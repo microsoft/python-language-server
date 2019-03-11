@@ -44,6 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly int _maxTaskRunning = 8;
         private int _runningTasks;
         private int _version;
+        private int _queueLength;
 
         public PythonAnalyzer(IServiceManager services) {
             _services = services;
@@ -155,13 +156,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
-            _progress?.ReportRemaining();
+            _progress.ReportRemaining(++_queueLength);
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
-
                 var walker = await _dependencyResolver.AddChangesAsync(key, entry, cts.Token);
-                _progress?.ReportRemaining(walker.AffectedValues.Count);
 
                 var stopOnVersionChange = true;
                 lock (_syncObj) {
@@ -176,12 +175,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
                 }
 
-                _progress?.ReportRemaining(walker.AffectedValues.Count);
                 await _analysisRunningEvent.WaitAsync(cancellationToken);
                 var stopWatch = Stopwatch.StartNew();
 
                 try {
-                    _progress?.ReportRemaining(walker.AffectedValues.Count);
                     lock (_syncObj) {
                         foreach (var affectedEntry in walker.AffectedValues) {
                             affectedEntry.Invalidate(_version);
@@ -196,12 +193,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
 
                     _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {walker.AffectedValues.Count} entries has started.");
-                    _progress?.ReportRemaining(walker.Remaining);
                     await AnalyzeAffectedEntriesAsync(walker, stopOnVersionChange, stopWatch, analysisToken);
                 } finally {
+                    _progress.ReportRemaining(--_queueLength);
                     _analysisRunningEvent.Set();
                     stopWatch.Stop();
-                    _progress?.ReportRemaining(walker.Remaining);
 
                     if (_log != null) {
                         if (walker.Remaining == 0) {
@@ -250,7 +246,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var (moduleName, _, isTypeshed) in missingKeys) {
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
                 moduleResolution.GetOrLoadModule(moduleName);
-                _progress?.ReportRemaining();
             }
         }
 
@@ -264,6 +259,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
             try {
+                _progress.ReportRemaining(++_queueLength);
+
                 var startTime = stopWatch.Elapsed;
                 var module = node.Value.Module;
                 var ast = node.Value.Ast;
@@ -289,6 +286,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             } catch (Exception exception) {
                 node.Value.TrySetException(exception, version, _syncObj);
             } finally {
+                _progress.ReportRemaining(--_queueLength);
                 Interlocked.Decrement(ref _runningTasks);
                 node.Commit();
             }
