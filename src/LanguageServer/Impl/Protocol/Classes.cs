@@ -130,11 +130,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     public sealed class PythonInitializationOptions {
         [Serializable]
         public struct Interpreter {
-            /// <summary>
-            /// The serialized info required to restore an interpreter factory
-            /// </summary>
-            // public Dictionary<string, object> properties;
-
             public sealed class InterpreterProperties {
                 public string Version;
                 public string InterpreterPath;
