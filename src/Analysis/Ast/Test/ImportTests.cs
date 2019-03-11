@@ -212,7 +212,7 @@ x = f()
             var d = analysis.Diagnostics.First();
             d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
             d.SourceSpan.Should().Be(1, 6, 1, 19);
-            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
+            d.Message.Should().Be(Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant("nonexistent"));
         }
     }
 }

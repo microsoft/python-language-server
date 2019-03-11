@@ -81,6 +81,14 @@ namespace Microsoft.Python.Parsing.Tests {
             Python27,
             Python27_x64).FirstOrDefault() ?? NotInstalled("v2");
 
+        public static InterpreterConfiguration LatestAnaconda3X => GetVersions(
+            Anaconda36,
+            Anaconda36_x64).FirstOrDefault() ?? NotInstalled("Anaconda v3");
+
+        public static InterpreterConfiguration LatestAnaconda2X => GetVersions(
+            Anaconda27,
+            Anaconda27_x64).FirstOrDefault() ?? NotInstalled("Anaconda v2");
+
         public static InterpreterConfiguration EarliestAvailable => EarliestAvailable2X ?? EarliestAvailable3X;
 
         public static InterpreterConfiguration EarliestAvailable3X => GetVersions(
