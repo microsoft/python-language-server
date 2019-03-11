@@ -133,7 +133,7 @@ namespace Microsoft.Python.Parsing {
                 match = ~match - 1;
             }
 
-            return new SourceLocation(index + _initialLocation.Index, match + 2 + _initialLocation.Line - 1, index - _newLineLocations[match].EndIndex + _initialLocation.Column);
+            return new SourceLocation(index + _initialLocation.Index, match + 2 + _initialLocation.Line - 1, index - _newLineLocations[match].EndIndex + 1);
         }
 
         internal ErrorSink ErrorSink {
@@ -2188,7 +2188,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private void ReportSyntaxError(IndexSpan span, string message, int errorCode)
-            => _errors.Add(message, _newLineLocations.ToArray(), span.Start, span.End, errorCode, Severity.Error);
+            => _errors.Add(message, IndexToLocation(span.Start), IndexToLocation(span.End), errorCode, Severity.Error);
 
         [Conditional("DUMP_TOKENS")]
         private static void DumpToken(Token token)
