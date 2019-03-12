@@ -129,7 +129,7 @@ namespace Microsoft.Python.Parsing {
                     };
                     new FStringParser(formatSpecifierBuilder, _buffer.ToString(), _isRaw, options, _langVersion).Parse();
                     _buffer.Clear();
-                    formatSpecifier = formatSpecifierBuilder.Build("");
+                    formatSpecifier = formatSpecifierBuilder.Build();
                 }
             }
 

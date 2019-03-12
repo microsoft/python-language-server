@@ -290,6 +290,10 @@ namespace Microsoft.Python.Parsing.Ast {
         public virtual Task<bool> WalkAsync(FString node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(FString node, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
+        // FormatSpecifier
+        public virtual Task<bool> WalkAsync(FormatSpecifier node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(FormatSpecifier node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
         // FormattedValue
         public virtual Task<bool> WalkAsync(FormattedValue node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(FormattedValue node, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -873,6 +877,10 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // FString
         public override Task<bool> WalkAsync(FString node, CancellationToken cancellationToken = default)
+            => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
+
+        // FormatSpecifier
+        public override Task<bool> WalkAsync(FormatSpecifier node, CancellationToken cancellationToken = default)
             => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
 
         // FormattedValue

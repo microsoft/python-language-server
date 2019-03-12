@@ -4,13 +4,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class FString : Expression {
+    public class FormatSpecifier : Expression {
         private readonly IEnumerable<Node> _children;
-        private readonly string _openQuotes;
 
-        public FString(IEnumerable<Node> children, string openQuotes) {
+        public FormatSpecifier(IReadOnlyList<Node> children) {
             _children = children;
-            _openQuotes = openQuotes;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
@@ -36,34 +34,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            var verbatimPieces = this.GetVerbatimNames(ast);
-            var verbatimComments = this.GetListWhiteSpace(ast);
-            if (verbatimPieces != null) {
-                // string+ / bytes+, such as "abc" "abc", which can spawn multiple lines, and 
-                // have comments in between the peices.
-                for (var i = 0; i < verbatimPieces.Length; i++) {
-                    if (verbatimComments != null && i < verbatimComments.Length) {
-                        format.ReflowComment(res, verbatimComments[i]);
-                    }
-                    res.Append(verbatimPieces[i]);
-                }
-            } else {
-                format.ReflowComment(res, this.GetPreceedingWhiteSpaceDefaultNull(ast));
-                if (this.GetExtraVerbatimText(ast) != null) {
-                    res.Append(this.GetExtraVerbatimText(ast));
-                } else {
-                    RecursiveAppendRepr(res, ast, format);
-                }
-            }
-        }
-
-        private void RecursiveAppendRepr(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            res.Append('f');
-            res.Append(_openQuotes);
+            // There is no leading f
             foreach (var child in _children) {
                 AppendChild(res, ast, format, child);
             }
-            res.Append(_openQuotes);
         }
 
         private static void AppendChild(StringBuilder res, PythonAst ast, CodeFormattingOptions format, Node child) {

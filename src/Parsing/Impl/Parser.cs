@@ -3264,7 +3264,10 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression buildFStringExpr(IEnumerable<TokenWithSpan> readTokens) {
-            var builder = new FStringBuilder();
+            var openQuotes = readTokens.Where(t => t.Token.Kind == TokenKind.FString)
+                .Select(t => ((FStringToken)t.Token).OpenQuotes).DefaultIfEmpty("'").First();
+
+            var builder = new RootFStringBuilder(openQuotes);
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Kind == TokenKind.FString) {
                     var fToken = (FStringToken)tokenWithSpan.Token;
@@ -3280,10 +3283,9 @@ namespace Microsoft.Python.Parsing {
                     builder.Append(new ConstantExpression(asciiString.String));
                 }
             }
-            var openQuotes = readTokens.Where(t => t.Token.Kind == TokenKind.FString)
-                .Select(t => ((FStringToken)t.Token).OpenQuotes).DefaultIfEmpty("'").First();
 
-            return builder.Build(openQuotes);
+
+            return builder.Build();
         }
 
         internal static string MakeString(IList<byte> bytes) {

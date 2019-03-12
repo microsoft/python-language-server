@@ -288,6 +288,10 @@ namespace Microsoft.Python.Parsing.Ast {
         public virtual bool Walk(FString node) { return true; }
         public virtual void PostWalk(FString node) { }
 
+        // FormatSpecifier
+        public virtual bool Walk(FormatSpecifier node) { return true; }
+        public virtual void PostWalk(FormatSpecifier node) { }
+
         // FormattedValue
         public virtual bool Walk(FormattedValue node) { return true; }
         public virtual void PostWalk(FormattedValue node) { }
@@ -805,6 +809,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // FString
         public override bool Walk(FString node) { return Location >= node.StartIndex && Location <= node.EndIndex; }
+
+        // FormatSpecifier
+        public override bool Walk(FormatSpecifier node) { return Location >= node.StartIndex && Location <= node.EndIndex; }
 
         // FormattedValue
         public override bool Walk(FormattedValue node) { return Location >= node.StartIndex && Location <= node.EndIndex; }

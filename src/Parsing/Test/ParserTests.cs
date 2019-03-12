@@ -254,7 +254,7 @@ namespace Microsoft.Python.Parsing.Tests {
                                 CheckFormattedValue(
                                     CheckNameExpr("some"),
                                     'r',
-                                    CheckFString(
+                                    CheckFormatSpecifer(
                                         CheckFormattedValue(
                                             CheckNameExpr("some")
                                         )
@@ -267,7 +267,7 @@ namespace Microsoft.Python.Parsing.Tests {
                                 CheckFormattedValue(
                                     CheckNameExpr("some"),
                                     null,
-                                    CheckFString(
+                                    CheckFormatSpecifer(
                                         CheckConstant("#06x")
                                     )
                                 )
@@ -4338,7 +4338,7 @@ pass
 
         private static Action<Expression> CheckFString(params Action<Expression>[] subExpressions) {
             return expr => {
-                Assert.IsInstanceOfType(expr, typeof(FString));
+                Assert.AreEqual(typeof(FString), expr.GetType());
                 var nodes = expr.GetChildNodes().ToArray();
                 Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in fstring");
                 for (var i = 0; i < subExpressions.Length; i++) {
@@ -4365,10 +4365,14 @@ pass
 
         private static Action<Expression> CheckFormatSpecifer(params Action<Expression>[] subExpressions) {
             return expr => {
-                Assert.AreEqual(typeof(FormatSpecifer), expr.GetType());
+                Assert.AreEqual(typeof(FormatSpecifier), expr.GetType());
 
-                // A format specifer is an f-string
-                CheckFString(subExpressions)(expr);
+                var nodes = expr.GetChildNodes().ToArray();
+                Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in format specifier");
+                for (var i = 0; i < subExpressions.Length; i++) {
+                    Assert.IsInstanceOfType(nodes[i], typeof(Expression), "format specifier child not an instance of expression");
+                    subExpressions[i]((Expression)nodes[i]);
+                }
             };
         }
 
