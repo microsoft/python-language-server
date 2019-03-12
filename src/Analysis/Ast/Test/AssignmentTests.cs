@@ -214,7 +214,6 @@ class D(C):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task LambdaExpression1() {
             const string code = @"
 x = lambda a: a
@@ -225,7 +224,6 @@ y = x(42)
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task LambdaExpression2() {
             const string code = @"
 def f(a):

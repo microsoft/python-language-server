@@ -141,6 +141,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case Comprehension comp:
                     m = GetValueFromComprehension(comp);
                     break;
+                case LambdaExpression lambda:
+                    m = GetValueFromLambda(lambda);
+                    break;
                 default:
                     m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
                     break;
