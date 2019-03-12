@@ -17,7 +17,6 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
@@ -27,15 +26,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         public void HandleTupleAssignment(TupleExpression lhs, Expression rhs, IMember value) {
             if (rhs is TupleExpression tex) {
                 AssignTuple(lhs, tex, Eval);
-                return;
-            }
-
-            if (AssignTuple(lhs, value, Eval)) {
-                return;
-            }
-
-            foreach (var n in lhs.Items.OfType<NameExpression>().Select(x => x.Name).ExcludeDefault()) {
-                Eval.DeclareVariable(n, value, VariableSource.Declaration, rhs);
+            } else {
+                AssignTuple(lhs, value, Eval);
             }
         }
 
@@ -55,16 +47,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        internal static bool AssignTuple(TupleExpression lhs, IMember value, ExpressionEval eval) {
+        internal static void AssignTuple(TupleExpression lhs, IMember value, ExpressionEval eval) {
             // Tuple = 'tuple value' (such as from callable). Transfer values.
-            if (!(value is IPythonCollection seq)) {
-                return false;
+            IPythonType[] types;
+            if (value is IPythonCollection seq) {
+                types = seq.Contents.Select(c => c.GetPythonType()).ToArray();
+            } else {
+                types = new[] {eval.UnknownType};
             }
 
-            var types = seq.Contents.Select(c => c.GetPythonType()).ToArray();
             var typeEnum = new TypeEnumerator(types, eval.UnknownType);
             AssignTuple(lhs, typeEnum, eval);
-            return true;
         }
 
         private static void AssignTuple(TupleExpression tex, TypeEnumerator typeEnum, ExpressionEval eval) {
