@@ -98,5 +98,8 @@ namespace Microsoft.Python.Core {
         /// <see cref="AggregateException"/>.
         /// </summary>
         public static T WaitAndUnwrapExceptions<T>(this Task<T> task) => task.GetAwaiter().GetResult();
+
+        public static Task<T> WaitAsync<T>(this Task<T> task, CancellationToken cancellationToken) 
+            => task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default);
     }
 }

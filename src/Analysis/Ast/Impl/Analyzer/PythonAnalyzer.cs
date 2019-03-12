@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly AsyncAutoResetEvent _analysisRunningEvent = new AsyncAutoResetEvent();
         private readonly ProgressReporter _progress;
         private readonly ILogger _log;
-        private readonly int _maxTaskRunning = 8;
+        private readonly int _maxTaskRunning = Environment.ProcessorCount * 3;
         private int _runningTasks;
         private int _version;
 
@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _services = services;
             _log = services.GetService<ILogger>();
             _progress = new ProgressReporter(services.GetService<IProgressService>());
-            _dependencyResolver = new DependencyResolver<ModuleKey, PythonAnalyzerEntry>(new ModuleDependencyFinder());
+            _dependencyResolver = new DependencyResolver<ModuleKey, PythonAnalyzerEntry>();
             _analysisCompleteEvent.Set();
             _analysisRunningEvent.Set();
         }
@@ -114,6 +114,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> dependencies) {
             var key = new ModuleKey(module);
             PythonAnalyzerEntry entry;
+            int version;
             lock (_syncObj) {
                 if (!_analysisEntries.TryGetValue(key, out entry)) {
                     return;
@@ -124,11 +125,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return;
                 }
 
-                entry.Invalidate(_version + 1);
-                entry.AddAnalysisDependencies(significantDependencies);
+                version = _version + 1;
+                entry.Invalidate(significantDependencies, version);
             }
 
-            AnalyzeDocumentAsync(key, entry, default).DoNotWait();
+            AnalyzeDocumentAsync(key, entry, version, default).DoNotWait();
 
             bool IsSignificant(IPythonModule m)
                 => m != entry.Module && ((m.ModuleType == ModuleType.User && m.Analysis.Version < entry.AnalysisVersion) || m.Analysis is EmptyAnalysis);
@@ -137,34 +138,40 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion, CancellationToken cancellationToken) {
             var key = new ModuleKey(module);
             PythonAnalyzerEntry entry;
+            int version;
             lock (_syncObj) {
+                version = _version + 1;
                 if (_analysisEntries.TryGetValue(key, out entry)) {
                     if (entry.BufferVersion >= bufferVersion) {
                         return;
                     }
 
-                    entry.Invalidate(ast, bufferVersion, _version + 1);
+                    entry.Invalidate(module, ast, bufferVersion, version);
                 } else {
-                    entry = new PythonAnalyzerEntry(module, ast, new EmptyAnalysis(_services, (IDocument)module), bufferVersion, _version + 1);
+                    entry = new PythonAnalyzerEntry(module, ast, new EmptyAnalysis(_services, (IDocument)module), bufferVersion, version);
                     _analysisEntries[key] = entry;
                 }
             }
 
-            AnalyzeDocumentAsync(key, entry, cancellationToken).DoNotWait();
+            AnalyzeDocumentAsync(key, entry, version, cancellationToken).DoNotWait();
         }
 
-        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, CancellationToken cancellationToken) {
+        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, int entryVersion, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
             _progress?.ReportRemaining();
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
+                if (!TryFindDependencies(entry, entryVersion, analysisToken, out var dependencies)) {
+                    return;
+                }
 
-                var walker = await _dependencyResolver.AddChangesAsync(key, entry, cts.Token);
-                _progress?.ReportRemaining(walker.AffectedValues.Count);
+                if (entry.AnalysisVersion > entryVersion) {
+                    return;
+                }
 
-                var stopOnVersionChange = true;
+                var walker = _dependencyResolver.NotifyChanges(key, entry, dependencies);
                 lock (_syncObj) {
                     if (_version > walker.Version) {
                         return;
@@ -173,6 +180,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _version = walker.Version;
                 }
 
+
+                var stopOnVersionChange = true;
+                _progress?.ReportRemaining(walker.AffectedValues.Count);
                 if (walker.MissingKeys.Count > 0) {
                     LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
                 }
@@ -234,7 +244,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
 
-                if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning) {
+                if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || walker.Remaining == 1) {
                     Analyze(node, walker.Version, stopWatch, cancellationToken);
                 } else {
                     StartAnalysis(node, walker.Version, stopWatch, cancellationToken);
@@ -265,9 +275,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
             try {
+                var entry = node.Value;
+                if (!entry.IsValidVersion(version, out var module, out var ast)) {
+                    _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                    node.Skip();
+                    return;
+                }
+
                 var startTime = stopWatch.Elapsed;
-                var module = node.Value.Module;
-                var ast = node.Value.Ast;
 
                 // Now run the analysis.
                 var walker = new ModuleWalker(_services, module, ast);
@@ -290,18 +305,96 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
-                node.Value.TrySetAnalysis(analysis, version, _syncObj);
+                entry.TrySetAnalysis(analysis, version);
+                node.Commit();
 
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) complete in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
-                node.Value.TryCancel(oce, version, _syncObj);
+                node.Value.TryCancel(oce, version);
+                node.Skip();
+                var module = node.Value.Module;
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
             } catch (Exception exception) {
-                node.Value.TrySetException(exception, version, _syncObj);
+                var module = node.Value.Module;
+                node.Value.TrySetException(exception, version);
+                node.Commit();
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
                 Interlocked.Decrement(ref _runningTasks);
-                node.Commit();
             }
         }
+
+        private bool TryFindDependencies(PythonAnalyzerEntry entry, int version, CancellationToken cancellationToken, out ImmutableArray<ModuleKey> dependencies) {
+            IPythonModule module;
+            PythonAst ast;
+            lock (_syncObj) {
+                if (!entry.IsValidVersion(version, out module, out ast)) {
+                    dependencies = ImmutableArray<ModuleKey>.Empty;
+                    return false;
+                }
+            }
+
+            var dependenciesHashSet = new HashSet<ModuleKey>();
+            var isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
+            var moduleResolution = module.Interpreter.ModuleResolution;
+            var pathResolver = isTypeshed
+                ? module.Interpreter.TypeshedResolution.CurrentPathResolver
+                : moduleResolution.CurrentPathResolver;
+
+            if (module.Stub != null) {
+                dependenciesHashSet.Add(new ModuleKey(module.Stub));
+            }
+
+            foreach (var dependency in entry.AnalysisDependencies) {
+                dependenciesHashSet.Add(new ModuleKey(dependency));
+            }
+
+            foreach (var node in ast.TraverseDepthFirst<Node>(n => n.GetChildNodes())) {
+                if (cancellationToken.IsCancellationRequested) {
+                    dependencies = ImmutableArray<ModuleKey>.Empty;
+                    return false;
+                }
+
+                switch (node) {
+                    case ImportStatement import:
+                        foreach (var moduleName in import.Names) {
+                            HandleSearchResults(isTypeshed, dependenciesHashSet, moduleResolution, pathResolver.FindImports(module.FilePath, moduleName, import.ForceAbsolute));
+                        }
+                        break;
+                    case FromImportStatement fromImport:
+                        var imports = pathResolver.FindImports(module.FilePath, fromImport);
+                        HandleSearchResults(isTypeshed, dependenciesHashSet, moduleResolution, imports);
+                        if (imports is IImportChildrenSource childrenSource) {
+                            foreach (var name in fromImport.Names) {
+                                if (childrenSource.TryGetChildImport(name.Name, out var childImport)) {
+                                    HandleSearchResults(isTypeshed, dependenciesHashSet, moduleResolution, childImport);
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+
+            dependenciesHashSet.Remove(new ModuleKey(entry.Module));
+            dependencies = ImmutableArray<ModuleKey>.Create(dependenciesHashSet);
+            return true;
+        }
+
+        private static void HandleSearchResults(bool isTypeshed, HashSet<ModuleKey> dependencies, IModuleManagement moduleResolution, IImportSearchResult searchResult) {
+            switch (searchResult) {
+                case ModuleImport moduleImport when !Ignore(moduleResolution, moduleImport.FullName):
+                    dependencies.Add(new ModuleKey(moduleImport.FullName, moduleImport.ModulePath, isTypeshed));
+                    return;
+                case PossibleModuleImport possibleModuleImport when !Ignore(moduleResolution, possibleModuleImport.PrecedingModuleFullName):
+                    dependencies.Add(new ModuleKey(possibleModuleImport.PrecedingModuleFullName, possibleModuleImport.PrecedingModulePath, isTypeshed));
+                    return;
+                default:
+                    return;
+            }
+        }
+
+        private static bool Ignore(IModuleManagement moduleResolution, string name)
+            => moduleResolution.BuiltinModuleName.EqualsOrdinal(name) || moduleResolution.GetSpecializedModule(name) != null;
 
         [DebuggerDisplay("{Name} : {FilePath}")]
         private struct ModuleKey : IEquatable<ModuleKey> {
@@ -321,7 +414,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 IsTypeshed = isTypeshed;
             }
 
-            public bool Equals(ModuleKey other)
+            public bool Equals(ModuleKey other) 
                 => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed;
 
             public override bool Equals(object obj) => obj is ModuleKey other && Equals(other);
@@ -346,70 +439,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             public override string ToString() => $"{Name}({FilePath})";
-        }
-
-        private sealed class ModuleDependencyFinder : IDependencyFinder<ModuleKey, PythonAnalyzerEntry> {
-            public Task<ImmutableArray<ModuleKey>> FindDependenciesAsync(PythonAnalyzerEntry value, CancellationToken cancellationToken) {
-                var dependencies = new HashSet<ModuleKey>();
-                var module = value.Module;
-                var isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
-                var moduleResolution = module.Interpreter.ModuleResolution;
-                var pathResolver = isTypeshed
-                    ? module.Interpreter.TypeshedResolution.CurrentPathResolver
-                    : moduleResolution.CurrentPathResolver;
-
-                if (module.Stub != null) {
-                    dependencies.Add(new ModuleKey(module.Stub));
-                }
-
-                foreach (var dependency in value.AnalysisDependencies) {
-                    dependencies.Add(new ModuleKey(dependency));
-                }
-
-                foreach (var node in value.Ast.TraverseDepthFirst<Node>(n => n.GetChildNodes())) {
-                    if (cancellationToken.IsCancellationRequested) {
-                        return Task.FromCanceled<ImmutableArray<ModuleKey>>(cancellationToken);
-                    }
-
-                    switch (node) {
-                        case ImportStatement import:
-                            foreach (var moduleName in import.Names) {
-                                HandleSearchResults(isTypeshed, dependencies, moduleResolution, pathResolver.FindImports(module.FilePath, moduleName, import.ForceAbsolute));
-                            }
-                            break;
-                        case FromImportStatement fromImport:
-                            var imports = pathResolver.FindImports(module.FilePath, fromImport);
-                            HandleSearchResults(isTypeshed, dependencies, moduleResolution, imports);
-                            if (imports is IImportChildrenSource childrenSource) {
-                                foreach (var name in fromImport.Names) {
-                                    if (childrenSource.TryGetChildImport(name.Name, out var childImport)) {
-                                        HandleSearchResults(isTypeshed, dependencies, moduleResolution, childImport);
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-
-                dependencies.Remove(new ModuleKey(value.Module));
-                return Task.FromResult(ImmutableArray<ModuleKey>.Create(dependencies));
-            }
-
-            private static void HandleSearchResults(bool isTypeshed, HashSet<ModuleKey> dependencies, IModuleManagement moduleResolution, IImportSearchResult searchResult) {
-                switch (searchResult) {
-                    case ModuleImport moduleImport when !Ignore(moduleResolution, moduleImport.FullName):
-                        dependencies.Add(new ModuleKey(moduleImport.FullName, moduleImport.ModulePath, isTypeshed));
-                        return;
-                    case PossibleModuleImport possibleModuleImport when !Ignore(moduleResolution, possibleModuleImport.PrecedingModuleFullName):
-                        dependencies.Add(new ModuleKey(possibleModuleImport.PrecedingModuleFullName, possibleModuleImport.PrecedingModulePath, isTypeshed));
-                        return;
-                    default:
-                        return;
-                }
-            }
-
-            private static bool Ignore(IModuleManagement moduleResolution, string name)
-                => moduleResolution.BuiltinModuleName.EqualsOrdinal(name) || moduleResolution.GetSpecializedModule(name) != null;
         }
     }
 }

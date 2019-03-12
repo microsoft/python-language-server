@@ -13,19 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Core.Collections;
-
-namespace Microsoft.Python.Analysis.Dependencies {
-    /// <summary>
-    /// Represents subsystem that can resolve module dependencies for analysis.
-    /// Given module the subsystem can return ordered chain of dependencies 
-    /// for the analysis. The chain is a tree where child branches can be analyzed
-    /// concurrently.
-    /// </summary>
-    internal interface IDependencyResolver<TKey, TValue> {
-        IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
+namespace Microsoft.Python.Analysis.Core.DependencyResolution {
+    public class RelativeImportBeyondTopLevel : IImportSearchResult {
+        public string RelativeImportName { get; }
+        public RelativeImportBeyondTopLevel(string relativeImportName) {
+            RelativeImportName = relativeImportName;
+        }
     }
 }
