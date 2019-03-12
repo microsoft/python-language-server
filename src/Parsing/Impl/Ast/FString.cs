@@ -8,7 +8,7 @@ namespace Microsoft.Python.Parsing.Ast {
         private readonly IEnumerable<Node> _children;
         private readonly string _openQuotes;
 
-        public FString(IEnumerable<Node> children, string openQuotes) {
+        public FString(IReadOnlyList<Node> children, string openQuotes) {
             _children = children;
             _openQuotes = openQuotes;
         }
