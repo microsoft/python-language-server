@@ -26,7 +26,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// concurrently.
     /// </summary>
     internal interface IDependencyResolver<TKey, TValue> {
-        ImmutableArray<TKey> MissingKeys { get; }
-        Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken);
+        IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
     }
 }
