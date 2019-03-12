@@ -35,7 +35,7 @@ namespace Microsoft.Python.Parsing {
 
     public class FormatSpecifierBuilder : FStringBuilder {
         public override Expression Build() {
-            return new FormatSpecifier(_children);
+            return new FormatSpecifier(_children.ToArray());
         }
     }
 
@@ -47,7 +47,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         public override Expression Build() {
-            return new FString(_children, _openQuotes);
+            return new FString(_children.ToArray(), _openQuotes);
         }
     }
 }

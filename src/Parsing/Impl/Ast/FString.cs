@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FString : Expression {
-        private readonly IEnumerable<Node> _children;
+        private readonly Node[] _children;
         private readonly string _openQuotes;
 
-        public FString(IReadOnlyList<Node> children, string openQuotes) {
+        public FString(Node[] children, string openQuotes) {
             _children = children;
             _openQuotes = openQuotes;
         }

@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FormatSpecifier : Expression {
-        private readonly IEnumerable<Node> _children;
+        private readonly Node[] _children;
 
-        public FormatSpecifier(IReadOnlyList<Node> children) {
+        public FormatSpecifier(Node[] children) {
             _children = children;
         }
 
