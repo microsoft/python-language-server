@@ -24,7 +24,7 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class LinterTests : AnalysisTestBase {
+    public class LintUndefinedVarsTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -346,6 +346,16 @@ x = a
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(3, 5, 3, 6);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Lambda() {
+            const string code = @"
+x = lambda a: a
+x(1)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {

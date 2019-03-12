@@ -226,7 +226,7 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod, TestCategory("60s"), Priority(1)]
-        [Timeout(10 * 60 * 1000)]
+        [Timeout(10 * 120 * 1000)]
         public async Task FullStdLibAnaconda2() {
             var v = PythonVersions.Anaconda27_x64 ?? PythonVersions.Anaconda27;
             await FullStdLibTest(v,

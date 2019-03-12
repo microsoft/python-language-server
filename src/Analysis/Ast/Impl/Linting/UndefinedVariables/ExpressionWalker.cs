@@ -48,6 +48,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             return false;
         }
 
+        public override bool Walk(LambdaExpression node) {
+            node.Walk(new LambdaWalker(_analysis));
+            return false;
+        }
+
         public override bool Walk(ListComprehension node) {
             node.Walk(new ComprehensionWalker(_analysis));
             return false;

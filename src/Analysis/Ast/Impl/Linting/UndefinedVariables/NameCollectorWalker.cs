@@ -31,7 +31,6 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 _names.Add(nex.Name);
                 _additionalNameNodes.Add(nex);
             }
-
             return false;
         }
     }
