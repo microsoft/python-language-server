@@ -61,5 +61,8 @@ namespace Microsoft.Python.Analysis.Values {
                 _variables[name] = new Variable(name, value, source, location);
             }
         }
+
+        internal void DeclareVariable(Variable variable) =>_variables[variable.Name] = variable;
+        internal void RemoveVariable(string name) => _variables.TryRemove(name, out _);
     }
 }

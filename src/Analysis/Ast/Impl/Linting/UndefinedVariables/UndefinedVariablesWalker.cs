@@ -19,32 +19,28 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesWalker : LinterWalker {
-        private readonly ExpressionWalker _expressionWalker;
-
         public UndefinedVariablesWalker(IDocumentAnalysis analysis, IServiceContainer services)
-            : base(analysis, services) {
-            _expressionWalker = new ExpressionWalker(analysis);
-        }
+            : base(analysis, services) { }
 
         public override bool Walk(AssignmentStatement node) {
             if (node.Right is ErrorExpression) {
                 return false;
             }
-            node.Right?.Walk(_expressionWalker);
+            node.Right?.Walk(new ExpressionWalker(Analysis));
             return false;
         }
 
         public override bool Walk(CallExpression node) {
-            node.Target?.Walk(_expressionWalker);
+            node.Target?.Walk(new ExpressionWalker(Analysis));
             foreach (var arg in node.Args) {
-                arg?.Expression?.Walk(_expressionWalker);
+                arg?.Expression?.Walk(new ExpressionWalker(Analysis));
             }
             return false;
         }
 
         public override bool Walk(IfStatement node) {
             foreach (var test in node.Tests) {
-                test.Test.Walk(_expressionWalker);
+                test.Test.Walk(new ExpressionWalker(Analysis));
             }
             return true;
         }

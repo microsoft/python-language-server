@@ -34,12 +34,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     break;
                 case TupleExpression tex:
                     // x = [('abc', 42, True), ('abc', 23, False)]
-                    // for some_str, some_int, some_bool in x:
-                    foreach (var nex in tex.Items.OfType<NameExpression>()) {
-                        if (!string.IsNullOrEmpty(nex.Name)) {
-                            Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Eval.GetLoc(nex));
-                        }
-                    }
+                    // for some_str, (some_int, some_bool) in x:
+                    var h = new TupleExpressionHandler(Walker);
+                    h.HandleTupleAssignment(tex, node.List, value);
                     break;
             }
 

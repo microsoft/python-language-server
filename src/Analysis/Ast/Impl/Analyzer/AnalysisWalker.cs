@@ -62,7 +62,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override bool Walk(ExpressionStatement node) {
-            AssignmentHandler.HandleAnnotatedExpression(node.Expression as ExpressionWithAnnotation, null);
+            switch (node.Expression) {
+                case ExpressionWithAnnotation ea:
+                    AssignmentHandler.HandleAnnotatedExpression(ea, null);
+                    break;
+                case Comprehension comp:
+                    Eval.ProcessComprehension(comp);
+                    break;
+            }
             return false;
         }
 
@@ -72,9 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public override bool Walk(IfStatement node) => ConditionalHandler.HandleIf(node);
 
         public override bool Walk(ImportStatement node) => ImportHandler.HandleImport(node);
-
-        public override bool Walk(NonlocalStatement node)
-            => NonLocalHandler.HandleNonLocal(node);
+        public override bool Walk(NonlocalStatement node) => NonLocalHandler.HandleNonLocal(node);
 
         public override bool Walk(TryStatement node) {
             TryExceptHandler.HandleTryExcept(node);

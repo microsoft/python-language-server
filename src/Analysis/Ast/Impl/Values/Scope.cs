@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region IScope
         public string Name => Node?.Name ?? "<global>";
-        public ScopeStatement Node { get; }
+        public virtual ScopeStatement Node { get; }
         public IScope OuterScope { get; }
         public bool VisibleToChildren { get; }
 

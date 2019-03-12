@@ -318,6 +318,19 @@ for some_str, some_int, some_bool in x:
         }
 
         [TestMethod, Priority(0)]
+        public async Task ForTuple() {
+            const string code = @"
+x = [('abc', 42, True), ('abc', 23, False)]
+for a, (b, c) in x:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Bool);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Generator2X() {
             const string code = @"
 def f():
@@ -502,6 +515,7 @@ y2 = x.get('oar')(42, [])
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task NamedTuple() {
             const string code = @"
 from collections import namedtuple

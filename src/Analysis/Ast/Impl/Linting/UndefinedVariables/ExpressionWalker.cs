@@ -16,7 +16,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
@@ -87,12 +88,23 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 if (!(v.Value is IPythonFunctionType || v.Value is IPythonClassType)) {
                     var span = v.Locations.First().Span;
                     var nodeLoc = node.GetLocation(_analysis.Document);
-                    if (span.IsAfter(nodeLoc.Span)) {
+                    // Exclude same-name variables declared within the same statement
+                    // like 'e' that appears before its declaration in '[e in for e in {}]'
+                    if (span.IsAfter(nodeLoc.Span) && !IsSpanInComprehension(nodeLoc.Span)) {
                         _analysis.ReportUndefinedVariable(node);
                     }
                 }
             }
             return false;
+        }
+
+        private bool IsSpanInComprehension(SourceSpan span) {
+            var start = span.Start.ToIndex(_analysis.Ast);
+            var end = span.End.ToIndex(_analysis.Ast);
+            return ((Node)_analysis.ExpressionEvaluator.CurrentScope.Node)
+                .TraverseDepthFirst(n => n.GetChildNodes())
+                .OfType<Comprehension>()
+                .Any(n => n.StartIndex <= start && end < n.EndIndex);
         }
     }
 }

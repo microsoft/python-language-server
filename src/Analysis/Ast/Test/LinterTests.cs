@@ -325,7 +325,30 @@ for a, b in enumerate(x):
             analysis.Diagnostics.Should().BeEmpty();
         }
 
-        private class AnalysisOptionsProvider: IAnalysisOptionsProvider {
+        [TestMethod, Priority(0)]
+        public async Task ListComprehensionStatement() {
+            const string code = @"
+[a == 1 for a in {}]
+x = a
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DictionaryComprehension() {
+            const string code = @"
+b = {str(a): a == 1 for a in {}}
+x = a
+";
+            var analysis = await GetAnalysisAsync(code);
+            var d = analysis.Diagnostics.ToArray();
+            d.Should().HaveCount(1);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(3, 5, 3, 6);
+        }
+
+        private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
             public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
     }
