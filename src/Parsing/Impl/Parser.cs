@@ -3280,8 +3280,10 @@ namespace Microsoft.Python.Parsing {
                     builder.Append(new ConstantExpression(asciiString.String));
                 }
             }
+            var openQuotes = readTokens.Where(t => t.Token.Kind == TokenKind.FString)
+                .Select(t => ((FStringToken)t.Token).OpenQuotes).DefaultIfEmpty("'").First();
 
-            return builder.Build();
+            return builder.Build(openQuotes);
         }
 
         internal static string MakeString(IList<byte> bytes) {

@@ -1004,29 +1004,31 @@ namespace Microsoft.Python.Parsing {
                 makeUnicode = LanguageVersion.Is3x() || UnicodeLiterals || StubFile;
             }
 
+            if (isFormatted) {
+                Debug.Assert(LanguageVersion >= PythonLanguageVersion.V36);
+
+                string contents = new string(_buffer, start, length);
+                string openQuotes = new string(quote, isTriple ? 3 : 1);
+                if (Verbatim) {
+                    return new VerbatimFStringToken(contents, openQuotes, isTriple, isRaw, GetTokenString());
+                } else {
+                    return new FStringToken(contents, openQuotes, isTriple, isRaw);
+                }
+            }
+
             if (makeUnicode) {
                 string contents;
-                if (isFormatted) {
-                    Debug.Assert(LanguageVersion >= PythonLanguageVersion.V36);
-                    contents = new string(_buffer, start, length);
-                    if (Verbatim) {
-                        return new VerbatimFStringToken(contents, quote, isTriple, isRaw, GetTokenString());
-                    } else {
-                        return new FStringToken(contents, quote, isTriple, isRaw);
-                    }
+                try {
+                    contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, !_disableLineFeedLineSeparator);
+                } catch (DecoderFallbackException e) {
+                    _errors.Add(e.Message, IndexToLocation(_tokenStartIndex),
+                        IndexToLocation(_tokenEndIndex), ErrorCodes.SyntaxError, Severity.Error);
+                    contents = "";
+                }
+                if (Verbatim) {
+                    return new VerbatimUnicodeStringToken(contents, GetTokenString());
                 } else {
-                    try {
-                        contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, !_disableLineFeedLineSeparator);
-                    } catch (DecoderFallbackException e) {
-                        _errors.Add(e.Message, IndexToLocation(_tokenStartIndex),
-                            IndexToLocation(_tokenEndIndex), ErrorCodes.SyntaxError, Severity.Error);
-                        contents = "";
-                    }
-                    if (Verbatim) {
-                        return new VerbatimUnicodeStringToken(contents, GetTokenString());
-                    } else {
-                        return new UnicodeStringToken(contents);
-                    }
+                    return new UnicodeStringToken(contents);
                 }
             } else {
                 var data = LiteralParser.ParseBytes(_buffer, start, length, isRaw, !_disableLineFeedLineSeparator);

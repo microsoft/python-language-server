@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FString : Expression {
-        private readonly IEnumerable<Node> _children;
+        protected readonly IEnumerable<Node> _children;
+        private readonly string _openQuotes;
 
-        public FString(IEnumerable<Node> children) {
+        public FString(IEnumerable<Node> children, string openQuotes) {
             _children = children;
+            _openQuotes = openQuotes;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
@@ -48,7 +49,32 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             } else {
                 format.ReflowComment(res, this.GetPreceedingWhiteSpaceDefaultNull(ast));
-                res.Append(this.GetExtraVerbatimText(ast));
+                if (this.GetExtraVerbatimText(ast) != null) {
+                    res.Append(this.GetExtraVerbatimText(ast));
+                } else {
+                    RecursiveAppendRepr(res, ast, format);
+                }
+            }
+        }
+
+        private void RecursiveAppendRepr(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
+            res.Append('f');
+            res.Append(_openQuotes);
+            foreach (var child in _children) {
+                AppendChild(res, ast, format, child);
+            }
+            res.Append(_openQuotes);
+        }
+
+        protected static void AppendChild(StringBuilder res, PythonAst ast, CodeFormattingOptions format, Node child) {
+            if (child is ConstantExpression expr) {
+                // Non-Verbatim AppendCodeString for ConstantExpression adds quotes around string
+                // Remove those quotes
+                var childStrBuilder = new StringBuilder();
+                child.AppendCodeString(childStrBuilder, ast, format);
+                res.Append(childStrBuilder.ToString().Trim('\''));
+            } else {
+                child.AppendCodeString(res, ast, format);
             }
         }
     }

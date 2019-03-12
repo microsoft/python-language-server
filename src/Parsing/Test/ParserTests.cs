@@ -192,11 +192,11 @@ namespace Microsoft.Python.Parsing.Tests {
                                CheckFormattedValue(
                                    One,
                                    null,
-                                   CheckFString(
-                                       CheckFormattedValue(
-                                           CheckConstant("{")
-                                       ),
-                                       CheckConstant(">10")
+                                   CheckFormatSpecifer(
+                                        CheckFormattedValue(
+                                            CheckConstant("{")
+                                        ),
+                                        CheckConstant(">10")
                                    )
                                )
                            )
@@ -4338,7 +4338,7 @@ pass
 
         private static Action<Expression> CheckFString(params Action<Expression>[] subExpressions) {
             return expr => {
-                Assert.AreEqual(typeof(FString), expr.GetType());
+                Assert.IsInstanceOfType(expr, typeof(FString));
                 var nodes = expr.GetChildNodes().ToArray();
                 Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in fstring");
                 for (var i = 0; i < subExpressions.Length; i++) {
@@ -4363,6 +4363,14 @@ pass
             };
         }
 
+        private static Action<Expression> CheckFormatSpecifer(params Action<Expression>[] subExpressions) {
+            return expr => {
+                Assert.AreEqual(typeof(FormatSpecifer), expr.GetType());
+
+                // A format specifer is an f-string
+                CheckFString(subExpressions)(expr);
+            };
+        }
 
         private Action<ComprehensionIterator> CompFor(Action<Expression> lhs, Action<Expression> list) {
             return iter => {

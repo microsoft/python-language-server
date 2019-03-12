@@ -125,19 +125,16 @@ namespace Microsoft.Python.Parsing {
     }
 
     public class FStringToken : Token {
-        public FStringToken(string value, char openQuote, bool isTriple, bool isRaw)
+        public FStringToken(string value, string openQuote, bool isTriple, bool isRaw)
             : base(TokenKind.FString) {
             Value = value;
-            OpenQuote = openQuote;
-            IsTriple = isTriple;
+            OpenQuotes = openQuote;
             IsRaw = isRaw;
         }
 
         public override object Value { get; }
 
-        public char OpenQuote { get; }
-
-        public bool IsTriple { get; }
+        public string OpenQuotes { get; }
 
         public bool IsRaw { get; }
 
@@ -145,15 +142,14 @@ namespace Microsoft.Python.Parsing {
 
         public override string Image {
             get {
-                var start = new String(OpenQuote, IsTriple ? 3 : 1);
-                return Value == null ? "None" : $"f{start}{Value.ToString()}{start}";
+                return Value == null ? "None" : $"f{OpenQuotes}{Value.ToString()}{OpenQuotes}";
             }
         }
     }
 
     public sealed class VerbatimFStringToken : FStringToken {
-        public VerbatimFStringToken(string value, char openQuote, bool isTriple, bool isRaw, string verbatim)
-            : base(value, openQuote, isTriple, isRaw) {
+        public VerbatimFStringToken(string value, string openQuotes, bool isTriple, bool isRaw, string verbatim)
+            : base(value, openQuotes, isTriple, isRaw) {
             VerbatimImage = verbatim;
         }
 

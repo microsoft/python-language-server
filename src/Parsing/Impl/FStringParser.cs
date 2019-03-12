@@ -8,7 +8,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
     public class FStringParser {
-        private readonly FStringBuilder _builder;
+        private readonly IFStringBuilder _builder;
         private readonly string _fString;
         private readonly bool _isRaw;
         private readonly ErrorSink _errors;
@@ -25,7 +25,7 @@ namespace Microsoft.Python.Parsing {
         private static readonly StringSpan doubleClose = new StringSpan("}}", 0, 2);
         private static readonly StringSpan notEqualStringSpan = new StringSpan("!=", 0, 2);
 
-        public FStringParser(FStringBuilder builder, string fString, bool isRaw,
+        public FStringParser(IFStringBuilder builder, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
 
             _fString = fString;
@@ -120,7 +120,7 @@ namespace Microsoft.Python.Parsing {
 
                 // If we got to the end, there will be an error when we try to read '}'
                 if (!EndOfFString()) {
-                    var formatSpecifierBuilder = new FStringBuilder();
+                    var formatSpecifierBuilder = new FormatSpecifierBuilder();
                     var options = new ParserOptions() {
                         ErrorSink = _errors,
                         Verbatim = _verbatim,
@@ -129,7 +129,7 @@ namespace Microsoft.Python.Parsing {
                     };
                     new FStringParser(formatSpecifierBuilder, _buffer.ToString(), _isRaw, options, _langVersion).Parse();
                     _buffer.Clear();
-                    formatSpecifier = formatSpecifierBuilder.Build();
+                    formatSpecifier = formatSpecifierBuilder.Build("");
                 }
             }
 
