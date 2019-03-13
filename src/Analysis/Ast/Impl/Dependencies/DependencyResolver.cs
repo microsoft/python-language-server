@@ -21,7 +21,6 @@ using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     internal sealed class DependencyResolver<TKey, TValue> : IDependencyResolver<TKey, TValue> {
-        private readonly IDependencyFinder<TKey, TValue> _dependencyFinder;
         private readonly DependencyGraph<TKey, TValue> _vertices = new DependencyGraph<TKey, TValue>();
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
