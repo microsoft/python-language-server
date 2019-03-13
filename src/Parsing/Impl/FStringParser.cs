@@ -308,7 +308,8 @@ namespace Microsoft.Python.Parsing {
             }
             var parser = Parser.CreateParser(new StringReader(subExprStr.TrimStart(' ')), _langVersion, new ParserOptions() {
                 ErrorSink = _errors,
-                InitialSourceLocation = initialSourceLocation
+                InitialSourceLocation = initialSourceLocation,
+                ParseFStringExpression = true
             });
             var expr = parser.ParseFStrSubExpr();
             if (expr is null) {

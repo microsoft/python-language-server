@@ -55,6 +55,11 @@ namespace Microsoft.Python.Parsing {
         public bool StubFile { get; set; }
 
         /// <summary>
+        /// When true, Parser behaves as if parsing an f-string expression
+        /// </summary>
+        public bool ParseFStringExpression { get; set; } = false;
+
+        /// <summary>
         /// An event that is raised for every comment in the source as it is parsed.
         /// </summary>
         public event EventHandler<CommentEventArgs> ProcessComment;

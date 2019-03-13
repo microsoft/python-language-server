@@ -34,3 +34,7 @@ f'{{nothing'
 f'Hello \'{f"{some}" + "example"}'
 
 f'{3.14:!<10.10}'
+
+f'''{1+
+1
+}'''

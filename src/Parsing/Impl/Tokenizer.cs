@@ -1903,7 +1903,8 @@ namespace Microsoft.Python.Parsing {
             #endregion
         }
 
-        public int GroupingLevel => _state.ParenLevel + _state.BraceLevel + _state.BracketLevel;
+        public int GroupingLevel => _state.ParenLevel + _state.BraceLevel + _state.BracketLevel +
+            (_state.FStringExpression ? 1 : 0);
 
         /// <summary>
         /// True if the last characters in the buffer are a backslash followed by a new line indicating
@@ -2279,6 +2280,7 @@ namespace Microsoft.Python.Parsing {
 
             // grouping state
             public int ParenLevel, BraceLevel, BracketLevel;
+            public bool FStringExpression;
 
             // white space tracking
             public StringBuilder CurWhiteSpace;
@@ -2291,6 +2293,7 @@ namespace Microsoft.Python.Parsing {
                 BracketLevel = state.BraceLevel;
                 ParenLevel = state.ParenLevel;
                 BraceLevel = state.BraceLevel;
+                FStringExpression = state.FStringExpression;
                 PendingDedents = state.PendingDedents;
                 IndentLevel = state.IndentLevel;
                 IndentFormat = (string[])state.IndentFormat?.Clone();
@@ -2310,6 +2313,8 @@ namespace Microsoft.Python.Parsing {
                 Indent = new int[MaxIndent]; // TODO
                 LastNewLine = true;
                 BracketLevel = ParenLevel = BraceLevel = PendingDedents = IndentLevel = 0;
+                FStringExpression = (options & TokenizerOptions.FStringExpression) != 0;
+
                 IndentFormat = null;
                 IncompleteString = null;
                 if ((options & TokenizerOptions.Verbatim) != 0) {

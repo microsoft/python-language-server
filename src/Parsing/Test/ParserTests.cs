@@ -316,6 +316,17 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckBinaryExpression(
+                                        One,
+                                        PythonOperator.Add,
+                                        One
+                                    )
+                                )
+                            )
                         )
                     )
                 );

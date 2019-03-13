@@ -49,5 +49,10 @@ namespace Microsoft.Python.Parsing {
         /// of the specified version.
         /// </summary>
         StubFile = 0x08,
+        /// <summary>
+        /// Set to true for parsing f-string expressions. These behave as if they were enclosed
+        /// by implicit parentheses
+        /// </summary>
+        FStringExpression = 0x10,
     }
 }
