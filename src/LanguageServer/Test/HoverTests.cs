@@ -206,6 +206,17 @@ import os.path as PATH
             AssertHover(hs, analysis, new SourceLocation(2, 20), $"module {name}*", new SourceSpan(2, 19, 2, 23));
         }
 
+        [TestMethod, Priority(0)]
+        public async Task FStringExpression() {
+            const string code = @"
+some = ''
+f'{some}'
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            AssertHover(hs, analysis, new SourceLocation(3, 4), @"some: str", new SourceSpan(3, 4, 3, 8));
+        }
+
         private static void AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = hs.GetHover(analysis, position);
 
