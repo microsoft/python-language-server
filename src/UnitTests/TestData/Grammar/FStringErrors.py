@@ -23,3 +23,5 @@ f'{import random}'
 f'{}'
 
 f'{a = 1}'
+
+f'{lambda x: 1}'
