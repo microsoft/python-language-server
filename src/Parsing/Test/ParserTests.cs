@@ -116,8 +116,8 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("f-string: empty expression not allowed", 167, 23, 4, 168, 23, 5),
                 new ErrorInfo("unexpected token '='", 2, 25, 6, 3, 25, 7),
                 new ErrorInfo("expected ':'", 200, 27, 12, 200, 27, 12),
-                new ErrorInfo("f-string: lambda must be inside parentheses", 192, 27, 4, 200, 27, 12)
-
+                new ErrorInfo("f-string: lambda must be inside parentheses", 192, 27, 4, 200, 27, 12),
+                new ErrorInfo("f-string: expecting '}'", 214, 29, 6, 215, 29, 7)
             );
         }
 
@@ -325,6 +325,19 @@ namespace Microsoft.Python.Parsing.Tests {
                                         PythonOperator.Add,
                                         One
                                     )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("\\N{GREEK CAPITAL LETTER DELTA}")
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckConstant("\\"),
+                                CheckFormattedValue(
+                                    One
                                 )
                             )
                         )

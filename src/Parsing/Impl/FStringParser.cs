@@ -22,9 +22,10 @@ namespace Microsoft.Python.Parsing {
         private bool _hasErrors = false;
         private readonly Stack<char> _nestedParens = new Stack<char>();
         private readonly SourceLocation _start;
-        private static readonly StringSpan doubleOpen = new StringSpan("{{", 0, 2);
-        private static readonly StringSpan doubleClose = new StringSpan("}}", 0, 2);
-        private static readonly StringSpan notEqualStringSpan = new StringSpan("!=", 0, 2);
+        private static readonly StringSpan DoubleOpen = new StringSpan("{{", 0, 2);
+        private static readonly StringSpan DoubleClose = new StringSpan("}}", 0, 2);
+        private static readonly StringSpan NotEqualStringSpan = new StringSpan("!=", 0, 2);
+        private static readonly StringSpan BackslashN = new StringSpan("\\N", 0, 2);
 
         public FStringParser(IFStringBuilder builder, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
@@ -42,16 +43,35 @@ namespace Microsoft.Python.Parsing {
         }
 
         public void Parse() {
+            var bufferStartLoc = CurrentLocation();
             while (!EndOfFString() && !_hasErrors) {
-                if (IsNext(doubleOpen)) {
+                if (IsNext(DoubleOpen)) {
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
-                } else if (IsNext(doubleClose)) {
+                } else if (IsNext(DoubleClose)) {
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
+                } else if (!_isRaw && IsNext(BackslashN)) {
+                    _buffer.Append(NextChar());
+                    _buffer.Append(NextChar());
+                    if (CurrentChar() == '{') {
+                        Read('{');
+                        _buffer.Append('{');
+                        while (!EndOfFString() && CurrentChar() != '}') {
+                            _buffer.Append(NextChar());
+                        }
+                        if (EndOfFString()) {
+                            ReportSyntaxError(Resources.ExpectingCharFStringErrorMsg.FormatInvariant('}'));
+                        }
+                        Read('}');
+                        _buffer.Append('}');
+                    } else {
+                        _buffer.Append(NextChar());
+                    }
                 } else if (CurrentChar() == '{') {
-                    AddBufferedSubstring();
+                    AddBufferedSubstring(bufferStartLoc);
                     ParseInnerExpression();
+                    bufferStartLoc = CurrentLocation();
                 } else if (CurrentChar() == '}') {
                     ReportSyntaxError(Resources.SingleClosedBraceFStringErrorMsg);
                     _buffer.Append(NextChar());
@@ -59,7 +79,7 @@ namespace Microsoft.Python.Parsing {
                     _buffer.Append(NextChar());
                 }
             }
-            AddBufferedSubstring();
+            AddBufferedSubstring(bufferStartLoc);
         }
 
         private bool IsNext(StringSpan span)
@@ -74,7 +94,7 @@ namespace Microsoft.Python.Parsing {
 
             Read('{');
             var initialPosition = _position;
-            var initialSourceLocation = new SourceLocation(_start.Index + initialPosition, _currentLineNumber, _currentColNumber);
+            SourceLocation initialSourceLocation = CurrentLocation();
 
             BufferInnerExpression();
 
@@ -107,7 +127,13 @@ namespace Microsoft.Python.Parsing {
             }
             var formattedValue = new FormattedValue(fStringExpression, conversion, formatSpecifier);
             formattedValue.SetLoc(new IndexSpan(_start.Index + initialPosition - 1, _position - initialPosition + 1));
+
+            Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
             return formattedValue;
+        }
+
+        private SourceLocation CurrentLocation() {
+            return new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber);
         }
 
         private Expression MaybeReadFormatSpecifier() {
@@ -168,7 +194,7 @@ namespace Microsoft.Python.Parsing {
                 var ch = CurrentChar();
                 if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}' || ch == '!' || ch == ':')) {
                     // check that it's not a != comparison
-                    if (ch != '!' || !IsNext(notEqualStringSpan)) {
+                    if (ch != '!' || !IsNext(NotEqualStringSpan)) {
                         break;
                     }
                 }
@@ -196,7 +222,7 @@ namespace Microsoft.Python.Parsing {
                 var ch = CurrentChar();
                 if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}')) {
                     // check that it's not a != comparison
-                    if (ch != '!' || !IsNext(notEqualStringSpan)) {
+                    if (ch != '!' || !IsNext(NotEqualStringSpan)) {
                         break;
                     }
                 }
@@ -334,12 +360,17 @@ namespace Microsoft.Python.Parsing {
             return true;
         }
 
-        private void AddBufferedSubstring() {
+        private void AddBufferedSubstring(SourceLocation bufferStartLoc) {
             if (_buffer.Length == 0) {
                 return;
             }
             var s = _buffer.ToString();
-            _builder.Append(s, _isRaw);
+            try {
+                _builder.Append(s, _isRaw);
+            } catch (DecoderFallbackException e) {
+                var span = new SourceSpan(bufferStartLoc, CurrentLocation());
+                _errors.Add(e.Message, span, ErrorCodes.SyntaxError, Severity.Error);
+            }
             _buffer.Clear();
         }
 

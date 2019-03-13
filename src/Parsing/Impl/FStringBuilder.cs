@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
@@ -16,8 +17,15 @@ namespace Microsoft.Python.Parsing {
         public abstract Expression Build();
 
         public void Append(string s, bool isRaw) {
-            _children.Add(new ConstantExpression(LiteralParser.ParseString(s.ToCharArray(),
-                0, s.Length, isRaw, isUni: true, normalizeLineEndings: true)));
+            string contents = "";
+            try {
+                contents = LiteralParser.ParseString(s.ToCharArray(),
+                0, s.Length, isRaw, isUni: true, normalizeLineEndings: true, allowTrailingBackslash: true);
+            } catch (DecoderFallbackException e) {
+                throw e;
+            } finally {
+                _children.Add(new ConstantExpression(contents));
+            }
         }
 
         public void Append(ConstantExpression expr) {
