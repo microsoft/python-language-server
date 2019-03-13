@@ -20,8 +20,8 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ComprehensionWalker : PythonWalker {
         private readonly IDocumentAnalysis _analysis;
-        private readonly HashSet<string> _names = new HashSet<string>();
-        private readonly HashSet<NameExpression> _additionalNameNodes = new HashSet<NameExpression>();
+        private readonly HashSet<string> _localNames = new HashSet<string>();
+        private readonly HashSet<NameExpression> _localNameNodes = new HashSet<NameExpression>();
 
         public ComprehensionWalker(IDocumentAnalysis analysis) {
             _analysis = analysis;
@@ -43,24 +43,24 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         public override bool Walk(ForStatement node) {
-            var nc = new NameCollectorWalker(_names, _additionalNameNodes);
+            var nc = new NameCollectorWalker(_localNames, _localNameNodes);
             node.Left?.Walk(nc);
             return true;
         }
 
         public override bool Walk(DictionaryComprehension node) {
             CollectNames(node);
-            node.Key?.Walk(new ExpressionWalker(_analysis, _names, _additionalNameNodes));
-            node.Value?.Walk(new ExpressionWalker(_analysis, _names, _additionalNameNodes));
+            var ew = new ExpressionWalker(_analysis, _localNames, _localNameNodes);
+            node.Key?.Walk(ew);
+            node.Value?.Walk(ew);
             foreach (var iter in node.Iterators) {
-                iter?.Walk(new ExpressionWalker(_analysis, null, _additionalNameNodes));
+                iter?.Walk(ew);
             }
-
             return true;
         }
 
         private void CollectNames(Comprehension c) {
-            var nc = new NameCollectorWalker(_names, _additionalNameNodes);
+            var nc = new NameCollectorWalker(_localNames, _localNameNodes);
             foreach (var cfor in c.Iterators.OfType<ComprehensionFor>()) {
                 cfor.Left?.Walk(nc);
             }
@@ -68,9 +68,10 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         private void ProcessComprehension(Comprehension c, Node item, IEnumerable<ComprehensionIterator> iterators) {
             CollectNames(c);
-            item?.Walk(new ExpressionWalker(_analysis, _names, _additionalNameNodes));
+            var ew = new ExpressionWalker(_analysis, _localNames, _localNameNodes);
+            item?.Walk(ew);
             foreach (var iter in iterators) {
-                iter.Walk(new ExpressionWalker(_analysis, null, _additionalNameNodes));
+                iter.Walk(ew);
             }
         }
     }

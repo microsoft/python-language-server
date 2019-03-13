@@ -164,6 +164,17 @@ for i in c:
         }
 
         [TestMethod, Priority(0)]
+        public async Task ForVariablesCondition() {
+            const string code = @"
+c = {}
+for a, b in c if a < 0:
+    x = b
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ForVariablesList() {
             const string code = @"
 for i, (j, k) in {}:
@@ -173,6 +184,22 @@ for i, (j, k) in {}:
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ForExpression() {
+            const string code = @"
+def func1(a):
+    return a
+
+def func2(a, b):
+    return a + b
+
+func1(func2(a) for a, b in {} if a < 0)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task ListComprehension() {

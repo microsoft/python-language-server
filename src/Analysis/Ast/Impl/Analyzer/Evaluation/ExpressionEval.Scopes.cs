@@ -141,8 +141,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// as a child of the specified scope. Scope is pushed on the stack
         /// and will be removed when returned the disposable is disposed.
         /// </summary>
-        public IDisposable OpenScope(IPythonModule module, ScopeStatement node, out Scope fromScope) {
-            fromScope = null;
+        public IDisposable OpenScope(IPythonModule module, ScopeStatement node, out Scope outerScope) {
+            outerScope = null;
             if (node == null) {
                 return Disposable.Empty;
             }
@@ -156,26 +156,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             if (node.Parent != null) {
-                if (!_scopeLookupCache.TryGetValue(node.Parent, out fromScope)) {
-                    fromScope = gs
+                if (!_scopeLookupCache.TryGetValue(node.Parent, out outerScope)) {
+                    outerScope = gs
                         .TraverseDepthFirst(s => s.Children.OfType<Scope>())
                         .FirstOrDefault(s => s.Node == node.Parent);
-                    _scopeLookupCache[node.Parent] = fromScope;
+                    _scopeLookupCache[node.Parent] = outerScope;
                 }
             }
 
-            fromScope = fromScope ?? gs;
-            if (fromScope != null) {
+            outerScope = outerScope ?? gs;
+            if (outerScope != null) {
                 Scope scope;
                 if (node is PythonAst) {
                     // node points to global scope, it is not a function or a class.
                     scope = gs;
                 } else {
-                    scope = fromScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
+                    scope = outerScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
                     if (scope == null) {
-                        scope = new Scope(node, fromScope, true);
-                        fromScope.AddChildScope(scope);
-                        _scopeLookupCache[node] = fromScope;
+                        scope = new Scope(node, outerScope, true);
+                        outerScope.AddChildScope(scope);
+                        _scopeLookupCache[node] = scope;
                     }
                 }
 

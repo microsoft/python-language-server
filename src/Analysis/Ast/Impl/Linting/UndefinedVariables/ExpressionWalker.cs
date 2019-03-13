@@ -23,8 +23,8 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ExpressionWalker : PythonWalker {
         private readonly IDocumentAnalysis _analysis;
-        private readonly HashSet<string> _additionalNames;
-        private readonly HashSet<NameExpression> _additionalNameNodes;
+        private readonly HashSet<string> _localNames;
+        private readonly HashSet<NameExpression> _localNameNodes;
 
         public ExpressionWalker(IDocumentAnalysis analysis)
             : this(analysis, null, null) { }
@@ -33,12 +33,12 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         /// Creates walker for detection of undefined variables.
         /// </summary>
         /// <param name="analysis">Document analysis.</param>
-        /// <param name="additionalNames">Additional defined names.</param>
-        /// <param name="additionalNameNodes">Name nodes for defined names.</param>
-        public ExpressionWalker(IDocumentAnalysis analysis, HashSet<string> additionalNames, HashSet<NameExpression> additionalNameNodes) {
+        /// <param name="localNames">Locally defined names, such as variables in a comprehension.</param>
+        /// <param name="localNameNodes">Name nodes for local names.</param>
+        public ExpressionWalker(IDocumentAnalysis analysis, HashSet<string> localNames, HashSet<NameExpression> localNameNodes) {
             _analysis = analysis;
-            _additionalNames = additionalNames;
-            _additionalNameNodes = additionalNameNodes;
+            _localNames = localNames;
+            _localNameNodes = localNameNodes;
         }
 
         public override bool Walk(CallExpression node) {
@@ -73,10 +73,10 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         public override bool Walk(NameExpression node) {
-            if (_additionalNames?.Contains(node.Name) == true) {
+            if (_localNames?.Contains(node.Name) == true) {
                 return false;
             }
-            if (_additionalNameNodes?.Contains(node) == true) {
+            if (_localNameNodes?.Contains(node) == true) {
                 return false;
             }
             var m = _analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var scope);
