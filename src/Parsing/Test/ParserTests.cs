@@ -2189,7 +2189,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 );
 
                 errors.Errors.Should().BeEquivalentTo(new ErrorResult[] {
-                    new ErrorResult("expected ':' before lambda's body", new SourceSpan(1, 7, 1, 7))
+                    new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7))
                 });
             }
         }
@@ -2205,6 +2205,9 @@ namespace Microsoft.Python.Parsing.Tests {
                         CheckLambdaStmt(new Action<Parameter>[] {
                             CheckParameter("x"),
                             CheckParameter("y")
+                        }, CheckErrorExpr()),
+                        CheckLambdaStmt(new Action<Parameter>[] {
+                            CheckParameter("x"),
                         }, CheckErrorExpr())
                     )
                 );
@@ -2212,8 +2215,10 @@ namespace Microsoft.Python.Parsing.Tests {
                 errors.Errors.Should().BeEquivalentTo(new ErrorResult[] {
                     new ErrorResult("unexpected token '<newline>'", new SourceSpan(1, 7, 2, 1)),
                     new ErrorResult("invalid parameter", new SourceSpan(1, 1, 1, 7)),
-                    new ErrorResult("expected ':' before lambda's body", new SourceSpan(1, 1, 1, 7)),
-                    new ErrorResult("expected ':' before lambda's body", new SourceSpan(2, 11, 2, 12))
+                    new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7)),
+                    new ErrorResult("expected ':'", new SourceSpan(2, 12, 2, 12)),
+                    new ErrorResult("expected ':'", new SourceSpan(3, 10, 3, 10)),
+                    new ErrorResult("unexpected token '1'", new SourceSpan(3, 10, 3, 11))
                 });
             }
         }
