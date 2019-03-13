@@ -121,19 +121,21 @@ namespace Microsoft.Python.Parsing {
         public int CurrentLine => _newLineLocations.Count;
         public SourceLocation CurrentPosition => IndexToLocation(CurrentIndex);
 
+        private int RelativeIndex(int index) => index - _initialLocation.Index;
+
         public SourceLocation IndexToLocation(int index) {
             var match = _newLineLocations.BinarySearch(new NewLineLocation(index, NewLineKind.None));
             if (match < 0) {
                 // If our index = -1, it means we're on the first line.
                 if (match == -1) {
-                    return new SourceLocation(index + _initialLocation.Index, _initialLocation.Line, checked(index + _initialLocation.Column));
+                    return new SourceLocation(index, _initialLocation.Line, checked(RelativeIndex(index) + _initialLocation.Column));
                 }
                 // If we couldn't find an exact match for this line number, get the nearest
                 // matching line number less than this one
                 match = ~match - 1;
             }
 
-            return new SourceLocation(index + _initialLocation.Index, match + 2 + _initialLocation.Line - 1, index - _newLineLocations[match].EndIndex + 1);
+            return new SourceLocation(index, match + 2 + _initialLocation.Line - 1, index - _newLineLocations[match].EndIndex + 1);
         }
 
         internal ErrorSink ErrorSink {
@@ -148,7 +150,8 @@ namespace Microsoft.Python.Parsing {
 
         public bool IsEndOfFile => Peek() == EOF;
 
-        public IndexSpan TokenSpan => new IndexSpan(_tokenStartIndex, _tokenEndIndex - _tokenStartIndex);
+        private int AbsoluteIndex(int index) => _initialLocation.Index + index;
+        public IndexSpan TokenSpan => new IndexSpan(AbsoluteIndex(_tokenStartIndex), _tokenEndIndex - _tokenStartIndex);
 
         public void Initialize(TextReader sourceUnit) {
             Contract.Assert(sourceUnit != null);
@@ -183,7 +186,7 @@ namespace Microsoft.Python.Parsing {
             _tokenEnd = -1;
             _multiEolns = !_disableLineFeedLineSeparator;
             _initialLocation = initialLocation;
-            Debug.Assert(_initialLocation.Index >= 0);
+            //Debug.Assert(_initialLocation.Index >= 0);
 
             _tokenEndIndex = -1;
             _tokenStartIndex = 0;
@@ -732,7 +735,7 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 // and then go ahead and imply the dedents.
-                SetIndent(0, null, null, _position);
+                SetIndent(0, null, null, AbsoluteIndex(_position));
                 _state.PendingDedents--;
                 return Tokens.DedentToken;
             }
@@ -918,7 +921,7 @@ namespace Microsoft.Python.Parsing {
                         // CPython reports the multi-line string error as if it is a single line
                         // ending at the last char in the file.
                         MarkTokenEnd();
-                        ReportSyntaxError(new IndexSpan(_tokenEndIndex, 0), "EOF while scanning triple-quoted string", ErrorCodes.SyntaxError | ErrorCodes.IncompleteToken);
+                        ReportSyntaxError(new IndexSpan(AbsoluteIndex(_tokenEndIndex), 0), "EOF while scanning triple-quoted string", ErrorCodes.SyntaxError | ErrorCodes.IncompleteToken);
                     } else {
                         MarkTokenEnd();
                     }
@@ -1180,7 +1183,7 @@ namespace Microsoft.Python.Parsing {
                         MarkTokenEnd();
 
                         if (LanguageVersion.Is3x()) {
-                            ReportSyntaxError(new IndexSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
+                            ReportSyntaxError(new IndexSpan(AbsoluteIndex(_tokenEndIndex - 1), 1), "invalid token", ErrorCodes.SyntaxError);
                         }
 
                         if (Verbatim) {
@@ -1444,7 +1447,7 @@ namespace Microsoft.Python.Parsing {
                 }
             }
             if (LanguageVersion.Is3x() && tokenStr.EndsWithOrdinal("l", ignoreCase: true)) {
-                ReportSyntaxError(new IndexSpan(_tokenEndIndex - 1, 1), "invalid token", ErrorCodes.SyntaxError);
+                ReportSyntaxError(new IndexSpan(AbsoluteIndex(_tokenEndIndex) - 1, 1), "invalid token", ErrorCodes.SyntaxError);
                 return true;
             }
             return false;
@@ -2032,9 +2035,9 @@ namespace Microsoft.Python.Parsing {
                                     noAllocWhiteSpace,
                                     spaces,
                                     sb,
-                                    _tokenStartIndex,
+                                    AbsoluteIndex(_tokenStartIndex),
                                     startingWhiteSpace,
-                                    _tokenStartIndex + tokenLength
+                                    AbsoluteIndex(_tokenStartIndex + tokenLength)
                                 );
                             }
                             return false;
@@ -2478,7 +2481,7 @@ namespace Microsoft.Python.Parsing {
             CheckInvariants();
         }
 
-        private IndexSpan BufferTokenSpan => new IndexSpan(_tokenStartIndex, _tokenEndIndex - _tokenStartIndex);
+        private IndexSpan BufferTokenSpan => new IndexSpan(AbsoluteIndex(_tokenStartIndex), _tokenEndIndex - _tokenStartIndex);
 
         private bool NextChar(int ch) {
             CheckInvariants();
@@ -2498,7 +2501,7 @@ namespace Microsoft.Python.Parsing {
 
         private bool AtBeginning => _position == 0 && !_bufferResized;
 
-        private int CurrentIndex => _tokenStartIndex + Math.Min(_position, _end) - _start;
+        private int CurrentIndex => AbsoluteIndex(_tokenStartIndex + Math.Min(_position, _end) - _start);
 
         private void DiscardToken() {
             CheckInvariants();
