@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,6 +26,8 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
+        private readonly ConcurrentDictionary<ScopeStatement, Scope> _scopeLookupCache = new ConcurrentDictionary<ScopeStatement, Scope>();
+
         public IMember GetInScope(string name, IScope scope)
             => scope.Variables.TryGetVariable(name, out var variable) ? variable.Value : null;
 
@@ -133,8 +136,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return ann.GetValue(new TypeAnnotationConverter(this, options));
         }
 
-        private readonly Dictionary<ScopeStatement, Scope> _scopeLookupCache = new Dictionary<ScopeStatement, Scope>();
-
         /// <summary>
         /// Locates and opens existing scope for a node or creates a new scope
         /// as a child of the specified scope. Scope is pushed on the stack
@@ -174,6 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (scope == null) {
                         scope = new Scope(node, fromScope, true);
                         fromScope.AddChildScope(scope);
+                        _scopeLookupCache[node] = fromScope;
                     }
                 }
 
