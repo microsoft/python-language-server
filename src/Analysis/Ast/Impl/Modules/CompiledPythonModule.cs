@@ -84,6 +84,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ErrorDialog = false,
                 CreateNoWindow = true,
                 StandardOutputEncoding = Encoding.UTF8,
+                RedirectStandardInput = true,
                 RedirectStandardOutput = true
             };
             var ps = Services.GetService<IProcessServices>();

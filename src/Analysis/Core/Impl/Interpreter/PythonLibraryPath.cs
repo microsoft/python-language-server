@@ -146,6 +146,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 UseShellExecute = false,
                 ErrorDialog = false,
                 CreateNoWindow = true,
+                RedirectStandardInput = true,
                 RedirectStandardOutput = true
             };
 
