@@ -36,8 +36,7 @@ namespace Microsoft.Python.Parsing {
             _verbatim = options.Verbatim;
             _start = options.InitialSourceLocation ?? SourceLocation.MinValue;
             _currentLineNumber = _start.Line;
-            // Adding offset because of f-string start: "f'"
-            _currentColNumber = _start.Column + 2;
+            _currentColNumber = _start.Column;
         }
 
         public void Parse() {
@@ -73,7 +72,7 @@ namespace Microsoft.Python.Parsing {
 
             Read('{');
             var initialPosition = _position;
-            var initialSourceLocation = new SourceLocation(0, _currentLineNumber, _currentColNumber);
+            var initialSourceLocation = new SourceLocation(_start.Index + initialPosition, _currentLineNumber, _currentColNumber);
 
             BufferInnerExpression();
 
@@ -104,7 +103,9 @@ namespace Microsoft.Python.Parsing {
             if (_hasErrors) {
                 return Error(initialPosition);
             }
-            return new FormattedValue(fStringExpression, conversion, formatSpecifier);
+            var formattedValue = new FormattedValue(fStringExpression, conversion, formatSpecifier);
+            formattedValue.SetLoc(new IndexSpan(_start.Index + initialPosition - 1, _position - initialPosition + 1));
+            return formattedValue;
         }
 
         private Expression MaybeReadFormatSpecifier() {
@@ -113,6 +114,7 @@ namespace Microsoft.Python.Parsing {
             Expression formatSpecifier = null;
             if (CurrentChar() == ':') {
                 Read(':');
+                var position = _position;
                 /* Ideally we would just call the FStringParser here. But we are relying on 
                  * an already cut of string, so we need to find the end of the format 
                  * specifier. */
@@ -124,17 +126,25 @@ namespace Microsoft.Python.Parsing {
                     var options = new ParserOptions() {
                         ErrorSink = _errors,
                         Verbatim = _verbatim,
-                        InitialSourceLocation = new SourceLocation(_start.Index + _position,
-                        _currentLineNumber, _currentColNumber)
+                        InitialSourceLocation = new SourceLocation(
+                            FStringStartIndex() + position,
+                            _currentLineNumber,
+                            _currentColNumber
+                        )
                     };
-                    new FStringParser(formatSpecifierBuilder, _buffer.ToString(), _isRaw, options, _langVersion).Parse();
+                    var formatStr = _buffer.ToString();
                     _buffer.Clear();
+                    new FStringParser(formatSpecifierBuilder, formatStr, _isRaw, options, _langVersion).Parse();
                     formatSpecifier = formatSpecifierBuilder.Build();
+                    formatSpecifier.SetLoc(new IndexSpan(FStringStartIndex() + position, formatStr.Length));
                 }
             }
 
             return formatSpecifier;
         }
+
+        // Adding offset because of f-string start: "f'"
+        private int FStringStartIndex() => _start.Index;
 
         private char? MaybeReadConversionChar() {
             char? conversion = null;

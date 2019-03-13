@@ -3271,10 +3271,17 @@ namespace Microsoft.Python.Parsing {
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Kind == TokenKind.FString) {
                     var fToken = (FStringToken)tokenWithSpan.Token;
+                    var sourceLoc = _tokenizer.IndexToLocation(tokenWithSpan.Span.Start);
+                    // Account for f and fr/rf
+                    var offset = 1 + (fToken.IsRaw ? 1 : 0);
                     var options = new ParserOptions() {
                         ErrorSink = _errors,
                         Verbatim = _verbatim,
-                        InitialSourceLocation = _tokenizer.IndexToLocation(tokenWithSpan.Span.Start)
+                        InitialSourceLocation = new SourceLocation(
+                            index: sourceLoc.Index + offset + fToken.OpenQuotes.Length,
+                            line: sourceLoc.Line,
+                            column: sourceLoc.Column + offset + fToken.OpenQuotes.Length
+                        )
                     };
                     new FStringParser(builder, fToken.Text, fToken.IsRaw, options, _langVersion).Parse();
                 } else if (tokenWithSpan.Token.Value is string str) {
