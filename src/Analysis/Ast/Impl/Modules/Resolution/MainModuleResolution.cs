@@ -39,18 +39,24 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
 
+        internal IBuiltinsPythonModule CreateBuiltinsModule() {
+            if (BuiltinsModule == null) {
+                // Initialize built-in
+                var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
+
+                ModuleCache = new ModuleCache(_interpreter, _services);
+                var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
+
+                var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
+                BuiltinsModule = b;
+                Modules[BuiltinModuleName] = new ModuleRef(b);
+            }
+            return BuiltinsModule;
+        }
+
         internal async Task InitializeAsync(CancellationToken cancellationToken = default) {
-            // Add names from search paths
             await ReloadAsync(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-
-            // Initialize built-in
-            var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
-            var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
-
-            var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
-            BuiltinsModule = b;
-            Modules[BuiltinModuleName] = new ModuleRef(b);
         }
 
         public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default) {
@@ -177,8 +183,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             Modules.Clear();
-
-            ModuleCache = new ModuleCache(_interpreter, _services);
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
             var addedRoots = new HashSet<string>();
