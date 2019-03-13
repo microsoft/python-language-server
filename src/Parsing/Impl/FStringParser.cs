@@ -12,6 +12,7 @@ namespace Microsoft.Python.Parsing {
         private readonly string _fString;
         private readonly bool _isRaw;
         private readonly ErrorSink _errors;
+        private readonly ParserOptions _options;
         private readonly PythonLanguageVersion _langVersion;
         private readonly StringBuilder _buffer = new StringBuilder();
         private int _position = 0;
@@ -32,6 +33,7 @@ namespace Microsoft.Python.Parsing {
             _isRaw = isRaw;
             _builder = builder;
             _errors = options.ErrorSink ?? ErrorSink.Null;
+            _options = options;
             _langVersion = langVersion;
             _verbatim = options.Verbatim;
             _start = options.InitialSourceLocation ?? SourceLocation.MinValue;
@@ -123,15 +125,12 @@ namespace Microsoft.Python.Parsing {
                 // If we got to the end, there will be an error when we try to read '}'
                 if (!EndOfFString()) {
                     var formatSpecifierBuilder = new FormatSpecifierBuilder();
-                    var options = new ParserOptions() {
-                        ErrorSink = _errors,
-                        Verbatim = _verbatim,
-                        InitialSourceLocation = new SourceLocation(
-                            FStringStartIndex() + position,
-                            _currentLineNumber,
-                            _currentColNumber
-                        )
-                    };
+                    var options = _options.Clone();
+                    options.InitialSourceLocation = new SourceLocation(
+                        FStringStartIndex() + position,
+                        _currentLineNumber,
+                        _currentColNumber
+                    );
                     var formatStr = _buffer.ToString();
                     _buffer.Clear();
                     new FStringParser(formatSpecifierBuilder, formatStr, _isRaw, options, _langVersion).Parse();
