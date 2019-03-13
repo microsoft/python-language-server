@@ -2178,7 +2178,7 @@ namespace Microsoft.Python.Parsing {
                 expr = ParseExpression();
             } else {
                 expr = Error(string.Empty);
-                ReportSyntaxError(GetStart(), GetEnd(), "expected ':' before lambda's body");
+                ReportSyntaxError(GetStart(), GetEnd(), "expected ':'");
             }
             return ParseLambdaHelperEnd(func, expr, whitespace, colonWhiteSpace, commaWhiteSpace, ateTerminator);
         }
