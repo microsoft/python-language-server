@@ -42,3 +42,5 @@ f'''{1+
 f'\N{GREEK CAPITAL LETTER DELTA}'
 
 f'\{1}'
+
+f'{a:{{}}}'

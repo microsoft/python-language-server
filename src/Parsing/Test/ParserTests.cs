@@ -340,6 +340,17 @@ namespace Microsoft.Python.Parsing.Tests {
                                     One
                                 )
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("a"),
+                                    null,
+                                    CheckFormatSpecifer(
+                                        CheckConstant("{{}}")
+                                    )
+                                )
+                            )
                         )
                     )
                 );
