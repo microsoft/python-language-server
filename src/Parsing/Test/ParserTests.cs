@@ -117,6 +117,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("unexpected token '='", 2, 25, 6, 3, 25, 7),
                 new ErrorInfo("expected ':'", 200, 27, 12, 200, 27, 12),
                 new ErrorInfo("f-string: lambda must be inside parentheses", 192, 27, 4, 200, 27, 12)
+
             );
         }
 
@@ -304,7 +305,18 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
-                       )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConstant(3.14),
+                                    null,
+                                    CheckFormatSpecifer(
+                                        CheckConstant("!<10.10")
+                                    )
+                                )
+                            )
+                        )
                     )
                 );
 

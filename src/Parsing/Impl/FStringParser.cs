@@ -195,7 +195,7 @@ namespace Microsoft.Python.Parsing {
 
             while (!EndOfFString()) {
                 var ch = CurrentChar();
-                if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}' || ch == '!' || ch == ':')) {
+                if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}')) {
                     // check that it's not a != comparison
                     if (ch != '!' || !IsNext(notEqualStringSpan)) {
                         break;
