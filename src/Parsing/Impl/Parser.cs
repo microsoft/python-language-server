@@ -219,10 +219,10 @@ namespace Microsoft.Python.Parsing {
 
             if (node is LambdaExpression lambda) {
                 _errors.Add(
-                    Resources.LambdaParenthesesWarning,
+                    Resources.LambdaParenthesesFstringErrorMsg,
                     new SourceSpan(_tokenizer.IndexToLocation(node.StartIndex), _tokenizer.IndexToLocation(node.EndIndex)),
                     ErrorCodes.SyntaxError,
-                    Severity.Warning
+                    Severity.Error
                 );
             }
 

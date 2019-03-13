@@ -133,11 +133,11 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to lambda might need to be inside parentheses.
+        ///   Looks up a localized string similar to f-string: lambda must be inside parentheses.
         /// </summary>
-        internal static string LambdaParenthesesWarning {
+        internal static string LambdaParenthesesFstringErrorMsg {
             get {
-                return ResourceManager.GetString("LambdaParenthesesWarning", resourceCulture);
+                return ResourceManager.GetString("LambdaParenthesesFstringErrorMsg", resourceCulture);
             }
         }
         
