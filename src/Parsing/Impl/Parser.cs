@@ -217,6 +217,15 @@ namespace Microsoft.Python.Parsing {
                 node = ParseTestListAsExpr();
             }
 
+            if (node is LambdaExpression lambda) {
+                _errors.Add(
+                    Resources.LambdaParenthesesWarning,
+                    new SourceSpan(_tokenizer.IndexToLocation(node.StartIndex), _tokenizer.IndexToLocation(node.EndIndex)),
+                    ErrorCodes.SyntaxError,
+                    Severity.Warning
+                );
+            }
+
             if (_errorCode == 0) {
                 // Detect if there are unexpected tokens
                 EatEndOfInput();

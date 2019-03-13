@@ -133,6 +133,15 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to lambda might need to be inside parentheses.
+        /// </summary>
+        internal static string LambdaParenthesesWarning {
+            get {
+                return ResourceManager.GetString("LambdaParenthesesWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to cannot mix bytes and nonbytes literals.
         /// </summary>
         internal static string MixingBytesAndNonBytesErrorMsg {

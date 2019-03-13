@@ -141,6 +141,9 @@
   <data name="InvalidSyntaxErrorMsg" xml:space="preserve">
     <value>invalid syntax</value>
   </data>
+  <data name="LambdaParenthesesWarning" xml:space="preserve">
+    <value>lambda might need to be inside parentheses</value>
+  </data>
   <data name="MixingBytesAndNonBytesErrorMsg" xml:space="preserve">
     <value>cannot mix bytes and nonbytes literals</value>
   </data>
