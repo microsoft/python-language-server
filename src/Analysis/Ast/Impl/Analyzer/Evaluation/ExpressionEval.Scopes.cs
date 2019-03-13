@@ -55,32 +55,44 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
 
         public IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options) {
-            var scopes = new List<Scope>();
-            for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
-                scopes.Add(s);
-            }
+            scope = null;
 
-            if (scopes.Count == 1) {
-                if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
-                    scopes.Clear();
-                }
-            } else if (scopes.Count >= 2) {
-                if (!options.HasFlag(LookupOptions.Nonlocal)) {
-                    while (scopes.Count > 2) {
-                        scopes.RemoveAt(1);
+            if (options == LookupOptions.Normal) {
+                // Default mode, no skipping, do direct search
+                for (var s = CurrentScope; s != null ; s = (Scope)s.OuterScope) {
+                    if (s.Variables.Contains(name)) {
+                        scope = s;
+                        break;
                     }
                 }
-
-                if (!options.HasFlag(LookupOptions.Local)) {
-                    scopes.RemoveAt(0);
+            } else {
+                var scopes = new List<Scope>();
+                for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
+                    scopes.Add(s);
                 }
 
-                if (!options.HasFlag(LookupOptions.Global)) {
-                    scopes.RemoveAt(scopes.Count - 1);
+                if (scopes.Count == 1) {
+                    if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
+                        scopes.Clear();
+                    }
+                } else if (scopes.Count >= 2) {
+                    if (!options.HasFlag(LookupOptions.Nonlocal)) {
+                        while (scopes.Count > 2) {
+                            scopes.RemoveAt(1);
+                        }
+                    }
+
+                    if (!options.HasFlag(LookupOptions.Local)) {
+                        scopes.RemoveAt(0);
+                    }
+
+                    if (!options.HasFlag(LookupOptions.Global)) {
+                        scopes.RemoveAt(scopes.Count - 1);
+                    }
                 }
+                scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             }
 
-            scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
             if (value == null && options.HasFlag(LookupOptions.Builtins)) {
                 var builtins = Interpreter.ModuleResolution.BuiltinsModule;
