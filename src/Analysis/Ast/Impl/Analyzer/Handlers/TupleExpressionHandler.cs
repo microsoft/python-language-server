@@ -49,46 +49,45 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         internal static void AssignTuple(TupleExpression lhs, IMember value, ExpressionEval eval) {
             // Tuple = 'tuple value' (such as from callable). Transfer values.
-            IPythonType[] types;
+            IMember[] values;
             if (value is IPythonCollection seq) {
-                types = seq.Contents.Select(c => c.GetPythonType()).ToArray();
+                values = seq.Contents.ToArray();
             } else {
-                types = new[] {eval.UnknownType};
+                values = new[] { value };
             }
 
-            var typeEnum = new TypeEnumerator(types, eval.UnknownType);
+            var typeEnum = new ValueEnumerator(values, eval.UnknownType);
             AssignTuple(lhs, typeEnum, eval);
         }
 
-        private static void AssignTuple(TupleExpression tex, TypeEnumerator typeEnum, ExpressionEval eval) {
+        private static void AssignTuple(TupleExpression tex, ValueEnumerator valueEnum, ExpressionEval eval) {
             foreach (var item in tex.Items) {
                 switch (item) {
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
-                        var instance = typeEnum.Next.CreateInstance(null, LocationInfo.Empty, ArgumentSet.Empty);
-                        eval.DeclareVariable(nex.Name, instance, VariableSource.Declaration, nex);
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
                     case TupleExpression te:
-                        AssignTuple(te, typeEnum, eval);
+                        AssignTuple(te, valueEnum, eval);
                         break;
                 }
             }
         }
 
-        private class TypeEnumerator {
-            private readonly IPythonType[] _types;
-            private readonly IPythonType _filler;
+        private class ValueEnumerator {
+            private readonly IMember[] _values;
+            private readonly IMember _filler;
             private int _index;
 
-            public TypeEnumerator(IPythonType[] types, IPythonType filler) {
-                _types = types;
+            public ValueEnumerator(IMember[] values, IMember filler) {
+                _values = values;
                 _filler = filler;
             }
 
-            public IPythonType Next {
+            public IMember Next {
                 get {
-                    IPythonType t;
-                    if (_types.Length > 0) {
-                        t = _index < _types.Length ? _types[_index] : _types[_types.Length - 1];
+                    IMember t;
+                    if (_values.Length > 0) {
+                        t = _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
                     } else {
                         t = _filler;
                     }
