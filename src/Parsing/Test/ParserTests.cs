@@ -2177,6 +2177,23 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void LambdaExprEmpty() {
+            foreach (var version in AllVersions) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseString("lambda", errors, version),
+                    CheckSuite(
+                        CheckLambdaStmt(new Action<Parameter>[] { }, CheckErrorExpr())
+                    )
+                );
+
+                errors.Errors.Should().BeEquivalentTo(new ErrorResult[] {
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 7, 1, 7))
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void FuncDef() {
             foreach (var version in AllVersions) {
                 CheckAst(

@@ -2037,6 +2037,10 @@ namespace Microsoft.Python.Parsing {
                 }
             }
 
+            if (PeekToken(TokenKind.EndOfFile)) {
+                ReportSyntaxError("invalid syntax");
+            }
+
             // Now we validate the parameters
             bool seenListArg = false, seenDictArg = false, seenDefault = false;
             var seenNames = new HashSet<string>();
