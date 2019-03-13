@@ -190,9 +190,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 return default;
             }
 
-            if (parentCount > lastEdge.PathLength) {
+            if (parentCount >= lastEdge.PathLength) {
                 // Can't get outside of the root
-                return default;
+                return new RelativeImportBeyondTopLevel(string.Join(".", relativePath));
             }
 
             var fullNameList = relativePath.TakeWhile(n => !string.IsNullOrEmpty(n)).ToList();
@@ -208,7 +208,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
                 return new ImportNotFound(new StringBuilder(lastEdge.Start.Name)
                     .Append(".")
-                    .Append(fullNameList)
+                    .Append(".", fullNameList)
                     .ToString());
             }
 

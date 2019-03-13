@@ -86,6 +86,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return TryGetModulePossibleImport(possibleModuleImport, parent, location, out variableModule);
                 case ImplicitPackageImport packageImport:
                     return TryGetPackageFromImport(packageImport, parent, out variableModule);
+                case RelativeImportBeyondTopLevel importBeyondTopLevel:
+                    var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
+                    Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(message, location.Span, ErrorCodes.UnresolvedImport, Severity.Warning));
+                    variableModule = default;
+                    return false;
                 case ImportNotFound importNotFound:
                     var memberName = asNameExpression?.Name ?? importNotFound.FullName;
                     MakeUnresolvedImport(memberName, importNotFound.FullName, location);
