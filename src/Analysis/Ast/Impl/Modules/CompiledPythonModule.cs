@@ -84,9 +84,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ErrorDialog = false,
                 CreateNoWindow = true,
                 StandardOutputEncoding = Encoding.UTF8,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardOutput = true
             };
             var ps = Services.GetService<IProcessServices>();
 
@@ -94,8 +92,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             try {
                 var token = new CancellationTokenSource(30000).Token;
-                var lines = ps.ExecuteAndCaptureOutputAsync(startInfo, token).GetAwaiter().GetResult();
-                return string.Join(Environment.NewLine, lines);
+                return ps.ExecuteAndCaptureOutputAsync(startInfo, token).GetAwaiter().GetResult();
             } catch (Exception ex) when (!ex.IsCriticalException()) { }
 
             return string.Empty;

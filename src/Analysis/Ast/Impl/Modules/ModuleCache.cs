@@ -43,35 +43,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _log = services.GetService<ILogger>();
             _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.DatabasePath);
         }
-
-        public async Task<IDocument> ImportFromCacheAsync(string name, CancellationToken cancellationToken) {
-            if (string.IsNullOrEmpty(ModuleCachePath)) {
-                return null;
-            }
-
-            var cache = GetCacheFilePath("python.{0}.pyi".FormatInvariant(name));
-            if (!_fs.FileExists(cache)) {
-                cache = GetCacheFilePath("python._{0}.pyi".FormatInvariant(name));
-                if (!_fs.FileExists(cache)) {
-                    cache = GetCacheFilePath("{0}.pyi".FormatInvariant(name));
-                    if (!_fs.FileExists(cache)) {
-                        return null;
-                    }
-                }
-            }
-
-            var rdt = _services.GetService<IRunningDocumentTable>();
-            var mco = new ModuleCreationOptions {
-                ModuleName = name,
-                ModuleType = ModuleType.Compiled,
-                FilePath = cache
-            };
-            var module = rdt.AddModule(mco);
-
-            await module.LoadAndAnalyzeAsync(cancellationToken);
-            return module;
-        }
-
+        
         public string GetCacheFilePath(string filePath) {
             if (string.IsNullOrEmpty(filePath) || !PathEqualityComparer.IsValidPath(ModuleCachePath)) {
                 if (!_loggedBadDbPath) {

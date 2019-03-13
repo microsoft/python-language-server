@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -145,14 +146,12 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 UseShellExecute = false,
                 ErrorDialog = false,
                 CreateNoWindow = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardOutput = true
             };
 
             try {
-                var lines = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
-                return lines.Select(s => {
+                var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
+                return output.Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Select(s => {
                     if (s.PathStartsWith(tempWorkingDir)) {
                         return null;
                     }
