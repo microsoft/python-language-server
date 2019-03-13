@@ -2037,10 +2037,6 @@ namespace Microsoft.Python.Parsing {
                 }
             }
 
-            if (PeekToken(TokenKind.EndOfFile)) {
-                ReportSyntaxError("invalid syntax");
-            }
-
             // Now we validate the parameters
             bool seenListArg = false, seenDictArg = false, seenDefault = false;
             var seenNames = new HashSet<string>();
@@ -2177,7 +2173,13 @@ namespace Microsoft.Python.Parsing {
             var func = ParseLambdaHelperStart(out var commaWhiteSpace, out var ateTerminator);
             var colonWhiteSpace = ateTerminator || PeekToken(TokenKind.EndOfFile) ? _tokenWhiteSpace : null;
 
-            var expr = ateTerminator ? ParseExpression() : Error(string.Empty);
+            Expression expr;
+            if (ateTerminator) {
+                expr = ParseExpression();
+            } else {
+                expr = Error(string.Empty);
+                ReportSyntaxError(GetStart(), GetEnd(), "expected ':' before lambda's body");
+            }
             return ParseLambdaHelperEnd(func, expr, whitespace, colonWhiteSpace, commaWhiteSpace, ateTerminator);
         }
 

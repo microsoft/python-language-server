@@ -2170,7 +2170,8 @@ namespace Microsoft.Python.Parsing.Tests {
                     CheckSuite(
                         CheckLambdaStmt(new[] { CheckParameter("x") }, One),
                         CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.List) }, One),
-                        CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.Dictionary) }, One)
+                        CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.Dictionary) }, One),
+                        CheckLambdaStmt(new Action<Parameter>[] { }, One)
                     )
                 );
             }
@@ -2188,10 +2189,35 @@ namespace Microsoft.Python.Parsing.Tests {
                 );
 
                 errors.Errors.Should().BeEquivalentTo(new ErrorResult[] {
-                    new ErrorResult("invalid syntax", new SourceSpan(1, 7, 1, 7))
+                    new ErrorResult("expected ':' before lambda's body", new SourceSpan(1, 7, 1, 7))
                 });
             }
         }
+
+        [TestMethod, Priority(0)]
+        public void LambdaErrors() {
+            foreach (var version in AllVersions) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("LambdaErrors.py", errors, version),
+                    CheckSuite(
+                        CheckLambdaStmt(new Action<Parameter>[] { CheckParameter(null, ParameterKind.Normal, null, null) }, CheckErrorExpr()),
+                        CheckLambdaStmt(new Action<Parameter>[] {
+                            CheckParameter("x"),
+                            CheckParameter("y")
+                        }, CheckErrorExpr())
+                    )
+                );
+
+                errors.Errors.Should().BeEquivalentTo(new ErrorResult[] {
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(1, 7, 2, 1)),
+                    new ErrorResult("invalid parameter", new SourceSpan(1, 1, 1, 7)),
+                    new ErrorResult("expected ':' before lambda's body", new SourceSpan(1, 1, 1, 7)),
+                    new ErrorResult("expected ':' before lambda's body", new SourceSpan(2, 11, 2, 12))
+                });
+            }
+        }
+
 
         [TestMethod, Priority(0)]
         public void FuncDef() {
