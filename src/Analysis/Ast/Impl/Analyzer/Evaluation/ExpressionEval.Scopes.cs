@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -54,7 +55,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
 
         public IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options) {
-            var scopes = CurrentScope.ToChainTowardsGlobal().ToList();
+            var scopes = new List<Scope>();
+            for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
+                scopes.Add(s);
+            }
+
             if (scopes.Count == 1) {
                 if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
                     scopes.Clear();
@@ -116,6 +121,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return ann.GetValue(new TypeAnnotationConverter(this, options));
         }
 
+        private readonly Dictionary<ScopeStatement, Scope> _scopeLookupCache = new Dictionary<ScopeStatement, Scope>();
+
         /// <summary>
         /// Locates and opens existing scope for a node or creates a new scope
         /// as a child of the specified scope. Scope is pushed on the stack
@@ -136,9 +143,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             if (node.Parent != null) {
-                fromScope = gs
-                    .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
-                    .FirstOrDefault(s => s.Node == node.Parent);
+                if (!_scopeLookupCache.TryGetValue(node.Parent, out fromScope)) {
+                    fromScope = gs
+                        .TraverseDepthFirst(s => s.Children.OfType<Scope>())
+                        .FirstOrDefault(s => s.Node == node.Parent);
+                    _scopeLookupCache[node.Parent] = fromScope;
+                }
             }
 
             fromScope = fromScope ?? gs;
