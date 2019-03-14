@@ -217,6 +217,19 @@ f'{some}'
             AssertHover(hs, analysis, new SourceLocation(3, 4), @"some: str", new SourceSpan(3, 4, 3, 8));
         }
 
+        [TestMethod, Priority(0)]
+        public async Task IncompleteFStringExpression() {
+            const string code = @"
+some = ''
+f'{some'
+Fr'{some'
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            AssertHover(hs, analysis, new SourceLocation(3, 4), @"some: str", new SourceSpan(3, 4, 3, 8));
+            AssertHover(hs, analysis, new SourceLocation(4, 5), @"some: str", new SourceSpan(4, 5, 4, 9));
+        }
+
         private static void AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = hs.GetHover(analysis, position);
 

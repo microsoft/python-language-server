@@ -44,7 +44,7 @@ namespace Microsoft.Python.Parsing {
 
         public void Parse() {
             var bufferStartLoc = CurrentLocation();
-            while (!EndOfFString() && !_hasErrors) {
+            while (!EndOfFString()) {
                 if (IsNext(DoubleOpen)) {
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
@@ -92,11 +92,14 @@ namespace Microsoft.Python.Parsing {
         private Node ParseFStringExpression() {
             Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
 
+            var startOfFormattedValue = CurrentLocation().Index;
             Read('{');
             var initialPosition = _position;
             SourceLocation initialSourceLocation = CurrentLocation();
 
             BufferInnerExpression();
+            Expression fStringExpression = null;
+            FormattedValue formattedValue;
 
             if (EndOfFString()) {
                 if (_nestedParens.Count > 0) {
@@ -105,28 +108,35 @@ namespace Microsoft.Python.Parsing {
                 } else {
                     ReportSyntaxError(Resources.ExpectingCharFStringErrorMsg.FormatInvariant('}'));
                 }
-                return Error(initialPosition);
+                if (_buffer.Length != 0) {
+                    fStringExpression = CreateExpression(_buffer.ToString(), initialSourceLocation);
+                    _buffer.Clear();
+                } else {
+                    fStringExpression = Error(initialPosition);
+                }
+                formattedValue = new FormattedValue(fStringExpression, null, null);
+                formattedValue.SetLoc(new IndexSpan(startOfFormattedValue, CurrentLocation().Index - startOfFormattedValue));
+                return formattedValue;
             }
-            if (_hasErrors) {
-                var expr = _buffer.ToString();
+            if (!_hasErrors) {
+                fStringExpression = CreateExpression(_buffer.ToString(), initialSourceLocation);
                 _buffer.Clear();
-                return Error(initialPosition);
+            } else {
+                // Clear and recover
+                _buffer.Clear();
             }
 
             Debug.Assert(CurrentChar() == '}' || CurrentChar() == '!' || CurrentChar() == ':');
-
-            var fStringExpression = CreateExpression(_buffer.ToString(), initialSourceLocation);
-            _buffer.Clear();
 
             var conversion = MaybeReadConversionChar();
             var formatSpecifier = MaybeReadFormatSpecifier();
             Read('}');
 
-            if (_hasErrors) {
+            if (fStringExpression == null) {
                 return Error(initialPosition);
             }
-            var formattedValue = new FormattedValue(fStringExpression, conversion, formatSpecifier);
-            formattedValue.SetLoc(new IndexSpan(_start.Index + initialPosition - 1, _position - initialPosition + 1));
+            formattedValue = new FormattedValue(fStringExpression, conversion, formatSpecifier);
+            formattedValue.SetLoc(new IndexSpan(startOfFormattedValue, CurrentLocation().Index - startOfFormattedValue));
 
             Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
             return formattedValue;
@@ -140,7 +150,7 @@ namespace Microsoft.Python.Parsing {
             Debug.Assert(_buffer.Length == 0);
 
             Expression formatSpecifier = null;
-            if (CurrentChar() == ':') {
+            if (!EndOfFString() && CurrentChar() == ':') {
                 Read(':');
                 var position = _position;
                 /* Ideally we would just call the FStringParser here. But we are relying on 
@@ -173,8 +183,12 @@ namespace Microsoft.Python.Parsing {
 
         private char? MaybeReadConversionChar() {
             char? conversion = null;
-            if (CurrentChar() == '!') {
+            if (!EndOfFString() && CurrentChar() == '!') {
                 Read('!');
+                if (EndOfFString()) {
+                    ReportSyntaxError(Resources.InvalidConversionCharacterFStringErrorMsg.FormatInvariant(' '));
+                    return null;
+                }
                 conversion = NextChar();
                 if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
                     ReportSyntaxError(Resources.InvalidConversionCharacterFStringErrorMsg.FormatInvariant(conversion));
