@@ -111,13 +111,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
         }
-        public void RemoveAnalysis(IPythonModule module)
-        {
-            lock (_syncObj)
-            {
-                _analysisEntries.Remove(new ModuleKey(module));
+
+        public void RemoveAnalysis(IPythonModule module) {
+            lock (_syncObj) {
+                _analysisEntries.Remove(new AnalysisModuleKey(module));
             }
         }
+
         public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> analysisDependencies) {
             var key = new AnalysisModuleKey(module);
             PythonAnalyzerEntry entry;
@@ -275,7 +275,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             return remaining;
         }
-        
+
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             foreach (var (moduleName, _, isTypeshed) in missingKeys) {
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
@@ -362,7 +362,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Python analyzer to call NotifyAnalysisComplete.
             walker.Complete();
             cancellationToken.ThrowIfCancellationRequested();
-            var analysis = new DocumentAnalysis((IDocument) module, version, walker.GlobalScope, walker.Eval);
+            var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
 
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
