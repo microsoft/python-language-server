@@ -625,6 +625,129 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void DisplacedErrors() {
+            var errors = new[] {
+                new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
+                new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
+                new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
+                new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
+                new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
+                new ErrorInfo("non-keyword arg after keyword arg", 134, 8, 12, 135, 8, 13),
+                new ErrorInfo("only one * allowed", 147, 9, 10, 149, 9, 12),
+                new ErrorInfo("only one ** allowed", 162, 10, 11, 165, 10, 14),
+                new ErrorInfo("keywords must come before ** args", 180, 11, 13, 186, 11, 19),
+                new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
+                new ErrorInfo("sublist parameters are not supported in 3.x", 216, 17, 10, 223, 17, 17),
+                new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
+                new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
+                new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
+                new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
+                new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
+                new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
+                new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
+                new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
+                new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
+                new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
+                new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
+                new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
+                new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
+                new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
+                new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
+                new ErrorInfo("'return' with argument inside generator", 539, 53, 5, 548, 53, 14),
+                new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
+                new ErrorInfo("'return' with argument inside generator", 581, 59, 5, 590, 59, 14),
+                new ErrorInfo("'return' with argument inside generator", 596, 60, 5, 606, 60, 15),
+                new ErrorInfo("two starred expressions in assignment", 660, 68, 8, 662, 68, 10),
+                new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
+                new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
+                new ErrorInfo("import * only allowed at module level", 734, 75, 19, 735, 75, 20),
+                new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
+                new ErrorInfo("nonlocal declaration not allowed at module level", 788, 82, 1, 796, 82, 9),
+                new ErrorInfo("invalid syntax, only exception value is allowed in 3.x.", 814, 83, 10, 819, 83, 15),
+                new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
+                new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
+                new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
+                new ErrorInfo("named arguments must follow bare *", 1044, 111, 10, 1045, 111, 11),
+                new ErrorInfo("sublist parameters are not supported in 3.x", 1072, 114, 10, 1078, 114, 16),
+                new ErrorInfo("sublist parameters are not supported in 3.x", 1106, 117, 10, 1113, 117, 17),
+                new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
+                new ErrorInfo("sublist parameters are not supported in 3.x", 1171, 123, 10, 1181, 123, 20),
+                new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
+                new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1277, 134, 17, 1280, 134, 20),
+                new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
+                new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1379, 144, 17, 1382, 144, 20),
+                new ErrorInfo("cannot mix bytes and nonbytes literals", 1404, 147, 8, 1409, 147, 13),
+                new ErrorInfo("cannot mix bytes and nonbytes literals", 1417, 148, 7, 1423, 148, 13),
+                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
+                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
+                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
+                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
+                new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
+                new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
+                new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
+                new ErrorInfo("invalid syntax", 1511, 160, 12, 1512, 160, 13),
+                new ErrorInfo("invalid syntax", 1524, 161, 10, 1527, 161, 13)
+            };
+
+            var initialLocations = new[] {
+                new SourceLocation(100, 50, 1),
+                new SourceLocation(10, 3, 2)
+            };
+
+            foreach (var version in V30_V32Versions) {
+                foreach (var initLoc in initialLocations) {
+                    ParseErrorsWithDisplacement("AllErrors.py", version, Severity.Hint, initLoc, errors);
+                }
+            }
+        }
+        private void ParseErrorsWithDisplacement(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, SourceLocation initialLocation,
+            params ErrorInfo[] errors) {
+            var sink = new CollectingErrorSink();
+            ParseFile(filename, sink, version, indentationInconsistencySeverity, initialLocation);
+
+            var foundErrors = new StringBuilder();
+            for (var i = 0; i < sink.Errors.Count; i++) {
+                foundErrors.AppendFormat("{0}{1}{2}",
+                    FormatError(sink.Errors[i]),
+                    i == sink.Errors.Count - 1 ? string.Empty : ",",
+                    Environment.NewLine
+                );
+            }
+
+            var finalErrors = foundErrors.ToString();
+            Console.WriteLine(finalErrors);
+            errors = errors.Select(e => AddDisplacement(initialLocation, e)).ToArray();
+
+            for (var i = 0; i < errors.Length; i++) {
+                if (sink.Errors.Count <= i) {
+                    Assert.Fail("No error {0}: {1}", i, FormatError(errors[i]));
+                }
+                if (sink.Errors[i].Message != errors[i].Message) {
+                    Assert.Fail("Wrong msg for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
+                }
+                if (sink.Errors[i].Span != errors[i].Span) {
+                    Assert.Fail("Wrong span for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
+                }
+            }
+            if (sink.Errors.Count > errors.Length) {
+                Assert.Fail("Unexpected errors occurred");
+            }
+        }
+
+        private ErrorInfo AddDisplacement(SourceLocation initLoc, ErrorInfo error) {
+            var span = error.Span;
+            return new ErrorInfo(
+                error.Message,
+                span.Start.Index + initLoc.Index,
+                span.Start.Line + initLoc.Line - 1,
+                span.Start.Line == 1 ? span.Start.Column + initLoc.Column - 1 : span.Start.Column,
+                span.End.Index + initLoc.Index,
+                span.End.Line + initLoc.Line - 1,
+                span.End.Line == 1 ? span.End.Column + initLoc.Column - 1: span.End.Column
+            );
+        }
+
+        [TestMethod, Priority(0)]
         public void InvalidUnicodeLiteral() {
             var position = 42 + Environment.NewLine.Length;
             foreach (var version in V26AndUp) {
@@ -3130,10 +3253,14 @@ pass
             return ast;
         }
 
-        private static PythonAst ParseFile(string filename, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
+        private static PythonAst ParseFile(string filename, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint,
+            SourceLocation? initialLocation = null) {
             var src = TestData.GetPath("TestData", "Grammar", filename);
             using (var reader = new StreamReader(src, true)) {
-                var parser = Parser.CreateParser(reader, version, new ParserOptions() { ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity });
+                var parser = Parser.CreateParser(reader, version, new ParserOptions() {
+                    ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity,
+                    InitialSourceLocation = initialLocation
+                });
                 return parser.ParseFile();
             }
         }
