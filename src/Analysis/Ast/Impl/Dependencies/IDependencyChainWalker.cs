@@ -24,6 +24,5 @@ namespace Microsoft.Python.Analysis.Dependencies {
         ImmutableArray<TValue> AffectedValues { get; }
         int Version { get; }
         int Remaining { get; }
-        bool IsCompleted { get; }
     }
 }

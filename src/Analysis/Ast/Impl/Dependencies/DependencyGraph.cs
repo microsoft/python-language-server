@@ -18,43 +18,61 @@ using System.Linq;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
+    internal struct DependencyGraphSnapshot<TKey, TValue> {
+        public int Version;
+        public ImmutableArray<DependencyVertex<TKey, TValue>> Vertices { get; }
+        public ImmutableArray<TKey> MissingKeys { get; }
+
+        public DependencyGraphSnapshot(int version, ImmutableArray<DependencyVertex<TKey, TValue>> vertices, ImmutableArray<TKey> missingKeys) {
+            Version = version;
+            Vertices = vertices;
+            MissingKeys = missingKeys;
+        }
+
+        public DependencyGraphSnapshot(int version) {
+            Version = version;
+            Vertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Empty;
+            MissingKeys = ImmutableArray<TKey>.Empty;
+        }
+    }
+
     /// <summary>
     /// Graph that represents dependencies between modules
-    /// NOT THREAD SAFE. All operations should happen under lock
+    /// NOT THREAD SAFE. All concurrent operations should happen under lock
     /// </summary>
     internal sealed class DependencyGraph<TKey, TValue> {
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _verticesByKey = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly List<DependencyVertex<TKey, TValue>> _verticesByIndex = new List<DependencyVertex<TKey, TValue>>();
 
-        public int Version { get; private set; }
+        public DependencyGraphSnapshot<TKey, TValue> Snapshot { get; private set; }
 
-        public DependencyVertex<TKey, TValue> AddOrUpdate(TKey key, TValue value) {
-            Version++;
-            
-            DependencyVertex<TKey, TValue> vertex;
-            if (_verticesByKey.TryGetValue(key, out var currentVertex)) {
-                vertex = new DependencyVertex<TKey, TValue>(currentVertex, value, Version);
-                _verticesByIndex[vertex.Index] = vertex;
-            } else {
-                vertex = new DependencyVertex<TKey, TValue>(key, value, Version, _verticesByIndex.Count);
-                _verticesByIndex.Add(vertex);
-            }
-            
-            _verticesByKey[key] = vertex;
-            return vertex;
+        public DependencyGraph() {
+            Snapshot = new DependencyGraphSnapshot<TKey, TValue>(0);
         }
 
-        public void ResolveDependencies(out ImmutableArray<DependencyVertex<TKey, TValue>> snapshot, out ImmutableArray<TKey> missingKeys) {
+        public DependencyVertex<TKey, TValue> AddOrUpdate(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
+            var version = Snapshot.Version + 1;
+            
+            DependencyVertex<TKey, TValue> changedVertex;
+            if (_verticesByKey.TryGetValue(key, out var currentVertex)) {
+                changedVertex = new DependencyVertex<TKey, TValue>(currentVertex, value, incomingKeys, version);
+                _verticesByIndex[changedVertex.Index] = changedVertex;
+            } else {
+                changedVertex = new DependencyVertex<TKey, TValue>(key, value, incomingKeys, version, _verticesByIndex.Count);
+                _verticesByIndex.Add(changedVertex);
+            }
+            
+            _verticesByKey[key] = changedVertex;
+
             var missingKeysHashSet = new HashSet<TKey>();
             var vertices = _verticesByIndex
                 .Where(v => !v.IsSealed || v.HasMissingKeys)
-                .Select(v => GetOrCreateNonSealedVertex(v.Index))
+                .Select(v => GetOrCreateNonSealedVertex(version, v.Index))
                 .ToArray();
 
             if (vertices.Length == 0) {
-                snapshot = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_verticesByIndex);
-                missingKeys = ImmutableArray<TKey>.Empty;
-                return;
+                Snapshot = new DependencyGraphSnapshot<TKey, TValue>(version);
+                return changedVertex;
             }
 
             foreach (var vertex in vertices) {
@@ -71,12 +89,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
 
                 foreach (var index in oldIncoming.Except(newIncoming)) {
-                    var incomingVertex = GetOrCreateNonSealedVertex(index);
+                    var incomingVertex = GetOrCreateNonSealedVertex(version, index);
                     incomingVertex.RemoveOutgoing(vertex.Index);
                 }
 
                 foreach (var index in newIncoming.Except(oldIncoming)) {
-                    var incomingVertex = GetOrCreateNonSealedVertex(index);
+                    var incomingVertex = GetOrCreateNonSealedVertex(version, index);
                     incomingVertex.AddOutgoing(vertex.Index);
                 }
 
@@ -87,20 +105,23 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 vertex.Seal();
             }
 
-            snapshot = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_verticesByIndex);
-            missingKeys = ImmutableArray<TKey>.Create(missingKeysHashSet);
+            Snapshot = new DependencyGraphSnapshot<TKey, TValue>(version, 
+                ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_verticesByIndex),
+                ImmutableArray<TKey>.Create(missingKeysHashSet));
 
-            DependencyVertex<TKey, TValue> GetOrCreateNonSealedVertex(int index) {
-                var vertex = _verticesByIndex[index];
-                if (!vertex.IsSealed) {
-                    return vertex;
-                }
+            return changedVertex;
+        }
 
-                vertex = new DependencyVertex<TKey, TValue>(vertex, vertex.Value, Version);
-                _verticesByIndex[index] = vertex;
-                _verticesByKey[vertex.Key] = vertex;
+        private DependencyVertex<TKey, TValue> GetOrCreateNonSealedVertex(int version, int index) {
+            var vertex = _verticesByIndex[index];
+            if (!vertex.IsSealed) {
                 return vertex;
             }
+
+            vertex = new DependencyVertex<TKey, TValue>(vertex, vertex.Value, vertex.IncomingKeys, version);
+            _verticesByIndex[index] = vertex;
+            _verticesByKey[vertex.Key] = vertex;
+            return vertex;
         }
     }
 }

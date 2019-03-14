@@ -28,9 +28,12 @@ import sys
 import tokenize
 import warnings
 
-try:
-    import builtins
-except ImportError:
+if sys.version_info >= (3, 0):
+    try:
+        import builtins
+    except ImportError:
+        import __builtin__ as builtins
+else:
     import __builtin__ as builtins
 
 try:

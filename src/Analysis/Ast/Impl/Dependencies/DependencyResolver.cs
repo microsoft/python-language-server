@@ -13,13 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Threading;
 
@@ -29,45 +25,25 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly DependencyGraph<TKey, TValue> _vertices = new DependencyGraph<TKey, TValue>();
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
-        public ImmutableArray<TKey> MissingKeys { get; private set; }
 
-        public DependencyResolver(IDependencyFinder<TKey, TValue> dependencyFinder) {
-            _dependencyFinder = dependencyFinder;
-        }
+        public IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, params TKey[] incomingKeys) 
+            => NotifyChanges(key, value, ImmutableArray<TKey>.Create(incomingKeys));
 
-        public async Task<IDependencyChainWalker<TKey, TValue>> AddChangesAsync(TKey key, TValue value, CancellationToken cancellationToken) {
+        public IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
             int version;
             ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
+            DependencyGraphSnapshot<TKey, TValue> snapshot;
 
             lock (_syncObj) {
-                cancellationToken.ThrowIfCancellationRequested();
-                var dependencyVertex = _vertices.AddOrUpdate(key, value);
-                version = _vertices.Version;
+                var dependencyVertex = _vertices.AddOrUpdate(key, value, incomingKeys);
+                snapshot = _vertices.Snapshot;
+
+                version = _vertices.Snapshot.Version;
                 _changedVertices[key] = dependencyVertex;
                 changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
             }
 
-            if (changedVertices.Count == 1) {
-                await changedVertices[0].EnsureDependenciesAsync(_dependencyFinder);
-            } else {
-                // If any of the dependency analysis cancelled, this method will be canceled as well,
-                // so no need to terminate it explicitly
-                var tasks = changedVertices.Select(e => e.EnsureDependenciesAsync(_dependencyFinder)).ToArray();
-                await ChangedVerticesAwaitable.Create(tasks);
-            }
-
-            ImmutableArray<DependencyVertex<TKey, TValue>> snapshot;
-            ImmutableArray<TKey> missingKeys;
-            lock (_syncObj) {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (version < _vertices.Version) {
-                    throw new OperationCanceledException();
-                }
-
-                _vertices.ResolveDependencies(out snapshot, out missingKeys);
-            }
-
-            var walkingGraph = CreateWalkingGraph(snapshot, changedVertices);
+            var walkingGraph = CreateWalkingGraph(snapshot.Vertices, changedVertices);
             var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
 
             var loopsCount = FindLoops(walkingGraph);
@@ -77,30 +53,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 vertex.SecondPass?.Seal();
             }
 
-            lock (_syncObj) {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (version < _vertices.Version) {
-                    throw new OperationCanceledException();
-                }
-
-                MissingKeys = missingKeys;
-            }
-
-            return new DependencyChainWalker(this, startingVertices, affectedValues, missingKeys, totalNodesCount, version);
+            return new DependencyChainWalker(this, startingVertices, affectedValues, snapshot.MissingKeys, totalNodesCount, version);
         }
 
         private void CommitChanges(DependencyVertex<TKey, TValue> vertex) {
             lock (_syncObj) {
                 if (_changedVertices.TryGetValue(vertex.Key, out var changedVertex) && changedVertex.Version <= vertex.Version) {
                     _changedVertices.Remove(vertex.Key);
-                }
-            }
-        }
-
-        private void CommitChanges(int version) {
-            lock (_syncObj) {
-                if (version == _vertices.Version) {
-                    _changedVertices.Clear();
                 }
             }
         }
@@ -258,14 +217,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         private sealed class DependencyChainWalker : IDependencyChainWalker<TKey, TValue> {
             private readonly DependencyResolver<TKey, TValue> _dependencyResolver;
-            private readonly PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
+            private readonly ImmutableArray<WalkingVertex<TKey, TValue>> _startingVertices;
             private readonly object _syncObj;
             private int _remaining;
+            private PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
 
             public ImmutableArray<TKey> MissingKeys { get; }
             public ImmutableArray<TValue> AffectedValues { get; }
             public int Version { get; }
-            public bool IsCompleted { get; private set; }
 
             public int Remaining {
                 get {
@@ -285,20 +244,30 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 _syncObj = new object();
                 _dependencyResolver = dependencyResolver;
-                _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
+                _startingVertices = startingVertices;
                 AffectedValues = affectedValues;
                 Version = version;
                 MissingKeys = missingKeys;
 
                 _remaining = totalNodesCount;
-                IsCompleted = _remaining == 0;
-                foreach (var vertex in startingVertices) {
-                    _ppc.Produce(new DependencyChainNode(this, vertex));
-                }
             }
 
-            public Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken) =>
-                _ppc.ConsumeAsync(cancellationToken);
+            public Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken) {
+                PriorityProducerConsumer<IDependencyChainNode<TValue>> ppc;
+                lock (_syncObj) {
+                    if (_ppc == null) {
+                        _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
+
+                        foreach (var vertex in _startingVertices) {
+                            _ppc.Produce(new DependencyChainNode(this, vertex));
+                        }
+                    }
+
+                    ppc = _ppc;
+                }
+
+                return ppc.ConsumeAsync(cancellationToken);
+            }
 
             public void MarkCompleted(WalkingVertex<TKey, TValue> vertex, bool commitChanges) {
                 var verticesToProduce = new List<WalkingVertex<TKey, TValue>>();
@@ -319,7 +288,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
 
                     if (_remaining == 0) {
-                        IsCompleted = isCompleted = true;
+                        isCompleted = true;
                     }
                 }
 
@@ -329,7 +298,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 if (isCompleted) {
                     _ppc.Produce(null);
-                    _ppc.Dispose();
                 } else {
                     foreach (var toProduce in verticesToProduce) {
                         _ppc.Produce(new DependencyChainNode(this, toProduce));
@@ -350,46 +318,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             public void Commit() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex, true);
             public void Skip() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex, false);
-        }
-
-        private sealed class ChangedVerticesAwaitable {
-            private readonly TaskCompletionSourceEx<int> _tcs;
-            private int _count;
-
-            private ChangedVerticesAwaitable(Task[] tasks) {
-                _tcs = new TaskCompletionSourceEx<int>();
-                _count = tasks.Length;
-
-                foreach (var task in tasks) {
-                    task.ContinueWith(CountdownOnCompletion, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-                }
-            }
-
-            public static ChangedVerticesAwaitable Create(Task[] tasks) => new ChangedVerticesAwaitable(tasks);
-
-            public TaskAwaiter GetAwaiter() => ((Task)_tcs.Task).GetAwaiter();
-
-            private void CountdownOnCompletion(Task task) {
-                switch (task.Status) {
-                    case TaskStatus.RanToCompletion:
-                        if (Interlocked.Decrement(ref _count) == 0) {
-                            _tcs.TrySetResult(0);
-                        }
-                        return;
-                    case TaskStatus.Canceled:
-                        try {
-                            task.GetAwaiter().GetResult();
-                        } catch (OperationCanceledException ex) {
-                            _tcs.TrySetCanceled(ex);
-                        }
-                        return;
-                    case TaskStatus.Faulted:
-                        _tcs.TrySetException(task.Exception);
-                        return;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
         }
     }
 }
