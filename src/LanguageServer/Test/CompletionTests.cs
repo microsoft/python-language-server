@@ -855,6 +855,15 @@ pass";
         }
 
         [TestMethod, Priority(0)]
+        public async Task NoCompletionInOpenString() {
+
+            var analysis = await GetAnalysisAsync("'''.");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            result.Should().HaveNoCompletion();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NoCompletionInComment() {
 
             var analysis = await GetAnalysisAsync("x = 1 #str. more text");
