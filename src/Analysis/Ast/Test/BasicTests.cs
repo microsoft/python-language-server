@@ -19,6 +19,8 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -83,12 +85,19 @@ x = sys.path
                 .And.HaveVariable("x").OfType(BuiltinTypeId.List);
         }
 
-        [TestMethod, Priority(0)]
-        public async Task BuiltinsTest() {
+        [DataRow(true, true)]
+        [DataRow(false, true)]
+        [DataRow(true, false)]
+        [DataRow(false, false)]
+        [DataTestMethod, Priority(0)]
+        public async Task BuiltinsTest(bool isPython3X, bool isAnaconda) {
             const string code = @"
 x = 1
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var configuration = isPython3X 
+                ? isAnaconda ? PythonVersions.LatestAnaconda3X : PythonVersions.LatestAvailable3X 
+                : isAnaconda ? PythonVersions.LatestAnaconda2X : PythonVersions.LatestAvailable2X;
+            var analysis = await GetAnalysisAsync(code, configuration);
 
             var v = analysis.Should().HaveVariable("x").Which;
             var t = v.Value.GetPythonType();

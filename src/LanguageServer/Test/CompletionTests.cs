@@ -904,6 +904,26 @@ os.path.
         }
 
         [TestMethod, Priority(0)]
+        public async Task FromDotInRootWithInitPy() {
+            var initPyPath = TestData.GetTestSpecificUri("__init__.py");
+            var module1Path = TestData.GetTestSpecificUri("module1.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(initPyPath, string.Empty);
+            var module1 = rdt.OpenDocument(module1Path, "from .");
+            module1.Interpreter.ModuleResolution.GetOrLoadModule("__init__");
+
+            var analysis = await module1.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
+            result.Should().HaveNoCompletion();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task FromDotInExplicitPackage() {
             var initPyPath = TestData.GetTestSpecificUri("package", "__init__.py");
             var module1Path = TestData.GetTestSpecificUri("package", "module1.py");

@@ -23,94 +23,160 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class PythonAnalyzerEntry {
+        private readonly object _syncObj = new object();
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
+        private IPythonModule _module;
+        private PythonAst _ast;
+        private IDocumentAnalysis _previousAnalysis;
+        private ImmutableArray<IPythonModule> _analysisDependencies;
+        private int _bufferVersion;
+        private int _analysisVersion;
 
-        public IPythonModule Module { get; }
-        public PythonAst Ast { get; private set; }
-        public IDocumentAnalysis PreviousAnalysis { get; private set; }
-        public ImmutableArray<IPythonModule> AnalysisDependencies { get; private set; }
-        public int BufferVersion { get; private set; }
-        public int AnalysisVersion { get; private set; }
+        public IPythonModule Module {
+            get {
+                lock (_syncObj) {
+                    return _module;
+                }
+            }
+        }
+
+        public IDocumentAnalysis PreviousAnalysis {
+            get {
+                lock (_syncObj) {
+                    return _previousAnalysis;
+                }
+            }
+        }
+
+        public ImmutableArray<IPythonModule> AnalysisDependencies {
+            get {
+                lock (_syncObj) {
+                    return _analysisDependencies;
+                }
+            }
+        }
+
+        public int BufferVersion {
+            get {
+                lock (_syncObj) {
+                    return _bufferVersion;
+                }
+            }
+        }
+
+        public int AnalysisVersion {
+            get {
+                lock (_syncObj) {
+                    return _analysisVersion;
+                }
+            }
+        }
+
         public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis;
 
         public PythonAnalyzerEntry(IPythonModule module, PythonAst ast, IDocumentAnalysis previousAnalysis, int bufferVersion, int analysisVersion) {
-            Module = module;
-            Ast = ast;
-            PreviousAnalysis = previousAnalysis;
-            AnalysisDependencies = ImmutableArray<IPythonModule>.Empty;
+            _module = module;
+            _ast = ast;
+            _previousAnalysis = previousAnalysis;
+            _analysisDependencies = ImmutableArray<IPythonModule>.Empty;
 
-            BufferVersion = bufferVersion;
-            AnalysisVersion = analysisVersion;
+            _bufferVersion = bufferVersion;
+            _analysisVersion = analysisVersion;
             _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken) 
             => _analysisTcs.Task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken);
 
-        public void TrySetAnalysis(IDocumentAnalysis analysis, int version, object syncObj) {
-            lock (syncObj) {
-                if (NotAnalyzed) {
-                    PreviousAnalysis = analysis;
+        public bool IsValidVersion(int version, out IPythonModule module, out PythonAst ast) {
+            lock (_syncObj) {
+                module = _module;
+                ast = _ast;
+                return _previousAnalysis is EmptyAnalysis || _analysisVersion <= version;
+            }
+        }
+
+        public void TrySetAnalysis(IDocumentAnalysis analysis, int version) {
+            lock (_syncObj) {
+                if (_previousAnalysis is EmptyAnalysis) {
+                    _previousAnalysis = analysis;
                 }
 
-                if (AnalysisVersion > version) {
+                if (_analysisVersion > version) {
                     return;
                 }
 
-                AnalysisDependencies = ImmutableArray<IPythonModule>.Empty;
+                _analysisDependencies = ImmutableArray<IPythonModule>.Empty;
                 UpdateAnalysisTcs(version);
             }
 
             _analysisTcs.TrySetResult(analysis);
         }
 
-        public void TrySetException(Exception ex, int version, object syncObj) {
-            lock (syncObj) {
-                if (AnalysisVersion > version) {
+        public void TrySetException(Exception ex, int version) {
+            lock (_syncObj) {
+                if (_analysisVersion > version) {
                     return;
                 }
 
-                AnalysisVersion = version;
+                _analysisVersion = version;
             }
 
             _analysisTcs.TrySetException(ex);
         }
 
-        public void TryCancel(OperationCanceledException oce, int version, object syncObj) {
-            lock (syncObj) {
-                if (AnalysisVersion > version) {
+        public void TryCancel(OperationCanceledException oce, int version) {
+            lock (_syncObj) {
+                if (_analysisVersion > version) {
                     return;
                 }
 
-                AnalysisVersion = version;
+                _analysisVersion = version;
             }
             
             _analysisTcs.TrySetCanceled(oce.CancellationToken);
         }
 
-        public void Invalidate(int analysisVersion)
-            => Invalidate(Ast, BufferVersion, analysisVersion);
+        public void Invalidate(int analysisVersion) {
+            lock (_syncObj) {
+                if (_analysisVersion >= analysisVersion) {
+                    return;
+                }
 
-        public void AddAnalysisDependencies(ImmutableArray<IPythonModule> dependencies) {
-            AnalysisDependencies = AnalysisDependencies.AddRange(dependencies);
+                UpdateAnalysisTcs(analysisVersion);
+            }
         }
 
-        public void Invalidate(PythonAst ast, int bufferVersion, int analysisVersion) {
-            if (AnalysisVersion >= analysisVersion && BufferVersion >= bufferVersion) {
-                return;
-            }
+        public void Invalidate(ImmutableArray<IPythonModule> dependencies, int analysisVersion) {
+            lock (_syncObj) {
+                if (_analysisVersion >= analysisVersion) {
+                    return;
+                }
 
-            Ast = ast;
-            BufferVersion = bufferVersion;
-            
-            UpdateAnalysisTcs(analysisVersion);
+                UpdateAnalysisTcs(analysisVersion);
+                _analysisDependencies = _analysisDependencies.AddRange(dependencies);
+            }
+        }
+
+        public void Invalidate(IPythonModule module, PythonAst ast, int bufferVersion, int analysisVersion) {
+            lock (_syncObj) {
+                if (_analysisVersion >= analysisVersion && _bufferVersion >= bufferVersion) {
+                    return;
+                }
+
+                _ast = ast;
+                _module = module;
+                _bufferVersion = bufferVersion;
+
+                UpdateAnalysisTcs(analysisVersion);
+            }
         }
 
         private void UpdateAnalysisTcs(int analysisVersion) {
-            AnalysisVersion = analysisVersion;
+            _analysisVersion = analysisVersion;
             if (_analysisTcs.Task.Status == TaskStatus.RanToCompletion) {
-                PreviousAnalysis = _analysisTcs.Task.Result;
-                AnalysisDependencies = ImmutableArray<IPythonModule>.Empty;
+                _previousAnalysis = _analysisTcs.Task.Result;
+                _analysisDependencies = ImmutableArray<IPythonModule>.Empty;
             }
 
             if (_analysisTcs.Task.IsCompleted) {

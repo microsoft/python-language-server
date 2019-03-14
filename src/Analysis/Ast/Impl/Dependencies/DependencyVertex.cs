@@ -13,18 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
     internal sealed class DependencyVertex<TKey, TValue> {
-        private readonly CancellationTokenSource _incomingKeysCts;
-        private TaskCompletionSource<int> _incomingKeysTcs;
-
         public TKey Key { get; }
         public TValue Value { get; }
         public int Version { get; }
@@ -34,63 +28,32 @@ namespace Microsoft.Python.Analysis.Dependencies {
         public bool IsSealed { get; private set; }
         public bool HasMissingKeys { get; private set; }
 
-        public ImmutableArray<TKey> IncomingKeys { get; private set; }
+        public ImmutableArray<TKey> IncomingKeys { get; }
         public ImmutableArray<int> Incoming { get; private set; }
         public ImmutableArray<int> Outgoing { get; private set; }
 
-        public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, TValue value, int version) {
+        public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, TValue value, ImmutableArray<TKey> incomingKeys, int version) {
             Key = oldVertex.Key;
             Value = value;
             Version = version;
             Index = oldVertex.Index;
-
-            _incomingKeysCts = new CancellationTokenSource();
-            oldVertex._incomingKeysCts.Cancel();
-
-            IncomingKeys = oldVertex.IncomingKeys;
+            
+            IncomingKeys = incomingKeys;
             Incoming = oldVertex.Incoming;
             Outgoing = oldVertex.Outgoing;
         }
 
-        public DependencyVertex(TKey key, TValue value, int version, int index) {
+        public DependencyVertex(TKey key, TValue value, ImmutableArray<TKey> incomingKeys, int version, int index) {
             Key = key;
             Value = value;
             Version = version;
             Index = index;
 
-            _incomingKeysCts = new CancellationTokenSource();
-
-            IncomingKeys = ImmutableArray<TKey>.Empty;
+            IncomingKeys = incomingKeys;
             Incoming = ImmutableArray<int>.Empty;
             Outgoing = ImmutableArray<int>.Empty;
         }
-
-        public Task EnsureDependenciesAsync(IDependencyFinder<TKey, TValue> dependencyFinder) {
-            if (_incomingKeysTcs != null) {
-                return _incomingKeysTcs.Task;
-            }
-
-            var tcs = new TaskCompletionSource<int>();
-            if (Interlocked.CompareExchange(ref _incomingKeysTcs, tcs, null) == null) {
-                return FindDependenciesAsync(dependencyFinder);
-            }
-
-            return _incomingKeysTcs.Task;
-        }
-
-        private async Task FindDependenciesAsync(IDependencyFinder<TKey, TValue> dependencyFinder) {
-            try {
-                IncomingKeys = await dependencyFinder.FindDependenciesAsync(Value, _incomingKeysCts.Token);
-            } catch (OperationCanceledException e) {
-                _incomingKeysTcs.TrySetCanceled(e.CancellationToken);
-                throw;
-            } catch (Exception ex) {
-                _incomingKeysTcs.TrySetException(ex);
-                throw;
-            }
-            _incomingKeysTcs.TrySetResult(0);
-        }
-
+        
         public void AddOutgoing(int index) {
             AssertIsNotSealed();
             Outgoing = Outgoing.Add(index);
