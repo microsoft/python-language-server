@@ -2171,7 +2171,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         CheckLambdaStmt(new[] { CheckParameter("x") }, One),
                         CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.List) }, One),
                         CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.Dictionary) }, One),
-                        CheckLambdaStmt(new Action<Parameter>[] { }, One)
+                        CheckLambdaStmt(NoParameters, One)
                     )
                 );
             }
@@ -2184,7 +2184,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 CheckAst(
                     ParseString("lambda", errors, version),
                     CheckSuite(
-                        CheckLambdaStmt(new Action<Parameter>[] { }, CheckErrorExpr())
+                        CheckLambdaStmt(NoParameters, CheckErrorExpr())
                     )
                 );
 
