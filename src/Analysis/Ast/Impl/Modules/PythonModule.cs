@@ -213,13 +213,18 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void InitializeContent(string content) {
+            bool startParse;
             lock (AnalysisLock) {
                 LoadContent(content);
 
-                var startParse = ContentState < State.Parsing && _parsingTask == null;
+                startParse = ContentState < State.Parsing && _parsingTask == null;
                 if (startParse) {
                     Parse();
                 }
+            }
+
+            if (startParse) {
+                Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
             }
         }
 

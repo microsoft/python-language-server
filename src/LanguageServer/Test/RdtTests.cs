@@ -78,8 +78,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(uri1, "from LockCount1 import *");
-            var doc = rdt.GetDocument(uri1);
-            await doc.GetAstAsync(CancellationToken.None);
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
 
             var docLc1 = rdt.First(d => d.Name.Contains("LockCount1"));
@@ -110,8 +108,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(uri, "from LockCount1 import *");
-            var doc = rdt.GetDocument(uri);
-            await doc.GetAstAsync(CancellationToken.None);
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
 
             var docLc1 = rdt.First(d => d.Name.Contains("LockCount1"));
