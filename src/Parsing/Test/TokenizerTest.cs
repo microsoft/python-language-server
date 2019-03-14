@@ -24,9 +24,16 @@ namespace Microsoft.Python.Parsing.Tests {
         public void AbsoluteTokenizerIndex() {
             foreach (var version in AllVersions) {
                 var tokenizer = MakeTokenizer(version, TokenizerOptions.None, "x = 1", new SourceLocation(5, 100, 3));
+
+                // Read 'x' token
                 var tokenInfo = tokenizer.ReadToken();
                 tokenizer.TokenSpan.Should().Be(new IndexSpan(5, 1));
                 tokenizer.CurrentPosition.Should().BeEquivalentTo(new SourceLocation(6, 100, 4));
+
+                // Read '=' token
+                tokenInfo = tokenizer.ReadToken();
+                tokenizer.TokenSpan.Should().Be(new IndexSpan(7, 1));
+                tokenizer.CurrentPosition.Should().BeEquivalentTo(new SourceLocation(8, 100, 6));
             }
         }
 
