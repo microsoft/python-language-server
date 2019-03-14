@@ -35,18 +35,21 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly Dictionary<string, DocumentEntry> _documentsByName = new Dictionary<string, DocumentEntry>();
         private readonly IServiceContainer _services;
         private readonly object _lock = new object();
-        private readonly string _workspaceRoot;
 
         private IModuleManagement _moduleManagement;
         private IModuleManagement ModuleManagement => _moduleManagement ?? (_moduleManagement = _services.GetService<IPythonInterpreter>().ModuleResolution);
 
         private class DocumentEntry {
-            public IDocument Document;
+            public readonly IDocument Document;
             public int LockCount;
+
+            public DocumentEntry(IDocument document) {
+                Document = document;
+                LockCount = 0;
+            }
         }
 
-        public RunningDocumentTable(string workspaceRoot, IServiceContainer services) {
-            _workspaceRoot = workspaceRoot;
+        public RunningDocumentTable(IServiceContainer services) {
             _services = services;
         }
 
@@ -205,7 +208,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     throw new InvalidOperationException($"CreateDocument does not support module type {mco.ModuleType}");
             }
 
-            var entry = new DocumentEntry { Document = document, LockCount = 0 };
+            var entry = new DocumentEntry(document);
             _documentsByUri[document.Uri] = entry;
             _documentsByName[mco.ModuleName] = entry;
             return entry;
