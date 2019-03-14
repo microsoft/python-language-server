@@ -7,13 +7,16 @@ namespace Microsoft.Python.Parsing.Ast {
     public class FormatSpecifier : Expression {
         private readonly Node[] _children;
 
-        public FormatSpecifier(Node[] children) {
+        public FormatSpecifier(Node[] children, string unparsed) {
             _children = children;
+            Unparsed = unparsed;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
             return _children;
         }
+
+        public readonly string Unparsed;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

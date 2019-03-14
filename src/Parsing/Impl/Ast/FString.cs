@@ -8,14 +8,17 @@ namespace Microsoft.Python.Parsing.Ast {
         private readonly Node[] _children;
         private readonly string _openQuotes;
 
-        public FString(Node[] children, string openQuotes) {
+        public FString(Node[] children, string openQuotes, string unparsed) {
             _children = children;
             _openQuotes = openQuotes;
+            Unparsed = unparsed;
         }
 
         public override IEnumerable<Node> GetChildNodes() {
             return _children;
         }
+
+        public readonly string Unparsed;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

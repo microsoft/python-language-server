@@ -3283,7 +3283,7 @@ namespace Microsoft.Python.Parsing {
             var openQuotes = readTokens.Where(t => t.Token.Kind == TokenKind.FString)
                 .Select(t => ((FStringToken)t.Token).OpenQuotes).DefaultIfEmpty("'").First();
 
-            var builder = new RootFStringBuilder(openQuotes);
+            IFStringBuilder builder = new RootFStringBuilder(openQuotes);
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Kind == TokenKind.FString) {
                     var fToken = (FStringToken)tokenWithSpan.Token;
@@ -3300,10 +3300,11 @@ namespace Microsoft.Python.Parsing {
                         )
                     };
                     new FStringParser(builder, fToken.Text, fToken.IsRaw, options, _langVersion).Parse();
+                    builder.AddUnparsedFString(fToken.Text);
                 } else if (tokenWithSpan.Token.Value is string str) {
-                    builder.Append(new ConstantExpression(str));
+                    builder.Append(str);
                 } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
-                    builder.Append(new ConstantExpression(asciiString.String));
+                    builder.Append(asciiString.String);
                 }
             }
 

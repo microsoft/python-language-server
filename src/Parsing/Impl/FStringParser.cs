@@ -170,6 +170,7 @@ namespace Microsoft.Python.Parsing {
                     var formatStr = _buffer.ToString();
                     _buffer.Clear();
                     new FStringParser(formatSpecifierBuilder, formatStr, _isRaw, options, _langVersion).Parse();
+                    formatSpecifierBuilder.AddUnparsedFString(formatStr);
                     formatSpecifier = formatSpecifierBuilder.Build();
                     formatSpecifier.SetLoc(new IndexSpan(FStringStartIndex() + position, formatStr.Length));
                 }
@@ -382,11 +383,15 @@ namespace Microsoft.Python.Parsing {
                 return;
             }
             var s = _buffer.ToString();
+            string contents = "";
             try {
-                _builder.Append(s, _isRaw);
+                contents = LiteralParser.ParseString(s.ToCharArray(),
+                0, s.Length, _isRaw, isUni: true, normalizeLineEndings: true, allowTrailingBackslash: true);
             } catch (DecoderFallbackException e) {
                 var span = new SourceSpan(bufferStartLoc, CurrentLocation());
                 _errors.Add(e.Message, span, ErrorCodes.SyntaxError, Severity.Error);
+            } finally {
+                _builder.Append(contents);
             }
             _buffer.Clear();
         }
