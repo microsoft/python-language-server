@@ -15,7 +15,6 @@
 
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -62,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
                     if (scope != null) {
-                        scope.Variables[ne.Name].Value = value;
+                        scope.Variables[ne.Name].Assign(value, Eval.GetLoc(ne));
                     } else {
                         // TODO: report variable is not declared in outer scopes.
                     }
@@ -72,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (Eval.CurrentScope.Globals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
                     if (scope != null) {
-                        scope.Variables[ne.Name].Value = value;
+                        scope.Variables[ne.Name].Assign(value, Eval.GetLoc(ne));
                     } else {
                         // TODO: report variable is not declared in global scope.
                     }

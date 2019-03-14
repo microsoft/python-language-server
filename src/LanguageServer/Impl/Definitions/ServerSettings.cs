@@ -37,7 +37,6 @@ namespace Microsoft.Python.LanguageServer {
             public bool showAdvancedMembers = true;
             public bool addBrackets = false;
         }
-
         public readonly PythonCompletionOptions completion = new PythonCompletionOptions();
     }
 }

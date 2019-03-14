@@ -17,17 +17,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Documents {
     internal sealed class DocumentBuffer {
         private readonly StringBuilder _sb = new StringBuilder();
-        private readonly int _ownerThreadId = Thread.CurrentThread.ManagedThreadId;
+        private string _cachedText;
 
         public int Version { get; private set; }
-        public string Text => _sb.ToString();
+        public string Text => _cachedText ?? (_cachedText = _sb.ToString());
 
         public void Reset(int version, string content) {
             Version = version;
@@ -35,9 +33,11 @@ namespace Microsoft.Python.Analysis.Documents {
             if (!string.IsNullOrEmpty(content)) {
                 _sb.Append(content);
             }
+            _cachedText = null;
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {
+
             var lastStart = int.MaxValue;
             var lineLoc = SplitLines(_sb).ToArray();
 
@@ -57,6 +57,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 }
             }
             Version++;
+            _cachedText = null;
         }
 
         private static IEnumerable<NewLineLocation> SplitLines(StringBuilder text) {

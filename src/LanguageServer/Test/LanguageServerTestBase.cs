@@ -13,14 +13,33 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Idle;
 using Microsoft.Python.LanguageServer.Diagnostics;
+using NSubstitute;
 
 namespace Microsoft.Python.LanguageServer.Tests {
     public abstract class LanguageServerTestBase : AnalysisTestBase {
         protected static readonly ServerSettings ServerSettings = new ServerSettings();
         protected override IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => new DiagnosticsService(s);
+
+
+        protected IDiagnosticsService GetDiagnosticsService() {
+            var ds = Services.GetService<IDiagnosticsService>();
+            ds.PublishingDelay = 0;
+            return ds;
+        }
+        protected void PublishDiagnostics() {
+            GetDiagnosticsService();
+            RaiseIdleEvent();
+        }
+
+        protected void RaiseIdleEvent() {
+            var idle = Services.GetService<IIdleTimeService>();
+            idle.Idle += Raise.EventWith(null, EventArgs.Empty);
+        }
     }
 }
