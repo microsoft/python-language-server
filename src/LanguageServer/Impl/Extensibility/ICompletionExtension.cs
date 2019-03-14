@@ -16,13 +16,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Protocol;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.LanguageServer.Completion;
 
 namespace Microsoft.Python.LanguageServer.Extensibility {
     public interface ICompletionExtension {
-        Task HandleCompletionAsync(IDocument document, IDocumentAnalysis analysis, PythonAst tree, SourceLocation location, CompletionList completions, CancellationToken token);
+        Task HandleCompletionAsync(IDocumentAnalysis analysis, SourceLocation location, CompletionItemEx[] completions, CancellationToken token);
     }
 }

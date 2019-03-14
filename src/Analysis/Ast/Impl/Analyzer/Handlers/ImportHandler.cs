@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // "import fob.oar.baz" is handled as fob = import_module('fob')
             if (asNameExpression != null) {
                 Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
-            } else if (_variableModules.TryGetValue(importNames[0], out variableModule)) {
+            } else if (importNames.Count > 0 && _variableModules.TryGetValue(importNames[0], out variableModule)) {
                 var firstName = moduleImportExpression.Names[0];
                 Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
             }
@@ -86,6 +86,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return TryGetModulePossibleImport(possibleModuleImport, parent, location, out variableModule);
                 case ImplicitPackageImport packageImport:
                     return TryGetPackageFromImport(packageImport, parent, out variableModule);
+                case RelativeImportBeyondTopLevel importBeyondTopLevel:
+                    var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
+                    Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(message, location.Span, ErrorCodes.UnresolvedImport, Severity.Warning));
+                    variableModule = default;
+                    return false;
                 case ImportNotFound importNotFound:
                     var memberName = asNameExpression?.Name ?? importNotFound.FullName;
                     MakeUnresolvedImport(memberName, importNotFound.FullName, location);

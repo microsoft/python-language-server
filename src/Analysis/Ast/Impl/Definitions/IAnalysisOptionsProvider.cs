@@ -13,16 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-
-namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
-    [Flags]
-    internal enum LookupOptions {
-        None = 0,
-        Local,
-        Nonlocal,
-        Global,
-        Builtins,
-        Normal = Local | Nonlocal | Global | Builtins
+namespace Microsoft.Python.Analysis {
+    public interface IAnalysisOptionsProvider {
+        AnalysisOptions Options { get; }
     }
 }

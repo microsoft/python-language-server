@@ -101,6 +101,7 @@ R_A3 = R_A1.r_A()";
                 .And.HaveVariable("R_A2").OfType("A")
                 .And.HaveVariable("R_A3").OfType("A");
         }
+
         [TestMethod, Priority(0)]
         public async Task BuiltinImport() {
             var analysis = await GetAnalysisAsync(@"import sys");
@@ -212,7 +213,7 @@ x = f()
             var d = analysis.Diagnostics.First();
             d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
             d.SourceSpan.Should().Be(1, 6, 1, 19);
-            d.Message.Should().Be(Resources.ErrorUnresolvedImport.FormatInvariant("nonexistent"));
+            d.Message.Should().Be(Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant("nonexistent"));
         }
     }
 }

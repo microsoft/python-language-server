@@ -14,10 +14,8 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 

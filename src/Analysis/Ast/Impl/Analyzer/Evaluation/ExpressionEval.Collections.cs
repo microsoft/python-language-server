@@ -98,5 +98,65 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             return UnknownType;
         }
+
+        public IMember GetValueFromComprehension(Comprehension node) {
+            var oldVariables = CurrentScope.Variables.OfType<Variable>().ToDictionary(k => k.Name, v => v);
+            try {
+                ProcessComprehension(node);
+                switch (node) {
+                    case ListComprehension lc:
+                        var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
+                        return PythonCollectionType.CreateList(Interpreter, GetLoc(lc), new[] { v1 });
+                    case SetComprehension sc:
+                        var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
+                        return PythonCollectionType.CreateSet(Interpreter, GetLoc(sc), new[] { v2 });
+                    case DictionaryComprehension dc:
+                        var k = GetValueFromExpression(dc.Key) ?? UnknownType;
+                        var v = GetValueFromExpression(dc.Value) ?? UnknownType;
+                        return new PythonDictionary(new PythonDictionaryType(Interpreter), GetLoc(dc), new Dictionary<IMember, IMember> { { k, v } });
+                }
+
+                return UnknownType;
+            } finally {
+                // Remove temporary variables since this is assignment and the right hand
+                // side comprehension does not leak internal variables into the scope.
+                var newVariables = CurrentScope.Variables.ToDictionary(k => k.Name, v => v);
+                var variables = (VariableCollection)CurrentScope.Variables;
+                foreach (var kvp in newVariables) {
+                    if (!oldVariables.ContainsKey(kvp.Key)) {
+                        variables.RemoveVariable(kvp.Key);
+                    } else {
+                        variables.DeclareVariable(oldVariables[kvp.Key]);
+                    }
+                }
+            }
+        }
+
+        internal void ProcessComprehension(Comprehension node) {
+            foreach (var cfor in node.Iterators.OfType<ComprehensionFor>().Where(c => c.Left != null)) {
+                var value = GetValueFromExpression(cfor.List);
+                if (value != null) {
+                    switch (cfor.Left) {
+                        case NameExpression nex when value is IPythonCollection coll:
+                            DeclareVariable(nex.Name, coll.GetIterator().Next, VariableSource.Declaration, GetLoc(nex));
+                            break;
+                        case NameExpression nex:
+                            DeclareVariable(nex.Name, UnknownType, VariableSource.Declaration, GetLoc(nex));
+                            break;
+                        case TupleExpression tex when value is IPythonDictionary dict && tex.Items.Count > 0:
+                            if (tex.Items[0] is NameExpression nx0 && !string.IsNullOrEmpty(nx0.Name)) {
+                                DeclareVariable(nx0.Name, dict.Keys.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, GetLoc(nx0));
+                            }
+                            if (tex.Items.Count > 1 && tex.Items[1] is NameExpression nx1 && !string.IsNullOrEmpty(nx1.Name)) {
+                                DeclareVariable(nx1.Name, dict.Values.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, GetLoc(nx1));
+                            }
+                            foreach (var item in tex.Items.Skip(2).OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
+                                DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, GetLoc(item));
+                            }
+                            break;
+                    }
+                }
+            }
+        }
     }
 }

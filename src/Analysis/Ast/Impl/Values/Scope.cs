@@ -38,11 +38,11 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region IScope
         public string Name => Node?.Name ?? "<global>";
-        public ScopeStatement Node { get; }
+        public virtual ScopeStatement Node { get; }
         public IScope OuterScope { get; }
         public bool VisibleToChildren { get; }
 
-        public IReadOnlyList<IScope> Children => _childScopes?.ToArray() ?? Array.Empty<IScope>();
+        public IReadOnlyList<IScope> Children => (IReadOnlyList<IScope>)_childScopes ?? Array.Empty<IScope>();
         public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
@@ -75,8 +75,7 @@ namespace Microsoft.Python.Analysis.Values {
             => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
         #endregion
 
-        public void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
-        public IReadOnlyList<Scope> ToChainTowardsGlobal() => EnumerateTowardsGlobal.OfType<Scope>().ToList();
+        internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
     }
 
     internal class EmptyGlobalScope : IGlobalScope {

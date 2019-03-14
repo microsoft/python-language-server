@@ -156,6 +156,15 @@ x, y, z = 1, 'str', 3.0
         }
 
         [TestMethod, Priority(0)]
+        public async Task TupleUnknownReturn() {
+            const string code = @"
+x, y, z = func()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").And.HaveVariable("y").And.HaveVariable("z");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task AnnotatedAssign() {
             const string code = @"
 x : int = 42
@@ -205,7 +214,6 @@ class D(C):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task LambdaExpression1() {
             const string code = @"
 x = lambda a: a
@@ -216,7 +224,6 @@ y = x(42)
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task LambdaExpression2() {
             const string code = @"
 def f(a):
@@ -279,6 +286,16 @@ x = a[0]
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task IncompleteTuple() {
+            const string code = @"
+a, b = 1
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
         }
     }
 }

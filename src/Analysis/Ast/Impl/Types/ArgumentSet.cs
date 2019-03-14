@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Creates set of arguments for a function call based on the call expression
         /// and the function signature. The result contains expressions
-        /// for arguments, but not actual values. <see cref="EvaluateAsync"/> on how to
+        /// for arguments, but not actual values. <see cref="Evaluate"/> on how to
         /// get values for actual parameters.
         /// </summary>
         /// <param name="fn">Function type.</param>

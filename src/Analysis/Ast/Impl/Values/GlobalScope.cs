@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     internal sealed class GlobalScope: Scope, IGlobalScope {
@@ -23,5 +24,6 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         public IPythonModule Module { get; }
+        public override ScopeStatement Node => Module.Analysis?.Ast;
     }
 }

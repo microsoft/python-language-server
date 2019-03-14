@@ -56,6 +56,20 @@ namespace Microsoft.Python.Analysis.Documents {
         IDocument GetDocument(string name);
 
         /// <summary>
+        /// Increase reference count of the document.
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <returns>New lock count or -1 if document was not found.</returns>
+        int LockDocument(Uri uri);
+
+        /// <summary>
+        /// Decrease reference count of the document.
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <returns>New lock count or -1 if document was not found.</returns>
+        int UnlockDocument(Uri uri);
+
+        /// <summary>
         /// Fires when document is opened.
         /// </summary>
         event EventHandler<DocumentEventArgs> Opened;
@@ -64,5 +78,10 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Fires when document is closed.
         /// </summary>
         event EventHandler<DocumentEventArgs> Closed;
+
+        /// <summary>
+        /// Fires when document is removed.
+        /// </summary>
+        event EventHandler<DocumentEventArgs> Removed;
     }
 }

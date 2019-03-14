@@ -13,12 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
     internal sealed class Variable : IVariable {
+        private List<LocationInfo> _locations;
+
         public Variable(string name, IMember value, VariableSource source, LocationInfo location = null) {
             Name = name;
             Value = value;
@@ -28,9 +32,22 @@ namespace Microsoft.Python.Analysis.Values {
 
         public string Name { get; }
         public VariableSource Source { get; }
-        public IMember Value { get; set; }
+        public IMember Value { get; private set; }
         public LocationInfo Location { get; }
         public PythonMemberType MemberType => PythonMemberType.Variable;
+        public IReadOnlyList<LocationInfo> Locations => _locations as IReadOnlyList<LocationInfo> ?? new[] { Location };
+
+        public void Assign(IMember value, LocationInfo location) {
+            if (Value == null || Value.GetPythonType().IsUnknown() || value?.GetPythonType().IsUnknown() == false) {
+                Value = value;
+            }
+            AddLocation(location);
+        }
+
+        private void AddLocation(LocationInfo location) {
+            _locations = _locations ?? new List<LocationInfo> { Location };
+            _locations.Add(location);
+        }
 
         private string DebuggerDisplay {
             get {
