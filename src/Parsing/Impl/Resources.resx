@@ -132,8 +132,11 @@
   <data name="ExpectingCharFStringErrorMsg" xml:space="preserve">
     <value>f-string: expecting '{0}'</value>
   </data>
-  <data name="InvalidConversionCharacterFStringErrorMsg" xml:space="preserve">
+  <data name="InvalidConversionCharacterExpectedFStringErrorMsg" xml:space="preserve">
     <value>f-string: invalid conversion character: {0} expected 's', 'r', or 'a'</value>
+  </data>
+  <data name="InvalidConversionCharacterFStringErrorMsg" xml:space="preserve">
+    <value>f-string: invalid conversion character: expected 's', 'r', or 'a'</value>
   </data>
   <data name="InvalidExpressionFStringErrorMsg" xml:space="preserve">
     <value>f-string: invalid expression</value>

@@ -108,6 +108,15 @@ namespace Microsoft.Python.Parsing {
         /// <summary>
         ///   Looks up a localized string similar to f-string: invalid conversion character: {0} expected &apos;s&apos;, &apos;r&apos;, or &apos;a&apos;.
         /// </summary>
+        internal static string InvalidConversionCharacterExpectedFStringErrorMsg {
+            get {
+                return ResourceManager.GetString("InvalidConversionCharacterExpectedFStringErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to f-string: invalid conversion character: expected &apos;s&apos;, &apos;r&apos;, or &apos;a&apos;.
+        /// </summary>
         internal static string InvalidConversionCharacterFStringErrorMsg {
             get {
                 return ResourceManager.GetString("InvalidConversionCharacterFStringErrorMsg", resourceCulture);

@@ -117,7 +117,8 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("unexpected token '='", 2, 25, 6, 3, 25, 7),
                 new ErrorInfo("expected ':'", 200, 27, 12, 200, 27, 12),
                 new ErrorInfo("f-string: lambda must be inside parentheses", 192, 27, 4, 200, 27, 12),
-                new ErrorInfo("f-string: expecting '}'", 214, 29, 6, 215, 29, 7)
+                new ErrorInfo("f-string: expecting '}'", 214, 29, 6, 215, 29, 7),
+                new ErrorInfo("f-string: invalid conversion character: expected 's', 'r', or 'a'", 224, 31, 6, 225, 31, 7)
             );
         }
 

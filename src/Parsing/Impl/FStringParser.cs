@@ -186,16 +186,19 @@ namespace Microsoft.Python.Parsing {
             if (!EndOfFString() && CurrentChar() == '!') {
                 Read('!');
                 if (EndOfFString()) {
-                    ReportSyntaxError(Resources.InvalidConversionCharacterFStringErrorMsg.FormatInvariant(' '));
                     return null;
                 }
-                conversion = NextChar();
-                if (!(conversion == 's' || conversion == 'r' || conversion == 'a')) {
-                    ReportSyntaxError(Resources.InvalidConversionCharacterFStringErrorMsg.FormatInvariant(conversion));
+                conversion = CurrentChar();
+                if (conversion == 's' || conversion == 'r' || conversion == 'a') {
+                    NextChar();
+                    return conversion;
+                } else if (conversion == '}' || conversion == ':') {
+                    ReportSyntaxError(Resources.InvalidConversionCharacterFStringErrorMsg);
+                } else {
+                    ReportSyntaxError(Resources.InvalidConversionCharacterExpectedFStringErrorMsg.FormatInvariant(conversion));
                 }
             }
-
-            return conversion;
+            return null;
         }
 
         private void BufferInnerExpression() {
