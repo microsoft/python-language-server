@@ -239,6 +239,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (walker.MissingKeys.Where(k => !k.IsTypeshed).Count == 0) {
                 Interlocked.Exchange(ref _runningTasks, 0);
                 _analysisCompleteEvent.Set();
+                _progress.Dispose();
             }
         }
 
