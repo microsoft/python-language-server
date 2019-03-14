@@ -47,7 +47,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             sm.AddService(this);
             _moduleResolution = new MainModuleResolution(root, sm);
-
             lock (_lock) {
                 var builtinModule = _moduleResolution.CreateBuiltinsModule();
                 _builtinTypes[BuiltinTypeId.NoneType]

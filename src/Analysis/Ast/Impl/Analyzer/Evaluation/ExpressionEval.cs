@@ -69,6 +69,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
         public IEnumerable<DiagnosticsEntry> Diagnostics => _diagnostics;
 
+        public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
+            // Do not add if module is library, etc. Only handle user code.
+            if (Module.ModuleType == ModuleType.User) {
+                lock (_lock) {
+                    _diagnostics.Add(entry);
+                }
+            }
+        }
+
         public IMember GetValueFromExpression(Expression expr)
             => GetValueFromExpression(expr, DefaultLookupOptions);
 
@@ -89,9 +98,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            while (expr is ParenthesisExpression parExpr) {
-                expr = parExpr.Expression;
-            }
+            expr = expr.RemoveParenthesis();
 
             IMember m;
             switch (expr) {
@@ -130,6 +137,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
                 case GeneratorExpression genex:
                     m = GetValueFromGenerator(genex);
+                    break;
+                case Comprehension comp:
+                    m = GetValueFromComprehension(comp);
+                    break;
+                case LambdaExpression lambda:
+                    m = GetValueFromLambda(lambda);
                     break;
                 default:
                     m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
@@ -227,15 +240,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var falseValue = GetValueFromExpression(expr.FalseExpression);
 
             return trueValue ?? falseValue ?? UnknownType;
-        }
-
-        public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
-            // Do not add if module is library, etc. Only handle user code.
-            if (Module.ModuleType == ModuleType.User) {
-                lock (_lock) {
-                    _diagnostics.Add(entry);
-                }
-            }
         }
     }
 }

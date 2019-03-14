@@ -217,8 +217,9 @@ namespace Microsoft.Python.Analysis.Tests {
             await FullStdLibTest(v);
         }
 
-        [TestMethod, TestCategory("60s"), Priority(1)]
-        [Timeout(10 * 60 * 1000)]
+        [TestMethod, Priority(1)]
+        [Timeout(10 * 180 * 1000)]
+        [Ignore]
         public async Task FullStdLibAnaconda3() {
             var v = PythonVersions.Anaconda36_x64 ?? PythonVersions.Anaconda36;
             await FullStdLibTest(v,
@@ -229,8 +230,9 @@ namespace Microsoft.Python.Analysis.Tests {
             );
         }
 
-        [TestMethod, TestCategory("60s"), Priority(1)]
-        [Timeout(10 * 60 * 1000)]
+        [TestMethod, Priority(1)]
+        [Timeout(10 * 180 * 1000)]
+        [Ignore]
         public async Task FullStdLibAnaconda2() {
             var v = PythonVersions.Anaconda27_x64 ?? PythonVersions.Anaconda27;
             await FullStdLibTest(v,

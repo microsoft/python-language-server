@@ -13,17 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
+using System.Collections.Generic;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Values {
-    internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModule module):
-            base(null, null, true) {
-            Module = module;
+namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
+    internal sealed class NameCollectorWalker : PythonWalker {
+        private readonly HashSet<string> _names;
+        private readonly HashSet<NameExpression> _additionalNameNodes;
+
+        public NameCollectorWalker(HashSet<string> names, HashSet<NameExpression> additionalNameNodes) {
+            _names = names;
+            _additionalNameNodes = additionalNameNodes;
         }
 
-        public IPythonModule Module { get; }
-        public override ScopeStatement Node => Module.Analysis?.Ast;
+        public override bool Walk(NameExpression nex) {
+            if (!string.IsNullOrEmpty(nex.Name)) {
+                _names.Add(nex.Name);
+                _additionalNameNodes.Add(nex);
+            }
+            return false;
+        }
     }
 }

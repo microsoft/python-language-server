@@ -318,6 +318,29 @@ for some_str, some_int, some_bool in x:
         }
 
         [TestMethod, Priority(0)]
+        public async Task ForSequenceWithList1() {
+            const string code = @"
+x = [('abc', 42, True), ('abc', 23, False)]
+for a, (b, c) in x:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Bool);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForSequenceWithList2() {
+            const string code = @"
+for a, (b, c) in x:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").And.HaveVariable("b").And.HaveVariable("c");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Generator2X() {
             const string code = @"
 def f():
@@ -499,6 +522,20 @@ y2 = x.get('oar')(42, [])
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("y1").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("y2").OfType(BuiltinTypeId.Tuple);
+        }
+
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public async Task NamedTuple() {
+            const string code = @"
+from collections import namedtuple
+nt = namedtuple('Point', ['x', 'y'])
+pt = nt(1, 2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var nt = analysis.Should().HaveVariable("nt").Which;
+            nt.Should().HaveType(BuiltinTypeId.Tuple);
+            nt.Should().HaveMembers("x", "y");
         }
     }
 }

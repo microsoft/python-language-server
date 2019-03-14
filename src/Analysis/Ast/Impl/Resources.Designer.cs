@@ -664,6 +664,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Undefined variable: &apos;{0}&apos;.
+        /// </summary>
+        internal static string UndefinedVariable {
+            get {
+                return ResourceManager.GetString("UndefinedVariable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to If checked, comments are wrapped to the specified width. If unchecked, comments are not modified..
         /// </summary>
         internal static string WrapCommentsLong {

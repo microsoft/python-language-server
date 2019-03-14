@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -57,7 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         IMember GetValueFromExpression(Expression expr);
 
-        IMember LookupNameInScopes(string name, out IScope scope);
+        IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options = LookupOptions.Normal);
 
         IPythonType GetTypeFromString(string typeString);
 
