@@ -101,6 +101,7 @@ R_A3 = R_A1.r_A()";
                 .And.HaveVariable("R_A2").OfType("A")
                 .And.HaveVariable("R_A3").OfType("A");
         }
+
         [TestMethod, Priority(0)]
         public async Task BuiltinImport() {
             var analysis = await GetAnalysisAsync(@"import sys");

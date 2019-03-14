@@ -56,9 +56,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void DidChangeWatchedFiles(DidChangeWatchedFilesParams @params) {
+            _disposableBag.ThrowIfDisposed();
             foreach (var c in @params.changes.MaybeEnumerate()) {
-                _disposableBag.ThrowIfDisposed();
-                // TODO: handle?
+                switch (c.type) {
+                    case FileChangeType.Deleted:
+                        _interpreter.ModuleResolution.CurrentPathResolver.RemoveModulePath(c.uri.ToAbsolutePath());
+                        break;
+                }
             }
         }
 

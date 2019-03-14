@@ -37,18 +37,16 @@ namespace Microsoft.Python.Core.OS {
         public void Kill(int pid) => Process.GetProcessById(pid).Kill();
         public bool IsProcessRunning(string processName) => Process.GetProcessesByName(processName).Any();
 
-        public async Task<IReadOnlyList<string>> ExecuteAndCaptureOutputAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default) {
-            var lines = new List<string>();
+        public async Task<string> ExecuteAndCaptureOutputAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default) {
+            var output = string.Empty;
             var process = Start(startInfo);
             try {
-                while (!process.StandardOutput.EndOfStream) {
-                    var line = await process.StandardOutput.ReadLineAsync();
-                    lines.Add(line);
-                }
+                output = await process.StandardOutput.ReadToEndAsync();
                 await process.WaitForExitAsync(30000, cancellationToken);
             } catch (IOException) {
             } catch (OperationCanceledException) { }
-            return lines;
+
+            return output;
         }
     }
 }

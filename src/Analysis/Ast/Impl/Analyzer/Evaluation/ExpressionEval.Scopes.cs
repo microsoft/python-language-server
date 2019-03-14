@@ -175,7 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (scope == null) {
                         scope = new Scope(node, fromScope, true);
                         fromScope.AddChildScope(scope);
-                        _scopeLookupCache[node] = fromScope;
+                        _scopeLookupCache[node] = scope;
                     }
                 }
 

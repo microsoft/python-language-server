@@ -22,7 +22,7 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal sealed class DocumentAnalysisAssertions : ReferenceTypeAssertions<IDocumentAnalysis, DocumentAnalysisAssertions> {
+    public sealed class DocumentAnalysisAssertions : ReferenceTypeAssertions<IDocumentAnalysis, DocumentAnalysisAssertions> {
         private readonly ScopeAssertions _scopeAssertions;
 
         public DocumentAnalysisAssertions(IDocumentAnalysis analysis) {
