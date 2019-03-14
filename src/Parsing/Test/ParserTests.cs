@@ -2201,18 +2201,20 @@ namespace Microsoft.Python.Parsing.Tests {
                 CheckAst(
                     ParseFile("LambdaErrors.py", errors, version),
                     CheckSuite(
-                        CheckLambdaStmt(new Action<Parameter>[] { CheckParameter(null, ParameterKind.Normal, null, null) }, CheckErrorExpr()),
-                        CheckLambdaStmt(new Action<Parameter>[] {
+                        CheckLambdaStmt(new[]{
+                            CheckParameter(null, ParameterKind.Normal, null, null)
+                        }, CheckErrorExpr()),
+                        CheckLambdaStmt(new[] {
                             CheckParameter("x"),
                             CheckParameter("y")
                         }, CheckErrorExpr()),
-                        CheckLambdaStmt(new Action<Parameter>[] {
+                        CheckLambdaStmt(new[] {
                             CheckParameter("x"),
                         }, CheckErrorExpr())
                     )
                 );
 
-                errors.Errors.Should().BeEquivalentTo(new ErrorResult[] {
+                errors.Errors.Should().BeEquivalentTo(new[] {
                     new ErrorResult("unexpected token '<newline>'", new SourceSpan(1, 7, 2, 1)),
                     new ErrorResult("invalid parameter", new SourceSpan(1, 1, 1, 7)),
                     new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7)),
