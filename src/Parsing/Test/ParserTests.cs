@@ -2188,7 +2188,7 @@ namespace Microsoft.Python.Parsing.Tests {
                     )
                 );
 
-                errors.Errors.Should().BeEquivalentTo(new ErrorResult[] {
+                errors.Errors.Should().BeEquivalentTo(new[] {
                     new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7))
                 });
             }
@@ -2201,7 +2201,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 CheckAst(
                     ParseFile("LambdaErrors.py", errors, version),
                     CheckSuite(
-                        CheckLambdaStmt(new[]{
+                        CheckLambdaStmt(new[] {
                             CheckParameter(null, ParameterKind.Normal, null, null)
                         }, CheckErrorExpr()),
                         CheckLambdaStmt(new[] {
