@@ -21,7 +21,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
@@ -330,8 +329,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #region Extensions
 
         [JsonRpcMethod("python/loadExtension")]
-        public Task LoadExtension(JToken token, CancellationToken cancellationToken) => Task.CompletedTask;
-            //=> _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
+        public Task LoadExtension(JToken token, CancellationToken cancellationToken)
+            => _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
 
         [JsonRpcMethod("python/extensionCommand")]
         public Task ExtensionCommand(JToken token, CancellationToken cancellationToken)

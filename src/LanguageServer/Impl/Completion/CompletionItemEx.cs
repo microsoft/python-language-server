@@ -13,14 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Completion;
+using System;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.LanguageServer.Protocol;
+using Newtonsoft.Json;
 
-namespace Microsoft.Python.LanguageServer.Extensibility {
-    public interface ICompletionExtension {
-        Task HandleCompletionAsync(IDocumentAnalysis analysis, SourceLocation location, CompletionItemEx[] completions, CancellationToken token);
+namespace Microsoft.Python.LanguageServer.Completion {
+    [Serializable]
+    public class CompletionItemEx: CompletionItem {
+        [JsonIgnore]
+        public IMember Member;
+        [JsonIgnore]
+        public IPythonType PythonType;
     }
 }
