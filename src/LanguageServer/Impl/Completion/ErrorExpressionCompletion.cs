@@ -83,6 +83,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 case TokenKind.KeywordAs:
                     return lastToken.Key.Start <= context.Position && context.Position <= lastToken.Key.End ? null : CompletionResult.Empty;
 
+                case TokenKind.Error:
+                    return null;
+
                 default:
                     return CompletionResult.Empty;
             }

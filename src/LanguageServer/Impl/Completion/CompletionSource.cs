@@ -40,7 +40,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     // no completions on integer ., the user is typing a float
                     return CompletionResult.Empty;
                 case ConstantExpression ce2 when ce2.Value is string:
-                    // no completions in strings
+                // no completions in strings
                 case null when context.Ast.IsInsideComment(context.Location):
                 case null when context.Ast.IsInsideString(context.Location):
                     return CompletionResult.Empty;
@@ -82,10 +82,11 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return result;
                 default: {
                         var result = ErrorExpressionCompletion.GetCompletions(scope, statement, expression, context);
-                        return result == CompletionResult.Empty
-                            ? TopLevelCompletion.GetCompletions(statement, scope, context)
-                            : result;
-                    }
+                        if (result == null) {
+                            return CompletionResult.Empty;
+                        }
+                        return result == CompletionResult.Empty ? TopLevelCompletion.GetCompletions(statement, scope, context) : result;
+                }
             }
         }
     }
