@@ -38,7 +38,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public CompletionItem CreateCompletionItem(string text, IMember member, IPythonType self = null, string label = null)
             => CreateCompletionItem(text, ToCompletionItemKind(member?.MemberType ?? PythonMemberType.Class), member, self, label);
 
-        public CompletionItem CreateCompletionItem(string text, CompletionItemKind kind, IMember member, IPythonType self = null, string label = null) {
+        public CompletionItemEx CreateCompletionItem(string text, CompletionItemKind kind, IMember member, IPythonType self = null, string label = null) {
             var t = member?.GetPythonType();
             var docFormat = _docSource.DocumentationFormat;
 
@@ -47,19 +47,23 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 docFormat = InsertTextFormat.Snippet;
             }
 
-            return new CompletionItem {
+            return new CompletionItemEx {
                 label = label ?? text,
                 insertText = text,
                 insertTextFormat = docFormat,
                 // Place regular items first, advanced entries last
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = kind,
-                documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member, self) : null
+                documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member, self) : null,
+                // Custom fields used by the LS extensions that may modify
+                // the completion list. Not passed to the client.
+                Member = member,
+                PythonType = self
             };
         }
 
-        public static CompletionItem CreateCompletionItem(string text, CompletionItemKind kind)
-            => new CompletionItem {
+        public static CompletionItemEx CreateCompletionItem(string text, CompletionItemKind kind)
+            => new CompletionItemEx {
                 label = text, insertText = text, insertTextFormat = InsertTextFormat.PlainText,
                 sortText = char.IsLetter(text, 0) ? "1" : "2", kind = kind
             };

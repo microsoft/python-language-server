@@ -21,7 +21,7 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
-    internal static class VariableAssertionsExtensions {
+    public static class VariableAssertionsExtensions {
         public static AndWhichConstraint<TAssertion, IVariable> OfType<TAssertion>(
             this AndWhichConstraint<TAssertion, IVariable> andWhichConstraint, BuiltinTypeId typeId, string because = "", params object[] reasonArgs) {
             andWhichConstraint.Subject.Value.Should().HaveType(typeId, because, reasonArgs);

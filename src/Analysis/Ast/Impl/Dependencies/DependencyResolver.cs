@@ -21,7 +21,6 @@ using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     internal sealed class DependencyResolver<TKey, TValue> : IDependencyResolver<TKey, TValue> {
-        private readonly IDependencyFinder<TKey, TValue> _dependencyFinder;
         private readonly DependencyGraph<TKey, TValue> _vertices = new DependencyGraph<TKey, TValue>();
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
@@ -217,9 +216,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         private sealed class DependencyChainWalker : IDependencyChainWalker<TKey, TValue> {
             private readonly DependencyResolver<TKey, TValue> _dependencyResolver;
-            private readonly PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
+            private readonly ImmutableArray<WalkingVertex<TKey, TValue>> _startingVertices;
             private readonly object _syncObj;
             private int _remaining;
+            private PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
 
             public ImmutableArray<TKey> MissingKeys { get; }
             public ImmutableArray<TValue> AffectedValues { get; }
@@ -243,19 +243,30 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 _syncObj = new object();
                 _dependencyResolver = dependencyResolver;
-                _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
+                _startingVertices = startingVertices;
                 AffectedValues = affectedValues;
                 Version = version;
                 MissingKeys = missingKeys;
 
                 _remaining = totalNodesCount;
-                foreach (var vertex in startingVertices) {
-                    _ppc.Produce(new DependencyChainNode(this, vertex));
-                }
             }
 
-            public Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken) =>
-                _ppc.ConsumeAsync(cancellationToken);
+            public Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken) {
+                PriorityProducerConsumer<IDependencyChainNode<TValue>> ppc;
+                lock (_syncObj) {
+                    if (_ppc == null) {
+                        _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
+
+                        foreach (var vertex in _startingVertices) {
+                            _ppc.Produce(new DependencyChainNode(this, vertex));
+                        }
+                    }
+
+                    ppc = _ppc;
+                }
+
+                return ppc.ConsumeAsync(cancellationToken);
+            }
 
             public void MarkCompleted(WalkingVertex<TKey, TValue> vertex, bool commitChanges) {
                 var verticesToProduce = new List<WalkingVertex<TKey, TValue>>();

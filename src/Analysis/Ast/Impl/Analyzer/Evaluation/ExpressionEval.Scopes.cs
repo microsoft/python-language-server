@@ -14,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -24,6 +26,8 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
+        private readonly ConcurrentDictionary<ScopeStatement, Scope> _scopeLookupCache = new ConcurrentDictionary<ScopeStatement, Scope>();
+
         public IMember GetInScope(string name, IScope scope)
             => scope.Variables.TryGetVariable(name, out var variable) ? variable.Value : null;
 
@@ -54,28 +58,44 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
 
         public IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options) {
-            var scopes = CurrentScope.ToChainTowardsGlobal().ToList();
-            if (scopes.Count == 1) {
-                if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
-                    scopes.Clear();
-                }
-            } else if (scopes.Count >= 2) {
-                if (!options.HasFlag(LookupOptions.Nonlocal)) {
-                    while (scopes.Count > 2) {
-                        scopes.RemoveAt(1);
+            scope = null;
+
+            if (options == LookupOptions.Normal) {
+                // Default mode, no skipping, do direct search
+                for (var s = CurrentScope; s != null ; s = (Scope)s.OuterScope) {
+                    if (s.Variables.Contains(name)) {
+                        scope = s;
+                        break;
                     }
                 }
-
-                if (!options.HasFlag(LookupOptions.Local)) {
-                    scopes.RemoveAt(0);
+            } else {
+                var scopes = new List<Scope>();
+                for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
+                    scopes.Add(s);
                 }
 
-                if (!options.HasFlag(LookupOptions.Global)) {
-                    scopes.RemoveAt(scopes.Count - 1);
+                if (scopes.Count == 1) {
+                    if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
+                        scopes.Clear();
+                    }
+                } else if (scopes.Count >= 2) {
+                    if (!options.HasFlag(LookupOptions.Nonlocal)) {
+                        while (scopes.Count > 2) {
+                            scopes.RemoveAt(1);
+                        }
+                    }
+
+                    if (!options.HasFlag(LookupOptions.Local)) {
+                        scopes.RemoveAt(0);
+                    }
+
+                    if (!options.HasFlag(LookupOptions.Global)) {
+                        scopes.RemoveAt(scopes.Count - 1);
+                    }
                 }
+                scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             }
 
-            scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             var value = scope?.Variables[name].Value;
             if (value == null && options.HasFlag(LookupOptions.Builtins)) {
                 var builtins = Interpreter.ModuleResolution.BuiltinsModule;
@@ -136,9 +156,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             if (node.Parent != null) {
-                fromScope = gs
-                    .TraverseBreadthFirst(s => s.Children.OfType<Scope>())
-                    .FirstOrDefault(s => s.Node == node.Parent);
+                if (!_scopeLookupCache.TryGetValue(node.Parent, out fromScope)) {
+                    fromScope = gs
+                        .TraverseDepthFirst(s => s.Children.OfType<Scope>())
+                        .FirstOrDefault(s => s.Node == node.Parent);
+                    _scopeLookupCache[node.Parent] = fromScope;
+                }
             }
 
             fromScope = fromScope ?? gs;
@@ -152,6 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (scope == null) {
                         scope = new Scope(node, fromScope, true);
                         fromScope.AddChildScope(scope);
+                        _scopeLookupCache[node] = scope;
                     }
                 }
 

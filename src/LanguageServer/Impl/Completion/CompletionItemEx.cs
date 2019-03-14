@@ -13,10 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Modules {
-    public interface IModuleCache {
-        string GetCacheFilePath(string filePath);
-        string ReadCachedModule(string filePath);
-        void WriteCachedModule(string filePath, string code);
+using System;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.LanguageServer.Protocol;
+using Newtonsoft.Json;
+
+namespace Microsoft.Python.LanguageServer.Completion {
+    [Serializable]
+    public class CompletionItemEx: CompletionItem {
+        [JsonIgnore]
+        public IMember Member;
+        [JsonIgnore]
+        public IPythonType PythonType;
     }
 }
