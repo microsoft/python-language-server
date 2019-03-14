@@ -159,7 +159,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, int entryVersion, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
-            _progress.ReportRemaining(++_queueLength);
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
@@ -180,6 +179,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _version = walker.Version;
                 }
 
+
+                _progress?.ReportRemaining(++_queueLength);
 
                 var stopOnVersionChange = true;
                 _progress?.ReportRemaining(walker.AffectedValues.Count);
@@ -207,16 +208,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {walker.AffectedValues.Count} entries has started.");
                     await AnalyzeAffectedEntriesAsync(walker, stopOnVersionChange, stopWatch, analysisToken);
                 } finally {
-                    _progress.ReportRemaining(--_queueLength);
                     _analysisRunningEvent.Set();
                     stopWatch.Stop();
+                    _progress?.ReportRemaining(--_queueLength);
 
-                    if (_log != null) {
-                        if (walker.Remaining == 0) {
-                            _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms.");
-                        } else {
-                            _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been canceled in {stopWatch.Elapsed.TotalMilliseconds} ms with {walker.Remaining} remaining entries.");
-                        }
+                    if (walker.Remaining == 0) {
+                        _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms.");
+                    } else {
+                        _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been canceled in {stopWatch.Elapsed.TotalMilliseconds} ms with {walker.Remaining} remaining entries.");
                     }
                 }
             }
@@ -251,7 +250,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (walker.MissingKeys.Where(k => !k.IsTypeshed).Count == 0) {
                 Interlocked.Exchange(ref _runningTasks, 0);
                 _analysisCompleteEvent.Set();
-                _progress.Dispose();
             }
         }
 
@@ -406,7 +404,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 IsTypeshed = isTypeshed;
             }
 
-            public bool Equals(ModuleKey other) 
+            public bool Equals(ModuleKey other)
                 => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed;
 
             public override bool Equals(object obj) => obj is ModuleKey other && Equals(other);
