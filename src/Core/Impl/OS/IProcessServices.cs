@@ -25,6 +25,6 @@ namespace Microsoft.Python.Core.OS {
         void Kill(IProcess process);
         void Kill(int pid);
         bool IsProcessRunning(string processName);
-        Task<IReadOnlyList<string>> ExecuteAndCaptureOutputAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default);
+        Task<string> ExecuteAndCaptureOutputAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default);
     }
 }
