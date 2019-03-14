@@ -13,17 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Linting.UndefinedVariables;
+using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Values {
-    internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModule module):
-            base(null, null, true) {
-            Module = module;
+namespace Microsoft.Python.Analysis.Linting {
+    internal sealed class LinterAggregator {
+        private readonly List<ILinter> _linters = new List<ILinter>();
+
+        public LinterAggregator() {
+            // TODO: develop mechanism for dynamic and external linter discovery.
+            _linters.Add(new UndefinedVariablesLinter());
         }
-
-        public IPythonModule Module { get; }
-        public override ScopeStatement Node => Module.Analysis?.Ast;
+        public void Lint(IDocumentAnalysis analysis, IServiceContainer services) {
+            foreach (var l in _linters) {
+                l.Lint(analysis, services);
+            }
+        }
     }
 }

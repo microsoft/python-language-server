@@ -69,6 +69,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
+        public IMember GetValueFromLambda(LambdaExpression expr) {
+            if (expr == null) {
+                return null;
+            }
+
+            var loc = GetLoc(expr);
+            var ft = new PythonFunctionType(expr.Function, Module, null, loc);
+            var overload = new PythonFunctionOverload(expr.Function, ft, Module, GetLoc(expr));
+            ft.AddOverload(overload);
+            return ft;
+        }
+
         public IMember GetValueFromClassCtor(IPythonClassType cls, CallExpression expr) {
             SymbolTable.Evaluate(cls.ClassDefinition);
             // Determine argument types

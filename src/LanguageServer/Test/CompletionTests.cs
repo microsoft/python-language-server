@@ -1080,5 +1080,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             result.Should().HaveLabels("get");
             result.Completions.First(x => x.label == "get").Should().HaveDocumentation("dict.get*");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InForEnumeration() {
+            var analysis = await GetAnalysisAsync(@"
+for a, b in x:
+    
+");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(3, 4));
+            result.Should().HaveLabels("a", "b");
+        }
     }
 }

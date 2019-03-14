@@ -61,5 +61,12 @@ namespace Microsoft.Python.Analysis {
             }
             return ast == node;
         }
+
+        public static Expression RemoveParenthesis(this Expression e) {
+            while (e is ParenthesisExpression parExpr) {
+                e = parExpr.Expression;
+            }
+            return e;
+        }
     }
 }

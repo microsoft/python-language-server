@@ -45,6 +45,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly CancellationTokenSource _sessionTokenSource = new CancellationTokenSource();
         private readonly Prioritizer _prioritizer = new Prioritizer();
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
+        private readonly AnalysisOptionsProvider _optionsProvider = new AnalysisOptionsProvider();
 
         private IServiceContainer _services;
         private Server _server;
@@ -78,6 +79,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(() => _pathsWatcher?.Dispose())
                 .Add(() => _rpc.TraceSource.Listeners.Remove(rpcTraceListener));
 
+            services.AddService(_optionsProvider);
             return _sessionTokenSource.Token;
         }
 
@@ -109,6 +111,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", 1000);
                 settings.symbolsHierarchyDepthLimit = GetSetting(analysis, "symbolsHierarchyDepthLimit", 10);
                 settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
+
+                var linting = pythonSection["linting"];
+                _optionsProvider.Options.LintingEnabled = GetSetting(linting, "enabled", true);
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
 
@@ -377,8 +382,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (!_watchSearchPaths || (_watchSearchPaths && _searchPaths.SetEquals(_initParams.initializationOptions.searchPaths))) {
                 // Were not watching OR were watching but paths have changed. Recreate the watcher.
                 _pathsWatcher?.Dispose();
-                var interpreter = _services.GetService<IPythonInterpreter>();
-                var logger = _services.GetService<ILogger>();
                 _pathsWatcher = new PathsWatcher(
                     _initParams.initializationOptions.searchPaths,
                     () =>_server.NotifyPackagesChanged(cancellationToken),
@@ -467,6 +470,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             public void Dispose() => _ppc.Dispose();
+        }
+
+        private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
+            public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
     }
 }

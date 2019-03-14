@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Linting;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -358,11 +359,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ast.Walk(walker);
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Note that we do not set the new analysis here and rather let
-            // Python analyzer to call NotifyAnalysisComplete.
             walker.Complete();
             cancellationToken.ThrowIfCancellationRequested();
             var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
+
+            if (module.ModuleType == ModuleType.User) {
+                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+                if (optionsProvider?.Options?.LintingEnabled != false) {
+                    var linter = new LinterAggregator();
+                    linter.Lint(analysis, _services);
+                }
+            }
 
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
