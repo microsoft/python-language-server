@@ -15,7 +15,9 @@
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -43,5 +45,8 @@ namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
 
         public static TextEditCollectionAssertions Should(this IEnumerable<TextEdit> textEdits)
             => new TextEditCollectionAssertions(textEdits);
+
+        public static DocumentAnalysisAssertions Should(this IDocumentAnalysis analysis) => new DocumentAnalysisAssertions(analysis);
+        public static VariableAssertions Should(this IVariable v) => new VariableAssertions(v);
     }
 }

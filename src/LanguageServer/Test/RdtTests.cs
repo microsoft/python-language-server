@@ -13,12 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using TestUtilities;
 
 namespace Microsoft.Python.LanguageServer.Tests {
@@ -62,6 +69,92 @@ namespace Microsoft.Python.LanguageServer.Tests {
             ds.Diagnostics[uri2].Count.Should().Be(1);
             rdt.GetDocument(uri1).Should().BeNull();
             ds.Diagnostics.TryGetValue(uri1, out _).Should().BeFalse();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LockCount() {
+            var uri1 = TestData.GetDefaultModuleUri();
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri1.AbsolutePath);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(uri1, "from LockCount1 import *");
+            var doc = rdt.GetDocument(uri1);
+            await doc.GetAstAsync(CancellationToken.None);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+
+            var docLc1 = rdt.First(d => d.Name.Contains("LockCount1"));
+            var docLc2 = rdt.First(d => d.Name.Contains("LockCount2"));
+            var docLc3 = rdt.First(d => d.Name.Contains("LockCount3"));
+
+            VerifyLockCount(rdt, docLc1.Uri, 1);
+            VerifyLockCount(rdt, docLc2.Uri, 1);
+            VerifyLockCount(rdt, docLc3.Uri, 1);
+
+            rdt.OpenDocument(docLc1.Uri, null);
+            VerifyLockCount(rdt, docLc1.Uri, 2);
+
+            rdt.OpenDocument(docLc3.Uri, null);
+            VerifyLockCount(rdt, docLc3.Uri, 2);
+
+            rdt.CloseDocument(docLc1.Uri);
+            VerifyLockCount(rdt, docLc1.Uri, 1);
+
+            rdt.CloseDocument(docLc3.Uri);
+            VerifyLockCount(rdt, docLc3.Uri, 1);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OpenCloseAnalysis() {
+            var uri = TestData.GetDefaultModuleUri();
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri.AbsolutePath);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(uri, "from LockCount1 import *");
+            var doc = rdt.GetDocument(uri);
+            await doc.GetAstAsync(CancellationToken.None);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+
+            var docLc1 = rdt.First(d => d.Name.Contains("LockCount1"));
+            var docLc2 = rdt.First(d => d.Name.Contains("LockCount2"));
+            var docLc3 = rdt.First(d => d.Name.Contains("LockCount3"));
+
+            var ds = GetDiagnosticsService();
+            PublishDiagnostics();
+            ds.Diagnostics.Count.Should().Be(4);
+            ds.Diagnostics[uri].Should().BeEmpty();
+            ds.Diagnostics[docLc1.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
+
+            rdt.OpenDocument(docLc1.Uri, null);
+            PublishDiagnostics();
+            ds.Diagnostics[uri].Should().BeEmpty();
+            ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
+
+            rdt.CloseDocument(docLc1.Uri);
+            PublishDiagnostics();
+            ds.Diagnostics[uri].Should().BeEmpty();
+            ds.Diagnostics[docLc1.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
+
+            rdt.OpenDocument(docLc1.Uri, null);
+            var analysis = await docLc1.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
+
+            PublishDiagnostics();
+            ds.Diagnostics[uri].Should().BeEmpty();
+            ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
+            ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
+            ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
+        }
+
+
+        private void VerifyLockCount(IRunningDocumentTable rdt, Uri uri, int expected) {
+            rdt.LockDocument(uri).Should().Be(expected + 1);
+            rdt.UnlockDocument(uri);
         }
     }
 }

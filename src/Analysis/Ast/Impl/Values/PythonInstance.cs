@@ -60,7 +60,11 @@ namespace Microsoft.Python.Analysis.Values {
             var iteratorFunc = Type.GetMember(@"__iter__") as IPythonFunctionType;
             var o = iteratorFunc?.Overloads.FirstOrDefault();
             var instance = o?.Call(ArgumentSet.Empty, Type);
-            return instance != null ? new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter) : null;
+            if (instance != null) { 
+                return new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter);
+            }
+
+            return new EmptyIterator(Type.DeclaringModule.Interpreter.UnknownType);
         }
 
         public bool Equals(IPythonInstance other) => Type?.Equals(other?.Type) == true;

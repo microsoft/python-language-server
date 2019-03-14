@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             .Where(n => n.IsModule)
             .Concat(_builtins.Children)
             .Select(n => n.FullModuleName);
-        
+
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
             for (var rootIndex = 0; rootIndex < _roots.Count; rootIndex++) {
                 if (TryFindModuleByName(rootIndex, fullModuleName, out var lastEdge) && TryCreateModuleImport(lastEdge, out var moduleImports)) {
@@ -237,6 +237,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return new ImportNotFound(fullName);
         }
 
+        public bool IsLibraryFile(string filePath)
+            => TryFindModule(filePath, out var edge, out _) && IsLibraryPath(edge.FirstEdge.End.Name);
+
         private bool TryGetSearchResults(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
             foreach (var edge in matchedEdges) {
                 if (TryCreateModuleImport(edge, out var moduleImport)) {
@@ -253,7 +256,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return false;
         }
 
-        private bool TryCreateModuleImport(Edge lastEdge, out ModuleImport moduleImport) { 
+        private bool TryCreateModuleImport(Edge lastEdge, out ModuleImport moduleImport) {
             var moduleNode = lastEdge.End;
             var rootNode = lastEdge.FirstEdge.End;
 
@@ -265,7 +268,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                     rootNode.Name,
                     initPyNode.ModulePath,
                     false,
-                    IsLibrary(rootNode.Name));
+                    IsLibraryPath(rootNode.Name));
 
                 return true;
             }
@@ -278,7 +281,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                     rootNode.Name,
                     moduleNode.ModulePath,
                     IsPythonCompiled(moduleNode.ModulePath),
-                    IsLibrary(rootNode.Name));
+                    IsLibraryPath(rootNode.Name));
 
                 return true;
             }
@@ -765,8 +768,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private static bool IsInitPyModule(in Node node, out Node initPyNode)
             => node.TryGetChild("__init__", out initPyNode) && initPyNode.IsModule;
 
-        private bool IsLibrary(string rootPath)
-            => _interpreterSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer);
+        private bool IsLibraryPath(string rootPath)
+            => !_userSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer)
+               && _interpreterSearchPaths.Except(_userSearchPaths).Contains(rootPath, StringExtensions.PathsStringComparer);
 
         private PathResolverSnapshot ReplaceNonRooted(Node nonRooted)
             => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _roots, _userRootsCount, nonRooted, _builtins, Version + 1);
