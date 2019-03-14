@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // "import fob.oar.baz" is handled as fob = import_module('fob')
             if (asNameExpression != null) {
                 Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
-            } else if (_variableModules.TryGetValue(importNames[0], out variableModule)) {
+            } else if (importNames.Count > 0 && _variableModules.TryGetValue(importNames[0], out variableModule)) {
                 var firstName = moduleImportExpression.Names[0];
                 Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
             }

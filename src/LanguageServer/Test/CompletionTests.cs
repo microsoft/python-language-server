@@ -864,6 +864,13 @@ pass";
         }
 
         [TestMethod, Priority(0)]
+        public async Task NoCompletionBadImportExpression() {
+            var analysis = await GetAnalysisAsync("import os,.");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            cs.GetCompletions(analysis, new SourceLocation(1, 12)); // Should not crash.
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NoCompletionInComment() {
 
             var analysis = await GetAnalysisAsync("x = 1 #str. more text");
