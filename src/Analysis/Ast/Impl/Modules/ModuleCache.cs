@@ -18,9 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
@@ -43,7 +41,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _log = services.GetService<ILogger>();
             _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.DatabasePath);
         }
-        
+
         public string GetCacheFilePath(string filePath) {
             if (string.IsNullOrEmpty(filePath) || !PathEqualityComparer.IsValidPath(ModuleCachePath)) {
                 if (!_loggedBadDbPath) {

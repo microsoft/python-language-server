@@ -34,23 +34,30 @@ using Microsoft.Python.Core.OS;
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
+        private IRunningDocumentTable _rdt;
         private IReadOnlyList<string> _searchPaths;
 
         public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
 
+        internal IBuiltinsPythonModule CreateBuiltinsModule() {
+            if (BuiltinsModule == null) {
+                // Initialize built-in
+                var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
+
+                ModuleCache = new ModuleCache(_interpreter, _services);
+                var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
+
+                var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
+                BuiltinsModule = b;
+                Modules[BuiltinModuleName] = new ModuleRef(b);
+            }
+            return BuiltinsModule;
+        }
+
         internal async Task InitializeAsync(CancellationToken cancellationToken = default) {
-            // Add names from search paths
             await ReloadAsync(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-
-            // Initialize built-in
-            var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
-            var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
-
-            var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
-            BuiltinsModule = b;
-            Modules[BuiltinModuleName] = new ModuleRef(b);
         }
 
         public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default) {
@@ -60,14 +67,17 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
             Debug.Assert(_searchPaths != null, "Should have search paths");
-            _searchPaths = _searchPaths != null
-                ? Configuration.SearchPaths != null
-                    ? _searchPaths.Concat(Configuration.SearchPaths).ToArray()
-                    : _searchPaths
-                : Array.Empty<string>();
+            _searchPaths = _searchPaths ?? Array.Empty<string>();
 
-            _log?.Log(TraceEventType.Information, "SearchPaths:");
+            _log?.Log(TraceEventType.Information, "Python search paths:");
             foreach (var s in _searchPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+
+            var configurationSearchPaths = Configuration.SearchPaths ?? Array.Empty<string>();
+
+            _log?.Log(TraceEventType.Information, "Configuration search paths:");
+            foreach (var s in configurationSearchPaths) {
                 _log?.Log(TraceEventType.Information, $"    {s}");
             }
             return _searchPaths;
@@ -80,11 +90,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
-            var rdt = _services.GetService<IRunningDocumentTable>();
             IPythonModule module;
             if (!string.IsNullOrEmpty(moduleImport.ModulePath) && Uri.TryCreate(moduleImport.ModulePath, UriKind.Absolute, out var uri)) {
-                module = rdt.GetDocument(uri);
+                module = GetRdt().GetDocument(uri);
                 if (module != null) {
+                    GetRdt().LockDocument(uri);
                     return module;
                 }
             }
@@ -117,7 +127,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     FilePath = moduleImport.ModulePath,
                     Stub = stub
                 };
-                module = rdt.AddModule(mco);
+                module = GetRdt().AddModule(mco);
             }
 
             return module;
@@ -176,9 +186,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
+            foreach (var m in Modules) {
+                GetRdt()?.UnlockDocument(m.Value.Value.Uri);
+            }
             Modules.Clear();
-
-            ModuleCache = new ModuleCache(_interpreter, _services);
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
             var addedRoots = new HashSet<string>();
@@ -187,7 +198,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(interpreterPaths));
 
-            addedRoots.UnionWith(SetUserSearchPaths(_interpreter.Configuration.SearchPaths));
+            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(interpreterPaths, StringExtensions.PathsStringComparer);
+            addedRoots.UnionWith(SetUserSearchPaths(userSearchPaths));
             ReloadModulePaths(addedRoots);
         }
 
@@ -213,5 +225,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             module = !string.IsNullOrEmpty(stubPath) ? new StubPythonModule(name, stubPath, false, _services) : null;
             return module != null;
         }
+
+        private IRunningDocumentTable GetRdt()
+            => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
     }
 }

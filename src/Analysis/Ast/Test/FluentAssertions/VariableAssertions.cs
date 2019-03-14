@@ -22,7 +22,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
-    internal sealed class VariableAssertions : ReferenceTypeAssertions<IVariable, VariableAssertions> {
+    public sealed class VariableAssertions : ReferenceTypeAssertions<IVariable, VariableAssertions> {
         public IMember Value { get; }
         public VariableAssertions(IVariable v) {
             Subject = v;
