@@ -345,4 +345,7 @@
   <data name="AnalysisProgress" xml:space="preserve">
     <value>Analyzing in background, {0} items left...</value>
   </data>
+  <data name="UndefinedVariable" xml:space="preserve">
+    <value>Undefined variable: '{0}'</value>
+  </data>
 </root>

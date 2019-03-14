@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,17 +14,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.Text;
 
-namespace Microsoft.Python.Analysis.Values {
-    internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModule module):
-            base(null, null, true) {
-            Module = module;
+namespace Microsoft.Python.Analysis {
+    public static class SourceSpanExtensions {
+        public static bool IsAfter(this SourceSpan span, SourceSpan other) {
+            if (!span.IsValid || !other.IsValid) {
+                return false;
+            }
+            return span.Start > other.Start;
         }
-
-        public IPythonModule Module { get; }
-        public override ScopeStatement Node => Module.Analysis?.Ast;
     }
 }

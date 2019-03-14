@@ -13,17 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
+using System;
 
-namespace Microsoft.Python.Analysis.Values {
-    internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModule module):
-            base(null, null, true) {
-            Module = module;
-        }
-
-        public IPythonModule Module { get; }
-        public override ScopeStatement Node => Module.Analysis?.Ast;
+namespace Microsoft.Python.Analysis.Analyzer {
+    [Flags]
+    public enum LookupOptions {
+        None = 0,
+        Local,
+        Nonlocal,
+        Global,
+        Builtins,
+        Normal = Local | Nonlocal | Global | Builtins
     }
 }

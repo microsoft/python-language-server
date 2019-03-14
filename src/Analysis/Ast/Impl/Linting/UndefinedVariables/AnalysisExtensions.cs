@@ -13,17 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
-namespace Microsoft.Python.Analysis.Values {
-    internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModule module):
-            base(null, null, true) {
-            Module = module;
+namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
+    internal static class AnalysisExtensions {
+        public static void ReportUndefinedVariable(this IDocumentAnalysis analysis, NameExpression node) {
+            var eval = analysis.ExpressionEvaluator;
+            eval.ReportDiagnostics(analysis.Document.Uri, new DiagnosticsEntry(
+                Resources.UndefinedVariable.FormatInvariant(node.Name),
+                eval.GetLocation(node).Span, ErrorCodes.UndefinedVariable, Severity.Warning));
         }
-
-        public IPythonModule Module { get; }
-        public override ScopeStatement Node => Module.Analysis?.Ast;
     }
 }

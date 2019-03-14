@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Linting;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -106,8 +107,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void InvalidateAnalysis(IPythonModule module) {
             lock (_syncObj) {
-                if (_analysisEntries.TryGetValue(new AnalysisModuleKey(module), out var entry)) {
+                var key = new AnalysisModuleKey(module);
+                if (_analysisEntries.TryGetValue(key, out var entry)) {
                     entry.Invalidate(_version + 1);
+                } else {
+                    _analysisEntries[key] = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
+                    _analysisCompleteEvent.Reset();
                 }
             }
         }
@@ -146,9 +151,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         return;
                     }
                 } else {
-                    _analysisCompleteEvent.Reset();
                     entry = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
                     _analysisEntries[key] = entry;
+                    _analysisCompleteEvent.Reset();
                 }
             }
 
@@ -358,11 +363,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ast.Walk(walker);
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Note that we do not set the new analysis here and rather let
-            // Python analyzer to call NotifyAnalysisComplete.
             walker.Complete();
             cancellationToken.ThrowIfCancellationRequested();
             var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
+
+            if (module.ModuleType == ModuleType.User) {
+                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+                if (optionsProvider?.Options?.LintingEnabled != false) {
+                    var linter = new LinterAggregator();
+                    linter.Lint(analysis, _services);
+                }
+            }
 
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);

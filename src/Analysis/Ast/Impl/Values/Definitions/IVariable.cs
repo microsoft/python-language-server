@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -24,13 +25,25 @@ namespace Microsoft.Python.Analysis.Values {
         /// Variable name.
         /// </summary>
         string Name { get; }
+
         /// <summary>
         /// Variable source.
         /// </summary>
         VariableSource Source { get; }
+
         /// <summary>
         /// Variable value.
         /// </summary>
-        IMember Value { get; set; }
+        IMember Value { get; }
+
+        /// <summary>
+        /// Assigns value to the variable.
+        /// </summary>
+        void Assign(IMember value, LocationInfo location);
+
+        /// <summary>
+        /// Provides list of all known assignment locations along the path of analysis.
+        /// </summary>
+        IReadOnlyList<LocationInfo> Locations { get; }
     }
 }

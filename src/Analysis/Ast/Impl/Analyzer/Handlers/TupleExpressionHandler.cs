@@ -13,8 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -24,29 +24,76 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         public TupleExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
         public void HandleTupleAssignment(TupleExpression lhs, Expression rhs, IMember value) {
-
             if (rhs is TupleExpression tex) {
-                var returnedExpressions = tex.Items.ToArray();
-                var names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
-                for (var i = 0; i < Math.Min(names.Length, returnedExpressions.Length); i++) {
-                    if (returnedExpressions[i] != null && !string.IsNullOrEmpty(names[i])) {
-                        var v = Eval.GetValueFromExpression(returnedExpressions[i]);
-                        Eval.DeclareVariable(names[i], v ?? Eval.UnknownType, VariableSource.Declaration, returnedExpressions[i]);
-                    }
+                AssignTuple(lhs, tex, Eval);
+            } else {
+                AssignTuple(lhs, value, Eval);
+            }
+        }
+
+        internal static void AssignTuple(TupleExpression lhs, TupleExpression rhs, ExpressionEval eval) {
+            var returnedExpressions = rhs.Items.ToArray();
+            var names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
+            for (var i = 0; i < names.Length; i++) {
+                Expression e = null;
+                if (returnedExpressions.Length > 0) {
+                    e = i < returnedExpressions.Length ? returnedExpressions[i] : returnedExpressions[returnedExpressions.Length - 1];
                 }
-                return;
+
+                if (e != null && !string.IsNullOrEmpty(names[i])) {
+                    var v = eval.GetValueFromExpression(e);
+                    eval.DeclareVariable(names[i], v ?? eval.UnknownType, VariableSource.Declaration, e);
+                }
+            }
+        }
+
+        internal static void AssignTuple(TupleExpression lhs, IMember value, ExpressionEval eval) {
+            // Tuple = 'tuple value' (such as from callable). Transfer values.
+            IMember[] values;
+            if (value is IPythonCollection seq) {
+                values = seq.Contents.ToArray();
+            } else {
+                values = new[] { value };
             }
 
-            // Tuple = 'tuple value' (such as from callable). Transfer values.
-            if (value is IPythonCollection seq) {
-                var types = seq.Contents.Select(c => c.GetPythonType()).ToArray();
-                var expressions = lhs.Items.OfType<NameExpression>().ToArray();
-                var names = expressions.Select(x => x.Name).ToArray();
-                for (var i = 0; i < Math.Min(names.Length, types.Length); i++) {
-                    if (names[i] != null && types[i] != null) {
-                        var instance = types[i].CreateInstance(null, Eval.GetLoc(expressions[i]), ArgumentSet.Empty);
-                        Eval.DeclareVariable(names[i], instance, VariableSource.Declaration, expressions[i]);
+            var typeEnum = new ValueEnumerator(values, eval.UnknownType);
+            AssignTuple(lhs, typeEnum, eval);
+        }
+
+        private static void AssignTuple(TupleExpression tex, ValueEnumerator valueEnum, ExpressionEval eval) {
+            foreach (var item in tex.Items) {
+                switch (item) {
+                    case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
+                        break;
+                    case TupleExpression te:
+                        AssignTuple(te, valueEnum, eval);
+                        break;
+                }
+            }
+        }
+
+        private class ValueEnumerator {
+            private readonly IMember[] _values;
+            private readonly IMember _filler;
+            private int _index;
+
+            public ValueEnumerator(IMember[] values, IMember filler) {
+                _values = values;
+                _filler = filler;
+            }
+
+            public IMember Next {
+                get {
+                    IMember t;
+                    if (_values.Length > 0) {
+                        t = _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
+                    } else {
+                        t = _filler;
                     }
+
+                    _index++;
+                    return t;
                 }
             }
         }

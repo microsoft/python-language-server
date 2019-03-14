@@ -2170,11 +2170,61 @@ namespace Microsoft.Python.Parsing.Tests {
                     CheckSuite(
                         CheckLambdaStmt(new[] { CheckParameter("x") }, One),
                         CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.List) }, One),
-                        CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.Dictionary) }, One)
+                        CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.Dictionary) }, One),
+                        CheckLambdaStmt(NoParameters, One)
                     )
                 );
             }
         }
+
+        [TestMethod, Priority(0)]
+        public void LambdaExprEmpty() {
+            foreach (var version in AllVersions) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseString("lambda", errors, version),
+                    CheckSuite(
+                        CheckLambdaStmt(NoParameters, CheckErrorExpr())
+                    )
+                );
+
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7))
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void LambdaErrors() {
+            foreach (var version in AllVersions) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("LambdaErrors.py", errors, version),
+                    CheckSuite(
+                        CheckLambdaStmt(new[] {
+                            CheckParameter(null, ParameterKind.Normal, null, null)
+                        }, CheckErrorExpr()),
+                        CheckLambdaStmt(new[] {
+                            CheckParameter("x"),
+                            CheckParameter("y")
+                        }, CheckErrorExpr()),
+                        CheckLambdaStmt(new[] {
+                            CheckParameter("x"),
+                        }, CheckErrorExpr())
+                    )
+                );
+
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(1, 7, 2, 1)),
+                    new ErrorResult("invalid parameter", new SourceSpan(1, 1, 1, 7)),
+                    new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7)),
+                    new ErrorResult("expected ':'", new SourceSpan(2, 12, 2, 12)),
+                    new ErrorResult("expected ':'", new SourceSpan(3, 10, 3, 10)),
+                    new ErrorResult("unexpected token '1'", new SourceSpan(3, 10, 3, 11))
+                });
+            }
+        }
+
 
         [TestMethod, Priority(0)]
         public void FuncDef() {

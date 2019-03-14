@@ -147,11 +147,12 @@ VALUE = 42";
             var root = TestData.GetTestSpecificRootUri().AbsolutePath;
             await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
 
             var doc1 = rdt.OpenDocument(uri1, content1);
             rdt.OpenDocument(uri2, content2);
             rdt.OpenDocument(uri3, content3);
-
+            await analyzer.WaitForCompleteAnalysisAsync();
             var analysis = await doc1.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
@@ -252,6 +253,7 @@ mod2.B.";
             await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
 
             var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
             var interpreter = Services.GetService<IPythonInterpreter>();
             interpreter.ModuleResolution.SetUserSearchPaths(new[] { folder1, folder2 });
 
@@ -260,6 +262,7 @@ mod2.B.";
 
             var mainPath = Path.Combine(root, "main.py");
             var doc = rdt.OpenDocument(new Uri(mainPath), mainContent);
+            await analyzer.WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);

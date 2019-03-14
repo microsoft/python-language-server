@@ -189,7 +189,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             foreach (var m in Modules) {
                 GetRdt()?.UnlockDocument(m.Value.Value.Uri);
             }
+            
+            // Preserve builtins, they don't need to be reloaded since interpreter does not change.
+            var builtins = Modules[BuiltinModuleName];
             Modules.Clear();
+            Modules[BuiltinModuleName] = builtins;
+
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
             var addedRoots = new HashSet<string>();

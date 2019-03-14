@@ -111,7 +111,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var analyzer = new PythonAnalyzer(_services);
             _services.AddService(analyzer);
 
-            _services.AddService(new RunningDocumentTable(@params.rootPath, _services));
+            _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
             // TODO: multi-root workspaces.

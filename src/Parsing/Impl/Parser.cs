@@ -2173,7 +2173,13 @@ namespace Microsoft.Python.Parsing {
             var func = ParseLambdaHelperStart(out var commaWhiteSpace, out var ateTerminator);
             var colonWhiteSpace = ateTerminator || PeekToken(TokenKind.EndOfFile) ? _tokenWhiteSpace : null;
 
-            var expr = ateTerminator ? ParseExpression() : Error(string.Empty);
+            Expression expr;
+            if (ateTerminator) {
+                expr = ParseExpression();
+            } else {
+                expr = Error(string.Empty);
+                ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.Start, "expected ':'");
+            }
             return ParseLambdaHelperEnd(func, expr, whitespace, colonWhiteSpace, commaWhiteSpace, ateTerminator);
         }
 
