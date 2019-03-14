@@ -61,13 +61,13 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="content">Document content</param>
         /// <param name="filePath">Optional file path, if different from the URI.</param>
         public IDocument OpenDocument(Uri uri, string content, string filePath = null) {
-            var justOpened = false;
+            bool justOpened;
             DocumentEntry entry;
             lock (_lock) {
                 entry = FindDocument(null, uri);
                 if (entry == null) {
-                    var resolver = _services.GetService<IPythonInterpreter>()?.ModuleResolution?.CurrentPathResolver;
-                    var moduleType = resolver?.IsLibraryFile(uri.ToAbsolutePath()) == true ? ModuleType.Library : ModuleType.User;
+                    var resolver = _services.GetService<IPythonInterpreter>().ModuleResolution.CurrentPathResolver;
+                    var moduleType = resolver.IsLibraryFile(uri.ToAbsolutePath()) ? ModuleType.Library : ModuleType.User;
                     var mco = new ModuleCreationOptions {
                         ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
                         Content = content,
@@ -120,8 +120,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public int LockDocument(Uri uri) {
             lock (_lock) {
                 if (_documentsByUri.TryGetValue(uri, out var entry)) {
-                    entry.LockCount++;
-                    return entry.LockCount;
+                    return ++entry.LockCount;
                 }
                 return -1;
             }
@@ -130,8 +129,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public int UnlockDocument(Uri uri) {
             lock (_lock) {
                 if (_documentsByUri.TryGetValue(uri, out var entry)) {
-                    entry.LockCount--;
-                    return entry.LockCount;
+                    return --entry.LockCount;
                 }
                 return -1;
             }

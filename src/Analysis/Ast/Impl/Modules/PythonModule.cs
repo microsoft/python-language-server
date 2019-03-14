@@ -29,6 +29,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Text;
@@ -53,7 +54,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
-        private readonly CancellationTokenSource _allProcessingCts = new CancellationTokenSource();
+        private readonly DisposeToken _disposeToken = DisposeToken.Create< PythonModule>();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly IDiagnosticsService _diagnosticsService;
 
@@ -242,9 +243,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         protected virtual void Dispose(bool disposing) {
             _diagnosticsService?.Remove(Uri);
-            _allProcessingCts.Cancel();
-            _allProcessingCts.Dispose();
-            Services.GetService<IPythonAnalyzer>().RemoveAnalysis(this);
+            _disposeToken.TryMarkDisposed();
         }
         #endregion
 
@@ -311,7 +310,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 _parseCts = new CancellationTokenSource();
 
                 _linkedParseCts?.Dispose();
-                _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, _parseCts.Token);
+                _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
 
                 _buffer.Update(changes);
                 Parse();
@@ -333,7 +332,7 @@ namespace Microsoft.Python.Analysis.Modules {
             _parseCts = new CancellationTokenSource();
 
             _linkedParseCts?.Dispose();
-            _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_allProcessingCts.Token, _parseCts.Token);
+            _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
 
             ContentState = State.Parsing;
             _parsingTask = Task.Run(() => Parse(_linkedParseCts.Token), _linkedParseCts.Token);
@@ -384,7 +383,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzing;
 
                 var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.EnqueueDocumentForAnalysis(this, ast, version, _allProcessingCts.Token);
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version, _disposeToken.CancellationToken);
             }
 
             lock (AnalysisLock) {
