@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(interpreter);
 
             TestLogger.Log(TraceEventType.Information, "Create RunningDocumentTable");
-            var documentTable = new RunningDocumentTable(root, sm);
+            var documentTable = new RunningDocumentTable(sm);
             sm.AddService(documentTable);
 
             return sm;

@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -949,12 +950,14 @@ os.path.
             var root = TestData.GetTestSpecificRootUri().AbsolutePath;
             await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
 
             rdt.OpenDocument(initPyPath, "answer = 42");
             var module = rdt.OpenDocument(module1Path, "from .");
             rdt.OpenDocument(module2Path, string.Empty);
             rdt.OpenDocument(module3Path, string.Empty);
 
+            await analyzer.WaitForCompleteAnalysisAsync();
             var analysis = await module.GetAnalysisAsync(-1);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
