@@ -230,14 +230,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     stopWatch.Stop();
 
                     if (_log != null) {
-                        if (walker.Remaining == 0) {
-                            if (remaining == 0) {
-                                _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms.");
-                            } else if (remaining < originalRemaining) {
-                                _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
-                            } else {
-                                _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been canceled after {stopWatch.Elapsed.TotalMilliseconds}.");
-                            }
+                        if (remaining == 0) {
+                            _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms.");
+                        } else if (remaining < originalRemaining) {
+                            _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
+                        } else {
+                            _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been canceled after {stopWatch.Elapsed.TotalMilliseconds}.");
                         }
                     }
                 }
