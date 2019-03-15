@@ -3202,10 +3202,10 @@ pass
                 }
                 // Span equality check is not looking at indexes, so we do that here
                 if (sink.Errors[i].Span.Start.Index != errors[i].Span.Start.Index) {
-                    Assert.Fail("Wrong span index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.Start.Index, errors[i].Span.Start.Index);
+                    Assert.Fail("Wrong start index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.Start.Index, errors[i].Span.Start.Index);
                 }
                 if (sink.Errors[i].Span.End.Index != errors[i].Span.End.Index) {
-                    Assert.Fail("Wrong span index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.End.Index, errors[i].Span.End.Index);
+                    Assert.Fail("Wrong end index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.End.Index, errors[i].Span.End.Index);
                 }
             }
             if (sink.Errors.Count > errors.Length) {
