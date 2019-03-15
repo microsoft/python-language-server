@@ -8,25 +8,32 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
     internal class FStringParser {
+
+        // Readonly parametrized
         private readonly IFStringBuilder _builder;
         private readonly string _fString;
         private readonly bool _isRaw;
         private readonly ErrorSink _errors;
         private readonly ParserOptions _options;
         private readonly PythonLanguageVersion _langVersion;
+        private readonly bool _verbatim;
+        private readonly SourceLocation _start;
+
+        // Nonparametric initialization
         private readonly StringBuilder _buffer = new StringBuilder();
+        private readonly Stack<char> _nestedParens = new Stack<char>();
+
+        // State fields
         private int _position = 0;
         private int _currentLineNumber;
-        private readonly bool _verbatim;
         private int _currentColNumber;
         private bool _hasErrors = false;
-        private readonly Stack<char> _nestedParens = new Stack<char>();
-        private readonly SourceLocation _start;
+
+        // Static fields
         private static readonly StringSpan DoubleOpen = new StringSpan("{{", 0, 2);
         private static readonly StringSpan DoubleClose = new StringSpan("}}", 0, 2);
         private static readonly StringSpan NotEqualStringSpan = new StringSpan("!=", 0, 2);
         private static readonly StringSpan BackslashN = new StringSpan("\\N", 0, 2);
-
         private static Dictionary<char, char> ParendsPairs = new Dictionary<char, char>() {
             { '(', ')' },
             { '{', '}' }
