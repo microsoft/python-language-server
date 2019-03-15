@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -33,8 +34,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// </summary>
     internal sealed partial class ExpressionEval: IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
-        private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
         private readonly object _lock = new object();
+        private List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -77,6 +78,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
         }
+
+        public void RemoveDiagnostics(DiagnosticSource source) 
+            => _diagnostics = _diagnostics.Where(d => d.Source != source).ToList();
 
         public IMember GetValueFromExpression(Expression expr)
             => GetValueFromExpression(expr, DefaultLookupOptions);

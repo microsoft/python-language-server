@@ -18,10 +18,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -69,20 +71,27 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 GetSetting(analysis, "disabled", Array.Empty<string>()));
 
             var linting = pythonSection["linting"];
-            var wasEnabled = _optionsProvider.Options.LintingEnabled;
-            _optionsProvider.Options.LintingEnabled = GetSetting(linting, "enabled", true);
+            HandleLintingOnOff(_services, GetSetting(linting, "enabled", true));
+        }
 
-            if (wasEnabled && !_optionsProvider.Options.LintingEnabled) {
+        internal static void HandleLintingOnOff(IServiceContainer services, bool linterEnabled) {
+            var optionsProvider = services.GetService<IAnalysisOptionsProvider>();
+            var ds = services.GetService<IDiagnosticsService>();
+
+            var wasEnabled = optionsProvider.Options.LintingEnabled;
+            optionsProvider.Options.LintingEnabled = linterEnabled;
+
+            if (wasEnabled && !linterEnabled) {
                 // Remove linter diagnostics
                 var currentDiagnostics = ds.Diagnostics;
-                foreach(var uri in currentDiagnostics.Keys) {
+                foreach (var uri in currentDiagnostics.Keys) {
                     var linterDiag = currentDiagnostics[uri].Where(d => d.Source == DiagnosticSource.Linter);
                     ds.Replace(uri, currentDiagnostics[uri].Except(linterDiag));
                 }
-            } else if(!wasEnabled && _optionsProvider.Options.LintingEnabled) {
+            } else if (!wasEnabled && linterEnabled) {
                 // Lint all user files in the RDT
-                var rdt = _services.GetService<IRunningDocumentTable>();
-                var analyzer = _services.GetService<IPythonAnalyzer>();
+                var rdt = services.GetService<IRunningDocumentTable>();
+                var analyzer = services.GetService<IPythonAnalyzer>();
                 foreach (var m in rdt.Where(m => m.ModuleType == ModuleType.User)) {
                     analyzer.LintModule(m);
                 }

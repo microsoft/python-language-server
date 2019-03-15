@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -168,17 +169,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            if (optionsProvider?.Options?.LintingEnabled == true) {
-                var beforeLinter = module.Analysis.Diagnostics.ToArray();
-
+            if (optionsProvider?.Options?.LintingEnabled != false) {
+                ((ExpressionEval)module.Analysis.ExpressionEvaluator).RemoveDiagnostics(DiagnosticSource.Linter);
                 var linter = new LinterAggregator();
                 linter.Lint(module.Analysis, _services);
 
                 var afterLinter = module.Analysis.Diagnostics.ToArray();
-                if(beforeLinter.Length != afterLinter.Length) {
-                    var ds = _services.GetService<IDiagnosticsService>();
-                    ds.Replace(module.Uri, afterLinter);
-                }
+                var ds = _services.GetService<IDiagnosticsService>();
+                ds.Replace(module.Uri, afterLinter);
             }
         }
 
