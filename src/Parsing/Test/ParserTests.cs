@@ -180,9 +180,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
             var initLoc = new SourceLocation(index, line, column);
 
-            ParseErrorsWithInitialLocation("AllErrors.py",
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V24,
-                Severity.Hint,
                 initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
@@ -249,9 +248,8 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
             );
 
-            ParseErrorsWithInitialLocation("AllErrors.py",
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V25,
-                Severity.Hint,
                 initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
@@ -318,9 +316,8 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
             );
 
-            ParseErrorsWithInitialLocation("AllErrors.py",
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V26,
-                Severity.Hint,
                 initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
@@ -382,9 +379,8 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
             );
 
-            ParseErrorsWithInitialLocation("AllErrors.py",
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V27,
-                Severity.Hint,
                 initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
@@ -447,9 +443,8 @@ namespace Microsoft.Python.Parsing.Tests {
             );
 
             foreach (var version in V30_V32Versions) {
-                ParseErrorsWithInitialLocation("AllErrors.py",
+                ParseErrorsWithOffset("AllErrors.py",
                     version,
-                    Severity.Hint,
                     initLoc,
                     new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
@@ -515,9 +510,8 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             foreach (var version in V33AndV34) {
-                ParseErrorsWithInitialLocation("AllErrors.py",
+                ParseErrorsWithOffset("AllErrors.py",
                     version,
-                    Severity.Hint,
                     initLoc,
                     new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
@@ -580,9 +574,8 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             foreach (var version in V35AndUp) {
-                ParseErrorsWithInitialLocation("AllErrors.py",
+                ParseErrorsWithOffset("AllErrors.py",
                     version,
-                    Severity.Hint,
                     initLoc,
                     new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
@@ -642,54 +635,12 @@ namespace Microsoft.Python.Parsing.Tests {
             }
         }
 
-        private void ParseErrorsWithInitialLocation(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, SourceLocation initialLocation,
+        private void ParseErrorsWithOffset(string filename, PythonLanguageVersion version, SourceLocation initialLocation,
             params ErrorInfo[] errors) {
-            var sink = new CollectingErrorSink();
-
-            var src = TestData.GetPath("TestData", "Grammar", filename);
-            using (var reader = new StreamReader(src, true)) {
-                var parser = Parser.CreateParser(reader, version, new ParserOptions() {
-                    ErrorSink = sink,
-                    IndentationInconsistencySeverity = indentationInconsistencySeverity,
-                    InitialSourceLocation = initialLocation
-                });
-                parser.ParseFile();
-            }
-
-            var foundErrors = new StringBuilder();
-            for (var i = 0; i < sink.Errors.Count; i++) {
-                foundErrors.AppendFormat("{0}{1}{2}",
-                    FormatError(sink.Errors[i]),
-                    i == sink.Errors.Count - 1 ? string.Empty : ",",
-                    Environment.NewLine
-                );
-            }
-
-            var finalErrors = foundErrors.ToString();
-            Console.WriteLine(finalErrors);
-            errors = errors.Select(e => AddDisplacement(initialLocation, e)).ToArray();
-
-            for (var i = 0; i < errors.Length; i++) {
-                if (sink.Errors.Count <= i) {
-                    Assert.Fail("No error {0}: {1}", i, FormatError(errors[i]));
-                }
-                if (sink.Errors[i].Message != errors[i].Message) {
-                    Assert.Fail("Wrong msg for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
-                }
-                if (sink.Errors[i].Span != errors[i].Span) {
-                    Assert.Fail("Wrong span for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
-                }
-                // Span equality check is not looking at indexes, so we do that here
-                if (sink.Errors[i].Span.Start.Index != errors[i].Span.Start.Index) {
-                    Assert.Fail("Wrong span index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.Start.Index, errors[i].Span.Start.Index);
-                }
-                if (sink.Errors[i].Span.End.Index != errors[i].Span.End.Index) {
-                    Assert.Fail("Wrong span index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.End.Index, errors[i].Span.End.Index);
-                }
-            }
-            if (sink.Errors.Count > errors.Length) {
-                Assert.Fail("Unexpected errors occurred");
-            }
+            ParseErrors(filename, version, new ParserOptions() {
+                IndentationInconsistencySeverity = Severity.Hint,
+                InitialSourceLocation = initialLocation
+            }, errors.Select(e => AddDisplacement(initialLocation, e)).ToArray());
         }
 
         private ErrorInfo AddDisplacement(SourceLocation initLoc, ErrorInfo error) {
@@ -3217,8 +3168,15 @@ pass
         }
 
         private void ParseErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, params ErrorInfo[] errors) {
+            ParseErrors(filename, version, new ParserOptions() {
+                IndentationInconsistencySeverity = indentationInconsistencySeverity,
+            }, errors);
+        }
+
+        private void ParseErrors(string filename, PythonLanguageVersion version, ParserOptions options, params ErrorInfo[] errors) {
             var sink = new CollectingErrorSink();
-            ParseFile(filename, sink, version, indentationInconsistencySeverity);
+            options.ErrorSink = sink;
+            ParseFile(filename, version, options);
 
             var foundErrors = new StringBuilder();
             for (var i = 0; i < sink.Errors.Count; i++) {
@@ -3242,6 +3200,13 @@ pass
                 if (sink.Errors[i].Span != errors[i].Span) {
                     Assert.Fail("Wrong span for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
                 }
+                // Span equality check is not looking at indexes, so we do that here
+                if (sink.Errors[i].Span.Start.Index != errors[i].Span.Start.Index) {
+                    Assert.Fail("Wrong span index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.Start.Index, errors[i].Span.Start.Index);
+                }
+                if (sink.Errors[i].Span.End.Index != errors[i].Span.End.Index) {
+                    Assert.Fail("Wrong span index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.End.Index, errors[i].Span.End.Index);
+                }
             }
             if (sink.Errors.Count > errors.Length) {
                 Assert.Fail("Unexpected errors occurred");
@@ -3262,11 +3227,15 @@ pass
         }
 
         private static PythonAst ParseFile(string filename, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
+            return ParseFile(filename, version, new ParserOptions() {
+                ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity,
+            });
+        }
+
+        private static PythonAst ParseFile(string filename, PythonLanguageVersion version, ParserOptions options) {
             var src = TestData.GetPath("TestData", "Grammar", filename);
             using (var reader = new StreamReader(src, true)) {
-                var parser = Parser.CreateParser(reader, version, new ParserOptions() {
-                    ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity,
-                });
+                var parser = Parser.CreateParser(reader, version, options);
                 return parser.ParseFile();
             }
         }
