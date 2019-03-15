@@ -27,6 +27,11 @@ namespace Microsoft.Python.Parsing {
         private static readonly StringSpan NotEqualStringSpan = new StringSpan("!=", 0, 2);
         private static readonly StringSpan BackslashN = new StringSpan("\\N", 0, 2);
 
+        private static Dictionary<char, char> ParendsPairs = new Dictionary<char, char>() {
+            { '(', ')' },
+            { '{', '}' }
+        };
+
         public FStringParser(IFStringBuilder builder, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
 
@@ -304,18 +309,22 @@ namespace Microsoft.Python.Parsing {
                 /* Start looking for the end of the string. */
             } else if (ch == '#') {
                 ReportSyntaxError(Resources.NumberSignFStringExpressionErrorMsg);
-            } else if (ch == ')' || ch == '}') {
+            } else if ((ch == ')' || ch == '}') && nestedParens.Count > 0) {
                 char opening = nestedParens.Pop();
-                if (!((opening == '{' && ch == '}') ||
-                    (opening == '(' && ch == ')'))) {
+                if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
+            } else if ((ch == ')' || ch == '}') && nestedParens.Count == 0) {
+                ReportSyntaxError(Resources.UnmatchedFStringErrorMsg.FormatInvariant(ch));
             } else if (ch == '(' || ch == '{') {
                 nestedParens.Push(ch);
             }
 
             _buffer.Append(NextChar());
         }
+
+        private bool IsOpeningOf(char opening, char ch)
+            => ParendsPairs.TryGetValue(opening, out var closing) ? closing == ch : false;
 
         private void HandleInsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(quoteChar.HasValue);
@@ -372,7 +381,7 @@ namespace Microsoft.Python.Parsing {
             NextChar();
 
             if (ch != nextChar) {
-                ReportSyntaxError(Resources.ExpectingCharButFoundFStringErrorMsg.FormatInvariant(nextChar, CurrentChar()));
+                ReportSyntaxError(Resources.ExpectingCharButFoundFStringErrorMsg.FormatInvariant(nextChar, ch));
                 return false;
             }
             return true;
