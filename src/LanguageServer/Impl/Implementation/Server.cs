@@ -117,7 +117,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             // TODO: multi-root workspaces.
             var rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : PathUtils.NormalizePath(@params.rootPath);
             var configuration = InterpreterConfiguration.FromDictionary(@params.initializationOptions.interpreter.properties);
-            configuration.SearchPaths = @params.initializationOptions.searchPaths;
+            configuration.SearchPaths = @params.initializationOptions.searchPaths.Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany().ToList();
             configuration.TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault();
 
             _interpreter = await PythonInterpreter.CreateAsync(configuration, rootDir, _services, cancellationToken);
