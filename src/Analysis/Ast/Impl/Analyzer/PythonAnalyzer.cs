@@ -19,7 +19,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Linting;
@@ -41,24 +40,25 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly object _syncObj = new object();
         private readonly AsyncManualResetEvent _analysisCompleteEvent = new AsyncManualResetEvent();
         private readonly AsyncAutoResetEvent _analysisRunningEvent = new AsyncAutoResetEvent();
-        private readonly ProgressReporter _progress;
+        private readonly AnalysisQueueTracker _queueTracker;
         private readonly ILogger _log;
         private readonly int _maxTaskRunning = Environment.ProcessorCount * 3;
         private int _runningTasks;
         private int _version;
-        private int _queueLength;
 
         public PythonAnalyzer(IServiceManager services) {
             _services = services;
             _log = services.GetService<ILogger>();
-            _progress = new ProgressReporter(services.GetService<IProgressService>());
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
             _analysisCompleteEvent.Set();
             _analysisRunningEvent.Set();
+
+            var progress = new ProgressReporter(services.GetService<IProgressService>());
+            _queueTracker = new AnalysisQueueTracker(progress);
         }
 
         public void Dispose() {
-            _progress.Dispose();
+            _queueTracker.Dispose();
             _disposeToken.TryMarkDisposed();
         }
 
@@ -179,7 +179,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _version = walker.Version;
                 }
 
-                _progress?.ReportRemaining(++_queueLength);
                 if (walker.MissingKeys.Count > 0) {
                     LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
                 }
@@ -189,6 +188,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         return;
                     }
                 }
+
+                _queueTracker.Add(entry.Module.FilePath);
 
                 var waitForAnalysisTask = _analysisRunningEvent.WaitAsync(cancellationToken);
                 if (!waitForAnalysisTask.IsCompleted) {
@@ -210,6 +211,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (version > walker.Version) {
                     if (notAnalyzed < _maxTaskRunning) {
                         _analysisRunningEvent.Set();
+                        _queueTracker.Remove(entry.Module.FilePath);
                         return;
                     }
                 }
@@ -222,12 +224,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var remaining = originalRemaining;
                 try {
                     _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has started.");
-                    _progress?.ReportRemaining(remaining);
                     remaining = await AnalyzeAffectedEntriesAsync(walker, stopWatch, analysisToken);
                 } finally {
                     _analysisRunningEvent.Set();
                     stopWatch.Stop();
-                    _progress?.ReportRemaining(--_queueLength);
 
                     if (_log != null) {
                         if (walker.Remaining == 0) {
@@ -284,7 +284,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             foreach (var (moduleName, _, isTypeshed) in missingKeys) {
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
-                moduleResolution.GetOrLoadModule(moduleName);
+                var m = moduleResolution.GetOrLoadModule(moduleName);
+                _queueTracker.Add(m.FilePath);
             }
         }
 
@@ -297,15 +298,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
+            IPythonModule module = null;
             try {
                 var entry = node.Value;
-                if (!entry.IsValidVersion(version, out var module, out var ast)) {
+                if (!entry.IsValidVersion(version, out module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     node.Skip();
                     return;
                 }
-
-                _progress.ReportRemaining(++_queueLength);
+                _queueTracker.Add(entry.Module.FilePath);
 
                 var startTime = stopWatch.Elapsed;
                 AnalyzeEntry(entry, module, ast, version, cancellationToken);
@@ -315,15 +316,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             } catch (OperationCanceledException oce) {
                 node.Value.TryCancel(oce, version);
                 node.Skip();
-                var module = node.Value.Module;
+                module = node.Value.Module;
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
             } catch (Exception exception) {
-                var module = node.Value.Module;
+                module = node.Value.Module;
                 node.Value.TrySetException(exception, version);
                 node.Commit();
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
-                _progress.ReportRemaining(--_queueLength);
+                if (module != null) {
+                    _queueTracker.Remove(module.FilePath);
+                }
                 Interlocked.Decrement(ref _runningTasks);
             }
         }
@@ -338,6 +341,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     return;
                 }
+                _queueTracker.Add(entry.Module.FilePath);
 
                 var startTime = stopWatch.Elapsed;
                 AnalyzeEntry(entry, module, ast, version, cancellationToken);
@@ -352,6 +356,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 entry.TrySetException(exception, version);
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
+                _queueTracker.Remove(entry.Module.FilePath);
                 stopWatch.Stop();
                 Interlocked.Decrement(ref _runningTasks);
             }
@@ -378,6 +383,32 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
+        }
+
+        private class AnalysisQueueTracker : IDisposable {
+            private readonly HashSet<string> _analysisQueue = new HashSet<string>();
+            private readonly ProgressReporter _progress;
+            private readonly object _lock = new object();
+
+            public AnalysisQueueTracker(ProgressReporter progress) {
+                _progress = progress;
+            }
+
+            public void Dispose() => _progress.Dispose();
+
+            public void Add(string path) {
+                lock (_lock) {
+                    _analysisQueue.Add(path);
+                    _progress.ReportRemaining(_analysisQueue.Count);
+                }
+            }
+
+            public void Remove(string path) {
+                lock (_lock) {
+                    _analysisQueue.Remove(path);
+                    _progress.ReportRemaining(_analysisQueue.Count);
+                }
+            }
         }
     }
 
