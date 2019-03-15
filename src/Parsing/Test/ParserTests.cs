@@ -119,8 +119,10 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("f-string: lambda must be inside parentheses", 192, 27, 4, 200, 27, 12),
                 new ErrorInfo("f-string: expecting '}'", 214, 29, 6, 215, 29, 7),
                 new ErrorInfo("f-string: invalid conversion character: expected 's', 'r', or 'a'", 224, 31, 6, 225, 31, 7),
-                new ErrorInfo("f-string: invalid conversion character: k expected 's', 'r', or 'a'", 235, 33, 6, 236, 33, 7),
-                new ErrorInfo("f-string: unmatched ')'", 245, 35, 4, 246, 35, 5)
+                new ErrorInfo("f-string: invalid conversion character: k expected 's', 'r', or 'a'", 236, 33, 7, 237, 33, 8),
+                new ErrorInfo("f-string: unmatched ')'", 245, 35, 4, 246, 35, 5),
+                new ErrorInfo("f-string: unmatched ')'", 257, 37, 6, 258, 37, 7),
+                new ErrorInfo("f-string: closing parenthesis '}' does not match opening parenthesis '('", 269, 39, 6, 270, 39, 7)
             );
         }
 

@@ -65,11 +65,9 @@ namespace Microsoft.Python.Parsing {
                         while (!EndOfFString() && CurrentChar() != '}') {
                             _buffer.Append(NextChar());
                         }
-                        if (EndOfFString()) {
-                            ReportSyntaxError(Resources.ExpectingCharFStringErrorMsg.FormatInvariant('}'));
+                        if (Read('}')) {
+                            _buffer.Append('}');
                         }
-                        Read('}');
-                        _buffer.Append('}');
                     } else {
                         _buffer.Append(NextChar());
                     }
@@ -201,6 +199,7 @@ namespace Microsoft.Python.Parsing {
                 } else if (conversion == '}' || conversion == ':') {
                     ReportSyntaxError(Resources.InvalidConversionCharacterFStringErrorMsg);
                 } else {
+                    NextChar();
                     ReportSyntaxError(Resources.InvalidConversionCharacterExpectedFStringErrorMsg.FormatInvariant(conversion));
                 }
             }
@@ -230,7 +229,7 @@ namespace Microsoft.Python.Parsing {
                 if (quoteChar.HasValue) {
                     HandleInsideString(ref quoteChar, ref stringType);
                 } else {
-                    HandleInnerExprOutsideString(_nestedParens, ref quoteChar, ref stringType);
+                    HandleInnerExprOutsideString(ref quoteChar, ref stringType);
                 }
             }
         }
@@ -254,11 +253,11 @@ namespace Microsoft.Python.Parsing {
                     /* We're inside a string. See if we're at the end. */
                     HandleInsideString(ref quoteChar, ref stringType);
                 } else {
-                    HandleFormatSpecOutsideString(_nestedParens, ref quoteChar, ref stringType);
+                    HandleFormatSpecOutsideString(ref quoteChar, ref stringType);
                 }
             }
         }
-        private void HandleFormatSpecOutsideString(Stack<char> nestedParens, ref char? quoteChar, ref int stringType) {
+        private void HandleFormatSpecOutsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(!quoteChar.HasValue);
 
             var ch = CurrentChar();
@@ -276,20 +275,21 @@ namespace Microsoft.Python.Parsing {
                     stringType = 1;
                 }
                 /* Start looking for the end of the string. */
-            } else if (ch == ')' || ch == '}') {
-                char opening = nestedParens.Pop();
-                if (!((opening == '{' && ch == '}') ||
-                    (opening == '(' && ch == ')'))) {
+            } else if ((ch == ')' || ch == '}') && _nestedParens.Count > 0) {
+                char opening = _nestedParens.Pop();
+                if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
+            } else if ((ch == ')' || ch == '}') && _nestedParens.Count == 0) {
+                ReportSyntaxError(Resources.UnmatchedFStringErrorMsg.FormatInvariant(ch));
             } else if (ch == '(' || ch == '{') {
-                nestedParens.Push(ch);
+                _nestedParens.Push(ch);
             }
 
             _buffer.Append(NextChar());
         }
 
-        private void HandleInnerExprOutsideString(Stack<char> nestedParens, ref char? quoteChar, ref int stringType) {
+        private void HandleInnerExprOutsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(!quoteChar.HasValue);
 
             var ch = CurrentChar();
@@ -309,15 +309,15 @@ namespace Microsoft.Python.Parsing {
                 /* Start looking for the end of the string. */
             } else if (ch == '#') {
                 ReportSyntaxError(Resources.NumberSignFStringExpressionErrorMsg);
-            } else if ((ch == ')' || ch == '}') && nestedParens.Count > 0) {
-                char opening = nestedParens.Pop();
+            } else if ((ch == ')' || ch == '}') && _nestedParens.Count > 0) {
+                char opening = _nestedParens.Pop();
                 if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
-            } else if ((ch == ')' || ch == '}') && nestedParens.Count == 0) {
+            } else if ((ch == ')' || ch == '}') && _nestedParens.Count == 0) {
                 ReportSyntaxError(Resources.UnmatchedFStringErrorMsg.FormatInvariant(ch));
             } else if (ch == '(' || ch == '{') {
-                nestedParens.Push(ch);
+                _nestedParens.Push(ch);
             }
 
             _buffer.Append(NextChar());
@@ -425,13 +425,10 @@ namespace Microsoft.Python.Parsing {
         private bool EndOfFString() => _position >= _fString.Length;
 
         private void ReportSyntaxError(string message) {
-            if (!_hasErrors) {
-                _hasErrors = true;
-
-                var span = new SourceSpan(new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber),
-                new SourceLocation(_start.Index + _position + 1, _currentLineNumber, _currentColNumber + 1));
-                _errors.Add(message, span, ErrorCodes.SyntaxError, Severity.Error);
-            }
+            _hasErrors = true;
+            var span = new SourceSpan(new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber),
+            new SourceLocation(_start.Index + _position + 1, _currentLineNumber, _currentColNumber + 1));
+            _errors.Add(message, span, ErrorCodes.SyntaxError, Severity.Error);
         }
 
         private ErrorExpression Error(int startPos, string verbatimImage = null, Expression preceding = null) {
