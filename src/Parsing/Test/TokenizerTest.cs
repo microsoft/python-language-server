@@ -37,13 +37,12 @@ namespace Microsoft.Python.Parsing.Tests {
             }
         }
 
-        private Tokenizer MakeTokenizer(PythonLanguageVersion version, TokenizerOptions optionSet, string text, 
+        private Tokenizer MakeTokenizer(PythonLanguageVersion version, TokenizerOptions optionSet, string text,
             SourceLocation? initialSourceLocation = null) {
             var tokenizer = new Tokenizer(version, options: optionSet);
 
             tokenizer.Initialize(null, new StringReader(text), initialSourceLocation ?? SourceLocation.MinValue);
             return tokenizer;
         }
-
     }
 }
