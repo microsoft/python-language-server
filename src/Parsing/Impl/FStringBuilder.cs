@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
-    public interface IFStringBuilder {
+    internal interface IFStringBuilder {
         Expression Build();
         void Append(string s);
         void Append(AsciiString s);
@@ -12,7 +12,7 @@ namespace Microsoft.Python.Parsing {
         void AddUnparsedFString(string s);
     }
 
-    public abstract class FStringBuilder : IFStringBuilder {
+    internal abstract class FStringBuilder : IFStringBuilder {
         protected readonly List<Node> _children = new List<Node>();
         protected readonly StringBuilder _unparsedFStringBuilder = new StringBuilder();
 
@@ -42,13 +42,13 @@ namespace Microsoft.Python.Parsing {
         }
     }
 
-    public class FormatSpecifierBuilder : FStringBuilder {
+    internal class FormatSpecifierBuilder : FStringBuilder {
         public override Expression Build() {
             return new FormatSpecifier(_children.ToArray(), _unparsedFStringBuilder.ToString());
         }
     }
 
-    public class RootFStringBuilder : FStringBuilder {
+    internal class RootFStringBuilder : FStringBuilder {
         private readonly string _openQuotes;
 
         public RootFStringBuilder(string openQuotes) {

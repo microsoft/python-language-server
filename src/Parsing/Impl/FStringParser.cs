@@ -7,7 +7,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
-    public class FStringParser {
+    internal class FStringParser {
         private readonly IFStringBuilder _builder;
         private readonly string _fString;
         private readonly bool _isRaw;
@@ -32,7 +32,7 @@ namespace Microsoft.Python.Parsing {
             { '{', '}' }
         };
 
-        public FStringParser(IFStringBuilder builder, string fString, bool isRaw,
+        internal FStringParser(IFStringBuilder builder, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
 
             _fString = fString;
