@@ -200,7 +200,8 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                     e.Message,
                     e.SourceSpan,
                     e.ErrorCode,
-                    DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity))
+                    DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity),
+                    e.Source)
                 );
 
         private void ConnectToRdt() {

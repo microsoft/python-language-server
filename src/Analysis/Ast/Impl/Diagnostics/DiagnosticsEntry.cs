@@ -18,11 +18,12 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Diagnostics {
     public sealed class DiagnosticsEntry {
-        public DiagnosticsEntry(string message, SourceSpan span, string errorCode, Severity severity) {
+        public DiagnosticsEntry(string message, SourceSpan span, string errorCode, Severity severity, DiagnosticSource source) {
             Message = message;
             SourceSpan = span;
             ErrorCode = errorCode;
             Severity = severity;
+            Source = source;
         }
 
         /// <summary>
@@ -44,5 +45,10 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         /// Issue severity.
         /// </summary>
         public Severity Severity { get; }
+
+        /// <summary>
+        /// Subsystem that produced the diagnostics.
+        /// </summary>
+        public DiagnosticSource Source { get; }
     }
 }

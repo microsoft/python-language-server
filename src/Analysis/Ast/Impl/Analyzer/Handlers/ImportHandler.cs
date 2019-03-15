@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return TryGetPackageFromImport(packageImport, parent, out variableModule);
                 case RelativeImportBeyondTopLevel importBeyondTopLevel:
                     var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
-                    Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(message, location.Span, ErrorCodes.UnresolvedImport, Severity.Warning));
+                    Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(message, location.Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
                     variableModule = default;
                     return false;
                 case ImportNotFound importNotFound:
@@ -165,7 +165,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (!string.IsNullOrEmpty(variableName)) {
                 Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
             }
-            Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), location.Span, ErrorCodes.UnresolvedImport, Severity.Warning));
+            Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), location.Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in string fullName, in PythonVariableModule parentModule, in string memberName) {

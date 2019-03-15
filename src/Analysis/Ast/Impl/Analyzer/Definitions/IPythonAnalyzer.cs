@@ -47,5 +47,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Get most recent analysis for module. If after specified time analysis isn't available, returns previously calculated analysis.
         /// </summary>
         Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime = 200, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Runs linters on the modules
+        /// </summary>
+        void LintModule(IPythonModule module);
     }
 }

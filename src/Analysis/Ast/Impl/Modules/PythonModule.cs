@@ -401,7 +401,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity)
-                => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity));
+                => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity, DiagnosticSource.Parser));
         }
         #endregion
 
