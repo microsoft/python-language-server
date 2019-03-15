@@ -8,7 +8,6 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
     internal class FStringParser {
-
         // Readonly parametrized
         private readonly IFStringBuilder _builder;
         private readonly string _fString;
@@ -99,6 +98,7 @@ namespace Microsoft.Python.Parsing {
             _builder.Append(ParseFStringExpression());
         }
 
+        // Inspired on CPython's f-string parsing implementation
         private Node ParseFStringExpression() {
             Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
 
