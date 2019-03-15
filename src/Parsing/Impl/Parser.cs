@@ -3285,7 +3285,9 @@ namespace Microsoft.Python.Parsing {
             var openQuotes = readTokens.Where(t => t.Token.Kind == TokenKind.FString)
                 .Select(t => ((FStringToken)t.Token).OpenQuotes).DefaultIfEmpty("'").First();
 
-            IFStringBuilder builder = new RootFStringBuilder(openQuotes);
+            List<Node> fStringChildren = new List<Node>();
+            StringBuilder unparsedFStringBuilder = new StringBuilder();
+
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Kind == TokenKind.FString) {
                     var fToken = (FStringToken)tokenWithSpan.Token;
@@ -3301,17 +3303,22 @@ namespace Microsoft.Python.Parsing {
                             column: sourceLoc.Column + offset + fToken.OpenQuotes.Length
                         )
                     };
-                    new FStringParser(builder, fToken.Text, fToken.IsRaw, options, _langVersion).Parse();
-                    builder.AddUnparsedFString(fToken.Text);
+                    new FStringParser(fStringChildren, fToken.Text, fToken.IsRaw, options, _langVersion).Parse();
+                    unparsedFStringBuilder.Append(fToken.Text);
                 } else if (tokenWithSpan.Token.Value is string str) {
-                    builder.Append(str);
+                    var expr = new ConstantExpression(str);
+                    expr.SetLoc(tokenWithSpan.Span.Start, tokenWithSpan.Span.End);
+                    fStringChildren.Append(expr);
+                    unparsedFStringBuilder.Append(str);
                 } else if (tokenWithSpan.Token.Value is AsciiString asciiString) {
-                    builder.Append(asciiString.String);
+                    var expr = new ConstantExpression(asciiString.String);
+                    expr.SetLoc(tokenWithSpan.Span.Start, tokenWithSpan.Span.End);
+                    fStringChildren.Append(expr);
+                    unparsedFStringBuilder.Append(asciiString.String);
                 }
             }
 
-
-            return builder.Build();
+            return new FString(fStringChildren.ToArray(), openQuotes, unparsedFStringBuilder.ToString());
         }
 
         internal static string MakeString(IList<byte> bytes) {

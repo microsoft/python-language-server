@@ -9,7 +9,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Parsing {
     internal class FStringParser {
         // Readonly parametrized
-        private readonly IFStringBuilder _builder;
+        private readonly List<Node> _fStringChildren;
         private readonly string _fString;
         private readonly bool _isRaw;
         private readonly ErrorSink _errors;
@@ -38,12 +38,12 @@ namespace Microsoft.Python.Parsing {
             { '{', '}' }
         };
 
-        internal FStringParser(IFStringBuilder builder, string fString, bool isRaw,
+        internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
 
             _fString = fString;
             _isRaw = isRaw;
-            _builder = builder;
+            _fStringChildren = fStringChildren;
             _errors = options.ErrorSink ?? ErrorSink.Null;
             _options = options;
             _langVersion = langVersion;
@@ -95,7 +95,7 @@ namespace Microsoft.Python.Parsing {
             => _fString.Slice(_position, span.Length).Equals(span);
 
         private void ParseInnerExpression() {
-            _builder.Append(ParseFStringExpression());
+            _fStringChildren.Add(ParseFStringExpression());
         }
 
         // Inspired on CPython's f-string parsing implementation
@@ -170,7 +170,6 @@ namespace Microsoft.Python.Parsing {
 
                 // If we got to the end, there will be an error when we try to read '}'
                 if (!EndOfFString()) {
-                    var formatSpecifierBuilder = new FormatSpecifierBuilder();
                     var options = _options.Clone();
                     options.InitialSourceLocation = new SourceLocation(
                         StartIndex() + position,
@@ -179,9 +178,9 @@ namespace Microsoft.Python.Parsing {
                     );
                     var formatStr = _buffer.ToString();
                     _buffer.Clear();
-                    new FStringParser(formatSpecifierBuilder, formatStr, _isRaw, options, _langVersion).Parse();
-                    formatSpecifierBuilder.AddUnparsedFString(formatStr);
-                    formatSpecifier = formatSpecifierBuilder.Build();
+                    var formatSpecifierChildren = new List<Node>();
+                    new FStringParser(formatSpecifierChildren, formatStr, _isRaw, options, _langVersion).Parse();
+                    formatSpecifier = new FormatSpecifier(formatSpecifierChildren.ToArray(), formatStr);
                     formatSpecifier.SetLoc(new IndexSpan(StartIndex() + position, formatStr.Length));
                 }
             }
@@ -396,6 +395,7 @@ namespace Microsoft.Python.Parsing {
                 return;
             }
             var s = _buffer.ToString();
+            _buffer.Clear();
             string contents = "";
             try {
                 contents = LiteralParser.ParseString(s.ToCharArray(),
@@ -404,9 +404,10 @@ namespace Microsoft.Python.Parsing {
                 var span = new SourceSpan(bufferStartLoc, CurrentLocation());
                 _errors.Add(e.Message, span, ErrorCodes.SyntaxError, Severity.Error);
             } finally {
-                _builder.Append(contents);
+                var expr = new ConstantExpression(contents);
+                expr.SetLoc(StartIndex() + _position - s.Length, StartIndex() + _position);
+                _fStringChildren.Add(expr);
             }
-            _buffer.Clear();
         }
 
         private char NextChar() {
