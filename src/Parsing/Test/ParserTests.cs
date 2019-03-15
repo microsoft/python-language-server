@@ -356,6 +356,25 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckCallExpression(
+                                        CheckParenExpr(
+                                            CheckLambda(
+                                                new[] { CheckParameter("x") },
+                                                CheckBinaryExpression(
+                                                    CheckNameExpr("x"),
+                                                    PythonOperator.Add,
+                                                    One
+                                                )
+                                            )
+                                        ),
+                                        PositionalArg(One)
+                                    )
+                                )
+                            )
                         )
                     )
                 );
