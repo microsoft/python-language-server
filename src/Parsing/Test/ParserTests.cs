@@ -3228,7 +3228,8 @@ pass
 
         private static PythonAst ParseFile(string filename, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
             return ParseFile(filename, version, new ParserOptions() {
-                ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity,
+                ErrorSink = errorSink,
+                IndentationInconsistencySeverity = indentationInconsistencySeverity,
             });
         }
 
