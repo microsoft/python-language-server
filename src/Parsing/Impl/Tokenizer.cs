@@ -2313,7 +2313,6 @@ namespace Microsoft.Python.Parsing {
                 LastNewLine = true;
                 BracketLevel = ParenLevel = BraceLevel = PendingDedents = IndentLevel = 0;
                 FStringExpression = (options & TokenizerOptions.FStringExpression) != 0;
-
                 IndentFormat = null;
                 IncompleteString = null;
                 if ((options & TokenizerOptions.Verbatim) != 0) {
