@@ -153,7 +153,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private SourceLocation CurrentLocation() {
-            return new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber);
+            return new SourceLocation(StartIndex() + _position, _currentLineNumber, _currentColNumber);
         }
 
         private Expression MaybeReadFormatSpecifier() {
@@ -173,7 +173,7 @@ namespace Microsoft.Python.Parsing {
                     var formatSpecifierBuilder = new FormatSpecifierBuilder();
                     var options = _options.Clone();
                     options.InitialSourceLocation = new SourceLocation(
-                        FStringStartIndex() + position,
+                        StartIndex() + position,
                         _currentLineNumber,
                         _currentColNumber
                     );
@@ -182,15 +182,12 @@ namespace Microsoft.Python.Parsing {
                     new FStringParser(formatSpecifierBuilder, formatStr, _isRaw, options, _langVersion).Parse();
                     formatSpecifierBuilder.AddUnparsedFString(formatStr);
                     formatSpecifier = formatSpecifierBuilder.Build();
-                    formatSpecifier.SetLoc(new IndexSpan(FStringStartIndex() + position, formatStr.Length));
+                    formatSpecifier.SetLoc(new IndexSpan(StartIndex() + position, formatStr.Length));
                 }
             }
 
             return formatSpecifier;
         }
-
-        // Adding offset because of f-string start: "f'"
-        private int FStringStartIndex() => _start.Index;
 
         private char? MaybeReadConversionChar() {
             char? conversion = null;
@@ -423,6 +420,8 @@ namespace Microsoft.Python.Parsing {
             return prev;
         }
 
+        private int StartIndex() => _start.Index;
+
         private bool IsLineEnding(char prev) => prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n", 0, 1)));
 
         private bool HasBackslash(char ch) => ch == '\\';
@@ -434,14 +433,14 @@ namespace Microsoft.Python.Parsing {
         private void ReportSyntaxError(string message) {
             _hasErrors = true;
             var span = new SourceSpan(new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber),
-            new SourceLocation(_start.Index + _position + 1, _currentLineNumber, _currentColNumber + 1));
+            new SourceLocation(StartIndex() + _position + 1, _currentLineNumber, _currentColNumber + 1));
             _errors.Add(message, span, ErrorCodes.SyntaxError, Severity.Error);
         }
 
         private ErrorExpression Error(int startPos, string verbatimImage = null, Expression preceding = null) {
             verbatimImage = verbatimImage ?? (_fString.Substring(startPos, _position - startPos));
             var expr = new ErrorExpression(verbatimImage, preceding);
-            expr.SetLoc(_start.Index + startPos, _start.Index + _position);
+            expr.SetLoc(StartIndex() + startPos, StartIndex() + _position);
             return expr;
         }
     }
