@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly object _syncObj = new object();
         private readonly AsyncManualResetEvent _analysisCompleteEvent = new AsyncManualResetEvent();
         private readonly AsyncAutoResetEvent _analysisRunningEvent = new AsyncAutoResetEvent();
-        private readonly AnalysisQueueTracker _queueTracker;
+        private readonly ProgressReporter _progress;
         private readonly ILogger _log;
         private readonly int _maxTaskRunning = Environment.ProcessorCount * 3;
         private int _runningTasks;
@@ -53,12 +53,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisCompleteEvent.Set();
             _analysisRunningEvent.Set();
 
-            var progress = new ProgressReporter(services.GetService<IProgressService>());
-            _queueTracker = new AnalysisQueueTracker(progress);
+            _progress = new ProgressReporter(services.GetService<IProgressService>());
         }
 
         public void Dispose() {
-            _queueTracker.Dispose();
+            _progress.Dispose();
             _disposeToken.TryMarkDisposed();
         }
 
@@ -168,6 +167,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
             var walker = _dependencyResolver.NotifyChanges(key, entry, dependencies);
+            if (_version + 1 == walker.Version) {
+                _progress.ReportRemaining(walker.Remaining);
+            }
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
@@ -189,8 +191,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
 
-                _queueTracker.Add(entry.Module.FilePath);
-
                 var waitForAnalysisTask = _analysisRunningEvent.WaitAsync(cancellationToken);
                 if (!waitForAnalysisTask.IsCompleted) {
                     if (entry.IsUserModule) {
@@ -211,7 +211,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (version > walker.Version) {
                     if (notAnalyzed < _maxTaskRunning) {
                         _analysisRunningEvent.Set();
-                        _queueTracker.Remove(entry.Module.FilePath);
                         return;
                     }
                 }
@@ -228,6 +227,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 } finally {
                     _analysisRunningEvent.Set();
                     stopWatch.Stop();
+
+                    if (_version == walker.Version) {
+                        _progress.ReportRemaining(walker.Remaining);
+                    }
 
                     if (_log != null) {
                         if (remaining == 0) {
@@ -258,9 +261,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || walker.Remaining == 1) {
-                    Analyze(node, walker.Version, stopWatch, cancellationToken);
+                    Analyze(node, walker, stopWatch, cancellationToken);
                 } else {
-                    StartAnalysis(node, walker.Version, stopWatch, cancellationToken).DoNotWait();
+                    StartAnalysis(node, walker, stopWatch, cancellationToken).DoNotWait();
                 }
             }
 
@@ -283,47 +286,44 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var (moduleName, _, isTypeshed) in missingKeys) {
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
                 var m = moduleResolution.GetOrLoadModule(moduleName);
-                _queueTracker.Add(m.FilePath);
             }
         }
 
-        private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken)
-            => Task.Run(() => Analyze(node, version, stopWatch, cancellationToken), cancellationToken);
+        private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, Stopwatch stopWatch, CancellationToken cancellationToken)
+            => Task.Run(() => Analyze(node, walker, stopWatch, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Performs analysis of the document. Returns document global scope
         /// with declared variables and inner scopes. Does not analyze chain
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
-        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, Stopwatch stopWatch, CancellationToken cancellationToken) {
             IPythonModule module = null;
             try {
                 var entry = node.Value;
-                if (!entry.IsValidVersion(version, out module, out var ast)) {
+                if (!entry.IsValidVersion(walker.Version, out module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     node.Skip();
                     return;
                 }
-                _queueTracker.Add(entry.Module.FilePath);
-
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(entry, module, ast, version, cancellationToken);
+                AnalyzeEntry(entry, module, ast, walker.Version, cancellationToken);
                 node.Commit();
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
-                node.Value.TryCancel(oce, version);
+                node.Value.TryCancel(oce, walker.Version);
                 node.Skip();
                 module = node.Value.Module;
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
             } catch (Exception exception) {
                 module = node.Value.Module;
-                node.Value.TrySetException(exception, version);
+                node.Value.TrySetException(exception, walker.Version);
                 node.Commit();
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
-                if (module != null) {
-                    _queueTracker.Remove(module.FilePath);
+                if(_version == walker.Version) {
+                    _progress.ReportRemaining(walker.Remaining);
                 }
                 Interlocked.Decrement(ref _runningTasks);
             }
@@ -339,7 +339,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     return;
                 }
-                _queueTracker.Add(entry.Module.FilePath);
 
                 var startTime = stopWatch.Elapsed;
                 AnalyzeEntry(entry, module, ast, version, cancellationToken);
@@ -354,7 +353,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 entry.TrySetException(exception, version);
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
-                _queueTracker.Remove(entry.Module.FilePath);
                 stopWatch.Stop();
                 Interlocked.Decrement(ref _runningTasks);
             }
@@ -381,32 +379,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
-        }
-
-        private class AnalysisQueueTracker : IDisposable {
-            private readonly HashSet<string> _analysisQueue = new HashSet<string>();
-            private readonly ProgressReporter _progress;
-            private readonly object _lock = new object();
-
-            public AnalysisQueueTracker(ProgressReporter progress) {
-                _progress = progress;
-            }
-
-            public void Dispose() => _progress.Dispose();
-
-            public void Add(string path) {
-                lock (_lock) {
-                    _analysisQueue.Add(path);
-                    _progress.ReportRemaining(_analysisQueue.Count);
-                }
-            }
-
-            public void Remove(string path) {
-                lock (_lock) {
-                    _analysisQueue.Remove(path);
-                    _progress.ReportRemaining(_analysisQueue.Count);
-                }
-            }
         }
     }
 
