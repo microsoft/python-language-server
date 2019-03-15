@@ -640,10 +640,10 @@ namespace Microsoft.Python.Parsing.Tests {
             ParseErrors(filename, version, new ParserOptions() {
                 IndentationInconsistencySeverity = Severity.Hint,
                 InitialSourceLocation = initialLocation
-            }, errors.Select(e => AddDisplacement(initialLocation, e)).ToArray());
+            }, errors.Select(e => AddOffset(initialLocation, e)).ToArray());
         }
 
-        private ErrorInfo AddDisplacement(SourceLocation initLoc, ErrorInfo error) {
+        private ErrorInfo AddOffset(SourceLocation initLoc, ErrorInfo error) {
             var span = error.Span;
             return new ErrorInfo(
                 error.Message,
