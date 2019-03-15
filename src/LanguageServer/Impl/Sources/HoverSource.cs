@@ -40,7 +40,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
 
-            if (node is ConstantExpression || !(node is Expression expr)) {
+            if (node is ConstantExpression || node is FString || !(node is Expression expr)) {
+                // node is FString only if it didn't save an f-string subexpression
                 return null; // No hover for literals.
             }
 
