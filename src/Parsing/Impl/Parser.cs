@@ -3131,14 +3131,14 @@ namespace Microsoft.Python.Parsing {
 
                 case TokenKind.FString:
                 case TokenKind.Constant:        // literal
-                    var start = _lookahead.Span.Start;
+                    NextToken();
+                    var start = GetStart();
                     var cv = t.Value;
                     var cvs = cv as string;
-                    if (ParseString(out ret)) {
-                        // Might read several tokens
-                        // For string concatanation
+                    if (IsStringToken(t)) {
+                        // Might read several tokens for string concatanation
+                        ret = ReadString();
                     } else {
-                        NextToken();
                         ret = new ConstantExpression(cv);
                         if (_verbatim) {
                             AddExtraVerbatimText(ret, t.VerbatimImage);
@@ -3176,17 +3176,13 @@ namespace Microsoft.Python.Parsing {
             return false;
         }
 
-        private bool ParseString(out Expression expr) {
-            if (!IsStringToken(PeekToken())) {
-                expr = null;
-                return false;
-            }
-
+        private Expression ReadString() {
             var verbatimWhiteSpaceList = new List<string>();
             var verbatimImagesList = new List<string>();
             var readTokens = ReadStringTokens(verbatimWhiteSpaceList, verbatimImagesList, out var hasFStrings,
                 out var hasStrings, out var hasAsciiStrings);
 
+            Expression expr;
             if (hasFStrings) {
                 expr = buildFStringExpr(readTokens);
             } else if (hasStrings) {
@@ -3203,51 +3199,57 @@ namespace Microsoft.Python.Parsing {
                     AddPreceedingWhiteSpace(expr, verbatimWhiteSpaceList.First());
                 }
             }
-            return true;
+            return expr;
         }
 
         private List<TokenWithSpan> ReadStringTokens(List<string> verbatimWhiteSpaceList, List<string> verbatimImagesList, out bool hasFStrings,
             out bool hasStrings, out bool hasAsciiStrings) {
-            var t = PeekToken();
             var readTokens = new List<TokenWithSpan>();
             hasFStrings = false;
             hasStrings = false;
             hasAsciiStrings = false;
-            while (IsStringToken(t)) {
-                if (t.Kind == TokenKind.FString) {
+            do {
+                var token = _token.Token;
+                Debug.Assert(IsStringToken(token));
+
+                if (token.Kind == TokenKind.FString) {
                     if (hasAsciiStrings) {
-                        ReportSyntaxError(Resources.MixingBytesAndNonBytesErrorMsg);
+                        ReportSyntaxError(_token.Span.Start, _token.Span.End, Resources.MixingBytesAndNonBytesErrorMsg);
                     }
                     hasFStrings = true;
-                } else if (t.Value is string str) {
+                } else if (token.Value is string str) {
                     if (hasAsciiStrings && _langVersion.Is3x()) {
-                        ReportSyntaxError(Resources.MixingBytesAndNonBytesErrorMsg);
+                        ReportSyntaxError(_token.Span.Start, _token.Span.End, Resources.MixingBytesAndNonBytesErrorMsg);
                     }
                     hasStrings = true;
-                } else if (t.Value is AsciiString asciiStr) {
+                } else if (token.Value is AsciiString asciiStr) {
                     if ((hasStrings && _langVersion.Is3x()) || hasFStrings) {
-                        ReportSyntaxError(Resources.MixingBytesAndNonBytesErrorMsg);
+                        ReportSyntaxError(_token.Span.Start, _token.Span.End, Resources.MixingBytesAndNonBytesErrorMsg);
                     }
                     hasAsciiStrings = true;
                 } else {
                     Debug.Fail("Unhandled string token");
-                    NextToken();
-                    continue;
+                    if (IsStringToken(PeekToken())) {
+                        NextToken();
+                    }
+                    break;
                 }
 
-                readTokens.Add(_lookahead);
-                NextToken();
+                readTokens.Add(_token);
                 if (_verbatim) {
                     verbatimWhiteSpaceList.Add(_tokenWhiteSpace);
-                    verbatimImagesList.Add(t.VerbatimImage);
+                    verbatimImagesList.Add(token.VerbatimImage);
                 }
+                if (IsStringToken(PeekToken())) {
+                    NextToken();
+                } else {
+                    break;
+                }
+            } while (true);
 
-                t = PeekToken();
-            }
-
-            if (PeekToken(TokenKind.Constant) && !IsStringToken(t)) {
+            if (PeekToken(TokenKind.Constant)) {
                 // A string was read and then a Constant that is not a string
-                ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);
+                ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, Resources.InvalidSyntaxErrorMsg);
             }
 
             return readTokens;
