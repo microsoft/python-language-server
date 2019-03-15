@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 } else {
                     scope = outerScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
                     if (scope == null) {
-                        scope = new Scope(node, outerScope, true);
+                        scope = new Scope(node, outerScope, Module);
                         outerScope.AddChildScope(scope);
                         _scopeLookupCache[node] = scope;
                     }
