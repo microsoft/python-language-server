@@ -169,8 +169,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
             if (optionsProvider?.Options?.LintingEnabled == true) {
+                var beforeLinter = module.Analysis.Diagnostics.ToArray();
+
                 var linter = new LinterAggregator();
                 linter.Lint(module.Analysis, _services);
+
+                var afterLinter = module.Analysis.Diagnostics.ToArray();
+                if(beforeLinter.Length != afterLinter.Length) {
+                    var ds = _services.GetService<IDiagnosticsService>();
+                    ds.Replace(module.Uri, afterLinter);
+                }
             }
         }
 

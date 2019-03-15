@@ -48,7 +48,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
-                HandlePathWatchChange(token, cancellationToken);
+                HandlePathWatchChanges(token, cancellationToken);
+                HandleDiagnosticsChanges(pythonSection, settings);
 
                 _server.DidChangeConfiguration(new DidChangeConfigurationParams {settings = settings}, cancellationToken);
             }

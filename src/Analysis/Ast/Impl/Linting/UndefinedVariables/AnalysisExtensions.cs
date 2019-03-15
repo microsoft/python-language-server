@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             var eval = analysis.ExpressionEvaluator;
             eval.ReportDiagnostics(analysis.Document.Uri, new DiagnosticsEntry(
                 Resources.UndefinedVariable.FormatInvariant(node.Name),
-                eval.GetLocation(node).Span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Analysis));
+                eval.GetLocation(node).Span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Linter));
         }
     }
 }

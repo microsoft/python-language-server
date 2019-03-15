@@ -328,7 +328,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return MessageType.Error;
         }
 
-        private void HandlePathWatchChange(JToken section, CancellationToken cancellationToken) {
+        private void HandlePathWatchChanges(JToken section, CancellationToken cancellationToken) {
             var watchSearchPaths = GetSetting(section, "watchSearchPaths", true);
             if (!watchSearchPaths) {
                 // No longer watching.
