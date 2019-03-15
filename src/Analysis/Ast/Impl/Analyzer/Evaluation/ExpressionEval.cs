@@ -150,10 +150,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case FormatSpecifier formatSpecifier:
                     m = GetValueFromFormatSpecifier(formatSpecifier);
                     break;
-                case FormattedValue formattedValue:
-                    // ToDo: decide based on formatSpecifier and conversion
-                    m = GetValueFromExpression(formattedValue.Value);
-                    break;
                 default:
                     m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
                     break;

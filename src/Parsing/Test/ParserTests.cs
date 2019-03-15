@@ -103,7 +103,7 @@ namespace Microsoft.Python.Parsing.Tests {
         public void FStringErrors() {
             ParseErrors("FStringErrors.py",
                 PythonLanguageVersion.V36,
-                new ErrorInfo("f-string: expecting '}'", 1, 1, 4, 2, 1, 5),
+                new ErrorInfo("f-string: expecting '}'", 3, 1, 4, 4, 1, 5),
                 new ErrorInfo("f-string expression part cannot include a backslash", 7, 2, 4, 8, 2, 5),
                 new ErrorInfo("unexpected token 'import'", 0, 4, 2, 6, 4, 8),
                 new ErrorInfo("unexpected token 'def'", 0, 7, 2, 3, 7, 5),
@@ -135,7 +135,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         ),
                         CheckExprStmt(
                             CheckFString(
-                                CheckConstant("text")
+                                CheckNodeConstant("text")
                             )
                         ),
                         CheckExprStmt(
@@ -156,7 +156,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         )),
                         CheckExprStmt(
                             CheckFString(
-                                CheckConstant("result: "),
+                                CheckNodeConstant("result: "),
                                 CheckFormattedValue(
                                     CheckFString(
                                         CheckFormattedValue(
@@ -168,11 +168,11 @@ namespace Microsoft.Python.Parsing.Tests {
                         ),
                         CheckExprStmt(
                             CheckFString(
-                                CheckConstant("{{text "),
+                                CheckNodeConstant("{{text "),
                                 CheckFormattedValue(
                                     CheckNameExpr("some")
                                 ),
-                                CheckConstant(" }}")
+                                CheckNodeConstant(" }}")
                             )
                        ),
                        CheckExprStmt(
@@ -188,7 +188,7 @@ namespace Microsoft.Python.Parsing.Tests {
                        ),
                        CheckExprStmt(
                            CheckFString(
-                               CheckConstant("Has a :")
+                               CheckNodeConstant("Has a :")
                            )
                        ),
                        CheckExprStmt(
@@ -200,7 +200,7 @@ namespace Microsoft.Python.Parsing.Tests {
                                         CheckFormattedValue(
                                             CheckConstant("{")
                                         ),
-                                        CheckConstant(">10")
+                                        CheckNodeConstant(">10")
                                    )
                                )
                            )
@@ -214,12 +214,12 @@ namespace Microsoft.Python.Parsing.Tests {
                         ),
                         CheckExprStmt(
                             CheckFString(
-                                CheckConstant("\n")
+                                CheckNodeConstant("\n")
                             )
                         ),
                         CheckExprStmt(
                             CheckFString(
-                                CheckConstant("space between opening braces: "),
+                                CheckNodeConstant("space between opening braces: "),
                                 CheckFormattedValue(
                                     CheckSetComp(
                                         CheckNameExpr("thing"),
@@ -240,10 +240,10 @@ namespace Microsoft.Python.Parsing.Tests {
                                 CheckNameExpr("print"),
                                 PositionalArg(
                                     CheckFString(
-                                        CheckConstant("first: "),
+                                        CheckNodeConstant("first: "),
                                         CheckFormattedValue(
                                             CheckFString(
-                                                CheckConstant("second "),
+                                                CheckNodeConstant("second "),
                                                 CheckFormattedValue(
                                                     CheckNameExpr("some")
                                                 )
@@ -272,28 +272,28 @@ namespace Microsoft.Python.Parsing.Tests {
                                     CheckNameExpr("some"),
                                     null,
                                     CheckFormatSpecifer(
-                                        CheckConstant("#06x")
+                                        CheckNodeConstant("#06x")
                                     )
                                 )
                             )
                        ),
                        CheckExprStmt(
                             CheckFString(
-                                CheckConstant("\n"),
+                                CheckNodeConstant("\n"),
                                 CheckFormattedValue(
                                     One
                                 ),
-                                CheckConstant("\n")
+                                CheckNodeConstant("\n")
                             )
                        ),
                        CheckExprStmt(
                             CheckFString(
-                                CheckConstant("{{nothing")
+                                CheckNodeConstant("{{nothing")
                             )
                        ),
                        CheckExprStmt(
                             CheckFString(
-                                CheckConstant("Hello '"),
+                                CheckNodeConstant("Hello '"),
                                 CheckFormattedValue(
                                     CheckBinaryExpression(
                                         CheckFString(
@@ -313,7 +313,7 @@ namespace Microsoft.Python.Parsing.Tests {
                                     CheckConstant(3.14),
                                     null,
                                     CheckFormatSpecifer(
-                                        CheckConstant("!<10.10")
+                                        CheckNodeConstant("!<10.10")
                                     )
                                 )
                             )
@@ -331,12 +331,12 @@ namespace Microsoft.Python.Parsing.Tests {
                         ),
                         CheckExprStmt(
                             CheckFString(
-                                CheckConstant("\\N{GREEK CAPITAL LETTER DELTA}")
+                                CheckNodeConstant("\\N{GREEK CAPITAL LETTER DELTA}")
                             )
                         ),
                         CheckExprStmt(
                             CheckFString(
-                                CheckConstant("\\"),
+                                CheckNodeConstant("\\"),
                                 CheckFormattedValue(
                                     One
                                 )
@@ -348,7 +348,7 @@ namespace Microsoft.Python.Parsing.Tests {
                                     CheckNameExpr("a"),
                                     null,
                                     CheckFormatSpecifer(
-                                        CheckConstant("{{}}")
+                                        CheckNodeConstant("{{}}")
                                     )
                                 )
                             )
@@ -4301,6 +4301,13 @@ pass
             };
         }
 
+        private static Action<Node> CheckNodeConstant(object value, string expectedRepr = null, PythonLanguageVersion ver = PythonLanguageVersion.V27) {
+            return node => {
+                Assert.IsInstanceOfType(node, typeof(Expression));
+                CheckConstant(value)((Expression)node);
+            };
+        }
+
         private static Action<Expression> CheckConstant(object value, string expectedRepr = null, PythonLanguageVersion ver = PythonLanguageVersion.V27) {
             return expr => {
                 Assert.AreEqual(typeof(ConstantExpression), expr.GetType());
@@ -4489,22 +4496,21 @@ pass
             };
         }
 
-        private static Action<Expression> CheckFString(params Action<Expression>[] subExpressions) {
+        private static Action<Expression> CheckFString(params Action<Node>[] subExpressions) {
             return expr => {
                 Assert.AreEqual(typeof(FString), expr.GetType());
                 var nodes = expr.GetChildNodes().ToArray();
                 Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in fstring");
                 for (var i = 0; i < subExpressions.Length; i++) {
-                    Assert.IsInstanceOfType(nodes[i], typeof(Expression), "fstring's child not an instance of expression");
-                    subExpressions[i]((Expression)nodes[i]);
+                    subExpressions[i](nodes[i]);
                 }
             };
         }
 
-        private static Action<Expression> CheckFormattedValue(Action<Expression> value, char? conversion = null, Action<Expression> formatSpecifier = null) {
-            return expr => {
-                Assert.AreEqual(typeof(FormattedValue), expr.GetType());
-                var formattedValue = (FormattedValue)expr;
+        private static Action<Node> CheckFormattedValue(Action<Expression> value, char? conversion = null, Action<Expression> formatSpecifier = null) {
+            return node => {
+                Assert.AreEqual(typeof(FormattedValue), node.GetType());
+                var formattedValue = (FormattedValue)node;
 
                 value(formattedValue.Value);
                 Assert.AreEqual(formattedValue.Conversion, conversion, "formatted value's conversion is not correct");
@@ -4516,15 +4522,14 @@ pass
             };
         }
 
-        private static Action<Expression> CheckFormatSpecifer(params Action<Expression>[] subExpressions) {
+        private static Action<Expression> CheckFormatSpecifer(params Action<Node>[] subExpressions) {
             return expr => {
                 Assert.AreEqual(typeof(FormatSpecifier), expr.GetType());
 
                 var nodes = expr.GetChildNodes().ToArray();
                 Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in format specifier");
                 for (var i = 0; i < subExpressions.Length; i++) {
-                    Assert.IsInstanceOfType(nodes[i], typeof(Expression), "format specifier child not an instance of expression");
-                    subExpressions[i]((Expression)nodes[i]);
+                    subExpressions[i](nodes[i]);
                 }
             };
         }

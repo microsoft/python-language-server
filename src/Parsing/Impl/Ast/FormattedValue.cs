@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class FormattedValue : Expression {
+    public class FormattedValue : Node {
         public FormattedValue(Expression value, char? conversion, Expression formatSpecifier) {
             Value = value;
             FormatSpecifier = formatSpecifier;
