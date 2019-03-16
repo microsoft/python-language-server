@@ -153,6 +153,19 @@ log
         }
 
         [TestMethod, Priority(0)]
+        public async Task GotoModuleSourceFromImportAs() {
+            const string code = @"from logging import RootLogger as rl";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource();
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 23));
+            reference.Should().NotBeNull();
+            reference.range.start.line.Should().BeGreaterThan(500);
+            reference.uri.AbsolutePath.Should().Contain("logging");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GotoBuiltinObject() {
             const string code = @"
 class A(object):

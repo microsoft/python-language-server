@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -55,23 +56,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
 
                 var value = eval.GetValueFromExpression(expr);
-                if (value.IsUnknown()) {
-                    // If this is 'import A as B' A is not declared as a variable, so try modules.
-                    string moduleName = null;
-                    if (!string.IsNullOrEmpty(name)) {
-                        switch (statement) {
-                            case ImportStatement imp when imp.Names.Any(x => x?.MakeString() == name):
-                            case FromImportStatement fimp when fimp.Root.Names.Any(x => x?.Name == name):
-                                moduleName = name;
-                                break;
-                        }
-
-                        if (moduleName != null) {
-                            var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName);
-                            if (module != null && CanNavigateToModule(module, analysis)) {
-                                return new Reference {range = default, uri = module.Uri};
-                            }
-                        }
+                if (value.IsUnknown() && !string.IsNullOrEmpty(name)) {
+                    var reference = FromImport(statement, name, analysis, out value);
+                    if (reference != null) {
+                        return reference;
                     }
                 }
 
@@ -80,6 +68,48 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
                 return FromMember(value, expr, statement, analysis);
             }
+        }
+
+        private Reference FromImport(Node statement, string name, IDocumentAnalysis analysis, out IMember value) {
+            value = null;
+            string moduleName = null;
+            switch (statement) {
+                // In 'import A as B' A is not declared as a variable, so try locating B.
+                case ImportStatement imp when imp.Names.Any(x => x?.MakeString() == name):
+                case FromImportStatement fimp when fimp.Root.Names.Any(x => x?.Name == name):
+                    moduleName = name;
+                    break;
+            }
+
+            if (moduleName != null) {
+                var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName);
+                if (module != null && CanNavigateToModule(module, analysis)) {
+                    return new Reference { range = default, uri = module.Uri };
+                }
+            }
+
+            // Perhaps it is a member such as A in 'from X import A as B'
+            switch (statement) {
+                case ImportStatement imp: {
+                    // Import A as B
+                    var index = imp.Names.IndexOf(x => x?.MakeString() == name);
+                    if (index >= 0 && index < imp.AsNames.Count) {
+                        value = analysis.ExpressionEvaluator.GetValueFromExpression(imp.AsNames[index]);
+                        return null;
+                    }
+                    break;
+                }
+                case FromImportStatement fimp: {
+                    // From X import A as B
+                    var index = fimp.Names.IndexOf(x => x?.Name == name);
+                    if (index >= 0 && index < fimp.AsNames.Count) {
+                        value = analysis.ExpressionEvaluator.GetValueFromExpression(fimp.AsNames[index]);
+                        return null;
+                    }
+                    break;
+                }
+            }
+            return null;
         }
 
         private Reference FromMember(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis) {
