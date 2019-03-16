@@ -396,6 +396,15 @@ x(1)
             analysis.Diagnostics.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task LambdaComrehension() {
+            const string code = @"
+y = lambda x: [e for e in x if e == 1]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
             public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
