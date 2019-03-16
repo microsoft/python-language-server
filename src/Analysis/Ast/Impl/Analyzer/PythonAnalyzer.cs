@@ -163,21 +163,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public void LintModule(IPythonModule module) {
+        public IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module) {
             if (module.ModuleType != ModuleType.User) {
-                return;
+                return Array.Empty<DiagnosticsEntry>();
             }
 
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            if (optionsProvider?.Options?.LintingEnabled != false) {
-                ((ExpressionEval)module.Analysis.ExpressionEvaluator).RemoveDiagnostics(DiagnosticSource.Linter);
-                var linter = new LinterAggregator();
-                linter.Lint(module.Analysis, _services);
-
-                var afterLinter = module.Analysis.Diagnostics.ToArray();
-                var ds = _services.GetService<IDiagnosticsService>();
-                ds.Replace(module.Uri, afterLinter);
+            if (optionsProvider?.Options?.LintingEnabled == false) {
+                return Array.Empty<DiagnosticsEntry>();
             }
+
+            var linter = new LinterAggregator();
+            return linter.Lint(module.Analysis, _services);
         }
 
 
@@ -389,7 +386,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
 
-            LintModule(module);
+            if (module.ModuleType == ModuleType.User) {
+                var linterDiagnostics = LintModule(module);
+                var ds = _services.GetService<IDiagnosticsService>();
+                ds.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+            }
         }
     }
 

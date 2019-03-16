@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
@@ -50,5 +51,13 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         /// Subsystem that produced the diagnostics.
         /// </summary>
         public DiagnosticSource Source { get; }
+
+        public override bool Equals(object obj) {
+            if (!(obj is DiagnosticsEntry e)) {
+                return false;
+            }
+            return ErrorCode == e.ErrorCode && SourceSpan == e.SourceSpan;
+        }
+        public override int GetHashCode() => 0;
     }
 }

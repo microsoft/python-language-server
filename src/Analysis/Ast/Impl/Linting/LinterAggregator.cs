@@ -14,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Linting.UndefinedVariables;
 using Microsoft.Python.Core;
 
@@ -25,10 +27,7 @@ namespace Microsoft.Python.Analysis.Linting {
             // TODO: develop mechanism for dynamic and external linter discovery.
             _linters.Add(new UndefinedVariablesLinter());
         }
-        public void Lint(IDocumentAnalysis analysis, IServiceContainer services) {
-            foreach (var l in _linters) {
-                l.Lint(analysis, services);
-            }
-        }
+        public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services)
+            => _linters.SelectMany(l => l.Lint(analysis, services)).ToArray();
     }
 }

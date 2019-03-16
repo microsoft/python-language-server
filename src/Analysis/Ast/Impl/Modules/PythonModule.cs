@@ -376,7 +376,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
                 // Do not report issues with libraries or stubs
                 if (sink != null) {
-                    _diagnosticsService?.Replace(Uri, _parseErrors);
+                    _diagnosticsService?.Replace(Uri, _parseErrors, DiagnosticSource.Parser);
                 }
 
                 ContentState = State.Parsed;
@@ -424,7 +424,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             // Do not report issues with libraries or stubs
             if (ModuleType == ModuleType.User) {
-                _diagnosticsService?.Replace(Uri, _parseErrors.Concat(analysis.Diagnostics));
+                _diagnosticsService?.Replace(Uri, analysis.Diagnostics, DiagnosticSource.Analysis);
             }
 
             NewAnalysis?.Invoke(this, EventArgs.Empty);

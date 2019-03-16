@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -53,10 +54,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
             const string code = @"a = x";
 
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(1);
+            var a = Services.GetService<IPythonAnalyzer>();
+            var d = a.LintModule(analysis.Document);
+            d.Should().HaveCount(1);
 
             var provider = Substitute.For<IAnalysisOptionsProvider>();
             Services.AddService(provider);
+
             var ds = Services.GetService<IDiagnosticsService>();
             var options = new AnalysisOptions();
             provider.Options.Returns(_ => options);

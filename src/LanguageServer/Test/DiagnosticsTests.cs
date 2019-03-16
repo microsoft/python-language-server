@@ -152,7 +152,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             ds.Diagnostics.TryGetValue(doc.Uri, out _).Should().BeFalse();
             reported.Count.Should().Be(1);
             reported[0].uri.Should().Be(doc.Uri);
-            reported[0].diagnostics.Length.Should().Be(0);
+            reported[0].diagnostics.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]

@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
@@ -51,6 +53,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Runs linters on the modules
         /// </summary>
-        void LintModule(IPythonModule module);
+        IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module);
     }
 }

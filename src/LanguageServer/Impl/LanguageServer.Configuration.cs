@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 HandlePathWatchChanges(token, cancellationToken);
                 HandleDiagnosticsChanges(pythonSection, settings);
 
-                _server.DidChangeConfiguration(new DidChangeConfigurationParams {settings = settings}, cancellationToken);
+                _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
             }
         }
 
@@ -77,24 +78,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         internal static void HandleLintingOnOff(IServiceContainer services, bool linterEnabled) {
             var optionsProvider = services.GetService<IAnalysisOptionsProvider>();
             var ds = services.GetService<IDiagnosticsService>();
+            var rdt = services.GetService<IRunningDocumentTable>();
 
             var wasEnabled = optionsProvider.Options.LintingEnabled;
             optionsProvider.Options.LintingEnabled = linterEnabled;
 
-            if (wasEnabled && !linterEnabled) {
-                // Remove linter diagnostics
-                var currentDiagnostics = ds.Diagnostics;
-                foreach (var uri in currentDiagnostics.Keys) {
-                    var linterDiag = currentDiagnostics[uri].Where(d => d.Source == DiagnosticSource.Linter);
-                    ds.Replace(uri, currentDiagnostics[uri].Except(linterDiag));
+            foreach (var m in rdt.Where(m => m.ModuleType == ModuleType.User)) {
+                IReadOnlyList<DiagnosticsEntry> entries = Array.Empty<DiagnosticsEntry>();
+                if (!wasEnabled && linterEnabled) {
+                    // Lint all user files in the RDT
+                    var analyzer = services.GetService<IPythonAnalyzer>();
+                    entries = analyzer.LintModule(m);
                 }
-            } else if (!wasEnabled && linterEnabled) {
-                // Lint all user files in the RDT
-                var rdt = services.GetService<IRunningDocumentTable>();
-                var analyzer = services.GetService<IPythonAnalyzer>();
-                foreach (var m in rdt.Where(m => m.ModuleType == ModuleType.User)) {
-                    analyzer.LintModule(m);
-                }
+                ds.Replace(m.Uri, entries, DiagnosticSource.Linter);
             }
         }
     }

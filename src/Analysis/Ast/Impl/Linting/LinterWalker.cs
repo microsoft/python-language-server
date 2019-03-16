@@ -23,9 +23,9 @@ namespace Microsoft.Python.Analysis.Linting {
     internal abstract class LinterWalker: PythonWalker {
         private readonly Stack<IDisposable> _scopeStack = new Stack<IDisposable>();
 
-        protected IDocumentAnalysis Analysis { get; }
-        protected IExpressionEvaluator Eval => Analysis.ExpressionEvaluator;
-        protected IServiceContainer Services { get; }
+        public IDocumentAnalysis Analysis { get; }
+        public IExpressionEvaluator Eval => Analysis.ExpressionEvaluator;
+        public IServiceContainer Services { get; }
 
         protected LinterWalker(IDocumentAnalysis analysis, IServiceContainer services) {
             Analysis = analysis;
