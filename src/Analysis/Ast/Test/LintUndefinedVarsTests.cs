@@ -400,6 +400,59 @@ x(1)
             return a.LintModule(analysis.Document);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task BuiltinModuleVariables() {
+            const string code = @"
+x1 = __doc__
+x2 = __file__
+x3 = __name__
+x4 = __package__
+x5 = __path__
+x6 = __dict__
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BuiltinFunctionVariables() {
+            const string code = @"
+def func():
+    x1 = __closure__
+    x2 = __code__
+    x3 = __defaults__
+    x4 = __dict__
+    x5 = __doc__
+    x6 = __func__
+    x7 = __name__
+    x8 = __globals__
+    x9 = __name__
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BuiltinClassVariables() {
+            const string code = @"
+class A:
+    a = __self__
+    def func():
+        x1 = __closure__
+        x2 = __code__
+        x3 = __defaults__
+        x4 = __dict__
+        x5 = __doc__
+        x6 = __func__
+        x7 = __name__
+        x8 = __globals__
+        x9 = __name__
+        x10 = __self__
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
             public AnalysisOptions Options { get; } = new AnalysisOptions();
         }

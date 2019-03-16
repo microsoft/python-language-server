@@ -20,9 +20,8 @@ using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class ProgressReporter : IProgressReporter, IDisposable {
-        private const int _initialDelay = 100;
-        private const int _reportingInterval = 200;
-        private const int _disposeInterval = 2000;
+        private const int _initialDelay = 50;
+        private const int _reportingInterval = 100;
 
         private readonly IProgressService _progressService;
         private readonly object _lock = new object();
@@ -30,9 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private int _lastReportedToClient;
         private IProgress _progress;
         private Timer _reportTimer;
-        private Timer _disposeTimer;
         private bool _running;
-        private int _disposedId;
 
         public ProgressReporter(IProgressService progressService) {
             _progressService = progressService;
@@ -44,20 +41,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public void ReportRemaining(int count = -1) {
+        public void ReportRemaining(int count) {
             lock (_lock) {
+                if (count == 0) {
+                   EndReport();
+                    return;
+                }
+
                 if (!_running) {
                     // Delay reporting a bit in case the analysis is short in order to reduce UI flicker.
                     _running = true;
                     _reportTimer?.Dispose();
                     _reportTimer = new Timer(OnReportTimer, null, _initialDelay, _reportingInterval);
                 }
-
-                _disposeTimer?.Dispose();
-                _disposeTimer = new Timer(OnDisposeTimer, ++_disposedId, _disposeInterval, Timeout.Infinite);
-                if (count >= 0) {
-                    _lastReportedCount = count;
-                }
+                _lastReportedCount = count;
             }
         }
 
@@ -73,22 +70,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void OnDisposeTimer(object o) {
-            lock (_lock) {
-                if (_disposedId == (int)o) {
-                    EndReport();
-                }
-            }
-        }
-
         private void EndReport() {
             if (_running) {
                 _running = false;
                 _progress?.Dispose();
                 _progress = null;
-
                 _reportTimer?.Dispose();
-                _disposeTimer?.Dispose();
             }
         }
     }
