@@ -17,6 +17,7 @@ using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
@@ -40,6 +41,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     // no completions on integer ., the user is typing a float
                     return CompletionResult.Empty;
                 case ConstantExpression ce2 when ce2.Value is string:
+                case ConstantExpression ce3 when ce3.Value is AsciiString:
                 // no completions in strings
                 case null when context.Ast.IsInsideComment(context.Location):
                 case null when context.Ast.IsInsideString(context.Location):

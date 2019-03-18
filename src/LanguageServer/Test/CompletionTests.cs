@@ -846,10 +846,11 @@ pass";
             result.Should().HaveLabels("__init__").And.NotContainLabels("def");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task NoCompletionInString() {
-
-            var analysis = await GetAnalysisAsync("\"str.\"");
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task NoCompletionInString(bool is2x) {
+            var analysis = await GetAnalysisAsync("\"str.\"", is2x ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 6));
             result.Should().HaveNoCompletion();
@@ -857,7 +858,6 @@ pass";
 
         [TestMethod, Priority(0)]
         public async Task NoCompletionInOpenString() {
-
             var analysis = await GetAnalysisAsync("'''.");
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
