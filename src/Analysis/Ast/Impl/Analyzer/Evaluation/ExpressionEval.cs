@@ -144,6 +144,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case LambdaExpression lambda:
                     m = GetValueFromLambda(lambda);
                     break;
+                case FString fString:
+                    m = GetValueFromFString(fString);
+                    break;
+                case FormatSpecifier formatSpecifier:
+                    m = GetValueFromFormatSpecifier(formatSpecifier);
+                    break;
                 default:
                     m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
                     break;
@@ -152,6 +158,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 Log?.Log(TraceEventType.Verbose, $"Unknown expression: {expr.ToCodeString(Ast).Trim()}");
             }
             return m;
+        }
+
+        private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier) {
+            return new PythonFString(formatSpecifier.Unparsed, Interpreter, GetLoc(formatSpecifier));
+        }
+
+        private IMember GetValueFromFString(FString fString) {
+            return new PythonFString(fString.Unparsed, Interpreter, GetLoc(fString));
         }
 
         private IMember GetValueFromName(NameExpression expr, LookupOptions options) {

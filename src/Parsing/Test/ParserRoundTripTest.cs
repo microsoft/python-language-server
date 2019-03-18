@@ -857,6 +857,11 @@ import fob");
         }
 
         [TestMethod, Priority(1)]
+        public void TestFStringWithoutVerbatim() {
+            TestOneString(PythonLanguageVersion.V36, "f'''sss {1:5}'''", null, null, true, null, false);
+        }
+
+        [TestMethod, Priority(1)]
         public void TestErrors() {
             TestOneString(PythonLanguageVersion.V30, ":   ...");
 
@@ -1690,14 +1695,15 @@ class BaseSet(object):
             CodeFormattingOptions format = null,
             string expected = null,
             bool recurse = true,
-            string filename = null
+            string filename = null,
+            bool verbatim = true
         ) {
             bool hadExpected = true;
             if (expected == null) {
                 expected = originalText;
                 hadExpected = false;
             }
-            var parser = Parser.CreateParser(new StringReader(originalText), version, new ParserOptions() { Verbatim = true });
+            var parser = Parser.CreateParser(new StringReader(originalText), version, new ParserOptions() { Verbatim = verbatim });
             var ast = parser.ParseFile();
 
             string output;

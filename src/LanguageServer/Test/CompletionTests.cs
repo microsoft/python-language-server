@@ -865,6 +865,17 @@ pass";
             result.Should().HaveNoCompletion();
         }
 
+        [DataRow("f'.")]
+        [DataRow("f'a.")]
+        [DataRow("f'a.'")]
+        [DataTestMethod, Priority(0)]
+        public async Task NoCompletionInFStringConstant(string openFString) {
+            var analysis = await GetAnalysisAsync(openFString);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            result.Should().HaveNoCompletion();
+        }
+
         [TestMethod, Priority(0)]
         public async Task NoCompletionBadImportExpression() {
             var analysis = await GetAnalysisAsync("import os,.");

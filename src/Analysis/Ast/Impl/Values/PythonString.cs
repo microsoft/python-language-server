@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
 
@@ -31,5 +32,22 @@ namespace Microsoft.Python.Analysis.Values {
     internal sealed class PythonUnicodeString : PythonConstant {
         public PythonUnicodeString(string s, IPythonInterpreter interpreter, LocationInfo location = null)
             : base(s, interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId()), location) { }
+    }
+
+    internal sealed class PythonFString : PythonInstance, IEquatable<PythonFString> {
+        public readonly string UnparsedFString;
+
+        public PythonFString(string unparsedFString, IPythonInterpreter interpreter, LocationInfo location = null)
+            : base(interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId()), location) {
+            UnparsedFString = unparsedFString;
+        }
+
+
+        public bool Equals(PythonFString other) {
+            if (!base.Equals(other)) {
+                return false;
+            }
+            return UnparsedFString?.Equals(other?.UnparsedFString) == true;
+        }
     }
 }
