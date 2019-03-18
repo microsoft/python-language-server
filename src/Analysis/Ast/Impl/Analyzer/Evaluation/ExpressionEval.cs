@@ -159,10 +159,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            if (expr.Name == Module.Name) {
-                return Module;
-            }
-
             var member = LookupNameInScopes(expr.Name, options);
             if (member != null) {
                 switch (member.GetPythonType()) {
