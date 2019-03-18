@@ -55,7 +55,7 @@ y = c.method()
             var analysis = await GetAnalysisAsync(code);
 
             var names = analysis.GlobalScope.Variables.Names;
-            names.Should().OnlyContain("x", "C", "func", "c", "y");
+            names.Should().Contain("x", "C", "func", "c", "y");
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
             analysis.Should().HaveVariable("C").Which.Value.Should().BeAssignableTo<IPythonClassType>();
@@ -78,8 +78,6 @@ import sys
 x = sys.path
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.GlobalScope.Variables.Count.Should().Be(2);
-
             analysis.Should()
                 .HaveVariable("sys").OfType(BuiltinTypeId.Module)
                 .And.HaveVariable("x").OfType(BuiltinTypeId.List);

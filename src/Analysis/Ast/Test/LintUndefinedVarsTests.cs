@@ -458,6 +458,16 @@ y = lambda x: [e for e in x if e == 1]
             analysis.Diagnostics.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task FromFuture() {
+            const string code = @"
+from __future__ import print_function
+print()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
             public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
