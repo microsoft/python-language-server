@@ -25,19 +25,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var item in node.Items.Where(x => x.Variable != null)) {
                 var contextManager = Eval.GetValueFromExpression(item.ContextManager);
                 var cmType = contextManager?.GetPythonType();
+                IMember context = Eval.UnknownType;
 
                 var enter = cmType?.GetMember(node.IsAsync ? @"__aenter__" : @"__enter__")?.GetPythonType<IPythonFunctionType>();
                 if (enter != null) {
                     var instance = contextManager as IPythonInstance;
                     var callExpr = item.ContextManager as CallExpression;
-                    var context = Eval.GetValueFromFunctionType(enter, instance, callExpr);
+                    context = Eval.GetValueFromFunctionType(enter, instance, callExpr);
                     // If fetching context from __enter__ failed, annotation in the stub may be using
                     // type from typing that we haven't specialized yet or there may be an issue in
                     // the stub itself, such as type or incorrect type. Try using context manager then.
                     context = context ?? contextManager;
-                    if (item.Variable is NameExpression nex && !string.IsNullOrEmpty(nex.Name)) {
-                        Eval.DeclareVariable(nex.Name, context, VariableSource.Declaration, Eval.GetLoc(item));
-                    }
+                }
+
+                if (item.Variable is NameExpression nex && !string.IsNullOrEmpty(nex.Name)) {
+                    Eval.DeclareVariable(nex.Name, context, VariableSource.Declaration, Eval.GetLoc(item));
                 }
             }
         }
