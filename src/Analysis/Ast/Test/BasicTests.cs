@@ -90,6 +90,23 @@ x = sys.path
         [DataRow(true, false)]
         [DataRow(false, false)]
         [DataTestMethod, Priority(0)]
+        public async Task UnknownType(bool isPython3X, bool isAnaconda) {
+            const string code = @"x = 1";
+
+            var configuration = isPython3X
+                ? isAnaconda ? PythonVersions.LatestAnaconda3X : PythonVersions.LatestAvailable3X
+                : isAnaconda ? PythonVersions.LatestAnaconda2X : PythonVersions.LatestAvailable2X;
+            var analysis = await GetAnalysisAsync(code, configuration);
+
+            var unkType = analysis.Document.Interpreter.UnknownType;
+            unkType.TypeId.Should().Be(BuiltinTypeId.Unknown);
+        }
+
+        [DataRow(true, true)]
+        [DataRow(false, true)]
+        [DataRow(true, false)]
+        [DataRow(false, false)]
+        [DataTestMethod, Priority(0)]
         public async Task BuiltinsTest(bool isPython3X, bool isAnaconda) {
             const string code = @"
 x = 1

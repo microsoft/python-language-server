@@ -65,6 +65,11 @@ namespace Microsoft.Python.Analysis.Modules {
                     continue;
                 }
 
+                if (biType.IsUnknown()) {
+                    // Under no circumstances we modify the unknown type.
+                    continue;
+                }
+
                 if (biType.IsHidden) {
                     _hiddenNames.Add(biType.Name);
                 }
@@ -97,6 +102,8 @@ namespace Microsoft.Python.Analysis.Modules {
                     case BuiltinTypeId.Str: {
                             biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, typeId), true);
                         }
+                        break;
+                    case BuiltinTypeId.Unknown:
                         break;
                     default:
                         biType.TrySetTypeId(typeId);

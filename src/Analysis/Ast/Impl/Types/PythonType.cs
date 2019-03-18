@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
         private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId = BuiltinTypeId.Unknown) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
             DeclaringModule = declaringModule;
-            _typeId = typeId; _typeId = typeId;
+            _typeId = typeId;
         }
 
         #region IPythonType
