@@ -33,10 +33,6 @@ namespace Microsoft.Python.Parsing {
         private static readonly StringSpan DoubleClose = new StringSpan("}}", 0, 2);
         private static readonly StringSpan NotEqualStringSpan = new StringSpan("!=", 0, 2);
         private static readonly StringSpan BackslashN = new StringSpan("\\N", 0, 2);
-        private static Dictionary<char, char> ParendsPairs = new Dictionary<char, char>() {
-            { '(', ')' },
-            { '{', '}' }
-        };
 
         internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
@@ -326,8 +322,15 @@ namespace Microsoft.Python.Parsing {
             _buffer.Append(NextChar());
         }
 
-        private bool IsOpeningOf(char opening, char ch)
-            => ParendsPairs.TryGetValue(opening, out var closing) ? closing == ch : false;
+        private bool IsOpeningOf(char opening, char ch) {
+            switch (opening) {
+                case '(' when ch == ')':
+                case '{' when ch == '}':
+                    return true;
+                default:
+                    return false;
+            }
+        }
 
         private void HandleInsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(quoteChar.HasValue);
