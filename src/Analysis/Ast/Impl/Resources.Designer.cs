@@ -169,6 +169,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Relative import &apos;{0}&apos; beyond top-level package.
+        /// </summary>
+        internal static string ErrorRelativeImportBeyondTopLevel {
+            get {
+                return ResourceManager.GetString("ErrorRelativeImportBeyondTopLevel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to unresolved import &apos;{0}&apos;.
         /// </summary>
         internal static string ErrorUnresolvedImport {
@@ -651,6 +660,15 @@ namespace Microsoft.Python.Analysis {
         internal static string SpaceWithinIndexBracketsShort {
             get {
                 return ResourceManager.GetString("SpaceWithinIndexBracketsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Undefined variable: &apos;{0}&apos;.
+        /// </summary>
+        internal static string UndefinedVariable {
+            get {
+                return ResourceManager.GetString("UndefinedVariable", resourceCulture);
             }
         }
         

@@ -16,11 +16,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Linting;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -33,25 +34,26 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
         private readonly IServiceManager _services;
-        private readonly IDependencyResolver<ModuleKey, PythonAnalyzerEntry> _dependencyResolver;
-        private readonly Dictionary<ModuleKey, PythonAnalyzerEntry> _analysisEntries = new Dictionary<ModuleKey, PythonAnalyzerEntry>();
+        private readonly IDependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry> _dependencyResolver;
+        private readonly Dictionary<AnalysisModuleKey, PythonAnalyzerEntry> _analysisEntries = new Dictionary<AnalysisModuleKey, PythonAnalyzerEntry>();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonAnalyzer>();
         private readonly object _syncObj = new object();
         private readonly AsyncManualResetEvent _analysisCompleteEvent = new AsyncManualResetEvent();
         private readonly AsyncAutoResetEvent _analysisRunningEvent = new AsyncAutoResetEvent();
         private readonly ProgressReporter _progress;
         private readonly ILogger _log;
-        private readonly int _maxTaskRunning = 8;
+        private readonly int _maxTaskRunning = Environment.ProcessorCount * 3;
         private int _runningTasks;
         private int _version;
 
         public PythonAnalyzer(IServiceManager services) {
             _services = services;
             _log = services.GetService<ILogger>();
-            _progress = new ProgressReporter(services.GetService<IProgressService>());
-            _dependencyResolver = new DependencyResolver<ModuleKey, PythonAnalyzerEntry>(new ModuleDependencyFinder());
+            _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
             _analysisCompleteEvent.Set();
             _analysisRunningEvent.Set();
+
+            _progress = new ProgressReporter(services.GetService<IProgressService>());
         }
 
         public void Dispose() {
@@ -59,16 +61,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _disposeToken.TryMarkDisposed();
         }
 
-        public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
-            => _analysisCompleteEvent.WaitAsync(cancellationToken);
+        public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default) {
+            return _analysisCompleteEvent.WaitAsync(cancellationToken);
+        }
 
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
-            var key = new ModuleKey(module);
+            var key = new AnalysisModuleKey(module);
             PythonAnalyzerEntry entry;
             lock (_syncObj) {
                 if (!_analysisEntries.TryGetValue(key, out entry)) {
                     var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
-                    entry = new PythonAnalyzerEntry(module, emptyAnalysis.Ast, emptyAnalysis, -1, 0);
+                    entry = new PythonAnalyzerEntry(emptyAnalysis);
                     _analysisEntries[key] = entry;
                 }
             }
@@ -104,66 +107,72 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void InvalidateAnalysis(IPythonModule module) {
             lock (_syncObj) {
-                if (_analysisEntries.TryGetValue(new ModuleKey(module), out var entry)) {
+                var key = new AnalysisModuleKey(module);
+                if (_analysisEntries.TryGetValue(key, out var entry)) {
                     entry.Invalidate(_version + 1);
+                } else {
+                    _analysisEntries[key] = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
+                    _analysisCompleteEvent.Reset();
                 }
             }
         }
 
-        public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> dependencies) {
-            var key = new ModuleKey(module);
+        public void RemoveAnalysis(IPythonModule module) {
+            lock (_syncObj) {
+                _analysisEntries.Remove(new AnalysisModuleKey(module));
+            }
+        }
+
+        public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> analysisDependencies) {
+            var key = new AnalysisModuleKey(module);
             PythonAnalyzerEntry entry;
+            int version;
             lock (_syncObj) {
                 if (!_analysisEntries.TryGetValue(key, out entry)) {
                     return;
                 }
 
-                var significantDependencies = dependencies.Where(IsSignificant);
-                if (significantDependencies.Count == 0) {
-                    return;
-                }
-
-                entry.Invalidate(_version + 1);
-                entry.AddAnalysisDependencies(significantDependencies);
+                version = _version + 1;
             }
 
-            AnalyzeDocumentAsync(key, entry, default).DoNotWait();
-
-            bool IsSignificant(IPythonModule m)
-                => m != entry.Module && ((m.ModuleType == ModuleType.User && m.Analysis.Version < entry.AnalysisVersion) || m.Analysis is EmptyAnalysis);
+            if (entry.Invalidate(analysisDependencies, version, out var dependencies)) {
+                AnalyzeDocumentAsync(key, entry, dependencies, default).DoNotWait();
+            }
         }
 
         public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion, CancellationToken cancellationToken) {
-            var key = new ModuleKey(module);
+            var key = new AnalysisModuleKey(module);
             PythonAnalyzerEntry entry;
+            int version;
             lock (_syncObj) {
+                version = _version + 1;
                 if (_analysisEntries.TryGetValue(key, out entry)) {
                     if (entry.BufferVersion >= bufferVersion) {
                         return;
                     }
-
-                    entry.Invalidate(ast, bufferVersion, _version + 1);
                 } else {
-                    entry = new PythonAnalyzerEntry(module, ast, new EmptyAnalysis(_services, (IDocument)module), bufferVersion, _version + 1);
+                    entry = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
                     _analysisEntries[key] = entry;
+                    _analysisCompleteEvent.Reset();
                 }
             }
 
-            AnalyzeDocumentAsync(key, entry, cancellationToken).DoNotWait();
+            if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
+                AnalyzeDocumentAsync(key, entry, dependencies, cancellationToken).DoNotWait();
+            }
         }
 
-        private async Task AnalyzeDocumentAsync(ModuleKey key, PythonAnalyzerEntry entry, CancellationToken cancellationToken) {
+        private async Task AnalyzeDocumentAsync(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
-            _progress?.ReportRemaining();
+
+            var walker = _dependencyResolver.NotifyChanges(key, entry, dependencies);
+            if (_version + 1 == walker.Version) {
+                _progress.ReportRemaining(walker.Remaining);
+            }
 
             using (var cts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, cancellationToken)) {
                 var analysisToken = cts.Token;
-
-                var walker = await _dependencyResolver.AddChangesAsync(key, entry, cts.Token);
-                _progress?.ReportRemaining(walker.AffectedValues.Count);
-
-                var stopOnVersionChange = true;
                 lock (_syncObj) {
                     if (_version > walker.Version) {
                         return;
@@ -176,231 +185,245 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
                 }
 
-                _progress?.ReportRemaining(walker.AffectedValues.Count);
-                await _analysisRunningEvent.WaitAsync(cancellationToken);
-                var stopWatch = Stopwatch.StartNew();
+                lock (_syncObj) {
+                    if (_version > walker.Version && walker.AffectedValues.Count(e => e.NotAnalyzed) < _maxTaskRunning) {
+                        return;
+                    }
+                }
 
-                try {
-                    _progress?.ReportRemaining(walker.AffectedValues.Count);
-                    lock (_syncObj) {
-                        foreach (var affectedEntry in walker.AffectedValues) {
-                            affectedEntry.Invalidate(_version);
-                            if (affectedEntry.NotAnalyzed) {
-                                stopOnVersionChange = false;
-                            }
-                        }
-
-                        if (_version > walker.Version && stopOnVersionChange) {
-                            return;
-                        }
+                var waitForAnalysisTask = _analysisRunningEvent.WaitAsync(cancellationToken);
+                if (!waitForAnalysisTask.IsCompleted) {
+                    if (entry.IsUserModule) {
+                        StartAnalysis(entry, walker.Version, cancellationToken);
                     }
 
-                    _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {walker.AffectedValues.Count} entries has started.");
-                    _progress?.ReportRemaining(walker.Remaining);
-                    await AnalyzeAffectedEntriesAsync(walker, stopOnVersionChange, stopWatch, analysisToken);
+                    await waitForAnalysisTask;
+                }
+
+                int version;
+                int notAnalyzed;
+                lock (_syncObj) {
+                    version = _version;
+                    notAnalyzed = walker.AffectedValues.Count(e => e.NotAnalyzed);
+                }
+
+                var stopWatch = Stopwatch.StartNew();
+                if (version > walker.Version) {
+                    if (notAnalyzed < _maxTaskRunning) {
+                        _analysisRunningEvent.Set();
+                        return;
+                    }
+                }
+
+                foreach (var affectedEntry in walker.AffectedValues) {
+                    affectedEntry.Invalidate(version);
+                }
+
+                var originalRemaining = walker.Remaining;
+                var remaining = originalRemaining;
+                try {
+                    _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has started.");
+                    remaining = await AnalyzeAffectedEntriesAsync(walker, stopWatch, analysisToken);
                 } finally {
                     _analysisRunningEvent.Set();
                     stopWatch.Stop();
-                    _progress?.ReportRemaining(walker.Remaining);
+
+                    if (_version == walker.Version) {
+                        _progress.ReportRemaining(walker.Remaining);
+                    }
 
                     if (_log != null) {
-                        if (walker.Remaining == 0) {
-                            _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms.");
+                        if (remaining == 0) {
+                            _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms.");
+                        } else if (remaining < originalRemaining) {
+                            _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
                         } else {
-                            _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been canceled in {stopWatch.Elapsed.TotalMilliseconds} ms with {walker.Remaining} remaining entries.");
+                            _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been canceled after {stopWatch.Elapsed.TotalMilliseconds}.");
                         }
                     }
                 }
             }
         }
 
-        private async Task AnalyzeAffectedEntriesAsync(IDependencyChainWalker<ModuleKey, PythonAnalyzerEntry> walker, bool stopOnVersionChange, Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private async Task<int> AnalyzeAffectedEntriesAsync(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, Stopwatch stopWatch, CancellationToken cancellationToken) {
             IDependencyChainNode<PythonAnalyzerEntry> node;
+            var remaining = 0;
             while ((node = await walker.GetNextAsync(cancellationToken)) != null) {
                 int version;
                 lock (_syncObj) {
                     version = _version;
                 }
 
-                if (version > walker.Version) {
-                    if (stopOnVersionChange) {
-                        return;
-                    }
-
-                    if (!node.Value.NotAnalyzed) {
-                        node.Skip();
-                        continue;
-                    }
+                if (version > walker.Version && !node.Value.NotAnalyzed) {
+                    remaining++;
+                    node.Skip();
+                    continue;
                 }
 
-                if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning) {
-                    Analyze(node, walker.Version, stopWatch, cancellationToken);
+                if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || walker.Remaining == 1) {
+                    Analyze(node, walker, stopWatch, cancellationToken);
                 } else {
-                    StartAnalysis(node, walker.Version, stopWatch, cancellationToken);
+                    StartAnalysis(node, walker, stopWatch, cancellationToken).DoNotWait();
                 }
             }
 
-            if (walker.MissingKeys.Where(k => !k.IsTypeshed).Count == 0) {
+            if (walker.MissingKeys.All(k => k.IsTypeshed)) {
                 Interlocked.Exchange(ref _runningTasks, 0);
-                _analysisCompleteEvent.Set();
+                int version;
+                lock (_syncObj) {
+                    version = _version;
+                }
+
+                if (version == walker.Version) {
+                    _analysisCompleteEvent.Set();
+                }
             }
+
+            return remaining;
         }
 
-        private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<ModuleKey> missingKeys) {
+        private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             foreach (var (moduleName, _, isTypeshed) in missingKeys) {
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
-                moduleResolution.GetOrLoadModule(moduleName);
-                _progress?.ReportRemaining();
+                var m = moduleResolution.GetOrLoadModule(moduleName);
             }
         }
 
-        private void StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken)
-            => Task.Run(() => Analyze(node, version, stopWatch, cancellationToken), cancellationToken);
+        private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, Stopwatch stopWatch, CancellationToken cancellationToken)
+            => Task.Run(() => Analyze(node, walker, stopWatch, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Performs analysis of the document. Returns document global scope
         /// with declared variables and inner scopes. Does not analyze chain
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
-        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, int version, Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, Stopwatch stopWatch, CancellationToken cancellationToken) {
+            IPythonModule module = null;
             try {
+                var entry = node.Value;
+                if (!entry.IsValidVersion(walker.Version, out module, out var ast)) {
+                    _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                    node.Skip();
+                    return;
+                }
                 var startTime = stopWatch.Elapsed;
-                var module = node.Value.Module;
-                var ast = node.Value.Ast;
-
-                // Now run the analysis.
-                var walker = new ModuleWalker(_services, module, ast);
-
-                ast.Walk(walker);
-                cancellationToken.ThrowIfCancellationRequested();
-
-                // Note that we do not set the new analysis here and rather let
-                // Python analyzer to call NotifyAnalysisComplete.
-                walker.Complete();
-                cancellationToken.ThrowIfCancellationRequested();
-                var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
-
-                (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
-                node.Value.TrySetAnalysis(analysis, version, _syncObj);
-
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) complete in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
-            } catch (OperationCanceledException oce) {
-                node.Value.TryCancel(oce, version, _syncObj);
-            } catch (Exception exception) {
-                node.Value.TrySetException(exception, version, _syncObj);
-            } finally {
-                Interlocked.Decrement(ref _runningTasks);
+                AnalyzeEntry(entry, module, ast, walker.Version, cancellationToken);
                 node.Commit();
+
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+            } catch (OperationCanceledException oce) {
+                node.Value.TryCancel(oce, walker.Version);
+                node.Skip();
+                module = node.Value.Module;
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+            } catch (Exception exception) {
+                module = node.Value.Module;
+                node.Value.TrySetException(exception, walker.Version);
+                node.Commit();
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
+            } finally {
+                if(_version == walker.Version) {
+                    _progress.ReportRemaining(walker.Remaining);
+                }
+                Interlocked.Decrement(ref _runningTasks);
             }
         }
 
-        [DebuggerDisplay("{Name} : {FilePath}")]
-        private struct ModuleKey : IEquatable<ModuleKey> {
-            public string Name { get; }
-            public string FilePath { get; }
-            public bool IsTypeshed { get; }
+        private void StartAnalysis(PythonAnalyzerEntry entry, int version, CancellationToken cancellationToken)
+            => Task.Run(() => Analyze(entry, version, cancellationToken), cancellationToken).DoNotWait();
 
-            public ModuleKey(IPythonModule module) {
-                Name = module.Name;
-                FilePath = module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath;
-                IsTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
-            }
-
-            public ModuleKey(string name, string filePath, bool isTypeshed) {
-                Name = name;
-                FilePath = filePath;
-                IsTypeshed = isTypeshed;
-            }
-
-            public bool Equals(ModuleKey other)
-                => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed;
-
-            public override bool Equals(object obj) => obj is ModuleKey other && Equals(other);
-
-            public override int GetHashCode() {
-                unchecked {
-                    var hashCode = (Name != null ? Name.GetHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ (FilePath != null ? FilePath.GetPathHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ IsTypeshed.GetHashCode();
-                    return hashCode;
+        private void Analyze(PythonAnalyzerEntry entry, int version, CancellationToken cancellationToken) {
+            var stopWatch = Stopwatch.StartNew();
+            try {
+                if (!entry.IsValidVersion(version, out var module, out var ast)) {
+                    _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                    return;
                 }
+
+                var startTime = stopWatch.Elapsed;
+                AnalyzeEntry(entry, module, ast, version, cancellationToken);
+
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+            } catch (OperationCanceledException oce) {
+                entry.TryCancel(oce, version);
+                var module = entry.Module;
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+            } catch (Exception exception) {
+                var module = entry.Module;
+                entry.TrySetException(exception, version);
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
+            } finally {
+                stopWatch.Stop();
+                Interlocked.Decrement(ref _runningTasks);
             }
-
-            public static bool operator ==(ModuleKey left, ModuleKey right) => left.Equals(right);
-
-            public static bool operator !=(ModuleKey left, ModuleKey right) => !left.Equals(right);
-
-            public void Deconstruct(out string moduleName, out string filePath, out bool isTypeshed) {
-                moduleName = Name;
-                filePath = FilePath;
-                isTypeshed = IsTypeshed;
-            }
-
-            public override string ToString() => $"{Name}({FilePath})";
         }
 
-        private sealed class ModuleDependencyFinder : IDependencyFinder<ModuleKey, PythonAnalyzerEntry> {
-            public Task<ImmutableArray<ModuleKey>> FindDependenciesAsync(PythonAnalyzerEntry value, CancellationToken cancellationToken) {
-                var dependencies = new HashSet<ModuleKey>();
-                var module = value.Module;
-                var isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
-                var moduleResolution = module.Interpreter.ModuleResolution;
-                var pathResolver = isTypeshed
-                    ? module.Interpreter.TypeshedResolution.CurrentPathResolver
-                    : moduleResolution.CurrentPathResolver;
+        private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version, CancellationToken cancellationToken) {
+            // Now run the analysis.
+            var walker = new ModuleWalker(_services, module, ast);
 
-                if (module.Stub != null) {
-                    dependencies.Add(new ModuleKey(module.Stub));
-                }
+            ast.Walk(walker);
+            cancellationToken.ThrowIfCancellationRequested();
 
-                foreach (var dependency in value.AnalysisDependencies) {
-                    dependencies.Add(new ModuleKey(dependency));
-                }
+            walker.Complete();
+            cancellationToken.ThrowIfCancellationRequested();
+            var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
 
-                foreach (var node in value.Ast.TraverseDepthFirst<Node>(n => n.GetChildNodes())) {
-                    if (cancellationToken.IsCancellationRequested) {
-                        return Task.FromCanceled<ImmutableArray<ModuleKey>>(cancellationToken);
-                    }
-
-                    switch (node) {
-                        case ImportStatement import:
-                            foreach (var moduleName in import.Names) {
-                                HandleSearchResults(isTypeshed, dependencies, moduleResolution, pathResolver.FindImports(module.FilePath, moduleName, import.ForceAbsolute));
-                            }
-                            break;
-                        case FromImportStatement fromImport:
-                            var imports = pathResolver.FindImports(module.FilePath, fromImport);
-                            HandleSearchResults(isTypeshed, dependencies, moduleResolution, imports);
-                            if (imports is IImportChildrenSource childrenSource) {
-                                foreach (var name in fromImport.Names) {
-                                    if (childrenSource.TryGetChildImport(name.Name, out var childImport)) {
-                                        HandleSearchResults(isTypeshed, dependencies, moduleResolution, childImport);
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-
-                dependencies.Remove(new ModuleKey(value.Module));
-                return Task.FromResult(ImmutableArray<ModuleKey>.Create(dependencies));
-            }
-
-            private static void HandleSearchResults(bool isTypeshed, HashSet<ModuleKey> dependencies, IModuleManagement moduleResolution, IImportSearchResult searchResult) {
-                switch (searchResult) {
-                    case ModuleImport moduleImport when !Ignore(moduleResolution, moduleImport.FullName):
-                        dependencies.Add(new ModuleKey(moduleImport.FullName, moduleImport.ModulePath, isTypeshed));
-                        return;
-                    case PossibleModuleImport possibleModuleImport when !Ignore(moduleResolution, possibleModuleImport.PrecedingModuleFullName):
-                        dependencies.Add(new ModuleKey(possibleModuleImport.PrecedingModuleFullName, possibleModuleImport.PrecedingModulePath, isTypeshed));
-                        return;
-                    default:
-                        return;
+            if (module.ModuleType == ModuleType.User) {
+                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+                if (optionsProvider?.Options?.LintingEnabled != false) {
+                    var linter = new LinterAggregator();
+                    linter.Lint(analysis, _services);
                 }
             }
 
-            private static bool Ignore(IModuleManagement moduleResolution, string name)
-                => moduleResolution.BuiltinModuleName.EqualsOrdinal(name) || moduleResolution.GetSpecializedModule(name) != null;
+            (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
+            entry.TrySetAnalysis(analysis, version);
         }
+    }
+
+    [DebuggerDisplay("{Name} : {FilePath}")]
+    internal struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
+        public string Name { get; }
+        public string FilePath { get; }
+        public bool IsTypeshed { get; }
+
+        public AnalysisModuleKey(IPythonModule module) {
+            Name = module.Name;
+            FilePath = module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath;
+            IsTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
+        }
+
+        public AnalysisModuleKey(string name, string filePath, bool isTypeshed) {
+            Name = name;
+            FilePath = filePath;
+            IsTypeshed = isTypeshed;
+        }
+
+        public bool Equals(AnalysisModuleKey other)
+            => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed;
+
+        public override bool Equals(object obj) => obj is AnalysisModuleKey other && Equals(other);
+
+        public override int GetHashCode() {
+            unchecked {
+                var hashCode = (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (FilePath != null ? FilePath.GetPathHashCode() : 0);
+                hashCode = (hashCode * 397) ^ IsTypeshed.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(AnalysisModuleKey left, AnalysisModuleKey right) => left.Equals(right);
+
+        public static bool operator !=(AnalysisModuleKey left, AnalysisModuleKey right) => !left.Equals(right);
+
+        public void Deconstruct(out string moduleName, out string filePath, out bool isTypeshed) {
+            moduleName = Name;
+            filePath = FilePath;
+            isTypeshed = IsTypeshed;
+        }
+
+        public override string ToString() => $"{Name}({FilePath})";
     }
 }

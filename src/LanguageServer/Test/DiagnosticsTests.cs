@@ -13,13 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -248,18 +246,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
             reported.Count.Should().Be(1);
             reported[0].uri.Should().Be(doc1.Uri);
             reported[0].diagnostics.Length.Should().Be(1);
-        }
-
-        private IDiagnosticsService GetDiagnosticsService() {
-            var ds = Services.GetService<IDiagnosticsService>();
-            ds.PublishingDelay = 0;
-            return ds;
-        }
-        private void PublishDiagnostics() {
-            var ds = Services.GetService<IDiagnosticsService>();
-            ds.PublishingDelay = 0;
-            var idle = Services.GetService<IIdleTimeService>();
-            idle.Idle += Raise.EventWith(null, EventArgs.Empty);
         }
     }
 }

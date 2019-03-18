@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -855,6 +856,22 @@ pass";
         }
 
         [TestMethod, Priority(0)]
+        public async Task NoCompletionInOpenString() {
+
+            var analysis = await GetAnalysisAsync("'''.");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            result.Should().HaveNoCompletion();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoCompletionBadImportExpression() {
+            var analysis = await GetAnalysisAsync("import os,.");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            cs.GetCompletions(analysis, new SourceLocation(1, 12)); // Should not crash.
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NoCompletionInComment() {
 
             var analysis = await GetAnalysisAsync("x = 1 #str. more text");
@@ -904,6 +921,26 @@ os.path.
         }
 
         [TestMethod, Priority(0)]
+        public async Task FromDotInRootWithInitPy() {
+            var initPyPath = TestData.GetTestSpecificUri("__init__.py");
+            var module1Path = TestData.GetTestSpecificUri("module1.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(initPyPath, string.Empty);
+            var module1 = rdt.OpenDocument(module1Path, "from .");
+            module1.Interpreter.ModuleResolution.GetOrLoadModule("__init__");
+
+            var analysis = await module1.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
+            result.Should().HaveNoCompletion();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task FromDotInExplicitPackage() {
             var initPyPath = TestData.GetTestSpecificUri("package", "__init__.py");
             var module1Path = TestData.GetTestSpecificUri("package", "module1.py");
@@ -913,12 +950,14 @@ os.path.
             var root = TestData.GetTestSpecificRootUri().AbsolutePath;
             await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
 
             rdt.OpenDocument(initPyPath, "answer = 42");
             var module = rdt.OpenDocument(module1Path, "from .");
             rdt.OpenDocument(module2Path, string.Empty);
             rdt.OpenDocument(module3Path, string.Empty);
 
+            await analyzer.WaitForCompleteAnalysisAsync();
             var analysis = await module.GetAnalysisAsync(-1);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
@@ -1043,6 +1082,17 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             var result = cs.GetCompletions(analysis, new SourceLocation(5, 23));
             result.Should().HaveLabels("get");
             result.Completions.First(x => x.label == "get").Should().HaveDocumentation("dict.get*");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InForEnumeration() {
+            var analysis = await GetAnalysisAsync(@"
+for a, b in x:
+    
+");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(3, 4));
+            result.Should().HaveLabels("a", "b");
         }
     }
 }

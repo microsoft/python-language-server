@@ -75,8 +75,12 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         public IReadOnlyDictionary<Uri, IReadOnlyList<DiagnosticsEntry>> Diagnostics {
             get {
                 lock (_lock) {
-                    return _diagnostics.ToDictionary(kvp => kvp.Key,
-                        kvp => FilterBySeverityMap(kvp.Value).ToList() as IReadOnlyList<DiagnosticsEntry>);
+                    return _diagnostics.ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => Rdt.GetDocument(kvp.Key)?.IsOpen == true
+                            ? FilterBySeverityMap(kvp.Value).ToList() as IReadOnlyList<DiagnosticsEntry>
+                            : Array.Empty<DiagnosticsEntry>()
+                    );
                 }
             }
         }
@@ -205,29 +209,34 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 if (_rdt != null) {
                     _rdt.Opened += OnOpenDocument;
                     _rdt.Closed += OnCloseDocument;
+                    _rdt.Removed += OnRemoveDocument;
 
                     _disposables
                         .Add(() => _rdt.Opened -= OnOpenDocument)
-                        .Add(() => _rdt.Closed -= OnCloseDocument);
+                        .Add(() => _rdt.Closed -= OnCloseDocument)
+                        .Add(() => _rdt.Removed -= OnRemoveDocument);
                 }
             }
         }
 
         private void OnOpenDocument(object sender, DocumentEventArgs e) {
             lock (_lock) {
-                if(_diagnostics.TryGetValue(e.Document.Uri, out var d)) {
+                if (_diagnostics.TryGetValue(e.Document.Uri, out var d)) {
                     d.Changed = d.Entries.Length > 0;
                 }
             }
         }
 
-        private void OnCloseDocument(object sender, DocumentEventArgs e) {
+        private void OnCloseDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, false);
+        private void OnRemoveDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, true);
+
+        private void ClearDiagnostics(Uri uri, bool remove) {
             lock (_lock) {
-                // Before removing the document, make sure we clear its diagnostics.
-                if (_diagnostics.TryGetValue(e.Document.Uri, out var d)) {
-                    d.Clear();
+                if (_diagnostics.TryGetValue(uri, out var _)) {
                     PublishDiagnostics();
-                    _diagnostics.Remove(e.Document.Uri);
+                    if (remove) {
+                        _diagnostics.Remove(uri);
+                    }
                 }
             }
         }

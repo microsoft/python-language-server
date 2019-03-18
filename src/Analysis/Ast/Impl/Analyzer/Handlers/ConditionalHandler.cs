@@ -15,8 +15,6 @@
 
 using System;
 using System.Linq;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;

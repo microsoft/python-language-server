@@ -90,6 +90,8 @@ namespace Microsoft.Python.Analysis.Tests {
                 new[] { interpreter.ModuleResolution.BuiltinModuleName, "exceptions" } :
                 new[] { interpreter.ModuleResolution.BuiltinModuleName };
 
+            var modules = new List<IPythonModule>();
+
             foreach (var pyd in PathUtils.EnumerateFiles(dllsDir, "*", recurse: false).Where(ModulePath.IsPythonFile)) {
                 var mp = ModulePath.FromFullPath(pyd);
                 if (mp.IsDebug) {
@@ -97,12 +99,14 @@ namespace Microsoft.Python.Analysis.Tests {
                 }
 
                 Console.WriteLine(@"Importing {0} from {1}", mp.ModuleName, mp.SourceFile);
-                var mod = interpreter.ModuleResolution.GetOrLoadModule(mp.ModuleName);
-                await mod.LoadAndAnalyzeAsync();
+                modules.Add(interpreter.ModuleResolution.GetOrLoadModule(mp.ModuleName));
+            }
+
+            foreach (var mod in modules) {
                 Assert.IsInstanceOfType(mod, typeof(CompiledPythonModule));
 
                 await ((ModuleCache)interpreter.ModuleResolution.ModuleCache).CacheWritingTask;
-                var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(pyd);
+                var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(mod.FilePath);
                 Assert.IsTrue(File.Exists(modPath), "No cache file created");
 
                 var doc = (IDocument)mod;
@@ -123,7 +127,7 @@ namespace Microsoft.Python.Analysis.Tests {
                     .ToArray();
 
                 // We expect no imports (after excluding builtins)
-                report.AddRange(imports.Select(n => $"{mp.ModuleName} imported {n}"));
+                report.AddRange(imports.Select(n => $"{mod.Name} imported {n}"));
             }
 
             report.Should().BeEmpty();
@@ -150,7 +154,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var interpreter = services.GetService<IPythonInterpreter>();
 
             var mod = interpreter.ModuleResolution.GetOrLoadModule(interpreter.ModuleResolution.BuiltinModuleName);
-            await mod.LoadAndAnalyzeAsync(new CancellationTokenSource(5000).Token);
+            await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             Assert.IsInstanceOfType(mod, typeof(BuiltinsPythonModule));
             var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
 
@@ -213,8 +217,9 @@ namespace Microsoft.Python.Analysis.Tests {
             await FullStdLibTest(v);
         }
 
-        [TestMethod, TestCategory("60s"), Priority(1)]
-        [Timeout(10 * 60 * 1000)]
+        [TestMethod, Priority(1)]
+        [Timeout(10 * 180 * 1000)]
+        [Ignore]
         public async Task FullStdLibAnaconda3() {
             var v = PythonVersions.Anaconda36_x64 ?? PythonVersions.Anaconda36;
             await FullStdLibTest(v,
@@ -225,8 +230,9 @@ namespace Microsoft.Python.Analysis.Tests {
             );
         }
 
-        [TestMethod, TestCategory("60s"), Priority(1)]
-        [Timeout(10 * 60 * 1000)]
+        [TestMethod, Priority(1)]
+        [Timeout(10 * 180 * 1000)]
+        [Ignore]
         public async Task FullStdLibAnaconda2() {
             var v = PythonVersions.Anaconda27_x64 ?? PythonVersions.Anaconda27;
             await FullStdLibTest(v,

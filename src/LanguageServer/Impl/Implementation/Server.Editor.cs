@@ -19,6 +19,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.LanguageServer.Completion;
+using Microsoft.Python.LanguageServer.Extensibility;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 
@@ -39,8 +40,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 res.items = result.Completions.ToArray();
             }
 
-            //await InvokeExtensionsAsync((ext, token)
-            //    => (ext as ICompletionExtension)?.HandleCompletionAsync(uri, analysis, tree, @params.position, res, cancellationToken), cancellationToken);
+            await InvokeExtensionsAsync((ext, token)
+                => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken), cancellationToken);
             return res;
         }
 

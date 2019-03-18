@@ -19,9 +19,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
@@ -35,23 +35,27 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly Dictionary<string, DocumentEntry> _documentsByName = new Dictionary<string, DocumentEntry>();
         private readonly IServiceContainer _services;
         private readonly object _lock = new object();
-        private readonly string _workspaceRoot;
 
         private IModuleManagement _moduleManagement;
         private IModuleManagement ModuleManagement => _moduleManagement ?? (_moduleManagement = _services.GetService<IPythonInterpreter>().ModuleResolution);
 
         private class DocumentEntry {
-            public IDocument Document;
+            public readonly IDocument Document;
             public int LockCount;
+
+            public DocumentEntry(IDocument document) {
+                Document = document;
+                LockCount = 0;
+            }
         }
 
-        public RunningDocumentTable(string workspaceRoot, IServiceContainer services) {
-            _workspaceRoot = workspaceRoot;
+        public RunningDocumentTable(IServiceContainer services) {
             _services = services;
         }
 
         public event EventHandler<DocumentEventArgs> Opened;
         public event EventHandler<DocumentEventArgs> Closed;
+        public event EventHandler<DocumentEventArgs> Removed;
 
         /// <summary>
         /// Adds file to the list of available documents.
@@ -60,17 +64,19 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="content">Document content</param>
         /// <param name="filePath">Optional file path, if different from the URI.</param>
         public IDocument OpenDocument(Uri uri, string content, string filePath = null) {
-            var justOpened = false;
+            bool justOpened;
             DocumentEntry entry;
             lock (_lock) {
                 entry = FindDocument(null, uri);
                 if (entry == null) {
+                    var resolver = _services.GetService<IPythonInterpreter>().ModuleResolution.CurrentPathResolver;
+                    var moduleType = resolver.IsLibraryFile(uri.ToAbsolutePath()) ? ModuleType.Library : ModuleType.User;
                     var mco = new ModuleCreationOptions {
                         ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
                         Content = content,
                         FilePath = filePath,
                         Uri = uri,
-                        ModuleType = ModuleType.User
+                        ModuleType = moduleType
                     };
                     entry = CreateDocument(mco);
                 }
@@ -114,10 +120,29 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
+        public int LockDocument(Uri uri) {
+            lock (_lock) {
+                if (_documentsByUri.TryGetValue(uri, out var entry)) {
+                    return ++entry.LockCount;
+                }
+                return -1;
+            }
+        }
+
+        public int UnlockDocument(Uri uri) {
+            lock (_lock) {
+                if (_documentsByUri.TryGetValue(uri, out var entry)) {
+                    return --entry.LockCount;
+                }
+                return -1;
+            }
+        }
+
         public IEnumerator<IDocument> GetEnumerator() => _documentsByUri.Values.Select(e => e.Document).GetEnumerator();
 
         public void CloseDocument(Uri documentUri) {
-            var justClosed = false;
+            var closed = false;
+            var removed = false;
             DocumentEntry entry;
             lock (_lock) {
                 if (_documentsByUri.TryGetValue(documentUri, out entry)) {
@@ -125,7 +150,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
                     if (entry.Document.IsOpen) {
                         entry.Document.IsOpen = false;
-                        justClosed = true;
+                        closed = true;
                     }
 
                     entry.LockCount--;
@@ -133,20 +158,23 @@ namespace Microsoft.Python.Analysis.Documents {
                     if (entry.LockCount == 0) {
                         _documentsByUri.Remove(documentUri);
                         _documentsByName.Remove(entry.Document.Name);
+                        removed = true;
                         entry.Document.Dispose();
                     }
-                    // TODO: Remove from module resolution?
                 }
             }
-            if(justClosed) {
+            if (closed) {
                 Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
+            }
+            if (removed) {
+                Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
 
         public void Dispose() {
-            lock(_lock) {
+            lock (_lock) {
                 foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {
                     d.Dispose();
                 }
@@ -180,7 +208,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     throw new InvalidOperationException($"CreateDocument does not support module type {mco.ModuleType}");
             }
 
-            var entry = new DocumentEntry { Document = document, LockCount = 0 };
+            var entry = new DocumentEntry(document);
             _documentsByUri[document.Uri] = entry;
             _documentsByName[mco.ModuleName] = entry;
             return entry;

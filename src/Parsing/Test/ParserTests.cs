@@ -167,8 +167,10 @@ namespace Microsoft.Python.Parsing.Tests {
             }
         }
 
-        [TestMethod, Priority(0)]
-        public void Errors() {
+        [DataRow(100, 50, 1)]
+        [DataRow(10, 3, 2)]
+        [DataTestMethod, Priority(0)]
+        public void Errors(int index, int line, int column) {
             foreach (var version in V30_V32Versions) {
                 ParseErrors("Errors3x.py",
                     version,
@@ -176,8 +178,11 @@ namespace Microsoft.Python.Parsing.Tests {
                 );
             }
 
-            ParseErrors("AllErrors.py",
+            var initLoc = new SourceLocation(index, line, column);
+
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V24,
+                initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
@@ -243,8 +248,9 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
             );
 
-            ParseErrors("AllErrors.py",
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V25,
+                initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
@@ -310,8 +316,9 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
             );
 
-            ParseErrors("AllErrors.py",
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V26,
+                initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
@@ -372,8 +379,9 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
             );
 
-            ParseErrors("AllErrors.py",
+            ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V27,
+                initLoc,
                 new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
                 new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
@@ -435,8 +443,9 @@ namespace Microsoft.Python.Parsing.Tests {
             );
 
             foreach (var version in V30_V32Versions) {
-                ParseErrors("AllErrors.py",
+                ParseErrorsWithOffset("AllErrors.py",
                     version,
+                    initLoc,
                     new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
@@ -501,8 +510,9 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             foreach (var version in V33AndV34) {
-                ParseErrors("AllErrors.py",
+                ParseErrorsWithOffset("AllErrors.py",
                     version,
+                    initLoc,
                     new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
@@ -564,8 +574,9 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             foreach (var version in V35AndUp) {
-                ParseErrors("AllErrors.py",
+                ParseErrorsWithOffset("AllErrors.py",
                     version,
+                    initLoc,
                     new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
                     new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
@@ -622,6 +633,27 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorInfo("invalid syntax", 1524, 161, 10, 1527, 161, 13)
                 );
             }
+        }
+
+        private void ParseErrorsWithOffset(string filename, PythonLanguageVersion version, SourceLocation initialLocation,
+            params ErrorInfo[] errors) {
+            ParseErrors(filename, version, new ParserOptions() {
+                IndentationInconsistencySeverity = Severity.Hint,
+                InitialSourceLocation = initialLocation
+            }, errors.Select(e => AddOffset(initialLocation, e)).ToArray());
+        }
+
+        private ErrorInfo AddOffset(SourceLocation initLoc, ErrorInfo error) {
+            var span = error.Span;
+            return new ErrorInfo(
+                error.Message,
+                span.Start.Index + initLoc.Index,
+                span.Start.Line + initLoc.Line - 1,
+                span.Start.Line == 1 ? span.Start.Column + initLoc.Column - 1 : span.Start.Column,
+                span.End.Index + initLoc.Index,
+                span.End.Line + initLoc.Line - 1,
+                span.End.Line == 1 ? span.End.Column + initLoc.Column - 1 : span.End.Column
+            );
         }
 
         [TestMethod, Priority(0)]
@@ -2170,11 +2202,61 @@ namespace Microsoft.Python.Parsing.Tests {
                     CheckSuite(
                         CheckLambdaStmt(new[] { CheckParameter("x") }, One),
                         CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.List) }, One),
-                        CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.Dictionary) }, One)
+                        CheckLambdaStmt(new[] { CheckParameter("x", ParameterKind.Dictionary) }, One),
+                        CheckLambdaStmt(NoParameters, One)
                     )
                 );
             }
         }
+
+        [TestMethod, Priority(0)]
+        public void LambdaExprEmpty() {
+            foreach (var version in AllVersions) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseString("lambda", errors, version),
+                    CheckSuite(
+                        CheckLambdaStmt(NoParameters, CheckErrorExpr())
+                    )
+                );
+
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7))
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void LambdaErrors() {
+            foreach (var version in AllVersions) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("LambdaErrors.py", errors, version),
+                    CheckSuite(
+                        CheckLambdaStmt(new[] {
+                            CheckParameter(null, ParameterKind.Normal, null, null)
+                        }, CheckErrorExpr()),
+                        CheckLambdaStmt(new[] {
+                            CheckParameter("x"),
+                            CheckParameter("y")
+                        }, CheckErrorExpr()),
+                        CheckLambdaStmt(new[] {
+                            CheckParameter("x"),
+                        }, CheckErrorExpr())
+                    )
+                );
+
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(1, 7, 2, 1)),
+                    new ErrorResult("invalid parameter", new SourceSpan(1, 1, 1, 7)),
+                    new ErrorResult("expected ':'", new SourceSpan(1, 7, 1, 7)),
+                    new ErrorResult("expected ':'", new SourceSpan(2, 12, 2, 12)),
+                    new ErrorResult("expected ':'", new SourceSpan(3, 10, 3, 10)),
+                    new ErrorResult("unexpected token '1'", new SourceSpan(3, 10, 3, 11))
+                });
+            }
+        }
+
 
         [TestMethod, Priority(0)]
         public void FuncDef() {
@@ -3086,8 +3168,15 @@ pass
         }
 
         private void ParseErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, params ErrorInfo[] errors) {
+            ParseErrors(filename, version, new ParserOptions() {
+                IndentationInconsistencySeverity = indentationInconsistencySeverity,
+            }, errors);
+        }
+
+        private void ParseErrors(string filename, PythonLanguageVersion version, ParserOptions options, params ErrorInfo[] errors) {
             var sink = new CollectingErrorSink();
-            ParseFile(filename, sink, version, indentationInconsistencySeverity);
+            options.ErrorSink = sink;
+            ParseFile(filename, version, options);
 
             var foundErrors = new StringBuilder();
             for (var i = 0; i < sink.Errors.Count; i++) {
@@ -3111,6 +3200,13 @@ pass
                 if (sink.Errors[i].Span != errors[i].Span) {
                     Assert.Fail("Wrong span for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
                 }
+                // Span equality check is not looking at indexes, so we do that here
+                if (sink.Errors[i].Span.Start.Index != errors[i].Span.Start.Index) {
+                    Assert.Fail("Wrong start index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.Start.Index, errors[i].Span.Start.Index);
+                }
+                if (sink.Errors[i].Span.End.Index != errors[i].Span.End.Index) {
+                    Assert.Fail("Wrong end index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.End.Index, errors[i].Span.End.Index);
+                }
             }
             if (sink.Errors.Count > errors.Length) {
                 Assert.Fail("Unexpected errors occurred");
@@ -3131,9 +3227,16 @@ pass
         }
 
         private static PythonAst ParseFile(string filename, ErrorSink errorSink, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
+            return ParseFile(filename, version, new ParserOptions() {
+                ErrorSink = errorSink,
+                IndentationInconsistencySeverity = indentationInconsistencySeverity,
+            });
+        }
+
+        private static PythonAst ParseFile(string filename, PythonLanguageVersion version, ParserOptions options) {
             var src = TestData.GetPath("TestData", "Grammar", filename);
             using (var reader = new StreamReader(src, true)) {
-                var parser = Parser.CreateParser(reader, version, new ParserOptions() { ErrorSink = errorSink, IndentationInconsistencySeverity = indentationInconsistencySeverity });
+                var parser = Parser.CreateParser(reader, version, options);
                 return parser.ParseFile();
             }
         }

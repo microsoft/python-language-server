@@ -41,4 +41,22 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             return base.Call(memberName, args);
         }
     }
+
+    /// <summary>
+    /// Empty iterator
+    /// </summary>
+    internal sealed class EmptyIterator : IPythonIterator {
+        public EmptyIterator(IPythonType unknownType) {
+            Type = unknownType;
+        }
+        
+        public PythonMemberType MemberType => PythonMemberType.Class;
+        public LocationInfo Location => LocationInfo.Empty;
+        public IPythonIterator GetIterator() => this;
+        public IPythonType Type { get; }
+        public IMember Call(string memberName, IArgumentSet args) => Type;
+        public IMember Index(object index) => Type;
+        public IMember Next => Type;
+
+    }
 }

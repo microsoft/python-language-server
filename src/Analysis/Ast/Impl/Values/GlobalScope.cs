@@ -13,15 +13,35 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModule module):
-            base(null, null, true) {
-            Module = module;
+        public GlobalScope(IPythonModule module): base(null, null, module) {
+            DeclareBuiltinVariables();
         }
 
-        public IPythonModule Module { get; }
+        public override ScopeStatement Node => Module.Analysis?.Ast;
+
+        private void DeclareBuiltinVariables() {
+            if (Module.ModuleType != ModuleType.User) {
+                return;
+            }
+
+            var boolType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
+            var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
+            var listType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.List);
+            var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
+
+            VariableCollection.DeclareVariable("__debug__", boolType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__file__", strType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__package__", strType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__path__", listType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin, LocationInfo.Empty);
+        }
     }
 }

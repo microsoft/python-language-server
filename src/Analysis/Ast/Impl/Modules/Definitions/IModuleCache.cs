@@ -13,13 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
-
 namespace Microsoft.Python.Analysis.Modules {
     public interface IModuleCache {
-        Task<IDocument> ImportFromCacheAsync(string name, CancellationToken cancellationToken);
         string GetCacheFilePath(string filePath);
         string ReadCachedModule(string filePath);
         void WriteCachedModule(string filePath, string code);
