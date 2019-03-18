@@ -215,5 +215,12 @@ x = f()
             d.SourceSpan.Should().Be(1, 6, 1, 19);
             d.Message.Should().Be(Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant("nonexistent"));
         }
+
+        [TestMethod, Priority(0)]
+        public async Task FromFuture() {
+            var analysis = await GetAnalysisAsync(@"from __future__ import print_function", PythonVersions.LatestAvailable2X);
+            analysis.Diagnostics.Should().BeEmpty();
+            analysis.Should().HaveFunction("print");
+        }
     }
 }

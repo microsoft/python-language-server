@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var mod = analysis.Document;
 
-            mod.GetMemberNames().Should().OnlyContain("f", "f2", "g", "h", "C");
+            mod.GetMemberNames().Should().Contain("f", "f2", "g", "h", "C");
             mod.GetMember("f").Should().BeAssignableTo<IPythonFunctionType>()
                 .Which.Documentation.Should().Be("f");
 

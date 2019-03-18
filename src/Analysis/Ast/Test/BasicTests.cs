@@ -55,7 +55,7 @@ y = c.method()
             var analysis = await GetAnalysisAsync(code);
 
             var names = analysis.GlobalScope.Variables.Names;
-            names.Should().OnlyContain("x", "C", "func", "c", "y");
+            names.Should().Contain("x", "C", "func", "c", "y");
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
             analysis.Should().HaveVariable("C").Which.Value.Should().BeAssignableTo<IPythonClassType>();
@@ -78,11 +78,26 @@ import sys
 x = sys.path
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.GlobalScope.Variables.Count.Should().Be(2);
-
             analysis.Should()
                 .HaveVariable("sys").OfType(BuiltinTypeId.Module)
                 .And.HaveVariable("x").OfType(BuiltinTypeId.List);
+        }
+
+        [DataRow(true, true)]
+        [DataRow(false, true)]
+        [DataRow(true, false)]
+        [DataRow(false, false)]
+        [DataTestMethod, Priority(0)]
+        public async Task UnknownType(bool isPython3X, bool isAnaconda) {
+            const string code = @"x = 1";
+
+            var configuration = isPython3X
+                ? isAnaconda ? PythonVersions.LatestAnaconda3X : PythonVersions.LatestAvailable3X
+                : isAnaconda ? PythonVersions.LatestAnaconda2X : PythonVersions.LatestAvailable2X;
+            var analysis = await GetAnalysisAsync(code, configuration);
+
+            var unkType = analysis.Document.Interpreter.UnknownType;
+            unkType.TypeId.Should().Be(BuiltinTypeId.Unknown);
         }
 
         [DataRow(true, true)]
