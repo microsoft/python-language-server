@@ -405,7 +405,7 @@ namespace Microsoft.Python.Parsing {
                 _errors.Add(e.Message, span, ErrorCodes.SyntaxError, Severity.Error);
             } finally {
                 var expr = new ConstantExpression(contents);
-                expr.SetLoc(StartIndex() + _position - s.Length, StartIndex() + _position);
+                expr.SetLoc(new IndexSpan(bufferStartLoc.Index, s.Length));
                 _fStringChildren.Add(expr);
             }
         }
