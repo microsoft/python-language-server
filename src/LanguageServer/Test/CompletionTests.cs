@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -1093,6 +1094,18 @@ for a, b in x:
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 4));
             result.Should().HaveLabels("a", "b");
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task NoCompletionForCurrentModuleName(bool empty) {
+            var modulePath = TestData.GetNextModulePath();
+            var code = empty ? string.Empty : $"{Path.GetFileNameWithoutExtension(modulePath)}.";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, null, modulePath);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, code.Length + 1));
+            result.Should().NotContainLabels(analysis.Document.Name);
         }
     }
 }
