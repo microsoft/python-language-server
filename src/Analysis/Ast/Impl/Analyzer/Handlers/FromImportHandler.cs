@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
@@ -122,6 +123,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (printNameExpression != null) {
                 var fn = new PythonFunctionType("print", Module, null, string.Empty, LocationInfo.Empty);
                 var o = new PythonFunctionOverload(fn.Name, Module, _ => LocationInfo.Empty);
+                var parameters = new List<ParameterInfo> {
+                    new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
+                    new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
+                    new ParameterInfo("end", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
+                    new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null)
+                };
+                o.SetParameters(parameters);
+                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), true);
                 fn.AddOverload(o);
                 Eval.DeclareVariable("print", fn, VariableSource.Import, printNameExpression);
             }
