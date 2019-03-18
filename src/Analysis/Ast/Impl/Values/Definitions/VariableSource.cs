@@ -37,6 +37,11 @@ namespace Microsoft.Python.Analysis.Values {
         /// Variable is as reference to existing variable
         /// declared as nonlocal or global.
         /// </summary>
-        Locality
+        Locality,
+
+        /// <summary>
+        /// Variable is a built-in constant such as __debug__.
+        /// </summary>
+        Builtin
     }
 }

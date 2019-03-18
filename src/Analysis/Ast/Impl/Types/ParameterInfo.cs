@@ -18,18 +18,23 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class ParameterInfo : IParameterInfo {
-        public ParameterInfo(PythonAst ast, Parameter p, IPythonType type, IMember defaultValue, bool isGeneric) {
-            Name = p?.Name ?? throw new ArgumentNullException(nameof(p));
+        public ParameterInfo(PythonAst ast, Parameter p, IPythonType type, IMember defaultValue, bool isGeneric) :
+        this(p?.Name, type, p?.Kind, defaultValue) {
             Documentation = string.Empty;
-            DefaultValueString = p.DefaultValue?.ToCodeString(ast).Trim();
+            DefaultValueString = p?.DefaultValue?.ToCodeString(ast).Trim();
             if (DefaultValueString == "...") {
                 DefaultValueString = null;
             }
-            IsParamArray = p.Kind == ParameterKind.List;
-            IsKeywordDict = p.Kind == ParameterKind.Dictionary;
             IsGeneric = isGeneric;
+        }
+
+        public ParameterInfo(string name, IPythonType type, ParameterKind? kind, IMember defaultValue) {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Documentation = string.Empty;
             DefaultValue = defaultValue;
             Type = type;
+            IsParamArray = kind == ParameterKind.List;
+            IsKeywordDict = kind == ParameterKind.Dictionary;
         }
 
         public string Name { get; }
@@ -39,6 +44,6 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsGeneric { get; }
         public IPythonType Type { get; }
         public string DefaultValueString { get; }
-        public IMember DefaultValue { get;}
+        public IMember DefaultValue { get; }
     }
 }

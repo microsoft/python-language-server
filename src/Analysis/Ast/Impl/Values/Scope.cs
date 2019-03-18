@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
@@ -25,25 +26,28 @@ namespace Microsoft.Python.Analysis.Values {
     /// Represents scope where variables can be declared.
     /// </summary>
     internal class Scope : IScope {
-        private VariableCollection _variables;
         private VariableCollection _nonLocals;
         private VariableCollection _globals;
         private List<Scope> _childScopes;
 
-        public Scope(ScopeStatement node, IScope outerScope, bool visibleToChildren = true) {
+        protected VariableCollection VariableCollection { get; } = new VariableCollection();
+
+        public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
             Node = node;
             OuterScope = outerScope;
-            VisibleToChildren = visibleToChildren;
+            Module = module;
+            DeclareBuiltinVariables();
         }
 
         #region IScope
+
         public string Name => Node?.Name ?? "<global>";
         public virtual ScopeStatement Node { get; }
         public IScope OuterScope { get; }
-        public bool VisibleToChildren { get; }
+        public IPythonModule Module { get; }
 
         public IReadOnlyList<IScope> Children => (IReadOnlyList<IScope>)_childScopes ?? Array.Empty<IScope>();
-        public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
+        public IVariableCollection Variables => VariableCollection;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
 
@@ -53,6 +57,7 @@ namespace Microsoft.Python.Analysis.Values {
                 while (scope.OuterScope != null) {
                     scope = scope.OuterScope;
                 }
+
                 Debug.Assert(scope is IGlobalScope);
                 return scope as IGlobalScope;
             }
@@ -67,15 +72,45 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
+
         public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location)
-            => (_variables ?? (_variables = new VariableCollection())).DeclareVariable(name, value, source, location);
+            => VariableCollection.DeclareVariable(name, value, source, location);
+
         public void DeclareNonLocal(string name, LocationInfo location)
             => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
+
         public void DeclareGlobal(string name, LocationInfo location)
             => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
+
         #endregion
 
         internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
+
+        private void DeclareBuiltinVariables() {
+            if(Node == null || Module.ModuleType != ModuleType.User || this is IGlobalScope) {
+                return;
+            }
+
+            var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
+            var objType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+
+            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin, LocationInfo.Empty);
+
+            if (Node is FunctionDefinition) {
+                var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
+                var tupleType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Tuple);
+
+                VariableCollection.DeclareVariable("__closure__", tupleType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__code__", objType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__defaults__", tupleType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin, LocationInfo.Empty);
+            } else if(Node is ClassDefinition) {
+                VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin, LocationInfo.Empty);
+            }
+        }
     }
 
     internal class EmptyGlobalScope : IGlobalScope {
@@ -88,7 +123,6 @@ namespace Microsoft.Python.Analysis.Values {
         public ScopeStatement Node => null;
         public IScope OuterScope => null;
         public IGlobalScope GlobalScope { get; protected set; }
-        public bool VisibleToChildren => true;
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);

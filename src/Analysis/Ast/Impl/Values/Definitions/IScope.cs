@@ -26,13 +26,13 @@ namespace Microsoft.Python.Analysis.Values {
         ScopeStatement Node { get; }
         IScope OuterScope { get; }
         IGlobalScope GlobalScope { get; }
-        bool VisibleToChildren { get; }
         IReadOnlyList<IScope> Children { get; }
         IEnumerable<IScope> EnumerateTowardsGlobal { get; }
         IEnumerable<IScope> EnumerateFromGlobal { get; }
         IVariableCollection Variables { get; }
         IVariableCollection NonLocals { get; }
         IVariableCollection Globals { get; }
+        IPythonModule Module { get; }
         void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location);
     }
 }
