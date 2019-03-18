@@ -396,6 +396,21 @@ x(1)
             analysis.Diagnostics.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task WithOpenOverUnknown() {
+            const string code = @"
+import xml.etree.ElementTree as ElementTree
+
+class XXX:
+    def __init__(self, path):
+        self.path = path
+        with (self.path / 'object.xml').open() as f:
+            self.root = ElementTree.parse(f)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
             public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
