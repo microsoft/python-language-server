@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
@@ -33,6 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (rootNames.Count == 1) {
                 var rootName = rootNames[0].Name;
                 if (rootName.EqualsOrdinal("__future__")) {
+                    SpecializeFuture(node);
                     return false;
                 }
             }
@@ -108,6 +110,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return GetOrCreateVariableModule(packageImport.FullName, parentModule, memberName);
                 default:
                     return Interpreter.UnknownType;
+            }
+        }
+
+        private void SpecializeFuture(FromImportStatement node) {
+            if (Interpreter.LanguageVersion.Is3x()) {
+                return;
+            }
+
+            var printNameExpression = node.Names.FirstOrDefault(n => n?.Name == "print_function");
+            if (printNameExpression != null) {
+                var fn = new PythonFunctionType("print", Module, null, string.Empty, LocationInfo.Empty);
+                var o = new PythonFunctionOverload(fn.Name, Module, _ => LocationInfo.Empty);
+                fn.AddOverload(o);
+                Eval.DeclareVariable("print", fn, VariableSource.Import, printNameExpression);
             }
         }
     }
