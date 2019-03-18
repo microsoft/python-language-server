@@ -609,7 +609,7 @@ namespace Microsoft.Python.Parsing {
 
             BufferBack();
 
-            if (atBeginning && ch != '#' && ch != '\f' && ch != EOF && !IsEoln(ch)) {
+            if (atBeginning && !_state.FStringExpression && ch != '#' && ch != '\f' && ch != EOF && !IsEoln(ch)) {
                 MarkTokenEnd();
                 ReportSyntaxError(BufferTokenSpan, "invalid syntax", ErrorCodes.SyntaxError);
             }

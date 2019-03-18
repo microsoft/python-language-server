@@ -361,7 +361,7 @@ namespace Microsoft.Python.Parsing {
                 ReportSyntaxError(Resources.EmptyExpressionFStringErrorMsg);
                 return new ErrorExpression(subExprStr, null);
             }
-            var parser = Parser.CreateParser(new StringReader(subExprStr.TrimStart(' ')), _langVersion, new ParserOptions() {
+            var parser = Parser.CreateParser(new StringReader(subExprStr), _langVersion, new ParserOptions() {
                 ErrorSink = _errors,
                 InitialSourceLocation = initialSourceLocation,
                 ParseFStringExpression = true
