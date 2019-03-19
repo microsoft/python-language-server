@@ -61,14 +61,14 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public int ReIndexingDelay { get; set; } = DefaultReIndexDelay;
 
-        public Task IndexWorkspace() {
+        public Task IndexWorkspace(CancellationToken ct = default) {
             return Task.Run(() => {
                 foreach (var fileInfo in WorkspaceFiles()) {
                     if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
                         _symbolIndex.Parse(fileInfo.FullName);
                     }
                 }
-            });
+            }, ct);
         }
 
         private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
