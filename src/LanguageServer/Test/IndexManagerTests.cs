@@ -57,6 +57,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             context.AddFileToRoot($"{_rootPath}\foo.py", MakeStream("y = 1"));
 
             var indexManager = context.GetDefaultIndexManager();
+            await WaitForWorkspaceAddedAsync(indexManager);
 
             var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             symbols.Should().HaveCount(2);
@@ -175,6 +176,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var pythonTestFilePath = context.FileWithXVarInRootDir();
 
             var indexManager = context.GetDefaultIndexManager();
+            await WaitForWorkspaceAddedAsync(indexManager);
 
             var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             SymbolsShouldBeOnlyX(symbols);
@@ -188,6 +190,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 context.AddFileToRoot($"{_rootPath}\bla{fileNumber}.py", MakeStream($"x{fileNumber} = 1"));
             }
             var indexManager = context.GetDefaultIndexManager();
+            await WaitForWorkspaceAddedAsync(indexManager);
 
             const int amountOfSymbols = 3;
 
@@ -201,6 +204,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var pythonTestFilePath = context.FileWithXVarInRootDir();
 
             var indexManager = context.GetDefaultIndexManager();
+            await WaitForWorkspaceAddedAsync(indexManager);
 
             var symbols = await indexManager.HierarchicalDocumentSymbolsAsync(pythonTestFilePath);
             SymbolsShouldBeOnlyX(symbols);
@@ -341,7 +345,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         private static async Task WaitForWorkspaceAddedAsync(IIndexManager indexManager) {
-            await indexManager.WorkspaceSymbolsAsync("", 1000);
+            await indexManager.IndexWorkspace();
         }
 
         private async Task SymbolIndexShouldBeEmpty(IIndexManager indexManager) {

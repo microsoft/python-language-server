@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface IIndexManager : IDisposable {
+        Task IndexWorkspace();
         void ProcessNewFile(string path, IDocument doc);
         void ProcessClosedFile(string path);
         void ReIndexFile(string path, IDocument doc);

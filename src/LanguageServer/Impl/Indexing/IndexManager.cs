@@ -57,18 +57,18 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _disposables
                 .Add(_symbolIndex)
                 .Add(() => idleTimeService.Idle -= OnIdle);
-
-            StartAddRootDir();
         }
 
         public int ReIndexingDelay { get; set; } = DefaultReIndexDelay;
 
-        private void StartAddRootDir() {
-            foreach (var fileInfo in WorkspaceFiles()) {
-                if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
-                    _symbolIndex.Parse(fileInfo.FullName);
+        public Task IndexWorkspace() {
+            return Task.Run(() => {
+                foreach (var fileInfo in WorkspaceFiles()) {
+                    if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
+                        _symbolIndex.Parse(fileInfo.FullName);
+                    }
                 }
-            }
+            });
         }
 
         private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
