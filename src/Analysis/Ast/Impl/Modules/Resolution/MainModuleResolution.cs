@@ -186,7 +186,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
-            foreach (var uri in Modules.Select(m => m.Value.Value?.Uri).ExcludeDefault()) {
+            foreach (var uri in Modules
+                .Where(m => m.Value.Value?.Name != BuiltinModuleName)
+                .Select(m => m.Value.Value?.Uri)
+                .ExcludeDefault()) {
                 GetRdt()?.UnlockDocument(uri);
             }
             
