@@ -226,6 +226,15 @@ y = n2[0]
         }
 
         [TestMethod, Priority(0)]
+        public async Task FStringIsStringType() {
+            const string code = @"
+x = f'{1}'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task OptionalNone() {
             const string code = @"
 import typing

@@ -100,6 +100,290 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void FStringErrors() {
+            ParseErrors("FStringErrors.py",
+                PythonLanguageVersion.V36,
+                new ErrorInfo("f-string: expecting '}'", 3, 1, 4, 4, 1, 5),
+                new ErrorInfo("f-string expression part cannot include a backslash", 9, 2, 4, 10, 2, 5),
+                new ErrorInfo("unexpected token 'import'", 26, 4, 2, 32, 4, 8),
+                new ErrorInfo("unexpected token 'def'", 61, 7, 2, 64, 7, 5),
+                new ErrorInfo("cannot mix bytes and nonbytes literals", 94, 11, 5, 97, 11, 8),
+                new ErrorInfo("f-string: expecting '}'", 113, 13, 13, 114, 13, 14),
+                new ErrorInfo("f-string: single '}' is not allowed", 120, 15, 3, 121, 15, 4),
+                new ErrorInfo("f-string expression part cannot include '#'", 129, 17, 4, 130, 17, 5),
+                new ErrorInfo("f-string: expecting '}'", 139, 19, 4, 140, 19, 5),
+                new ErrorInfo("unexpected token 'import'", 147, 21, 4, 153, 21, 10),
+                new ErrorInfo("f-string: empty expression not allowed", 169, 23, 4, 170, 23, 5),
+                new ErrorInfo("unexpected token '='", 180, 25, 6, 181, 25, 7),
+                new ErrorInfo("expected ':'", 200, 27, 12, 200, 27, 12),
+                new ErrorInfo("f-string: lambda must be inside parentheses", 192, 27, 4, 200, 27, 12),
+                new ErrorInfo("f-string: expecting '}'", 214, 29, 6, 215, 29, 7),
+                new ErrorInfo("f-string: invalid conversion character: expected 's', 'r', or 'a'", 224, 31, 6, 225, 31, 7),
+                new ErrorInfo("f-string: invalid conversion character: k expected 's', 'r', or 'a'", 236, 33, 7, 237, 33, 8),
+                new ErrorInfo("f-string: unmatched ')'", 245, 35, 4, 246, 35, 5),
+                new ErrorInfo("f-string: unmatched ')'", 257, 37, 6, 258, 37, 7),
+                new ErrorInfo("f-string: closing parenthesis '}' does not match opening parenthesis '('", 269, 39, 6, 270, 39, 7)
+            );
+        }
+
+        [TestMethod, Priority(0)]
+        public void FStrings() {
+            foreach (var version in V36AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("FStrings.py", errors, version),
+                    CheckSuite(
+                        CheckAssignment(
+                            CheckNameExpr("some"),
+                            One
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("text")
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("some")
+                                )
+                            )
+                        ),
+                        CheckFuncDef("f", NoParameters, CheckSuite(
+                            CheckReturnStmt(
+                                CheckFString(
+                                    CheckFormattedValue(
+                                        CheckYieldExpr(CheckNameExpr("some"))
+                                    )
+                                )
+                           )
+                        )),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("result: "),
+                                CheckFormattedValue(
+                                    CheckFString(
+                                        CheckFormattedValue(
+                                            CheckNameExpr("some")
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("{{text "),
+                                CheckFormattedValue(
+                                    CheckNameExpr("some")
+                                ),
+                                CheckNodeConstant(" }}")
+                            )
+                       ),
+                       CheckExprStmt(
+                           CheckFString(
+                               CheckFormattedValue(
+                                   CheckBinaryExpression(
+                                       CheckNameExpr("some"),
+                                        PythonOperator.Add,
+                                        One
+                                   )
+                               )
+                           )
+                       ),
+                       CheckExprStmt(
+                           CheckFString(
+                               CheckNodeConstant("Has a :")
+                           )
+                       ),
+                       CheckExprStmt(
+                           CheckFString(
+                               CheckFormattedValue(
+                                   One,
+                                   null,
+                                   CheckFormatSpecifer(
+                                        CheckFormattedValue(
+                                            CheckConstant("{")
+                                        ),
+                                        CheckNodeConstant(">10")
+                                   )
+                               )
+                           )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("some")
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("\n")
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("space between opening braces: "),
+                                CheckFormattedValue(
+                                    CheckSetComp(
+                                        CheckNameExpr("thing"),
+                                        CompFor(
+                                            CheckNameExpr("thing"),
+                                            CheckTupleExpr(
+                                                One,
+                                                CheckConstant(2),
+                                                CheckConstant(3)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckCallExpression(
+                                CheckNameExpr("print"),
+                                PositionalArg(
+                                    CheckFString(
+                                        CheckNodeConstant("first: "),
+                                        CheckFormattedValue(
+                                            CheckFString(
+                                                CheckNodeConstant("second "),
+                                                CheckFormattedValue(
+                                                    CheckNameExpr("some")
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("some"),
+                                    'r',
+                                    CheckFormatSpecifer(
+                                        CheckFormattedValue(
+                                            CheckNameExpr("some")
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("some"),
+                                    null,
+                                    CheckFormatSpecifer(
+                                        CheckNodeConstant("#06x")
+                                    )
+                                )
+                            )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("\n"),
+                                CheckFormattedValue(
+                                    One
+                                ),
+                                CheckNodeConstant("\n")
+                            )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("{{nothing")
+                            )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("Hello '"),
+                                CheckFormattedValue(
+                                    CheckBinaryExpression(
+                                        CheckFString(
+                                            CheckFormattedValue(
+                                                CheckNameExpr("some")
+                                            )
+                                        ),
+                                        PythonOperator.Add,
+                                        CheckConstant("example")
+                                    )
+                                )
+                            )
+                       ),
+                       CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckConstant(3.14),
+                                    null,
+                                    CheckFormatSpecifer(
+                                        CheckNodeConstant("!<10.10")
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckBinaryExpression(
+                                        One,
+                                        PythonOperator.Add,
+                                        One
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("\\N{GREEK CAPITAL LETTER DELTA}")
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckNodeConstant("\\"),
+                                CheckFormattedValue(
+                                    One
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("a"),
+                                    null,
+                                    CheckFormatSpecifer(
+                                        CheckNodeConstant("{{}}")
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckCallExpression(
+                                        CheckParenExpr(
+                                            CheckLambda(
+                                                new[] { CheckParameter("x") },
+                                                CheckBinaryExpression(
+                                                    CheckNameExpr("x"),
+                                                    PythonOperator.Add,
+                                                    One
+                                                )
+                                            )
+                                        ),
+                                        PositionalArg(One)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                );
+
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void GeneralizedUnpacking() {
             foreach (var version in V35AndUp) {
                 CheckAst(
@@ -4040,6 +4324,13 @@ pass
             };
         }
 
+        private static Action<Node> CheckNodeConstant(object value, string expectedRepr = null, PythonLanguageVersion ver = PythonLanguageVersion.V27) {
+            return node => {
+                Assert.IsInstanceOfType(node, typeof(Expression));
+                CheckConstant(value)((Expression)node);
+            };
+        }
+
         private static Action<Expression> CheckConstant(object value, string expectedRepr = null, PythonLanguageVersion ver = PythonLanguageVersion.V27) {
             return expr => {
                 Assert.AreEqual(typeof(ConstantExpression), expr.GetType());
@@ -4228,6 +4519,43 @@ pass
             };
         }
 
+        private static Action<Expression> CheckFString(params Action<Node>[] subExpressions) {
+            return expr => {
+                Assert.AreEqual(typeof(FString), expr.GetType());
+                var nodes = expr.GetChildNodes().ToArray();
+                Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in fstring");
+                for (var i = 0; i < subExpressions.Length; i++) {
+                    subExpressions[i](nodes[i]);
+                }
+            };
+        }
+
+        private static Action<Node> CheckFormattedValue(Action<Expression> value, char? conversion = null, Action<Expression> formatSpecifier = null) {
+            return node => {
+                Assert.AreEqual(typeof(FormattedValue), node.GetType());
+                var formattedValue = (FormattedValue)node;
+
+                value(formattedValue.Value);
+                Assert.AreEqual(formattedValue.Conversion, conversion, "formatted value's conversion is not correct");
+                if (formatSpecifier == null) {
+                    Assert.AreEqual(formattedValue.FormatSpecifier, null, "format specifier is not null");
+                } else {
+                    formatSpecifier(formattedValue.FormatSpecifier);
+                }
+            };
+        }
+
+        private static Action<Expression> CheckFormatSpecifer(params Action<Node>[] subExpressions) {
+            return expr => {
+                Assert.AreEqual(typeof(FormatSpecifier), expr.GetType());
+
+                var nodes = expr.GetChildNodes().ToArray();
+                Assert.AreEqual(nodes.Length, subExpressions.Length, "Wrong amount of nodes in format specifier");
+                for (var i = 0; i < subExpressions.Length; i++) {
+                    subExpressions[i](nodes[i]);
+                }
+            };
+        }
 
         private Action<ComprehensionIterator> CompFor(Action<Expression> lhs, Action<Expression> list) {
             return iter => {

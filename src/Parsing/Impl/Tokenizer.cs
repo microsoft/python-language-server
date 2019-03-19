@@ -609,7 +609,7 @@ namespace Microsoft.Python.Parsing {
 
             BufferBack();
 
-            if (atBeginning && ch != '#' && ch != '\f' && ch != EOF && !IsEoln(ch)) {
+            if (atBeginning && !_state.FStringExpression && ch != '#' && ch != '\f' && ch != EOF && !IsEoln(ch)) {
                 MarkTokenEnd();
                 ReportSyntaxError(BufferTokenSpan, "invalid syntax", ErrorCodes.SyntaxError);
             }
@@ -993,10 +993,10 @@ namespace Microsoft.Python.Parsing {
 
             MarkTokenEnd();
 
-            return MakeStringToken(quote, isRaw, isUnicode, isBytes, isTriple, _start + startAdd, TokenLength - startAdd - end_add);
+            return MakeStringToken(quote, isRaw, isUnicode, isBytes, isTriple, isFormatted, _start + startAdd, TokenLength - startAdd - end_add);
         }
 
-        private Token MakeStringToken(char quote, bool isRaw, bool isUnicode, bool isBytes, bool isTriple, int start, int length) {
+        private Token MakeStringToken(char quote, bool isRaw, bool isUnicode, bool isBytes, bool isTriple, bool isFormatted, int start, int length) {
             bool makeUnicode;
             if (isUnicode) {
                 makeUnicode = true;
@@ -1006,19 +1006,32 @@ namespace Microsoft.Python.Parsing {
                 makeUnicode = LanguageVersion.Is3x() || UnicodeLiterals || StubFile;
             }
 
+            if (isFormatted) {
+                Debug.Assert(LanguageVersion >= PythonLanguageVersion.V36);
+
+                string contents = new string(_buffer, start, length);
+                string openQuotes = new string(quote, isTriple ? 3 : 1);
+                if (Verbatim) {
+                    return new VerbatimFStringToken(contents, openQuotes, isTriple, isRaw, GetTokenString());
+                } else {
+                    return new FStringToken(contents, openQuotes, isTriple, isRaw);
+                }
+            }
+
             if (makeUnicode) {
                 string contents;
                 try {
                     contents = LiteralParser.ParseString(_buffer, start, length, isRaw, true, !_disableLineFeedLineSeparator);
                 } catch (DecoderFallbackException e) {
-                    _errors.Add(e.Message, _newLineLocations.ToArray(), _tokenStartIndex, _tokenEndIndex, ErrorCodes.SyntaxError, Severity.Error);
+                    _errors.Add(e.Message, IndexToLocation(_tokenStartIndex),
+                        IndexToLocation(_tokenEndIndex), ErrorCodes.SyntaxError, Severity.Error);
                     contents = "";
                 }
-
                 if (Verbatim) {
                     return new VerbatimUnicodeStringToken(contents, GetTokenString());
+                } else {
+                    return new UnicodeStringToken(contents);
                 }
-                return new UnicodeStringToken(contents);
             } else {
                 var data = LiteralParser.ParseBytes(_buffer, start, length, isRaw, !_disableLineFeedLineSeparator);
                 if (data.Count == 0) {
@@ -1889,7 +1902,8 @@ namespace Microsoft.Python.Parsing {
             #endregion
         }
 
-        public int GroupingLevel => _state.ParenLevel + _state.BraceLevel + _state.BracketLevel;
+        public int GroupingLevel => _state.ParenLevel + _state.BraceLevel + _state.BracketLevel +
+            (_state.FStringExpression ? 1 : 0);
 
         /// <summary>
         /// True if the last characters in the buffer are a backslash followed by a new line indicating
@@ -2265,6 +2279,7 @@ namespace Microsoft.Python.Parsing {
 
             // grouping state
             public int ParenLevel, BraceLevel, BracketLevel;
+            public bool FStringExpression;
 
             // white space tracking
             public StringBuilder CurWhiteSpace;
@@ -2277,6 +2292,7 @@ namespace Microsoft.Python.Parsing {
                 BracketLevel = state.BraceLevel;
                 ParenLevel = state.ParenLevel;
                 BraceLevel = state.BraceLevel;
+                FStringExpression = state.FStringExpression;
                 PendingDedents = state.PendingDedents;
                 IndentLevel = state.IndentLevel;
                 IndentFormat = (string[])state.IndentFormat?.Clone();
@@ -2296,6 +2312,7 @@ namespace Microsoft.Python.Parsing {
                 Indent = new int[MaxIndent]; // TODO
                 LastNewLine = true;
                 BracketLevel = ParenLevel = BraceLevel = PendingDedents = IndentLevel = 0;
+                FStringExpression = (options & TokenizerOptions.FStringExpression) != 0;
                 IndentFormat = null;
                 IncompleteString = null;
                 if ((options & TokenizerOptions.Verbatim) != 0) {
