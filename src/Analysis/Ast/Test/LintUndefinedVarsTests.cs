@@ -453,6 +453,40 @@ class A:
             analysis.Diagnostics.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task LambdaComrehension() {
+            const string code = @"
+y = lambda x: [e for e in x if e == 1]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromFuture() {
+            const string code = @"
+from __future__ import print_function
+print()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithOpenOverUnknown() {
+            const string code = @"
+import xml.etree.ElementTree as ElementTree
+
+class XXX:
+    def __init__(self, path):
+        self.path = path
+        with (self.path / 'object.xml').open() as f:
+            self.root = ElementTree.parse(f)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
             public AnalysisOptions Options { get; } = new AnalysisOptions();
         }

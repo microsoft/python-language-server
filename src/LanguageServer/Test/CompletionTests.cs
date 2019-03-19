@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -846,10 +847,11 @@ pass";
             result.Should().HaveLabels("__init__").And.NotContainLabels("def");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task NoCompletionInString() {
-
-            var analysis = await GetAnalysisAsync("\"str.\"");
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task NoCompletionInString(bool is2x) {
+            var analysis = await GetAnalysisAsync("\"str.\"", is2x ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 6));
             result.Should().HaveNoCompletion();
@@ -857,8 +859,18 @@ pass";
 
         [TestMethod, Priority(0)]
         public async Task NoCompletionInOpenString() {
-
             var analysis = await GetAnalysisAsync("'''.");
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            result.Should().HaveNoCompletion();
+        }
+
+        [DataRow("f'.")]
+        [DataRow("f'a.")]
+        [DataRow("f'a.'")]
+        [DataTestMethod, Priority(0)]
+        public async Task NoCompletionInFStringConstant(string openFString) {
+            var analysis = await GetAnalysisAsync(openFString);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
             result.Should().HaveNoCompletion();
@@ -937,7 +949,7 @@ os.path.
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().HaveNoCompletion();
+            result.Should().OnlyHaveLabels("__dict__", "__debug__", "__path__", "__file__", "__doc__", "__package__", "__name__");
         }
 
         [TestMethod, Priority(0)]
@@ -962,7 +974,7 @@ os.path.
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().OnlyHaveLabels("module2", "sub_package", "answer");
+            result.Should().HaveLabels("module2", "sub_package", "answer");
         }
 
         [TestMethod, Priority(0)]
@@ -988,7 +1000,7 @@ os.path.
             var result = cs.GetCompletions(analysis1, new SourceLocation(1, 8));
             result.Should().HaveLabels("package").And.NotContainLabels("module2", "sub_package", "answer");
             result = cs.GetCompletions(analysis2, new SourceLocation(1, 16));
-            result.Should().OnlyHaveLabels("module1", "sub_package", "answer");
+            result.Should().HaveLabels("module1", "sub_package", "answer");
         }
 
         [TestMethod, Priority(0)]
@@ -1093,6 +1105,18 @@ for a, b in x:
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 4));
             result.Should().HaveLabels("a", "b");
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task NoCompletionForCurrentModuleName(bool empty) {
+            var modulePath = TestData.GetNextModulePath();
+            var code = empty ? string.Empty : $"{Path.GetFileNameWithoutExtension(modulePath)}.";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, null, modulePath);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, code.Length + 1));
+            result.Should().NotContainLabels(analysis.Document.Name);
         }
     }
 }

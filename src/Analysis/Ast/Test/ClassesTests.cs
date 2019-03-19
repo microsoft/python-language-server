@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var names = analysis.GlobalScope.Variables.Names;
             var all = analysis.GlobalScope.Variables.ToArray();
 
-            names.Should().OnlyContain("C1", "C2", "C3", "C4", "C5",
+            names.Should().Contain("C1", "C2", "C3", "C4", "C5",
                 "D", "E",
                 "F1",
                 "f"

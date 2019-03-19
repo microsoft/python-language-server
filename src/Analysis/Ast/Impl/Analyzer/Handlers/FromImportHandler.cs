@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
@@ -20,6 +21,7 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
@@ -33,6 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (rootNames.Count == 1) {
                 var rootName = rootNames[0].Name;
                 if (rootName.EqualsOrdinal("__future__")) {
+                    SpecializeFuture(node);
                     return false;
                 }
             }
@@ -108,6 +111,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return GetOrCreateVariableModule(packageImport.FullName, parentModule, memberName);
                 default:
                     return Interpreter.UnknownType;
+            }
+        }
+
+        private void SpecializeFuture(FromImportStatement node) {
+            if (Interpreter.LanguageVersion.Is3x()) {
+                return;
+            }
+
+            var printNameExpression = node.Names.FirstOrDefault(n => n?.Name == "print_function");
+            if (printNameExpression != null) {
+                var fn = new PythonFunctionType("print", Module, null, string.Empty, LocationInfo.Empty);
+                var o = new PythonFunctionOverload(fn.Name, Module, _ => LocationInfo.Empty);
+                var parameters = new List<ParameterInfo> {
+                    new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
+                    new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
+                    new ParameterInfo("end", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
+                    new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null)
+                };
+                o.SetParameters(parameters);
+                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), true);
+                fn.AddOverload(o);
+                Eval.DeclareVariable("print", fn, VariableSource.Import, printNameExpression);
             }
         }
     }
