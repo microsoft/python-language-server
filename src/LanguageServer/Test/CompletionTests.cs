@@ -949,7 +949,7 @@ os.path.
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().HaveNoCompletion();
+            result.Should().OnlyHaveLabels("__dict__", "__debug__", "__path__", "__file__", "__doc__", "__package__", "__name__");
         }
 
         [TestMethod, Priority(0)]
@@ -974,7 +974,7 @@ os.path.
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().OnlyHaveLabels("module2", "sub_package", "answer");
+            result.Should().HaveLabels("module2", "sub_package", "answer");
         }
 
         [TestMethod, Priority(0)]
@@ -1000,7 +1000,7 @@ os.path.
             var result = cs.GetCompletions(analysis1, new SourceLocation(1, 8));
             result.Should().HaveLabels("package").And.NotContainLabels("module2", "sub_package", "answer");
             result = cs.GetCompletions(analysis2, new SourceLocation(1, 16));
-            result.Should().OnlyHaveLabels("module1", "sub_package", "answer");
+            result.Should().HaveLabels("module1", "sub_package", "answer");
         }
 
         [TestMethod, Priority(0)]
