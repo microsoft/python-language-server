@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             DependencyVertex = vertex;
             FirstPass = firstPass;
             Index = -1;
-            LoopNumber = -1;
+            LoopNumber = firstPass?.LoopNumber ?? -1;
             _outgoing = new List<WalkingVertex<TKey, TValue>>();
         }
 
@@ -55,6 +55,15 @@ namespace Microsoft.Python.Analysis.Dependencies {
         }
 
         public void AddOutgoing(List<WalkingVertex<TKey, TValue>> loop) {
+            CheckNotSealed();
+
+            _outgoing.AddRange(loop);
+            foreach (var outgoingVertex in loop) {
+                outgoingVertex.IncomingCount++;
+            }
+        }
+
+        public void AddOutgoing(HashSet<WalkingVertex<TKey, TValue>> loop) {
             CheckNotSealed();
 
             _outgoing.AddRange(loop);
@@ -75,17 +84,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
             CheckNotSealed();
 
             SecondPass = new WalkingVertex<TKey, TValue>(DependencyVertex, this);
-
-            for (var i = _outgoing.Count - 1; i >= 0; i--) {
-                var outgoingVertex = _outgoing[i];
-                if (LoopNumber == outgoingVertex.LoopNumber) {
-                    continue;
-                }
-
-                SecondPass._outgoing.Add(outgoingVertex);
-                _outgoing.RemoveAt(i);
-            }
-
             return SecondPass;
         }
 

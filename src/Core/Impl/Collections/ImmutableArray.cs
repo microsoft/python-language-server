@@ -18,6 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Microsoft.Python.Core.Collections {
     /// <summary>
@@ -28,10 +29,13 @@ namespace Microsoft.Python.Core.Collections {
     /// <typeparam name="T"></typeparam>
     public struct ImmutableArray<T> : IReadOnlyList<T>, IEquatable<ImmutableArray<T>> {
         private readonly T[] _items;
+        private readonly Ref _ref;
+        private readonly int _count;
 
         private ImmutableArray(T[] items, int count) {
             _items = items;
-            Count = count;
+            _ref = new Ref();
+            _count = count;
         }
 
         public static ImmutableArray<T> Empty { get; } = new ImmutableArray<T>(Array.Empty<T>(), 0);
@@ -67,26 +71,26 @@ namespace Microsoft.Python.Core.Collections {
         }
 
         public T this[int index] => _items[index];
-        public int Count { get; } // Length of the ImmutableArray.
+        public int Count => _count; // Length of the ImmutableArray.
 
         [Pure]
         public ImmutableArray<T> Add(T item) {
-            var newCount = Count + 1;
+            var newCount = _count + 1;
             var newItems = _items;
 
-            if (newCount > _items.Length) {
+            if (newCount > _items.Length || Interlocked.CompareExchange(ref _ref.Count, newCount, _count) != _count) {
                 var capacity = GetCapacity(newCount);
                 newItems = new T[capacity];
-                Array.Copy(_items, 0, newItems, 0, Count);
+                Array.Copy(_items, 0, newItems, 0, _count);
             }
 
-            newItems[Count] = item;
+            newItems[_count] = item;
             return new ImmutableArray<T>(newItems, newCount);
         }
 
         [Pure]
         public ImmutableArray<T> AddRange(in ImmutableArray<T> items) 
-            => AddRange(items._items, items.Count);
+            => AddRange(items._items, items._count);
 
         [Pure]
         public ImmutableArray<T> AddRange(in T[] items) 
@@ -98,16 +102,16 @@ namespace Microsoft.Python.Core.Collections {
                 return this;
             }
 
-            var newCount = Count + itemsCount;
+            var newCount = _count + itemsCount;
             var newItems = _items;
 
-            if (newCount > _items.Length) {
+            if (newCount > _items.Length || Interlocked.CompareExchange(ref _ref.Count, newCount, _count) != _count) {
                 var capacity = GetCapacity(newCount);
                 newItems = new T[capacity];
-                Array.Copy(_items, 0, newItems, 0, Count);
+                Array.Copy(_items, 0, newItems, 0, _count);
             }
 
-            Array.Copy(items, 0, newItems, Count, itemsCount);
+            Array.Copy(items, 0, newItems, _count, itemsCount);
             return new ImmutableArray<T>(newItems, newCount);
         }
 
@@ -119,7 +123,7 @@ namespace Microsoft.Python.Core.Collections {
 
         [Pure]
         public ImmutableArray<T> RemoveAt(int index) {
-            var newCount = Count - 1;
+            var newCount = _count - 1;
 
             var capacity = GetCapacity(newCount);
             var newArray = new T[capacity];
@@ -137,15 +141,15 @@ namespace Microsoft.Python.Core.Collections {
 
         [Pure]
         public ImmutableArray<T> InsertAt(int index, T value) {
-            if (index > Count) {
+            if (index > _count) {
                 throw new IndexOutOfRangeException();
             }
 
-            if (index == Count) {
+            if (index == _count) {
                 return Add(value);
             }
 
-            var newCount = Count + 1;
+            var newCount = _count + 1;
             var capacity = GetCapacity(newCount);
             var newArray = new T[capacity];
 
@@ -154,7 +158,7 @@ namespace Microsoft.Python.Core.Collections {
             }
 
             newArray[index] = value;
-            Array.Copy(_items, index, newArray, index + 1, Count - index);
+            Array.Copy(_items, index, newArray, index + 1, _count - index);
 
             return new ImmutableArray<T>(newArray, newCount);
         }
@@ -169,7 +173,7 @@ namespace Microsoft.Python.Core.Collections {
                 return ReplaceAt(startIndex, value);
             }
 
-            var newCount = Math.Max(Count - length + 1, startIndex + 1);
+            var newCount = Math.Max(_count - length + 1, startIndex + 1);
             var capacity = GetCapacity(newCount);
             var newArray = new T[capacity];
             
@@ -177,10 +181,11 @@ namespace Microsoft.Python.Core.Collections {
                 Array.Copy(_items, newArray, startIndex);
             }
 
-            newArray[startIndex + 1] = value;
+            newArray[startIndex] = value;
 
-            if (startIndex + 2 < newCount) {
-                Array.Copy(_items, startIndex + length + 1, newArray, startIndex + 1, newCount - startIndex - 2);
+            var afterChangeIndex = startIndex + length;
+            if (afterChangeIndex < _count) {
+                Array.Copy(_items, afterChangeIndex, newArray, startIndex + 1, _count - afterChangeIndex);
             }
 
             return new ImmutableArray<T>(newArray, newCount);
@@ -188,17 +193,17 @@ namespace Microsoft.Python.Core.Collections {
 
         [Pure]
         public ImmutableArray<T> ReplaceAt(int index, T value) {
-            var capacity = GetCapacity(Count);
+            var capacity = GetCapacity(_count);
             var newArray = new T[capacity];
-            Array.Copy(_items, newArray, Count);
+            Array.Copy(_items, newArray, _count);
             newArray[index] = value;
-            return new ImmutableArray<T>(newArray, Count);
+            return new ImmutableArray<T>(newArray, _count);
         }
 
         [Pure]
         public ImmutableArray<T> Where(Func<T, bool> predicate) {
             var count = 0;
-            for (var i = 0; i < Count; i++) {
+            for (var i = 0; i < _count; i++) {
                 if (predicate(_items[i])) {
                     count++;
                 }
@@ -206,7 +211,7 @@ namespace Microsoft.Python.Core.Collections {
 
             var index = 0;
             var items = new T[count];
-            for (var i = 0; i < Count; i++) {
+            for (var i = 0; i < _count; i++) {
                 if (predicate(_items[i])) {
                     items[index] = _items[i];
                     index++;
@@ -218,15 +223,15 @@ namespace Microsoft.Python.Core.Collections {
 
         [Pure]
         public ImmutableArray<TResult> Select<TResult>(Func<T, TResult> selector) {
-            var items = new TResult[Count];
-            for (var i = 0; i < Count; i++) {
+            var items = new TResult[_count];
+            for (var i = 0; i < _count; i++) {
                 items[i] = selector(_items[i]);
             }
             return new ImmutableArray<TResult>(items, items.Length);
         }
 
         [Pure]
-        public int IndexOf(T value) => Array.IndexOf(_items, value, 0, Count);
+        public int IndexOf(T value) => Array.IndexOf(_items, value, 0, _count);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetCapacity(int length) {
@@ -248,14 +253,14 @@ namespace Microsoft.Python.Core.Collections {
         }
 
         public bool Equals(ImmutableArray<T> other)
-            => Equals(_items, other._items) && Count == other.Count;
+            => Equals(_items, other._items) && _count == other._count;
 
         public override bool Equals(object obj) => obj is ImmutableArray<T> other && Equals(other);
 
         public override int GetHashCode() {
             unchecked {
                 var hashCode = (_items != null ? _items.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ Count;
+                hashCode = (hashCode * 397) ^ _count;
                 return hashCode;
             }
         }
@@ -292,13 +297,13 @@ namespace Microsoft.Python.Core.Collections {
             public bool MoveNext() {
                 var localList = _owner;
 
-                if (_index < localList.Count) {
+                if (_index < localList._count) {
                     Current = localList._items[_index];
                     _index++;
                     return true;
                 }
 
-                _index = _owner.Count + 1;
+                _index = _owner._count + 1;
                 Current = default;
                 return false;
             }
@@ -311,6 +316,10 @@ namespace Microsoft.Python.Core.Collections {
                 _index = 0;
                 Current = default;
             }
+        }
+
+        private class Ref {
+            public int Count;
         }
     }
 }

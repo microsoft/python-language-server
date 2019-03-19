@@ -181,18 +181,26 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             // Make all vertices from second pass loop have incoming edges from vertices from first pass loop and set unique loop numbers
+            var outgoingVertices = new HashSet<WalkingVertex<TKey, TValue>>();
             foreach (var loop in secondPassLoops) {
+                outgoingVertices.Clear();
                 foreach (var secondPassVertex in loop) {
                     var firstPassVertex = secondPassVertex.FirstPass;
-                    secondPassVertex.LoopNumber = loopsCount;
                     firstPassVertex.AddOutgoing(loop);
 
-                    // Copy outgoing edges to the second pass vertex
                     foreach (var outgoingVertex in firstPassVertex.Outgoing) {
-                        if (outgoingVertex.LoopNumber == firstPassVertex.LoopNumber) {
+                        if (outgoingVertex.LoopNumber != firstPassVertex.LoopNumber) {
+                            // Collect outgoing vertices to reference them from loop
+                            outgoingVertices.Add(outgoingVertex);
+                        } else if (outgoingVertex.SecondPass != null) {
+                            // Copy outgoing edges to the second pass vertex
                             secondPassVertex.AddOutgoing(outgoingVertex.SecondPass);
                         }
                     }
+                }
+
+                foreach (var secondPassVertex in loop) {
+                    secondPassVertex.AddOutgoing(outgoingVertices);
                 }
 
                 loopsCount++;
