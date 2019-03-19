@@ -326,6 +326,31 @@ package.sub_package.module2.";
             comps.Should().HaveLabels("TypeVar", "List", "Dict", "Union");
         }
 
+        [TestMethod, Priority(0)]
+        public async Task RelativeImportsFromParent() {
+            const string module2Code = @"from ...package import module1
+module1.";
+
+            var appPath = TestData.GetTestSpecificPath("app.py");
+            var root = Path.GetDirectoryName(appPath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            var module1Path = Path.Combine(root, "package", "module1.py");
+            var module2Path = Path.Combine(root, "package", "sub_package", "module2.py");
+
+            rdt.OpenDocument(new Uri(module1Path), "X = 42");
+            var module2 = rdt.OpenDocument(new Uri(module2Path), module2Code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module2.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 9));
+            comps.Should().HaveLabels("X");
+        }
+
         [DataRow(@"from package import sub_package; import package.sub_package.module")]
         [DataRow(@"import package.sub_package.module; from package import sub_package")]
         [DataRow(@"from package import sub_package; from package.sub_package import module")]

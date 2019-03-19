@@ -949,7 +949,7 @@ os.path.
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().OnlyHaveLabels("__dict__", "__debug__", "__path__", "__file__", "__doc__", "__package__", "__name__");
+            result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__");
         }
 
         [TestMethod, Priority(0)]
