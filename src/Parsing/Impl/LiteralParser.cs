@@ -26,9 +26,10 @@ namespace Microsoft.Python.Parsing {
     /// Summary description for ConstantValue.
     /// </summary>
     internal static class LiteralParser {
-        public static string ParseString(string text, bool isRaw, bool isUni) => ParseString(text.ToCharArray(), 0, text.Length, isRaw, isUni, false);
+        public static string ParseString(string text, bool isRaw, bool isUni) => ParseString(text.ToCharArray(), 0, text.Length, isRaw, isUni, false, false);
 
-        public static string ParseString(char[] text, int start, int length, bool isRaw, bool isUni, bool normalizeLineEndings) {
+        public static string ParseString(char[] text, int start, int length, bool isRaw, bool isUni, 
+            bool normalizeLineEndings, bool allowTrailingBackslash = false) {
             if (text == null) {
                 throw new ArgumentNullException("text");
             }
@@ -49,7 +50,7 @@ namespace Microsoft.Python.Parsing {
                     }
 
                     if (i >= l) {
-                        if (isRaw) {
+                        if (isRaw || allowTrailingBackslash) {
                             buf.Append('\\');
                             break;
                         }
