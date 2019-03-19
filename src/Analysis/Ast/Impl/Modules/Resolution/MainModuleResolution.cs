@@ -186,8 +186,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
-            foreach (var m in Modules) {
-                GetRdt()?.UnlockDocument(m.Value.Value.Uri);
+            foreach (var uri in Modules.Select(m => m.Value.Value?.Uri).ExcludeDefault()) {
+                GetRdt()?.UnlockDocument(uri);
             }
             
             // Preserve builtins, they don't need to be reloaded since interpreter does not change.
