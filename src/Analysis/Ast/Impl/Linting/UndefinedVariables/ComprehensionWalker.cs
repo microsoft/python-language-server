@@ -20,11 +20,13 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ComprehensionWalker : PythonWalker {
         private readonly UndefinedVariablesWalker _walker;
-        private readonly HashSet<string> _localNames = new HashSet<string>();
-        private readonly HashSet<NameExpression> _localNameNodes = new HashSet<NameExpression>();
+        private readonly HashSet<string> _localNames;
+        private readonly HashSet<NameExpression> _localNameNodes;
 
-        public ComprehensionWalker(UndefinedVariablesWalker walker) {
+        public ComprehensionWalker(UndefinedVariablesWalker walker, HashSet<string> localNames, HashSet<NameExpression> localNameNodes) {
             _walker = walker;
+            _localNames = localNames;
+            _localNameNodes = localNameNodes;
         }
 
         public override bool Walk(GeneratorExpression node) {

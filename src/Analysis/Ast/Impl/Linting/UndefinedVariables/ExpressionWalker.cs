@@ -54,21 +54,21 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         public override bool Walk(ListComprehension node) {
-            node.Walk(new ComprehensionWalker(_analysis, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
             return false;
         }
 
         public override bool Walk(SetComprehension node) {
-            node.Walk(new ComprehensionWalker(_analysis, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
             return false;
         }
         public override bool Walk(DictionaryComprehension node) {
-            node.Walk(new ComprehensionWalker(_analysis, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
             return false;
         }
 
         public override bool Walk(GeneratorExpression node) {
-            node.Walk(new ComprehensionWalker(_analysis, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
             return false;
         }
 
