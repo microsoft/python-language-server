@@ -15,9 +15,7 @@
 
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Linting;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;

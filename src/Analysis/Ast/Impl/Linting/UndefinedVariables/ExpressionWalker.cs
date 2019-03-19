@@ -37,8 +37,8 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         /// <param name="localNameNodes">Name nodes for local names.</param>
         public ExpressionWalker(UndefinedVariablesWalker walker, HashSet<string> localNames, HashSet<NameExpression> localNameNodes) {
             _walker = walker;
-            _localNames = localNames;
-            _localNameNodes = localNameNodes;
+            _localNames = localNames ?? new HashSet<string>();
+            _localNameNodes = localNameNodes ?? new HashSet<NameExpression>();
         }
 
         public override bool Walk(CallExpression node) {
