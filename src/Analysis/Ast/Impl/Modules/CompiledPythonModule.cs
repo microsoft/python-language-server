@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Modules {
             => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;
 
         protected virtual string[] GetScrapeArguments(IPythonInterpreter interpreter) {
-            var args = new List<string> { "-B", "-E" };
+            var args = new List<string> { "-W", "ignore", "-B", "-E" };
 
             var mp = Interpreter.ModuleResolution.FindModule(FilePath);
             if (string.IsNullOrEmpty(mp.FullName)) {
