@@ -47,15 +47,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private ILogger _log;
         private IIndexManager _indexManager;
 
-        public static InformationDisplayOptions DisplayOptions { get; private set; } = new InformationDisplayOptions {
-            preferredFormat = MarkupKind.PlainText,
-            trimDocumentationLines = true,
-            maxDocumentationLineLength = 100,
-            trimDocumentationText = true,
-            maxDocumentationTextLength = 1024,
-            maxDocumentationLines = 100
-        };
-
         public Server(IServiceManager services) {
             _services = services;
 
@@ -102,10 +93,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _clientCaps = @params.capabilities;
             _log = _services.GetService<ILogger>();
 
-            if (@params.initializationOptions.displayOptions != null) {
-                DisplayOptions = @params.initializationOptions.displayOptions;
-            }
-
             _services.AddService(new DiagnosticsService(_services));
 
             var analyzer = new PythonAnalyzer(_services);
@@ -116,9 +103,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             // TODO: multi-root workspaces.
             var rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : PathUtils.NormalizePath(@params.rootPath);
-            var configuration = InterpreterConfiguration.FromDictionary(@params.initializationOptions.interpreter.properties);
-            configuration.SearchPaths = @params.initializationOptions.searchPaths.Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany().ToList();
-            configuration.TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault();
+
+            Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);
+
+            var configuration = new InterpreterConfiguration(null, null,
+                interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
+                moduleCachePath: @params.initializationOptions.interpreter.properties?.DatabasePath,
+                version: version
+            ) {
+                // TODO: Remove this split once the extension is updated and no longer passes the interpreter search paths directly.
+                // This is generally harmless to keep around.
+                SearchPaths = @params.initializationOptions.searchPaths.Select(p => p.Split(new[] { ';', ':' }, StringSplitOptions.RemoveEmptyEntries)).SelectMany().ToList(),
+                TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
+            };
 
             _interpreter = await PythonInterpreter.CreateAsync(configuration, rootDir, _services, cancellationToken);
             _services.AddService(_interpreter);
@@ -133,18 +130,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             DisplayStartupInfo();
 
-            // TODO: Pass different documentation sources to completion/hover/signature
-            // based on client capabilities.
-            IDocumentationSource ds;
-            if (DisplayOptions.preferredFormat == MarkupKind.Markdown) {
-                ds = new MarkdownDocumentationSource();
-            } else {
-                ds = new PlainTextDocumentationSource();
-            }
+            _completionSource = new CompletionSource(
+                ChooseDocumentationSource(_clientCaps?.textDocument?.completion?.completionItem?.documentationFormat),
+                Settings.completion
+            );
 
-            _completionSource = new CompletionSource(ds, Settings.completion);
-            _hoverSource = new HoverSource(ds);
-            _signatureSource = new SignatureSource(ds);
+            _hoverSource = new HoverSource(
+                ChooseDocumentationSource(_clientCaps?.textDocument?.hover?.contentFormat)
+            );
+
+            _signatureSource = new SignatureSource(
+                ChooseDocumentationSource(_clientCaps?.textDocument?.signatureHelp?.signatureInformation?.documentationFormat)
+            );
 
             return GetInitializeResult();
         }
@@ -197,6 +194,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             return false;
+        }
+
+        private IDocumentationSource ChooseDocumentationSource(string[] kinds) {
+            if (kinds == null) {
+                return new PlainTextDocumentationSource();
+            }
+
+            foreach (var k in kinds) {
+                switch (k) {
+                    case MarkupKind.Markdown:
+                        return new MarkdownDocumentationSource();
+                    case MarkupKind.PlainText:
+                        return new PlainTextDocumentationSource();
+                }
+            }
+
+            return new PlainTextDocumentationSource();
         }
         #endregion
 

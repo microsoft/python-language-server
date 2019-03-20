@@ -92,7 +92,7 @@ namespace Microsoft.Python.Parsing.Tests {
             return new InterpreterConfiguration(
                 id: $"{idPrefix}|{version}",
                 description: $"{idPrefix} {version} ({architecture})",
-                pythonExePath: pythonFilePath,
+                interpreterPath: pythonFilePath,
                 pathVar: pythonFilePath,
                 libPath: libPath,
                 sitePackagesPath: sitePackagesPath,

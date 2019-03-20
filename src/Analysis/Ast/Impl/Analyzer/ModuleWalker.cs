@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // types yet since at this time imports or generic definitions
             // have not been processed.
             SymbolTable.Build(Eval);
-            
+
             // There are cases (see typeshed datetime stub) with constructs
             //   class A:
             //      def __init__(self, x: Optional[B]): ...

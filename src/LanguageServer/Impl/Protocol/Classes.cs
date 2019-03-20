@@ -130,18 +130,12 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     public sealed class PythonInitializationOptions {
         [Serializable]
         public struct Interpreter {
-            /// <summary>
-            /// The serialized info required to restore an interpreter factory
-            /// </summary>
-            public string assembly;
-            public string typeName;
-            public Dictionary<string, object> properties;
-
-            /// <summary>
-            /// The x.y language version of the interpreter in case the factory
-            /// cannot be restored.
-            /// </summary>
-            public string version;
+            public sealed class InterpreterProperties {
+                public string Version;
+                public string InterpreterPath;
+                public string DatabasePath;
+            }
+            public InterpreterProperties properties;
         }
         public Interpreter interpreter;
 
@@ -156,11 +150,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public string[] typeStubSearchPaths = Array.Empty<string>();
 
         /// <summary>
-        /// Controls tooltip display appearance. Different between VS and VS Code.
-        /// </summary>
-        public InformationDisplayOptions displayOptions = new InformationDisplayOptions();
-
-        /// <summary>
         /// Glob pattern of files and folders to exclude from loading
         /// into the Python analysis engine.
         /// </summary>
@@ -171,12 +160,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// should be loaded into the Python analysis engine.
         /// </summary>
         public string[] includeFiles = Array.Empty<string>();
-
-        /// <summary>
-        /// Enables an even higher level of logging via the logMessage event.
-        /// This will likely have a performance impact.
-        /// </summary>
-        public bool traceLogging;
     }
 
     [Serializable]
