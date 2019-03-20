@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Linting;
 using Microsoft.Python.Analysis.Modules;
@@ -161,6 +162,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 AnalyzeDocumentAsync(key, entry, dependencies, cancellationToken).DoNotWait();
             }
         }
+
+        public IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module) {
+            if (module.ModuleType != ModuleType.User) {
+                return Array.Empty<DiagnosticsEntry>();
+            }
+
+            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+            if (optionsProvider?.Options?.LintingEnabled == false) {
+                return Array.Empty<DiagnosticsEntry>();
+            }
+
+            var linter = new LinterAggregator();
+            return linter.Lint(module.Analysis, _services);
+        }
+
 
         private async Task AnalyzeDocumentAsync(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
@@ -369,16 +385,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             cancellationToken.ThrowIfCancellationRequested();
             var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
 
-            if (module.ModuleType == ModuleType.User) {
-                var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-                if (optionsProvider?.Options?.LintingEnabled != false) {
-                    var linter = new LinterAggregator();
-                    linter.Lint(analysis, _services);
-                }
-            }
-
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
+
+            if (module.ModuleType == ModuleType.User) {
+                var linterDiagnostics = LintModule(module);
+                var ds = _services.GetService<IDiagnosticsService>();
+                ds.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+            }
         }
     }
 

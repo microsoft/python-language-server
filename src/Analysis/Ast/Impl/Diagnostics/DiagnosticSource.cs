@@ -13,12 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Core;
-
-namespace Microsoft.Python.Analysis.Linting {
-    public interface ILinter {
-        IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services);
+namespace Microsoft.Python.Analysis.Diagnostics {
+    public enum DiagnosticSource {
+        Parser,
+        Analysis,
+        Linter
     }
 }

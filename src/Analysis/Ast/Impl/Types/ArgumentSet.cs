@@ -152,7 +152,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // We ran out of formal parameters and yet haven't seen
                         // any sequence or dictionary ones. This looks like an error.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
-                            ErrorCodes.TooManyFunctionArguments, Severity.Warning));
+                            ErrorCodes.TooManyFunctionArguments, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }
 
@@ -161,7 +161,7 @@ namespace Microsoft.Python.Analysis.Types {
                         if (string.IsNullOrEmpty(formalParam.Name)) {
                             // If the next unfilled slot is a vararg slot, and it does not have a name, then it is an error.
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
-                                ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning));
+                                ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
 
@@ -169,7 +169,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // non-keyword arguments are placed into the vararg slot.
                         if (_listArgument == null) {
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
-                                ErrorCodes.TooManyFunctionArguments, Severity.Warning));
+                                ErrorCodes.TooManyFunctionArguments, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
 
@@ -189,7 +189,7 @@ namespace Microsoft.Python.Analysis.Types {
                     if (formalParam.IsDictionary) {
                         // Next slot is a dictionary slot, but we have positional arguments still.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
-                            ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning));
+                            ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }
 
@@ -203,7 +203,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                     if (string.IsNullOrEmpty(arg.Name)) {
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_PositionalArgumentAfterKeyword, arg.GetLocation(module).Span,
-                            ErrorCodes.PositionalArgumentAfterKeyword, Severity.Warning));
+                            ErrorCodes.PositionalArgumentAfterKeyword, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }
 
@@ -215,13 +215,13 @@ namespace Microsoft.Python.Analysis.Types {
                         // unless there is already an entry with that key, in which case it is an error.
                         if (_dictArgument == null) {
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_UnknownParameterName, arg.GetLocation(module).Span,
-                                ErrorCodes.UnknownParameterName, Severity.Warning));
+                                ErrorCodes.UnknownParameterName, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
 
                         if (_dictArgument.Arguments.ContainsKey(arg.Name)) {
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
-                                ErrorCodes.ParameterAlreadySpecified, Severity.Warning));
+                                ErrorCodes.ParameterAlreadySpecified, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
 
@@ -232,7 +232,7 @@ namespace Microsoft.Python.Analysis.Types {
                     if (nvp.ValueExpression != null || nvp.Value != null) {
                         // Slot is already filled.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
-                            ErrorCodes.ParameterAlreadySpecified, Severity.Warning));
+                            ErrorCodes.ParameterAlreadySpecified, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }
 
@@ -250,7 +250,7 @@ namespace Microsoft.Python.Analysis.Types {
                         if (parameter.DefaultValue == null) {
                             // TODO: parameter is not assigned and has no default value.
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterMissing.FormatUI(slot.Name), callLocation.Span,
-                                ErrorCodes.ParameterMissing, Severity.Warning));
+                                ErrorCodes.ParameterMissing, Severity.Warning, DiagnosticSource.Analysis));
                         }
 
                         slot.ValueExpression = parameter.DefaultValue;

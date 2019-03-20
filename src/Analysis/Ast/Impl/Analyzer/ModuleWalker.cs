@@ -64,6 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
             }
+
             return base.Walk(node);
         }
 

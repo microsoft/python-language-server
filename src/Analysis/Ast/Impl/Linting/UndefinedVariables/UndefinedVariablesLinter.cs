@@ -13,13 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesLinter : ILinter {
-        public void Lint(IDocumentAnalysis analysis, IServiceContainer services) {
+        public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services) {
             var w = new UndefinedVariablesWalker(analysis, services);
             analysis.Ast.Walk(w);
+            return w.Diagnostics;
         }
     }
 }
