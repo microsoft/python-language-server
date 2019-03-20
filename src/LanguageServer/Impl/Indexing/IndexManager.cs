@@ -64,6 +64,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public Task IndexWorkspace(CancellationToken ct = default) {
             return Task.Run(() => {
                 foreach (var fileInfo in WorkspaceFiles()) {
+                    ct.ThrowIfCancellationRequested();
                     if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
                         _symbolIndex.Parse(fileInfo.FullName);
                     }

@@ -57,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             context.AddFileToRoot($"{_rootPath}\foo.py", MakeStream("y = 1"));
 
             var indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             symbols.Should().HaveCount(2);
@@ -83,7 +83,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             context.AddFileInfoToRootTestFS(nonPythonTestFileInfo);
 
             IIndexManager indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             context.FileSystem.DidNotReceive().FileExists(nonPythonTestFileInfo.FullName);
         }
@@ -108,7 +108,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var pythonTestFilePath = context.FileWithXVarInRootDir();
 
             var indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             indexManager.ReIndexFile(pythonTestFilePath, DocumentWithAst("y = 1"));
 
@@ -138,7 +138,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             context.FileSystem.IsPathUnderRoot(_rootPath, pythonTestFilePath).Returns(true);
 
             var indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             indexManager.ProcessNewFile(pythonTestFilePath, DocumentWithAst("r = 1"));
             // It Needs to remake the stream for the file, previous one is closed
@@ -176,7 +176,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var pythonTestFilePath = context.FileWithXVarInRootDir();
 
             var indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             var symbols = await indexManager.WorkspaceSymbolsAsync("", maxSymbolsCount);
             SymbolsShouldBeOnlyX(symbols);
@@ -190,7 +190,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 context.AddFileToRoot($"{_rootPath}\bla{fileNumber}.py", MakeStream($"x{fileNumber} = 1"));
             }
             var indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             const int amountOfSymbols = 3;
 
@@ -204,7 +204,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var pythonTestFilePath = context.FileWithXVarInRootDir();
 
             var indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             var symbols = await indexManager.HierarchicalDocumentSymbolsAsync(pythonTestFilePath);
             SymbolsShouldBeOnlyX(symbols);
@@ -233,7 +233,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var f2 = context.AddFileToRoot($"{_rootPath}/fileB.py", MakeStream(""));
 
             var indexManager = context.GetDefaultIndexManager();
-            await WaitForWorkspaceAddedAsync(indexManager);
+            await indexManager.IndexWorkspace();
 
             indexManager.AddPendingDoc(DocumentWithAst("y = 1", f1));
             indexManager.AddPendingDoc(DocumentWithAst("x = 1", f2));
@@ -342,10 +342,6 @@ namespace Microsoft.Python.LanguageServer.Tests {
             doc.GetAstAsync().ReturnsForAnyArgs(Task.FromResult(MakeAst(testCode)));
             doc.Uri.Returns(new Uri(filePath));
             return doc;
-        }
-
-        private static async Task WaitForWorkspaceAddedAsync(IIndexManager indexManager) {
-            await indexManager.IndexWorkspace();
         }
 
         private async Task SymbolIndexShouldBeEmpty(IIndexManager indexManager) {
