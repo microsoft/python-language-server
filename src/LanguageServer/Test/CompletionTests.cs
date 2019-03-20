@@ -865,6 +865,17 @@ pass";
             result.Should().HaveNoCompletion();
         }
 
+        [DataRow("f'.")]
+        [DataRow("f'a.")]
+        [DataRow("f'a.'")]
+        [DataTestMethod, Priority(0)]
+        public async Task NoCompletionInFStringConstant(string openFString) {
+            var analysis = await GetAnalysisAsync(openFString);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            result.Should().HaveNoCompletion();
+        }
+
         [TestMethod, Priority(0)]
         public async Task NoCompletionBadImportExpression() {
             var analysis = await GetAnalysisAsync("import os,.");
@@ -938,7 +949,7 @@ os.path.
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().HaveNoCompletion();
+            result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__");
         }
 
         [TestMethod, Priority(0)]
@@ -963,7 +974,7 @@ os.path.
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().OnlyHaveLabels("module2", "sub_package", "answer");
+            result.Should().HaveLabels("module2", "sub_package", "answer");
         }
 
         [TestMethod, Priority(0)]
@@ -989,7 +1000,7 @@ os.path.
             var result = cs.GetCompletions(analysis1, new SourceLocation(1, 8));
             result.Should().HaveLabels("package").And.NotContainLabels("module2", "sub_package", "answer");
             result = cs.GetCompletions(analysis2, new SourceLocation(1, 16));
-            result.Should().OnlyHaveLabels("module1", "sub_package", "answer");
+            result.Should().HaveLabels("module1", "sub_package", "answer");
         }
 
         [TestMethod, Priority(0)]

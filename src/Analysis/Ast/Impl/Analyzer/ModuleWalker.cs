@@ -14,8 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Linting;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -41,8 +41,28 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // types yet since at this time imports or generic definitions
             // have not been processed.
             SymbolTable.Build(Eval);
-            if (_stubAnalysis != null) {
-                Eval.Log?.Log(TraceEventType.Information, $"'{Module.Name}' evaluation skipped, stub is available.");
+
+            // There are cases (see typeshed datetime stub) with constructs
+            //   class A:
+            //      def __init__(self, x: Optional[B]): ...
+            //
+            //   _A = A
+            //
+            //   class B:
+            //      def func(self, x: Optional[_A])
+            //
+            // so evaluation of A -> B ends up incomplete since _A is not known yet.
+            // Thus, when A type is created, we need to go and evaluate all assignments
+            // that might be referring to it in the right hand side.
+            if (Ast.Body is SuiteStatement ste) {
+                foreach (var statement in ste.Statements.OfType<AssignmentStatement>()) {
+                    if (statement.Left.Count == 1 && statement.Left[0] is NameExpression leftNex && statement.Right is NameExpression rightNex) {
+                        var m = Eval.GetInScope<IPythonClassType>(rightNex.Name);
+                        if (m != null) {
+                            Eval.DeclareVariable(leftNex.Name, m, VariableSource.Declaration, leftNex);
+                        }
+                    }
+                }
             }
             return base.Walk(node);
         }

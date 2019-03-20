@@ -35,16 +35,17 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-// ReSharper disable StringLiteralTypo
+        // ReSharper disable StringLiteralTypo
         [DataRow("A:BC|B:C|C", "CBA")]
         [DataRow("C|A:BC|B:C", "CBA")]
         [DataRow("C|B:AC|A:BC", "CBABA")]
-        [DataRow("A:CE|B:A|C:B|D:B|E", "[BE]CAB[DC]A")]
+        [DataRow("A:CE|B:A|C:B|D:B|E", "[BE]CABCAD")]
         [DataRow("A:D|B:DA|C:BA|D:AE|E", "[AE]DADBC")]
-        [DataRow("A:C|C:B|B:A|D:AF|F:CE|E:BD", "ABCA[DB][EC]FDEF")]
+        [DataRow("A:C|C:B|B:A|D:AF|F:CE|E:BD", "ABCABCDEFDEF")]
         [DataRow("A:BC|B:AC|C:BA|D:BC", "ACBACBD")]
         [DataRow("A|B|C|D:AB|E:BC", "[ABC][DE]")]
-        [DataRow("A:CE|B:A|C:B|D:BC|E|F:C", "[BE]CABC[FDA]")]
+        [DataRow("A:CE|B:A|C:B|D:BC|E|F:C", "[BE]CABCA[DF]")]
+        [DataRow("A:D|B:E|C:F|D:E|E:F|F:D", "DFEDFE[ABC]")]
 // ReSharper restore StringLiteralTypo
         [DataTestMethod]
         public void NotifyChanges(string input, string output) {
