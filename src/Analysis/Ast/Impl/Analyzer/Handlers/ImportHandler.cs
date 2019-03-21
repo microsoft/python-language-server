@@ -67,10 +67,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
             if (asNameExpression != null) {
-                Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
+                Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, Module, asNameExpression);
             } else if (importNames.Count > 0 && _variableModules.TryGetValue(importNames[0], out variableModule)) {
                 var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
+                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, variableModule, firstName);
             }
         }
 
@@ -161,7 +161,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private void MakeUnresolvedImport(string variableName, string moduleName, Node location) {
             if (!string.IsNullOrEmpty(variableName)) {
-                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
+                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, Module, location);
             }
             Eval.ReportDiagnostics(Eval.Module.Uri, 
                 new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), Eval.GetLoc(location).Span, ErrorCodes.UnresolvedImport, Severity.Warning));

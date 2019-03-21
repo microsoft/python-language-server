@@ -62,14 +62,14 @@ class A:
 ";
             var analysis = await GetAnalysisAsync(code);
             var a = analysis.Should().HaveVariable("a").Which;
-            a.Locations.Should().HaveCount(7);
-            a.Locations[0].Span.Should().Be(2, 1, 2, 2);
-            a.Locations[1].Span.Should().Be(3, 1, 3, 2);
-            a.Locations[2].Span.Should().Be(6, 5, 6, 6);
-            a.Locations[3].Span.Should().Be(9, 5, 9, 6);
-            a.Locations[4].Span.Should().Be(11, 5, 11, 6);
-            a.Locations[5].Span.Should().Be(13, 5, 13, 6);
-            a.Locations[6].Span.Should().Be(23, 5, 23, 6);
+            a.References.Should().HaveCount(7);
+            a.References[0].Span.Should().Be(2, 1, 2, 2);
+            a.References[1].Span.Should().Be(3, 1, 3, 2);
+            a.References[2].Span.Should().Be(6, 5, 6, 6);
+            a.References[3].Span.Should().Be(9, 5, 9, 6);
+            a.References[4].Span.Should().Be(11, 5, 11, 6);
+            a.References[5].Span.Should().Be(13, 5, 13, 6);
+            a.References[6].Span.Should().Be(23, 5, 23, 6);
         }
 
         [TestMethod, Priority(0)]
@@ -84,9 +84,9 @@ def outer():
             var analysis = await GetAnalysisAsync(code);
             var outer = analysis.Should().HaveFunction("outer").Which;
             var b = outer.Should().HaveVariable("b").Which;
-            b.Locations.Should().HaveCount(2);
-            b.Locations[0].Span.Should().Be(3, 5, 3, 6);
-            b.Locations[1].Span.Should().Be(6, 9, 6, 10);
+            b.References.Should().HaveCount(2);
+            b.References[0].Span.Should().Be(3, 5, 3, 6);
+            b.References[1].Span.Should().Be(6, 9, 6, 10);
         }
 
         [TestMethod, Priority(0)]
@@ -100,10 +100,10 @@ def func(a):
             var analysis = await GetAnalysisAsync(code);
             var outer = analysis.Should().HaveFunction("func").Which;
             var a = outer.Should().HaveVariable("a").Which;
-            a.Locations.Should().HaveCount(3);
-            a.Locations[0].Span.Should().Be(2, 10, 2, 11);
-            a.Locations[1].Span.Should().Be(3, 5, 3, 6);
-            a.Locations[2].Span.Should().Be(5, 9, 5, 10);
+            a.References.Should().HaveCount(3);
+            a.References[0].Span.Should().Be(2, 10, 2, 11);
+            a.References[1].Span.Should().Be(3, 5, 3, 6);
+            a.References[2].Span.Should().Be(5, 9, 5, 10);
         }
     }
 }

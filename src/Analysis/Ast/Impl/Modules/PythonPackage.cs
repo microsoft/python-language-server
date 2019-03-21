@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Interpreter = interpreter;
         }
 
-        public PythonVariableModule(IPythonModule module): base(module, module.Definition) {
+        public PythonVariableModule(IPythonModule module): base(module) {
             Name = module.Name;
             Interpreter = module.Interpreter;
             Module = module;

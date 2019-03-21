@@ -88,10 +88,10 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             //    y = x
             //    x = 1
             var v = scope?.Variables[node.Name];
-            if (v != null && v.Location.DocumentUri == _analysis.Document.Uri) {
+            if (v != null && v.Definition.DocumentUri == _analysis.Document.Uri) {
                 // Do not complain about functions and classes that appear later in the file
                 if (!(v.Value is IPythonFunctionType || v.Value is IPythonClassType)) {
-                    var span = v.Locations.First().Span;
+                    var span = v.Definition.Span;
                     var nodeLoc = node.GetLocation(_analysis.Document);
                     // Exclude same-name variables declared within the same statement
                     // like 'e' that appears before its declaration in '[e in for e in {}]'

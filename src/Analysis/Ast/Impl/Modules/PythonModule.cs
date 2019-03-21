@@ -160,7 +160,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region ILocatedMember
-        public override LocationInfo GetLocation(PythonAst ast) => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
+        public override LocationInfo Definition => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
         #endregion
 
         #region IPythonFile

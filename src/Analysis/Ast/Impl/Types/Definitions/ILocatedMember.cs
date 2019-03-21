@@ -29,26 +29,25 @@ namespace Microsoft.Python.Analysis.Types {
         IPythonModule DeclaringModule { get; }
 
         /// <summary>
+        /// Location where the member is defined.
+        /// </summary>
+        LocationInfo Definition { get; }
+
+        /// <summary>
         /// AST node where the member is defined. For example, <see cref="ClassDefinition"/>
         /// for a class, <see cref="FunctionDefinition"/> for functions, methods and properties
         /// or a <see cref="NameExpression"/> for variables.
         /// </summary>
-        Node Definition { get; }
+        Node DefinitionNode { get; }
 
         /// <summary>
         /// List of references to the member.
         /// </summary>
-        IReadOnlyList<Node> References { get; }
+        IReadOnlyList<LocationInfo> References { get; }
 
         /// <summary>
         /// Add member reference.
         /// </summary>
-        void AddReference(Node expression);
-
-        /// <summary>
-        /// Calculates location of the definition in the provided AST
-        /// based on the <see cref="Definition"/> field.
-        /// </summary>
-        LocationInfo GetLocation(PythonAst ast);
+        void AddReference(IPythonModule module, Node location);
     }
 }

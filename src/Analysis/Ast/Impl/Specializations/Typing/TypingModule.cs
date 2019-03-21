@@ -151,8 +151,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private string GetMemberDocumentation(string name)
         => base.GetMember(name)?.GetPythonType()?.Documentation;
-        private Node GetMemberLocation(string name)
-            => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Definition;
 
         private IPythonType CreateListType(string typeName, BuiltinTypeId typeId, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
             if (typeArgs.Count == 1) {

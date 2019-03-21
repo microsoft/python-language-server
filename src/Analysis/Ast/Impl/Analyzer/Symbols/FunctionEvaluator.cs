@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Inner function, declare as variable.
             var m = SymbolTable.Evaluate(node);
             if (m != null) {
-                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, node);
+                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, Module, node);
             }
             return false;
         }
@@ -138,7 +138,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // The reason is that if method might be called on a derived class.
                     // Declare self or cls in this scope.
                     if (declareVariables) {
-                        Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
+                        Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, Module, p0.NameExpression);
                     }
                     // Set parameter info.
                     var pi = new ParameterInfo(Ast, p0, _self, null, false);
@@ -186,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             } else {
                 paramType = pi?.DefaultValue?.GetPythonType() ?? Eval.UnknownType;
             }
-            Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
+            Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, Module, p.NameExpression);
         }
     }
 }

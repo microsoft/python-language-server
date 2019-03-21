@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (statement.Left.Count == 1 && statement.Left[0] is NameExpression leftNex && statement.Right is NameExpression rightNex) {
                         var m = Eval.GetInScope<IPythonClassType>(rightNex.Name);
                         if (m != null) {
-                            Eval.DeclareVariable(leftNex.Name, m, VariableSource.Declaration, leftNex);
+                            Eval.DeclareVariable(leftNex.Name, m, VariableSource.Declaration, Module, leftNex);
                         }
                     }
                 }
@@ -140,7 +140,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
-                        Eval.DeclareVariable(v.Name, v.Value, source, null, overwrite: true);
+                        Eval.DeclareVariable(v.Name, v.Value, source, null, null, overwrite: true);
                     }
                 }
             }

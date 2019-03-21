@@ -74,10 +74,10 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
-        public Node Definition => (InnerType as ILocatedMember)?.Definition;
-        public IReadOnlyList<Node> References => (InnerType as ILocatedMember)?.References;
-        public void AddReference(Node reference) => (InnerType as ILocatedMember)?.AddReference(reference);
-        public LocationInfo GetLocation(PythonAst ast) => (InnerType as ILocatedMember)?.GetLocation(ast);
+        public LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
+        public Node DefinitionNode => InnerType?.DefinitionNode;
+        public IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
+        public void AddReference(IPythonModule module, Node location) => InnerType?.AddReference(module, location);
         #endregion
 
         #region IMemberContainer

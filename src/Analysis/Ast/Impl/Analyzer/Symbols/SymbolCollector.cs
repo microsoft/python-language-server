@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override bool Walk(ClassDefinition cd) {
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var classInfo = CreateClass(cd);
-                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, cd);
+                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, _eval.Module, cd);
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private IMember AddFunction(FunctionDefinition node, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonFunctionType existing)) {
                 existing = new PythonFunctionType(node, _eval.Module, declaringType);
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, node);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, _eval.Module, node);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;
@@ -145,20 +145,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var d in decorators.OfType<NameExpression>()) {
                 switch (d.Name) {
                     case @"property":
-                        AddProperty(node, _eval.Module, declaringType, false);
+                        AddProperty(node, declaringType, false);
                         return true;
                     case @"abstractproperty":
-                        AddProperty(node, _eval.Module, declaringType, true);
+                        AddProperty(node, declaringType, true);
                         return true;
                 }
             }
             return false;
         }
 
-        private PythonPropertyType AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract) {
+        private PythonPropertyType AddProperty(FunctionDefinition node, IPythonType declaringType, bool isAbstract) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract);
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, node);
+                existing = new PythonPropertyType(node, _eval.Module, declaringType, isAbstract);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, _eval.Module, node);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;

@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
                 if (e != null && !string.IsNullOrEmpty(names[i])) {
                     var v = eval.GetValueFromExpression(e);
-                    eval.DeclareVariable(names[i], v ?? eval.UnknownType, VariableSource.Declaration, e);
+                    eval.DeclareVariable(names[i], v ?? eval.UnknownType, VariableSource.Declaration, eval.Module, e);
                 }
             }
         }
@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var item in tex.Items) {
                 switch (item) {
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex);
                         break;
                     case TupleExpression te:
                         AssignTuple(te, valueEnum, eval);

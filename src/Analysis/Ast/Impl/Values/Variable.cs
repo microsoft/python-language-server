@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Diagnostics;
@@ -23,8 +22,6 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
     internal sealed class Variable : LocatedMember, IVariable {
-        private readonly List<Node> _references = new List<Node>();
-
         public Variable(string name, IMember value, VariableSource source, IPythonModule declaringModule, Node location)
             : base(PythonMemberType.Variable, declaringModule, location) {
             Check.ArgumentNotNull(nameof(location), location);
@@ -37,14 +34,14 @@ namespace Microsoft.Python.Analysis.Values {
         public VariableSource Source { get; }
         public IMember Value { get; private set; }
 
-        public void Assign(IMember value, Node location) {
+        public void Assign(IMember value, IPythonModule module, Node location) {
             Check.ArgumentNotNull(nameof(value), value);
             Check.ArgumentNotNull(nameof(location), location);
 
             if (Value == null || Value.GetPythonType().IsUnknown() || value?.GetPythonType().IsUnknown() == false) {
                 Value = value;
             }
-            AddReference(location);
+            AddReference(module, location);
         }
 
         private string DebuggerDisplay {

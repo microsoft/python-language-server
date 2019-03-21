@@ -20,7 +20,20 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember: ILocatedMember {
-        private HashSet<Node> _references;
+        private struct Location {
+            private readonly IPythonModule _module;
+            private readonly Node _node;
+
+            public Location(IPythonModule module, Node node) {
+                _module = module;
+                _node = node;
+            }
+
+            public LocationInfo LocationInfo => _node?.GetLocation(_module) ?? LocationInfo.Empty;
+        }
+
+        private Node _definition;
+        private HashSet<Location> _references;
 
         protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule = null, Node definition = null)
             : this(declaringModule, definition) {
@@ -29,25 +42,25 @@ namespace Microsoft.Python.Analysis.Types {
 
         protected LocatedMember(IPythonModule declaringModule = null, Node definition = null) {
             DeclaringModule = declaringModule;
-            Definition = definition;
+            _definition = definition;
         }
 
         public virtual PythonMemberType MemberType { get; }
 
         public virtual IPythonModule DeclaringModule { get; }
 
-        public virtual Node Definition { get; private set; }
+        public virtual LocationInfo Definition => _definition.GetLocation(DeclaringModule);
+        public Node DefinitionNode => _definition;
 
-        public virtual LocationInfo GetLocation(PythonAst ast)
-            => Definition?.GetLocation(ast) ?? LocationInfo.Empty;
+        public virtual IReadOnlyList<LocationInfo> References 
+            => Enumerable.Repeat(Definition, 1).Concat(_references?.Select(r => r.LocationInfo) ?? Enumerable.Empty<LocationInfo>()).ToArray();
 
-        public virtual IReadOnlyList<Node> References => _references?.ToArray() ?? Array.Empty<Node>();
-        public void AddReference(Node node) {
-            _references = _references ?? new HashSet<Node>();
-            _references.Add(node);
+        public void AddReference(IPythonModule module, Node location) {
+            _references = _references ?? new HashSet<Location>();
+            _references.Add(new Location(module, location));
         }
 
-        internal virtual void SetDefinition(Node definition) => Definition = definition;
+        internal virtual void SetDefinitionNode(Node definition) => _definition = definition;
     }
 
     internal abstract class EmptyLocatedMember: ILocatedMember {
@@ -57,9 +70,9 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonMemberType MemberType { get; }
         public IPythonModule DeclaringModule => null;
-        public Node Definition => null;
-        public IReadOnlyList<Node> References => Array.Empty<Node>();
-        public void AddReference(Node expression) { }
-        public LocationInfo GetLocation(PythonAst ast) => LocationInfo.Empty;
+        public LocationInfo Definition => LocationInfo.Empty;
+        public Node DefinitionNode => null;
+        public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
+        public void AddReference(IPythonModule module, Node location) { }
     }
 }

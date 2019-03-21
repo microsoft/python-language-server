@@ -50,7 +50,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         var type = v.Value.GetPythonType();
                         var module = type as IPythonModule ?? type?.DeclaringModule;
                         if (module != null && CanNavigateToModule(module, analysis)) {
-                            return new Reference { range = v.GetLocation(module.Analysis.Ast).Span, uri = module.Uri };
+                            return new Reference { range = v.Definition.Span, uri = module.Uri };
                         }
                     }
                 }
@@ -91,23 +91,23 @@ namespace Microsoft.Python.LanguageServer.Sources {
             // Perhaps it is a member such as A in 'from X import A as B'
             switch (statement) {
                 case ImportStatement imp: {
-                    // Import A as B
-                    var index = imp.Names.IndexOf(x => x?.MakeString() == name);
-                    if (index >= 0 && index < imp.AsNames.Count) {
-                        value = analysis.ExpressionEvaluator.GetValueFromExpression(imp.AsNames[index]);
-                        return null;
+                        // Import A as B
+                        var index = imp.Names.IndexOf(x => x?.MakeString() == name);
+                        if (index >= 0 && index < imp.AsNames.Count) {
+                            value = analysis.ExpressionEvaluator.GetValueFromExpression(imp.AsNames[index]);
+                            return null;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case FromImportStatement fimp: {
-                    // From X import A as B
-                    var index = fimp.Names.IndexOf(x => x?.Name == name);
-                    if (index >= 0 && index < fimp.AsNames.Count) {
-                        value = analysis.ExpressionEvaluator.GetValueFromExpression(fimp.AsNames[index]);
-                        return null;
+                        // From X import A as B
+                        var index = fimp.Names.IndexOf(x => x?.Name == name);
+                        if (index >= 0 && index < fimp.AsNames.Count) {
+                            value = analysis.ExpressionEvaluator.GetValueFromExpression(fimp.AsNames[index]);
+                            return null;
+                        }
+                        break;
                     }
-                    break;
-                }
             }
             return null;
         }
@@ -115,31 +115,31 @@ namespace Microsoft.Python.LanguageServer.Sources {
         private Reference FromMember(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis) {
             Node node = null;
             IPythonModule module = null;
-            Node definition = null;
+            LocationInfo location = null;
             var eval = analysis.ExpressionEvaluator;
 
             switch (value) {
                 case IPythonClassType cls:
                     node = cls.ClassDefinition;
                     module = cls.DeclaringModule;
-                    definition = cls.Definition;
+                    location = cls.Definition;
                     break;
                 case IPythonFunctionType fn:
                     node = fn.FunctionDefinition;
                     module = fn.DeclaringModule;
-                    definition = fn.Definition;
+                    location = fn.Definition;
                     break;
                 case IPythonPropertyType prop:
                     node = prop.FunctionDefinition;
                     module = prop.DeclaringModule;
-                    definition = prop.Definition;
+                    location = prop.Definition;
                     break;
                 case IPythonModule mod:
                     return HandleModule(mod, analysis, statement);
                 case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
                     node = ft.FunctionDefinition;
                     module = ft.DeclaringModule;
-                    definition = ft.Definition;
+                    location = ft.Definition;
                     break;
                 case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
                     node = ft.FunctionDefinition;
@@ -150,25 +150,24 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     if (m1 != null && scope != null) {
                         var v = scope.Variables[nex.Name];
                         if (v != null) {
-                            return new Reference { range = v.GetLocation(eval.Ast).Span, uri = analysis.Document.Uri };
+                            return new Reference { range = v.Definition.Span, uri = v.Definition.DocumentUri };
                         }
                     }
                     break;
                 case IPythonInstance _ when expr is MemberExpression mex: {
                         var target = eval.GetValueFromExpression(mex.Target);
                         var type = target?.GetPythonType();
-                        var m2 = type?.GetMember(mex.Name);
-                        if (m2 is IPythonInstance v) {
-                            return new Reference { range = v.Definition.GetLocation(eval.Ast).Span, uri = analysis.Document.Uri };
+                        if (type?.GetMember(mex.Name) is ILocatedMember m2) {
+                            return new Reference { range = m2.Definition.Span, uri = m2.Definition.DocumentUri };
                         }
-                        return FromMember(m2, null, statement, analysis);
                     }
+                    break;
             }
 
             module = module?.ModuleType == ModuleType.Stub ? module.PrimaryModule : module;
             if (node != null && module is IDocument doc && CanNavigateToModule(module, analysis)) {
                 return new Reference {
-                    range = definition.GetLocation(doc.Analysis.Ast)?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
+                    range = location?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
                 };
             }
 

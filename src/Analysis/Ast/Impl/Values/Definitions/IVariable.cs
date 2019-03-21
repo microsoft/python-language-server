@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
@@ -40,6 +39,6 @@ namespace Microsoft.Python.Analysis.Values {
         /// <summary>
         /// Assigns value to the variable.
         /// </summary>
-        void Assign(IMember value, Node location);
+        void Assign(IMember value, IPythonModule module, Node location);
     }
 }

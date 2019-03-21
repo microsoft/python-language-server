@@ -21,7 +21,6 @@ using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingTupleType : PythonCollectionType, ITypingTupleType {
