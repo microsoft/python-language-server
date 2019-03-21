@@ -19,6 +19,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class NodeExtensions {
+        public static LocationInfo GetLocation(this Node node, PythonAst ast)
+            => node.GetLocation(null, ast);
+
         public static LocationInfo GetLocation(this Node node, IPythonModule module, PythonAst ast = null) {
             if (node == null || node.StartIndex >= node.EndIndex) {
                 return LocationInfo.Empty;

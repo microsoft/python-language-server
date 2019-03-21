@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
@@ -26,14 +27,12 @@ namespace Microsoft.Python.Analysis.Values {
     /// Type information is marked as the type it describes, such as <see cref="PythonMemberType.Class"/>.
     /// </summary>
     [DebuggerDisplay("Instance of {Type.Name}")]
-    internal class PythonInstance : IPythonInstance, IEquatable<IPythonInstance> {
-        public PythonInstance(IPythonType type, LocationInfo location = null) {
+    internal class PythonInstance : LocatedMember, IPythonInstance, IEquatable<IPythonInstance> {
+        public PythonInstance(IPythonType type, Node definition = null) : base(definition) {
             Type = type ?? throw new ArgumentNullException(nameof(type));
-            Location = location ?? LocationInfo.Empty;
         }
 
         public virtual IPythonType Type { get; }
-        public LocationInfo Location { get; }
         public virtual PythonMemberType MemberType => PythonMemberType.Instance;
 
         public virtual IMember Call(string memberName, IArgumentSet args) {
@@ -59,7 +58,7 @@ namespace Microsoft.Python.Analysis.Values {
             var iteratorFunc = Type.GetMember(@"__iter__") as IPythonFunctionType;
             var o = iteratorFunc?.Overloads.FirstOrDefault();
             var instance = o?.Call(ArgumentSet.Empty, Type);
-            if (instance != null) { 
+            if (instance != null) {
                 return new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter);
             }
 

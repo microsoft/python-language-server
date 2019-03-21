@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
     internal class PythonCollection : PythonInstance, IPythonCollection {
@@ -30,7 +31,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         /// a sequence of sequences with a single element.</param>
         public PythonCollection(
             IPythonType collectionType,
-            LocationInfo location,
+            Node location,
             IReadOnlyList<IMember> contents,
             bool flatten = true
         ) : base(collectionType, location) {

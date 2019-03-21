@@ -161,11 +161,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return true;
         }
 
-        private void MakeUnresolvedImport(string variableName, string moduleName, LocationInfo location) {
+        private void MakeUnresolvedImport(string variableName, string moduleName, Expression definition) {
             if (!string.IsNullOrEmpty(variableName)) {
-                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
+                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, definition);
             }
-            Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), location.Span, ErrorCodes.UnresolvedImport, Severity.Warning));
+            Eval.ReportDiagnostics(Eval.Module.Uri, 
+                new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), Eval.GetLoc(definition).Span, ErrorCodes.UnresolvedImport, Severity.Warning));
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in string fullName, in PythonVariableModule parentModule, in string memberName) {

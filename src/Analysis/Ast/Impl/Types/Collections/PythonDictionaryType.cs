@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     internal class PythonDictionaryType : PythonCollectionType {
@@ -24,16 +25,16 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             : base(null, BuiltinTypeId.Dict, interpreter, isMutable) {
         }
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) {
+        public override IMember CreateInstance(string typeName, Node definition, IArgumentSet args) {
             var contents = args.Arguments.Count == 1
                 ? args.Arguments[0].Value as IReadOnlyDictionary<IMember, IMember>
                 : EmptyDictionary<IMember, IMember>.Instance;
-            return new PythonDictionary(this, location, contents);
+            return new PythonDictionary(this, definition, contents);
         }
 
         // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
+            => CreateInstance(Name, instance?.Definition ?? LocationInfo.Empty, args);
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.Dict;
         public override PythonMemberType MemberType => PythonMemberType.Class;

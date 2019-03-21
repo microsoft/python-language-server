@@ -16,6 +16,7 @@
 using System;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
@@ -30,14 +31,14 @@ namespace Microsoft.Python.Analysis.Values {
     /// Python Unicode string (default string in 3.x+)
     /// </summary>
     internal sealed class PythonUnicodeString : PythonConstant {
-        public PythonUnicodeString(string s, IPythonInterpreter interpreter, LocationInfo location = null)
+        public PythonUnicodeString(string s, IPythonInterpreter interpreter, Node location = null)
             : base(s, interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId()), location) { }
     }
 
     internal sealed class PythonFString : PythonInstance, IEquatable<PythonFString> {
         public readonly string UnparsedFString;
 
-        public PythonFString(string unparsedFString, IPythonInterpreter interpreter, LocationInfo location = null)
+        public PythonFString(string unparsedFString, IPythonInterpreter interpreter, Node location = null)
             : base(interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId()), location) {
             UnparsedFString = unparsedFString;
         }

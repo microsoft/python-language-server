@@ -45,18 +45,15 @@ namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
     /// Empty iterator
     /// </summary>
-    internal sealed class EmptyIterator : IPythonIterator {
-        public EmptyIterator(IPythonType unknownType) {
+    internal sealed class EmptyIterator : EmptyLocatedMember, IPythonIterator {
+        public EmptyIterator(IPythonType unknownType): base(PythonMemberType.Class) {
             Type = unknownType;
         }
         
-        public PythonMemberType MemberType => PythonMemberType.Class;
-        public LocationInfo Location => LocationInfo.Empty;
         public IPythonIterator GetIterator() => this;
         public IPythonType Type { get; }
         public IMember Call(string memberName, IArgumentSet args) => Type;
         public IMember Index(object index) => Type;
         public IMember Next => Type;
-
     }
 }

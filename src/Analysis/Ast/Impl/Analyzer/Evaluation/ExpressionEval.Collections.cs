@@ -138,20 +138,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (value != null) {
                     switch (cfor.Left) {
                         case NameExpression nex when value is IPythonCollection coll:
-                            DeclareVariable(nex.Name, coll.GetIterator().Next, VariableSource.Declaration, GetLoc(nex));
+                            DeclareVariable(nex.Name, coll.GetIterator().Next, VariableSource.Declaration, nex);
                             break;
                         case NameExpression nex:
-                            DeclareVariable(nex.Name, UnknownType, VariableSource.Declaration, GetLoc(nex));
+                            DeclareVariable(nex.Name, UnknownType, VariableSource.Declaration, nex);
                             break;
                         case TupleExpression tex when value is IPythonDictionary dict && tex.Items.Count > 0:
                             if (tex.Items[0] is NameExpression nx0 && !string.IsNullOrEmpty(nx0.Name)) {
-                                DeclareVariable(nx0.Name, dict.Keys.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, GetLoc(nx0));
+                                DeclareVariable(nx0.Name, dict.Keys.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx0);
                             }
                             if (tex.Items.Count > 1 && tex.Items[1] is NameExpression nx1 && !string.IsNullOrEmpty(nx1.Name)) {
-                                DeclareVariable(nx1.Name, dict.Values.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, GetLoc(nx1));
+                                DeclareVariable(nx1.Name, dict.Values.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx1);
                             }
                             foreach (var item in tex.Items.Skip(2).OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
-                                DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, GetLoc(item));
+                                DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, item);
                             }
                             break;
                     }

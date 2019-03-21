@@ -28,13 +28,12 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Contains either module members, members + imported children of explicit package or imported implicit package children
     /// Instance is unique for each module analysis
     /// </summary>
-    internal sealed class PythonVariableModule : IPythonModule, IEquatable<IPythonModule> {
+    internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
 
         public string Name { get; }
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
-        public LocationInfo Location { get; }
 
         public IDocumentAnalysis Analysis => Module?.Analysis;
         public IPythonModule DeclaringModule => null;
@@ -51,9 +50,8 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter) {
+        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(null) {
             Name = name;
-            Location = LocationInfo.Empty;
             Interpreter = interpreter;
         }
 

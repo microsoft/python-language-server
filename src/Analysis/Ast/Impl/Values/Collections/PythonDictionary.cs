@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
@@ -28,7 +29,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
         private readonly IPythonInterpreter _interpreter;
 
-        public PythonDictionary(PythonDictionaryType dictType, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :
+        public PythonDictionary(PythonDictionaryType dictType, Node location, IReadOnlyDictionary<IMember, IMember> contents) :
             base(dictType, location, contents.Keys.ToArray()) {
             foreach (var kvp in contents) {
                 _contents[kvp.Key] = kvp.Value;
@@ -36,7 +37,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _interpreter = dictType.DeclaringModule.Interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IMember contents) :
+        public PythonDictionary(IPythonInterpreter interpreter, Node location, IMember contents) :
             base(new PythonDictionaryType(interpreter), location, Array.Empty<IMember>()) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {

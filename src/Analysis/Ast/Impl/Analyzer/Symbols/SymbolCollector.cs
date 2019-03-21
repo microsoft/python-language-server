@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override bool Walk(ClassDefinition cd) {
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var classInfo = CreateClass(cd);
-                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, GetLoc(cd));
+                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, cd);
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private PythonClassType CreateClass(ClassDefinition node) {
-            var cls = new PythonClassType(node, _eval.Module, GetLoc(node), 
+            var cls = new PythonClassType(node, _eval.Module, 
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
             _typeMap[node] = cls;
             return cls;
@@ -89,16 +89,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void AddFunctionOrProperty(FunctionDefinition fd) {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
-            var loc = GetLoc(fd);
-            if (!TryAddProperty(fd, declaringType, loc)) {
-                AddFunction(fd, declaringType, loc);
+            if (!TryAddProperty(fd, declaringType)) {
+                AddFunction(fd, declaringType);
             }
         }
 
-        private IMember AddFunction(FunctionDefinition node, IPythonType declaringType, LocationInfo loc) {
+        private IMember AddFunction(FunctionDefinition node, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonFunctionType existing)) {
-                existing = new PythonFunctionType(node, _eval.Module, declaringType, loc);
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, loc);
+                existing = new PythonFunctionType(node, _eval.Module, declaringType);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, node);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;
@@ -123,7 +122,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
                 var location = _eval.GetLocOfName(node, node.NameExpression);
-                var overload = new PythonFunctionOverload(node, function, _eval.Module, location);
+                var overload = new PythonFunctionOverload(node, function, _eval.Module);
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, node, overload, function));
             }
@@ -139,27 +138,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return null;
         }
 
-        private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType, LocationInfo location) {
+        private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType) {
             var dec = node.Decorators?.Decorators;
             var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
 
             foreach (var d in decorators.OfType<NameExpression>()) {
                 switch (d.Name) {
                     case @"property":
-                        AddProperty(node, _eval.Module, declaringType, false, location);
+                        AddProperty(node, _eval.Module, declaringType, false);
                         return true;
                     case @"abstractproperty":
-                        AddProperty(node, _eval.Module, declaringType, true, location);
+                        AddProperty(node, _eval.Module, declaringType, true);
                         return true;
                 }
             }
             return false;
         }
 
-        private PythonPropertyType AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo loc) {
+        private PythonPropertyType AddProperty(FunctionDefinition node, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract, loc);
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, loc);
+                existing = new PythonPropertyType(node, declaringModule, declaringType, isAbstract);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, node);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;

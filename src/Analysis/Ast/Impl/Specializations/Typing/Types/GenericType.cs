@@ -18,12 +18,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal delegate IPythonType SpecificTypeConstructor(
         IReadOnlyList<IPythonType> typeArgs,
         IPythonModule declaringModule,
-        LocationInfo location);
+        Node location);
 
     /// <summary>
     /// Base class for generic types and type declarations.
@@ -77,7 +78,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Creates instance of a type information with the specific
         /// type arguments from a generic template.
         /// </summary>
-        public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null)
+        public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, Node location = null)
             => SpecificTypeConstructor(typeArguments, declaringModule, location);
 
         #region IPythonType
@@ -92,7 +93,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsAbstract => true;
         public bool IsSpecialized => true;
 
-        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) {
+        public IMember CreateInstance(string typeName, Node location, IArgumentSet args) {
             var types = args.Values<IPythonType>();
             if (types.Count != args.Arguments.Count) {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
@@ -100,7 +101,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var specific = CreateSpecificType(types, DeclaringModule, location);
             return specific == null
                 ? DeclaringModule.Interpreter.UnknownType
-                : specific.CreateInstance(typeName, location, null);
+                : specific.CreateInstance(typeName, location);
         }
 
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;

@@ -37,17 +37,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember GetInScope(string name) => GetInScope(name, CurrentScope);
         public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, Node expression)
-            => DeclareVariable(name, value, source, GetLoc(expression));
-
-        public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location, bool overwrite = false) {
+        public void DeclareVariable(string name, IMember value, VariableSource source, Node definition, bool overwrite = false) {
             var member = GetInScope(name);
             if (member != null) {
                 if (!value.IsUnknown()) {
-                    CurrentScope.DeclareVariable(name, value, source, location);
+                    CurrentScope.DeclareVariable(name, value, source, definition);
                 }
             } else {
-                CurrentScope.DeclareVariable(name, value, source, location);
+                CurrentScope.DeclareVariable(name, value, source, definition);
             }
         }
 

@@ -31,9 +31,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval: IExpressionEvaluator {
+    internal sealed partial class ExpressionEval : IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private readonly ReferenceCollection _references = new ReferenceCollection();
         private readonly object _lock = new object();
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
@@ -68,6 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
         public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
         public IEnumerable<DiagnosticsEntry> Diagnostics => _diagnostics;
+        public IReferenceCollection References => _references;
 
         public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
             // Do not add if module is library, etc. Only handle user code.
@@ -160,13 +162,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
-        private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier) {
-            return new PythonFString(formatSpecifier.Unparsed, Interpreter, GetLoc(formatSpecifier));
-        }
+        private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier) 
+            => new PythonFString(formatSpecifier.Unparsed, Interpreter, GetLoc(formatSpecifier));
 
-        private IMember GetValueFromFString(FString fString) {
-            return new PythonFString(fString.Unparsed, Interpreter, GetLoc(fString));
-        }
+        private IMember GetValueFromFString(FString fString) 
+            => new PythonFString(fString.Unparsed, Interpreter, GetLoc(fString));
 
         private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
             if (expr == null || string.IsNullOrEmpty(expr.Name)) {
@@ -175,6 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var member = LookupNameInScopes(expr.Name, options);
             if (member != null) {
+                _references.AddReference(member, expr);
                 switch (member.GetPythonType()) {
                     case IPythonClassType cls:
                         SymbolTable.Evaluate(cls.ClassDefinition);
@@ -205,6 +206,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // If container is class/type info rather than the instance, then the method is an unbound function.
                 // Example: C.f where f is a method of C. Compare to C().f where f is bound to the instance of C.
                 if (member is PythonFunctionType f && !f.IsStatic && !f.IsClassMethod) {
+                    _references.AddReference(member, expr.Target);
                     return f.ToUnbound();
                 }
                 instance = new PythonInstance(typeInfo);
@@ -214,6 +216,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var type = m?.GetPythonType(); // Try inner type
             var value = type?.GetMember(expr.Name);
 
+            _references.AddReference(m, expr.Target);
             if (type is IPythonModule) {
                 return value;
             }

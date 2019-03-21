@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     internal sealed class TypingModule : SpecializedModule {
@@ -44,8 +45,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private void SpecializeMembers() {
             // TypeVar
-            var fn = new PythonFunctionType("TypeVar", this, null, GetMemberDocumentation, GetMemberLocation);
-            var o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            var fn = new PythonFunctionType("TypeVar", this, null, GetMemberDocumentation);
+            var o = new PythonFunctionOverload(fn.Name, this);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, location, args)
@@ -55,8 +56,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["TypeVar"] = fn;
 
             // NewType
-            fn = new PythonFunctionType("NewType", this, null, GetMemberDocumentation, GetMemberLocation);
-            o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            fn = new PythonFunctionType("NewType", this, null, GetMemberDocumentation);
+            o = new PythonFunctionOverload(fn.Name, this);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, location, args) => CreateTypeAlias(args.Values<IMember>()));
@@ -64,8 +65,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["NewType"] = fn;
 
             // NewType
-            fn = new PythonFunctionType("Type", this, null, GetMemberDocumentation, GetMemberLocation);
-            o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            fn = new PythonFunctionType("Type", this, null, GetMemberDocumentation);
+            o = new PythonFunctionOverload(fn.Name, this);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, location, args) => {
@@ -128,8 +129,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
 
-            fn = new PythonFunctionType("NamedTuple", this, null, GetMemberDocumentation, GetMemberLocation);
-            o = new PythonFunctionOverload(fn.Name, this, _ => fn.Location);
+            fn = new PythonFunctionType("NamedTuple", this, null, GetMemberDocumentation);
+            o = new PythonFunctionOverload(fn.Name, this);
             o.SetReturnValueProvider((interpreter, overload, location, args) => CreateNamedTuple(args.Values<IMember>()));
             fn.AddOverload(o);
             _members["NamedTuple"] = fn;
@@ -140,7 +141,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var str = Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var bytes = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             var unicode = Interpreter.GetBuiltinType(BuiltinTypeId.Unicode);
-            var anyStrName = new PythonConstant("AnyStr", str, LocationInfo.Empty);
+            var anyStrName = new PythonConstant("AnyStr", str);
 
             var anyStrArgs = Interpreter.LanguageVersion.Is3x()
                 ? new IMember[] { anyStrName, str, bytes }
@@ -156,8 +157,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private string GetMemberDocumentation(string name)
         => base.GetMember(name)?.GetPythonType()?.Documentation;
-        private LocationInfo GetMemberLocation(string name)
-            => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Location ?? LocationInfo.Empty;
+        private Node GetMemberLocation(string name)
+            => (base.GetMember(name)?.GetPythonType() as ILocatedMember)?.Definition;
 
         private IPythonType CreateListType(string typeName, BuiltinTypeId typeId, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
             if (typeArgs.Count == 1) {

@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
@@ -71,18 +72,18 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? IteratorType : base.GetMember(name);
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
+        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args)
             => new PythonCollection(this, location, args.Arguments.Select(a => a.Value).OfType<IMember>().ToArray());
 
         // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => CreateInstance(Name, instance?.Location ?? LocationInfo.Empty, args);
+            => CreateInstance(Name, instance?.Definition ?? LocationInfo.Empty, args);
 
         public override IMember Index(IPythonInstance instance, object index)
             => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
         #endregion
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IArgumentSet args) {
+        public static IPythonCollection CreateList(IPythonInterpreter interpreter, Node location, IArgumentSet args) {
             IReadOnlyList<IMember> contents = null;
             if (args.Arguments.Count > 1) {
                 // self and list like in list.__init__ and 'list([1, 'str', 3.0])'
@@ -94,16 +95,16 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             return CreateList(interpreter, location, contents ?? Array.Empty<IMember>());
         }
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
+        public static IPythonCollection CreateList(IPythonInterpreter interpreter, Node location, IReadOnlyList<IMember> contents, bool flatten = true) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
             return new PythonCollection(collectionType, location, contents, flatten);
         }
 
-        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents) {
+        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, Node location, IReadOnlyList<IMember> contents) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
             return new PythonCollection(collectionType, location, contents);
         }
-        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
+        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, Node location, IReadOnlyList<IMember> contents, bool flatten = true) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
             return new PythonCollection(collectionType, location, contents, flatten);
         }

@@ -52,9 +52,8 @@ namespace Microsoft.Python.Analysis.Types {
             string name,
             IPythonModule declaringModule,
             IPythonType declaringType,
-            string documentation,
-            LocationInfo location = null
-        ) : this(name, declaringModule, declaringType, _ => documentation, _ => location ?? LocationInfo.Empty) { }
+            string documentation
+        ) : this(name, declaringModule, declaringType, _ => documentation) { }
 
         /// <summary>
         /// Creates function type to use in special cases when function is dynamically
@@ -66,10 +65,9 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonModule declaringModule,
             IPythonType declaringType,
             Func<string, string> documentationProvider,
-            Func<string, LocationInfo> locationProvider,
-            IPythonFunctionOverload overload = null
-        ) : base(name, declaringModule, documentationProvider, locationProvider,
-            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            IPythonFunctionOverload overload = null,
+            Node definition = null
+        ) : base(name, declaringModule, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, definition) {
             DeclaringType = declaringType;
             if (overload != null) {
                 AddOverload(overload);
@@ -79,10 +77,8 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonFunctionType(
             FunctionDefinition fd,
             IPythonModule declaringModule,
-            IPythonType declaringType,
-            LocationInfo location = null
-        ) : base(fd.Name, declaringModule, fd.Documentation, location ?? LocationInfo.Empty,
-            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            IPythonType declaringType
+        ) : base(fd.Name, declaringModule, fd.Documentation, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, fd) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;

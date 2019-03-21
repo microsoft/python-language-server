@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonUnionType : IPythonUnionType {
@@ -62,7 +63,7 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsAbstract => false;
         public bool IsSpecialized => true;
 
-        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
+        public IMember CreateInstance(string typeName, Node location, IArgumentSet args)
             => new PythonUnion(this, location);
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {

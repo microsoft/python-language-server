@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Inner function, declare as variable.
             var m = SymbolTable.Evaluate(node);
             if (m != null) {
-                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, Eval.GetLoc(node));
+                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, node);
             }
             return false;
         }

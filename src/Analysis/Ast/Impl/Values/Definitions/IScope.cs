@@ -33,6 +33,6 @@ namespace Microsoft.Python.Analysis.Values {
         IVariableCollection NonLocals { get; }
         IVariableCollection Globals { get; }
         IPythonModule Module { get; }
-        void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location);
+        void DeclareVariable(string name, IMember value, VariableSource source, Node location);
     }
 }

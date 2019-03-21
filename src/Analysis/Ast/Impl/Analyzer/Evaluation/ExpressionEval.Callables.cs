@@ -32,6 +32,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = GetValueFromExpression(expr.Target);
+            _references.AddReference(target, expr);
+
             var result = GetValueFromGeneric(target, expr);
             if (result != null) {
                 return result;
@@ -74,9 +76,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var loc = GetLoc(expr);
-            var ft = new PythonFunctionType(expr.Function, Module, null, loc);
-            var overload = new PythonFunctionOverload(expr.Function, ft, Module, GetLoc(expr));
+            var ft = new PythonFunctionType(expr.Function, Module, null);
+            var overload = new PythonFunctionOverload(expr.Function, ft, Module));
             ft.AddOverload(overload);
             return ft;
         }

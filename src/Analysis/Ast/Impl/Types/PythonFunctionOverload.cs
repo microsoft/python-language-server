@@ -36,11 +36,10 @@ namespace Microsoft.Python.Analysis.Types {
     public delegate IMember ReturnValueProvider(
         IPythonModule declaringModule,
         IPythonFunctionOverload overload,
-        LocationInfo location,
+        Node location,
         IArgumentSet args);
 
-    internal sealed class PythonFunctionOverload : IPythonFunctionOverload, ILocatedMember {
-        private readonly Func<string, LocationInfo> _locationProvider;
+    internal sealed class PythonFunctionOverload : LocatedMember, IPythonFunctionOverload {
         private readonly IPythonModule _declaringModule;
         private readonly string _returnDocumentation;
 
@@ -54,18 +53,17 @@ namespace Microsoft.Python.Analysis.Types {
         private Func<string, string> _documentationProvider;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, IPythonModule declaringModule, LocationInfo location)
-            : this(fd.Name, declaringModule, _ => location) {
+        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, IPythonModule declaringModule)
+            : this(fd.Name, declaringModule, fd) {
             FunctionDefinition = fd;
             ClassMember = classMember;
             var ast = (declaringModule as IDocument)?.Analysis.Ast;
             _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
-        public PythonFunctionOverload(string name, IPythonModule declaringModule, Func<string, LocationInfo> locationProvider) {
+        public PythonFunctionOverload(string name, IPythonModule declaringModule, Node definition = null): base(definition) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             _declaringModule = declaringModule;
-            _locationProvider = locationProvider;
         }
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
@@ -153,11 +151,10 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
-        public PythonMemberType MemberType => PythonMemberType.Function;
+        public override PythonMemberType MemberType => PythonMemberType.Function;
         public IMember StaticReturnValue { get; private set; }
 
-        public IMember Call(IArgumentSet args, IPythonType self, LocationInfo callLocation = null) {
-            callLocation = callLocation ?? LocationInfo.Empty;
+        public IMember Call(IArgumentSet args, IPythonType self, Node callLocation = null) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
                 var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);

@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    public class PythonModule : IDocument, IAnalyzable, IEquatable<IPythonModule> {
+    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule> {
         private enum State {
             None,
             Loading,
@@ -122,8 +122,8 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
 
-        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) => this;
-        public PythonMemberType MemberType => PythonMemberType.Module;
+        public IMember CreateInstance(string typeName, Node location, IArgumentSet args) => this;
+        public override PythonMemberType MemberType => PythonMemberType.Module;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
 
@@ -158,6 +158,10 @@ namespace Microsoft.Python.Analysis.Modules {
                             && !(v.Value?.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
                 .Select(v => v.Name);
         }
+        #endregion
+
+        #region ILocatedMember
+        public override LocationInfo GetLocation(PythonAst ast) => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
         #endregion
 
         #region IPythonFile

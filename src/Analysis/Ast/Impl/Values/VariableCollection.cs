@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
@@ -53,7 +54,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<string> GetMemberNames() => _variables.Keys.ToArray();
         #endregion
 
-        internal void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location) {
+        internal void DeclareVariable(string name, IMember value, VariableSource source, Node location = null) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
             if (_variables.TryGetValue(name, out var existing)) {
                 existing.Assign(value, location);

@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Location of the argument in the function definition.
         /// Not the same as location of the <see cref="ValueExpression"/>.
         /// </summary>
-        LocationInfo Location { get; }
+        Node Definition { get; }
 
         /// <summary>
         /// Value of the argument.
@@ -75,7 +75,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Location of the argument in the function definition.
         /// Not the same as location of the <see cref="Expression"/>.
         /// </summary>
-        LocationInfo Location { get; }
+        Node Definition { get; }
 
         /// <summary>
         /// Expressions that evaluate to the elements of the list.
@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Location of the argument in the function definition.
         /// Not the same as location of the <see cref="Expression"/>.
         /// </summary>
-        LocationInfo Location { get; }
+        Node Definition { get; }
 
         /// <summary>
         /// Dictionary arguments.

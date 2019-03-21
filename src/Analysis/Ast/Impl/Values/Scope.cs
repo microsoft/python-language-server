@@ -73,14 +73,14 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location)
-            => VariableCollection.DeclareVariable(name, value, source, location);
+        public void DeclareVariable(string name, IMember value, VariableSource source, Node definition)
+            => VariableCollection.DeclareVariable(name, value, source, definition);
 
-        public void DeclareNonLocal(string name, LocationInfo location)
-            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
+        public void DeclareNonLocal(string name, Node definition)
+            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, definition);
 
-        public void DeclareGlobal(string name, LocationInfo location)
-            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
+        public void DeclareGlobal(string name, Node definition)
+            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, definition);
 
         #endregion
 
@@ -94,21 +94,21 @@ namespace Microsoft.Python.Analysis.Values {
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var objType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
 
-            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin);
 
             if (Node is FunctionDefinition) {
                 var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
                 var tupleType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Tuple);
 
-                VariableCollection.DeclareVariable("__closure__", tupleType, VariableSource.Builtin, LocationInfo.Empty);
-                VariableCollection.DeclareVariable("__code__", objType, VariableSource.Builtin, LocationInfo.Empty);
-                VariableCollection.DeclareVariable("__defaults__", tupleType, VariableSource.Builtin, LocationInfo.Empty);
-                VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin, LocationInfo.Empty);
-                VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin, LocationInfo.Empty);
-                VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin, LocationInfo.Empty);
-                VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__closure__", tupleType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__code__", objType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__defaults__", tupleType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin);
             } else if(Node is ClassDefinition) {
-                VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin, LocationInfo.Empty);
+                VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin);
             }
         }
     }
@@ -130,7 +130,6 @@ namespace Microsoft.Python.Analysis.Values {
         public IVariableCollection NonLocals => VariableCollection.Empty;
         public  IVariableCollection Globals => VariableCollection.Empty;
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location) { }
-
+        public void DeclareVariable(string name, IMember value, VariableSource source, Node location) { }
     }
 }

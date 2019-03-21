@@ -15,11 +15,12 @@
 
 using System;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     internal class PythonConstant : PythonInstance, IPythonConstant, IEquatable<IPythonConstant> {
-        public PythonConstant(object value, IPythonType type, LocationInfo location)
-            : base(type, location) {
+        public PythonConstant(object value, IPythonType type, Node definition)
+            : base(type, definition) {
             Value = value;
         }
         public object Value { get; }

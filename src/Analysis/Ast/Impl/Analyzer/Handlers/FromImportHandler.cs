@@ -121,8 +121,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var printNameExpression = node.Names.FirstOrDefault(n => n?.Name == "print_function");
             if (printNameExpression != null) {
-                var fn = new PythonFunctionType("print", Module, null, string.Empty, LocationInfo.Empty);
-                var o = new PythonFunctionOverload(fn.Name, Module, _ => LocationInfo.Empty);
+                var fn = new PythonFunctionType("print", Module, null, string.Empty);
+                var o = new PythonFunctionOverload(fn.Name, Module);
                 var parameters = new List<ParameterInfo> {
                     new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
                     new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),

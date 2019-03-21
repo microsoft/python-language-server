@@ -17,29 +17,8 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Values {
-    /// <summary>
-    /// Represents a variable.
-    /// </summary>
-    public interface IVariable: ILocatedMember {
-        /// <summary>
-        /// Variable name.
-        /// </summary>
-        string Name { get; }
-
-        /// <summary>
-        /// Variable source.
-        /// </summary>
-        VariableSource Source { get; }
-
-        /// <summary>
-        /// Variable value.
-        /// </summary>
-        IMember Value { get; }
-
-        /// <summary>
-        /// Assigns value to the variable.
-        /// </summary>
-        void Assign(IMember value, Node location);
+namespace Microsoft.Python.Analysis {
+    public interface IReferenceCollection {
+        IReadOnlyList<Expression> GetReferences(IPythonType type);
     }
 }

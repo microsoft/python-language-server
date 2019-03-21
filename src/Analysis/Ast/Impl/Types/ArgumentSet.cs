@@ -51,12 +51,12 @@ namespace Microsoft.Python.Analysis.Types {
         private ArgumentSet() { }
 
         public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
-            _arguments = typeArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
+            _arguments = typeArgs.Select(t => new Argument(t)).ToList();
             _evaluated = true;
         }
 
         public ArgumentSet(IReadOnlyList<IMember> memberArgs) {
-            _arguments = memberArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
+            _arguments = memberArgs.Select(t => new Argument(t)).ToList();
             _evaluated = true;
         }
 
@@ -295,28 +295,28 @@ namespace Microsoft.Python.Analysis.Types {
             public object Value { get; internal set; }
             public ParameterKind Kind { get; }
             public Expression ValueExpression { get; set; }
-            public LocationInfo Location { get; }
+            public Node Definition { get; }
             public IPythonType Type { get; internal set; }
             public Expression TypeExpression { get; }
 
-            public Argument(Parameter p, LocationInfo location) :
-                this(p.Name, p.Kind, null, p.Annotation, location) { }
+            public Argument(Parameter p, Node definition = null) :
+                this(p.Name, p.Kind, null, p.Annotation, definition) { }
 
-            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, LocationInfo location) {
+            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, Node definition) {
                 Name = name;
                 Kind = kind;
                 ValueExpression = valueValueExpression;
                 TypeExpression = typeExpression;
-                Location = location;
+                Definition = definition;
             }
 
-            public Argument(IPythonType type, LocationInfo location) : this(type.Name, type, location) { }
-            public Argument(IMember member, LocationInfo location) : this(string.Empty, member, location) { }
+            public Argument(IPythonType type, Node definition) : this(type.Name, type, definition) { }
+            public Argument(IMember member, Node definition) : this(string.Empty, member, definition) { }
 
-            private Argument(string name, object value, LocationInfo location) {
+            private Argument(string name, object value, Node definition) {
                 Name = name;
                 Value = value;
-                Location = location;
+                Definition = definition;
             }
         }
 

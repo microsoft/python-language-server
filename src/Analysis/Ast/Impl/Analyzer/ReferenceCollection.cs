@@ -13,33 +13,27 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Values {
-    /// <summary>
-    /// Represents a variable.
-    /// </summary>
-    public interface IVariable: ILocatedMember {
-        /// <summary>
-        /// Variable name.
-        /// </summary>
-        string Name { get; }
+namespace Microsoft.Python.Analysis.Analyzer {
+    internal class ReferenceCollection: IReferenceCollection {
+        private readonly Dictionary<IMember, List<Expression>> _references = new Dictionary<IMember, List<Expression>>();
 
-        /// <summary>
-        /// Variable source.
-        /// </summary>
-        VariableSource Source { get; }
+        public void AddReference(IMember m, Expression expression) {
+            if (m.IsUnknown()) {
+                return;
+            }
+             if (!_references.TryGetValue(m, out var exprList)) {
+                exprList = new List<Expression>();
+                _references[m] = exprList;
+            }
+            exprList.Add(expression);
+        }
 
-        /// <summary>
-        /// Variable value.
-        /// </summary>
-        IMember Value { get; }
-
-        /// <summary>
-        /// Assigns value to the variable.
-        /// </summary>
-        void Assign(IMember value, Node location);
+        public IReadOnlyList<Expression> GetReferences(IPythonType type) 
+            => _references.TryGetValue(type, out var refs) ? (IReadOnlyList<Expression>)refs : Array.Empty<Expression>();
     }
 }

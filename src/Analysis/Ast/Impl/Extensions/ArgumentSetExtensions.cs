@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis {
 
             if (args.DictionaryArgument != null) {
                 foreach (var kvp in args.DictionaryArgument.Arguments) {
-                    eval.DeclareVariable(kvp.Key, kvp.Value, VariableSource.Declaration, args.DictionaryArgument.Location, false);
+                    eval.DeclareVariable(kvp.Key, kvp.Value, VariableSource.Declaration, args.DictionaryArgument.Expression, false);
                 }
             }
         }

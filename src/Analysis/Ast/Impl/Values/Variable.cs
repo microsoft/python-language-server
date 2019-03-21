@@ -17,36 +17,33 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
-    internal sealed class Variable : IVariable {
-        private List<LocationInfo> _locations;
+    internal sealed class Variable : LocatedMember, IVariable {
+        private readonly List<Node> _references = new List<Node>();
 
-        public Variable(string name, IMember value, VariableSource source, LocationInfo location = null) {
-            Name = name;
-            Value = value;
+        public Variable(string name, IMember value, VariableSource source, Node definition): base(PythonMemberType.Variable, definition) {
+            Check.ArgumentNotNull(nameof(definition), definition);
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Value = value ?? throw new ArgumentNullException(nameof(value));
             Source = source;
-            Location = location ?? (value is ILocatedMember lm ? lm.Location : LocationInfo.Empty);
         }
 
         public string Name { get; }
         public VariableSource Source { get; }
         public IMember Value { get; private set; }
-        public LocationInfo Location { get; }
-        public PythonMemberType MemberType => PythonMemberType.Variable;
-        public IReadOnlyList<LocationInfo> Locations => _locations as IReadOnlyList<LocationInfo> ?? new[] { Location };
 
-        public void Assign(IMember value, LocationInfo location) {
+        public void Assign(IMember value, Node location) {
+            Check.ArgumentNotNull(nameof(value), value);
+            Check.ArgumentNotNull(nameof(location), location);
+
             if (Value == null || Value.GetPythonType().IsUnknown() || value?.GetPythonType().IsUnknown() == false) {
                 Value = value;
             }
-            AddLocation(location);
-        }
-
-        private void AddLocation(LocationInfo location) {
-            _locations = _locations ?? new List<LocationInfo> { Location };
-            _locations.Add(location);
+            AddReference(location);
         }
 
         private string DebuggerDisplay {

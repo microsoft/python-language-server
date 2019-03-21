@@ -39,15 +39,14 @@ namespace Microsoft.Python.Analysis.Types {
         private Dictionary<string, IPythonType> _genericParameters;
 
         // For tests
-        internal PythonClassType(string name, IPythonModule declaringModule, LocationInfo location = null)
-            : base(name, declaringModule, string.Empty, location ?? LocationInfo.Empty, BuiltinTypeId.Type) { }
+        internal PythonClassType(string name, IPythonModule declaringModule, Node definition = null)
+            : base(name, declaringModule, string.Empty, BuiltinTypeId.Type, definition) { }
 
         public PythonClassType(
             ClassDefinition classDefinition,
             IPythonModule declaringModule,
-            LocationInfo location,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), location, builtinTypeId) {
+        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), builtinTypeId, classDefinition) {
             ClassDefinition = classDefinition;
         }
 

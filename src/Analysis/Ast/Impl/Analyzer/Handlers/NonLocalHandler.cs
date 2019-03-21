@@ -21,14 +21,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         public bool HandleNonLocal(NonlocalStatement node) {
             foreach (var nex in node.Names) {
-                Eval.CurrentScope.DeclareNonLocal(nex.Name, Eval.GetLoc(nex));
+                Eval.CurrentScope.DeclareNonLocal(nex.Name, nex);
             }
             return false;
         }
 
         public bool HandleGlobal(GlobalStatement node) {
             foreach (var nex in node.Names) {
-                Eval.CurrentScope.DeclareGlobal(nex.Name, Eval.GetLoc(nex));
+                Eval.CurrentScope.DeclareGlobal(nex.Name, nex);
             }
             return false;
         }

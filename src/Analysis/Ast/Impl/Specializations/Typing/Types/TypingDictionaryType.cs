@@ -17,6 +17,7 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
@@ -46,7 +47,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override string Name { get; }
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
+        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args)
             => new TypingDictionary(this, location);
         public override IMember Index(IPythonInstance instance, object index) => new PythonInstance(ValueType);
         public override bool IsSpecialized => true;

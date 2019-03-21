@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 case NameExpression nex:
                     // for x in y:
                     if (!string.IsNullOrEmpty(nex.Name)) {
-                        Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Eval.GetLoc(nex));
+                        Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, nex);
                     }
                     break;
                 case TupleExpression tex:

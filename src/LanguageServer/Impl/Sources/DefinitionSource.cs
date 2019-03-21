@@ -49,8 +49,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     if (m != null && scope.Variables[name] is IVariable v) {
                         var type = v.Value.GetPythonType();
                         var module = type as IPythonModule ?? type?.DeclaringModule;
-                        if (CanNavigateToModule(module, analysis)) {
-                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                        if (module != null && CanNavigateToModule(module, analysis)) {
+                            return new Reference { range = v.GetLocation(module.Analysis.Ast).Span, uri = module.Uri };
                         }
                     }
                 }
@@ -115,31 +115,31 @@ namespace Microsoft.Python.LanguageServer.Sources {
         private Reference FromMember(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis) {
             Node node = null;
             IPythonModule module = null;
-            LocationInfo location = null;
+            Node definition = null;
             var eval = analysis.ExpressionEvaluator;
 
             switch (value) {
                 case IPythonClassType cls:
                     node = cls.ClassDefinition;
                     module = cls.DeclaringModule;
-                    location = cls.Location;
+                    definition = cls.Definition;
                     break;
                 case IPythonFunctionType fn:
                     node = fn.FunctionDefinition;
                     module = fn.DeclaringModule;
-                    location = fn.Location;
+                    definition = fn.Definition;
                     break;
                 case IPythonPropertyType prop:
                     node = prop.FunctionDefinition;
                     module = prop.DeclaringModule;
-                    location = prop.Location;
+                    definition = prop.Definition;
                     break;
                 case IPythonModule mod:
                     return HandleModule(mod, analysis, statement);
                 case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
                     node = ft.FunctionDefinition;
                     module = ft.DeclaringModule;
-                    location = ft.Location;
+                    definition = ft.Definition;
                     break;
                 case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
                     node = ft.FunctionDefinition;
@@ -159,7 +159,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         var type = target?.GetPythonType();
                         var m2 = type?.GetMember(mex.Name);
                         if (m2 is IPythonInstance v) {
-                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                            return new Reference { range = v.Definition.GetLocation().Span, uri = v.Location.DocumentUri };
                         }
                         return FromMember(m2, null, statement, analysis);
                     }
@@ -168,7 +168,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             module = module?.ModuleType == ModuleType.Stub ? module.PrimaryModule : module;
             if (node != null && module is IDocument doc && CanNavigateToModule(module, analysis)) {
                 return new Reference {
-                    range = location?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
+                    range = definition.GetLocation(doc.Analysis.Ast)?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
                 };
             }
 
