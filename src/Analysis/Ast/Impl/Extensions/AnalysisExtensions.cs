@@ -54,8 +54,8 @@ namespace Microsoft.Python.Analysis {
             // 'type()' in code is a function call, not a type class instantiation.
             if (!(analysis.GlobalScope.Variables[name]?.Value is PythonFunctionType f)) {
                 f = PythonFunctionType.ForSpecialization(name, analysis.Document);
-                f.AddOverload(new PythonFunctionOverload(name, analysis.Document, _ => LocationInfo.Empty));
-                analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration, LocationInfo.Empty);
+                f.AddOverload(new PythonFunctionOverload(name, analysis.Document));
+                analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration, null);
             }
             return f;
         }

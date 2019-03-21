@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingTupleType : PythonCollectionType, ITypingTupleType {
@@ -41,7 +42,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
+        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args)
             => new TypingTuple(this, location);
 
         public override IMember Index(IPythonInstance instance, object index) {

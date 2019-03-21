@@ -50,8 +50,8 @@ namespace Microsoft.Python.Analysis.Types {
                 string name,
                 IPythonModule declaringModule,
                 Func<string, string> documentationProvider,
-                Node definition = null,
-                BuiltinTypeId typeId = BuiltinTypeId.Unknown
+                BuiltinTypeId typeId = BuiltinTypeId.Unknown,
+                Node definition = null
             ) : this(name, declaringModule, typeId, definition) {
             _documentationProvider = documentationProvider;
         }

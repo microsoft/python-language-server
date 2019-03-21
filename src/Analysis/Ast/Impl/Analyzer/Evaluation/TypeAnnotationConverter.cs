@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
             if (baseType is IGenericType gt) {
-                return gt.CreateSpecificType(args, _eval.Module, LocationInfo.Empty);
+                return gt.CreateSpecificType(args, _eval.Module);
             }
             if(baseType is IPythonClassType cls && cls.IsGeneric()) {
                 // Type is not yet known for generic classes. Resolution is delayed

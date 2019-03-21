@@ -146,7 +146,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var anyStrArgs = Interpreter.LanguageVersion.Is3x()
                 ? new IMember[] { anyStrName, str, bytes }
                 : new IMember[] { anyStrName, str, unicode };
-            _members["AnyStr"] = GenericTypeParameter.FromTypeVar(new ArgumentSet(anyStrArgs), this, LocationInfo.Empty);
+            _members["AnyStr"] = GenericTypeParameter.FromTypeVar(new ArgumentSet(anyStrArgs), this);
 
             _members["Optional"] = new GenericType("Optional", this, (typeArgs, module, location) => CreateOptional(typeArgs));
             _members["Type"] = new GenericType("Type", this, (typeArgs, module, location) => CreateType(typeArgs));
@@ -317,7 +317,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateGenericClassParameter(IReadOnlyList<IPythonType> typeArgs, IPythonModule declaringModule, LocationInfo location) {
+        private IPythonType CreateGenericClassParameter(IReadOnlyList<IPythonType> typeArgs, IPythonModule declaringModule, Node location) {
             // Handle Generic[_T1, _T2, ...]. _T1, et al are IGenericTypeParameter from TypeVar.
             // Hold the parameter until concrete type is provided at the time of the class instantiation.
             if (typeArgs.Count > 0) {

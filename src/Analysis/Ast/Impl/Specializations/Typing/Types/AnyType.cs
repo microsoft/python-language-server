@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class AnyType : IPythonType {
@@ -34,7 +35,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public PythonMemberType MemberType => PythonMemberType.Class;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => DeclaringModule.Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) 
+        public IMember CreateInstance(string typeName, Node location, IArgumentSet args) 
             => new PythonInstance(this, location);
 
         public IMember GetMember(string name) => null;

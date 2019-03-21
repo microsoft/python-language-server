@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
             => new PythonFunctionType(name, declaringModule, true);
 
         private PythonFunctionType(string name, IPythonModule declaringModule, bool isSpecialized = false) :
-            base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
+            base(name, declaringModule, string.Empty, BuiltinTypeId.Function) {
             DeclaringType = declaringModule;
             _isSpecialized = isSpecialized;
         }

@@ -150,7 +150,6 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
-        public LocationInfo Location => _locationProvider?.Invoke(Name) ?? LocationInfo.Empty;
         public override PythonMemberType MemberType => PythonMemberType.Function;
         public IMember StaticReturnValue { get; private set; }
 

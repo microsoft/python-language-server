@@ -19,7 +19,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     internal class PythonConstant : PythonInstance, IPythonConstant, IEquatable<IPythonConstant> {
-        public PythonConstant(object value, IPythonType type, Node definition)
+        public PythonConstant(object value, IPythonType type, Node definition = null)
             : base(type, definition) {
             Value = value;
         }

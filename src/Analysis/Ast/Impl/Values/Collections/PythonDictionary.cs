@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _interpreter = interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents) :
+        public PythonDictionary(IPythonInterpreter interpreter, Node location, IReadOnlyDictionary<IMember, IMember> contents) :
             this(new PythonDictionaryType(interpreter), location, contents) {
             _interpreter = interpreter;
         }
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
         public IReadOnlyList<IPythonCollection> Items
-            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
+            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, Definition, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         private IPythonCollection CreateList(IReadOnlyList<IMember> items)
-            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, items, false);
+            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, null, items, false);
 
         private sealed class KeyComparer : IEqualityComparer<IMember> {
             public bool Equals(IMember x, IMember y) {

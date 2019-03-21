@@ -163,10 +163,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier) 
-            => new PythonFString(formatSpecifier.Unparsed, Interpreter, GetLoc(formatSpecifier));
+            => new PythonFString(formatSpecifier.Unparsed, Interpreter, formatSpecifier);
 
         private IMember GetValueFromFString(FString fString) 
-            => new PythonFString(fString.Unparsed, Interpreter, GetLoc(fString));
+            => new PythonFString(fString.Unparsed, Interpreter, fString);
 
         private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
             if (expr == null || string.IsNullOrEmpty(expr.Name)) {
@@ -235,7 +235,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonPropertyType prop:
                     return prop.Call(instance, prop.Name, ArgumentSet.Empty);
                 case IPythonType p:
-                    return new PythonBoundType(p, instance, GetLoc(expr));
+                    return new PythonBoundType(p, instance, expr);
                 case null:
                     Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;

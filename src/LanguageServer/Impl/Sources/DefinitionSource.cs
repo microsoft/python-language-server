@@ -150,7 +150,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     if (m1 != null && scope != null) {
                         var v = scope.Variables[nex.Name];
                         if (v != null) {
-                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                            return new Reference { range = v.GetLocation(eval.Ast).Span, uri = analysis.Document.Uri };
                         }
                     }
                     break;
@@ -159,7 +159,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         var type = target?.GetPythonType();
                         var m2 = type?.GetMember(mex.Name);
                         if (m2 is IPythonInstance v) {
-                            return new Reference { range = v.Definition.GetLocation().Span, uri = v.Location.DocumentUri };
+                            return new Reference { range = v.Definition.GetLocation(eval.Ast).Span, uri = analysis.Document.Uri };
                         }
                         return FromMember(m2, null, statement, analysis);
                     }

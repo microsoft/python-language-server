@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonType t:
                     // Target is type (info), the call creates instance.
                     // For example, 'x = C; y = x()' or 'x = C()' where C is class
-                    value = new PythonInstance(t, GetLoc(expr));
+                    value = new PythonInstance(t, expr);
                     break;
             }
 
@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var ft = new PythonFunctionType(expr.Function, Module, null);
-            var overload = new PythonFunctionOverload(expr.Function, ft, Module));
+            var overload = new PythonFunctionOverload(expr.Function, ft, Module);
             ft.AddOverload(overload);
             return ft;
         }
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
                 args = a.Evaluate();
             }
-            return cls.CreateInstance(cls.Name, GetLoc(expr), args);
+            return cls.CreateInstance(cls.Name, expr, args);
         }
 
         public IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {

@@ -17,6 +17,7 @@ using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal class TypingListType : PythonCollectionType, ITypingListType {
@@ -50,7 +51,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) 
+        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args) 
             => new TypingList(this, location);
         public IPythonType ItemType { get; }
 

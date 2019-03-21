@@ -19,11 +19,12 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
-        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, LocationInfo location)
-            : base(name, declaringModule, documentation, location) {
+        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, Node location)
+            : base(name, declaringModule, documentation, BuiltinTypeId.Unknown, location) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
         }
         public IReadOnlyList<IPythonType> Constraints { get; }
@@ -33,7 +34,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsSpecialized => true;
 
 
-        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, LocationInfo location) {
+        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, Node location = null) {
             var args = argSet.Values<IMember>();
             if (args.Count == 0) {
                 // TODO: report that at least one argument is required.

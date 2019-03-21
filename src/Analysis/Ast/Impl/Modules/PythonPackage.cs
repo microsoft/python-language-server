@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -42,7 +43,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
         public bool IsSpecialized => Module?.IsSpecialized ?? false;
-        public PythonMemberType MemberType => PythonMemberType.Module;
         public ModuleType ModuleType => Module?.ModuleType ?? ModuleType.Package;
         public IPythonModule PrimaryModule => null;
         public IPythonModule Stub => null;
@@ -50,16 +50,14 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(null) {
+        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(PythonMemberType.Module) {
             Name = name;
             Interpreter = interpreter;
         }
 
-        public PythonVariableModule(IPythonModule module) {
+        public PythonVariableModule(IPythonModule module): base(module.Definition) {
             Name = module.Name;
-            Location = module.Location;
             Interpreter = module.Interpreter;
-
             Module = module;
         }
 
@@ -70,7 +68,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName = null, LocationInfo location = null, IArgumentSet args = null) => this;
+        public IMember CreateInstance(string typeName = null, Node location = null, IArgumentSet args = null) => this;
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
 

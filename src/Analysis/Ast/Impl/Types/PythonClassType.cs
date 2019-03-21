@@ -76,7 +76,7 @@ namespace Microsoft.Python.Analysis.Types {
                 switch (name) {
                     case "__mro__":
                     case "mro":
-                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro) : UnknownType;
+                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, null, Mro) : UnknownType;
                     case "__dict__":
                         return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
                     case @"__weakref__":
@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) {
+        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args) {
             // Specializations
             switch (typeName) {
                 case "list":
@@ -201,7 +201,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return;
                 }
 
-                AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, _bases), true);
+                AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, null, _bases), true);
             }
         }
 
@@ -271,8 +271,7 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
-        public IPythonType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, LocationInfo location = null) {
-            location = location ?? LocationInfo.Empty;
+        public IPythonType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, Node location = null) {
             // Get declared generic parameters of the class, i.e. list of Ts in Generic[T1, T2, ...]
             var genericClassParameters = Bases.OfType<IGenericClassParameter>().ToArray();
             // Optimistically use the first one
@@ -444,7 +443,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Transfers members from generic class to the specific class type
         /// while instantiating specific types for the members.
         /// </summary>
-        private void SetClassMembers(PythonClassType classType, IArgumentSet args, IPythonModule declaringModule, LocationInfo location) {
+        private void SetClassMembers(PythonClassType classType, IArgumentSet args, IPythonModule declaringModule, Node location) {
             // Add members from the template class (this one).
             // Members must be clones rather than references since
             // we are going to set specific types on them.

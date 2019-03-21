@@ -18,13 +18,14 @@ using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingList : PythonCollection {
         private readonly ITypingListType _collectionType;
 
-        public TypingList(ITypingListType collectionType, LocationInfo location = null)
-            : base(collectionType, location ?? LocationInfo.Empty, Array.Empty<IMember>()) {
+        public TypingList(ITypingListType collectionType, Node location = null)
+            : base(collectionType, location, Array.Empty<IMember>()) {
             _collectionType = collectionType;
         }
 

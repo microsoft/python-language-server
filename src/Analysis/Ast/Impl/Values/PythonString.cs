@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// Python ASCII (bytes) string (default string in 2.x).
     /// </summary>
     internal sealed class PythonAsciiString : PythonConstant {
-        public PythonAsciiString(AsciiString s, IPythonInterpreter interpreter, LocationInfo location = null)
+        public PythonAsciiString(AsciiString s, IPythonInterpreter interpreter, Node location = null)
             : base(s, interpreter.GetBuiltinType(interpreter.GetAsciiTypeId()), location) { }
     }
 

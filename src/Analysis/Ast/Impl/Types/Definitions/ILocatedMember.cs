@@ -24,7 +24,9 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     public interface ILocatedMember: IMember {
         /// <summary>
-        /// Expression where the member is defined.
+        /// AST node where the member is defined. For example, <see cref="ClassDefinition"/>
+        /// for a class, <see cref="FunctionDefinition"/> for functions, methods and properties
+        /// or a <see cref="NameExpression"/> for variables.
         /// </summary>
         Node Definition { get; }
 
@@ -39,7 +41,8 @@ namespace Microsoft.Python.Analysis.Types {
         void AddReference(Node expression);
 
         /// <summary>
-        /// Calculates location of the definition in the provided AST.
+        /// Calculates location of the definition in the provided AST
+        /// based on the <see cref="Definition"/> field.
         /// </summary>
         LocationInfo GetLocation(PythonAst ast);
     }

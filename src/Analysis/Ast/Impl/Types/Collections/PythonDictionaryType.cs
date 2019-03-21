@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
 
         // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => CreateInstance(Name, instance?.Definition ?? LocationInfo.Empty, args);
+            => CreateInstance(Name, instance?.Definition, args);
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.Dict;
         public override PythonMemberType MemberType => PythonMemberType.Class;

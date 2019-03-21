@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public PythonPropertyType(string name, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, Node definition = null)
-            : base(name, declaringModule, null, definition) {
+            : base(name, declaringModule, string.Empty, BuiltinTypeId.Property, definition) {
             DeclaringType = declaringType;
             IsAbstract = isAbstract;
         }

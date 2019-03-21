@@ -40,9 +40,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
 
-            var location = Eval.GetLoc(node.Root);
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-            if (HandleImportSearchResult(imports, null, null, location, out var variableModule)) {
+            if (HandleImportSearchResult(imports, null, null, node.Root, out var variableModule)) {
                 AssignVariables(node, imports, variableModule);
             }
             return false;
@@ -94,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
-                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule.Location);
+                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule.Definition);
             }
         }
 

@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class NamedTupleType : TypingTupleType, ITypingNamedTupleType {
@@ -43,9 +44,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override string Name { get; }
         public override bool IsSpecialized => true;
 
-
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
-            => new TypingTuple(this, location);
+        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args) => new TypingTuple(this, location);
 
         // NamedTuple does not create instances, it defines a type.
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => this;
