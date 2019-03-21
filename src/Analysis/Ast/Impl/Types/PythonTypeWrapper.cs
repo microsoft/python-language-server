@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Delegates most of the methods to the wrapped/inner class.
     /// </summary>
-    internal class PythonTypeWrapper : ILocatedMember, IPythonType, IHasQualifiedName {
+    internal class PythonTypeWrapper : IPythonType, IHasQualifiedName {
         private readonly BuiltinTypeId _builtinTypeId;
         private IPythonType _innerType;
 
@@ -65,8 +65,8 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual bool IsAbstract => InnerType.IsAbstract;
         public virtual bool IsSpecialized => InnerType.IsSpecialized;
 
-        public virtual IMember CreateInstance(string typeName, Node location, IArgumentSet args)
-            => IsAbstract ? null : InnerType.CreateInstance(typeName, location, args);
+        public virtual IMember CreateInstance(string typeName, IArgumentSet args)
+            => IsAbstract ? null : InnerType.CreateInstance(typeName, args);
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => InnerType.Call(instance, memberName, args);
         public virtual IMember Index(IPythonInstance instance, object index) 

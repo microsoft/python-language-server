@@ -15,12 +15,10 @@
 
 using System;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     internal class PythonConstant : PythonInstance, IPythonConstant, IEquatable<IPythonConstant> {
-        public PythonConstant(object value, IPythonType type, Node definition = null)
-            : base(type, definition) {
+        public PythonConstant(object value, IPythonType type) : base(type) {
             Value = value;
         }
         public object Value { get; }
@@ -35,7 +33,7 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         public bool Equals(IPythonConstant other) {
-            if(!base.Equals(other)) {
+            if (!base.Equals(other)) {
                 return false;
             }
             return Value?.Equals(other?.Value) == true;

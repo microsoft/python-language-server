@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -40,7 +39,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
                 } else if (_index < _iteratorType.ItemTypes.Count) {
                     itemType = _iteratorType.ItemTypes[_index++];
                 }
-                return itemType?.CreateInstance(itemType.Name, null, ArgumentSet.Empty) ?? UnknownType;
+                return itemType?.CreateInstance(itemType.Name, ArgumentSet.Empty) ?? UnknownType;
             }
         }
     }

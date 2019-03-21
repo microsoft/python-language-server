@@ -121,7 +121,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["Union"] = new GenericType("Union", this,
                 (typeArgs, module, location) => CreateUnion(typeArgs));
 
-            _members["Counter"] = Specialized.Function("Counter", this, null, "Counter", new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
+            _members["Counter"] = Specialized.Function("Counter", this, null, "Counter", 
+                new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
 
             _members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
             _members["SupportsFloat"] = Interpreter.GetBuiltinType(BuiltinTypeId.Float);

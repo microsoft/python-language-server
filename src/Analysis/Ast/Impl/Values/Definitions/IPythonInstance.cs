@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// <summary>
     /// Represents instance of a type.
     /// </summary>
-    public interface IPythonInstance : ILocatedMember, IPythonIterable {
+    public interface IPythonInstance : IMember, IPythonIterable {
         /// <summary>
         /// Type of the object the instance represents.
         /// </summary>

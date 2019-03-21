@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis {
 
             if (args.ListArgument != null && !string.IsNullOrEmpty(args.ListArgument.Name)) {
                 var type = new PythonCollectionType(null, BuiltinTypeId.List, eval.Interpreter, false);
-                var list = new PythonCollection(type, null, args.ListArgument.Values);
+                var list = new PythonCollection(type, args.ListArgument.Values);
                 eval.DeclareVariable(args.ListArgument.Name, list, VariableSource.Declaration, args.ListArgument.Definition);
             }
 

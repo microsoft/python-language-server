@@ -188,14 +188,14 @@ namespace Microsoft.Python.Analysis.Types {
 
                     if (typeArgs != null) {
                         var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), DeclaringModule, callLocation);
-                        return new PythonInstance(specificReturnValue, callLocation);
+                        return new PythonInstance(specificReturnValue);
                     }
                     break;
 
                 case IGenericTypeDefinition gtp1: {
                         // -> _T
                         if (selfClassType.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
-                            return new PythonInstance(specificType, callLocation);
+                            return new PythonInstance(specificType);
                         }
                         // Try returning the constraint
                         // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T

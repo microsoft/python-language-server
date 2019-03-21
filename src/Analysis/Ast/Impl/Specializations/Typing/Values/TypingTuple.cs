@@ -17,13 +17,12 @@ using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingTuple : PythonCollection {
         private readonly TypingTupleType _collectionType;
-        public TypingTuple(TypingTupleType collectionType, Node location = null)
-            : base(collectionType, location, collectionType.ItemTypes) {
+        public TypingTuple(TypingTupleType collectionType)
+            : base(collectionType, collectionType.ItemTypes) {
             _collectionType = collectionType;
         }
 
@@ -34,6 +33,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         }
 
         public override IMember Index(object index) 
-            => _collectionType.Index(this, index).GetPythonType().CreateInstance(null, null, ArgumentSet.Empty);
+            => _collectionType.Index(this, index).GetPythonType().CreateInstance(null, ArgumentSet.Empty);
     }
 }

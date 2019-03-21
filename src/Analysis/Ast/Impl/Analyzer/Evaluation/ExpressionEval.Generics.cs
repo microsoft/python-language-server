@@ -136,7 +136,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet, Module, callExpr);
-            return new PythonInstance(specificType, callExpr);
+            return new PythonInstance(specificType, Module, callExpr);
         }
 
         private ScopeStatement GetScope(IMember m) {

@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
                     name = name ?? $"arg{i}";
                     var parameter = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
-                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, parameter));
+                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, module, parameter));
                 }
                 return;
             }
@@ -113,7 +113,7 @@ namespace Microsoft.Python.Analysis.Types {
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
 
-            var slots = fd.Parameters.Select(p => new Argument(p)).ToArray();
+            var slots = fd.Parameters.Select(p => new Argument(p, module)).ToArray();
             // Locate sequence argument, if any
             var sa = slots.Where(s => s.Kind == ParameterKind.List).ToArray();
             if (sa.Length > 1) {
@@ -127,8 +127,8 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].ValueExpression, sa[0].Definition) : null;
-            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].ValueExpression, da[0].Definition) : null;
+            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].ValueExpression, module, sa[0].Definition) : null;
+            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].ValueExpression, module, da[0].Definition) : null;
 
             // Class methods
             var formalParamIndex = 0;

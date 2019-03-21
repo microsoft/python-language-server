@@ -72,12 +72,12 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? IteratorType : base.GetMember(name);
 
-        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args)
-            => new PythonCollection(this, location, args.Arguments.Select(a => a.Value).OfType<IMember>().ToArray());
+        public override IMember CreateInstance(string typeName, IArgumentSet args)
+            => new PythonCollection(this, args.Arguments.Select(a => a.Value).OfType<IMember>().ToArray());
 
         // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => CreateInstance(Name, instance?.Definition, args);
+            => CreateInstance(Name, args);
 
         public override IMember Index(IPythonInstance instance, object index)
             => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
@@ -92,21 +92,21 @@ namespace Microsoft.Python.Analysis.Types.Collections {
                 // Try list argument as n '__init__(self, *args, **kwargs)'
                 contents = args.ListArgument?.Values;
             }
-            return CreateList(interpreter, location, contents ?? Array.Empty<IMember>());
+            return CreateList(interpreter, contents ?? Array.Empty<IMember>());
         }
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, Node location, IReadOnlyList<IMember> contents, bool flatten = true) {
+        public static IPythonCollection CreateList(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
-            return new PythonCollection(collectionType, location, contents, flatten);
+            return new PythonCollection(collectionType, contents, flatten);
         }
 
-        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, Node location, IReadOnlyList<IMember> contents) {
+        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
-            return new PythonCollection(collectionType, location, contents);
+            return new PythonCollection(collectionType, contents);
         }
-        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, Node location, IReadOnlyList<IMember> contents, bool flatten = true) {
+        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
-            return new PythonCollection(collectionType, location, contents, flatten);
+            return new PythonCollection(collectionType, contents, flatten);
         }
 
         public override bool Equals(object obj) 

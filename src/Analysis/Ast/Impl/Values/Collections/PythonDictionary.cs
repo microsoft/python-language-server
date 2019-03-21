@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
@@ -29,16 +28,16 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
         private readonly IPythonInterpreter _interpreter;
 
-        public PythonDictionary(PythonDictionaryType dictType, Node location, IReadOnlyDictionary<IMember, IMember> contents) :
-            base(dictType, location, contents.Keys.ToArray()) {
+        public PythonDictionary(PythonDictionaryType dictType, IReadOnlyDictionary<IMember, IMember> contents) :
+            base(dictType, contents.Keys.ToArray()) {
             foreach (var kvp in contents) {
                 _contents[kvp.Key] = kvp.Value;
             }
             _interpreter = dictType.DeclaringModule.Interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, Node location, IMember contents) :
-            base(new PythonDictionaryType(interpreter), location, Array.Empty<IMember>()) {
+        public PythonDictionary(IPythonInterpreter interpreter, IMember contents) :
+            base(new PythonDictionaryType(interpreter), Array.Empty<IMember>()) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {
                     _contents[key] = dict[key];
@@ -48,8 +47,8 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _interpreter = interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, Node location, IReadOnlyDictionary<IMember, IMember> contents) :
-            this(new PythonDictionaryType(interpreter), location, contents) {
+        public PythonDictionary(IPythonInterpreter interpreter, IReadOnlyDictionary<IMember, IMember> contents) :
+            this(new PythonDictionaryType(interpreter), contents) {
             _interpreter = interpreter;
         }
 
@@ -57,12 +56,12 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
         public IReadOnlyList<IPythonCollection> Items
-            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, Definition, new[] { kvp.Key, kvp.Value })).ToArray();
+            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
 
-        public override IPythonIterator GetIterator() => 
+        public override IPythonIterator GetIterator() =>
             Call(@"iterkeys", ArgumentSet.Empty) as IPythonIterator ?? new EmptyIterator(Type.DeclaringModule.Interpreter.UnknownType);
 
         public override IMember Index(object key) => key is IMember m ? this[m] : UnknownType;
@@ -93,7 +92,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         private IPythonCollection CreateList(IReadOnlyList<IMember> items)
-            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, null, items, false);
+            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, items, false);
 
         private sealed class KeyComparer : IEqualityComparer<IMember> {
             public bool Equals(IMember x, IMember y) {

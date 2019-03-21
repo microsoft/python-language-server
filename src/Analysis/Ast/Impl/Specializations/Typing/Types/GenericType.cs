@@ -90,15 +90,15 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsAbstract => true;
         public bool IsSpecialized => true;
 
-        public IMember CreateInstance(string typeName, Node location, IArgumentSet args) {
+        public IMember CreateInstance(string typeName, IArgumentSet args) {
             var types = args.Values<IPythonType>();
             if (types.Count != args.Arguments.Count) {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
             }
-            var specific = CreateSpecificType(types, DeclaringModule, location);
+            var specific = CreateSpecificType(types);
             return specific == null
                 ? DeclaringModule.Interpreter.UnknownType
-                : specific.CreateInstance(typeName, location);
+                : specific.CreateInstance(typeName);
         }
 
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;

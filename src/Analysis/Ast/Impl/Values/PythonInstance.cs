@@ -23,17 +23,17 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
     /// Represents an instance of type or the type information.
-    /// Actual instance has <see cref="MemberType"/> set to <see cref="PythonMemberType.Instance"/>.
+    /// Actual instance has <see cref="LocatedMember.MemberType"/> set to <see cref="PythonMemberType.Instance"/>.
     /// Type information is marked as the type it describes, such as <see cref="PythonMemberType.Class"/>.
     /// </summary>
     [DebuggerDisplay("Instance of {Type.Name}")]
-    internal class PythonInstance : LocatedMember, IPythonInstance, IEquatable<IPythonInstance> {
-        public PythonInstance(IPythonType type, Node definition = null) : base(definition) {
+    internal class PythonInstance : IPythonInstance, IEquatable<IPythonInstance> {
+        public PythonInstance(IPythonType type) {
             Type = type ?? throw new ArgumentNullException(nameof(type));
         }
 
         public virtual IPythonType Type { get; }
-        public virtual PythonMemberType MemberType => PythonMemberType.Instance;
+        public PythonMemberType MemberType => PythonMemberType.Instance;
 
         public virtual IMember Call(string memberName, IArgumentSet args) {
             var t = Type.GetMember(memberName).GetPythonType();

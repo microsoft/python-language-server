@@ -25,16 +25,10 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         /// </summary>
         /// <param name="collectionType">Collection type.</param>
         /// <param name="contents">Contents of the collection (typically elements from the initialization).</param>
-        /// <param name="location">Declaring location.</param>
         /// <param name="flatten">If true and contents is a single element
         /// and is a sequence, the sequence elements are copied rather than creating
         /// a sequence of sequences with a single element.</param>
-        public PythonCollection(
-            IPythonType collectionType,
-            Node location,
-            IReadOnlyList<IMember> contents,
-            bool flatten = true
-        ) : base(collectionType, location) {
+        public PythonCollection(IPythonType collectionType, IReadOnlyList<IMember> contents, bool flatten = true) : base(collectionType) {
             var c = contents ?? Array.Empty<IMember>();
             if (flatten && c.Count == 1 && c[0] is IPythonCollection seq) {
                 Contents = seq.Contents;

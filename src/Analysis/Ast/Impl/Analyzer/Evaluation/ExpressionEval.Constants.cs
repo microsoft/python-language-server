@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var t = SuppressBuiltinLookup ? UnknownType : (GetTypeFromLiteral(expr) ?? UnknownType);
-            return new PythonInstance(t, expr);
+            return new PythonInstance(t, Module, expr);
         }
 
         public IPythonType GetTypeFromLiteral(Expression expr) {

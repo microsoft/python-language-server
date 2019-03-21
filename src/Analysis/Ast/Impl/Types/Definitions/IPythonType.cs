@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -57,9 +56,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="typeName">Name of the type. Used in specialization scenarios
         /// where constructor may want to create specialized type.</param>
-        /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        IMember CreateInstance(string typeName = null, Node location = null, IArgumentSet args = null);
+        IMember CreateInstance(string typeName = null, IArgumentSet args = null);
 
         /// <summary>
         /// Invokes method or property on the specified instance.

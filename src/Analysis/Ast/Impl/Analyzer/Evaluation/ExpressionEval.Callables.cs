@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonType t:
                     // Target is type (info), the call creates instance.
                     // For example, 'x = C; y = x()' or 'x = C()' where C is class
-                    value = new PythonInstance(t, expr);
+                    value = new PythonInstance(t);
                     break;
             }
 
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
                 args = a.Evaluate();
             }
-            return cls.CreateInstance(cls.Name, expr, args);
+            return cls.CreateInstance(cls.Name, args);
         }
 
         public IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {

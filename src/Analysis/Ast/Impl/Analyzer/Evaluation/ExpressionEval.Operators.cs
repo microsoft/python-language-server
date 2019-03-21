@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     }
                 }
                 return instance is IPythonConstant c && instance.TryGetConstant<int>(out var value)
-                    ? new PythonConstant(-value, c.Type, expr)
+                    ? new PythonConstant(-value, c.Type)
                     : instance;
             }
             return UnknownType;

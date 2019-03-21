@@ -125,14 +125,14 @@ namespace Microsoft.Python.Analysis.Types {
                 case "dict": {
                         // self, then contents
                         var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
-                        return new PythonDictionary(DeclaringModule.Interpreter, location, contents);
+                        return new PythonDictionary(DeclaringModule.Interpreter, contents);
                     }
                 case "tuple": {
                         var contents = args.Values<IMember>();
                         return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, contents);
                     }
             }
-            return new PythonInstance(this, location);
+            return new PythonInstance(this);
         }
 
         public override IMember Index(IPythonInstance instance, object index) {
@@ -476,7 +476,7 @@ namespace Microsoft.Python.Analysis.Types {
                             }
 
                             if (specificType != null) {
-                                classType.AddMember(m.Key, new PythonInstance(specificType, location), true);
+                                classType.AddMember(m.Key, new PythonInstance(specificType), true);
                             }
                             break;
                         }

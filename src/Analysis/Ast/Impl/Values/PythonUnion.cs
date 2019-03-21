@@ -14,7 +14,6 @@
 // permissions and limitations under the License.    }
 
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
@@ -22,8 +21,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// Primarily used to describe multiple types that a function
     /// may be returning in different cases.
     /// </summary>
-    internal sealed class PythonUnion: PythonInstance {
-        public PythonUnion(IPythonUnionType unionType, Node location = null) 
-            : base(unionType, location) { }
+    internal sealed class PythonUnion : PythonInstance {
+        public PythonUnion(IPythonUnionType unionType) : base(unionType) { }
     }
 }

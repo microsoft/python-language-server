@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             var args = argSet.Values<IMember>();
             if (args.Count > 0) {
                 var type = new PythonCollectionType(null, BuiltinTypeId.List, module.Interpreter, false);
-                return new PythonCollection(type, location, new[] { args[0] });
+                return new PythonCollection(type, new[] { args[0] });
             }
             return null;
         }

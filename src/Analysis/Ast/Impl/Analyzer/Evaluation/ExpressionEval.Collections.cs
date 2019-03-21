@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateList(Module.Interpreter, expression, contents);
+            return PythonCollectionType.CreateList(Module.Interpreter, contents);
         }
 
         public IMember GetValueFromDictionary(DictionaryExpression expression) {
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
-            return new PythonDictionary(Interpreter, expression, contents);
+            return new PythonDictionary(Interpreter, contents);
         }
 
         private IMember GetValueFromTuple(TupleExpression expression) {
@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateTuple(Module.Interpreter, expression, contents);
+            return PythonCollectionType.CreateTuple(Module.Interpreter, contents);
         }
 
         public IMember GetValueFromSet(SetExpression expression) {
@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateSet(Interpreter, expression, contents);
+            return PythonCollectionType.CreateSet(Interpreter, contents);
         }
 
         public IMember GetValueFromGenerator(GeneratorExpression expression) {
@@ -106,14 +106,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 switch (node) {
                     case ListComprehension lc:
                         var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateList(Interpreter, lc, new[] { v1 });
+                        return PythonCollectionType.CreateList(Interpreter, new[] { v1 });
                     case SetComprehension sc:
                         var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateSet(Interpreter, sc, new[] { v2 });
+                        return PythonCollectionType.CreateSet(Interpreter, new[] { v2 });
                     case DictionaryComprehension dc:
                         var k = GetValueFromExpression(dc.Key) ?? UnknownType;
                         var v = GetValueFromExpression(dc.Value) ?? UnknownType;
-                        return new PythonDictionary(new PythonDictionaryType(Interpreter), dc, new Dictionary<IMember, IMember> { { k, v } });
+                        return new PythonDictionary(new PythonDictionaryType(Interpreter), new Dictionary<IMember, IMember> { { k, v } });
                 }
 
                 return UnknownType;
