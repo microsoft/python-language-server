@@ -348,4 +348,10 @@
   <data name="UndefinedVariable" xml:space="preserve">
     <value>Undefined variable: '{0}'</value>
   </data>
+  <data name="ExceptionGettingSearchPaths" xml:space="preserve">
+    <value>An exception occured while discovering search paths; analysis will not be available.</value>
+  </data>
+  <data name="InterpreterNotFound" xml:space="preserve">
+    <value>Interpreter does not exist; analysis will not be available.</value>
+  </data>
 </root>

@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal abstract class ModuleResolutionBase {
@@ -32,6 +33,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected readonly IPythonInterpreter _interpreter;
         protected readonly IFileSystem _fs;
         protected readonly ILogger _log;
+        protected readonly IUIService _ui;
         protected readonly bool _requireInitPy;
         protected string _root;
 
@@ -46,6 +48,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             _interpreter = services.GetService<IPythonInterpreter>();
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
+            _ui = services.GetService<IUIService>();
 
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
         }
