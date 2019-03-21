@@ -196,6 +196,24 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An exception occured while discovering search paths; analysis will not be available..
+        /// </summary>
+        internal static string ExceptionGettingSearchPaths {
+            get {
+                return ResourceManager.GetString("ExceptionGettingSearchPaths", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Interpreter does not exist; analysis will not be available..
+        /// </summary>
+        internal static string InterpreterNotFound {
+            get {
+                return ResourceManager.GetString("InterpreterNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The number of empty lines to include between class or function declarations at the top level of a module..
         /// </summary>
         internal static string LinesBetweenLevelDeclarationsLong {

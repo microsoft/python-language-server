@@ -136,7 +136,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {
             if (!_fs.FileExists(Configuration.InterpreterPath)) {
                 _log?.Log(TraceEventType.Warning, "Interpreter does not exist:", Configuration.InterpreterPath);
-                _ui?.ShowMessageAsync($"Interpreter does not exist; analysis will not be available. See the output panel for more information.", TraceEventType.Error);
+                _ui?.ShowMessageAsync(Resources.InterpreterNotFound, TraceEventType.Error);
                 return Array.Empty<string>();
             }
 
@@ -149,7 +149,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
             } catch (InvalidOperationException ex) {
                 _log?.Log(TraceEventType.Warning, "Exception getting search paths", ex);
-                _ui?.ShowMessageAsync($"An exception occured while discovering search paths; analysis will not be available. See the output panel for more information.", TraceEventType.Error);
+                _ui?.ShowMessageAsync(Resources.ExceptionGettingSearchPaths, TraceEventType.Error);
                 return Array.Empty<string>();
             }
         }
