@@ -309,7 +309,7 @@ z = u[0]
             var errors = new CollectingErrorSink();
             var ops = new ParserOptions { ErrorSink = errors };
             var p = Parser.CreateParser(new StringReader(expr), version, ops);
-            var ast = p.ParseTopExpression();
+            var ast = p.ParseTopExpression(null);
             if (errors.Errors.Any()) {
                 foreach (var e in errors.Errors) {
                     Console.WriteLine(e);

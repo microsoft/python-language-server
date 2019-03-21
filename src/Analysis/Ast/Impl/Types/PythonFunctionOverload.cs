@@ -40,7 +40,6 @@ namespace Microsoft.Python.Analysis.Types {
         IArgumentSet args);
 
     internal sealed class PythonFunctionOverload : LocatedMember, IPythonFunctionOverload {
-        private readonly IPythonModule _declaringModule;
         private readonly string _returnDocumentation;
 
         // Allow dynamic function specialization, such as defining return types for builtin
@@ -61,9 +60,8 @@ namespace Microsoft.Python.Analysis.Types {
             _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
-        public PythonFunctionOverload(string name, IPythonModule declaringModule, Node definition = null): base(definition) {
+        public PythonFunctionOverload(string name, IPythonModule declaringModule, Node definition = null): base(declaringModule, definition) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            _declaringModule = declaringModule;
         }
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
@@ -125,7 +123,7 @@ namespace Microsoft.Python.Analysis.Types {
                             .Select(n => cls.GenericParameters.TryGetValue(n, out var t) ? t : null)
                             .ExcludeDefault()
                             .ToArray();
-                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule);
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), DeclaringModule);
                         return specificReturnValue.Name;
                     }
                 case IGenericTypeDefinition gtp1 when self is IPythonClassType cls: {
@@ -136,7 +134,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // Try returning the constraint
                         // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
                         var name = StaticReturnValue.GetPythonType()?.Name;
-                        var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
+                        var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
                         if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
                             var t = gtp2.Constraints.FirstOrDefault();
                             if (t != null) {
@@ -156,7 +154,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember Call(IArgumentSet args, IPythonType self, Node callLocation = null) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(_declaringModule, this, callLocation, args);
+                var rt = _returnValueProvider?.Invoke(DeclaringModule, this, callLocation, args);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
@@ -189,7 +187,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
 
                     if (typeArgs != null) {
-                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), _declaringModule, callLocation);
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), DeclaringModule, callLocation);
                         return new PythonInstance(specificReturnValue, callLocation);
                     }
                     break;
@@ -202,7 +200,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // Try returning the constraint
                         // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
                         var name = StaticReturnValue.GetPythonType()?.Name;
-                        var typeDefVar = _declaringModule.Analysis.GlobalScope.Variables[name];
+                        var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
                         if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
                             return gtp2.Constraints.FirstOrDefault();
                         }

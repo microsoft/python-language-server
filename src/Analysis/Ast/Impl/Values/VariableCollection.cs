@@ -54,12 +54,12 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<string> GetMemberNames() => _variables.Keys.ToArray();
         #endregion
 
-        internal void DeclareVariable(string name, IMember value, VariableSource source, Node location = null) {
+        internal void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule declaringModule = null, Node location = null) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
             if (_variables.TryGetValue(name, out var existing)) {
                 existing.Assign(value, location);
             } else {
-                _variables[name] = new Variable(name, value, source, location);
+                _variables[name] = new Variable(name, value, source, declaringModule, location);
             }
         }
 

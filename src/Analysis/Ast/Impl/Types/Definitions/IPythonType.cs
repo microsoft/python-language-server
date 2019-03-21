@@ -20,16 +20,11 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Type information of an instance.
     /// </summary>
-    public interface IPythonType : IMember, IMemberContainer {
+    public interface IPythonType : ILocatedMember, IMemberContainer {
         /// <summary>
         /// Type name.
         /// </summary>
         string Name { get; }
-
-        /// <summary>
-        /// Module the type is declared in.
-        /// </summary>
-        IPythonModule DeclaringModule { get; }
 
         /// <summary>
         /// Indicates built-in type id such as 'int' or 'str'

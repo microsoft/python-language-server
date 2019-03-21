@@ -146,56 +146,7 @@ namespace Microsoft.Python.Parsing {
         //single_input: Newline | simple_stmt | compound_stmt Newline
         //eval_input: testlist Newline* ENDMARKER
         //file_input: (Newline | stmt)* ENDMARKER
-        public PythonAst ParseFile() => ParseFileWorker();
-
-        //[stmt_list] Newline | compound_stmt Newline
-        //stmt_list ::= simple_stmt (";" simple_stmt)* [";"]
-        //compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
-        //Returns a simple or coumpound_stmt or null if input is incomplete
-        /// <summary>
-        /// Parse one or more lines of interactive input
-        /// </summary>
-        /// <returns>null if input is not yet valid but could be with more lines</returns>
-        public PythonAst ParseInteractiveCode(out ParseResult properties) {
-
-            properties = ParseResult.Complete;
-
-            StartParsing();
-            var ret = InternalParseInteractiveInput(out var parsingMultiLineCmpdStmt, out var isEmptyStmt);
-
-            if (_errorCode == 0) {
-                if (isEmptyStmt) {
-                    properties = ParseResult.Empty;
-                } else if (parsingMultiLineCmpdStmt) {
-                    properties = ParseResult.IncompleteStatement;
-                }
-
-                if (isEmptyStmt) {
-                    return null;
-                }
-
-                return CreateAst(ret);
-            } else {
-                if ((_errorCode & ErrorCodes.IncompleteMask) != 0) {
-                    if ((_errorCode & ErrorCodes.IncompleteToken) != 0) {
-                        properties = ParseResult.IncompleteToken;
-                        return null;
-                    }
-
-                    if ((_errorCode & ErrorCodes.IncompleteStatement) != 0) {
-                        if (parsingMultiLineCmpdStmt) {
-                            properties = ParseResult.IncompleteStatement;
-                        } else {
-                            properties = ParseResult.IncompleteToken;
-                        }
-                        return null;
-                    }
-                }
-
-                properties = ParseResult.Invalid;
-                return null;
-            }
-        }
+        public PythonAst ParseFile(Uri module = null) => ParseFileWorker(module);
 
         public Expression ParseFStrSubExpr() {
             _alwaysAllowContextDependentSyntax = true;
@@ -236,10 +187,8 @@ namespace Microsoft.Python.Parsing {
             return node;
         }
 
-        private PythonAst CreateAst(Statement ret) {
-            var ast = new PythonAst(ret, _tokenizer.GetLineLocations(), _tokenizer.LanguageVersion, _tokenizer.GetCommentLocations());
-            ast.HasVerbatim = _verbatim;
-            ast.PrivatePrefix = _privatePrefix;
+        private PythonAst CreateAst(Uri module, Statement ret) {
+            var ast = new PythonAst(module, ret, _tokenizer.GetLineLocations(), _tokenizer.LanguageVersion, _tokenizer.GetCommentLocations()) {HasVerbatim = _verbatim, PrivatePrefix = _privatePrefix};
             if (_token.Token != null) {
                 ast.SetLoc(0, GetEndForStatement());
             }
@@ -253,22 +202,13 @@ namespace Microsoft.Python.Parsing {
             return ast;
         }
 
-        public PythonAst ParseSingleStatement() {
-            StartParsing();
-
-            MaybeEatNewLine();
-            var statement = ParseStmt();
-            EatEndOfInput();
-            return CreateAst(statement);
-        }
-
-        public PythonAst ParseTopExpression() {
+        public PythonAst ParseTopExpression(Uri module) {
             // TODO: move from source unit  .TrimStart(' ', '\t')
             _alwaysAllowContextDependentSyntax = true;
             var ret = new ReturnStatement(ParseTestListAsExpression());
             _alwaysAllowContextDependentSyntax = false;
             ret.SetLoc(0, 0);
-            return CreateAst(ret);
+            return CreateAst(module, ret);
         }
 
         internal ErrorSink ErrorSink {
@@ -4605,7 +4545,7 @@ namespace Microsoft.Python.Parsing {
 
         #region Implementation Details
 
-        private PythonAst ParseFileWorker() {
+        private PythonAst ParseFileWorker(Uri module) {
             StartParsing();
 
             var l = new List<Statement>();
@@ -4670,7 +4610,7 @@ namespace Microsoft.Python.Parsing {
             if (_token.Token != null) {
                 ret.SetLoc(0, GetEndForStatement());
             }
-            return CreateAst(ret);
+            return CreateAst(module, ret);
         }
 
         private bool IsString(ConstantExpression ce) {

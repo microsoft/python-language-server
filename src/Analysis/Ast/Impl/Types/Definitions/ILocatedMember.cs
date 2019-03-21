@@ -24,6 +24,11 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     public interface ILocatedMember: IMember {
         /// <summary>
+        /// Module that defines the member.
+        /// </summary>
+        IPythonModule DeclaringModule { get; }
+
+        /// <summary>
         /// AST node where the member is defined. For example, <see cref="ClassDefinition"/>
         /// for a class, <see cref="FunctionDefinition"/> for functions, methods and properties
         /// or a <see cref="NameExpression"/> for variables.

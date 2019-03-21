@@ -73,14 +73,14 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, Node definition)
-            => VariableCollection.DeclareVariable(name, value, source, definition);
+        public void DeclareVariable(string name, IMember value, VariableSource source, Node location)
+            => VariableCollection.DeclareVariable(name, value, source, Module, location);
 
-        public void DeclareNonLocal(string name, Node definition)
-            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, definition);
+        public void DeclareNonLocal(string name, Node location)
+            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, Module, location);
 
-        public void DeclareGlobal(string name, Node definition)
-            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, definition);
+        public void DeclareGlobal(string name, Node location)
+            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, Module, location);
 
         #endregion
 

@@ -22,15 +22,19 @@ namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember: ILocatedMember {
         private HashSet<Node> _references;
 
-        protected LocatedMember(PythonMemberType memberType, Node definition = null): this(definition) {
+        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule = null, Node definition = null)
+            : this(declaringModule, definition) {
             MemberType = memberType;
         }
 
-        protected LocatedMember(Node definition = null) {
+        protected LocatedMember(IPythonModule declaringModule = null, Node definition = null) {
+            DeclaringModule = declaringModule;
             Definition = definition;
         }
 
         public virtual PythonMemberType MemberType { get; }
+
+        public virtual IPythonModule DeclaringModule { get; }
 
         public virtual Node Definition { get; private set; }
 
@@ -52,6 +56,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public PythonMemberType MemberType { get; }
+        public IPythonModule DeclaringModule => null;
         public Node Definition => null;
         public IReadOnlyList<Node> References => Array.Empty<Node>();
         public void AddReference(Node expression) { }

@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,7 +62,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             try {
                 using (var stream = _fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     var parser = Parser.CreateParser(stream, _version);
-                    ast = parser.ParseFile();
+                    ast = parser.ParseFile(new Uri(path));
                 }
             } finally {
                 _semaphore.Release();

@@ -25,8 +25,9 @@ namespace Microsoft.Python.Analysis.Values {
     internal sealed class Variable : LocatedMember, IVariable {
         private readonly List<Node> _references = new List<Node>();
 
-        public Variable(string name, IMember value, VariableSource source, Node definition): base(PythonMemberType.Variable, definition) {
-            Check.ArgumentNotNull(nameof(definition), definition);
+        public Variable(string name, IMember value, VariableSource source, IPythonModule declaringModule, Node location)
+            : base(PythonMemberType.Variable, declaringModule, location) {
+            Check.ArgumentNotNull(nameof(location), location);
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Value = value ?? throw new ArgumentNullException(nameof(value));
             Source = source;

@@ -366,7 +366,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, options);
             }
 
-            var ast = parser.ParseFile();
+            var ast = parser.ParseFile(Uri);
 
             //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 

@@ -97,7 +97,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             scope = context.Analysis.FindScope(context.Location);
             using (var reader = new StringReader(text)) {
                 var parser = Parser.CreateParser(reader, context.Ast.LanguageVersion, new ParserOptions());
-                expressionAst = parser.ParseTopExpression();
+                expressionAst = parser.ParseTopExpression(null);
                 return Statement.GetExpression(expressionAst.Body);
             }
         }

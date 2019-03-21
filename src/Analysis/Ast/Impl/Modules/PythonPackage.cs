@@ -37,7 +37,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public IPythonInterpreter Interpreter { get; }
 
         public IDocumentAnalysis Analysis => Module?.Analysis;
-        public IPythonModule DeclaringModule => null;
         public string Documentation => Module?.Documentation ?? string.Empty;
         public string FilePath => Module?.FilePath;
         public bool IsBuiltin => true;
@@ -55,7 +54,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Interpreter = interpreter;
         }
 
-        public PythonVariableModule(IPythonModule module): base(module.Definition) {
+        public PythonVariableModule(IPythonModule module): base(module, module.Definition) {
             Name = module.Name;
             Interpreter = module.Interpreter;
             Module = module;

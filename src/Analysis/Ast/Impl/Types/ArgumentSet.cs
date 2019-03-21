@@ -298,20 +298,24 @@ namespace Microsoft.Python.Analysis.Types {
             public IPythonType Type { get; internal set; }
             public Expression TypeExpression { get; }
 
-            public Argument(Parameter p) :
-                this(p.Name, p.Kind, null, p.Annotation, p) { }
+            public Argument(Parameter p, IPythonModule declaringModule) :
+                this(p.Name, p.Kind, null, p.Annotation, declaringModule, p) { }
 
-            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, Node definition): base(definition) {
+            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, IPythonModule declaringModule, Node definition)
+                : base(declaringModule, definition) {
                 Name = name;
                 Kind = kind;
                 ValueExpression = valueValueExpression;
                 TypeExpression = typeExpression;
             }
 
-            public Argument(IPythonType type, Node definition) : this(type.Name, type, definition) { }
-            public Argument(IMember member, Node definition) : this(string.Empty, member, definition) { }
+            public Argument(IPythonType type, IPythonModule declaringModule, Node location)
+                : this(type.Name, type, declaringModule, location) { }
+            public Argument(IMember member, IPythonModule declaringModule, Node location)
+                : this(string.Empty, member, declaringModule, location) { }
 
-            private Argument(string name, object value, Node definition): base(definition) {
+            private Argument(string name, object value, IPythonModule declaringModule, Node location)
+                : base(declaringModule, location) {
                 Name = name;
                 Value = value;
             }
@@ -327,7 +331,8 @@ namespace Microsoft.Python.Analysis.Types {
             public List<IMember> _Values { get; } = new List<IMember>();
             public List<Expression> _Expressions { get; } = new List<Expression>();
 
-            public ListArg(string name, Expression expression, Node location): base(location) {
+            public ListArg(string name, Expression expression, IPythonModule declaringModule, Node location)
+                : base(declaringModule, location) {
                 Name = name;
                 Expression = expression;
             }
@@ -343,7 +348,8 @@ namespace Microsoft.Python.Analysis.Types {
             public Dictionary<string, IMember> _Args { get; } = new Dictionary<string, IMember>();
             public Dictionary<string, Expression> _Expressions { get; } = new Dictionary<string, Expression>();
 
-            public DictArg(string name, Expression expression, Node location): base(location) {
+            public DictArg(string name, Expression expression, IPythonModule declaringModule, Node location)
+                : base(declaringModule, location) {
                 Name = name;
                 Expression = expression;
             }

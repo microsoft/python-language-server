@@ -23,11 +23,11 @@ using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal sealed class PythonUnionType : IPythonUnionType {
+    internal sealed class PythonUnionType : LocatedMember, IPythonUnionType {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
-        public PythonUnionType(IEnumerable<IPythonType> types) {
+        public PythonUnionType(IEnumerable<IPythonType> types): base(PythonMemberType.Union) {
             _types.UnionWith(types);
         }
 
@@ -48,12 +48,11 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonModule DeclaringModule {
+        public override IPythonModule DeclaringModule {
             get { lock (_lock) { return _types.First().DeclaringModule; } }
         }
 
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
-        public PythonMemberType MemberType => PythonMemberType.Union;
         public string Documentation => Name;
 
         public bool IsBuiltin {

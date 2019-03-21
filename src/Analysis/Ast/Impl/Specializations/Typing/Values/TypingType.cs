@@ -23,24 +23,22 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     /// <summary>
     /// Holds type info of the generic parameter.
     /// </summary>
-    internal sealed class TypingType : IPythonType {
+    internal sealed class TypingType : LocatedMember, IPythonType {
         private readonly IPythonType _type;
 
-        public TypingType(IPythonModule declaringModule, IPythonType type) {
+        public TypingType(IPythonModule declaringModule, IPythonType type)
+            : base(PythonMemberType.Class, declaringModule) {
             _type = type ?? throw  new ArgumentNullException(nameof(type));
-            DeclaringModule = declaringModule;
             Name = $"Type[{_type.Name}]";
         }
 
         public string Name { get; }
-        public IPythonModule DeclaringModule { get; }
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => false;
         public bool IsSpecialized => true;
 
-        public PythonMemberType MemberType => PythonMemberType.Class;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => _type.Call(instance, memberName, args);
         public IMember CreateInstance(string typeName, Node location, IArgumentSet args ) => _type;
         public IMember GetMember(string name) => _type.GetMember(name);

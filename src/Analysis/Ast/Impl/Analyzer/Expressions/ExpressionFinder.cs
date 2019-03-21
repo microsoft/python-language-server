@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
 
         public ExpressionFinder(string expression, PythonLanguageVersion version, FindExpressionOptions options) {
             var parser = Parser.CreateParser(new StringReader(expression), version, ParserOptions.Default);
-            Ast = parser.ParseTopExpression();
+            Ast = parser.ParseTopExpression(null);
             Ast.Body.SetLoc(0, expression.Length);
             Options = options;
         }

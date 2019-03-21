@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
     /// Base class for generic types and type declarations.
     /// </summary>
-    internal class GenericType : IGenericType {
+    internal class GenericType : LocatedMember, IGenericType {
         internal SpecificTypeConstructor SpecificTypeConstructor { get; }
 
         /// <summary>
@@ -63,9 +63,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Parameters = parameters ?? Array.Empty<IGenericTypeDefinition>();
         }
 
-        private GenericType(string name, IPythonModule declaringModule) {
+        private GenericType(string name, IPythonModule declaringModule): base(PythonMemberType.Generic, declaringModule) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
         }
 
         /// <summary>
@@ -83,8 +82,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         #region IPythonType
         public string Name { get; }
-        public IPythonModule DeclaringModule { get; }
-        public PythonMemberType MemberType => PythonMemberType.Generic;
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
         public BuiltinTypeId TypeId { get; } = BuiltinTypeId.Unknown;

@@ -56,9 +56,9 @@ namespace Microsoft.Python.Analysis.Types {
             _documentationProvider = documentationProvider;
         }
 
-        private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId, Node definition): base(definition) {
+        private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId, Node definition)
+            : base(declaringModule, definition) {
             _name = name ?? throw new ArgumentNullException(nameof(name));
-            DeclaringModule = declaringModule;
             _typeId = typeId;
         }
 
@@ -66,7 +66,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
         public virtual string Documentation => _documentationProvider != null ? _documentationProvider.Invoke(Name) : _documentation;
-        public IPythonModule DeclaringModule { get; }
         public override PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
