@@ -135,7 +135,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {
             if (!_fs.FileExists(Configuration.InterpreterPath)) {
-                _log?.Log(TraceEventType.Error, "Interpreter does not exist:", Configuration.InterpreterPath);
+                _log?.Log(TraceEventType.Warning, "Interpreter does not exist:", Configuration.InterpreterPath);
                 return Array.Empty<string>();
             }
 
@@ -146,7 +146,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 var paths = await PythonLibraryPath.GetSearchPathsAsync(Configuration, fs, ps, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
-            } catch (InvalidOperationException) {
+            } catch (InvalidOperationException ex) {
+                _log?.Log(TraceEventType.Warning, "Exception getting search paths", ex);
                 return Array.Empty<string>();
             }
         }
