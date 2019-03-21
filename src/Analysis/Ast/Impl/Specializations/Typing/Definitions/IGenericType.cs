@@ -15,7 +15,6 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
@@ -29,6 +28,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// </summary>
         IReadOnlyList<IGenericTypeDefinition> Parameters { get; }
 
-        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, Node location = null);
+        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments);
     }
 }

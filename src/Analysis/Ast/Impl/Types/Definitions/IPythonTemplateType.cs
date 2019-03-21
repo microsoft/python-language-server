@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Parsing.Ast;
-
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents type that can be a template for specific types.
@@ -25,6 +23,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates instance of a type information with the specific
         /// type arguments from a generic template.
         /// </summary>
-        IPythonType CreateSpecificType(IArgumentSet typeArguments, IPythonModule declaringModule, Node location);
+        IPythonType CreateSpecificType(IArgumentSet typeArguments);
     }
 }

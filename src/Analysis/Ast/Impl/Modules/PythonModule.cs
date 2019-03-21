@@ -116,13 +116,12 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IPythonType
         public string Name { get; }
-        public virtual IPythonModule DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
 
-        public IMember CreateInstance(string typeName, Node location, IArgumentSet args) => this;
+        public IMember CreateInstance(string typeName, IArgumentSet args) => this;
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;

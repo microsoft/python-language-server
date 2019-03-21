@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (gt.Name.EqualsOrdinal("Generic")) {
                 // Generic[T1, T2, ...] expression. Create generic base for the class.
                 if (genericTypeArgs.Length > 0) {
-                    return new GenericClassParameter(genericTypeArgs, Module, expr);
+                    return new GenericClassParameter(genericTypeArgs);
                 } else {
                     // TODO: report too few type arguments for Generic[].
                     return UnknownType;
@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // For other types just use supplied arguments
             if (indices.Count > 0) {
-                return gt.CreateSpecificType(new ArgumentSet(indices), Module, expr);
+                return gt.CreateSpecificType(new ArgumentSet(indices));
             }
             // TODO: report too few type arguments for the generic expression.
             return UnknownType;
@@ -135,8 +135,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     : new ArgumentSet(constructorArguments);
 
             argSet.Evaluate();
-            var specificType = cls.CreateSpecificType(argSet, Module, callExpr);
-            return new PythonInstance(specificType, Module, callExpr);
+            var specificType = cls.CreateSpecificType(argSet);
+            return new PythonInstance(specificType);
         }
 
         private ScopeStatement GetScope(IMember m) {

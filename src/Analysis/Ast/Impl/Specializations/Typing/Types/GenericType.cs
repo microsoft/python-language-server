@@ -21,10 +21,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal delegate IPythonType SpecificTypeConstructor(
-        IReadOnlyList<IPythonType> typeArgs,
-        IPythonModule declaringModule,
-        Node location);
+    internal delegate IPythonType SpecificTypeConstructor(IReadOnlyList<IPythonType> typeArgs);
 
     /// <summary>
     /// Base class for generic types and type declarations.
@@ -36,8 +33,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Constructs generic type with generic type parameters. Typically used
         /// in generic classes such as when handling Generic[_T] base.
         /// </summary>
-        public GenericType(string name, IPythonModule declaringModule, IReadOnlyList<IGenericTypeDefinition> parameters)
-            : this(name, declaringModule) {
+        public GenericType(string name, IReadOnlyList<IGenericTypeDefinition> parameters) : this(name) {
             Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
 
@@ -46,24 +42,22 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Typically used in type specialization scenarios.
         /// </summary>
         /// <param name="name">Type name including parameters, such as Iterator[T]</param>
-        /// <param name="declaringModule">Declaring module.</param>
         /// <param name="specificTypeConstructor">Constructor of specific types.</param>
         /// <param name="typeId">Type id. Used in type comparisons such as when matching
         /// function arguments. For example, Iterator[T] normally has type id of ListIterator.</param>
         /// <param name="parameters">Optional type parameters as declared by TypeVar.</param>
         public GenericType(
             string name,
-            IPythonModule declaringModule,
             SpecificTypeConstructor specificTypeConstructor,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
             IReadOnlyList<IGenericTypeDefinition> parameters = null
-            ) : this(name, declaringModule) {
+            ) : this(name) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
             Parameters = parameters ?? Array.Empty<IGenericTypeDefinition>();
         }
 
-        private GenericType(string name, IPythonModule declaringModule): base(PythonMemberType.Generic, declaringModule) {
+        private GenericType(string name): base(PythonMemberType.Generic) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
@@ -77,8 +71,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Creates instance of a type information with the specific
         /// type arguments from a generic template.
         /// </summary>
-        public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, Node location = null)
-            => SpecificTypeConstructor(typeArguments, declaringModule, location);
+        public IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments)
+            => SpecificTypeConstructor(typeArguments);
 
         #region IPythonType
         public string Name { get; }
@@ -104,8 +98,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
         public virtual IMember Index(IPythonInstance instance, object index) => DeclaringModule.Interpreter.UnknownType;
 
-        public IPythonType CreateSpecificType(IArgumentSet typeArguments, IPythonModule declaringModule, Node location)
-            => CreateSpecificType(typeArguments.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray(), declaringModule, location);
+        public IPythonType CreateSpecificType(IArgumentSet typeArguments)
+            => CreateSpecificType(typeArguments.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray());
         #endregion
 
         public override bool Equals(object other) {

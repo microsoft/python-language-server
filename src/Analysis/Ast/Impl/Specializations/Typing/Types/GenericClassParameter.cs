@@ -15,7 +15,6 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
@@ -24,8 +23,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// generic type parameters from TypeVar. <see cref="IGenericTypeDefinition"/>
     /// </summary>
     internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
-        internal GenericClassParameter(IReadOnlyList<IGenericTypeDefinition> typeArgs, IPythonModule declaringModule, Node location)
-        : base("GenericParameter", declaringModule, location) {
+        internal GenericClassParameter(IReadOnlyList<IGenericTypeDefinition> typeArgs)
+        : base("GenericParameter", null) {
             TypeDefinitions = typeArgs;
         }
 

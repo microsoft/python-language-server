@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Values {
     internal sealed class PythonBoundType : PythonInstance, IPythonBoundType {
         public IPythonInstance Self { get; }
 
-        public PythonBoundType(IPythonType fn, IPythonInstance self, Node location) : base(fn, location) {
+        public PythonBoundType(IPythonType fn, IPythonInstance self) : base(fn) {
             Self = self;
         }
     }

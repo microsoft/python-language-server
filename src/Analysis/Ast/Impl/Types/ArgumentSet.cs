@@ -51,12 +51,12 @@ namespace Microsoft.Python.Analysis.Types {
         private ArgumentSet() { }
 
         public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
-            _arguments = typeArgs.Select(t => new Argument(t, null)).ToList();
+            _arguments = typeArgs.Select(t => new Argument(t)).ToList();
             _evaluated = true;
         }
 
         public ArgumentSet(IReadOnlyList<IMember> memberArgs) {
-            _arguments = memberArgs.Select(t => new Argument(t, null)).ToList();
+            _arguments = memberArgs.Select(t => new Argument(t)).ToList();
             _evaluated = true;
         }
 
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
                     name = name ?? $"arg{i}";
                     var parameter = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
-                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, module, parameter));
+                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, parameter));
                 }
                 return;
             }
@@ -113,7 +113,7 @@ namespace Microsoft.Python.Analysis.Types {
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
 
-            var slots = fd.Parameters.Select(p => new Argument(p, module)).ToArray();
+            var slots = fd.Parameters.Select(p => new Argument(p, p)).ToArray();
             // Locate sequence argument, if any
             var sa = slots.Where(s => s.Kind == ParameterKind.List).ToArray();
             if (sa.Length > 1) {
@@ -127,8 +127,8 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].ValueExpression, module, sa[0].Definition) : null;
-            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].ValueExpression, module, da[0].Definition) : null;
+            _listArgument = sa.Length == 1 && sa[0].Name.Length > 0 ? new ListArg(sa[0].Name, sa[0].ValueExpression, sa[0].Location) : null;
+            _dictArgument = da.Length == 1 ? new DictArg(da[0].Name, da[0].ValueExpression, da[0].Location) : null;
 
             // Class methods
             var formalParamIndex = 0;
@@ -290,40 +290,39 @@ namespace Microsoft.Python.Analysis.Types {
             return this;
         }
 
-        private sealed class Argument : LocatedMember, IArgument {
+        private sealed class Argument : IArgument {
             public string Name { get; }
             public object Value { get; internal set; }
             public ParameterKind Kind { get; }
             public Expression ValueExpression { get; set; }
             public IPythonType Type { get; internal set; }
             public Expression TypeExpression { get; }
+            public Node Location { get; }
 
-            public Argument(Parameter p, IPythonModule declaringModule) :
-                this(p.Name, p.Kind, null, p.Annotation, declaringModule, p) { }
+            public Argument(Parameter p, Node location) :
+                this(p.Name, p.Kind, null, p.Annotation, location) { }
 
-            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, IPythonModule declaringModule, Node definition)
-                : base(declaringModule, definition) {
+            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, Node location) {
                 Name = name;
                 Kind = kind;
                 ValueExpression = valueValueExpression;
                 TypeExpression = typeExpression;
+                Location = location;
             }
 
-            public Argument(IPythonType type, IPythonModule declaringModule, Node location)
-                : this(type.Name, type, declaringModule, location) { }
-            public Argument(IMember member, IPythonModule declaringModule, Node location)
-                : this(string.Empty, member, declaringModule, location) { }
+            public Argument(IPythonType type) : this(type.Name, type) { }
+            public Argument(IMember member) : this(string.Empty, member) { }
 
-            private Argument(string name, object value, IPythonModule declaringModule, Node location)
-                : base(declaringModule, location) {
+            private Argument(string name, object value) {
                 Name = name;
                 Value = value;
             }
         }
 
-        private sealed class ListArg : LocatedMember, IListArgument {
+        private sealed class ListArg : IListArgument {
             public string Name { get; }
             public Expression Expression { get; }
+            public Node Location { get; }
 
             public IReadOnlyList<IMember> Values => _Values;
             public IReadOnlyList<Expression> Expressions => _Expressions;
@@ -331,16 +330,17 @@ namespace Microsoft.Python.Analysis.Types {
             public List<IMember> _Values { get; } = new List<IMember>();
             public List<Expression> _Expressions { get; } = new List<Expression>();
 
-            public ListArg(string name, Expression expression, IPythonModule declaringModule, Node location)
-                : base(declaringModule, location) {
+            public ListArg(string name, Expression expression, Node location) {
                 Name = name;
                 Expression = expression;
+                Location = location;
             }
         }
 
-        private sealed class DictArg : LocatedMember, IDictionaryArgument {
+        private sealed class DictArg : IDictionaryArgument {
             public string Name { get; }
             public Expression Expression { get; }
+            public Node Location { get; }
 
             public IReadOnlyDictionary<string, IMember> Arguments => _Args;
             public IReadOnlyDictionary<string, Expression> Expressions => _Expressions;
@@ -348,10 +348,10 @@ namespace Microsoft.Python.Analysis.Types {
             public Dictionary<string, IMember> _Args { get; } = new Dictionary<string, IMember>();
             public Dictionary<string, Expression> _Expressions { get; } = new Dictionary<string, Expression>();
 
-            public DictArg(string name, Expression expression, IPythonModule declaringModule, Node location)
-                : base(declaringModule, location) {
+            public DictArg(string name, Expression expression, Node location) {
                 Name = name;
                 Expression = expression;
+                Location = Location;
             }
         }
     }

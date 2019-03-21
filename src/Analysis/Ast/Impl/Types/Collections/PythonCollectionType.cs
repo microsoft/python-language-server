@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
         #endregion
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, Node location, IArgumentSet args) {
+        public static IPythonCollection CreateList(IPythonInterpreter interpreter, IArgumentSet args) {
             IReadOnlyList<IMember> contents = null;
             if (args.Arguments.Count > 1) {
                 // self and list like in list.__init__ and 'list([1, 'str', 3.0])'

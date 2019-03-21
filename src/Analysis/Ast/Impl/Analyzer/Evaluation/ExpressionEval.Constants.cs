@@ -27,16 +27,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (expr is ConstantExpression ce) {
                 switch (ce.Value) {
                     case string s:
-                        return new PythonUnicodeString(s, Interpreter, expr);
+                        return new PythonUnicodeString(s, Interpreter);
                     case AsciiString b:
-                        return new PythonAsciiString(b, Interpreter, expr);
+                        return new PythonAsciiString(b, Interpreter);
                     case int integer:
-                        return new PythonConstant(integer, Interpreter.GetBuiltinType(BuiltinTypeId.Int), expr);
+                        return new PythonConstant(integer, Interpreter.GetBuiltinType(BuiltinTypeId.Int));
                 }
             }
 
             var t = SuppressBuiltinLookup ? UnknownType : (GetTypeFromLiteral(expr) ?? UnknownType);
-            return new PythonInstance(t, Module, expr);
+            return new PythonInstance(t);
         }
 
         public IPythonType GetTypeFromLiteral(Expression expr) {

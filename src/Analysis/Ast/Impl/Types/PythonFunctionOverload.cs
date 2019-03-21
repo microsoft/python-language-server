@@ -30,13 +30,11 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     /// <param name="declaringModule">Module making the call.</param>
     /// <param name="overload">Function overload the return value is requested for.</param>
-    /// <param name="location">Call location, if any.</param>
     /// <param name="args">Call arguments.</param>
     /// <returns></returns>
     public delegate IMember ReturnValueProvider(
         IPythonModule declaringModule,
         IPythonFunctionOverload overload,
-        Node location,
         IArgumentSet args);
 
     internal sealed class PythonFunctionOverload : LocatedMember, IPythonFunctionOverload {
@@ -123,7 +121,7 @@ namespace Microsoft.Python.Analysis.Types {
                             .Select(n => cls.GenericParameters.TryGetValue(n, out var t) ? t : null)
                             .ExcludeDefault()
                             .ToArray();
-                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), DeclaringModule);
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs));
                         return specificReturnValue.Name;
                     }
                 case IGenericTypeDefinition gtp1 when self is IPythonClassType cls: {
@@ -154,7 +152,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember Call(IArgumentSet args, IPythonType self, Node callLocation = null) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(DeclaringModule, this, callLocation, args);
+                var rt = _returnValueProvider?.Invoke(DeclaringModule, this, args);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
@@ -187,7 +185,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
 
                     if (typeArgs != null) {
-                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs), DeclaringModule, callLocation);
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs));
                         return new PythonInstance(specificReturnValue);
                     }
                     break;

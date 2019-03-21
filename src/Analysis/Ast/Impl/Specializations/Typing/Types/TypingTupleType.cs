@@ -42,8 +42,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 
-        public override IMember CreateInstance(string typeName, Node location, IArgumentSet args)
-            => new TypingTuple(this, location);
+        public override IMember CreateInstance(string typeName, IArgumentSet args)
+            => new TypingTuple(this);
 
         public override IMember Index(IPythonInstance instance, object index) {
             var n = PythonCollection.GetIndex(index);

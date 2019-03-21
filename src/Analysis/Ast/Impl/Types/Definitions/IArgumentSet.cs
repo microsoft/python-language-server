@@ -35,12 +35,6 @@ namespace Microsoft.Python.Analysis.Types {
         Expression ValueExpression { get; }
 
         /// <summary>
-        /// Location of the argument in the function definition.
-        /// Not the same as location of the <see cref="ValueExpression"/>.
-        /// </summary>
-        Node Definition { get; }
-
-        /// <summary>
         /// Value of the argument.
         /// </summary>
         object Value { get; }
@@ -54,6 +48,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Annotation expression.
         /// </summary>
         Expression TypeExpression { get; }
+
+        /// <summary>
+        /// Parameter location in the AST.
+        /// </summary>
+        Node Location { get; }
     }
 
     /// <summary>
@@ -72,12 +71,6 @@ namespace Microsoft.Python.Analysis.Types {
         Expression Expression { get; }
 
         /// <summary>
-        /// Location of the argument in the function definition.
-        /// Not the same as location of the <see cref="Expression"/>.
-        /// </summary>
-        Node Definition { get; }
-
-        /// <summary>
         /// Expressions that evaluate to the elements of the list.
         /// </summary>
         IReadOnlyList<Expression> Expressions { get; }
@@ -86,6 +79,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Values of the elements of the list.
         /// </summary>
         IReadOnlyList<IMember> Values { get; }
+
+        /// <summary>
+        /// Parameter location in the AST.
+        /// </summary>
+        Node Location { get; }
     }
 
     /// <summary>
@@ -104,12 +102,6 @@ namespace Microsoft.Python.Analysis.Types {
         Expression Expression { get; }
 
         /// <summary>
-        /// Location of the argument in the function definition.
-        /// Not the same as location of the <see cref="Expression"/>.
-        /// </summary>
-        Node Definition { get; }
-
-        /// <summary>
         /// Dictionary arguments.
         /// </summary>
         IReadOnlyDictionary<string, IMember> Arguments { get; }
@@ -119,6 +111,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Function call parameters.
         /// </summary>
         IReadOnlyDictionary<string, Expression> Expressions { get; }
+
+        /// <summary>
+        /// Parameter location in the AST.
+        /// </summary>
+        Node Location { get; }
     }
 
     /// <summary>

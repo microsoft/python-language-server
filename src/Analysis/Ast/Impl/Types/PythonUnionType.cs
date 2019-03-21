@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
-        public PythonUnionType(IEnumerable<IPythonType> types): base(PythonMemberType.Union) {
+        public PythonUnionType(IEnumerable<IPythonType> types) : base(PythonMemberType.Union) {
             _types.UnionWith(types);
         }
 
@@ -62,8 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsAbstract => false;
         public bool IsSpecialized => true;
 
-        public IMember CreateInstance(string typeName, Node location, IArgumentSet args)
-            => new PythonUnion(this, location);
+        public IMember CreateInstance(string typeName, IArgumentSet args) => new PythonUnion(this);
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             IPythonType[] types;
