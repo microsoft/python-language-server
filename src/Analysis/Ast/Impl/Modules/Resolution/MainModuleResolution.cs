@@ -135,7 +135,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {
             if (!_fs.FileExists(Configuration.InterpreterPath)) {
-                _log?.Log(TraceEventType.Information, "Interpreter does not exist:", Configuration.InterpreterPath);
+                _log?.Log(TraceEventType.Error, "Interpreter does not exist:", Configuration.InterpreterPath);
                 return Array.Empty<string>();
             }
 
