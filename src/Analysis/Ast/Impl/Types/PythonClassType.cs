@@ -293,18 +293,18 @@ namespace Microsoft.Python.Analysis.Types {
             // Some generic parameters may be used to specify method return types or
             // method arguments and do not appear in the constructor argument list.
             // Figure out whatever specific types we can from the arguments.
-            foreach (var a in args.Arguments) {
+            foreach (var arg in args.Arguments) {
                 // The argument may either match generic type definition of be a specific type
                 // created off generic type. Consider '__init__(self, v: _T)' and
                 // 'class A(Generic[K, V], Mapping[K, V])'.
-                if (a.Type is IGenericTypeDefinition argTypeDefinition) {
+                if (arg.Type is IGenericTypeDefinition argTypeDefinition) {
                     // Parameter is annotated as generic type definition. Check if its generic type
                     // name matches any of the generic class parameters. I.e. if there is
                     // an argument like 'v: _T' we need to check if class has matching Generic[_T].
                     if (genericClassTypeParameters.ContainsKey(argTypeDefinition.Name)) {
                         // TODO: Check if specific type matches generic type definition constraints and report mismatches.
                         // Assign specific type.
-                        if (a.Value is IMember m && m.GetPythonType() is IPythonType pt) {
+                        if (arg.Value is IMember m && m.GetPythonType() is IPythonType pt) {
                             specificClassTypeParameters[argTypeDefinition.Name] = pt;
                         } else {
                             // TODO: report supplied parameter is not a type.
@@ -312,7 +312,10 @@ namespace Microsoft.Python.Analysis.Types {
                     } else {
                         // TODO: report generic parameter name mismatch.
                     }
-                } else if (a.Value is IMember member && !member.GetPythonType().IsUnknown()) {
+                    continue;
+                }
+
+                if (arg.Value is IMember member && !member.GetPythonType().IsUnknown()) {
                     var type = member.GetPythonType();
                     // Type may be a specific type created off generic or just a type
                     // for the copy constructor. Consider 'class A(Generic[K, V], Mapping[K, V])'
@@ -325,17 +328,30 @@ namespace Microsoft.Python.Analysis.Types {
                         newBases.Add(type);
                         // Optimistically assign argument types if they match.
                         // Handle common cases directly.
-                        GetSpecificTypeFromArgumentValue(b, a.Value, specificClassTypeParameters);
-                    } else {
-                        // Any regular base match?
-                        if (_bases.Any(x => x.TypeId == type.TypeId)) {
-                            newBases.Add(type);
-                        }
-                        // Just match passed types to generic parameters in order
-                        for (var i = 0; i < Math.Min(genericTypeDefinitions.Count, args.Arguments.Count); i++) {
-                            if ((args.Arguments[i].Value as IMember)?.GetPythonType() is IPythonType t) {
-                                specificClassTypeParameters[genericTypeDefinitions[i].Name] = t;
-                            }
+                        GetSpecificTypeFromArgumentValue(b, arg.Value, specificClassTypeParameters);
+                        continue;
+                    }
+
+                    // Any regular base match?
+                    if (_bases.Any(x => x.TypeId == type.TypeId) && !type.Equals(this)) {
+                        newBases.Add(type);
+                    }
+                }
+            }
+
+            // For still undefined parameters try matching passed types in order
+            for (var i = 0; i < args.Arguments.Count; i++) {
+                var arg = args.Arguments[i];
+                if (Equals(arg.Type)) {
+                    continue;
+                }
+
+                if (arg.Value is IMember member) {
+                    var type = member.GetPythonType();
+                    if (!type.IsUnknown()) {
+                        var gtd = i < genericTypeDefinitions.Count ? genericTypeDefinitions[i] : null;
+                        if (gtd != null && !specificClassTypeParameters.ContainsKey(gtd.Name)) {
+                            specificClassTypeParameters[gtd.Name] = type;
                         }
                     }
                 }

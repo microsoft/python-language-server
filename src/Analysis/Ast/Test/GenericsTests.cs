@@ -610,5 +610,37 @@ x = Simple().test_exception();
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("x").Which.Should().HaveType("TypeError");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericConstructorArguments() {
+            const string code = @"
+from typing import TypeVar, Generic
+from logging import Logger, getLogger
+
+T = TypeVar('T')
+
+class LoggedVar(Generic[T]):
+    def __init__(self, value: T, name: str, logger: Logger) -> None:
+        self.name = name
+        self.logger = logger
+        self.value = value
+
+    def set(self, new: T) -> None:
+        self.log('Set ' + repr(self.value))
+        self.value = new
+
+    def get(self) -> T:
+        self.log('Get ' + repr(self.value))
+        return self.value
+
+    def log(self, message: str) -> None:
+        self.logger.info('%s: %s', self.name, message)
+
+v = LoggedVar(1234, 'name', getLogger('oh_no'))
+x = v.get()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
     }
 }
