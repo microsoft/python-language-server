@@ -383,7 +383,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             walker.Complete();
             cancellationToken.ThrowIfCancellationRequested();
-            var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval);
+            var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval, walker.ExportedMemberNames);
 
             (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);

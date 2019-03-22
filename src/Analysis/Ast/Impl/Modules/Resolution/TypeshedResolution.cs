@@ -18,12 +18,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class TypeshedResolution : ModuleResolutionBase, IModuleResolution {
@@ -33,9 +35,13 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             BuiltinsModule = _interpreter.ModuleResolution.BuiltinsModule;
             Modules[BuiltinModuleName] = new ModuleRef(BuiltinsModule);
 
+            var stubs = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Stubs");
             _root = _interpreter.Configuration?.TypeshedPath;
             // TODO: merge with user-provided stub paths
-            _typeStubPaths = GetTypeShedPaths(_interpreter.Configuration?.TypeshedPath).ToArray();
+            _typeStubPaths = GetTypeShedPaths(_root)
+                .Concat(GetTypeShedPaths(stubs))
+                .Where(services.GetService<IFileSystem>().DirectoryExists)
+                .ToArray();
 
             _log?.Log(TraceEventType.Verbose, @"Typeshed paths:");
             foreach (var p in _typeStubPaths) {

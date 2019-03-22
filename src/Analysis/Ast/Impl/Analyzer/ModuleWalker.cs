@@ -15,22 +15,36 @@
 
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Module.Name} : {Module.ModuleType}")]
     internal class ModuleWalker : AnalysisWalker {
+        private const string AllVariableName = "__all__";
         private readonly IDocumentAnalysis _stubAnalysis;
 
+        // A hack to use __all__ export in the most simple case.
+        private int _allReferencesCount;
+
         public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
-            : base(services, module, ast) {
+            : base(new ExpressionEval(services, module, ast)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
+            ExportedMemberNames = ImmutableArray<string>.Empty;
+        }
+
+        public override bool Walk(NameExpression node) {
+            if (Eval.CurrentScope == Eval.GlobalScope && node.Name == AllVariableName) {
+                _allReferencesCount++;
+            }
+            return base.Walk(node);
         }
 
         public override bool Walk(PythonAst node) {
@@ -83,9 +97,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             SymbolTable.EvaluateAll();
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
+
+            if (_allReferencesCount == 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable) && variable?.Value is IPythonCollection collection) {
+                ExportedMemberNames = collection.Contents
+                    .OfType<IPythonConstant>()
+                    .Select(c => c.GetString())
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToImmutableArray();
+            }
         }
 
         public IGlobalScope GlobalScope => Eval.GlobalScope;
+        public ImmutableArray<string> ExportedMemberNames { get; private set; }
 
         /// <summary>
         /// Merges data from stub with the data from the module.

@@ -125,7 +125,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var location = _eval.GetLocOfName(node, node.NameExpression);
                 var overload = new PythonFunctionOverload(node, function, _eval.Module, location);
                 addOverload(overload);
-                _table.Add(new FunctionEvaluator(_eval, node, overload, function));
+                _table.Add(new FunctionEvaluator(_eval, overload));
             }
         }
 

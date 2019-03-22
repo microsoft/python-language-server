@@ -22,19 +22,21 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval) {
+        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval, ImmutableArray<string> exportedMemberNames) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
             Document = document;
             Version = version;
             GlobalScope = globalScope;
             ExpressionEvaluator = eval;
+            ExportedMemberNames = exportedMemberNames;
         }
 
         #region IDocumentAnalysis
@@ -66,6 +68,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IExpressionEvaluator ExpressionEvaluator { get; }
 
         /// <summary>
+        /// Members of the module explicitly specified for export
+        /// </summary>
+        public ImmutableArray<string> ExportedMemberNames { get; }
+
+        /// <summary>
         /// Analysis diagnostics.
         /// </summary>
         public IEnumerable<DiagnosticsEntry> Diagnostics => ExpressionEvaluator.Diagnostics;
@@ -88,6 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IGlobalScope GlobalScope { get; }
         public PythonAst Ast => _emptyAst;
         public IExpressionEvaluator ExpressionEvaluator { get; }
+        public ImmutableArray<string> ExportedMemberNames => ImmutableArray<string>.Empty;
         public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
     }
 }
