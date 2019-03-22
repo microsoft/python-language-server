@@ -155,6 +155,14 @@ namespace Microsoft.Python.Analysis.Modules {
                 return Analysis.ExportedMemberNames;
             }
 
+            var all = Analysis.GlobalScope.Variables["__all__"];
+            if (all?.Value is IPythonCollection collection) {
+                return collection.Contents
+                    .OfType<IPythonConstant>()
+                    .Select(c => c.GetString())
+                    .Where(s => !string.IsNullOrEmpty(s));
+            }
+
             // drop imported modules and typing.
             return Analysis.GlobalScope.Variables
                 .Where(v => !(v.Value?.GetPythonType() is PythonModule)
