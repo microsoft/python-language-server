@@ -19,15 +19,12 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class NodeExtensions {
-        public static LocationInfo GetLocation(this Node node, PythonAst ast)
-            => node.GetLocation(null, ast);
-
-        public static LocationInfo GetLocation(this Node node, IPythonModule module, PythonAst ast = null) {
+        public static LocationInfo GetLocation(this Node node, IPythonModule module) {
             if (node == null || node.StartIndex >= node.EndIndex) {
                 return LocationInfo.Empty;
             }
 
-            ast = ast ?? (module as IDocument)?.GetAnyAst();
+            var ast = (module as IDocument)?.GetAnyAst();
             if (ast != null) {
                 var start = node.GetStart(ast);
                 var end = node.GetEnd(ast);
@@ -37,14 +34,14 @@ namespace Microsoft.Python.Analysis {
             return LocationInfo.Empty;
         }
 
-        public static LocationInfo GetLocationOfName(this Node node, NameExpression header, IPythonModule module, PythonAst ast = null) {
+        public static LocationInfo GetLocationOfName(this Node node, NameExpression header, IPythonModule module) {
             if (header == null) {
                 return LocationInfo.Empty;
             }
 
-            var loc = node.GetLocation(module, ast);
+            var loc = node.GetLocation(module);
             if (!loc.Equals(LocationInfo.Empty)) {
-                ast = ast ?? (module as IDocument)?.GetAnyAst();
+                var ast = (module as IDocument)?.GetAnyAst();
                 if (ast != null) {
                     var nameStart = header.GetStart(ast);
                     if (!nameStart.IsValid) {

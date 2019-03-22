@@ -76,43 +76,43 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             fn.AddOverload(o);
             _members["Type"] = fn;
 
-            _members["Iterator"] = new GenericType("Iterator", CreateIteratorType);
+            _members["Iterator"] = new GenericType("Iterator", CreateIteratorType, this);
 
-            _members["Iterable"] = new GenericType("Iterable", typeArgs => CreateListType("Iterable", BuiltinTypeId.List, typeArgs, false));
-            _members["Sequence"] = new GenericType("Sequence", typeArgs => CreateListType("Sequence", BuiltinTypeId.List, typeArgs, false));
+            _members["Iterable"] = new GenericType("Iterable", typeArgs => CreateListType("Iterable", BuiltinTypeId.List, typeArgs, false), this);
+            _members["Sequence"] = new GenericType("Sequence", typeArgs => CreateListType("Sequence", BuiltinTypeId.List, typeArgs, false), this);
             _members["MutableSequence"] = new GenericType("MutableSequence", 
-                typeArgs => CreateListType("MutableSequence", BuiltinTypeId.List, typeArgs, true));
+                typeArgs => CreateListType("MutableSequence", BuiltinTypeId.List, typeArgs, true), this);
             _members["List"] = new GenericType("List", 
-                typeArgs => CreateListType("List", BuiltinTypeId.List, typeArgs, true));
+                typeArgs => CreateListType("List", BuiltinTypeId.List, typeArgs, true), this);
 
             _members["MappingView"] = new GenericType("MappingView", 
-                typeArgs => CreateDictionary("MappingView", typeArgs, false));
+                typeArgs => CreateDictionary("MappingView", typeArgs, false), this);
 
-            _members["KeysView"] = new GenericType("KeysView", CreateKeysViewType);
-            _members["ValuesView"] = new GenericType("ValuesView", CreateValuesViewType);
-            _members["ItemsView"] = new GenericType("ItemsView", CreateItemsViewType);
+            _members["KeysView"] = new GenericType("KeysView", CreateKeysViewType, this);
+            _members["ValuesView"] = new GenericType("ValuesView", CreateValuesViewType, this);
+            _members["ItemsView"] = new GenericType("ItemsView", CreateItemsViewType, this);
 
             _members["Set"] = new GenericType("Set", 
-                typeArgs => CreateListType("Set", BuiltinTypeId.Set, typeArgs, true));
+                typeArgs => CreateListType("Set", BuiltinTypeId.Set, typeArgs, true), this);
             _members["MutableSet"] = new GenericType("MutableSet", 
-                typeArgs => CreateListType("MutableSet", BuiltinTypeId.Set, typeArgs, true));
+                typeArgs => CreateListType("MutableSet", BuiltinTypeId.Set, typeArgs, true), this);
             _members["FrozenSet"] = new GenericType("FrozenSet", 
-                typeArgs => CreateListType("FrozenSet", BuiltinTypeId.Set, typeArgs, false));
+                typeArgs => CreateListType("FrozenSet", BuiltinTypeId.Set, typeArgs, false), this);
 
-            _members["Tuple"] = new GenericType("Tuple", CreateTupleType);
+            _members["Tuple"] = new GenericType("Tuple", CreateTupleType, this);
 
             _members["Mapping"] = new GenericType("Mapping", 
-                typeArgs => CreateDictionary("Mapping", typeArgs, false));
+                typeArgs => CreateDictionary("Mapping", typeArgs, false), this);
             _members["MutableMapping"] = new GenericType("MutableMapping", 
-                typeArgs => CreateDictionary("MutableMapping", typeArgs, true));
+                typeArgs => CreateDictionary("MutableMapping", typeArgs, true), this);
             _members["Dict"] = new GenericType("Dict", 
-                typeArgs => CreateDictionary("Dict", typeArgs, true));
+                typeArgs => CreateDictionary("Dict", typeArgs, true), this);
             _members["OrderedDict"] = new GenericType("OrderedDict", 
-                typeArgs => CreateDictionary("OrderedDict", typeArgs, true));
+                typeArgs => CreateDictionary("OrderedDict", typeArgs, true), this);
             _members["DefaultDict"] = new GenericType("DefaultDict", 
-                typeArgs => CreateDictionary("DefaultDict", typeArgs, true));
+                typeArgs => CreateDictionary("DefaultDict", typeArgs, true), this);
 
-            _members["Union"] = new GenericType("Union", CreateUnion);
+            _members["Union"] = new GenericType("Union", CreateUnion, this);
 
             _members["Counter"] = Specialized.Function("Counter", this, null, "Counter", 
                 new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
@@ -142,10 +142,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 : new IMember[] { anyStrName, str, unicode };
             _members["AnyStr"] = GenericTypeParameter.FromTypeVar(new ArgumentSet(anyStrArgs), this);
 
-            _members["Optional"] = new GenericType("Optional", CreateOptional);
-            _members["Type"] = new GenericType("Type", CreateType);
+            _members["Optional"] = new GenericType("Optional", CreateOptional, this);
+            _members["Type"] = new GenericType("Type", CreateType, this);
 
-            _members["Generic"] = new GenericType("Generic", CreateGenericClassParameter);
+            _members["Generic"] = new GenericType("Generic", CreateGenericClassParameter, this);
         }
 
 
@@ -239,7 +239,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private IPythonType CreateUnion(IReadOnlyList<IMember> typeArgs) {
             if (typeArgs.Count > 0) {
-                return TypingTypeFactory.CreateUnionType(Interpreter, typeArgs.Select(a => a.GetPythonType()).ToArray());
+                return TypingTypeFactory.CreateUnionType(Interpreter, typeArgs.Select(a => a.GetPythonType()).ToArray(), this);
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
@@ -315,7 +315,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             if (typeArgs.Count > 0) {
                 var typeDefs = typeArgs.OfType<IGenericTypeDefinition>().ToArray();
                 if (typeDefs.Length == typeArgs.Count) {
-                    return new GenericClassParameter(typeDefs);
+                    return new GenericClassParameter(typeDefs, this);
                 } else {
                     // TODO: report argument mismatch
                 }
@@ -326,7 +326,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private IPythonType ToGenericTemplate(string typeName, IGenericTypeDefinition[] typeArgs, BuiltinTypeId typeId) 
             => _members[typeName] is GenericType gt
-                ? new GenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, typeId, typeArgs)
+                ? new GenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId, typeArgs)
                 : Interpreter.UnknownType;
     }
 }

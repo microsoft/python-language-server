@@ -35,19 +35,20 @@ namespace Microsoft.Python.Analysis.Types {
         private Node _definition;
         private HashSet<Location> _references;
 
-        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule = null, Node definition = null)
+        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, Node definition = null)
             : this(declaringModule, definition) {
             MemberType = memberType;
         }
 
-        protected LocatedMember(IPythonModule declaringModule = null, Node definition = null) {
+        protected LocatedMember(IPythonModule declaringModule, Node definition = null) {
             DeclaringModule = declaringModule;
             _definition = definition;
         }
 
+        protected void SetDeclaringModule(IPythonModule module) => DeclaringModule = module;
         public virtual PythonMemberType MemberType { get; }
 
-        public virtual IPythonModule DeclaringModule { get; }
+        public virtual IPythonModule DeclaringModule { get; private set; }
 
         public virtual LocationInfo Definition => _definition.GetLocation(DeclaringModule);
         public Node DefinitionNode => _definition;
@@ -56,8 +57,10 @@ namespace Microsoft.Python.Analysis.Types {
             => Enumerable.Repeat(Definition, 1).Concat(_references?.Select(r => r.LocationInfo) ?? Enumerable.Empty<LocationInfo>()).ToArray();
 
         public void AddReference(IPythonModule module, Node location) {
-            _references = _references ?? new HashSet<Location>();
-            _references.Add(new Location(module, location));
+            if (module != null && location != null) {
+                _references = _references ?? new HashSet<Location>();
+                _references.Add(new Location(module, location));
+            }
         }
 
         internal virtual void SetDefinitionNode(Node definition) => _definition = definition;

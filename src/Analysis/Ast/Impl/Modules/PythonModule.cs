@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
-        private readonly DisposeToken _disposeToken = DisposeToken.Create< PythonModule>();
+        private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly IDiagnosticsService _diagnosticsService;
 
@@ -70,7 +70,8 @@ namespace Microsoft.Python.Analysis.Modules {
         private object AnalysisLock { get; } = new object();
         private State ContentState { get; set; } = State.None;
 
-        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
+        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services)
+            : base(PythonMemberType.Module, null) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
@@ -80,6 +81,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis = new EmptyAnalysis(services, this);
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
+            SetDeclaringModule(this);
         }
 
         protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :

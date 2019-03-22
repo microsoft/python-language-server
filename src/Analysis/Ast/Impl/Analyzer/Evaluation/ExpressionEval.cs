@@ -57,8 +57,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType => Interpreter.UnknownType;
 
-        public LocationInfo GetLoc(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
-        public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module, Ast) ?? LocationInfo.Empty;
+        public LocationInfo GetLoc(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
+        public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module) ?? LocationInfo.Empty;
 
         #region IExpressionEvaluator
         public PythonAst Ast { get; }
@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IServiceContainer Services { get; }
         IScope IExpressionEvaluator.CurrentScope => CurrentScope;
         IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
-        public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
+        public LocationInfo GetLocation(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
         public IEnumerable<DiagnosticsEntry> Diagnostics => _diagnostics;
         public IReferenceCollection References => _references;
 

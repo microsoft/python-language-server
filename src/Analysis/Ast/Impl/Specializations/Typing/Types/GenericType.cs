@@ -33,7 +33,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Constructs generic type with generic type parameters. Typically used
         /// in generic classes such as when handling Generic[_T] base.
         /// </summary>
-        public GenericType(string name, IReadOnlyList<IGenericTypeDefinition> parameters) : this(name) {
+        public GenericType(string name, IReadOnlyList<IGenericTypeDefinition> parameters, IPythonModule declaringModule) 
+            : this(name, declaringModule) {
             Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
 
@@ -43,21 +44,24 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         /// <param name="name">Type name including parameters, such as Iterator[T]</param>
         /// <param name="specificTypeConstructor">Constructor of specific types.</param>
+        /// <param name="declaringModule">Declaring module.</param>
         /// <param name="typeId">Type id. Used in type comparisons such as when matching
         /// function arguments. For example, Iterator[T] normally has type id of ListIterator.</param>
         /// <param name="parameters">Optional type parameters as declared by TypeVar.</param>
         public GenericType(
             string name,
             SpecificTypeConstructor specificTypeConstructor,
+            IPythonModule declaringModule,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
             IReadOnlyList<IGenericTypeDefinition> parameters = null
-            ) : this(name) {
+            ) : this(name, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
             Parameters = parameters ?? Array.Empty<IGenericTypeDefinition>();
         }
 
-        private GenericType(string name): base(PythonMemberType.Generic) {
+        private GenericType(string name, IPythonModule declaringModule) 
+            : base(PythonMemberType.Generic, declaringModule) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 

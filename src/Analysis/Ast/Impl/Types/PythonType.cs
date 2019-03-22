@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -58,6 +59,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId, Node definition)
             : base(declaringModule, definition) {
+            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }

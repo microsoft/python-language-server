@@ -20,6 +20,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -39,6 +40,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private PythonFunctionType(string name, IPythonModule declaringModule, bool isSpecialized = false) :
             base(name, declaringModule, string.Empty, BuiltinTypeId.Function) {
+            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
             DeclaringType = declaringModule;
             _isSpecialized = isSpecialized;
         }
@@ -53,7 +55,9 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonModule declaringModule,
             IPythonType declaringType,
             string documentation
-        ) : this(name, declaringModule, declaringType, _ => documentation) { }
+        ) : this(name, declaringModule, declaringType, _ => documentation) {
+            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
+        }
 
         /// <summary>
         /// Creates function type to use in special cases when function is dynamically

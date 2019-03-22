@@ -16,7 +16,6 @@
 using System;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -24,9 +23,8 @@ namespace Microsoft.Python.Analysis.Values {
     internal sealed class Variable : LocatedMember, IVariable {
         public Variable(string name, IMember value, VariableSource source, IPythonModule declaringModule, Node location)
             : base(PythonMemberType.Variable, declaringModule, location) {
-            Check.ArgumentNotNull(nameof(location), location);
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Value = value ?? throw new ArgumentNullException(nameof(value));
+            Value = value;
             Source = source;
         }
 
@@ -35,9 +33,6 @@ namespace Microsoft.Python.Analysis.Values {
         public IMember Value { get; private set; }
 
         public void Assign(IMember value, IPythonModule module, Node location) {
-            Check.ArgumentNotNull(nameof(value), value);
-            Check.ArgumentNotNull(nameof(location), location);
-
             if (Value == null || Value.GetPythonType().IsUnknown() || value?.GetPythonType().IsUnknown() == false) {
                 Value = value;
             }

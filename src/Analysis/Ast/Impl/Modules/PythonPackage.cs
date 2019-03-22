@@ -49,9 +49,11 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(PythonMemberType.Module) {
+        public PythonVariableModule(string name, IPythonInterpreter interpreter)
+            : base(PythonMemberType.Module, null) {
             Name = name;
             Interpreter = interpreter;
+            SetDeclaringModule(this);
         }
 
         public PythonVariableModule(IPythonModule module): base(module) {

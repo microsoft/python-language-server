@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (gt.Name.EqualsOrdinal("Generic")) {
                 // Generic[T1, T2, ...] expression. Create generic base for the class.
                 if (genericTypeArgs.Length > 0) {
-                    return new GenericClassParameter(genericTypeArgs);
+                    return new GenericClassParameter(genericTypeArgs, Module);
                 } else {
                     // TODO: report too few type arguments for Generic[].
                     return UnknownType;

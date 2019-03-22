@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -40,13 +41,16 @@ namespace Microsoft.Python.Analysis.Types {
 
         // For tests
         internal PythonClassType(string name, IPythonModule declaringModule, Node definition = null)
-            : base(name, declaringModule, string.Empty, BuiltinTypeId.Type, definition) { }
+            : base(name, declaringModule, string.Empty, BuiltinTypeId.Type, definition) {
+            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
+        }
 
         public PythonClassType(
             ClassDefinition classDefinition,
             IPythonModule declaringModule,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
         ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), builtinTypeId, classDefinition) {
+            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
             ClassDefinition = classDefinition;
         }
 
