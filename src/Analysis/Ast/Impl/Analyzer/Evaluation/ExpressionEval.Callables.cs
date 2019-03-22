@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = GetValueFromExpression(expr.Target);
-            _references.AddReference(target, expr);
+            (target as ILocatedMember)?.AddReference(Module, expr);
 
             var result = GetValueFromGeneric(target, expr);
             if (result != null) {

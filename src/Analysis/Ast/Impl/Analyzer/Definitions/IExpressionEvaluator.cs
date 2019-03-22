@@ -69,6 +69,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry);
         IEnumerable<DiagnosticsEntry> Diagnostics { get; }
-        IReferenceCollection References { get; }
     }
 }

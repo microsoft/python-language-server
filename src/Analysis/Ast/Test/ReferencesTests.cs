@@ -35,8 +35,9 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         public async Task BasicReferences() {
             const string code = @"
-z = 1
-z = 2
+z1 = 1
+z1 = 2
+z2 = 3
 
 def func():
     return 1
@@ -45,14 +46,16 @@ class A:
     x: int
     def methodA(self):
         return func()
-    
+
     @property
     def propA(self): ...
-
 
 class B(A):
     y: str
     def methodB(self):
+        z1 = 3
+        global z2
+        z2 = 4
         return methodA()
 
 func()
@@ -65,7 +68,19 @@ b.methodA()
 
 ";
             var analysis = await GetAnalysisAsync(code);
-            var refs = analysis.ExpressionEvaluator.References;
+
+            var z1 = analysis.Should().HaveVariable("z1").Which;
+            z1.Definition.Span.Should().Be(2, 1, 2, 3);
+            z1.References.Should().HaveCount(2);
+            z1.References[0].Span.Should().Be(2, 1, 2, 3);
+            z1.References[1].Span.Should().Be(3, 1, 3, 3);
+
+            var z2 = analysis.Should().HaveVariable("z2").Which;
+            z2.Definition.Span.Should().Be(4, 1, 4, 3);
+            z2.References.Should().HaveCount(3);
+            z2.References[0].Span.Should().Be(4, 1, 4, 3);
+            z2.References[1].Span.Should().Be(21, 16, 21, 18);
+            z2.References[2].Span.Should().Be(22, 9, 22, 11);
         }
     }
 }

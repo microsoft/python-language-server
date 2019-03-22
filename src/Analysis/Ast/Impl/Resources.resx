@@ -348,4 +348,10 @@
   <data name="UndefinedVariable" xml:space="preserve">
     <value>Undefined variable: '{0}'</value>
   </data>
+  <data name="ErrorVariableNotDefinedGlobally" xml:space="preserve">
+    <value>'{0}' is not defined in the global scope</value>
+  </data>
+  <data name="ErrorVariableNotDefinedNonLocal" xml:space="preserve">
+    <value>'{0}' is not defined in non-local scopes</value>
+  </data>
 </root>

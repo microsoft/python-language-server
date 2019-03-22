@@ -196,6 +196,24 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; is not defined in the global scope.
+        /// </summary>
+        internal static string ErrorVariableNotDefinedGlobally {
+            get {
+                return ResourceManager.GetString("ErrorVariableNotDefinedGlobally", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; is not defined in non-local scopes.
+        /// </summary>
+        internal static string ErrorVariableNotDefinedNonLocal {
+            get {
+                return ResourceManager.GetString("ErrorVariableNotDefinedNonLocal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The number of empty lines to include between class or function declarations at the top level of a module..
         /// </summary>
         internal static string LinesBetweenLevelDeclarationsLong {

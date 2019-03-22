@@ -13,7 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class NonLocalHandler : StatementHandler {
@@ -21,14 +26,34 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         public bool HandleNonLocal(NonlocalStatement node) {
             foreach (var nex in node.Names) {
-                Eval.CurrentScope.DeclareNonLocal(nex.Name, nex);
+                var m = Eval.LookupNameInScopes(nex.Name, out _, out var v, LookupOptions.Nonlocal);
+                if (m != null) {
+                    Eval.CurrentScope.DeclareNonLocal(nex.Name, nex);
+                    v?.AddReference(Module, nex);
+                } else {
+                    Eval.ReportDiagnostics(Eval.Module.Uri,
+                        new DiagnosticsEntry(
+                            Resources.ErrorVariableNotDefinedGlobally.FormatInvariant(nex.Name),
+                            Eval.GetLoc(nex).Span, ErrorCodes.VariableNotDefinedNonLocal, Severity.Warning
+                        ));
+                }
             }
             return false;
         }
 
         public bool HandleGlobal(GlobalStatement node) {
             foreach (var nex in node.Names) {
-                Eval.CurrentScope.DeclareGlobal(nex.Name, nex);
+                var m = Eval.LookupNameInScopes(nex.Name, out _, out var v, LookupOptions.Global);
+                if (m != null) {
+                    Eval.CurrentScope.DeclareGlobal(nex.Name, nex);
+                    v?.AddReference(Module, nex);
+                } else {
+                    Eval.ReportDiagnostics(Eval.Module.Uri, 
+                        new DiagnosticsEntry(
+                            Resources.ErrorVariableNotDefinedGlobally.FormatInvariant(nex.Name),
+                            Eval.GetLoc(nex).Span, ErrorCodes.VariableNotDefinedGlobally, Severity.Warning
+                        ));
+                }
             }
             return false;
         }

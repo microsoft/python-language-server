@@ -27,8 +27,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public ScopeStatement Target { get; }
-        public bool IsClass => Target is ClassDefinition;
-        public bool IsFunction => Target is FunctionDefinition;
         public IMember Result { get; protected set; }
         public abstract void Evaluate();
     }

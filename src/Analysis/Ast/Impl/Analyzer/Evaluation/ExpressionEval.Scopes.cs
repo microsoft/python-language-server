@@ -49,12 +49,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name, out IScope scope) => LookupNameInScopes(name, out scope, DefaultLookupOptions);
+        public IMember LookupNameInScopes(string name, out IScope scope, ) => LookupNameInScopes(name, out scope, out _, DefaultLookupOptions);
 
         [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
+        public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, out _, options);
 
-        public IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options) {
+        public IMember LookupNameInScopes(string name, out IScope scope, out IVariable v, LookupOptions options) {
             scope = null;
 
             if (options == LookupOptions.Normal) {
@@ -93,7 +93,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
             }
 
-            var value = scope?.Variables[name].Value;
+            v = scope?.Variables[name];
+            var value = v?.Value;
             if (value == null && options.HasFlag(LookupOptions.Builtins)) {
                 var builtins = Interpreter.ModuleResolution.BuiltinsModule;
                 value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);
