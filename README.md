@@ -25,7 +25,7 @@ The following diagnostics are supported:
 | `unresolved-import` | An import cannot be resolved, and may be missing. |
 | `undefined-variable` | A variable has used that has not yet been defined. |
 
-[A full list can be seen in the source code.](src\Analysis\Impl\Diagnostics\ErrorCodes.cs)
+[A full list can be seen in the source code.](src/Analysis/Ast/Impl/Diagnostics/ErrorCodes.cs)
 
 Linting can be controlled via the user configuration. In VS Code, this is `settings.json`, but other
 clients would send this via `workspace/didChangeConfiguration`.
