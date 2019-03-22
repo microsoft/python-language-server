@@ -64,30 +64,39 @@ c.method(1, 2)
             var ds = new DefinitionSource();
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(4, 5));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(1, 7, 1, 9);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(9, 9));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(7, 15, 7, 19);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(9, 14));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(6, 4, 6, 5);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(13, 5));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(11, 9, 11, 10);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(14, 9));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(11, 9, 11, 10);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(17, 5));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(11, 0, 14, 12);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(18, 1));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(3, 0, 3, 1); // TODO: store all locations
 
             reference = ds.FindDefinition(analysis, new SourceLocation(19, 5));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(5, 6, 9, 18);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(20, 5));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(7, 4, 9, 18);
         }
 
@@ -106,14 +115,17 @@ logging.info('')
             reference.Should().BeNull();
 
             reference = ds.FindDefinition(analysis, new SourceLocation(5, 3));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(2, 7, 2, 14);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(3, 10));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
 
             reference = ds.FindDefinition(analysis, new SourceLocation(5, 11));
+            reference.Should().NotBeNull();
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
@@ -197,6 +209,7 @@ class A(object):
             var analysis = await submod.GetAnalysisAsync(-1);
             var ds = new DefinitionSource();
             var reference = ds.FindDefinition(analysis, new SourceLocation(1, 18));
+            reference.Should().NotBeNull();
             reference.uri.Should().Be(modPath);
         }
     }

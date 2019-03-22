@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, Module, asNameExpression);
             } else if (importNames.Count > 0 && _variableModules.TryGetValue(importNames[0], out variableModule)) {
                 var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, variableModule, firstName);
+                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, Module, firstName);
             }
         }
 
