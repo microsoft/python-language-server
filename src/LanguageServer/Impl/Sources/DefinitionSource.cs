@@ -145,20 +145,21 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     node = ft.FunctionDefinition;
                     module = ft.DeclaringModule;
                     break;
-                case IPythonInstance _ when expr is NameExpression nex:
-                    var m1 = eval.LookupNameInScopes(nex.Name, out var scope);
-                    if (m1 != null && scope != null) {
-                        var v = scope.Variables[nex.Name];
-                        if (v != null) {
-                            return new Reference { range = v.Definition.Span, uri = v.Definition.DocumentUri };
-                        }
+                case IVariable _ when expr is MemberExpression mex:
+                    var target = eval.GetValueFromExpression(mex.Target);
+                    var type = target?.GetPythonType();
+                    if (type?.GetMember(mex.Name) is ILocatedMember m2) {
+                        return new Reference { range = m2.Definition.Span, uri = m2.Definition.DocumentUri };
                     }
                     break;
-                case IPythonInstance _ when expr is MemberExpression mex: {
-                        var target = eval.GetValueFromExpression(mex.Target);
-                        var type = target?.GetPythonType();
-                        if (type?.GetMember(mex.Name) is ILocatedMember m2) {
-                            return new Reference { range = m2.Definition.Span, uri = m2.Definition.DocumentUri };
+                default:
+                    if (expr is NameExpression nex) {
+                        var m1 = eval.LookupNameInScopes(nex.Name, out var scope);
+                        if (m1 != null && scope != null) {
+                            var v = scope.Variables[nex.Name];
+                            if (v != null) {
+                                return new Reference { range = v.Definition.Span, uri = v.Definition.DocumentUri };
+                            }
                         }
                     }
                     break;
