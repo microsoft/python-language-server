@@ -24,6 +24,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -316,6 +317,78 @@ package.sub_package.module2.";
 
             comps = cs.GetCompletions(analysis, new SourceLocation(8, 29));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LoopImports() {
+            var module1Code = @"
+class B1:
+    def M1(self):
+        pass
+    pass
+
+from module2 import B2
+class A1(B2):
+    pass";
+            var module2Code = @"
+class B2:
+    def M2(self):
+        pass
+    pass
+
+from module3 import B3
+class A2(B3):
+    pass";
+            var module3Code = @"
+class B3:
+    def M3(self):
+        pass
+    pass
+
+from module1 import B1
+class A3(B1):
+    pass";
+
+            var appCode = @"
+from module1 import A1
+from module2 import A2
+from module3 import A3
+
+a1 = A1()
+a2 = A2()
+a3 = A3()
+
+a1.
+a2.
+a3.";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var module2Uri = TestData.GetTestSpecificUri("module2.py");
+            var module3Uri = TestData.GetTestSpecificUri("module3.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+            rdt.OpenDocument(module2Uri, module2Code);
+            rdt.OpenDocument(module3Uri, module3Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(10, 4));
+            comps.Should().HaveLabels("M2");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(11, 4));
+            comps.Should().HaveLabels("M3");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(12, 4));
+            comps.Should().HaveLabels("M1");
         }
 
         [TestMethod, Priority(0)]

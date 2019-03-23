@@ -33,16 +33,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
 
-        public FunctionEvaluator(
-            ExpressionEval eval,
-            FunctionDefinition targetFunction,
-            PythonFunctionOverload overload,
-            IPythonClassMember function
-        ) : base(eval, targetFunction) {
-            FunctionDefinition = targetFunction ?? throw new ArgumentNullException(nameof(targetFunction));
-            _overload = overload ?? throw new ArgumentNullException(nameof(overload));
-            _function = function ?? throw new ArgumentNullException(nameof(function));
-            _self = function.DeclaringType as PythonClassType;
+        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload) 
+            : base(eval, overload.FunctionDefinition) {
+
+            _overload = overload;
+            _function = overload.ClassMember ?? throw new NullReferenceException(nameof(overload.ClassMember));
+            _self = _function.DeclaringType as PythonClassType;
+
+            FunctionDefinition = overload.FunctionDefinition;
         }
 
         public FunctionDefinition FunctionDefinition { get; }

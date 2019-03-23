@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Core {
     public static class EnumerableExtensions {
@@ -25,6 +26,8 @@ namespace Microsoft.Python.Core {
         public static T[] MaybeEnumerate<T>(this T[] source) => source ?? Array.Empty<T>();
 
         public static IEnumerable<T> MaybeEnumerate<T>(this IEnumerable<T> source) => source ?? Enumerable.Empty<T>();
+
+        public static ImmutableArray<T> ToImmutableArray<T>(this IEnumerable<T> source) => ImmutableArray<T>.Create(source);
 
         private static T Identity<T>(T source) => source;
 
