@@ -56,7 +56,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // We cheat slightly and treat base classes as annotations.
                     var b = Eval.GetTypeFromAnnotation(a.Expression);
                     if (b != null) {
-                        bases.Add(b.GetPythonType());
+                        var t = b.GetPythonType();
+                        bases.Add(t);
+                        t.AddReference(Module, a.Expression);
                     }
                 }
                 _class.SetBases(bases);

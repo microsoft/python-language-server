@@ -29,6 +29,10 @@ namespace Microsoft.Python.Analysis.Types {
              this(path, documentUri, line, column, null, null) {
         }
 
+        public LocationInfo(string path, Uri documentUri, SourceSpan span) :
+            this(path, documentUri, span.Start.Line, span.Start.Column, span.End.Line, span.End.Column) {
+        }
+
         public LocationInfo(string path, Uri documentUri, int line, int column, int? endLine, int? endColumn) {
             FilePath = path;
             DocumentUri = documentUri;

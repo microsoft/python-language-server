@@ -17,6 +17,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -95,6 +96,14 @@ b.methodA()
             classA.References[0].Span.Should().Be(9, 7, 9, 8);
             classA.References[1].Span.Should().Be(17, 9, 17, 10);
             classA.References[2].Span.Should().Be(26, 5, 26, 6);
+
+            var methodA = classA.Should().HaveMember<IPythonFunctionType>("methodA").Which;
+            methodA.Definition.Span.Should().Be(11, 9, 11, 16);
+            methodA.References.Should().HaveCount(4);
+            methodA.References[0].Span.Should().Be(11, 9, 11, 16);
+            methodA.References[1].Span.Should().Be(23, 21, 23, 28);
+            methodA.References[2].Span.Should().Be(27, 3, 27, 10);
+            methodA.References[2].Span.Should().Be(31, 3, 31, 10);
         }
     }
 }

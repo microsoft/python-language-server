@@ -19,7 +19,7 @@ using System.Linq;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal abstract class LocatedMember: ILocatedMember {
+    internal abstract class LocatedMember : ILocatedMember {
         private struct Location {
             private readonly IPythonModule _module;
             private readonly Node _node;
@@ -29,10 +29,17 @@ namespace Microsoft.Python.Analysis.Types {
                 _node = node;
             }
 
-            public LocationInfo LocationInfo => _node?.GetLocation(_module) ?? LocationInfo.Empty;
+            public LocationInfo LocationInfo {
+                get {
+                    if (_node is MemberExpression mex && _module.Analysis.Ast != null) {
+                        var span = mex.GetNameSpan(_module.Analysis.Ast);
+                        return new LocationInfo(_module.FilePath, _module.Uri, span);
+                    }
+                    return _node?.GetLocation(_module) ?? LocationInfo.Empty;
+                }
+            }
         }
 
-        private Node _definition;
         private HashSet<Location> _references;
 
         protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, Node definition = null)
@@ -42,7 +49,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         protected LocatedMember(IPythonModule declaringModule, Node definition = null) {
             DeclaringModule = declaringModule;
-            _definition = definition;
+            DefinitionNode = definition;
         }
 
         protected void SetDeclaringModule(IPythonModule module) => DeclaringModule = module;
@@ -50,10 +57,11 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual IPythonModule DeclaringModule { get; private set; }
 
-        public virtual LocationInfo Definition => _definition.GetLocation(DeclaringModule);
-        public Node DefinitionNode => _definition;
+        public virtual LocationInfo Definition => DefinitionNode.GetLocation(DeclaringModule);
 
-        public virtual IReadOnlyList<LocationInfo> References 
+        public Node DefinitionNode { get; private set; }
+
+        public virtual IReadOnlyList<LocationInfo> References
             => Enumerable.Repeat(Definition, 1).Concat(_references?.Select(r => r.LocationInfo) ?? Enumerable.Empty<LocationInfo>()).ToArray();
 
         public void AddReference(IPythonModule module, Node location) {
@@ -63,10 +71,10 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal virtual void SetDefinitionNode(Node definition) => _definition = definition;
+        internal virtual void SetDefinitionNode(Node definition) => DefinitionNode = definition;
     }
 
-    internal abstract class EmptyLocatedMember: ILocatedMember {
+    internal abstract class EmptyLocatedMember : ILocatedMember {
         protected EmptyLocatedMember(PythonMemberType memberType) {
             MemberType = memberType;
         }
