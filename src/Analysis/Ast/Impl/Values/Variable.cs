@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -25,7 +26,7 @@ namespace Microsoft.Python.Analysis.Values {
         public Variable(string name, IMember value, VariableSource source, IPythonModule declaringModule, Node location)
             : base(PythonMemberType.Variable, declaringModule, location) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Value = value;
+            Value = value is IVariable v ? v.Value : value ;
             Source = source;
         }
 
@@ -35,7 +36,11 @@ namespace Microsoft.Python.Analysis.Values {
         public IMember Value { get; private set; }
 
         public void Assign(IMember value, IPythonModule module, Node location) {
+            if (value is IVariable v) {
+                value = v.Value;
+            }
             if (Value == null || Value.GetPythonType().IsUnknown() || value?.GetPythonType().IsUnknown() == false) {
+                Debug.Assert(!(value is IVariable));
                 Value = value;
             }
             AddReference(module, location);
@@ -44,9 +49,23 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region ILocatedMember
         public override LocationInfo Definition
-            => base.Definition.DocumentUri != null ? base.Definition : (Value as ILocatedMember)?.Definition;
+            => base.Definition.DocumentUri != null ? base.Definition : (Value as ILocatedMember)?.Definition ?? LocationInfo.Empty;
         public override IReadOnlyList<LocationInfo> References
             => base.Definition.DocumentUri != null ? base.References : (Value as ILocatedMember)?.References;
+
+        public override void AddReference(IPythonModule module, Node location) {
+            // If value is not a located member, then add reference to the variable.
+            // If variable name is the same as the value member name, then the variable
+            // is implicit declaration (like declared function or a class) and we need
+            // to add reference to the actual type instead.
+            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Definition.DocumentUri == null)) {
+                // Variable is not user-declared and rather is holder of a function or class definition.
+                lm.AddReference(module, location);
+            } else {
+                base.AddReference(module, location);
+            }
+        }
+
         #endregion
 
         private string DebuggerDisplay {

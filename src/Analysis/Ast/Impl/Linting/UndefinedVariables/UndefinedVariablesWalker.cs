@@ -14,8 +14,11 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesWalker : LinterWalker {
@@ -49,7 +52,9 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             foreach (var nex in node.Names) {
                 var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Global);
                 if (m == null) {
-                    Analysis.ReportUndefinedVariable(nex);
+                    Eval.ReportDiagnostics(Analysis.Document.Uri, new DiagnosticsEntry(
+                        Resources.ErrorVariableNotDefinedGlobally.FormatInvariant(nex.Name),
+                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedGlobally, Severity.Warning));
                 }
             }
             return false;
@@ -59,7 +64,9 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             foreach (var nex in node.Names) {
                 var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Nonlocal);
                 if (m == null) {
-                    Analysis.ReportUndefinedVariable(nex);
+                    Eval.ReportDiagnostics(Analysis.Document.Uri, new DiagnosticsEntry(
+                        Resources.ErrorVariableNotDefinedNonLocal.FormatInvariant(nex.Name),
+                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedNonLocal, Severity.Warning));
                 }
             }
             return false;

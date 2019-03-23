@@ -165,9 +165,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var member = this.LookupNameInScopes(expr.Name, options);
+            var member = this.LookupNameInScopes(expr.Name, out _, out var v, options);
             if (member != null) {
-                member.AddReference(Module, expr);
+                v?.AddReference(Module, expr);
                 switch (member.GetPythonType()) {
                     case IPythonClassType cls:
                         SymbolTable.Evaluate(cls.ClassDefinition);

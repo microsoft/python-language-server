@@ -290,7 +290,7 @@ class A:
             var analysis = await GetAnalysisAsync(code);
             var d = analysis.Diagnostics.ToArray();
             d.Should().HaveCount(1);
-            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].ErrorCode.Should().Be(ErrorCodes.VariableNotDefinedNonLocal);
             d[0].SourceSpan.Should().Be(5, 21, 5, 22);
         }
 
@@ -307,7 +307,7 @@ class A:
             var analysis = await GetAnalysisAsync(code);
             var d = analysis.Diagnostics.ToArray();
             d.Should().HaveCount(1);
-            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].ErrorCode.Should().Be(ErrorCodes.VariableNotDefinedGlobally);
             d[0].SourceSpan.Should().Be(6, 19, 6, 20);
         }
 

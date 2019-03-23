@@ -66,10 +66,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             for (var i = 0; i < names.Count; i++) {
                 var memberName = names[i].Name;
                 if (!string.IsNullOrEmpty(memberName)) {
-                    var variableName = asNames[i]?.Name ?? memberName;
+                    var nameExpression = asNames[i];
+                    var variableName = nameExpression?.Name ?? memberName;
                     var value = variableModule.GetMember(memberName) ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-
-                    Eval.DeclareVariable(variableName, value, VariableSource.Import, variableModule, names[i]);
+                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression != null ? Module : variableModule, nameExpression);
                 }
             }
         }

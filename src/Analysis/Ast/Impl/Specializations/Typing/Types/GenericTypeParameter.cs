@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var name = (args[0] as IPythonConstant)?.Value as string;
+            var name = (args[0] as IPythonConstant)?.GetString();
             if (string.IsNullOrEmpty(name)) {
                 // TODO: report that type name is not a string.
                 return declaringModule.Interpreter.UnknownType;
@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray();
             if (constraints.Any(c => c.IsUnknown())) {
-                // TODO: report that some constraints could be be resolved.
+                // TODO: report that some constraints could not be resolved.
             }
 
             var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.IsUnknown() ? "?" : c.Name));

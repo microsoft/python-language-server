@@ -192,5 +192,92 @@ class A:
             z1Method.References[1].Span.Should().Be(8, 22, 8, 24);
             z1Method.References[2].Span.Should().Be(9, 13, 9, 15);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Import() {
+            const string code = @"
+import sys as s
+x = s.path
+";
+            var analysis = await GetAnalysisAsync(code);
+            var s = analysis.Should().HaveVariable("s").Which;
+            s.Definition.Span.Should().Be(2, 15, 2, 16);
+            s.References.Should().HaveCount(2);
+            s.References[0].Span.Should().Be(2, 15, 2, 16);
+            s.References[1].Span.Should().Be(3, 5, 3, 6);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromImport() {
+            const string code = @"
+from sys import path as p
+x = p
+";
+            var analysis = await GetAnalysisAsync(code);
+            var p = analysis.Should().HaveVariable("p").Which;
+            p.Definition.Span.Should().Be(2, 25, 2, 26);
+            p.References.Should().HaveCount(2);
+            p.References[0].Span.Should().Be(2, 25, 2, 26);
+            p.References[1].Span.Should().Be(3, 5, 3, 6);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FunctionParameter() {
+            const string code = @"
+def func(a):
+    a = 1
+    if True:
+        a = 2
+";
+            var analysis = await GetAnalysisAsync(code);
+            var outer = analysis.Should().HaveFunction("func").Which;
+            var a = outer.Should().HaveVariable("a").Which;
+            a.References.Should().HaveCount(3);
+            a.References[0].Span.Should().Be(2, 10, 2, 11);
+            a.References[1].Span.Should().Be(3, 5, 3, 6);
+            a.References[2].Span.Should().Be(5, 9, 5, 10);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Assignments() {
+            const string code = @"
+a = 1
+a = 2
+
+for x in y:
+    a = 3
+
+if True:
+    a = 4
+elif False:
+    a = 5
+else:
+    a = 6
+
+def func():
+    a = 0
+
+def func(a):
+    a = 0
+
+def func():
+    global a
+    a = 7
+
+class A:
+    a: int
+";
+            var analysis = await GetAnalysisAsync(code);
+            var a = analysis.Should().HaveVariable("a").Which;
+            a.References.Should().HaveCount(8);
+            a.References[0].Span.Should().Be(2, 1, 2, 2);
+            a.References[1].Span.Should().Be(3, 1, 3, 2);
+            a.References[2].Span.Should().Be(6, 5, 6, 6);
+            a.References[3].Span.Should().Be(9, 5, 9, 6);
+            a.References[4].Span.Should().Be(11, 5, 11, 6);
+            a.References[5].Span.Should().Be(13, 5, 13, 6);
+            a.References[6].Span.Should().Be(22, 12, 22, 13);
+            a.References[7].Span.Should().Be(23, 5, 23, 6);
+        }
     }
 }

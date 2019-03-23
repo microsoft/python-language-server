@@ -35,9 +35,15 @@ namespace Microsoft.Python.Analysis.Types {
                         var span = mex.GetNameSpan(_module.Analysis.Ast);
                         return new LocationInfo(_module.FilePath, _module.Uri, span);
                     }
+
                     return _node?.GetLocation(_module) ?? LocationInfo.Empty;
                 }
             }
+
+            public override bool Equals(object obj)
+                => obj is Location other && other._node == _node;
+
+            public override int GetHashCode() => _node.GetHashCode();
         }
 
         private HashSet<Location> _references;
@@ -61,10 +67,17 @@ namespace Microsoft.Python.Analysis.Types {
 
         public Node DefinitionNode { get; private set; }
 
-        public virtual IReadOnlyList<LocationInfo> References
-            => Enumerable.Repeat(Definition, 1).Concat(_references?.Select(r => r.LocationInfo) ?? Enumerable.Empty<LocationInfo>()).ToArray();
+        public virtual IReadOnlyList<LocationInfo> References {
+            get {
+                if (_references == null) {
+                    return new[] { Definition };
+                }
+                var refs = _references.Select(r => r.LocationInfo).OrderBy(x => x.Span);
+                return Enumerable.Repeat(Definition, 1).Concat(refs).ToArray();
+            }
+        }
 
-        public void AddReference(IPythonModule module, Node location) {
+        public virtual void AddReference(IPythonModule module, Node location) {
             if (module != null && location != null) {
                 _references = _references ?? new HashSet<Location>();
                 _references.Add(new Location(module, location));

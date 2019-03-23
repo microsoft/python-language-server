@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -44,6 +45,7 @@ namespace Microsoft.Python.Analysis {
                 case IPythonInstance pi:
                     return pi.Type;
                 case IVariable v when v.Value != null:
+                    Debug.Assert(!(v.Value is IVariable));
                     return v.Value.GetPythonType();
             }
             return null;
@@ -75,24 +77,7 @@ namespace Microsoft.Python.Analysis {
             return false;
         }
 
-        public static void AddReference(this IMember m, IPythonModule module, Node location) {
-            Check.ArgumentNotNull(nameof(module), module);
-            Check.ArgumentNotNull(nameof(location), location);
-            // If member is a variable and its value is not a located member, then add reference to the variable.
-            // If the variable value is located member AND variable name is the same as the value member
-            // name, then user the latter. Example: function A is declared as variable A that hold type info
-            // of the function so reference is to the function. Another example: class member that is 'int'
-            // is 'an instance of int' and instances don't have locations. So the holding variable is the located
-            // member. On the other hand, function definition is a variable in scope and value of the variable
-            // is the function type info which tracks the location and references.
-            ILocatedMember lm;
-            if (m is IVariable v && v.Value is ILocatedMember x && (v.Name.EqualsOrdinal(x.GetPythonType()?.Name) || v.Definition.DocumentUri == null)) {
-                // Variable is not user-declared and rather is holder of a function or class definition.
-                lm = x;
-            } else {
-                lm = m as ILocatedMember;
-            }
-            lm?.AddReference(module, location);
-        }
+        public static void AddReference(this IMember m, IPythonModule module, Node location)
+            => (m as ILocatedMember)?.AddReference(module, location);
     }
 }

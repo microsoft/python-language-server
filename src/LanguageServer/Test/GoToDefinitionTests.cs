@@ -89,7 +89,7 @@ c.method(1, 2)
 
             reference = ds.FindDefinition(analysis, new SourceLocation(18, 1));
             reference.Should().NotBeNull();
-            reference.range.Should().Be(3, 0, 3, 1); // TODO: store all locations
+            reference.range.Should().Be(3, 0, 3, 1);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(19, 5));
             reference.Should().NotBeNull();

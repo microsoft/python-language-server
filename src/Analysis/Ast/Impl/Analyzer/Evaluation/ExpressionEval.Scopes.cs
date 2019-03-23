@@ -18,6 +18,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -51,40 +52,39 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember LookupNameInScopes(string name, out IScope scope, out IVariable v, LookupOptions options) {
             scope = null;
 
-            if (options == LookupOptions.Normal) {
-                // Default mode, no skipping, do direct search
-                for (var s = CurrentScope; s != null ; s = (Scope)s.OuterScope) {
-                    if (s.Variables.Contains(name)) {
-                        scope = s;
-                        break;
-                    }
-                }
-            } else {
-                var scopes = new List<Scope>();
-                for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
-                    scopes.Add(s);
-                }
-
-                if (scopes.Count == 1) {
-                    if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
-                        scopes.Clear();
-                    }
-                } else if (scopes.Count >= 2) {
-                    if (!options.HasFlag(LookupOptions.Nonlocal)) {
-                        while (scopes.Count > 2) {
-                            scopes.RemoveAt(1);
+            switch (options) {
+                case LookupOptions.Normal:
+                    // Regular lookup: all scopes and builtins.
+                    for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
+                        if (s.Variables.Contains(name)) {
+                            scope = s;
+                            break;
                         }
                     }
-
-                    if (!options.HasFlag(LookupOptions.Local)) {
-                        scopes.RemoveAt(0);
+                    break;
+                case LookupOptions.Global:
+                case LookupOptions.Global | LookupOptions.Builtins:
+                    // Global scope only.
+                    scope = GlobalScope;
+                    break;
+                case LookupOptions.Nonlocal:
+                case LookupOptions.Nonlocal | LookupOptions.Builtins:
+                    // All scopes but current and global ones.
+                    for (var s = CurrentScope.OuterScope as Scope; s != null && s != GlobalScope; s = (Scope)s.OuterScope) {
+                        if (s.Variables.Contains(name)) {
+                            scope = s;
+                            break;
+                        }
                     }
-
-                    if (!options.HasFlag(LookupOptions.Global)) {
-                        scopes.RemoveAt(scopes.Count - 1);
-                    }
-                }
-                scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
+                    break;
+                case LookupOptions.Local:
+                case LookupOptions.Local | LookupOptions.Builtins:
+                    // Just the current scope
+                    scope = CurrentScope;
+                    break;
+                default:
+                    Debug.Fail("Unsupported name lookup combination");
+                    break;
             }
 
             v = scope?.Variables[name];
