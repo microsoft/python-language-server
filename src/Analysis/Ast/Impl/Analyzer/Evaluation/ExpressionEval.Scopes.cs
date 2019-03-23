@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember GetInScope(string name) => GetInScope(name, CurrentScope);
         public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, Node location, bool overwrite = false) {
+        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module = null, Node location = null, bool overwrite = false) {
             var member = GetInScope(name);
             if (member != null) {
                 if (!value.IsUnknown()) {
@@ -47,12 +47,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 CurrentScope.DeclareVariable(name, value, source, module, location);
             }
         }
-
-        [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name, out IScope scope, ) => LookupNameInScopes(name, out scope, out _, DefaultLookupOptions);
-
-        [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, out _, options);
 
         public IMember LookupNameInScopes(string name, out IScope scope, out IVariable v, LookupOptions options) {
             scope = null;

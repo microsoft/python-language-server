@@ -69,6 +69,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case Comprehension comp:
                     Eval.ProcessComprehension(comp);
                     break;
+                case CallExpression callex when callex.Target is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
+                    Eval.GetValueFromExpression(nex)?.AddReference(Module, nex);
+                    break;
+                case CallExpression callex when callex.Target is MemberExpression mex && !string.IsNullOrEmpty(mex.Name):
+                    var t = Eval.GetValueFromExpression(mex.Target);
+                    (t as IMemberContainer)?.GetMember(mex.Name).AddReference(Module, mex);
+                    break;
             }
             return false;
         }

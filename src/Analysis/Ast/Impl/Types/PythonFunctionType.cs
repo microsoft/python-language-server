@@ -68,21 +68,17 @@ namespace Microsoft.Python.Analysis.Types {
             string name,
             IPythonModule declaringModule,
             IPythonType declaringType,
-            Func<string, string> documentationProvider,
-            IPythonFunctionOverload overload = null,
-            Node definition = null
-        ) : base(name, declaringModule, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, definition) {
+            Func<string, string> documentationProvider
+        ) : base(name, declaringModule, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
-            if (overload != null) {
-                AddOverload(overload);
-            }
         }
 
         public PythonFunctionType(
             FunctionDefinition fd,
             IPythonModule declaringModule,
             IPythonType declaringType
-        ) : base(fd.Name, declaringModule, fd.Documentation, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, fd) {
+        ) : base(fd.Name, declaringModule, fd.Documentation,
+                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, fd.NameExpression) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;

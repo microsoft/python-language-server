@@ -43,12 +43,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             GlobalScope = new GlobalScope(module);
             CurrentScope = GlobalScope;
-            DefaultLookupOptions = LookupOptions.Normal;
-
             //Log = services.GetService<ILogger>();
         }
 
-        public LookupOptions DefaultLookupOptions { get; set; }
         public GlobalScope GlobalScope { get; }
         public Scope CurrentScope { get; private set; }
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
@@ -78,9 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        public IMember GetValueFromExpression(Expression expr)
-            => GetValueFromExpression(expr, DefaultLookupOptions);
-
         public IDisposable OpenScope(IScope scope) {
             if (!(scope is Scope s)) {
                 return Disposable.Empty;
@@ -93,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IDisposable OpenScope(IPythonModule module, ScopeStatement scope) => OpenScope(module, scope, out _);
         #endregion
 
-        public IMember GetValueFromExpression(Expression expr, LookupOptions options) {
+        public IMember GetValueFromExpression(Expression expr, LookupOptions options = LookupOptions.Normal) {
             if (expr == null) {
                 return null;
             }
@@ -166,14 +160,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private IMember GetValueFromFString(FString fString) 
             => new PythonFString(fString.Unparsed, Interpreter);
 
-        private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
+        private IMember GetValueFromName(NameExpression expr, LookupOptions options = LookupOptions.Normal) {
             if (expr == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
             }
 
-            var member = LookupNameInScopes(expr.Name, options);
+            var member = this.LookupNameInScopes(expr.Name, options);
             if (member != null) {
-                (member as ILocatedMember)?.AddReference(Module, expr);
+                member.AddReference(Module, expr);
                 switch (member.GetPythonType()) {
                     case IPythonClassType cls:
                         SymbolTable.Evaluate(cls.ClassDefinition);
@@ -214,7 +208,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var type = m?.GetPythonType(); // Try inner type
             var value = type?.GetMember(expr.Name);
 
-            (m as ILocatedMember)?.AddReference(Module, expr);
+            m?.AddReference(Module, expr);
             if (type is IPythonModule) {
                 return value;
             }

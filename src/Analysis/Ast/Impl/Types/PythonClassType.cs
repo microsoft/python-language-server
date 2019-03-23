@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Types {
             ClassDefinition classDefinition,
             IPythonModule declaringModule,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), builtinTypeId, classDefinition) {
+        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), builtinTypeId, classDefinition.NameExpression) {
             Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
             ClassDefinition = classDefinition;
         }

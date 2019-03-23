@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override bool Walk(ClassDefinition cd) {
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var classInfo = CreateClass(cd);
-                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, _eval.Module, cd);
+                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private IMember AddFunction(FunctionDefinition node, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonFunctionType existing)) {
                 existing = new PythonFunctionType(node, _eval.Module, declaringType);
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, _eval.Module, node);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;
@@ -158,23 +158,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private PythonPropertyType AddProperty(FunctionDefinition node, IPythonType declaringType, bool isAbstract) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonPropertyType existing)) {
                 existing = new PythonPropertyType(node, _eval.Module, declaringType, isAbstract);
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, _eval.Module, node);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
             return existing;
         }
-
-        private LocationInfo GetLoc(ClassDefinition node) {
-            if (node == null || node.StartIndex >= node.EndIndex) {
-                return null;
-            }
-
-            var start = node.NameExpression?.GetStart(_eval.Ast) ?? node.GetStart(_eval.Ast);
-            var end = node.GetEnd(_eval.Ast);
-            return new LocationInfo(_eval.Module.FilePath, _eval.Module.Uri, start.Line, start.Column, end.Line, end.Column);
-        }
-
-        private LocationInfo GetLoc(Node node) => _eval.GetLoc(node);
 
         private IMember GetMemberFromStub(string name) {
             if (_eval.Module.Stub == null) {

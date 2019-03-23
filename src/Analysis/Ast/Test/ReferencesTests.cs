@@ -56,7 +56,7 @@ class B(A):
         z1 = 3
         global z2
         z2 = 4
-        return methodA()
+        return self.methodA()
 
 func()
 a = A()
@@ -81,6 +81,20 @@ b.methodA()
             z2.References[0].Span.Should().Be(4, 1, 4, 3);
             z2.References[1].Span.Should().Be(21, 16, 21, 18);
             z2.References[2].Span.Should().Be(22, 9, 22, 11);
+
+            var func = analysis.Should().HaveVariable("func").Which;
+            func.Definition.Span.Should().Be(6, 5, 6, 9);
+            func.References.Should().HaveCount(3);
+            func.References[0].Span.Should().Be(6, 5, 6, 9);
+            func.References[1].Span.Should().Be(12, 16, 12, 20);
+            func.References[2].Span.Should().Be(25, 1, 25, 5);
+
+            var classA = analysis.Should().HaveVariable("A").Which;
+            classA.Definition.Span.Should().Be(9, 7, 9, 8);
+            classA.References.Should().HaveCount(3);
+            classA.References[0].Span.Should().Be(9, 7, 9, 8);
+            classA.References[1].Span.Should().Be(17, 9, 17, 10);
+            classA.References[2].Span.Should().Be(26, 5, 26, 6);
         }
     }
 }

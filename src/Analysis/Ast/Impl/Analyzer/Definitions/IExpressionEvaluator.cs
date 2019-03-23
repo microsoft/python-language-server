@@ -56,9 +56,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Evaluates expression in the currently open scope.
         /// </summary>
-        IMember GetValueFromExpression(Expression expr);
+        IMember GetValueFromExpression(Expression expr, LookupOptions options = LookupOptions.Normal);
 
-        IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options = LookupOptions.Normal);
+        IMember LookupNameInScopes(string name, out IScope scope, out IVariable v, LookupOptions options = LookupOptions.Normal);
 
         IPythonType GetTypeFromString(string typeString);
 

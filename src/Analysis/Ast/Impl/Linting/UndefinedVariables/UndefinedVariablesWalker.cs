@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         public override bool Walk(GlobalStatement node) {
             foreach (var nex in node.Names) {
-                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Global);
+                var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Global);
                 if (m == null) {
                     Analysis.ReportUndefinedVariable(nex);
                 }

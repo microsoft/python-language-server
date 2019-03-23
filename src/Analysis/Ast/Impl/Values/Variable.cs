@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
@@ -28,6 +29,7 @@ namespace Microsoft.Python.Analysis.Values {
             Source = source;
         }
 
+        #region IVariable
         public string Name { get; }
         public VariableSource Source { get; }
         public IMember Value { get; private set; }
@@ -38,6 +40,14 @@ namespace Microsoft.Python.Analysis.Values {
             }
             AddReference(module, location);
         }
+        #endregion
+
+        #region ILocatedMember
+        public override LocationInfo Definition
+            => base.Definition.DocumentUri != null ? base.Definition : (Value as ILocatedMember)?.Definition;
+        public override IReadOnlyList<LocationInfo> References
+            => base.Definition.DocumentUri != null ? base.References : (Value as ILocatedMember)?.References;
+        #endregion
 
         private string DebuggerDisplay {
             get {

@@ -116,10 +116,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         // Classes and functions are walked by their respective evaluators
         public override bool Walk(ClassDefinition node) => false;
         public override bool Walk(FunctionDefinition node) {
-            // Inner function, declare as variable.
+            // Inner function, declare as variable. Do not set variable location
+            // since it is not an assignment visible to the user.
             var m = SymbolTable.Evaluate(node);
             if (m != null) {
-                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, Module, node);
+                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration);
             }
             return false;
         }
