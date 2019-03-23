@@ -22,12 +22,12 @@ namespace Microsoft.Python.Analysis.Types {
         private IPythonFunctionOverload _getter;
 
         public PythonPropertyType(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract)
-            : this(fd.Name, declaringModule, declaringType, isAbstract, fd) {
+            : this(fd.Name, declaringModule, declaringType, isAbstract, fd.NameExpression) {
             FunctionDefinition = fd;
         }
 
-        public PythonPropertyType(string name, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, Node definition = null)
-            : base(name, declaringModule, string.Empty, BuiltinTypeId.Property, definition) {
+        public PythonPropertyType(string name, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, Node location = null)
+            : base(name, declaringModule, string.Empty, BuiltinTypeId.Property, location) {
             DeclaringType = declaringType;
             IsAbstract = isAbstract;
         }
