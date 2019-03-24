@@ -181,7 +181,7 @@ x = t
             reference.Should().NotBeNull();
             reference.range.Should().Be(1, 24, 1, 25);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(1, 25));
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 25));
             reference.Should().NotBeNull();
             reference.range.Should().Be(2, 0, 2, 1);
             reference.uri.AbsolutePath.Should().Contain("MultiValues.py");
