@@ -61,7 +61,7 @@ c = C()
 c.method(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(4, 5));
             reference.Should().NotBeNull();
@@ -85,7 +85,7 @@ c.method(1, 2)
 
             reference = ds.FindDefinition(analysis, new SourceLocation(17, 5));
             reference.Should().NotBeNull();
-            reference.range.Should().Be(11, 0, 14, 12);
+            reference.range.Should().Be(11, 4, 11, 8);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(18, 1));
             reference.Should().NotBeNull();
@@ -93,11 +93,11 @@ c.method(1, 2)
 
             reference = ds.FindDefinition(analysis, new SourceLocation(19, 5));
             reference.Should().NotBeNull();
-            reference.range.Should().Be(5, 0, 9, 18);
+            reference.range.Should().Be(5, 6, 5, 7);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(20, 5));
             reference.Should().NotBeNull();
-            reference.range.Should().Be(7, 4, 9, 18);
+            reference.range.Should().Be(7, 8, 7, 14);
         }
 
         [TestMethod, Priority(0)]
@@ -109,7 +109,7 @@ import logging
 logging.info('')
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(2, 9));
             reference.Should().BeNull();
@@ -137,17 +137,20 @@ import logging as log
 log
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(2, 10));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
 
             reference = ds.FindDefinition(analysis, new SourceLocation(3, 2));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(1, 18, 1, 21);
 
             reference = ds.FindDefinition(analysis, new SourceLocation(2, 20));
+            reference.Should().NotBeNull();
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
@@ -156,9 +159,10 @@ log
         public async Task GotoModuleSourceFromImport() {
             const string code = @"from logging import A";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(1, 7));
+            reference.Should().NotBeNull();
             reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
@@ -168,7 +172,7 @@ log
         public async Task GotoModuleSourceFromImportAs() {
             const string code = @"from logging import RootLogger as rl";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(1, 23));
             reference.Should().NotBeNull();
@@ -184,7 +188,7 @@ class A(object):
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(2, 12));
             reference.Should().BeNull();
@@ -207,7 +211,7 @@ class A(object):
             var submod = rdt.OpenDocument(submodPath, "from .. import mod");
 
             var analysis = await submod.GetAnalysisAsync(-1);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
             var reference = ds.FindDefinition(analysis, new SourceLocation(1, 18));
             reference.Should().NotBeNull();
             reference.uri.Should().Be(modPath);

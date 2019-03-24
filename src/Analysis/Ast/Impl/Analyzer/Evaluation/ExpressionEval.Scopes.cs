@@ -65,7 +65,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case LookupOptions.Global:
                 case LookupOptions.Global | LookupOptions.Builtins:
                     // Global scope only.
-                    scope = GlobalScope;
+                    if (GlobalScope.Variables.Contains(name)) {
+                        scope = GlobalScope;
+                    }
                     break;
                 case LookupOptions.Nonlocal:
                 case LookupOptions.Nonlocal | LookupOptions.Builtins:
@@ -80,7 +82,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case LookupOptions.Local:
                 case LookupOptions.Local | LookupOptions.Builtins:
                     // Just the current scope
-                    scope = CurrentScope;
+                    if (CurrentScope.Variables.Contains(name)) {
+                        scope = CurrentScope;
+                    }
                     break;
                 default:
                     Debug.Fail("Unsupported name lookup combination");

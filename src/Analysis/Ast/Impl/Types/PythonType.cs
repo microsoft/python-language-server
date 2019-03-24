@@ -125,7 +125,9 @@ namespace Microsoft.Python.Analysis.Types {
             lock (_lock) {
                 if (!_readonly) {
                     foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
-                        WritableMembers[v.Name] = v.Value;
+                        // If variable holds function or a class, use value as member. 
+                        // If it holds an instance, use the variable itself (i.e. it is a data member).
+                        WritableMembers[v.Name] = v.Value is IPythonClassMember ? v.Value : v;
                     }
                 }
             }

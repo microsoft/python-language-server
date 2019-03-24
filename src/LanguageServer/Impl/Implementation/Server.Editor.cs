@@ -72,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Goto Definition in {uri} at {@params.position}");
 
             var analysis = await GetAnalysisAsync(uri, cancellationToken);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
             var reference = ds.FindDefinition(analysis, @params.position);
             return reference != null ? new[] { reference } : Array.Empty<Reference>();
         }
