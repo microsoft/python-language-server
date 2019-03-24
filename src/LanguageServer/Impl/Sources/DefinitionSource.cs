@@ -50,7 +50,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
                 if (expr is MemberExpression mex) {
-                    return FromMemberExpression(mex, eval);
+                    return FromMemberExpression(mex, analysis);
                 }
 
                 // Try variables
@@ -103,11 +103,24 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
-        private Reference FromMemberExpression(MemberExpression mex, IExpressionEvaluator eval) {
+        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis) {
+            var eval = analysis.ExpressionEvaluator;
             var target = eval.GetValueFromExpression(mex.Target);
             var type = target?.GetPythonType();
+
             if (type?.GetMember(mex.Name) is ILocatedMember lm) {
                 return FromMember(lm);
+            }
+
+            if (type is IPythonClassType cls) {
+                // Data members may be instances that are not tracking locations.
+                // In this case we'll try look up the respective variable instead.
+                using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
+                    eval.LookupNameInScopes(mex.Name, out _, out var v, LookupOptions.Local);
+                    if (v != null) {
+                        return FromMember(v);
+                    }
+                }
             }
             return null;
         }
