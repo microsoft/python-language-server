@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (!string.IsNullOrEmpty(memberName)) {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
-                    var exported = variableModule.Analysis.GlobalScope.Variables[memberName];
+                    var exported = variableModule.Analysis?.GlobalScope.Variables[memberName] ?? variableModule.GetMember(memberName);
                     var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
                     Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression != null ? Module : variableModule, nameExpression);
                 }
