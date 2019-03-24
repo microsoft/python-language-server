@@ -156,7 +156,7 @@ log
         }
 
         [TestMethod, Priority(0)]
-        public async Task GotoModuleSourceFromImport() {
+        public async Task GotoModuleSourceFromImport1() {
             const string code = @"from logging import A";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var ds = new DefinitionSource(Services);
@@ -166,6 +166,25 @@ log
             reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoModuleSourceFromImport2() {
+            const string code = @"
+from MultiValues import t
+x = t
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 5));
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(1, 24, 1, 25);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(1, 25));
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 0, 2, 1);
+            reference.uri.AbsolutePath.Should().Contain("MultiValues.py");
         }
 
         [TestMethod, Priority(0)]

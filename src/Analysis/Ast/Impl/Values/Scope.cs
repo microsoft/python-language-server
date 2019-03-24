@@ -76,6 +76,9 @@ namespace Microsoft.Python.Analysis.Values {
         public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module = null, Node location = null)
             => VariableCollection.DeclareVariable(name, value, source, module ?? Module, location);
 
+        public void LinkVariable(string name, IVariable v, IPythonModule module, Node location)
+            => VariableCollection.LinkVariable(name, v, module ?? Module, location);
+
         public void DeclareNonLocal(string name, Node location)
             => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, Module, location);
 
@@ -131,5 +134,6 @@ namespace Microsoft.Python.Analysis.Values {
         public  IVariableCollection Globals => VariableCollection.Empty;
 
         public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, Node location) { }
+        public void LinkVariable(string name, IVariable v, IPythonModule module, Node location) { }
     }
 }

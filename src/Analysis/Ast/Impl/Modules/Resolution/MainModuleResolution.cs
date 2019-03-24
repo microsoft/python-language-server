@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
@@ -174,12 +175,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             await BuiltinsModule.LoadAndAnalyzeAsync(cancellationToken);
-
             Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "After await");
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
-            if (builtinModuleNamesMember.TryGetConstant<string>(out var s)) {
+            var value = (builtinModuleNamesMember as IVariable)?.Value ?? builtinModuleNamesMember;
+            if (value.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
                 PathResolver.SetBuiltins(builtinModuleNames);
             }

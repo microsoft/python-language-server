@@ -34,5 +34,9 @@ namespace Microsoft.Python.Analysis.Values {
         IVariableCollection Globals { get; }
         IPythonModule Module { get; }
         void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, Node location = null);
+        /// <summary>
+        /// Links variable from another module.
+        /// </summary>
+        void LinkVariable(string name, IVariable v, IPythonModule module, Node location);
     }
 }

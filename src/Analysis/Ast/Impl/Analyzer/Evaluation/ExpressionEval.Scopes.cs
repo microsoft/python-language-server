@@ -15,10 +15,8 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Security;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -39,6 +37,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
         public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module = null, Node location = null, bool overwrite = false) {
+            if (source == VariableSource.Import && value is IVariable v) {
+                CurrentScope.LinkVariable(name, v, module, location);
+                return;
+            }
             var member = GetInScope(name);
             if (member != null) {
                 if (!value.IsUnknown()) {

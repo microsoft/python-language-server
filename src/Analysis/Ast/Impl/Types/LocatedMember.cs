@@ -48,14 +48,16 @@ namespace Microsoft.Python.Analysis.Types {
 
         private HashSet<Location> _references;
 
-        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, Node definition = null)
-            : this(declaringModule, definition) {
+        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, Node location = null, ILocatedMember parent = null)
+            : this(declaringModule, location, parent) {
             MemberType = memberType;
         }
 
-        protected LocatedMember(IPythonModule declaringModule, Node definition = null) {
+        protected LocatedMember(IPythonModule declaringModule, Node location = null, ILocatedMember parent = null) {
             DeclaringModule = declaringModule;
-            DefinitionNode = definition;
+            DefinitionNode = location;
+            Parent = parent;
+            Parent?.AddReference(declaringModule, location);
         }
 
         protected void SetDeclaringModule(IPythonModule module) => DeclaringModule = module;
@@ -67,12 +69,16 @@ namespace Microsoft.Python.Analysis.Types {
 
         public Node DefinitionNode { get; private set; }
 
+        public ILocatedMember Parent { get; }
+
         public virtual IReadOnlyList<LocationInfo> References {
             get {
                 if (_references == null) {
                     return new[] { Definition };
                 }
-                var refs = _references.Select(r => r.LocationInfo).OrderBy(x => x.Span);
+                var refs = _references
+                    .GroupBy(x => x.LocationInfo.DocumentUri)
+                    .SelectMany(g => g.Select(x => x.LocationInfo).OrderBy(x => x.Span));
                 return Enumerable.Repeat(Definition, 1).Concat(refs).ToArray();
             }
         }
@@ -96,6 +102,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IPythonModule DeclaringModule => null;
         public LocationInfo Definition => LocationInfo.Empty;
         public Node DefinitionNode => null;
+        public ILocatedMember Parent => null;
         public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
         public void AddReference(IPythonModule module, Node location) { }
     }

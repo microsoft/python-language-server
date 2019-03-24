@@ -208,7 +208,7 @@ x = s.path
         }
 
         [TestMethod, Priority(0)]
-        public async Task FromImport() {
+        public async Task FromImportAs() {
             const string code = @"
 from sys import path as p
 x = p
@@ -219,6 +219,20 @@ x = p
             p.References.Should().HaveCount(2);
             p.References[0].Span.Should().Be(2, 25, 2, 26);
             p.References[1].Span.Should().Be(3, 5, 3, 6);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromImport() {
+            const string code = @"
+from sys import path
+x = path
+";
+            var analysis = await GetAnalysisAsync(code);
+            var p = analysis.Should().HaveVariable("path").Which;
+            p.Definition.Span.Should().Be(2, 17, 2, 21);
+            p.References.Should().HaveCount(2);
+            p.References[0].Span.Should().Be(2, 17, 2, 21);
+            p.References[1].Span.Should().Be(3, 5, 3, 9);
         }
 
         [TestMethod, Priority(0)]
@@ -278,6 +292,35 @@ class A:
             a.References[5].Span.Should().Be(13, 5, 13, 6);
             a.References[6].Span.Should().Be(22, 12, 22, 13);
             a.References[7].Span.Should().Be(23, 5, 23, 6);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task CrossFile() {
+            const string code = @"
+from MultiValues import t
+x = t
+";
+            var analysis = await GetAnalysisAsync(code);
+            var t = analysis.Should().HaveVariable("t").Which;
+            t.Definition.Span.Should().Be(2, 25, 2, 26);
+            t.Definition.DocumentUri.AbsolutePath.Should().Contain("module.py");
+            t.References.Should().HaveCount(2);
+            t.References[0].Span.Should().Be(2, 25, 2, 26);
+            t.References[0].DocumentUri.AbsolutePath.Should().Contain("module.py");
+            t.References[1].Span.Should().Be(3, 5, 3, 6);
+            t.References[1].DocumentUri.AbsolutePath.Should().Contain("module.py");
+
+            var parent = t.Parent;
+            parent.Should().NotBeNull();
+            parent.References.Should().HaveCount(4);
+            parent.References[0].Span.Should().Be(3, 1, 3, 2);
+            parent.References[0].DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
+            parent.References[1].Span.Should().Be(12, 5, 12, 6);
+            parent.References[1].DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
+            parent.References[2].Span.Should().Be(2, 25, 2, 26);
+            parent.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
+            parent.References[3].Span.Should().Be(3, 5, 3, 6);
+            parent.References[3].DocumentUri.AbsolutePath.Should().Contain("module.py");
         }
     }
 }

@@ -30,6 +30,13 @@ namespace Microsoft.Python.Analysis.Values {
             Source = source;
         }
 
+        public Variable(string name, IVariable parent, IPythonModule declaringModule, Node location)
+            : base(PythonMemberType.Variable, declaringModule, location, parent) {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Value = parent.Value;
+            Source = VariableSource.Import;
+        }
+
         #region IVariable
         public string Name { get; }
         public VariableSource Source { get; }
@@ -64,8 +71,8 @@ namespace Microsoft.Python.Analysis.Values {
             } else {
                 base.AddReference(module, location);
             }
+            Parent?.AddReference(module, location);
         }
-
         #endregion
 
         private string DebuggerDisplay {

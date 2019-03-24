@@ -63,6 +63,11 @@ namespace Microsoft.Python.Analysis.Values {
             }
         }
 
+        internal void LinkVariable(string name, IVariable v, IPythonModule module, Node location) {
+            name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
+            _variables[name] = new Variable(name, v, module, location);
+        }
+
         internal void DeclareVariable(Variable variable) =>_variables[variable.Name] = variable;
         internal void RemoveVariable(string name) => _variables.TryRemove(name, out _);
     }
