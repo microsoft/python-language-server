@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 if (m == null) {
                     Eval.ReportDiagnostics(Analysis.Document.Uri, new DiagnosticsEntry(
                         Resources.ErrorVariableNotDefinedGlobally.FormatInvariant(nex.Name),
-                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedGlobally, Severity.Warning));
+                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedGlobally, Severity.Warning, DiagnosticSource.Linter));
                 }
             }
             return false;
@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 if (m == null) {
                     Eval.ReportDiagnostics(Analysis.Document.Uri, new DiagnosticsEntry(
                         Resources.ErrorVariableNotDefinedNonLocal.FormatInvariant(nex.Name),
-                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedNonLocal, Severity.Warning));
+                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedNonLocal, Severity.Warning, DiagnosticSource.Linter));
                 }
             }
             return false;
