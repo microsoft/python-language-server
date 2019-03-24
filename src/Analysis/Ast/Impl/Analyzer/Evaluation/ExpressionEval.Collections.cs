@@ -125,8 +125,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 foreach (var kvp in newVariables) {
                     if (!oldVariables.ContainsKey(kvp.Key)) {
                         variables.RemoveVariable(kvp.Key);
-                    } else {
-                        variables.DeclareVariable(oldVariables[kvp.Key]);
                     }
                 }
             }

@@ -28,20 +28,30 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.LanguageServer.Diagnostics {
     internal sealed class DiagnosticsService : IDiagnosticsService, IDisposable {
         private sealed class DocumentDiagnostics {
-            private DiagnosticsEntry[] _entries;
+            private readonly Dictionary<DiagnosticSource, IReadOnlyList<DiagnosticsEntry>> _entries
+                = new Dictionary<DiagnosticSource, IReadOnlyList<DiagnosticsEntry>>();
 
-            public DiagnosticsEntry[] Entries {
-                get => _entries ?? Array.Empty<DiagnosticsEntry>();
-                set {
-                    _entries = value;
-                    Changed = true;
-                }
-            }
+            public IReadOnlyDictionary<DiagnosticSource, IReadOnlyList<DiagnosticsEntry>> Entries => _entries;
+
             public bool Changed { get; set; }
 
-            public void Clear() {
-                Changed = _entries.Length > 0;
-                _entries = Array.Empty<DiagnosticsEntry>();
+            public void Clear(DiagnosticSource source) {
+                Changed = Entries.Count > 0;
+                _entries[source] = Array.Empty<DiagnosticsEntry>();
+            }
+
+            public void ClearAll() => _entries.Clear();
+
+            public void SetDiagnostics(DiagnosticSource source, IReadOnlyList<DiagnosticsEntry> entries) {
+                if (_entries.TryGetValue(source, out var existing)) {
+                    if (existing.SetEquals(entries)) {
+                        return;
+                    }
+                } else if (entries.Count == 0) {
+                        return;
+                }
+                _entries[source] = entries;
+                Changed = true;
             }
         }
 
@@ -85,14 +95,13 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             }
         }
 
-        public void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries) {
+        public void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries, DiagnosticSource source) {
             lock (_lock) {
                 if (!_diagnostics.TryGetValue(documentUri, out var documentDiagnostics)) {
                     documentDiagnostics = new DocumentDiagnostics();
                     _diagnostics[documentUri] = documentDiagnostics;
                 }
-                documentDiagnostics.Entries = entries.ToArray();
-                documentDiagnostics.Changed = true;
+                documentDiagnostics.SetDiagnostics(source, entries.ToArray());
                 _lastChangeTime = DateTime.Now;
             }
         }
@@ -101,7 +110,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             lock (_lock) {
                 // Before removing the document, make sure we clear its diagnostics.
                 if (_diagnostics.TryGetValue(documentUri, out var d)) {
-                    d.Clear();
+                    d.ClearAll();
                     PublishDiagnostics();
                     _diagnostics.Remove(documentUri);
                 }
@@ -195,12 +204,14 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
 
         private IEnumerable<DiagnosticsEntry> FilterBySeverityMap(DocumentDiagnostics d)
            => d.Entries
+                .SelectMany(kvp => kvp.Value)
                 .Where(e => DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity) != Severity.Suppressed)
                 .Select(e => new DiagnosticsEntry(
                     e.Message,
                     e.SourceSpan,
                     e.ErrorCode,
-                    DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity))
+                    DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity),
+                    e.Source)
                 );
 
         private void ConnectToRdt() {
@@ -222,7 +233,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private void OnOpenDocument(object sender, DocumentEventArgs e) {
             lock (_lock) {
                 if (_diagnostics.TryGetValue(e.Document.Uri, out var d)) {
-                    d.Changed = d.Entries.Length > 0;
+                    d.Changed = d.Entries.Count > 0;
                 }
             }
         }

@@ -19,14 +19,14 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ComprehensionWalker : PythonWalker {
-        private readonly IDocumentAnalysis _analysis;
+        private readonly UndefinedVariablesWalker _walker;
         private readonly HashSet<string> _localNames;
         private readonly HashSet<NameExpression> _localNameNodes;
 
-        public ComprehensionWalker(IDocumentAnalysis analysis, HashSet<string> localNames, HashSet<NameExpression> localNameNodes) {
-            _analysis = analysis;
-            _localNames = localNames ?? new HashSet<string>();
-            _localNameNodes = localNameNodes ?? new HashSet<NameExpression>();
+        public ComprehensionWalker(UndefinedVariablesWalker walker, HashSet<string> localNames, HashSet<NameExpression> localNameNodes) {
+            _walker = walker;
+            _localNames = localNames;
+            _localNameNodes = localNameNodes;
         }
 
         public override bool Walk(GeneratorExpression node) {
@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         public override bool Walk(DictionaryComprehension node) {
             CollectNames(node);
-            var ew = new ExpressionWalker(_analysis, _localNames, _localNameNodes);
+            var ew = new ExpressionWalker(_walker, _localNames, _localNameNodes);
             node.Key?.Walk(ew);
             node.Value?.Walk(ew);
             foreach (var iter in node.Iterators) {
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         private void ProcessComprehension(Comprehension c, Node item, IEnumerable<ComprehensionIterator> iterators) {
             CollectNames(c);
-            var ew = new ExpressionWalker(_analysis, _localNames, _localNameNodes);
+            var ew = new ExpressionWalker(_walker, _localNames, _localNameNodes);
             item?.Walk(ew);
             foreach (var iter in iterators) {
                 iter.Walk(ew);

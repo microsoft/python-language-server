@@ -158,7 +158,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 return new InterpreterConfiguration(
                     id: $"Global|Jython|{version.ToVersion()}",
                     description: string.Format("Jython {0}", version.ToVersion()),
-                    pythonExePath: interpreter.FullName,
+                    interpreterPath: interpreter.FullName,
                     version: version.ToVersion()
                 );
             }

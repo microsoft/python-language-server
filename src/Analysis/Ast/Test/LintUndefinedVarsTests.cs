@@ -13,9 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -43,8 +46,7 @@ class A:
     x1: int = 0
     y1: int
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(2, 5, 2, 6);
@@ -57,8 +59,8 @@ class A:
     x1: int = 0
     y1: int
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -68,8 +70,7 @@ z = 3
 if x > 2 and y == 3 or z < 2:
     pass
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(2);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(3, 4, 3, 5);
@@ -83,8 +84,7 @@ if x > 2 and y == 3 or z < 2:
 z = 3
 func(x, 1, y+1, z)
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(3);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(3, 1, 3, 5);
@@ -99,8 +99,8 @@ func(x, 1, y+1, z)
             const string code = @"
 a, *b, c = range(5)
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -110,8 +110,8 @@ a, b = 1
 x = a
 y = b
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -121,8 +121,8 @@ def func(a=None, b=True):
     x = a
     y = b
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -134,8 +134,8 @@ def func1():
 
 def func2(a=None, b=True): ...
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -148,8 +148,8 @@ class A(B):
 
 class B(): ...
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -159,8 +159,8 @@ c = {}
 for i in c:
     x = i
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -170,8 +170,8 @@ c = {}
 for a, b in c if a < 0:
     x = b
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -181,8 +181,8 @@ for i, (j, k) in {}:
     x = j
     y = k
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -196,8 +196,8 @@ def func2(a, b):
 
 func1(func2(a) for a, b in {} if a < 0)
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
 
@@ -211,8 +211,7 @@ class C:
     x = [(e, e) for e in EVENTS]
     y = EVENTS
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(2, 34, 2, 35);
@@ -224,8 +223,8 @@ class C:
 def foo(m):
     m = m
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
 
@@ -235,8 +234,8 @@ def foo(m):
 x = 1
 y = x
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -246,8 +245,8 @@ x = 1
 y = x
 x = 's'
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -256,8 +255,7 @@ x = 's'
 y = x
 x = 1
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(2, 5, 2, 6);
@@ -274,8 +272,8 @@ def func(a, b, c):
     x = c
     z(c * 3)
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -287,8 +285,7 @@ class A:
         nonlocal x, y
         y = 2
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.VariableNotDefinedNonLocal);
             d[0].SourceSpan.Should().Be(5, 21, 5, 22);
@@ -304,8 +301,7 @@ class A:
         global x, y
         y = 2
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.VariableNotDefinedGlobally);
             d[0].SourceSpan.Should().Be(6, 19, 6, 20);
@@ -323,7 +319,10 @@ class A:
 
             op.Options.LintingEnabled = enabled;
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, sm);
-            analysis.Diagnostics.Should().HaveCount(enabled ? 1 : 0);
+
+            var a = Services.GetService<IPythonAnalyzer>();
+            var d = a.LintModule(analysis.Document);
+            d.Should().HaveCount(enabled ? 1 : 0);
         }
 
         [TestMethod, Priority(0)]
@@ -332,8 +331,8 @@ class A:
 print(1)
 abs(3)
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -346,8 +345,8 @@ for a, b in enumerate(x):
     if b:
         pass
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -359,8 +358,8 @@ for a, b in enumerate(x):
     a = b
     b = 1
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -369,8 +368,8 @@ for a, b in enumerate(x):
 [a == 1 for a in {}]
 x = a
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -379,8 +378,7 @@ x = a
 b = {str(a): a == 1 for a in {}}
 x = a
 ";
-            var analysis = await GetAnalysisAsync(code);
-            var d = analysis.Diagnostics.ToArray();
+            var d = await LintAsync(code);
             d.Should().HaveCount(1);
             d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
             d[0].SourceSpan.Should().Be(3, 5, 3, 6);
@@ -392,8 +390,14 @@ x = a
 x = lambda a: a
 x(1)
 ";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code) {
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var a = Services.GetService<IPythonAnalyzer>();
+            return a.LintModule(analysis.Document);
         }
 
         [TestMethod, Priority(0)]

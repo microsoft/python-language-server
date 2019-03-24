@@ -152,6 +152,9 @@ namespace Microsoft.Python.Analysis.Modules {
         public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
             // TODO: Filter __all__. See: https://github.com/Microsoft/python-language-server/issues/620
+            if (Analysis.ExportedMemberNames.Count > 0) {
+                return Analysis.ExportedMemberNames;
+            }
 
             // drop imported modules and typing.
             return Analysis.GlobalScope.Variables
@@ -381,7 +384,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
                 // Do not report issues with libraries or stubs
                 if (sink != null) {
-                    _diagnosticsService?.Replace(Uri, _parseErrors);
+                    _diagnosticsService?.Replace(Uri, _parseErrors, DiagnosticSource.Parser);
                 }
 
                 ContentState = State.Parsed;
@@ -406,7 +409,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity)
-                => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity));
+                => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity, DiagnosticSource.Parser));
         }
         #endregion
 
@@ -429,7 +432,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             // Do not report issues with libraries or stubs
             if (ModuleType == ModuleType.User) {
-                _diagnosticsService?.Replace(Uri, _parseErrors.Concat(analysis.Diagnostics));
+                _diagnosticsService?.Replace(Uri, analysis.Diagnostics, DiagnosticSource.Analysis);
             }
 
             NewAnalysis?.Invoke(this, EventArgs.Empty);

@@ -18,6 +18,7 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
@@ -51,6 +52,11 @@ namespace Microsoft.Python.Analysis {
         /// ValueExpression evaluator used in the analysis.
         /// </summary>
         IExpressionEvaluator ExpressionEvaluator { get; }
+
+        /// <summary>
+        /// Members of the module explicitly specified for export
+        /// </summary>
+        ImmutableArray<string> ExportedMemberNames { get; }
 
         /// <summary>
         /// Analysis diagnostics.

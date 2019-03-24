@@ -13,13 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.LanguageServer.Protocol {
-    public sealed class InformationDisplayOptions {
-        public string preferredFormat;
-        public bool trimDocumentationLines;
-        public int maxDocumentationLineLength;
-        public bool trimDocumentationText;
-        public int maxDocumentationTextLength;
-        public int maxDocumentationLines;
+namespace Microsoft.Python.Analysis.Diagnostics {
+    public enum DiagnosticSource {
+        Parser,
+        Analysis,
+        Linter
     }
 }
