@@ -13,20 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
+using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
-    public sealed partial class Server {
-        public async Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
-
-            var uri = @params.textDocument.uri;
-            _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
-
-            return Array.Empty<Reference>();
+namespace Microsoft.Python.LanguageServer.Sources {
+    internal sealed class ReferenceSource {
+        public Reference[] FindAllReferences(IDocumentAnalysis analysis, ILocatedMember definingMember, SourceLocation location) {
+            // Get to the root definition
+            for (; definingMember.Parent != null; definingMember = definingMember.Parent) { }
+            // Basic, single-file case
+            return definingMember.References
+                .Select(r => new Reference { uri = analysis.Document.Uri, range = r.Span })
+                .ToArray();
+            // TODO: locate in closed files.
         }
     }
 }

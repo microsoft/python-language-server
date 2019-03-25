@@ -36,28 +36,27 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _services = services;
         }
 
-        public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location) {
+        public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember member) {
+            member = null;
+
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var exprNode, out var statement, out var exprScope);
 
-            if (exprNode is ConstantExpression) {
+            if (exprNode is ConstantExpression || !(exprNode is Expression expr)) {
                 return null; // No hover for literals.
-            }
-            if (!(exprNode is Expression expr)) {
-                return null;
             }
 
             var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
                 if (expr is MemberExpression mex) {
-                    return FromMemberExpression(mex, analysis);
+                    return FromMemberExpression(mex, analysis, out member);
                 }
 
                 // Try variables
                 var name = (expr as NameExpression)?.Name;
                 IMember value = null;
                 if (!string.IsNullOrEmpty(name)) {
-                    var reference = TryFromVariable(name, analysis, location, statement);
+                    var reference = TryFromVariable(name, analysis, location, statement, out member);
                     if (reference != null) {
                         return reference;
                     }
@@ -65,6 +64,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     if (statement is ImportStatement || statement is FromImportStatement) {
                         reference = TryFromImport(statement, name, analysis, out value);
                         if (reference != null) {
+                            member = value as ILocatedMember;
                             return reference;
                         }
                     }
@@ -74,14 +74,17 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 if (value.IsUnknown()) {
                     return null;
                 }
+                member = value as ILocatedMember;
                 return FromMember(value);
             }
         }
 
-        private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement) {
+        private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement, out ILocatedMember member) {
+            member = null;
+
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
             if (m != null && scope.Variables[name] is IVariable v) {
-
+                member = v;
                 var definition = v.Definition;
                 if (statement is ImportStatement || statement is FromImportStatement) {
                     // If we are on the variable definition in this module,
@@ -103,12 +106,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
-        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis) {
+        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis, out ILocatedMember member) {
+            member = null;
+
             var eval = analysis.ExpressionEvaluator;
             var target = eval.GetValueFromExpression(mex.Target);
             var type = target?.GetPythonType();
 
             if (type?.GetMember(mex.Name) is ILocatedMember lm) {
+                member = lm;
                 return FromMember(lm);
             }
 
@@ -118,6 +124,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
                     eval.LookupNameInScopes(mex.Name, out _, out var v, LookupOptions.Local);
                     if (v != null) {
+                        member = v;
                         return FromMember(v);
                     }
                 }

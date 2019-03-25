@@ -18,6 +18,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Extensibility;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -72,9 +76,26 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Goto Definition in {uri} at {@params.position}");
 
             var analysis = await GetAnalysisAsync(uri, cancellationToken);
-            var ds = new DefinitionSource(Services);
-            var reference = ds.FindDefinition(analysis, @params.position);
+            var reference = FindDefinition(analysis, @params.position, out _);
             return reference != null ? new[] { reference } : Array.Empty<Reference>();
+        }
+
+        public async Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
+
+            var analysis = await GetAnalysisAsync(uri, cancellationToken);
+            var definition = FindDefinition(analysis, @params.position, out var definingMember);
+            if(definition != null) {
+                var rs = new ReferenceSource();
+                return rs.FindAllReferences(analysis, definingMember, @params.position);
+            }
+            return Array.Empty<Reference>();
+        }
+
+        private Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember definingMember) {
+            var ds = new DefinitionSource(Services);
+           return ds.FindDefinition(analysis, location, out definingMember);
         }
     }
 }
