@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             foreach (var nex in node.Names) {
                 var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Global);
                 if (m == null) {
-                    Eval.ReportDiagnostics(Analysis.Document.Uri, new DiagnosticsEntry(
+                    _diagnostics.Add(new DiagnosticsEntry(
                         Resources.ErrorVariableNotDefinedGlobally.FormatInvariant(nex.Name),
                         Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedGlobally, Severity.Warning, DiagnosticSource.Linter));
                 }
@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             foreach (var nex in node.Names) {
                 var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Nonlocal);
                 if (m == null) {
-                    Eval.ReportDiagnostics(Analysis.Document.Uri, new DiagnosticsEntry(
+                    _diagnostics.Add(new DiagnosticsEntry(
                         Resources.ErrorVariableNotDefinedNonLocal.FormatInvariant(nex.Name),
                         Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedNonLocal, Severity.Warning, DiagnosticSource.Linter));
                 }
