@@ -116,6 +116,8 @@ namespace Microsoft.Python.Core.IO {
                     return fs.ReadAllText(file);
                 } catch (UnauthorizedAccessException) {
                     Thread.Sleep(10);
+                } catch (IOException) {
+                    Thread.Sleep(10);
                 }
             }
             return null;

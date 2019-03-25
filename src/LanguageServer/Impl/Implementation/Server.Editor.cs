@@ -87,8 +87,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var analysis = await GetAnalysisAsync(uri, cancellationToken);
             var definition = FindDefinition(analysis, @params.position, out var definingMember);
             if(definition != null) {
-                var rs = new ReferenceSource();
-                return rs.FindAllReferences(analysis, definingMember, @params.position);
+                var rs = new ReferenceSource(Services, _rootDir);
+                return await rs.FindAllReferences(analysis, definingMember, @params.position, cancellationToken);
             }
             return Array.Empty<Reference>();
         }
