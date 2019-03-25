@@ -57,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             await AnalyzeFiles(candidateFiles, cancellationToken);
 
             return definingMember.References
-                .Select(r => new Reference { uri = analysis.Document.Uri, range = r.Span })
+                .Select(r => new Reference { uri = new Uri(r.FilePath), range = r.Span })
                 .ToArray();
         }
 
@@ -88,10 +88,11 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         private IEnumerable<string> ScanFiles(IDictionary<string, PythonAst> closedFiles, string name, CancellationToken cancellationToken) {
             var candidateNames = new HashSet<string> { name };
-            var nextCandidateNames = new HashSet<string>();
             var candidateFiles = new HashSet<string>();
 
             while (candidateNames.Count > 0) {
+                var nextCandidateNames = new HashSet<string>();
+
                 foreach (var kvp in closedFiles.ToArray()) {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -118,7 +119,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
         }
 
-        private async Task AnalyzeAsync(string filePath, IRunningDocumentTable rdt, CancellationToken cancellationToken) {
+        private static async Task AnalyzeAsync(string filePath, IRunningDocumentTable rdt, CancellationToken cancellationToken) {
             var mco = new ModuleCreationOptions {
                 ModuleName = Path.GetFileNameWithoutExtension(filePath),
                 FilePath = filePath,
@@ -139,11 +140,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             public override bool Walk(ImportStatement node) {
-                foreach (var n in node.Names.ExcludeDefault()) {
-                    if (_names.Any(x => n.MakeString().Contains(x))) {
-                        IsCandidate = true;
-                        throw new OperationCanceledException();
-                    }
+                if (node.Names.ExcludeDefault().Any(n => _names.Any(x => n.MakeString().Contains(x)))) {
+                    IsCandidate = true;
+                    throw new OperationCanceledException();
                 }
                 return false;
             }
