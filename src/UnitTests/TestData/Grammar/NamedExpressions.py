@@ -18,3 +18,4 @@ def foo(answer: (p := 42) = 5):
     return 1
 
 lambda: (y := 1)
+x = (y := 1)

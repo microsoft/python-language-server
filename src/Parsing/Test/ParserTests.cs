@@ -2845,6 +2845,15 @@ namespace Microsoft.Python.Parsing.Tests {
                                     One
                                 )
                             )
+                        ),
+                        CheckAssignment(
+                            CheckNameExpr("x"),
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("y"),
+                                    One
+                                )
+                            )
                         )
                     )
                 );
@@ -2865,6 +2874,7 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorResult("Cannot use named assignment with subscript", new SourceSpan(8, 2, 8, 6)),
                     new ErrorResult("Cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
                     new ErrorResult("Named assignments not allowed in this context", new SourceSpan(12, 9, 12, 11)),
+                    new ErrorResult("Named assignments not allowed in this context", new SourceSpan(14, 21, 14, 23)),
                 });
             }
         }

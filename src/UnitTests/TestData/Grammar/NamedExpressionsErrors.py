@@ -10,3 +10,6 @@ a = Object()
 def f(x):
     return 1
 f(x = a := 1)
+
+def foo2(answer = p := 42):
+    pass

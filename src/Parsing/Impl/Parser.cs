@@ -2065,7 +2065,7 @@ namespace Microsoft.Python.Parsing {
                     if (_verbatim) {
                         GetNodeAttributes(p)[Parameter.WhitespacePrecedingAssign] = _tokenWhiteSpace;
                     }
-                    p.DefaultValue = ParseExpression();
+                    p.DefaultValue = ParseExpression(allowNamedExpressions: false);
                     p.SetLoc(p.StartIndex, GetEnd());
                 }
 
