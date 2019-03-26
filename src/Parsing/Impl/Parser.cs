@@ -864,7 +864,7 @@ namespace Microsoft.Python.Parsing {
                     Eat(TokenKind.KeywordYield);
                     right = ParseYieldExpression();
                 } else {
-                    right = ParseTestListAsExpr();
+                    right = ParseTestListAsExpr(allowNamedExpression: false);
                 }
             }
 
@@ -970,7 +970,7 @@ namespace Microsoft.Python.Parsing {
         // augmented_assignment_stmt ::= target augop (expression_list | yield_expression) 
         // augop: '+=' | '-=' | '*=' | '/=' | '%=' | '**=' | '>>=' | '<<=' | '&=' | '^=' | '|=' | '//='
         private Statement ParseExprStmt() {
-            var ret = ParseTestListAsExpr();
+            var ret = ParseTestListAsExpr(allowNamedExpression: false);
             var hasAnnotation = false;
 
             if (PeekToken(TokenKind.Colon) && (_stubFile || _langVersion >= PythonLanguageVersion.V36)) {
@@ -2056,7 +2056,7 @@ namespace Microsoft.Python.Parsing {
                     }
 
                     if (allowAnnotations && MaybeEat(TokenKind.Colon)) {
-                        p.Annotation = ParseExpression();
+                        p.Annotation = ParseExpression(allowNamedExpressions: false);
                         p.SetLoc(p.StartIndex, GetEnd());
                     }
                 }
@@ -2215,7 +2215,8 @@ namespace Microsoft.Python.Parsing {
 
             Expression expr;
             if (ateTerminator) {
-                expr = ParseExpression();
+                // named expressions are not allowed in lambda's without parenthesis
+                expr = ParseExpression(allowNamedExpressions: false);
             } else {
                 expr = Error(string.Empty);
                 ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.Start, "expected ':'");
@@ -2767,10 +2768,10 @@ namespace Microsoft.Python.Parsing {
             return ParseOrTest();
         }
 
-        // expression: conditional_expression | lambda_form
+        // expression: conditional_expression | lambda_forṃ | or_test [':=' or_test]
         // conditional_expression: or_test ['if' or_test 'else' expression]
         // lambda_form: "lambda" [parameter_list] : expression
-        private Expression ParseExpression() {
+        private Expression ParseExpression(bool allowNamedExpressions = true) {
             if (MaybeEat(TokenKind.KeywordLambda)) {
                 return FinishLambdef();
             }
@@ -2782,6 +2783,25 @@ namespace Microsoft.Python.Parsing {
                 var start = ret.StartIndex;
                 ret = ParseConditionalTest(ret);
                 ret.SetLoc(start, GetEnd());
+            } else if (MaybeEat(TokenKind.ColonEqual)) {
+                if (!allowNamedExpressions) {
+                    ReportSyntaxError(_token.Span.Start, _token.Span.End, Resources.NamedAssignmentCtxtErrorMsg.FormatInvariant());
+                }
+
+                var target = ret;
+                if (!(ret is NameExpression)) {
+                    if (ret is MemberExpression) {
+                        ReportSyntaxError(ret.StartIndex, ret.EndIndex, Resources.NamedAssignmentWithErrorMsg.FormatInvariant("attribute"));
+                    } else if (ret is IndexExpression) {
+                        ReportSyntaxError(ret.StartIndex, ret.EndIndex, Resources.NamedAssignmentWithErrorMsg.FormatInvariant("subscript"));
+                    } else {
+                        //ReportSyntaxError(ret.StartIndex, ret.EndIndex, Resources.Na)
+                    }
+                }
+                var value = ParseOrTest();
+                var assignExpr = new NamedExpression(target, value);
+                assignExpr.SetLoc(target.StartIndex, value.EndIndex);
+                return assignExpr;
             }
 
             return ret;
@@ -3618,7 +3638,7 @@ namespace Microsoft.Python.Parsing {
                 name = n.Name;
             }
 
-            var val = ParseExpression();
+            var val = ParseExpression(allowNamedExpressions: false);
             var arg = new Arg(t, val);
             arg.SetLoc(t.StartIndex, val.EndIndex);
             if (_verbatim) {
@@ -3781,9 +3801,9 @@ namespace Microsoft.Python.Parsing {
             return ParseExpr();
         }
 
-        private Expression ParseTestListAsExpr() {
+        private Expression ParseTestListAsExpr(bool allowNamedExpression = true) {
             if (!NeverTestToken(PeekToken())) {
-                var expr = ParseExpression();
+                var expr = ParseExpression(allowNamedExpression);
                 if (!MaybeEat(TokenKind.Comma)) {
                     return expr;
                 }
@@ -4524,6 +4544,7 @@ namespace Microsoft.Python.Parsing {
                 case TokenKind.Comma:
 
                 case TokenKind.Colon:
+                case TokenKind.ColonEqual:
 
                 case TokenKind.KeywordFor:
                 case TokenKind.KeywordIn:

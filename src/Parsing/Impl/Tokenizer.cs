@@ -1818,6 +1818,9 @@ namespace Microsoft.Python.Parsing {
                 case ',':
                     return Tokens.CommaToken;
                 case ':':
+                    if (NextChar('=')) {
+                        return Tokens.ColonEqualToken;
+                    }
                     return Tokens.ColonToken;
                 case '`':
                     if (LanguageVersion.Is2x()) {

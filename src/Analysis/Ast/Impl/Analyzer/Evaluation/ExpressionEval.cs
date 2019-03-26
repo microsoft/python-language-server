@@ -154,6 +154,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case FormatSpecifier formatSpecifier:
                     m = GetValueFromFormatSpecifier(formatSpecifier);
                     break;
+                case NamedExpression namedExpr:
+                    m = GetValueFromExpression(namedExpr.Value);
+                    break;
                 default:
                     m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
                     break;
