@@ -34,7 +34,9 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
-            throw new NotImplementedException();
+            Target.AppendCodeString(res, ast, format);
+            res.Append(" := ");
+            Value.AppendCodeString(res, ast, format);
         }
     }
 }
