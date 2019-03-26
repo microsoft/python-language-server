@@ -82,7 +82,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
-            return new ReferenceSource(Services, _rootDir).FindAllReferencesAsync(uri, @params.position, cancellationToken);
+            return new ReferenceSource(Services, _rootDir).FindAllReferencesAsync(uri, @params.position, ReferenceSearchOptions.All, cancellationToken);
         }
 
         public Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {

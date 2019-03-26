@@ -17,8 +17,6 @@ using System.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
@@ -79,5 +77,10 @@ namespace Microsoft.Python.Analysis {
 
         public static void AddReference(this IMember m, IPythonModule module, Node location)
             => (m as ILocatedMember)?.AddReference(module, location);
+
+        public static ILocatedMember GetRootDefinition(this ILocatedMember lm) {
+            for (; lm.Parent != null; lm = lm.Parent) { }
+            return lm;
+        }
     }
 }

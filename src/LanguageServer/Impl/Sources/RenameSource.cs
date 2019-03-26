@@ -33,8 +33,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _rootPath = rootPath;
         }
 
-        public async Task< WorkspaceEdit> RenameAsync(Uri uri, SourceLocation location, string newName, CancellationToken cancellationToken = default) {
-            var references = await new ReferenceSource(_services, _rootPath).FindAllReferencesAsync(uri, location, cancellationToken);
+        public async Task<WorkspaceEdit> RenameAsync(Uri uri, SourceLocation location, string newName, CancellationToken cancellationToken = default) {
+            var rs = new ReferenceSource(_services, _rootPath);
+            var references = await rs.FindAllReferencesAsync(uri, location, ReferenceSearchOptions.ExcludeLibraries, cancellationToken);
+            if (references.Length == 0) {
+                return null;
+            }
 
             var changes = new Dictionary<Uri, List<TextEdit>>();
             foreach (var r in references) {

@@ -152,5 +152,32 @@ y = x
             wse.changes[uri3][0].range.Should().Be(1, 19, 1, 20);
             wse.changes[uri3][1].range.Should().Be(2, 4, 2, 5);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NoRenameInCompiled() {
+            const string code = "from sys import path";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var rs = new RenameSource(Services, TestData.GetTestSpecificPath());
+
+            var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(1, 7), "z");
+            wse.Should().BeNull();
+
+            wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(1, 18), "z");
+            wse.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoRenameInLibrary() {
+            const string code = @"from logging import BASIC_FORMAT";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var rs = new RenameSource(Services, TestData.GetTestSpecificPath());
+
+            var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(1, 10), "z");
+            wse.Should().BeNull();
+
+            wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(1, 23), "z");
+            wse.Should().BeNull();
+        }
     }
 }

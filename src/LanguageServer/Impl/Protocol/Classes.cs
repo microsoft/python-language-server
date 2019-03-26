@@ -603,11 +603,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     public sealed class Reference {
         public Uri uri;
         public Range range;
-
-        /// <summary>
-        /// The kind of reference
-        /// </summary>
-        public ReferenceKind? _kind;
     }
 
     [Serializable]

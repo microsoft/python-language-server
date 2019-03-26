@@ -20,7 +20,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -33,6 +32,11 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
+    internal enum ReferenceSearchOptions {
+        All,
+        ExcludeLibraries
+    }
+
     internal sealed class ReferenceSource {
         private const int FindReferencesAnalysisTimeout = 10000;
         private readonly IServiceContainer _services;
@@ -43,29 +47,26 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _rootPath = rootPath;
         }
 
-        public async Task<Reference[]> FindAllReferencesAsync(Uri uri, SourceLocation location, CancellationToken cancellationToken = default) {
-            var analyzer = _services.GetService<IPythonAnalyzer>();
-            await analyzer.WaitForCompleteAnalysisAsync(cancellationToken);
-
+        public async Task<Reference[]> FindAllReferencesAsync(Uri uri, SourceLocation location, ReferenceSearchOptions options, CancellationToken cancellationToken = default) {
             var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
             var definition = new DefinitionSource(_services).FindDefinition(analysis, location, out var definingMember);
             if (definition != null) {
-                var rs = new ReferenceSource(_services, _rootPath);
-                return await rs.FindAllReferencesAsync(analysis, definingMember, cancellationToken);
+                var rootDefinition = definingMember.GetRootDefinition();
+                if (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All) {
+                    return await FindAllReferencesAsync(rootDefinition, cancellationToken);
+                }
             }
             return Array.Empty<Reference>();
         }
 
-        private async Task<Reference[]> FindAllReferencesAsync(IDocumentAnalysis analysis, ILocatedMember definingMember, CancellationToken cancellationToken) {
-            // Get to the root definition
-            for (; definingMember.Parent != null; definingMember = definingMember.Parent) { }
-            var module = definingMember.DeclaringModule;
+        private async Task<Reference[]> FindAllReferencesAsync(ILocatedMember rootDefinition, CancellationToken cancellationToken) {
+            var module = rootDefinition.DeclaringModule;
 
             var closedFiles = ParseClosedFiles(cancellationToken);
             var candidateFiles = ScanFiles(closedFiles, Path.GetFileNameWithoutExtension(module.FilePath), cancellationToken);
             await AnalyzeFiles(candidateFiles, cancellationToken);
 
-            return definingMember.References
+            return rootDefinition.References
                 .Select(r => new Reference { uri = new Uri(r.FilePath), range = r.Span })
                 .ToArray();
         }

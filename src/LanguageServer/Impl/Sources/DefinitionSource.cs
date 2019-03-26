@@ -145,8 +145,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             if (moduleName != null) {
                 var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName);
-                if (module != null && CanNavigateToModule(module)) {
-                    return new Reference { range = default, uri = module.Uri };
+                if (module != null) {
+                    value = module;
+                    return CanNavigateToModule(module) ? new Reference { range = default, uri = module.Uri } : null;
                 }
             }
 
