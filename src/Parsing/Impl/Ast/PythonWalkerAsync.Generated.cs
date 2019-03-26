@@ -890,5 +890,9 @@ namespace Microsoft.Python.Parsing.Ast {
         // FormattedValue
         public override Task<bool> WalkAsync(FormattedValue node, CancellationToken cancellationToken = default)
             => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
+
+        // NamedExpression
+        public override Task<bool> WalkAsync(NamedExpression node, CancellationToken cancellationToken = default)
+            => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
     }
 }
