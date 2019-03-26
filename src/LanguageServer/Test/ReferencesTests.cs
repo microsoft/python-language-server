@@ -168,5 +168,56 @@ y = x
             refs[6].range.Should().Be(2, 4, 2, 5);
             refs[6].uri.Should().Be(uri3);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedClosedFiles() {
+            const string code = @"
+x = 1
+
+def func(x):
+    return x
+
+y = func(x)
+x = 2
+";
+            const string mod2Code = @"
+from module import x
+y = x
+";
+            const string mod3Code = @"
+from module2 import x
+y = x
+";
+            var uri2 = await TestData.CreateTestSpecificFileAsync("module2.py", mod2Code);
+            var uri3 = await TestData.CreateTestSpecificFileAsync("module3.py", mod3Code);
+
+            var analysis = await GetAnalysisAsync(code);
+
+            var ds = new DefinitionSource(Services);
+            ds.FindDefinition(analysis, new SourceLocation(7, 10), out var definingMember);
+
+            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+
+            refs.Should().HaveCount(7);
+
+            refs[0].range.Should().Be(1, 0, 1, 1);
+            refs[0].uri.Should().Be(analysis.Document.Uri);
+            refs[1].range.Should().Be(6, 9, 6, 10);
+            refs[1].uri.Should().Be(analysis.Document.Uri);
+            refs[2].range.Should().Be(7, 0, 7, 1);
+            refs[2].uri.Should().Be(analysis.Document.Uri);
+
+            refs[3].range.Should().Be(1, 19, 1, 20);
+            refs[3].uri.Should().Be(uri2);
+            refs[4].range.Should().Be(2, 4, 2, 5);
+            refs[4].uri.Should().Be(uri2);
+
+            refs[5].range.Should().Be(1, 20, 1, 21);
+            refs[5].uri.Should().Be(uri3);
+            refs[6].range.Should().Be(2, 4, 2, 5);
+            refs[6].uri.Should().Be(uri3);
+        }
+
     }
 }
