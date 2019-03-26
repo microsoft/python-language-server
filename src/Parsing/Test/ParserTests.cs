@@ -59,6 +59,7 @@ namespace Microsoft.Python.Parsing.Tests {
         internal static readonly PythonLanguageVersion[] V35AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V35).ToArray();
         internal static readonly PythonLanguageVersion[] V36AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V36).ToArray();
         internal static readonly PythonLanguageVersion[] V37AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V37).ToArray();
+        internal static readonly PythonLanguageVersion[] V38AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V38).ToArray();
 
         #region Test Cases
 
@@ -2746,8 +2747,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
         [TestMethod, Priority(0)]
         public void NamedExpressions() {
-            // ToDo: Change to V38AndUp
-            foreach (var version in V37AndUp) {
+            foreach (var version in V38AndUp) {
                 var errors = new CollectingErrorSink();
                 CheckAst(
                     ParseFile("NamedExpressions.py", errors, version),
@@ -2854,8 +2854,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
         [TestMethod, Priority(0)]
         public void NamedExpressionsErrors() {
-            // ToDo: Change to V38AndUp
-            foreach (var version in V37AndUp) {
+            foreach (var version in V38AndUp) {
                 var errors = new CollectingErrorSink();
                 ParseFile("NamedExpressionsErrors.py", errors, version);
                 errors.Errors.Should().BeEquivalentTo(new[] {
