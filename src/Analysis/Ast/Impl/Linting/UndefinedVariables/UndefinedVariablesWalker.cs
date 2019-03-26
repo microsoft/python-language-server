@@ -33,7 +33,15 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         public override bool Walk(SuiteStatement node) {
             foreach(Node statement in node.Statements) {
-                foreach(var e in statement.TraverseDepthFirst(c => c.GetChildNodes()).OfType<Expression>()) {
+                switch(statement) {
+                    case ClassDefinition cd:
+                        Walk(cd);
+                        break;
+                    case FunctionDefinition fd:
+                        Walk(fd);
+                        break;
+                }
+                foreach (var e in statement.TraverseDepthFirst(c => c.GetChildNodes()).OfType<Expression>()) {
                     e.Walk(new ExpressionWalker(this));
                 }
             }
