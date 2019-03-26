@@ -250,5 +250,70 @@ def baz(quux):
             refs[1].range.Should().Be(7, 19, 7, 26);
             refs[1].uri.Should().Be(analysis.Document.Uri);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task RemoveReference() {
+            const string code1 = @"
+x = 1
+
+def func(x):
+    return x
+
+y = func(x)
+x = 2
+";
+            var uri1 = TestData.GetDefaultModuleUri();
+            var uri2 = TestData.GetNextModuleUri();
+
+            var code2 = $@"
+from {Path.GetFileNameWithoutExtension(uri1.AbsolutePath)} import x, y
+a = x
+b = y
+";
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri1.AbsolutePath);
+
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            rdt.OpenDocument(uri1, code1);
+            rdt.OpenDocument(uri2, code2);
+
+            var doc1 = rdt.GetDocument(uri1);
+            var doc2 = rdt.GetDocument(uri2);
+
+            var analysis = await doc1.GetAnalysisAsync(Timeout.Infinite);
+            await doc2.GetAnalysisAsync(Timeout.Infinite);
+
+            var ds = new DefinitionSource(Services);
+            ds.FindDefinition(analysis, new SourceLocation(7, 1), out var definingMember);
+
+            var rs = new ReferenceSource(Services, TestData.Root);
+            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+
+            refs.Should().HaveCount(3);
+            refs[0].range.Should().Be(6, 0, 6, 1);
+            refs[0].uri.Should().Be(uri1);
+            refs[1].range.Should().Be(1, 22, 1, 23);
+            refs[1].uri.Should().Be(uri2);
+            refs[2].range.Should().Be(3, 4, 3, 5);
+            refs[2].uri.Should().Be(uri2);
+
+            doc2.Update(new[] {
+                new DocumentChange {
+                    InsertedText = string.Empty,
+                    ReplacedSpan = new SourceSpan(4, 1, 4, 5)
+                },
+                new DocumentChange {
+                    InsertedText = string.Empty,
+                    ReplacedSpan = new SourceSpan(2, 20, 2, 23)
+                }
+            });
+            await doc2.GetAnalysisAsync(Timeout.Infinite);
+
+            ds.FindDefinition(analysis, new SourceLocation(7, 1), out definingMember);
+            refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+
+            refs.Should().HaveCount(1);
+            refs[0].range.Should().Be(6, 0, 6, 1);
+            refs[0].uri.Should().Be(uri1);
+        }
     }
 }

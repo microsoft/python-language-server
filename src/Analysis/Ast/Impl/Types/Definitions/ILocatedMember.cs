@@ -54,5 +54,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// Add member reference.
         /// </summary>
         void AddReference(IPythonModule module, Node location);
+
+        /// <summary>
+        /// Removes references to the module variable recorded in other modules.
+        /// </summary>
+        void RemoveReferences(IPythonModule module);
     }
 }

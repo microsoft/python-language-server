@@ -21,22 +21,23 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
         private struct Location {
-            private readonly IPythonModule _module;
             private readonly Node _node;
 
             public Location(IPythonModule module, Node node) {
-                _module = module;
+                Module = module;
                 _node = node;
             }
 
+            public IPythonModule Module { get; }
+
             public LocationInfo LocationInfo {
                 get {
-                    if (_node is MemberExpression mex && _module.Analysis.Ast != null) {
-                        var span = mex.GetNameSpan(_module.Analysis.Ast);
-                        return new LocationInfo(_module.FilePath, _module.Uri, span);
+                    if (_node is MemberExpression mex && Module.Analysis.Ast != null) {
+                        var span = mex.GetNameSpan(Module.Analysis.Ast);
+                        return new LocationInfo(Module.FilePath, Module.Uri, span);
                     }
 
-                    return _node?.GetLocation(_module) ?? LocationInfo.Empty;
+                    return _node?.GetLocation(Module) ?? LocationInfo.Empty;
                 }
             }
 
@@ -47,6 +48,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         private HashSet<Location> _references;
+        private readonly object _referencesLock = new object();
 
         protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, Node location = null, ILocatedMember parent = null)
             : this(declaringModule, location, parent) {
@@ -73,20 +75,35 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual IReadOnlyList<LocationInfo> References {
             get {
-                if (_references == null) {
-                    return new[] { Definition };
+                lock (_referencesLock) {
+                    if (_references == null) {
+                        return new[] {Definition};
+                    }
+
+                    var refs = _references
+                        .GroupBy(x => x.LocationInfo.DocumentUri)
+                        .SelectMany(g => g.Select(x => x.LocationInfo).OrderBy(x => x.Span));
+                    return Enumerable.Repeat(Definition, 1).Concat(refs).ToArray();
                 }
-                var refs = _references
-                    .GroupBy(x => x.LocationInfo.DocumentUri)
-                    .SelectMany(g => g.Select(x => x.LocationInfo).OrderBy(x => x.Span));
-                return Enumerable.Repeat(Definition, 1).Concat(refs).ToArray();
             }
         }
 
         public virtual void AddReference(IPythonModule module, Node location) {
-            if (module != null && location != null) {
-                _references = _references ?? new HashSet<Location>();
-                _references.Add(new Location(module, location));
+            lock (_referencesLock) {
+                if (module != null && location != null) {
+                    _references = _references ?? new HashSet<Location>();
+                    _references.Add(new Location(module, location));
+                }
+            }
+        }
+
+        public void RemoveReferences(IPythonModule module) {
+            lock (_referencesLock) {
+                if (_references != null) {
+                    foreach (var r in _references.ToArray().Where(r => r.Module == module)) {
+                        _references.Remove(r);
+                    }
+                }
             }
         }
 
@@ -105,5 +122,6 @@ namespace Microsoft.Python.Analysis.Types {
         public ILocatedMember Parent => null;
         public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
         public void AddReference(IPythonModule module, Node location) { }
+        public void RemoveReferences(IPythonModule module) { }
     }
 }

@@ -420,6 +420,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     return;
                 }
 
+                Analysis?.Dispose();
                 Analysis = analysis;
                 GlobalScope = analysis.GlobalScope;
 
