@@ -13,17 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Tests.FluentAssertions;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
@@ -56,12 +50,9 @@ y = func(x)
 x = 2
 ";
             var analysis = await GetAnalysisAsync(code);
-
-            var ds = new DefinitionSource(Services);
-            ds.FindDefinition(analysis, new SourceLocation(8, 1), out var definingMember);
-
             var rs = new ReferenceSource(Services, TestData.Root);
-            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(8, 1));
+
             refs.Should().HaveCount(3);
             refs[0].range.Should().Be(1, 0, 1, 1);
             refs[1].range.Should().Be(6, 9, 6, 10);
@@ -98,11 +89,8 @@ y = x
             var analysis = await doc1.GetAnalysisAsync(Timeout.Infinite);
             await doc2.GetAnalysisAsync(Timeout.Infinite);
 
-            var ds = new DefinitionSource(Services);
-            ds.FindDefinition(analysis, new SourceLocation(7, 10), out var definingMember);
-
-            var rs = new ReferenceSource(Services, TestData.Root);
-            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10));
 
             refs.Should().HaveCount(5);
 
@@ -142,12 +130,8 @@ y = x
             var uri3 = await TestData.CreateTestSpecificFileAsync("module3.py", mod3Code);
 
             var analysis = await GetAnalysisAsync(code);
-
-            var ds = new DefinitionSource(Services);
-            ds.FindDefinition(analysis, new SourceLocation(7, 10), out var definingMember);
-
             var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
-            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10));
 
             refs.Should().HaveCount(7);
 
@@ -193,11 +177,8 @@ y = x
 
             var analysis = await GetAnalysisAsync(code);
 
-            var ds = new DefinitionSource(Services);
-            ds.FindDefinition(analysis, new SourceLocation(7, 10), out var definingMember);
-
             var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
-            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10));
 
             refs.Should().HaveCount(7);
 
@@ -237,11 +218,8 @@ def baz(quux):
             await TestData.CreateTestSpecificFileAsync("bar.py", barCode);
             var analysis = await GetAnalysisAsync(code);
 
-            var ds = new DefinitionSource(Services);
-            ds.FindDefinition(analysis, new SourceLocation(5, 8), out var definingMember);
-
             var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
-            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(5, 8));
 
             refs.Should().HaveCount(2);
 
@@ -282,11 +260,8 @@ b = y
             var analysis = await doc1.GetAnalysisAsync(Timeout.Infinite);
             await doc2.GetAnalysisAsync(Timeout.Infinite);
 
-            var ds = new DefinitionSource(Services);
-            ds.FindDefinition(analysis, new SourceLocation(7, 1), out var definingMember);
-
-            var rs = new ReferenceSource(Services, TestData.Root);
-            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 1));
 
             refs.Should().HaveCount(3);
             refs[0].range.Should().Be(6, 0, 6, 1);
@@ -308,8 +283,7 @@ b = y
             });
             await doc2.GetAnalysisAsync(Timeout.Infinite);
 
-            ds.FindDefinition(analysis, new SourceLocation(7, 1), out definingMember);
-            refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+            refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 1));
 
             refs.Should().HaveCount(1);
             refs[0].range.Should().Be(6, 0, 6, 1);

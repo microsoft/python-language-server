@@ -63,13 +63,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// empty string.
         /// </summary>
         public string newText;
-
-        /// <summary>
-        /// Extended version information specifying the source version
-        /// that range applies to. Should be used by the client to
-        /// adjust range before applying the edit.
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]

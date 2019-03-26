@@ -18,17 +18,16 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
+using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Extensibility;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server {
+        private const int CompletionAnalysisTimeout = 200;
+
         private CompletionSource _completionSource;
         private HoverSource _hoverSource;
         private SignatureSource _signatureSource;
@@ -38,8 +37,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _log?.Log(TraceEventType.Verbose, $"Completions in {uri} at {@params.position}");
 
             var res = new CompletionList();
-            var analysis = await GetAnalysisAsync(uri, cancellationToken);
-            if(analysis != null) { 
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
+            if (analysis != null) {
                 var result = _completionSource.GetCompletions(analysis, @params.position);
                 res.items = result.Completions.ToArray();
             }
@@ -53,7 +52,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Hover in {uri} at {@params.position}");
 
-            var analysis = await GetAnalysisAsync(uri, cancellationToken);
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
             if (analysis != null) {
                 return _hoverSource.GetHover(analysis, @params.position);
             }
@@ -64,7 +63,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Signatures in {uri} at {@params.position}");
 
-            var analysis = await GetAnalysisAsync(uri, cancellationToken);
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
             if (analysis != null) {
                 return _signatureSource.GetSignature(analysis, @params.position);
             }
@@ -75,27 +74,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Goto Definition in {uri} at {@params.position}");
 
-            var analysis = await GetAnalysisAsync(uri, cancellationToken);
-            var reference = FindDefinition(analysis, @params.position, out _);
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
+            var reference = new DefinitionSource(Services).FindDefinition(analysis, @params.position, out _);
             return reference != null ? new[] { reference } : Array.Empty<Reference>();
         }
 
-        public async Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
+        public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
-
-            var analysis = await GetAnalysisAsync(uri, cancellationToken);
-            var definition = FindDefinition(analysis, @params.position, out var definingMember);
-            if(definition != null) {
-                var rs = new ReferenceSource(Services, _rootDir);
-                return await rs.FindAllReferencesAsync(analysis, definingMember, cancellationToken);
-            }
-            return Array.Empty<Reference>();
+            return new ReferenceSource(Services, _rootDir).FindAllReferencesAsync(uri, @params.position, cancellationToken);
         }
 
-        private Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember definingMember) {
-            var ds = new DefinitionSource(Services);
-           return ds.FindDefinition(analysis, location, out definingMember);
+        public Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Rename in {uri} at {@params.position}");
+            return new RenameSource(Services, _rootDir).RenameAsync(uri, @params.position, @params.newName, cancellationToken);
         }
     }
 }

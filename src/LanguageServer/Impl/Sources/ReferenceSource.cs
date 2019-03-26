@@ -20,17 +20,21 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class ReferenceSource {
+        private const int FindReferencesAnalysisTimeout = 10000;
         private readonly IServiceContainer _services;
         private readonly string _rootPath;
 
@@ -39,7 +43,20 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _rootPath = rootPath;
         }
 
-        public async Task<Reference[]> FindAllReferencesAsync(IDocumentAnalysis analysis, ILocatedMember definingMember, CancellationToken cancellationToken) {
+        public async Task<Reference[]> FindAllReferencesAsync(Uri uri, SourceLocation location, CancellationToken cancellationToken = default) {
+            var analyzer = _services.GetService<IPythonAnalyzer>();
+            await analyzer.WaitForCompleteAnalysisAsync(cancellationToken);
+
+            var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
+            var definition = new DefinitionSource(_services).FindDefinition(analysis, location, out var definingMember);
+            if (definition != null) {
+                var rs = new ReferenceSource(_services, _rootPath);
+                return await rs.FindAllReferencesAsync(analysis, definingMember, cancellationToken);
+            }
+            return Array.Empty<Reference>();
+        }
+
+        private async Task<Reference[]> FindAllReferencesAsync(IDocumentAnalysis analysis, ILocatedMember definingMember, CancellationToken cancellationToken) {
             // Get to the root definition
             for (; definingMember.Parent != null; definingMember = definingMember.Parent) { }
             var module = definingMember.DeclaringModule;
