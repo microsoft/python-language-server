@@ -124,7 +124,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private bool HasHover(Node node) {
-            switch(node) {
+            switch (node) {
                 // No hover for literals
                 case ConstantExpression constExpr:
                 // node is FString only if it didn't save an f-string subexpression
