@@ -168,13 +168,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return Array.Empty<DiagnosticsEntry>();
             }
 
-            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            if (optionsProvider?.Options?.LintingEnabled == false) {
-                return Array.Empty<DiagnosticsEntry>();
-            }
-
+            // Linter always runs no matter of the option since it looks up variables
+            // which also enumerates and updates variable references for find all
+            // references and rename operations.
             var linter = new LinterAggregator();
-            return linter.Lint(module.Analysis, _services);
+            var result = linter.Lint(module.Analysis, _services);
+
+            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+            return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
         }
 
 

@@ -81,15 +81,16 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
 
             var analysis = _walker.Analysis;
-            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var scope);
+            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var scope, out var v);
             if (m == null) {
                 _walker.ReportUndefinedVariable(node);
             }
+            v?.AddReference(analysis.Document, node);
+
             // Take into account where variable is defined so we do detect
             // undefined x in 
             //    y = x
             //    x = 1
-            var v = scope?.Variables[node.Name];
             if (v != null && v.Definition.DocumentUri == analysis.Document.Uri) {
                 // Do not complain about functions and classes that appear later in the file
                 if (!(v.Value is IPythonFunctionType || v.Value is IPythonClassType)) {

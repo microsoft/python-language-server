@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
@@ -30,27 +31,13 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
 
-        public override bool Walk(AssignmentStatement node) {
-            if (node.Right is ErrorExpression) {
-                return false;
-            }
-            node.Right?.Walk(new ExpressionWalker(this));
-            return false;
-        }
-
-        public override bool Walk(CallExpression node) {
-            node.Target?.Walk(new ExpressionWalker(this));
-            foreach (var arg in node.Args) {
-                arg?.Expression?.Walk(new ExpressionWalker(this));
+        public override bool Walk(SuiteStatement node) {
+            foreach(Node statement in node.Statements) {
+                foreach(var e in statement.TraverseDepthFirst(c => c.GetChildNodes()).OfType<Expression>()) {
+                    e.Walk(new ExpressionWalker(this));
+                }
             }
             return false;
-        }
-
-        public override bool Walk(IfStatement node) {
-            foreach (var test in node.Tests) {
-                test.Test.Walk(new ExpressionWalker(this));
-            }
-            return true;
         }
 
         public override bool Walk(GlobalStatement node) {

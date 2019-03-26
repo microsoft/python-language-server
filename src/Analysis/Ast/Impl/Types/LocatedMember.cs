@@ -90,7 +90,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual void AddReference(IPythonModule module, Node location) {
             lock (_referencesLock) {
-                if (module != null && location != null) {
+                if (module != null && location != null && location != DefinitionNode) {
                     _references = _references ?? new HashSet<Location>();
                     _references.Add(new Location(module, location));
                 }

@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -35,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval : IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly object _lock = new object();
-        private List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -155,10 +154,46 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
-        private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier) 
+        public void EvaluateForReferences(Expression expr) {
+            switch (expr) {
+                // Evaluate left side for the reference accounting
+                case IndexExpression idx:
+                    GetValueFromExpression(idx.Target);
+                    break;
+                case MemberExpression mex:
+                    GetValueFromExpression(mex.Target);
+                    break;
+                case SetExpression setex:
+                    foreach (var e in setex.Items) {
+                        GetValueFromExpression(e);
+                    }
+                    break;
+                case ListExpression setex:
+                    foreach (var e in setex.Items) {
+                        GetValueFromExpression(e);
+                    }
+                    break;
+            }
+        }
+
+        public void EvaluateForReferences(Statement s) {
+            switch (s) {
+                case AssertStatement asst:
+                    GetValueFromExpression(asst.Test);
+                    GetValueFromExpression(asst.Message);
+                    break;
+                case DelStatement ds:
+                    foreach (var e in ds.Expressions) {
+                        GetValueFromExpression(e);
+                    }
+                    break;
+            }
+        }
+
+        private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier)
             => new PythonFString(formatSpecifier.Unparsed, Interpreter);
 
-        private IMember GetValueFromFString(FString fString) 
+        private IMember GetValueFromFString(FString fString)
             => new PythonFString(fString.Unparsed, Interpreter);
 
         private IMember GetValueFromName(NameExpression expr, LookupOptions options = LookupOptions.Normal) {

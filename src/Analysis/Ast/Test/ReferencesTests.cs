@@ -339,5 +339,47 @@ x = t
             parent.References[3].Span.Should().Be(3, 5, 3, 6);
             parent.References[3].DocumentUri.AbsolutePath.Should().Contain("module.py");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Conditional() {
+            const string code = @"
+x = 1
+y = 2
+
+if x < y:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            var x = analysis.Should().HaveVariable("x").Which;
+            x.Definition.Span.Should().Be(2, 1, 2, 2);
+            x.References.Should().HaveCount(2);
+            x.References[0].Span.Should().Be(2, 1, 2, 2);
+            x.References[1].Span.Should().Be(5, 4, 5, 5);
+
+            var y = analysis.Should().HaveVariable("y").Which;
+            y.Definition.Span.Should().Be(3, 1, 3, 2);
+            y.References.Should().HaveCount(2);
+            y.References[0].Span.Should().Be(3, 1, 3, 2);
+            y.References[1].Span.Should().Be(5, 8, 5, 9);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AugmentedAssign() {
+            const string code = @"
+def func(a, b):
+    dest = 1
+    dest += src
+    dest[dest < src] = np.iinfo(dest.dtype).max
+";
+            var analysis = await GetAnalysisAsync(code);
+            var dest = analysis.GlobalScope.Children[0].Should().HaveVariable("dest").Which;
+            dest.Definition.Span.Should().Be(3, 5, 3, 9);
+            dest.References.Should().HaveCount(5);
+            dest.References[0].Span.Should().Be(3, 5, 3, 9);
+            dest.References[1].Span.Should().Be(4, 5, 4, 9);
+            dest.References[2].Span.Should().Be(5, 5, 5, 9);
+            dest.References[3].Span.Should().Be(5, 10, 5, 14);
+            dest.References[4].Span.Should().Be(5, 33, 5, 37);
+        }
     }
 }

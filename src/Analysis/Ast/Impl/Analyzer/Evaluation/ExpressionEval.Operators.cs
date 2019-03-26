@@ -58,7 +58,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         private IMember GetValueFromBinaryOp(Expression expr) {
-            if (expr is AndExpression) {
+            if (expr is AndExpression a) {
+                GetValueFromExpression(a.Left);
+                GetValueFromExpression(a.Right);
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
 
@@ -75,6 +77,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (!(expr is BinaryExpression binop) || binop.Left == null) {
                 return null;
             }
+
+            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
+            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
 
             // TODO: Specific parsing
             // TODO: warn about incompatible types like 'str' + 1
@@ -93,9 +98,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // Assume all of these return True/False
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
-
-            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
-            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
 
             switch (binop.Operator) {
                 case PythonOperator.Divide:
