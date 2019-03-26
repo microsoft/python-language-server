@@ -219,5 +219,36 @@ y = x
             refs[6].uri.Should().Be(uri3);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task UnrelatedFiles() {
+            const string code = @"
+from bar import baz
+
+class spam:
+    __bug__ = 0
+
+def eggs(ham: spam):
+    return baz(ham.__bug__)
+";
+            const string barCode = @"
+def baz(quux):
+    pass
+";
+            await TestData.CreateTestSpecificFileAsync("bar.py", barCode);
+            var analysis = await GetAnalysisAsync(code);
+
+            var ds = new DefinitionSource(Services);
+            ds.FindDefinition(analysis, new SourceLocation(5, 8), out var definingMember);
+
+            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var refs = await rs.FindAllReferencesAsync(analysis, definingMember, CancellationToken.None);
+
+            refs.Should().HaveCount(2);
+
+            refs[0].range.Should().Be(4, 4, 4, 11);
+            refs[0].uri.Should().Be(analysis.Document.Uri);
+            refs[1].range.Should().Be(7, 19, 7, 26);
+            refs[1].uri.Should().Be(analysis.Document.Uri);
+        }
     }
 }

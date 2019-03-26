@@ -391,7 +391,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (module.ModuleType == ModuleType.User) {
                 var linterDiagnostics = LintModule(module);
                 var ds = _services.GetService<IDiagnosticsService>();
-                ds.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+                ds?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
             }
         }
     }

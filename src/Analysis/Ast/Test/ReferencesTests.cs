@@ -253,6 +253,23 @@ def func(a):
         }
 
         [TestMethod, Priority(0)]
+        public async Task ClassField() {
+            const string code = @"
+class A:
+    x = 0
+
+def func(a: A):
+    return a.x
+";
+            var analysis = await GetAnalysisAsync(code);
+            var x = analysis.GlobalScope.Children[0].Should().HaveVariable("x").Which;
+            x.Should().NotBeNull();
+            x.References.Should().HaveCount(2);
+            x.References[0].Span.Should().Be(3, 5, 3, 6);
+            x.References[1].Span.Should().Be(6, 14, 6, 15);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Assignments() {
             const string code = @"
 a = 1

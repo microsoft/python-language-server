@@ -207,9 +207,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             instance = instance ?? m as IPythonInstance;
             var type = m?.GetPythonType(); // Try inner type
-            var value = type?.GetMember(expr.Name);
 
-            value?.AddReference(Module, expr);
+            var value = type?.GetMember(expr.Name);
+            type?.AddMemberReference(expr.Name, this, Module, expr);
+
             if (type is IPythonModule) {
                 return value;
             }
