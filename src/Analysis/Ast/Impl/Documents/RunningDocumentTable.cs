@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Documents {
     /// <summary>
@@ -33,6 +34,7 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly Dictionary<Uri, DocumentEntry> _documentsByUri = new Dictionary<Uri, DocumentEntry>();
         private readonly Dictionary<string, DocumentEntry> _documentsByName = new Dictionary<string, DocumentEntry>();
         private readonly IServiceContainer _services;
+        private readonly ILogger _log;
         private readonly object _lock = new object();
 
         private IModuleManagement _moduleManagement;
@@ -50,6 +52,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
         public RunningDocumentTable(IServiceContainer services) {
             _services = services;
+            _log = _services.GetService<ILogger>();
         }
 
         public event EventHandler<DocumentEventArgs> Opened;
@@ -95,7 +98,9 @@ namespace Microsoft.Python.Analysis.Documents {
                 if (mco.Uri == null) {
                     mco.FilePath = mco.FilePath ?? throw new ArgumentNullException(nameof(mco.FilePath));
                     if (!Uri.TryCreate(mco.FilePath, UriKind.Absolute, out var uri)) {
-                        throw new ArgumentException("Unable to determine URI from the file path.");
+                        var message = $"Unable to determine URI from the file path {mco.FilePath}";
+                        _log?.Log(TraceEventType.Warning, message);
+                        throw new OperationCanceledException(message);
                     }
 
                     mco.Uri = uri;
