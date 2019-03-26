@@ -40,14 +40,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _rootPath = rootPath;
         }
 
-        public async Task<Reference[]> FindAllReferences(IDocumentAnalysis analysis, ILocatedMember definingMember, SourceLocation location, CancellationToken cancellationToken) {
-            if (definingMember.Parent == null) {
-                // Basic, single-file case
-                return definingMember.References
-                    .Select(r => new Reference { uri = analysis.Document.Uri, range = r.Span })
-                    .ToArray();
-            }
-
+        public async Task<Reference[]> FindAllReferencesAsync(IDocumentAnalysis analysis, ILocatedMember definingMember, CancellationToken cancellationToken) {
             // Get to the root definition
             for (; definingMember.Parent != null; definingMember = definingMember.Parent) { }
             var module = definingMember.DeclaringModule;
@@ -120,6 +113,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private static async Task AnalyzeAsync(string filePath, IRunningDocumentTable rdt, CancellationToken cancellationToken) {
+            if (rdt.GetDocument(new Uri(filePath)) != null) {
+                return; // Already opened by another analysis.
+            }
+
             var mco = new ModuleCreationOptions {
                 ModuleName = Path.GetFileNameWithoutExtension(filePath),
                 FilePath = filePath,
