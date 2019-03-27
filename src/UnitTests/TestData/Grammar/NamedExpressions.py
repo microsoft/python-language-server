@@ -27,3 +27,5 @@ foo(x := 1, cat='vector')
 
 (a := 1 if False else 2)
 # a is 2
+
+((x) := 1)

@@ -2894,6 +2894,16 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckParenExpr(
+                                        CheckNameExpr("x")
+                                    ),
+                                    One
+                                )
+                            )
                         )
                     )
                 );
