@@ -2789,14 +2789,9 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 var target = ret;
-                if (!(ret is NameExpression)) {
-                    if (ret is MemberExpression) {
-                        ReportSyntaxError(ret.StartIndex, ret.EndIndex, Resources.NamedAssignmentWithErrorMsg.FormatInvariant("attribute"));
-                    } else if (ret is IndexExpression) {
-                        ReportSyntaxError(ret.StartIndex, ret.EndIndex, Resources.NamedAssignmentWithErrorMsg.FormatInvariant("subscript"));
-                    } else {
-                        //ReportSyntaxError(ret.StartIndex, ret.EndIndex, Resources.Na)
-                    }
+                var assignErrorMsg = ret.CheckAssignExpr();
+                if (!string.IsNullOrEmpty(assignErrorMsg)) {
+                    ReportSyntaxError(ret.StartIndex, ret.EndIndex, assignErrorMsg);
                 }
                 var value = ParseExpression(allowNamedExpressions: false);
                 var assignExpr = new NamedExpression(target, value);

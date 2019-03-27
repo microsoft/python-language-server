@@ -169,7 +169,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unparenthesized named expression not allowed in this context.
+        ///   Looks up a localized string similar to Named expression must be parenthesized in this context.
         /// </summary>
         internal static string NamedExpressionCtxtErrorMsg {
             get {
