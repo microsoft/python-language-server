@@ -160,20 +160,20 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Named assignments not allowed in this context.
-        /// </summary>
-        internal static string NamedAssignmentCtxtErrorMsg {
-            get {
-                return ResourceManager.GetString("NamedAssignmentCtxtErrorMsg", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Cannot use named assignment with {0}.
         /// </summary>
         internal static string NamedAssignmentWithErrorMsg {
             get {
                 return ResourceManager.GetString("NamedAssignmentWithErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unparenthesized named expression not allowed in this context.
+        /// </summary>
+        internal static string NamedExpressionCtxtErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionCtxtErrorMsg", resourceCulture);
             }
         }
         

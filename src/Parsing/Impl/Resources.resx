@@ -150,11 +150,11 @@
   <data name="MixingBytesAndNonBytesErrorMsg" xml:space="preserve">
     <value>cannot mix bytes and nonbytes literals</value>
   </data>
-  <data name="NamedAssignmentCtxtErrorMsg" xml:space="preserve">
-    <value>Named assignments not allowed in this context</value>
-  </data>
   <data name="NamedAssignmentWithErrorMsg" xml:space="preserve">
     <value>Cannot use named assignment with {0}</value>
+  </data>
+  <data name="NamedExpressionCtxtErrorMsg" xml:space="preserve">
+    <value>Unparenthesized named expression not allowed in this context</value>
   </data>
   <data name="NumberSignFStringExpressionErrorMsg" xml:space="preserve">
     <value>f-string expression part cannot include '#'</value>

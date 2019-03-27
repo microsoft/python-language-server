@@ -2785,7 +2785,7 @@ namespace Microsoft.Python.Parsing {
                 ret.SetLoc(start, GetEnd());
             } else if (MaybeEat(TokenKind.ColonEqual)) {
                 if (!allowNamedExpressions) {
-                    ReportSyntaxError(_token.Span.Start, _token.Span.End, Resources.NamedAssignmentCtxtErrorMsg.FormatInvariant());
+                    ReportSyntaxError(_token.Span.Start, _token.Span.End, Resources.NamedExpressionCtxtErrorMsg.FormatInvariant());
                 }
 
                 var target = ret;
