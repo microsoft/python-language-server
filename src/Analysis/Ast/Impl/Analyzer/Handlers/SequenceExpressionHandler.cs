@@ -64,6 +64,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         private static void Assign(IEnumerable<Expression> items, ValueEnumerator valueEnum, ExpressionEval eval) {
             foreach (var item in items) {
                 switch (item) {
+                    case StarredExpression stx when stx.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex);
+                        break;
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex);
                         break;

@@ -274,7 +274,7 @@ b = y
             doc2.Update(new[] {
                 new DocumentChange {
                     InsertedText = string.Empty,
-                    ReplacedSpan = new SourceSpan(4, 1, 4, 5)
+                    ReplacedSpan = new SourceSpan(4, 1, 4, 6)
                 },
                 new DocumentChange {
                     InsertedText = string.Empty,

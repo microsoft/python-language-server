@@ -51,24 +51,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             return false;
         }
 
-        public override bool Walk(MemberExpression node) {
-            if (!string.IsNullOrEmpty(node.Name)) {
-                var eval = _walker.Analysis.ExpressionEvaluator;
-                var target = eval.GetValueFromExpression(node.Target);
-                if (!target.IsUnknown()) {
-                    var m = target.GetPythonType().GetMember(node.Name);
-                    if (m == null) {
-                        _walker.ReportUndefinedVariable(node.Name, node.GetNameSpan(eval.Ast));
-                    }
-                }
-            }
-            return false;
-        }
-
         public override bool Walk(SetComprehension node) {
             node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
             return false;
         }
+
         public override bool Walk(DictionaryComprehension node) {
             node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
             return false;

@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
@@ -26,12 +25,9 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesWalker : LinterWalker {
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
-        private readonly ExpressionWalker _ew;
 
         public UndefinedVariablesWalker(IDocumentAnalysis analysis, IServiceContainer services)
-            : base(analysis, services) {
-            _ew = new ExpressionWalker(this);
-        }
+            : base(analysis, services) { }
 
         public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
 
@@ -51,7 +47,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                         HandleNonLocal(nls);
                         break;
                     default:
-                        statement.Walk(_ew);
+                        statement.Walk(new ExpressionWalker(this));
                         break;
                 }
             }

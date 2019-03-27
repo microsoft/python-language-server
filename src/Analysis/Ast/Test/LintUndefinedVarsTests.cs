@@ -514,13 +514,14 @@ a.x = 1
 a.y = 2
 ";
             var d = await LintAsync(code);
-            d.Should().HaveCount(1);
-            d[0].SourceSpan.Should().Be(7, 3, 7, 4);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
         public async Task ListAssignment() {
-            const string code = @"[year, month] = date.split(' - ')";
+            const string code = @"
+from datetime import date
+[year, month] = date.split(' - ')";
             var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
