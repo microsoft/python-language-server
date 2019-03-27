@@ -535,6 +535,21 @@ y = ";
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task ListComprehensionFunction() {
+            const string code = @"
+def func_a(value):
+    return value
+
+def func_b():
+    list_a = [1, 2, 3, 4]
+
+    return [func_a(value=elem) for elem in list_a]
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();
