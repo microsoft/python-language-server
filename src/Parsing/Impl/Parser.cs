@@ -2768,7 +2768,7 @@ namespace Microsoft.Python.Parsing {
             return ParseOrTest();
         }
 
-        // expression: conditional_expression | lambda_forṃ | or_test [':=' or_test]
+        // expression: conditional_expression | lambda_form | or_test [':=' expression]
         // conditional_expression: or_test ['if' or_test 'else' expression]
         // lambda_form: "lambda" [parameter_list] : expression
         private Expression ParseExpression(bool allowNamedExpressions = true) {
@@ -2798,7 +2798,7 @@ namespace Microsoft.Python.Parsing {
                         //ReportSyntaxError(ret.StartIndex, ret.EndIndex, Resources.Na)
                     }
                 }
-                var value = ParseOrTest();
+                var value = ParseExpression(allowNamedExpressions: false);
                 var assignExpr = new NamedExpression(target, value);
                 assignExpr.SetLoc(target.StartIndex, value.EndIndex);
                 return assignExpr;

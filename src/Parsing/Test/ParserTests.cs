@@ -2829,7 +2829,7 @@ namespace Microsoft.Python.Parsing.Tests {
                                             CheckConstant(42)
                                         )
                                     )
-                                )
+                                ), CheckParameter("cat", ParameterKind.Normal, CheckConstant(""))
                             },
                             CheckSuite(
                                 CheckReturnStmt(
@@ -2853,6 +2853,23 @@ namespace Microsoft.Python.Parsing.Tests {
                                     CheckNameExpr("y"),
                                     One
                                 )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckCallExpression(
+                                CheckNameExpr("foo"),
+                                new[] {
+                                    PositionalArg(
+                                        CheckNamedExpr(
+                                            CheckNameExpr("x"),
+                                            One
+                                        )
+                                    ),
+                                    CheckNamedArg(
+                                        "cat",
+                                        CheckConstant("vector")
+                                    )
+                                }
                             )
                         )
                     )

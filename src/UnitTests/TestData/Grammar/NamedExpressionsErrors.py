@@ -13,3 +13,5 @@ f(x = a := 1)
 
 def foo2(answer = p := 42):
     pass
+
+(x := x := x)
