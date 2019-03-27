@@ -2871,6 +2871,29 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 }
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    CheckAndExpression(
+                                        One,
+                                        None
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    CheckConditionalExpression(
+                                        One,
+                                        CheckConstant(false),
+                                        Two
+                                    )
+                                )
+                            )
                         )
                     )
                 );
@@ -2892,6 +2915,7 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorResult("Cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
                     new ErrorResult("Named assignments not allowed in this context", new SourceSpan(12, 9, 12, 11)),
                     new ErrorResult("Named assignments not allowed in this context", new SourceSpan(14, 21, 14, 23)),
+                    new ErrorResult("Named assignments not allowed in this context", new SourceSpan(17, 9, 17, 11)),
                 });
             }
         }
