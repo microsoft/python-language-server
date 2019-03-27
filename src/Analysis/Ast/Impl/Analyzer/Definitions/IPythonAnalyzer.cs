@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
@@ -47,5 +49,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Get most recent analysis for module. If after specified time analysis isn't available, returns previously calculated analysis.
         /// </summary>
         Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime = 200, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Runs linters on the modules
+        /// </summary>
+        IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module);
     }
 }

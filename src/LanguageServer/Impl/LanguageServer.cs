@@ -20,7 +20,6 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
@@ -92,45 +91,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             => _rpc.NotifyWithParameterObjectAsync("workspace/applyEdit", e.@params).DoNotWait();
 
         #region Workspace
-        [JsonRpcMethod("workspace/didChangeConfiguration")]
-        public async Task DidChangeConfiguration(JToken token, CancellationToken cancellationToken) {
-            using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
-                var settings = new LanguageServerSettings();
-
-                var rootSection = token["settings"];
-                var pythonSection = rootSection?["python"];
-                if (pythonSection == null) {
-                    return;
-                }
-
-                var autoComplete = pythonSection["autoComplete"];
-                settings.completion.showAdvancedMembers = GetSetting(autoComplete, "showAdvancedMembers", true);
-                settings.completion.addBrackets = GetSetting(autoComplete, "addBrackets", false);
-
-                var analysis = pythonSection["analysis"];
-                settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", 1000);
-                settings.symbolsHierarchyDepthLimit = GetSetting(analysis, "symbolsHierarchyDepthLimit", 10);
-                settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
-
-                var linting = pythonSection["linting"];
-                _optionsProvider.Options.LintingEnabled = GetSetting(linting, "enabled", true);
-
-                _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
-
-                HandlePathWatchChange(token, cancellationToken);
-
-                var ds = _services.GetService<IDiagnosticsService>();
-                ds.PublishingDelay = settings.diagnosticPublishDelay;
-
-                ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(
-                    GetSetting(analysis, "errors", Array.Empty<string>()),
-                    GetSetting(analysis, "warnings", Array.Empty<string>()),
-                    GetSetting(analysis, "information", Array.Empty<string>()),
-                    GetSetting(analysis, "disabled", Array.Empty<string>()));
-
-                _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
-            }
-        }
 
         [JsonRpcMethod("workspace/didChangeWatchedFiles")]
         public async Task DidChangeWatchedFiles(JToken token, CancellationToken cancellationToken) {
@@ -368,7 +328,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return MessageType.Error;
         }
 
-        private void HandlePathWatchChange(JToken section, CancellationToken cancellationToken) {
+        private void HandlePathWatchChanges(JToken section, CancellationToken cancellationToken) {
             var watchSearchPaths = GetSetting(section, "watchSearchPaths", true);
             if (!watchSearchPaths) {
                 // No longer watching.

@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         public InterpreterConfiguration(
             string id,
             string description,
-            string pythonExePath = null,
+            string interpreterPath = null,
             string pathVar = "",
             string libPath = null,
             string sitePackagesPath = null,
@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         ) {
             Id = id;
             _description = description ?? string.Empty;
-            InterpreterPath = pythonExePath;
+            InterpreterPath = interpreterPath;
             PathEnvironmentVariable = pathVar;
             Architecture = architecture ?? InterpreterArchitecture.Unknown;
             Version = version ?? new Version();

@@ -17,6 +17,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -55,6 +56,11 @@ namespace Microsoft.Python.Core.Collections {
         public static ImmutableArray<T> Create(List<T> list) {
             var items = new T[list.Count];
             list.CopyTo(items);
+            return new ImmutableArray<T>(items, items.Length);
+        }
+
+        public static ImmutableArray<T> Create(IEnumerable<T> enumerable) {
+            var items = enumerable.ToArray();
             return new ImmutableArray<T>(items, items.Length);
         }
 

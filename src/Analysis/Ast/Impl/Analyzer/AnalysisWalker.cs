@@ -19,7 +19,6 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -51,10 +50,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             NonLocalHandler = new NonLocalHandler(this);
         }
 
-        protected AnalysisWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
-            : this(new ExpressionEval(services, module, ast)) {
-        }
-
         #region AST walker overrides
         public override bool Walk(AssignmentStatement node) {
             AssignmentHandler.HandleAssignment(node);
@@ -65,12 +60,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             switch (node.Expression) {
                 case ExpressionWithAnnotation ea:
                     AssignmentHandler.HandleAnnotatedExpression(ea, null);
-                    break;
+                    return false;
                 case Comprehension comp:
                     Eval.ProcessComprehension(comp);
-                    break;
+                    return false;
+                default:
+                    return base.Walk(node);
             }
-            return false;
         }
 
         public override bool Walk(ForStatement node) => LoopHandler.HandleFor(node);

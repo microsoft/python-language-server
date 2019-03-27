@@ -19,29 +19,30 @@ using System.IO;
 
 namespace Microsoft.Python.Core.OS {
     public sealed class PlatformProcess : IProcess {
-        private readonly Process _process;
+        public Process Process { get; private set; }
+
         private readonly IProcessServices _ps;
         public PlatformProcess(IProcessServices ps, Process process) {
             _ps = ps;
-            _process = process;
+            Process = process;
         }
 
-        public int Id => _process.Id;
-        public StreamWriter StandardInput => _process.StandardInput;
-        public StreamReader StandardOutput => _process.StandardOutput;
-        public StreamReader StandardError => _process.StandardError;
-        public bool HasExited => _process.HasExited;
-        public int ExitCode => _process.ExitCode;
+        public int Id => Process.Id;
+        public StreamWriter StandardInput => Process.StandardInput;
+        public StreamReader StandardOutput => Process.StandardOutput;
+        public StreamReader StandardError => Process.StandardError;
+        public bool HasExited => Process.HasExited;
+        public int ExitCode => Process.ExitCode;
 
         public event EventHandler Exited {
             add {
-                _process.EnableRaisingEvents = true;
-                _process.Exited += value;
+                Process.EnableRaisingEvents = true;
+                Process.Exited += value;
             }
-            remove => _process.Exited -= value;
+            remove => Process.Exited -= value;
         }
 
-        public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);
-        public void Dispose() => _process.Dispose();
+        public bool WaitForExit(int milliseconds) => Process.WaitForExit(milliseconds);
+        public void Dispose() => Process.Dispose();
     }
 }

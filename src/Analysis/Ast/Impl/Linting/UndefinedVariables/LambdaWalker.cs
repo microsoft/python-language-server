@@ -20,17 +20,17 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class LambdaWalker : PythonWalker {
-        private readonly IDocumentAnalysis _analysis;
+        private readonly UndefinedVariablesWalker _walker;
         private readonly HashSet<string> _names = new HashSet<string>();
         private readonly HashSet<NameExpression> _additionalNameNodes = new HashSet<NameExpression>();
 
-        public LambdaWalker(IDocumentAnalysis analysis) {
-            _analysis = analysis;
+        public LambdaWalker(UndefinedVariablesWalker walker) {
+            _walker = walker;
         }
 
         public override bool Walk(FunctionDefinition node) {
             CollectNames(node);
-            node.Body?.Walk(new ExpressionWalker(_analysis, _names, _additionalNameNodes));
+            node.Body?.Walk(new ExpressionWalker(_walker, _names, _additionalNameNodes));
             return false;
         }
 

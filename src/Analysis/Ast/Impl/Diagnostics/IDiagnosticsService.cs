@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         /// <summary>
         /// Replaces diagnostics for the document by the new set.
         /// </summary>
-        void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries);
+        void Replace(Uri documentUri, IEnumerable<DiagnosticsEntry> entries, DiagnosticSource source);
 
         /// <summary>
         /// Removes document from the diagnostics report. Typically when document is disposed.

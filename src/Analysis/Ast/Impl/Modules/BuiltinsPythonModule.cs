@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 
         protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
-            => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new [] { "-B", "-E", sb };
+            => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new [] { "-W", "ignore", "-B", "-E", sb };
 
         protected override void OnAnalysisComplete() {
             SpecializeTypes();
