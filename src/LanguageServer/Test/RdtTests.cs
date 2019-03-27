@@ -124,7 +124,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             rdt.OpenDocument(docLc1.Uri, null);
             PublishDiagnostics();
             ds.Diagnostics[uri].Should().BeEmpty();
-            ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
+            ds.Diagnostics[docLc1.Uri].Count.Should().Be(3);
             ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
             ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
 
@@ -141,7 +141,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             PublishDiagnostics();
             ds.Diagnostics[uri].Should().BeEmpty();
-            ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
+            ds.Diagnostics[docLc1.Uri].Count.Should().Be(3);
             ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
             ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
         }

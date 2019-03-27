@@ -46,6 +46,12 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                     case NonlocalStatement nls:
                         HandleNonLocal(nls);
                         break;
+                    case AugmentedAssignStatement augs:
+                        augs.Right?.Walk(new ExpressionWalker(this));
+                        break;
+                    case AssignmentStatement asst:
+                        asst.Right?.Walk(new ExpressionWalker(this));
+                        break;
                     default:
                         statement.Walk(new ExpressionWalker(this));
                         break;
