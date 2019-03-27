@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -44,10 +45,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 value = Eval.UnknownType;
             }
 
-            if (node.Left.FirstOrDefault() is TupleExpression lhs) {
+            if (node.Left.FirstOrDefault() is SequenceExpression seq) {
                 // Tuple = Tuple. Transfer values.
-                var texHandler = new TupleExpressionHandler(Walker);
-                texHandler.HandleTupleAssignment(lhs, node.Right, value);
+                var seqHandler = new SequenceExpressionHandler(Walker);
+                seqHandler.HandleAssignment(seq.Items, node.Right, value);
                 return;
             }
 

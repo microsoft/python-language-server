@@ -165,6 +165,15 @@ x, y, z = func()
         }
 
         [TestMethod, Priority(0)]
+        public async Task List() {
+            const string code = @"
+[year, month] = (1, 2)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("year").And.HaveVariable("month");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task AnnotatedAssign() {
             const string code = @"
 x : int = 42

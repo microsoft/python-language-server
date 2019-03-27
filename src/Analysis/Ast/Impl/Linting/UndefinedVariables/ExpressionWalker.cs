@@ -41,13 +41,6 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             _localNameNodes = localNameNodes ?? new HashSet<NameExpression>();
         }
 
-        public override bool Walk(CallExpression node) {
-            foreach (var arg in node.Args) {
-                arg?.Expression?.Walk(this);
-            }
-            return false;
-        }
-
         public override bool Walk(LambdaExpression node) {
             node.Walk(new LambdaWalker(_walker));
             return false;
@@ -55,6 +48,20 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         public override bool Walk(ListComprehension node) {
             node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            return false;
+        }
+
+        public override bool Walk(MemberExpression node) {
+            if (!string.IsNullOrEmpty(node.Name)) {
+                var eval = _walker.Analysis.ExpressionEvaluator;
+                var target = eval.GetValueFromExpression(node.Target);
+                if (!target.IsUnknown()) {
+                    var m = target.GetPythonType().GetMember(node.Name);
+                    if (m == null) {
+                        _walker.ReportUndefinedVariable(node.Name, node.GetNameSpan(eval.Ast));
+                    }
+                }
+            }
             return false;
         }
 

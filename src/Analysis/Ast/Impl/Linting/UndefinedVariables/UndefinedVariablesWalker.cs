@@ -18,6 +18,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
@@ -25,42 +26,61 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesWalker : LinterWalker {
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private readonly ExpressionWalker _ew;
 
         public UndefinedVariablesWalker(IDocumentAnalysis analysis, IServiceContainer services)
-            : base(analysis, services) { }
+            : base(analysis, services) {
+            _ew = new ExpressionWalker(this);
+        }
 
         public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
 
         public override bool Walk(SuiteStatement node) {
-            foreach(Node statement in node.Statements) {
-                switch(statement) {
+            foreach (var statement in node.Statements) {
+                switch (statement) {
                     case ClassDefinition cd:
-                        Walk(cd);
+                        HandleScope(cd);
                         break;
                     case FunctionDefinition fd:
-                        Walk(fd);
+                        HandleScope(fd);
                         break;
-                }
-                foreach (var e in statement.TraverseDepthFirst(c => c.GetChildNodes()).OfType<Expression>()) {
-                    e.Walk(new ExpressionWalker(this));
+                    case GlobalStatement gs:
+                        HandleGlobal(gs);
+                        break;
+                    case NonlocalStatement nls:
+                        HandleNonLocal(nls);
+                        break;
+                    default:
+                        statement.Walk(_ew);
+                        break;
                 }
             }
             return false;
         }
 
-        public override bool Walk(GlobalStatement node) {
+        public void ReportUndefinedVariable(NameExpression node) {
+            var eval = Analysis.ExpressionEvaluator;
+            ReportUndefinedVariable(node.Name, eval.GetLocation(node).Span);
+        }
+
+        public void ReportUndefinedVariable(string name, SourceSpan span) {
+            _diagnostics.Add(new DiagnosticsEntry(
+                Resources.UndefinedVariable.FormatInvariant(name),
+                span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Linter));
+        }
+
+        private void HandleGlobal(GlobalStatement node) {
             foreach (var nex in node.Names) {
-                var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Global);
+                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Global);
                 if (m == null) {
                     _diagnostics.Add(new DiagnosticsEntry(
                         Resources.ErrorVariableNotDefinedGlobally.FormatInvariant(nex.Name),
                         Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedGlobally, Severity.Warning, DiagnosticSource.Linter));
                 }
             }
-            return false;
         }
 
-        public override bool Walk(NonlocalStatement node) {
+        private void HandleNonLocal(NonlocalStatement node) {
             foreach (var nex in node.Names) {
                 var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Nonlocal);
                 if (m == null) {
@@ -69,14 +89,15 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                         Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedNonLocal, Severity.Warning, DiagnosticSource.Linter));
                 }
             }
-            return false;
         }
 
-        public void ReportUndefinedVariable(NameExpression node) {
-            var eval = Analysis.ExpressionEvaluator;
-            _diagnostics.Add(new DiagnosticsEntry(
-                Resources.UndefinedVariable.FormatInvariant(node.Name),
-                eval.GetLocation(node).Span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Linter));
+        private void HandleScope(ScopeStatement node) {
+            try {
+                OpenScope(node);
+                node.Walk(this);
+            } finally {
+                CloseScope();
+            }
         }
     }
 }

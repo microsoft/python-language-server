@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
@@ -20,20 +21,20 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
-    internal sealed class TupleExpressionHandler : StatementHandler {
-        public TupleExpressionHandler(AnalysisWalker walker) : base(walker) { }
+    internal sealed class SequenceExpressionHandler : StatementHandler {
+        public SequenceExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleTupleAssignment(TupleExpression lhs, Expression rhs, IMember value) {
+        public void HandleAssignment(IEnumerable<Expression> lhs, Expression rhs, IMember value) {
             if (rhs is TupleExpression tex) {
-                AssignTuple(lhs, tex, Eval);
+                Assign(lhs, tex, Eval);
             } else {
-                AssignTuple(lhs, value, Eval);
+                Assign(lhs, value, Eval);
             }
         }
 
-        internal static void AssignTuple(TupleExpression lhs, TupleExpression rhs, ExpressionEval eval) {
+        internal static void Assign(IEnumerable<Expression> lhs, TupleExpression rhs, ExpressionEval eval) {
             var returnedExpressions = rhs.Items.ToArray();
-            var names = lhs.Items.OfType<NameExpression>().Select(x => x.Name).ToArray();
+            var names = lhs.OfType<NameExpression>().Select(x => x.Name).ToArray();
             for (var i = 0; i < names.Length; i++) {
                 Expression e = null;
                 if (returnedExpressions.Length > 0) {
@@ -47,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        internal static void AssignTuple(TupleExpression lhs, IMember value, ExpressionEval eval) {
+        internal static void Assign(IEnumerable<Expression> lhs, IMember value, ExpressionEval eval) {
             // Tuple = 'tuple value' (such as from callable). Transfer values.
             IMember[] values;
             if (value is IPythonCollection seq) {
@@ -57,17 +58,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             var typeEnum = new ValueEnumerator(values, eval.UnknownType);
-            AssignTuple(lhs, typeEnum, eval);
+            Assign(lhs, typeEnum, eval);
         }
 
-        private static void AssignTuple(TupleExpression tex, ValueEnumerator valueEnum, ExpressionEval eval) {
-            foreach (var item in tex.Items) {
+        private static void Assign(IEnumerable<Expression> items, ValueEnumerator valueEnum, ExpressionEval eval) {
+            foreach (var item in items) {
                 switch (item) {
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex);
                         break;
                     case TupleExpression te:
-                        AssignTuple(te, valueEnum, eval);
+                        Assign(te.Items, valueEnum, eval);
                         break;
                 }
             }

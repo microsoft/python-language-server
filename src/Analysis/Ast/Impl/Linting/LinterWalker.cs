@@ -20,7 +20,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting {
-    internal abstract class LinterWalker: PythonWalker {
+    internal abstract class LinterWalker : PythonWalker {
         private readonly Stack<IDisposable> _scopeStack = new Stack<IDisposable>();
 
         public IDocumentAnalysis Analysis { get; }
@@ -32,16 +32,7 @@ namespace Microsoft.Python.Analysis.Linting {
             Services = services;
         }
 
-        public override bool Walk(ClassDefinition cd) {
-            _scopeStack.Push(Eval.OpenScope(Analysis.Document, cd));
-            return true;
-        }
-        public override void PostWalk(ClassDefinition cd) => _scopeStack.Pop().Dispose();
-
-        public override bool Walk(FunctionDefinition fd) {
-            _scopeStack.Push(Eval.OpenScope(Analysis.Document, fd));
-            return true;
-        }
-        public override void PostWalk(FunctionDefinition cd) => _scopeStack.Pop().Dispose();
+        protected void OpenScope(ScopeStatement node) => _scopeStack.Push(Eval.OpenScope(Analysis.Document, node));
+        protected void CloseScope() => _scopeStack.Pop().Dispose();
     }
 }
