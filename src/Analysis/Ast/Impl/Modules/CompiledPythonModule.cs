@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading;
 using Microsoft.Python.Analysis.Types;
@@ -75,7 +76,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 return string.Empty;
             }
 
-            var startInfo = new ProcessStartInfo { 
+            var startInfo = new ProcessStartInfo {
                 FileName = Interpreter.Configuration.InterpreterPath,
                 Arguments = args.AsQuotedArguments(),
                 WorkingDirectory = Interpreter.Configuration.LibraryPath,
@@ -87,16 +88,23 @@ namespace Microsoft.Python.Analysis.Modules {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             };
-            var ps = Services.GetService<IProcessServices>();
 
             Log?.Log(TraceEventType.Verbose, "Scrape", startInfo.FileName, startInfo.Arguments);
+            var output = string.Empty;
 
             try {
-                var token = new CancellationTokenSource(30000).Token;
-                return ps.ExecuteAndCaptureOutputAsync(startInfo, token).GetAwaiter().GetResult();
+                using (var process = new Process()) {
+                    process.StartInfo = startInfo;
+                    process.ErrorDataReceived += new DataReceivedEventHandler((s, e) => { });
+
+                    process.Start();
+                    process.BeginErrorReadLine();
+
+                    output = process.StandardOutput.ReadToEnd();
+                }
             } catch (Exception ex) when (!ex.IsCriticalException()) { }
 
-            return string.Empty;
+            return output;
         }
     }
 }

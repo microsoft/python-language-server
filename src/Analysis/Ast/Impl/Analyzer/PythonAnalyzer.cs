@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly AsyncAutoResetEvent _analysisRunningEvent = new AsyncAutoResetEvent();
         private readonly ProgressReporter _progress;
         private readonly ILogger _log;
-        private readonly int _maxTaskRunning = Environment.ProcessorCount * 3;
+        private readonly int _maxTaskRunning = Environment.ProcessorCount;
         private int _runningTasks;
         private int _version;
 
