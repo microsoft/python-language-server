@@ -94,11 +94,13 @@ namespace Microsoft.Python.Analysis.Modules {
             var output = string.Empty;
 
             try {
-                var token = new CancellationTokenSource(10000).Token;
-                var process = Process.Start(startInfo);
-                if (process != null) {
+                using (var process = new Process()) {
+                    process.StartInfo = startInfo;
                     process.ErrorDataReceived += new DataReceivedEventHandler((s, e) => { });
+
+                    process.Start();
                     process.BeginErrorReadLine();
+
                     output = process.StandardOutput.ReadToEnd();
                 }
             } catch (Exception ex) when (!ex.IsCriticalException()) { }
