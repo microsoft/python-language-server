@@ -39,6 +39,8 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public bool StepProvided { get; }
 
+        public override string NodeName => "slice";
+
         public override IEnumerable<Node> GetChildNodes() {
             if (SliceStart != null) yield return SliceStart;
             if (SliceStop != null) yield return SliceStop;
