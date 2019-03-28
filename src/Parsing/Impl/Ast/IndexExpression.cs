@@ -33,6 +33,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckDelete() => null;
 
+        public override string NodeName => "subscript";
+
         public override IEnumerable<Node> GetChildNodes() {
             if (Target != null) yield return Target;
             if (Index != null) yield return Index;

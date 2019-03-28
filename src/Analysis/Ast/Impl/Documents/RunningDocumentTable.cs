@@ -73,7 +73,13 @@ namespace Microsoft.Python.Analysis.Documents {
                 entry = FindDocument(null, uri);
                 if (entry == null) {
                     var resolver = _services.GetService<IPythonInterpreter>().ModuleResolution.CurrentPathResolver;
-                    var moduleType = resolver.IsLibraryFile(uri.ToAbsolutePath()) ? ModuleType.Library : ModuleType.User;
+
+                    var moduleType = ModuleType.User;
+                    var path = uri.ToAbsolutePath();
+                    if (Path.IsPathRooted(path)) {
+                        moduleType = resolver.IsLibraryFile(uri.ToAbsolutePath()) ? ModuleType.Library : ModuleType.User;
+                    }
+
                     var mco = new ModuleCreationOptions {
                         ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
                         Content = content,
@@ -205,7 +211,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 case ModuleType.CompiledBuiltin:
                     document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, _services);
                     break;
-                case ModuleType.User when TryAddModulePath(mco):
+                case ModuleType.User:
                 case ModuleType.Library when TryAddModulePath(mco):
                     document = new PythonModule(mco, _services);
                     break;
