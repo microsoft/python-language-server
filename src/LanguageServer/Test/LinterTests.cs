@@ -81,5 +81,18 @@ namespace Microsoft.Python.LanguageServer.Tests {
             PublishDiagnostics();
             ds.Diagnostics[analysis.Document.Uri].Should().HaveCount(1);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task LinterConsidersNamedExpr() {
+            const string code = @"
+if x := 1:
+    y = x
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            var a = Services.GetService<IPythonAnalyzer>();
+            var d = a.LintModule(analysis.Document);
+            d.Should().HaveCount(0);
+        }
     }
 }

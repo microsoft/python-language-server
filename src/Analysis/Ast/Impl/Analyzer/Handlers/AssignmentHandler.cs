@@ -98,6 +98,36 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             HandleTypedVariable(variableType, value, expr.Expression);
         }
 
+        public void HandleNamedExpr(NamedExpression namedExpr) {
+            var value = Eval.GetValueFromExpression(namedExpr.Value) ?? Eval.UnknownType;
+            if (value.IsUnknown()) {
+                Log?.Log(TraceEventType.Verbose, $"Undefined value: {namedExpr.Value.ToCodeString(Ast).Trim()}");
+            }
+            if (value?.GetPythonType().TypeId == BuiltinTypeId.Ellipsis) {
+                value = Eval.UnknownType;
+            }
+
+            var name = "";
+            if (Eval.CurrentScope.NonLocals[name] != null) {
+                Eval.LookupNameInScopes(name, out var scope, LookupOptions.Nonlocal);
+                if (scope != null) {
+                    scope.Variables[name].Assign(value, Eval.GetLoc(namedExpr));
+                } else {
+                    // TODO: report variable is not declared in outer scopes.
+                }
+            } else if (Eval.CurrentScope.Globals[name] != null) {
+                Eval.LookupNameInScopes(name, out var scope, LookupOptions.Global);
+                if (scope != null) {
+                    scope.Variables[name].Assign(value, Eval.GetLoc(namedExpr));
+                } else {
+                    // TODO: report variable is not declared in global scope.
+                }
+            }
+
+            var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
+            Eval.DeclareVariable(name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLoc(namedExpr));
+        }
+
         private void TryHandleClassVariable(AssignmentStatement node, IMember value) {
             var mex = node.Left.OfType<MemberExpression>().FirstOrDefault();
             if (!string.IsNullOrEmpty(mex?.Name) && mex?.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
