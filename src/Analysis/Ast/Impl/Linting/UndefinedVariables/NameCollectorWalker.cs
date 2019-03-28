@@ -14,22 +14,29 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class NameCollectorWalker : PythonWalker {
         private readonly HashSet<string> _names;
-        private readonly HashSet<NameExpression> _additionalNameNodes;
+        private readonly HashSet<NameExpression> _nameExpressions;
 
-        public NameCollectorWalker(HashSet<string> names, HashSet<NameExpression> additionalNameNodes) {
-            _names = names;
-            _additionalNameNodes = additionalNameNodes;
+        public NameCollectorWalker()
+            : this(Enumerable.Empty<string>(), Enumerable.Empty<NameExpression>()) { }
+
+        public NameCollectorWalker(IEnumerable<string> names, IEnumerable<NameExpression> nameExpressions) {
+            _names = new HashSet<string>(names);
+            _nameExpressions = new HashSet<NameExpression>(nameExpressions);
         }
+
+        public IEnumerable<string> Names => _names;
+        public IEnumerable<NameExpression> NameExpressions => _nameExpressions;
 
         public override bool Walk(NameExpression nex) {
             if (!string.IsNullOrEmpty(nex.Name)) {
                 _names.Add(nex.Name);
-                _additionalNameNodes.Add(nex);
+                _nameExpressions.Add(nex);
             }
             return false;
         }

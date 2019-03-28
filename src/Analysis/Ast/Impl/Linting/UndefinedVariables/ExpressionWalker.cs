@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ExpressionWalker : PythonWalker {
         private readonly UndefinedVariablesWalker _walker;
         private readonly HashSet<string> _localNames;
-        private readonly HashSet<NameExpression> _localNameNodes;
+        private readonly HashSet<NameExpression> _localNameExpressions;
 
         public ExpressionWalker(UndefinedVariablesWalker walker)
             : this(walker, null, null) { }
@@ -34,11 +34,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         /// </summary>
         /// <param name="walker">Undefined variables walker.</param>
         /// <param name="localNames">Locally defined names, such as variables in a comprehension.</param>
-        /// <param name="localNameNodes">Name nodes for local names.</param>
-        public ExpressionWalker(UndefinedVariablesWalker walker, HashSet<string> localNames, HashSet<NameExpression> localNameNodes) {
+        /// <param name="localNameExpressions">Name nodes for local names.</param>
+        public ExpressionWalker(UndefinedVariablesWalker walker, IEnumerable<string> localNames, IEnumerable<NameExpression> localNameExpressions) {
             _walker = walker;
-            _localNames = localNames ?? new HashSet<string>();
-            _localNameNodes = localNameNodes ?? new HashSet<NameExpression>();
+            _localNames = new HashSet<string>(localNames ?? Enumerable.Empty<string>());
+            _localNameExpressions = new HashSet<NameExpression>(localNameExpressions ?? Enumerable.Empty<NameExpression>());
         }
 
         public override bool Walk(LambdaExpression node) {
@@ -47,22 +47,22 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         public override bool Walk(ListComprehension node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
 
         public override bool Walk(SetComprehension node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
 
         public override bool Walk(DictionaryComprehension node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
 
         public override bool Walk(GeneratorExpression node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
 
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             if (_localNames?.Contains(node.Name) == true) {
                 return false;
             }
-            if (_localNameNodes?.Contains(node) == true) {
+            if (_localNameExpressions?.Contains(node) == true) {
                 return false;
             }
 

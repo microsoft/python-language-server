@@ -449,7 +449,7 @@ class A:
         }
 
         [TestMethod, Priority(0)]
-        public async Task LambdaComrehension() {
+        public async Task LambdaComprehension() {
             const string code = @"
 y = lambda x: [e for e in x if e == 1]
 ";
@@ -548,6 +548,17 @@ def func_b():
 ";
             var d = await LintAsync(code);
             d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoLeakFromComprehension() {
+            const string code = @"
+len([1 for e in [1, 2]]) + len([e])
+";
+            var d = await LintAsync(code);
+            d.Should().HaveCount(1);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(2, 33, 2, 34);
         }
 
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
