@@ -146,6 +146,17 @@ namespace Microsoft.Python.LanguageServer.Tests {
             ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
         }
 
+        [DataRow("a.b.py")]
+        [DataRow("a-b.py")]
+        [DataRow("01.py")]
+        [DataTestMethod, Priority(0)]
+        public async Task OpenOddNames(string fileName) {
+            var uri = await TestData.CreateTestSpecificFileAsync(fileName, "x = 1");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri.AbsolutePath);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            rdt.OpenDocument(uri, null, uri.AbsolutePath);
+        }
 
         private void VerifyLockCount(IRunningDocumentTable rdt, Uri uri, int expected) {
             rdt.LockDocument(uri).Should().Be(expected + 1);

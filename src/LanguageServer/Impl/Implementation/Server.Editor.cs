@@ -41,10 +41,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (analysis != null) {
                 var result = _completionSource.GetCompletions(analysis, @params.position);
                 res.items = result.Completions.ToArray();
+
+                await InvokeExtensionsAsync((ext, token)
+                    => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken), cancellationToken);
             }
 
-            await InvokeExtensionsAsync((ext, token)
-                => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken), cancellationToken);
             return res;
         }
 
