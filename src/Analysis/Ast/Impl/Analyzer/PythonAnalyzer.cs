@@ -193,14 +193,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void Worker() {
-            ThreadPool.GetMaxThreads(out var max, out _);
+            var maxConcurrent = Math.Max(Environment.ProcessorCount / 2, 4);
             while (true) {
                 _workAvailable.Wait();
                 if (_queue.TryDequeue(out var action)) {
                     _workerAvailable.Wait();
                     lock (_lock) {
                         _workerCount++;
-                        if (_workerCount >= Environment.ProcessorCount) {
+                        if (_workerCount >= maxConcurrent) {
                             _workerAvailable.Reset();
                         }
                     }
@@ -377,7 +377,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 node.Commit();
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
-                if(_version == walker.Version) {
+                if (_version == walker.Version) {
                     _progress.ReportRemaining(walker.Remaining);
                 }
                 Interlocked.Decrement(ref _runningTasks);
