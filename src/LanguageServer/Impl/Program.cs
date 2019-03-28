@@ -121,11 +121,15 @@ namespace Microsoft.Python.LanguageServer.Server {
                 return;
             }
 
-            if (value is Uri) {
-                var uri = (Uri)value;
+            if (value is Uri uri) {
                 var scheme = uri.Scheme;
                 var str = uri.ToString();
-                str = uri.Scheme + "://" + str.Substring(scheme.Length + 3).Replace(":", "%3A").Replace('\\', '/');
+                // If URI does not have :// it is most probably untitled: scheme in which
+                // there is no path so we don't have to escape or deal with slashes.
+                if (str.Contains("://")) {
+                    str = uri.Scheme + "://" + str.Substring(scheme.Length + 3).Replace(":", "%3A").Replace('\\', '/');
+                }
+
                 writer.WriteValue(str);
                 return;
             }
