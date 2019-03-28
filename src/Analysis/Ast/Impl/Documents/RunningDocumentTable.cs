@@ -205,7 +205,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 case ModuleType.CompiledBuiltin:
                     document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, _services);
                     break;
-                case ModuleType.User when TryAddModulePath(mco):
+                case ModuleType.User:
                 case ModuleType.Library when TryAddModulePath(mco):
                     document = new PythonModule(mco, _services);
                     break;
