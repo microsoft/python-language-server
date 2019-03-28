@@ -16,6 +16,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
@@ -1114,9 +1115,29 @@ for a, b in x:
             var modulePath = TestData.GetNextModulePath();
             var code = empty ? string.Empty : $"{Path.GetFileNameWithoutExtension(modulePath)}.";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, null, modulePath);
+
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, code.Length + 1));
             result.Should().NotContainLabels(analysis.Document.Name);
+        }
+
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public async Task OddNamedFile() {
+            const string code = @"
+import sys
+sys.
+";
+            var uri = await TestData.CreateTestSpecificFileAsync("a.b.py", code);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri.AbsolutePath);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var doc = rdt.OpenDocument(uri, null, uri.AbsolutePath);
+
+            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var completions = cs.GetCompletions(analysis, new SourceLocation(3, 5));
+            completions.Should().HaveLabels("argv", "path", "exit");
         }
     }
 }
