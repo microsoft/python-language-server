@@ -34,13 +34,6 @@ namespace Microsoft.Python.Analysis.Types {
         LocationInfo Definition { get; }
 
         /// <summary>
-        /// AST node where the member is defined. For example, <see cref="ClassDefinition"/>
-        /// for a class, <see cref="FunctionDefinition"/> for functions, methods and properties
-        /// or a <see cref="NameExpression"/> for variables.
-        /// </summary>
-        Node DefinitionNode { get; }
-
-        /// <summary>
         /// Link to the primary definition such as when variable is imported from another file.
         /// </summary>
         ILocatedMember Parent { get; }

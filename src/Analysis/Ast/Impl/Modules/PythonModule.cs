@@ -97,7 +97,6 @@ namespace Microsoft.Python.Analysis.Modules {
             Check.ArgumentNotNull(nameof(services), services);
 
             FileSystem = services.GetService<IFileSystem>();
-            Location = new LocationInfo(creationOptions.FilePath, creationOptions.Uri, 1, 1);
 
             var uri = creationOptions.Uri;
             if (uri == null && !string.IsNullOrEmpty(creationOptions.FilePath)) {
@@ -245,10 +244,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
-        #endregion
-
-        #region ILocatedMember
-        public virtual LocationInfo Location { get; }
         #endregion
 
         #region IDisposable

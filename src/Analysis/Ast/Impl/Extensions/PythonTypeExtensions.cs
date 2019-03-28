@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis {
                 if (!string.IsNullOrEmpty(documentation)) {
                     dst.SetDocumentation(documentation);
                 }
-                dst.SetDefinitionNode(src.DefinitionNode);
+                dst.Location = src.Location;
             }
         }
 

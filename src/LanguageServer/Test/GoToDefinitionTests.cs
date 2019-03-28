@@ -215,6 +215,7 @@ class A(object):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task GotoRelativeImportInExplicitPackage() {
             var pkgPath = TestData.GetTestSpecificUri("pkg", "__init__.py");
             var modPath = TestData.GetTestSpecificUri("pkg", "mod.py");
@@ -247,6 +248,22 @@ class A(object):
 
             reference = ds.FindDefinition(null, new SourceLocation(1, 1), out _);
             reference.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReCompile() {
+            const string code = @"
+import re
+x = re.compile(r'hello', re.IGNORECASE)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 10), out _);
+            reference.Should().NotBeNull();
+            reference.range.start.line.Should().BeGreaterThan(0);
+            reference.uri.AbsolutePath.Should().Contain("re.py");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
     }
 }

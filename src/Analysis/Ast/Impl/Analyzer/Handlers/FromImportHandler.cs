@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
-                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule, (member as ILocatedMember)?.DefinitionNode);
+                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule);
             }
         }
 
