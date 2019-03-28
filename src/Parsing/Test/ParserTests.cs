@@ -2926,6 +2926,7 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
                     new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
                     new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
+                    new ErrorResult("can't assign to named expression", new SourceSpan(18, 1, 18, 9)),
                 });
             }
         }
