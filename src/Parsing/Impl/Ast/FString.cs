@@ -20,6 +20,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public readonly string Unparsed;
 
+        public override string NodeName => "f-string expression";
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 foreach (var child in _children) {

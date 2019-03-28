@@ -51,6 +51,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckDelete() => null;
 
+        public override string NodeName => "attribute";
+
         public override IEnumerable<Node> GetChildNodes() {
             if (Target != null) yield return Target;
         }
