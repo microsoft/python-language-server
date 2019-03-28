@@ -193,13 +193,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void Worker() {
-            while(true) {
+            ThreadPool.GetMaxThreads(out var max, out _);
+            while (true) {
                 _workAvailable.Wait();
                 if (_queue.TryDequeue(out var action)) {
                     _workerAvailable.Wait();
                     lock (_lock) {
                         _workerCount++;
-                        if (_workerCount > 4) {
+                        if (_workerCount >= Environment.ProcessorCount) {
                             _workerAvailable.Reset();
                         }
                     }
