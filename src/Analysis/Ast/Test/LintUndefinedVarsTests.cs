@@ -277,6 +277,17 @@ def func(a, b, c):
         }
 
         [TestMethod, Priority(0)]
+        public async Task NamedExprInIf() {
+            const string code = @"
+if x := 1:
+    y = x
+";
+
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NonLocal() {
             const string code = @"
 class A:

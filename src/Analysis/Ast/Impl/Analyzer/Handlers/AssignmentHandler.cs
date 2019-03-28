@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Linting.UndefinedVariables;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -107,7 +109,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 value = Eval.UnknownType;
             }
 
-            var name = "";
+            var name = GetName(namedExpr);
+            if (string.IsNullOrEmpty(name)) {
+                return;
+            }
             if (Eval.CurrentScope.NonLocals[name] != null) {
                 Eval.LookupNameInScopes(name, out var scope, LookupOptions.Nonlocal);
                 if (scope != null) {
@@ -126,6 +131,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
             Eval.DeclareVariable(name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLoc(namedExpr));
+        }
+
+        private string GetName(NamedExpression namedExpr) {
+            var names = new HashSet<string>();
+            var nameWalker = new NameCollectorWalker(names, new HashSet<NameExpression>());
+            namedExpr.Target.Walk(nameWalker);
+            var name = names.FirstOrDefault();
+            return name ?? "";
         }
 
         private void TryHandleClassVariable(AssignmentStatement node, IMember value) {

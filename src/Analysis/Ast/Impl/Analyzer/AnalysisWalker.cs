@@ -69,6 +69,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
+        public override bool Walk(NamedExpression namedExpr) {
+            AssignmentHandler.HandleNamedExpr(namedExpr);
+            return false;
+        }
+
         public override bool Walk(ForStatement node) => LoopHandler.HandleFor(node);
         public override bool Walk(FromImportStatement node) => ImportHandler.HandleFromImport(node);
         public override bool Walk(GlobalStatement node) => NonLocalHandler.HandleGlobal(node);
