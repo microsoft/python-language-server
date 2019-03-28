@@ -17,6 +17,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
@@ -288,6 +289,14 @@ b = y
             refs.Should().HaveCount(1);
             refs[0].range.Should().Be(6, 0, 6, 1);
             refs[0].uri.Should().Be(uri1);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task EmptyAnalysis() {
+            await GetAnalysisAsync(string.Empty);
+            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var references = await rs.FindAllReferencesAsync(null, new SourceLocation(1, 1), ReferenceSearchOptions.All);
+            references.Should().BeEmpty();
         }
     }
 }

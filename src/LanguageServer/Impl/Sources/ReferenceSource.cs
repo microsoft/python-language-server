@@ -48,12 +48,14 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         public async Task<Reference[]> FindAllReferencesAsync(Uri uri, SourceLocation location, ReferenceSearchOptions options, CancellationToken cancellationToken = default) {
-            var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
-            var definition = new DefinitionSource(_services).FindDefinition(analysis, location, out var definingMember);
-            if (definition != null) {
-                var rootDefinition = definingMember.GetRootDefinition();
-                if (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All) {
-                    return await FindAllReferencesAsync(rootDefinition, cancellationToken);
+            if (uri != null) {
+                var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
+                var definition = new DefinitionSource(_services).FindDefinition(analysis, location, out var definingMember);
+                if (definition != null) {
+                    var rootDefinition = definingMember.GetRootDefinition();
+                    if (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All) {
+                        return await FindAllReferencesAsync(rootDefinition, cancellationToken);
+                    }
                 }
             }
             return Array.Empty<Reference>();

@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
@@ -234,6 +235,18 @@ class A(object):
             var reference = ds.FindDefinition(analysis, new SourceLocation(1, 18), out _);
             reference.Should().NotBeNull();
             reference.uri.Should().Be(modPath);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task EmptyAnalysis() {
+            var analysis = await GetAnalysisAsync(string.Empty);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(new EmptyAnalysis(Services, analysis.Document), new SourceLocation(1, 1), out _);
+            reference.Should().BeNull();
+
+            reference = ds.FindDefinition(null, new SourceLocation(1, 1), out _);
+            reference.Should().BeNull();
         }
     }
 }

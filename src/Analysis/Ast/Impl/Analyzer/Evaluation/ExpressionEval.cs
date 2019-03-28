@@ -167,7 +167,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var member = this.LookupNameInScopes(expr.Name, out _, out var v, options);
+            var member = LookupNameInScopes(expr.Name, out _, out var v, options);
             if (member != null) {
                 v?.AddReference(Module, expr);
                 switch (member.GetPythonType()) {

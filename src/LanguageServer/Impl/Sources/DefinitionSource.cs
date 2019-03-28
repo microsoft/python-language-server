@@ -38,6 +38,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember member) {
             member = null;
+            if(analysis?.Ast == null) {
+                return null;
+            }
 
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var exprNode, out var statement, out var exprScope);
