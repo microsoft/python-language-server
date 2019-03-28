@@ -31,6 +31,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Expression Expression { get; }
 
+        public override string NodeName => "yield from expression";
+
         public override IEnumerable<Node> GetChildNodes() {
             if (Expression != null) yield return Expression;
         }

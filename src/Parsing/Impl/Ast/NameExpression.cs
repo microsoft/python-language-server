@@ -33,6 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public override string ToString() => base.ToString() + ":" + Name;
         internal override string CheckAssign() => null;
         internal override string CheckDelete() => null;
+        public override string NodeName => "name";
 
         public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
 
