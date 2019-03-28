@@ -154,41 +154,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
-        public void EvaluateForReferences(Expression expr) {
-            switch (expr) {
-                // Evaluate left side for the reference accounting
-                case IndexExpression idx:
-                    GetValueFromExpression(idx.Target);
-                    break;
-                case MemberExpression mex:
-                    GetValueFromExpression(mex.Target);
-                    break;
-                case SetExpression setex:
-                    foreach (var e in setex.Items) {
-                        GetValueFromExpression(e);
-                    }
-                    break;
-                case ListExpression setex:
-                    foreach (var e in setex.Items) {
-                        GetValueFromExpression(e);
-                    }
-                    break;
-            }
-        }
-
-        public void EvaluateForReferences(Statement s) {
-            switch (s) {
-                case AssertStatement asst:
-                    GetValueFromExpression(asst.Test);
-                    GetValueFromExpression(asst.Message);
-                    break;
-                case DelStatement ds:
-                    foreach (var e in ds.Expressions) {
-                        GetValueFromExpression(e);
-                    }
-                    break;
-            }
-        }
+        internal void ClearCache() => _scopeLookupCache.Clear();
 
         private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier)
             => new PythonFString(formatSpecifier.Unparsed, Interpreter);
