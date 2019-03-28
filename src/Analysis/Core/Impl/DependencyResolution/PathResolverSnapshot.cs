@@ -694,8 +694,11 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         private bool TryFindModule(string modulePath, out Edge lastEdge, out StringSpan unmatchedPathSpan) {
+            lastEdge = default;
+            unmatchedPathSpan = default;
+
             if (!Path.IsPathRooted(modulePath)) {
-                throw new InvalidOperationException("Module path should be rooted");
+                return false;
             }
 
             var normalizedPath = PathUtils.NormalizePath(modulePath);

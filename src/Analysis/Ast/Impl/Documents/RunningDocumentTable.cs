@@ -73,7 +73,13 @@ namespace Microsoft.Python.Analysis.Documents {
                 entry = FindDocument(null, uri);
                 if (entry == null) {
                     var resolver = _services.GetService<IPythonInterpreter>().ModuleResolution.CurrentPathResolver;
-                    var moduleType = resolver.IsLibraryFile(uri.ToAbsolutePath()) ? ModuleType.Library : ModuleType.User;
+
+                    var moduleType = ModuleType.User;
+                    var path = uri.ToAbsolutePath();
+                    if (Path.IsPathRooted(path)) {
+                        moduleType = resolver.IsLibraryFile(uri.ToAbsolutePath()) ? ModuleType.Library : ModuleType.User;
+                    }
+
                     var mco = new ModuleCreationOptions {
                         ModuleName = Path.GetFileNameWithoutExtension(uri.LocalPath),
                         Content = content,
