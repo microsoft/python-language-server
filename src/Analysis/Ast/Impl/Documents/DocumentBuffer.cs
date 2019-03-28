@@ -21,22 +21,21 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Documents {
     internal sealed class DocumentBuffer {
-        private readonly StringBuilder _sb = new StringBuilder();
-        private string _cachedText;
+        private StringBuilder _sb;
+        private string _content;
 
         public int Version { get; private set; }
-        public string Text => _cachedText ?? (_cachedText = _sb.ToString());
+        public string Text => _content ?? (_content = _sb.ToString());
 
         public void Reset(int version, string content) {
             Version = version;
-            _sb.Clear();
-            if (!string.IsNullOrEmpty(content)) {
-                _sb.Append(content);
-            }
-            _cachedText = null;
+            _sb = null;
+            _content = content;
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {
+            _sb = _sb ?? new StringBuilder(_content);
+            _content = null;
 
             var lastStart = int.MaxValue;
             var lineLoc = SplitLines(_sb).ToArray();
@@ -57,7 +56,6 @@ namespace Microsoft.Python.Analysis.Documents {
                 }
             }
             Version++;
-            _cachedText = null;
         }
 
         private static IEnumerable<NewLineLocation> SplitLines(StringBuilder text) {

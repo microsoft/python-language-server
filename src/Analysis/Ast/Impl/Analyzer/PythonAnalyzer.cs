@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -55,6 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisRunningEvent.Set();
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
+            Task.Run(() => Worker()).DoNotWait();
         }
 
         public void Dispose() {
@@ -137,7 +139,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (entry.Invalidate(analysisDependencies, version, out var dependencies)) {
-                AnalyzeDocumentAsync(key, entry, dependencies, default).DoNotWait();
+                AnalyzeDocument(key, entry, dependencies, default);
             }
         }
 
@@ -159,7 +161,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
-                AnalyzeDocumentAsync(key, entry, dependencies, cancellationToken).DoNotWait();
+                AnalyzeDocument(key, entry, dependencies, cancellationToken);
             }
         }
 
@@ -177,8 +179,45 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return linter.Lint(module.Analysis, _services);
         }
 
+        private readonly ConcurrentQueue<Action> _queue = new ConcurrentQueue<Action>();
+        private readonly ManualResetEventSlim _workAvailable = new ManualResetEventSlim(false);
+        private readonly ManualResetEventSlim _workerAvailable = new ManualResetEventSlim(true);
+        private readonly object _lock = new object();
+        private int _workerCount;
 
-        private async Task AnalyzeDocumentAsync(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
+        private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
+            lock (_lock) {
+                _queue.Enqueue(() => DoAnalyzeDocument(key, entry, dependencies, cancellationToken));
+                _workAvailable.Set();
+            }
+        }
+
+        private void Worker() {
+            var maxConcurrent = Math.Max(Environment.ProcessorCount / 2, 4);
+            while (true) {
+                _workAvailable.Wait();
+                if (_queue.TryDequeue(out var action)) {
+                    _workerAvailable.Wait();
+                    lock (_lock) {
+                        _workerCount++;
+                        if (_workerCount >= maxConcurrent) {
+                            _workerAvailable.Reset();
+                        }
+                    }
+
+                    Task.Run(action).ContinueWith(t => {
+                        lock (_lock) {
+                            _workerCount--;
+                            _workerAvailable.Set();
+                        }
+                    });
+                } else {
+                    _workAvailable.Reset();
+                }
+            }
+        }
+
+        private void DoAnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
@@ -213,7 +252,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         StartAnalysis(entry, walker.Version, cancellationToken);
                     }
 
-                    await waitForAnalysisTask;
+                    waitForAnalysisTask.Wait(cancellationToken);
                 }
 
                 int version;
@@ -239,7 +278,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var remaining = originalRemaining;
                 try {
                     _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has started.");
-                    remaining = await AnalyzeAffectedEntriesAsync(walker, stopWatch, analysisToken);
+                    remaining = AnalyzeAffectedEntriesAsync(walker, stopWatch, analysisToken).GetAwaiter().GetResult();
                 } finally {
                     _analysisRunningEvent.Set();
                     stopWatch.Stop();
@@ -338,7 +377,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 node.Commit();
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
-                if(_version == walker.Version) {
+                if (_version == walker.Version) {
                     _progress.ReportRemaining(walker.Remaining);
                 }
                 Interlocked.Decrement(ref _runningTasks);
