@@ -167,6 +167,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
+        internal void ClearCache() => _scopeLookupCache.Clear();
+
         private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier) {
             return new PythonFString(formatSpecifier.Unparsed, Interpreter, GetLoc(formatSpecifier));
         }

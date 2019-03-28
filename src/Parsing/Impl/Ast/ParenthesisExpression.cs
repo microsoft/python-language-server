@@ -31,6 +31,7 @@ namespace Microsoft.Python.Parsing.Ast {
         internal override string CheckDelete() => Expression.CheckDelete();
 
         internal override string CheckAssignExpr() => Expression.CheckAssignExpr();
+        public override string NodeName => "parenthesized expression";
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Expression != null) yield return Expression;

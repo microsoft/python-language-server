@@ -70,6 +70,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckDelete() => "can't delete function call";
 
+        public override string NodeName => "function call";
+
         public override IEnumerable<Node> GetChildNodes() {
             if (Target != null) yield return Target;
             foreach (var arg in Args) {
