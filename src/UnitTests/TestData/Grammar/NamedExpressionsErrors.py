@@ -15,4 +15,3 @@ def foo2(answer = p := 42):
     pass
 
 (x := x := x)
-(a := 1) = 1

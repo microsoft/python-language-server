@@ -2926,7 +2926,6 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
                     new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
                     new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
-                    new ErrorResult("can't assign to named expression", new SourceSpan(18, 1, 18, 9)),
                 });
             }
         }
@@ -3065,6 +3064,17 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorInfo("illegal expression for augmented assignment", 69, 6, 1, 77, 6, 9),
                     new ErrorInfo("can't assign to yield expression", 98, 8, 5, 109, 8, 16)
                 );
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void AssignToNamedExprIllegal() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseString("(a := 1) = 1", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[]{
+                    new ErrorResult("can't assign to named expression", new SourceSpan(1, 1, 1, 9))
+                });
             }
         }
 
