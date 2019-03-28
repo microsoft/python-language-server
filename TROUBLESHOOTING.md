@@ -12,10 +12,6 @@ There are a few known issues in the current version of the language server:
 - Find references and rename functionality is not yet implemented.
     - See [#699](https://github.com/Microsoft/python-language-server/issues/699),
     [#577](https://github.com/Microsoft/python-language-server/issues/577).
-- Files with unimportable names cannot be analyzed.
-    - This includes files like `my-script`, `1.py`, and untitled files.
-    See [#597](https://github.com/Microsoft/python-language-server/issues/597),
-    [#736](https://github.com/Microsoft/python-language-server/issues/736).
 - Not all `__all__` statements can be handled.
     - Some modules may have an incorrect list of exported names.
     See [#620](https://github.com/Microsoft/python-language-server/issues/620),
