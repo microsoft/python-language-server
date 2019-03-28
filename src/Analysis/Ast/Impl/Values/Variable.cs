@@ -61,6 +61,9 @@ namespace Microsoft.Python.Analysis.Values {
             => base.Definition.DocumentUri != null ? base.References : (Value as ILocatedMember)?.References;
 
         public override void AddReference(IPythonModule module, Node location) {
+            if(module == null || location == null) {
+                return;
+            }
             // If value is not a located member, then add reference to the variable.
             // If variable name is the same as the value member name, then the variable
             // is implicit declaration (like declared function or a class) and we need
