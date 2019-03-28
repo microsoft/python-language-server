@@ -225,15 +225,14 @@ f'hey {some}'
         }
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public async Task AssignmentExpressions() {
             const string code = @"
-a = 5
-a := 1
+(a := 1)
 ";
             var analysis = await GetAnalysisAsync(code);
             var hs = new HoverSource(new PlainTextDocumentationSource());
-            AssertHover(hs, analysis, new SourceLocation(3, 1), @"a: int", new SourceSpan(3, 1, 3, 2));
-            hs.GetHover(analysis, new SourceLocation(3, 3)).Should().BeNull();
+            AssertHover(hs, analysis, new SourceLocation(2, 2), @"a: int", new SourceSpan(3, 1, 3, 2));
         }
 
         private static void AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
