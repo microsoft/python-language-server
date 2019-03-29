@@ -1256,7 +1256,7 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorInfo("invalid syntax", 7, 1, 8, 8, 1, 9),
                     new ErrorInfo("unexpected token '<newline>'", 8, 1, 9, 10, 2, 1),
                     new ErrorInfo("unexpected token 'as'", 10, 2, 1, 12, 2, 3),
-                    new ErrorInfo("can't assign to ErrorExpression", 10, 2, 1, 12, 2, 3)
+                    new ErrorInfo("can't assign to error expression", 10, 2, 1, 12, 2, 3)
                 );
             }
         }

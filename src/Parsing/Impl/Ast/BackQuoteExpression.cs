@@ -26,6 +26,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Expression Expression { get; }
 
+        public override string NodeName => "string conversion";
+
         public override IEnumerable<Node> GetChildNodes() {
             if (Expression != null) yield return Expression;
         }

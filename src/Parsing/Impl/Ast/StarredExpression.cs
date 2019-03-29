@@ -31,6 +31,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int StarCount { get; }
 
+        public override string NodeName => "starred";
+
         public override IEnumerable<Node> GetChildNodes() {
             yield return Expression;
         }

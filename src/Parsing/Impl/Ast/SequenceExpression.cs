@@ -58,6 +58,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckAugmentedAssign() => "illegal expression for augmented assignment";
 
+        public override string NodeName => "sequence";
+
         private static bool IsComplexAssignment(Expression expr) => !(expr is NameExpression);
     }
 }

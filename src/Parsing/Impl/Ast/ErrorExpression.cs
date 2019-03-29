@@ -32,6 +32,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public ErrorExpression(string verbatimImage, Expression preceding) : this(verbatimImage, preceding, null) { }
 
+        public override string NodeName => "error expression";
+
         public ErrorExpression AddPrefix(string verbatimImage, Expression preceding) => new ErrorExpression(verbatimImage, preceding, this);
 
         public string VerbatimImage => _verbatimImage;
