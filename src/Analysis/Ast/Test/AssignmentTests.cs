@@ -165,7 +165,19 @@ x, y, z = func()
         }
 
         [TestMethod, Priority(0)]
-        public async Task TupleSingleValue() {
+        public async Task NestedTuple() {
+            const string code = @"
+((x, r), y, z) = (1, 1), '', False,
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("r").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Bool);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedTupleSingleValue() {
             const string code = @"
 (x, (y, (z))) = 1,
 ";
