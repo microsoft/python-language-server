@@ -48,7 +48,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                         return;
                     }
                 } else if (entries.Count == 0) {
-                        return;
+                    return;
                 }
                 _entries[source] = entries;
                 Changed = true;
@@ -157,16 +157,16 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                         d.Value.Changed = false;
                     }
                 }
-            }
 
-            foreach (var kvp in diagnostics) {
-                var parameters = new PublishDiagnosticsParams {
-                    uri = kvp.Key,
-                    diagnostics = Rdt.GetDocument(kvp.Key)?.IsOpen == true
-                            ? FilterBySeverityMap(kvp.Value).Select(ToDiagnostic).ToArray()
-                            : Array.Empty<Diagnostic>()
-                };
-                _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
+                foreach (var kvp in diagnostics) {
+                    var parameters = new PublishDiagnosticsParams {
+                        uri = kvp.Key,
+                        diagnostics = Rdt.GetDocument(kvp.Key)?.IsOpen == true
+                                ? FilterBySeverityMap(kvp.Value).Select(ToDiagnostic).ToArray()
+                                : Array.Empty<Diagnostic>()
+                    };
+                    _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
+                }
             }
         }
 
@@ -203,7 +203,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         }
 
         private IEnumerable<DiagnosticsEntry> FilterBySeverityMap(DocumentDiagnostics d)
-           => d.Entries
+            => d.Entries
                 .SelectMany(kvp => kvp.Value)
                 .Where(e => DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity) != Severity.Suppressed)
                 .Select(e => new DiagnosticsEntry(
@@ -212,7 +212,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                     e.ErrorCode,
                     DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity),
                     e.Source)
-                );
+                ).ToArray();
 
         private void ConnectToRdt() {
             if (_rdt == null) {
