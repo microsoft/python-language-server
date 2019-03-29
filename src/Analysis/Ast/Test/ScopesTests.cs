@@ -50,6 +50,7 @@ def func(x, y):
     def inner(c):
         z
         
+
     
 
 ";
@@ -85,6 +86,29 @@ def func(x, y):
                 (new SourceLocation(16, 9),  "inner"),
                 (new SourceLocation(17, 5),  "func"),
                 (new SourceLocation(18, 1),  "<module>")
+            };
+
+            foreach (var loc in locations) {
+                var scope = gs.FindScope(analysis.Document, loc.Item1);
+                scope.Name.Should().Be(loc.Item2, $"location {loc.Item1.Line}, {loc.Item1.Column}");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task EmptyLines() {
+            const string code = @"
+class A:
+    x: int
+    def method(self):
+
+";
+            var analysis = await GetAnalysisAsync(code);
+            var gs = analysis.GlobalScope;
+
+            var locations = new[] {
+                (new SourceLocation(5, 1), "<module>"),
+                (new SourceLocation(5, 5), "A"),
+                (new SourceLocation(5, 9), "method")
             };
 
             foreach (var loc in locations) {

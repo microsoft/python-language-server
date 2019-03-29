@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
@@ -72,7 +71,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var scopeIndent = GetParentScopeIndent(candidate, document.Analysis.Ast);
-            var indent = GetLineIndent(document, index);
+            var indent = GetLineIndent(document, index, out var lineIsEmpty);
+            indent = lineIsEmpty ? location.Column : indent; // Take into account virtual space.
             if (indent <= scopeIndent) {
                 // Candidate is at deeper indentation than location and the
                 // candidate is scoped, so return the parent instead.
@@ -91,13 +91,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return child;
         }
 
-        private static int GetLineIndent(IDocument document, int index) {
+        private static int GetLineIndent(IDocument document, int index, out bool lineIsEmpty) {
             var content = document.Content;
+            lineIsEmpty = true;
             if (!string.IsNullOrEmpty(content)) {
                 var i = index - 1;
                 for (; i >= 0 && content[i] != '\n' && content[i] != '\r'; i--) { }
                 var lineStart = i + 1;
-                for (i = lineStart; i < content.Length && char.IsWhiteSpace(content[i]) && content[i] != '\n' && content[i] != '\r'; i++) { }
+                for (i = lineStart; i < content.Length && content[i] != '\n' && content[i] != '\r'; i++) {
+                    if (!char.IsWhiteSpace(content[i])) {
+                        lineIsEmpty = false;
+                        break;
+                    }
+                }
                 return i - lineStart + 1;
             }
             return 1;

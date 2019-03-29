@@ -147,7 +147,7 @@ x.oar(100)
 
         [TestMethod, Priority(0)]
         public async Task TypeAtEndOfIncompleteMethod() {
-            var code = @"
+            const string code = @"
 class Fob(object):
     def oar(self, a):
 
