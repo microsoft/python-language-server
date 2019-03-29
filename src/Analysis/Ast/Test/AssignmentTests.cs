@@ -149,7 +149,7 @@ a = z
             const string code = @"
 x, y, z = 1, 'str', 3.0
 ";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Float);
@@ -160,7 +160,16 @@ x, y, z = 1, 'str', 3.0
             const string code = @"
 x, y, z = func()
 ";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").And.HaveVariable("y").And.HaveVariable("z");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TupleSingleValue() {
+            const string code = @"
+(x, (y, (z))) = 1,
+";
+            var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").And.HaveVariable("y").And.HaveVariable("z");
         }
 

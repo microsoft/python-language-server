@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         internal static void Assign(IEnumerable<Expression> lhs, TupleExpression rhs, ExpressionEval eval) {
             var returnedExpressions = rhs.Items.ToArray();
-            var names = lhs.OfType<NameExpression>().Select(x => x.Name).ToArray();
+            var names = NamesFromSequenceExpression(lhs).Select(n => n.Name).ToArray();
             for (var i = 0; i < names.Length; i++) {
                 Expression e = null;
                 if (returnedExpressions.Length > 0) {
@@ -75,6 +75,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         break;
                 }
             }
+        }
+
+        private static IEnumerable<NameExpression> NamesFromSequenceExpression(IEnumerable<Expression> items) {
+            var names = new List<NameExpression>();
+            foreach (var item in items) {
+                var expr = item.RemoveParenthesis();
+                switch (expr) {
+                    case SequenceExpression seq:
+                        names.AddRange(NamesFromSequenceExpression(seq.Items));
+                        break;
+                    case NameExpression nex:
+                        names.Add(nex);
+                        break;
+                }
+            }
+            return names;
         }
 
         private class ValueEnumerator {
