@@ -125,7 +125,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 lock (_lock) {
                     _severityMap = value;
                     foreach (var d in _diagnostics) {
-                        _diagnostics[d.Key].Changed = true;
+                        d.Value.Changed = true;
                         _lastChangeTime = DateTime.Now;
                     }
                     PublishDiagnostics();
@@ -149,12 +149,12 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         }
 
         private void PublishDiagnostics() {
-            var diagnostics = new List<KeyValuePair<Uri, DocumentDiagnostics>>();
+            var diagnostics = new Dictionary<Uri, DocumentDiagnostics>();
             lock (_lock) {
                 foreach (var d in _diagnostics) {
                     if (d.Value.Changed) {
-                        diagnostics.Add(d);
-                        _diagnostics[d.Key].Changed = false;
+                        diagnostics[d.Key] = d.Value;
+                        d.Value.Changed = false;
                     }
                 }
             }
