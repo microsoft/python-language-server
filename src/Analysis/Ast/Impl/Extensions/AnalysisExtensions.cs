@@ -22,7 +22,7 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Analysis {
     public static class AnalysisExtensions {
         public static IScope FindScope(this IDocumentAnalysis analysis, SourceLocation location)
-            => analysis.GlobalScope.FindScope(analysis.Ast, location);
+            => analysis.GlobalScope.FindScope(analysis.Document, location);
 
         /// <summary>
         /// Provides ability to specialize function return type manually.

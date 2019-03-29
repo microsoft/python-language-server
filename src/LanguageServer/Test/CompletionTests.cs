@@ -1139,5 +1139,18 @@ sys.
             var completions = cs.GetCompletions(analysis, new SourceLocation(3, 5));
             completions.Should().HaveLabels("argv", "path", "exit");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task FunctionScope() {
+            const string code = @"
+def func():
+    aaa = 1
+a";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(4, 2));
+            result.Completions.Select(c => c.label).Should().NotContain("aaa");
+        }
     }
 }
