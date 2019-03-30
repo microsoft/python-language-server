@@ -93,19 +93,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         private static IEnumerable<IMember> ValuesFromSequenceExpression(IEnumerable<Expression> items, ExpressionEval eval) {
-            var names = new List<IMember>();
+            var members = new List<IMember>();
             foreach (var item in items) {
                 var value = eval.GetValueFromExpression(item);
                 switch (value) {
                     case IPythonCollection coll:
-                        names.AddRange(coll.Contents);
+                        members.AddRange(coll.Contents);
                         break;
                     default:
-                        names.Add(value);
+                        members.Add(value);
                         break;
                 }
             }
-            return names;
+            return members;
         }
 
         private class ValueEnumerator {
