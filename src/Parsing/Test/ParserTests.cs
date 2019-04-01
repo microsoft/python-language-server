@@ -122,7 +122,8 @@ namespace Microsoft.Python.Parsing.Tests {
                 new ErrorInfo("f-string: invalid conversion character: k expected 's', 'r', or 'a'", 236, 33, 7, 237, 33, 8),
                 new ErrorInfo("f-string: unmatched ')'", 245, 35, 4, 246, 35, 5),
                 new ErrorInfo("f-string: unmatched ')'", 257, 37, 6, 258, 37, 7),
-                new ErrorInfo("f-string: closing parenthesis '}' does not match opening parenthesis '('", 269, 39, 6, 270, 39, 7)
+                new ErrorInfo("f-string: closing parenthesis '}' does not match opening parenthesis '('", 269, 39, 6, 270, 39, 7),
+                new ErrorInfo("f-string: unmatched ']'", 280, 41, 4, 281, 41, 5)
             );
         }
 
@@ -372,6 +373,16 @@ namespace Microsoft.Python.Parsing.Tests {
                                             )
                                         ),
                                         PositionalArg(One)
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckIndexExpression(
+                                        CheckListExpr(One, Two, One),
+                                        CheckSlice(One, null)
                                     )
                                 )
                             )
