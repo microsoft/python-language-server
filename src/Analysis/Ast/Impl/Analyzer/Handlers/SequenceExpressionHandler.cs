@@ -33,17 +33,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         internal static void Assign(IEnumerable<Expression> lhs, TupleExpression rhs, ExpressionEval eval) {
-            var returnedExpressions = rhs.Items.ToArray();
-            var names = lhs.OfType<NameExpression>().Select(x => x.Name).ToArray();
+            var names = NamesFromSequenceExpression(lhs).ToArray();
+            var values = ValuesFromSequenceExpression(rhs.Items, eval).ToArray();
             for (var i = 0; i < names.Length; i++) {
-                Expression e = null;
-                if (returnedExpressions.Length > 0) {
-                    e = i < returnedExpressions.Length ? returnedExpressions[i] : returnedExpressions[returnedExpressions.Length - 1];
+                IMember value = null;
+                if (values.Length > 0) {
+                    value = i < values.Length ? values[i] : values[values.Length - 1];
                 }
 
-                if (e != null && !string.IsNullOrEmpty(names[i])) {
-                    var v = eval.GetValueFromExpression(e);
-                    eval.DeclareVariable(names[i], v ?? eval.UnknownType, VariableSource.Declaration, eval.Module, e);
+                if (!string.IsNullOrEmpty(names[i]?.Name)) {
+                    eval.DeclareVariable(names[i].Name, value ?? eval.UnknownType, VariableSource.Declaration, eval.Module, names[i]);
                 }
             }
         }
@@ -75,6 +74,38 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         break;
                 }
             }
+        }
+
+        private static IEnumerable<NameExpression> NamesFromSequenceExpression(IEnumerable<Expression> items) {
+            var names = new List<NameExpression>();
+            foreach (var item in items) {
+                var expr = item.RemoveParenthesis();
+                switch (expr) {
+                    case SequenceExpression seq:
+                        names.AddRange(NamesFromSequenceExpression(seq.Items));
+                        break;
+                    case NameExpression nex:
+                        names.Add(nex);
+                        break;
+                }
+            }
+            return names;
+        }
+
+        private static IEnumerable<IMember> ValuesFromSequenceExpression(IEnumerable<Expression> items, ExpressionEval eval) {
+            var members = new List<IMember>();
+            foreach (var item in items) {
+                var value = eval.GetValueFromExpression(item);
+                switch (value) {
+                    case IPythonCollection coll:
+                        members.AddRange(coll.Contents);
+                        break;
+                    default:
+                        members.Add(value);
+                        break;
+                }
+            }
+            return members;
         }
 
         private class ValueEnumerator {

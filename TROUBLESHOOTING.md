@@ -9,9 +9,6 @@ in [Filing an issue](#filing-an-issue).
 
 There are a few known issues in the current version of the language server:
 
-- Find references and rename functionality is not yet implemented.
-    - See [#699](https://github.com/Microsoft/python-language-server/issues/699),
-    [#577](https://github.com/Microsoft/python-language-server/issues/577).
 - Not all `__all__` statements can be handled.
     - Some modules may have an incorrect list of exported names.
     See [#620](https://github.com/Microsoft/python-language-server/issues/620),
