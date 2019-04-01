@@ -13,12 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -86,48 +83,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             TryHandleClassVariable(node, value);
-        }
-
-        public void HandleAugmentedAssign(AugmentedAssignStatement node) {
-            if (node.Operator != Parsing.PythonOperator.Add) {
-                return;
-            }
-
-            // TODO: handle more complicated lvars
-            if (!(node.Left is NameExpression ne)) {
-                return;
-            }
-
-            if (node.Right is ErrorExpression) {
-                return;
-            }
-
-            if (Eval.CurrentScope != Eval.GlobalScope || ne.Name != "__all__") {
-                return;
-            }
-
-            var rightVar = Eval.GetValueFromExpression(node.Right);
-            var rightContents = (rightVar as IPythonCollection)?.Contents;
-
-            if (rightContents == null) {
-                // TODO: Mark __all__ as unusable
-                return;
-            }
-
-            Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Normal);
-            if (scope == null) {
-                // += on __all__ before it's declared, uh oh
-                return;
-            }
-
-            var allContents = (scope.Variables[ne.Name].Value as IPythonCollection)?.Contents;
-
-            var contents = new List<IMember>(allContents ?? Array.Empty<IMember>());
-            contents.AddRange(rightContents ?? Array.Empty<IMember>());
-            var list = PythonCollectionType.CreateList(Module.Interpreter, Eval.GetLoc(ne), contents);
-            var source = list.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-
-            Eval.DeclareVariable(ne.Name, list, source, Eval.GetLoc(ne));
         }
 
         public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {

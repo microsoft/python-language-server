@@ -56,11 +56,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return base.Walk(node);
         }
 
-        public override bool Walk(AugmentedAssignStatement node) {
-            AssignmentHandler.HandleAugmentedAssign(node);
-            return base.Walk(node);
-        }
-
         public override bool Walk(ExpressionStatement node) {
             switch (node.Expression) {
                 case ExpressionWithAnnotation ea:

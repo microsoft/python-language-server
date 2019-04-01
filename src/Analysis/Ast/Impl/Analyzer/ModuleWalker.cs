@@ -13,12 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
@@ -33,6 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         // A hack to use __all__ export in the most simple case.
         private int _allReferencesCount;
+        private bool _allIsUsable = true;
 
         public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
             : base(new ExpressionEval(services, module, ast)) {
@@ -41,11 +45,109 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override bool Walk(NameExpression node) {
-            // if (Eval.CurrentScope == Eval.GlobalScope && node.Name == AllVariableName) {
-            //     _allReferencesCount++;
-            // }
-            _allReferencesCount = 1;
+            if (Eval.CurrentScope == Eval.GlobalScope && node.Name == AllVariableName) {
+                _allReferencesCount++;
+            }
             return base.Walk(node);
+        }
+
+        public override bool Walk(AugmentedAssignStatement node) {
+            HandleAugmentedAllAssign(node);
+            return base.Walk(node);
+        }
+
+        public override bool Walk(CallExpression node) {
+            HandleAllAppendExtend(node);
+            return base.Walk(node);
+        }
+
+        private void HandleAugmentedAllAssign(AugmentedAssignStatement node) {
+            if (!IsHandleableAll(node.Left)) {
+                return;
+            }
+
+            if (node.Right is ErrorExpression) {
+                return;
+            }
+
+            if (node.Operator != Parsing.PythonOperator.Add) {
+                _allIsUsable = false;
+                return;
+            }
+
+            var rightVar = Eval.GetValueFromExpression(node.Right);
+            var rightContents = (rightVar as IPythonCollection)?.Contents;
+
+            if (rightContents == null) {
+                _allIsUsable = false;
+                return;
+            }
+
+            ExtendAll(node.Left, rightContents);
+        }
+
+        private void HandleAllAppendExtend(CallExpression node) {
+            if (!(node.Target is MemberExpression me)) {
+                return;
+            }
+
+            if (!IsHandleableAll(me.Target)) {
+                return;
+            }
+
+            if (node.Args.Count == 0) {
+                return;
+            }
+
+            IEnumerable<IMember> content = null;
+            var v = Eval.GetValueFromExpression(node.Args[0].Expression);
+            if (v == null) {
+                _allIsUsable = false;
+                return;
+            }
+
+            switch (me.Name) {
+                case "append":
+                    content = Enumerable.Repeat(v, 1);
+                    break;
+                case "extend":
+                    content = (v as IPythonCollection)?.Contents;
+                    break;
+            }
+
+            if (content == null) {
+                _allIsUsable = false;
+                return;
+            }
+
+            ExtendAll(node, content);
+        }
+
+        private void ExtendAll(Node declNode, IEnumerable<IMember> values) {
+            Eval.LookupNameInScopes(AllVariableName, out var scope, LookupOptions.Normal);
+            if (scope == null) {
+                return;
+            }
+
+            var loc = Eval.GetLoc(declNode);
+
+            var allContents = (scope.Variables[AllVariableName].Value as IPythonCollection)?.Contents;
+
+            var contents = new List<IMember>(allContents ?? Array.Empty<IMember>());
+            contents.AddRange(values ?? Array.Empty<IMember>());
+            var list = PythonCollectionType.CreateList(Module.Interpreter, loc, contents);
+            var source = list.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
+
+            Eval.DeclareVariable(AllVariableName, list, source, loc);
+        }
+
+        private bool IsHandleableAll(Node node) {
+            // TODO: handle more complicated lvars
+            if (!(node is NameExpression ne)) {
+                return false;
+            }
+
+            return Eval.CurrentScope == Eval.GlobalScope && ne.Name == AllVariableName;
         }
 
         public override bool Walk(PythonAst node) {
@@ -99,7 +201,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
 
-            if (_allReferencesCount == 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable) && variable?.Value is IPythonCollection collection) {
+            if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable) && variable?.Value is IPythonCollection collection) {
                 ExportedMemberNames = collection.Contents
                     .OfType<IPythonConstant>()
                     .Select(c => c.GetString())
