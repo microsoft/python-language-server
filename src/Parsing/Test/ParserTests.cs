@@ -375,6 +375,16 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckIndexExpression(
+                                        CheckListExpr(One, Two, One),
+                                        CheckSlice(One, null)
+                                    )
+                                )
+                            )
                         )
                     )
                 );
