@@ -225,7 +225,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void NotifyPackagesChanged(CancellationToken cancellationToken) {
             lock (_reloadLock) {
-                if ((DateTime.Now - _lastPackageReload).TotalMilliseconds > 15000) {
+                if ((DateTime.Now - _lastPackageReload).TotalMilliseconds > 10000) {
                     var interpreter = _services.GetService<IPythonInterpreter>();
                     _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
                     // No need to reload typeshed resolution since it is a static storage.
