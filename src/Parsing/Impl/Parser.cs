@@ -2789,7 +2789,7 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 var target = ret;
-                var assignErrorMsg = ret.CheckAssignExpr();
+                var assignErrorMsg = RemoveParenthesis(ret).CheckAssignExpr();
                 if (!string.IsNullOrEmpty(assignErrorMsg)) {
                     ReportSyntaxError(ret.StartIndex, ret.EndIndex, assignErrorMsg);
                 }
@@ -4958,6 +4958,13 @@ namespace Microsoft.Python.Parsing {
 
                 _parser.ErrorSink.Add(message, span, errorCode, severity);
             }
+        }
+
+        private Expression RemoveParenthesis(Expression expr) {
+            while(expr is ParenthesisExpression parenExpr) {
+                expr = parenExpr.Expression;
+            }
+            return expr;
         }
 
         #endregion
