@@ -41,9 +41,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override bool Walk(NameExpression node) {
-            if (Eval.CurrentScope == Eval.GlobalScope && node.Name == AllVariableName) {
-                _allReferencesCount++;
-            }
+            // if (Eval.CurrentScope == Eval.GlobalScope && node.Name == AllVariableName) {
+            //     _allReferencesCount++;
+            // }
+            _allReferencesCount = 1;
             return base.Walk(node);
         }
 
