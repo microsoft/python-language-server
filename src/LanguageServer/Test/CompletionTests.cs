@@ -1122,7 +1122,6 @@ for a, b in x:
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task OddNamedFile() {
             const string code = @"
 import sys
@@ -1133,9 +1132,9 @@ sys.
             var rdt = Services.GetService<IRunningDocumentTable>();
             var doc = rdt.OpenDocument(uri, null, uri.AbsolutePath);
 
-            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var analysis = await GetDocumentAnalysisAsync(doc);
 
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var completions = cs.GetCompletions(analysis, new SourceLocation(3, 5));
             completions.Should().HaveLabels("argv", "path", "exit");
         }

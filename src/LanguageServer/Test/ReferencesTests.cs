@@ -85,10 +85,7 @@ y = x
             rdt.OpenDocument(uri2, code2);
 
             var doc1 = rdt.GetDocument(uri1);
-            var doc2 = rdt.GetDocument(uri2);
-
-            var analysis = await doc1.GetAnalysisAsync(Timeout.Infinite);
-            await doc2.GetAnalysisAsync(Timeout.Infinite);
+            var analysis = await GetDocumentAnalysisAsync(doc1);
 
             var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10), ReferenceSearchOptions.All);
@@ -258,8 +255,7 @@ b = y
             var doc1 = rdt.GetDocument(uri1);
             var doc2 = rdt.GetDocument(uri2);
 
-            var analysis = await doc1.GetAnalysisAsync(Timeout.Infinite);
-            await doc2.GetAnalysisAsync(Timeout.Infinite);
+            var analysis = await GetDocumentAnalysisAsync(doc1);
 
             var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 1), ReferenceSearchOptions.All);
@@ -282,7 +278,7 @@ b = y
                     ReplacedSpan = new SourceSpan(2, 20, 2, 23)
                 }
             });
-            await doc2.GetAnalysisAsync(Timeout.Infinite);
+            await GetDocumentAnalysisAsync(doc2);
 
             refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 1), ReferenceSearchOptions.All);
 

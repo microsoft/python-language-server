@@ -85,14 +85,11 @@ y = x
             await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri1.AbsolutePath);
 
             var rdt = Services.GetService<IRunningDocumentTable>();
-            rdt.OpenDocument(uri1, code1);
-            rdt.OpenDocument(uri2, code2);
+            var doc1 = rdt.OpenDocument(uri1, code1);
+            var doc2 = rdt.OpenDocument(uri2, code2);
 
-            var doc1 = rdt.GetDocument(uri1);
-            var doc2 = rdt.GetDocument(uri2);
-
-            var analysis = await doc1.GetAnalysisAsync(Timeout.Infinite);
-            await doc2.GetAnalysisAsync(Timeout.Infinite);
+            var analysis = await GetDocumentAnalysisAsync(doc1);
+            await GetDocumentAnalysisAsync(doc2);
 
             var rs = new RenameSource(Services, TestData.GetTestSpecificPath());
             var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(7, 10), "z");
