@@ -99,7 +99,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            IEnumerable<IMember> content = null;
+            IEnumerable<IMember> contents = null;
             var v = Eval.GetValueFromExpression(node.Args[0].Expression);
             if (v == null) {
                 _allIsUsable = false;
@@ -108,19 +108,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             switch (me.Name) {
                 case "append":
-                    content = Enumerable.Repeat(v, 1);
+                    contents = Enumerable.Repeat(v, 1);
                     break;
                 case "extend":
-                    content = (v as IPythonCollection)?.Contents;
+                    contents = (v as IPythonCollection)?.Contents;
                     break;
             }
 
-            if (content == null) {
+            if (contents == null) {
                 _allIsUsable = false;
                 return;
             }
 
-            ExtendAll(node, content);
+            ExtendAll(node, contents);
         }
 
         private void ExtendAll(Node declNode, IEnumerable<IMember> values) {
