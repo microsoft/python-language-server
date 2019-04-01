@@ -216,8 +216,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ReloadModulePaths(addedRoots);
         }
 
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
-            => PathResolver.SetUserSearchPaths(searchPaths);
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) {
+            UserSearchPaths = searchPaths?.ToArray() ?? Array.Empty<string>();
+            return PathResolver.SetUserSearchPaths(UserSearchPaths);
+        }
+
+        public IEnumerable<string> UserSearchPaths { get; private set; } = Enumerable.Empty<string>();
 
         // For tests
         internal void AddUnimportableModule(string moduleName)

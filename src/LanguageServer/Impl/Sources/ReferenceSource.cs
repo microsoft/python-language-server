@@ -78,22 +78,26 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var rdt = _services.GetService<IRunningDocumentTable>();
             var interpreter = _services.GetService<IPythonInterpreter>();
             var closedFiles = new Dictionary<string, PythonAst>();
+            var userSearchPaths = interpreter.ModuleResolution.UserSearchPaths;
 
-            try {
-                foreach (var filePath in fs.GetFiles(_rootPath, "*.py", SearchOption.AllDirectories)) {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var doc = rdt.GetDocument(new Uri(filePath));
-                    if (doc != null) {
-                        continue;
+            foreach (var folder in userSearchPaths) {
+                try {
+                    foreach (var filePath in fs.GetFiles(folder, "*.py", SearchOption.AllDirectories)) {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var doc = rdt.GetDocument(new Uri(filePath));
+                        if (doc != null) {
+                            continue;
+                        }
+
+                        var content = fs.ReadTextWithRetry(filePath);
+                        using (var s = new StringReader(content)) {
+                            var parser = Parser.CreateParser(s, interpreter.LanguageVersion);
+                            var ast = parser.ParseFile();
+                            closedFiles[filePath] = ast;
+                        }
                     }
-                    var content = fs.ReadTextWithRetry(filePath);
-                    using (var s = new StringReader(content)) {
-                        var parser = Parser.CreateParser(s, interpreter.LanguageVersion);
-                        var ast = parser.ParseFile();
-                        closedFiles[filePath] = ast;
-                    }
-                }
-            } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
 
             return closedFiles;
         }

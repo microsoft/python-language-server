@@ -38,10 +38,15 @@ namespace Microsoft.Python.Analysis.Modules {
         bool TryAddModulePath(in string path, out string fullName);
 
         /// <summary>
-        /// Sets user search paths. This changes <see cref="CurrentPathResolver"/>.
+        /// Sets user search paths. This changes <see cref="IModuleResolution.CurrentPathResolver"/>.
         /// </summary>
         /// <returns>Added roots.</returns>
         IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths);
+
+        /// <summary>
+        /// User search paths.
+        /// </summary>
+        IEnumerable<string> UserSearchPaths { get; }
 
         /// <summary>
         /// Provides ability to specialize module by replacing module import by

@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Types {
             get {
                 lock (_referencesLock) {
                     if (_references == null) {
-                        return new[] {Definition};
+                        return new[] { Definition };
                     }
 
                     var refs = _references
@@ -61,7 +62,8 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual void AddReference(IPythonModule module, Node location) {
             lock (_referencesLock) {
-                if (module != null && location != null && location != Location.Node) {
+                // Don't add references to library code.
+                if (module?.ModuleType == ModuleType.User && location != null && location != Location.Node) {
                     _references = _references ?? new HashSet<Location>();
                     _references.Add(new Location(module, location));
                 }
