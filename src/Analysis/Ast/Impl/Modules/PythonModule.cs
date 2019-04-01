@@ -215,10 +215,10 @@ namespace Microsoft.Python.Analysis.Modules {
             return null; // Keep content as null so module can be loaded later.
         }
 
-        private void InitializeContent(string content) {
+        private void InitializeContent(string content, int version = 0) {
             bool startParse;
             lock (AnalysisLock) {
-                LoadContent(content);
+                LoadContent(content, version);
 
                 startParse = ContentState < State.Parsing && _parsingTask == null;
                 if (startParse) {
@@ -231,11 +231,11 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        private void LoadContent(string content) {
+        private void LoadContent(string content, int version) {
             if (ContentState < State.Loading) {
                 try {
                     content = content ?? LoadContent();
-                    _buffer.Reset(0, content);
+                    _buffer.Reset(version, content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
@@ -330,7 +330,8 @@ namespace Microsoft.Python.Analysis.Modules {
         public void Reset(string content) {
             lock (AnalysisLock) {
                 if (content != Content) {
-                    InitializeContent(content);
+                    ContentState = State.None;
+                    InitializeContent(content, _buffer.Version + 1);
                 }
             }
         }

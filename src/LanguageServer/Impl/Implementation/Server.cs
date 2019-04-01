@@ -40,12 +40,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
         private readonly IServiceManager _services;
+        private readonly object _reloadLock = new object();
 
         private IPythonInterpreter _interpreter;
         private IRunningDocumentTable _rdt;
         private ClientCapabilities _clientCaps;
         private ILogger _log;
         private IIndexManager _indexManager;
+        private string _rootDir;
+        private DateTime _lastPackageReload = DateTime.Now;
+
 
         public Server(IServiceManager services) {
             _services = services;
@@ -65,6 +69,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void Dispose() => _disposableBag.TryDispose();
 
         #region Client message handling
+
         private InitializeResult GetInitializeResult() => new InitializeResult {
             capabilities = new ServerCapabilities {
                 textDocumentSync = new TextDocumentSyncOptions {
@@ -72,10 +77,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     change = TextDocumentSyncKind.Incremental
                 },
                 completionProvider = new CompletionOptions {
-                    triggerCharacters = new[] { "." }
+                    triggerCharacters = new[] {"."}
                 },
                 hoverProvider = true,
-                signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
+                signatureHelpProvider = new SignatureHelpOptions {triggerCharacters = new[] {"(", ",", ")"}},
                 definitionProvider = true,
                 referencesProvider = true,
                 workspaceSymbolProvider = true,
@@ -83,7 +88,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 renameProvider = true,
                 documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
                     firstTriggerCharacter = "\n",
-                    moreTriggerCharacter = new[] { ";", ":" }
+                    moreTriggerCharacter = new[] {";", ":"}
                 },
             }
         };
@@ -121,10 +126,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(_interpreter);
 
             var fileSystem = _services.GetService<IFileSystem>();
-            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, rootDir,
-                                            @params.initializationOptions.includeFiles,
-                                            @params.initializationOptions.excludeFiles,
-                                            _services.GetService<IIdleTimeService>());
+            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, _rootDir,
+                @params.initializationOptions.includeFiles,
+                @params.initializationOptions.excludeFiles,
+                _services.GetService<IIdleTimeService>());
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
 
@@ -158,6 +163,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     if (HandleConfigurationChanges(settings)) {
                         RestartAnalysis();
                     }
+
                     break;
                 }
                 default:
@@ -165,15 +171,17 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     break;
             }
         }
+
         #endregion
 
         #region Private Helpers
+
         private void DisplayStartupInfo() {
             _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
             _log?.Log(TraceEventType.Information,
                 string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
-                ? Resources.InitializingForGenericInterpreter
-                : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
+                    ? Resources.InitializingForGenericInterpreter
+                    : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
         }
 
         private bool HandleConfigurationChanges(ServerSettings newSettings) {
@@ -212,25 +220,31 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             return new PlainTextDocumentationSource();
         }
+
         #endregion
 
         public void NotifyPackagesChanged(CancellationToken cancellationToken) {
-            var interpreter = _services.GetService<IPythonInterpreter>();
-            _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
-            // No need to reload typeshed resolution since it is a static storage.
-            // User does can add stubs while application is running, but it is
-            // by design at this time that the app should be restarted.
-            interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
-                _log?.Log(TraceEventType.Information, Resources.Done);
-                _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
-                RestartAnalysis();
-            }, cancellationToken).DoNotWait();
-
+            lock (_reloadLock) {
+                if ((DateTime.Now - _lastPackageReload).TotalMilliseconds > 15000) {
+                    var interpreter = _services.GetService<IPythonInterpreter>();
+                    _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
+                    // No need to reload typeshed resolution since it is a static storage.
+                    // User does can add stubs while application is running, but it is
+                    // by design at this time that the app should be restarted.
+                    interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
+                        _log?.Log(TraceEventType.Information, Resources.Done);
+                        _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
+                        RestartAnalysis();
+                    }, cancellationToken).DoNotWait();
+                }
+            }
         }
 
         private void RestartAnalysis() {
-            foreach (var doc in _rdt) {
-                doc.Reset(null);
+            lock (_reloadLock) {
+                foreach (var doc in _rdt) {
+                    doc.Reset(null);
+                }
             }
         }
     }

@@ -180,7 +180,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             await BuiltinsModule.LoadAndAnalyzeAsync(cancellationToken);
 
             Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "After await");
+            // Add built-in module names
+            SetBuiltinModuleNames();
+        }
 
+        private void SetBuiltinModuleNames() {
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
             if (builtinModuleNamesMember.TryGetConstant<string>(out var s)) {
@@ -203,6 +207,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             Modules[BuiltinModuleName] = builtins;
 
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
+            SetBuiltinModuleNames();
 
             var addedRoots = new HashSet<string>();
             addedRoots.UnionWith(PathResolver.SetRoot(_root));
