@@ -215,7 +215,6 @@ class A(object):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task GotoRelativeImportInExplicitPackage() {
             var pkgPath = TestData.GetTestSpecificUri("pkg", "__init__.py");
             var modPath = TestData.GetTestSpecificUri("pkg", "mod.py");
