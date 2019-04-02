@@ -40,7 +40,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
             if (analysis != null) {
                 var result = _completionSource.GetCompletions(analysis, @params.position);
-                res.items = result.Completions.ToArray();
+                res.items = result?.Completions?.ToArray() ?? Array.Empty<CompletionItem>();
 
                 await InvokeExtensionsAsync((ext, token)
                     => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken), cancellationToken);
