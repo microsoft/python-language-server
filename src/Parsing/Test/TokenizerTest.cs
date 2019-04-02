@@ -37,12 +37,54 @@ namespace Microsoft.Python.Parsing.Tests {
             }
         }
 
+        [DataTestMethod, Priority(0)]
+        [DataRow(true)]
+        [DataRow(false)]
+        public void NewLines(bool useCRLF) {
+            foreach (var version in AllVersions) {
+                var code = @"
+x
+y
+";
+                if (!useCRLF) {
+                    code = code.Replace("\r\n", "\n");
+                }
+                var initialLocation = SourceLocation.MinValue;
+                var tokenizer = MakeTokenizer(version, TokenizerOptions.None, code,
+                    initialLocation);
+
+                CheckAndReadNext(tokenizer, new IndexSpan(0, 2), TokenKind.NLToken);
+                CheckAndReadNext(tokenizer, new IndexSpan(2, 1), TokenKind.Name);
+                CheckAndReadNext(tokenizer, new IndexSpan(3, 2), TokenKind.NewLine);
+                CheckAndReadNext(tokenizer, new IndexSpan(5, 1), TokenKind.Name);
+                CheckAndReadNext(tokenizer, new IndexSpan(6, 2), TokenKind.NewLine);
+            }
+        }
+
+        private static void CheckAndReadNext(Tokenizer tokenizer, IndexSpan tokenSpan, TokenKind tokenKind) {
+            var token = tokenizer.GetNextToken();
+            tokenizer.TokenSpan.Should().Be(tokenSpan);
+            token.Kind.Should().Be(tokenKind);
+        }
+
         private Tokenizer MakeTokenizer(PythonLanguageVersion version, TokenizerOptions optionSet, string text,
+            SourceLocation? initialSourceLocation = null) {
+            return MakeTokenizer(version, optionSet, new StringReader(text), initialSourceLocation);
+        }
+
+        private Tokenizer MakeTokenizer(PythonLanguageVersion version, TokenizerOptions optionSet, StringReader reader,
             SourceLocation? initialSourceLocation = null) {
             var tokenizer = new Tokenizer(version, options: optionSet);
 
-            tokenizer.Initialize(null, new StringReader(text), initialSourceLocation ?? SourceLocation.MinValue);
+            tokenizer.Initialize(null, reader, initialSourceLocation ?? SourceLocation.MinValue);
             return tokenizer;
+        }
+
+        /* == operator doesn't compare indexes */
+        private void ShouldEqual(SourceLocation s1, SourceLocation s2) {
+            s1.Index.Should().Be(s2.Index);
+            s1.Line.Should().Be(s2.Line);
+            s1.Column.Should().Be(s2.Column);
         }
     }
 }
