@@ -136,10 +136,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var leftContents = (leftVar as IPythonCollection)?.Contents;
                 var rightContents = (rightVar as IPythonCollection)?.Contents;
 
-                var contents = new List<IMember>(leftContents ?? Array.Empty<IMember>());
-                contents.AddRange(rightContents ?? Array.Empty<IMember>());
-
-                return PythonCollectionType.CreateList(Module.Interpreter, GetLoc(expr), contents);
+                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), leftContents, rightContents);
             }
 
             return left.IsUnknown() ? right : left;

@@ -99,7 +99,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            IEnumerable<IMember> contents = null;
+            IReadOnlyList<IMember> contents = null;
             var v = Eval.GetValueFromExpression(node.Args[0].Expression);
             if (v == null) {
                 _allIsUsable = false;
@@ -108,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             switch (me.Name) {
                 case "append":
-                    contents = Enumerable.Repeat(v, 1);
+                    contents = new List<IMember>() { v };
                     break;
                 case "extend":
                     contents = (v as IPythonCollection)?.Contents;
@@ -123,7 +123,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ExtendAll(node, contents);
         }
 
-        private void ExtendAll(Node declNode, IEnumerable<IMember> values) {
+        private void ExtendAll(Node declNode, IReadOnlyList<IMember> values) {
             Eval.LookupNameInScopes(AllVariableName, out var scope, LookupOptions.Normal);
             if (scope == null) {
                 return;
@@ -133,9 +133,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var allContents = (scope.Variables[AllVariableName].Value as IPythonCollection)?.Contents;
 
-            var contents = new List<IMember>(allContents ?? Array.Empty<IMember>());
-            contents.AddRange(values ?? Array.Empty<IMember>());
-            var list = PythonCollectionType.CreateList(Module.Interpreter, loc, contents);
+            var list = PythonCollectionType.CreateConcatenatedList(Module.Interpreter, loc, allContents, values);
             var source = list.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
 
             Eval.DeclareVariable(AllVariableName, list, source, loc);
