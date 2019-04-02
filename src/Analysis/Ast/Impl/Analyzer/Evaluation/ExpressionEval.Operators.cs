@@ -130,13 +130,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 && left.GetPythonType()?.TypeId == BuiltinTypeId.List
                 && right.GetPythonType()?.TypeId == BuiltinTypeId.List) {
 
-                var leftVar = GetValueFromExpression(binop.Left);
-                var rightVar = GetValueFromExpression(binop.Right);
+                var leftVar = GetValueFromExpression(binop.Left) as IPythonCollection;
+                var rightVar = GetValueFromExpression(binop.Right) as IPythonCollection;
 
-                var leftContents = (leftVar as IPythonCollection)?.Contents;
-                var rightContents = (rightVar as IPythonCollection)?.Contents;
-
-                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), leftContents, rightContents);
+                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), leftVar?.Contents, rightVar?.Contents);
             }
 
             return left.IsUnknown() ? right : left;
