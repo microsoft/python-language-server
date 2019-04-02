@@ -14,6 +14,8 @@ namespace Microsoft.Python.Parsing.Ast {
         public Expression Target { get; }
         public Expression Value { get; }
 
+        public override string NodeName => "named expression";
+
         public override IEnumerable<Node> GetChildNodes() {
             yield return Target;
             if (Value != null) yield return Value;

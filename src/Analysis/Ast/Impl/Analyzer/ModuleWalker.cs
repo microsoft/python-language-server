@@ -105,6 +105,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     .Where(s => !string.IsNullOrEmpty(s))
                     .ToImmutableArray();
             }
+
+            Eval.ClearCache();
         }
 
         public IGlobalScope GlobalScope => Eval.GlobalScope;

@@ -34,6 +34,7 @@ namespace Microsoft.Python.Parsing.Ast {
         internal override string CheckAssign() => null;
         internal override string CheckDelete() => null;
         internal override string CheckAssignExpr() => null;
+        public override string NodeName => "name";
 
         public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
 

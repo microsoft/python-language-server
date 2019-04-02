@@ -27,6 +27,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public FunctionDefinition Function { get; }
 
+        public override string NodeName => "lambda";
+
         public override IEnumerable<Node> GetChildNodes() {
             if (Function != null) yield return Function;
         }

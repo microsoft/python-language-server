@@ -1257,7 +1257,7 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorInfo("invalid syntax", 7, 1, 8, 8, 1, 9),
                     new ErrorInfo("unexpected token '<newline>'", 8, 1, 9, 10, 2, 1),
                     new ErrorInfo("unexpected token 'as'", 10, 2, 1, 12, 2, 3),
-                    new ErrorInfo("can't assign to ErrorExpression", 10, 2, 1, 12, 2, 3)
+                    new ErrorInfo("can't assign to error expression", 10, 2, 1, 12, 2, 3)
                 );
             }
         }
@@ -3064,6 +3064,17 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorInfo("illegal expression for augmented assignment", 69, 6, 1, 77, 6, 9),
                     new ErrorInfo("can't assign to yield expression", 98, 8, 5, 109, 8, 16)
                 );
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void AssignToNamedExprIllegal() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseString("(a := 1) = 1", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[]{
+                    new ErrorResult("can't assign to named expression", new SourceSpan(1, 1, 1, 9))
+                });
             }
         }
 
