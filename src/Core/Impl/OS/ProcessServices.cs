@@ -42,7 +42,7 @@ namespace Microsoft.Python.Core.OS {
             var process = Start(startInfo);
 
             if (startInfo.RedirectStandardError && process is PlatformProcess p) {
-                p.Process.ErrorDataReceived += new DataReceivedEventHandler((s, e) => { });
+                p.Process.ErrorDataReceived += (s, e) => { };
                 p.Process.BeginErrorReadLine();
             }
 
