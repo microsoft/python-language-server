@@ -206,22 +206,18 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
             var addedRoots = new HashSet<string>();
-            addedRoots.UnionWith(PathResolver.SetRoot(_root));
+            addedRoots.UnionWith(PathResolver.SetRoot(Root));
 
-            var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(interpreterPaths));
+            InterpreterPaths = await GetSearchPathsAsync(cancellationToken);
+            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
 
-            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(interpreterPaths, StringExtensions.PathsStringComparer);
+            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(InterpreterPaths, StringExtensions.PathsStringComparer);
             addedRoots.UnionWith(SetUserSearchPaths(userSearchPaths));
             ReloadModulePaths(addedRoots);
         }
 
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) {
-            UserSearchPaths = searchPaths?.ToArray() ?? Array.Empty<string>();
-            return PathResolver.SetUserSearchPaths(UserSearchPaths);
-        }
-
-        public IEnumerable<string> UserSearchPaths { get; private set; } = Enumerable.Empty<string>();
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) 
+            => PathResolver.SetUserSearchPaths(searchPaths);
 
         // For tests
         internal void AddUnimportableModule(string moduleName)

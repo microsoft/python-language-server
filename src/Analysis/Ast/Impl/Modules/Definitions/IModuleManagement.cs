@@ -44,11 +44,6 @@ namespace Microsoft.Python.Analysis.Modules {
         IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths);
 
         /// <summary>
-        /// User search paths.
-        /// </summary>
-        IEnumerable<string> UserSearchPaths { get; }
-
-        /// <summary>
         /// Provides ability to specialize module by replacing module import by
         /// <see cref="IPythonModule"/> implementation in code. Real module
         /// content is loaded and analyzed only for class/functions definitions
@@ -63,5 +58,15 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Returns specialized module, if any.
         /// </summary>
         IPythonModule GetSpecializedModule(string name);
+
+        /// <summary>
+        /// Root directory of the path resolver.
+        /// </summary>
+        string Root { get; }
+
+        /// <summary>
+        /// Set of interpreter paths.
+        /// </summary>
+        IEnumerable<string> InterpreterPaths { get; }
     }
 }

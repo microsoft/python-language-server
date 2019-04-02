@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             // undefined x in 
             //    y = x
             //    x = 1
-            if (v != null && v.Definition.DocumentUri == analysis.Document.Uri) {
+            if (v?.Definition != null && v.Definition.DocumentUri == analysis.Document.Uri) {
                 // Do not complain about functions and classes that appear later in the file
                 if (!(v.Value is IPythonFunctionType || v.Value is IPythonClassType)) {
                     var span = v.Definition.Span;

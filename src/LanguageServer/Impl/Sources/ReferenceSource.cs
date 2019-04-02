@@ -78,23 +78,30 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var rdt = _services.GetService<IRunningDocumentTable>();
             var interpreter = _services.GetService<IPythonInterpreter>();
             var closedFiles = new Dictionary<string, PythonAst>();
-            var userSearchPaths = interpreter.ModuleResolution.UserSearchPaths;
 
-            foreach (var folder in userSearchPaths) {
+            var root = interpreter.ModuleResolution.Root;
+            var interpreterPaths = interpreter.ModuleResolution.InterpreterPaths.ToArray();
+
+            foreach (var filePath in fs.GetFiles(root, "*.py", SearchOption.AllDirectories).Select(Path.GetFullPath)) {
                 try {
-                    foreach (var filePath in fs.GetFiles(folder, "*.py", SearchOption.AllDirectories)) {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var doc = rdt.GetDocument(new Uri(filePath));
-                        if (doc != null) {
-                            continue;
-                        }
+                    cancellationToken.ThrowIfCancellationRequested();
+                    // Exclude files that are inside interpreter paths such as when
+                    // virtual environment is inside the user workspace folder.
+                    var fileDirectory = Path.GetDirectoryName(filePath);
+                    if (interpreterPaths.Any(p => fs.IsPathUnderRoot(p, fileDirectory))) {
+                        continue;
+                    }
 
-                        var content = fs.ReadTextWithRetry(filePath);
-                        using (var s = new StringReader(content)) {
-                            var parser = Parser.CreateParser(s, interpreter.LanguageVersion);
-                            var ast = parser.ParseFile();
-                            closedFiles[filePath] = ast;
-                        }
+                    var doc = rdt.GetDocument(new Uri(filePath));
+                    if (doc != null) {
+                        continue;
+                    }
+
+                    var content = fs.ReadTextWithRetry(filePath);
+                    using (var s = new StringReader(content)) {
+                        var parser = Parser.CreateParser(s, interpreter.LanguageVersion);
+                        var ast = parser.ParseFile();
+                        closedFiles[filePath] = ast;
                     }
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
