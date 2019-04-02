@@ -409,13 +409,21 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
+
+        public void NotifyAnalysisBegins() {
+            if (GlobalScope != null) {
+                foreach (var v in ((IScope)GlobalScope).TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
+                    v.Parent?.RemoveReferences(this);
+                }
+            }
+        }
+
         public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (AnalysisLock) {
                 if (analysis.Version < Analysis.Version) {
                     return;
                 }
 
-                Analysis?.Dispose();
                 Analysis = analysis;
                 GlobalScope = analysis.GlobalScope;
 

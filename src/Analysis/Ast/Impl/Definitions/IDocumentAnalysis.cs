@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis {
     /// <summary>
     /// Represents analysis of the Python module.
     /// </summary>
-    public interface IDocumentAnalysis: IDisposable {
+    public interface IDocumentAnalysis {
         /// <summary>
         /// Analyzed document.
         /// </summary>

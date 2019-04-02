@@ -242,7 +242,7 @@ x = 2
             var uri2 = TestData.GetNextModuleUri();
 
             var code2 = $@"
-from {Path.GetFileNameWithoutExtension(uri1.AbsolutePath)} import x, y
+from module import x, y
 a = x
 b = y
 ";
@@ -275,7 +275,7 @@ b = y
                 },
                 new DocumentChange {
                     InsertedText = string.Empty,
-                    ReplacedSpan = new SourceSpan(2, 20, 2, 23)
+                    ReplacedSpan = new SourceSpan(2, 21, 2, 24)
                 }
             });
             await GetDocumentAnalysisAsync(doc2);

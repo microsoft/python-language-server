@@ -416,16 +416,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version, CancellationToken cancellationToken) {
             // Now run the analysis.
-            var walker = new ModuleWalker(_services, module, ast);
+            var analyzable = module as IAnalyzable;
+            analyzable?.NotifyAnalysisBegins();
 
+            var walker = new ModuleWalker(_services, module, ast);
             ast.Walk(walker);
+
             cancellationToken.ThrowIfCancellationRequested();
 
             walker.Complete();
             cancellationToken.ThrowIfCancellationRequested();
             var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval, walker.ExportedMemberNames);
 
-            (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
+            analyzable?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
 
             if (module.ModuleType == ModuleType.User) {

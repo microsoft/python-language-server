@@ -77,13 +77,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         public IEnumerable<DiagnosticsEntry> Diagnostics => ExpressionEvaluator.Diagnostics;
         #endregion
-
-        public void Dispose() {
-            // Remove references to variables in this analysis
-            foreach(var v in  ((IScope)GlobalScope).TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
-                v.Parent?.RemoveReferences(Document);
-            }
-        }
     }
 
     public sealed class EmptyAnalysis : IDocumentAnalysis {
@@ -97,7 +90,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ExpressionEvaluator = new ExpressionEval(services, document, Ast);
         }
 
-        public void Dispose() { }
         public IDocument Document { get; }
         public int Version { get; } = -1;
         public IGlobalScope GlobalScope { get; }
