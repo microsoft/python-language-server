@@ -144,39 +144,39 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (!isCanceled) {
                     _progress.ReportRemaining(walker.Remaining);
                 }
+            }
 
-                var elapsed = stopWatch.Elapsed.TotalMilliseconds;
+            var elapsed = stopWatch.Elapsed.TotalMilliseconds;
 
-                if (_telemetry != null && remaining == 0 && originalRemaining > 100) {
-                    double privateMB;
-                    double peakPagedMB;
+            if (_telemetry != null && remaining == 0 && originalRemaining > 100) {
+                double privateMB;
+                double peakPagedMB;
 
-                    using (var proc = Process.GetCurrentProcess()) {
-                        privateMB = proc.PrivateMemorySize64 / 1e+6;
-                        peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
-                    }
-
-                    var e = new TelemetryEvent() {
-                        EventName = "analysis_complete",
-                    };
-
-                    e.Measurements["privateMB"] = privateMB;
-                    e.Measurements["peakPagedMB"] = peakPagedMB;
-                    e.Measurements["elapsedMs"] = elapsed;
-                    e.Measurements["entries"] = originalRemaining;
-                    e.Measurements["version"] = walker.Version;
-
-                    _telemetry.SendTelemetryAsync(e).DoNotWait();
+                using (var proc = Process.GetCurrentProcess()) {
+                    privateMB = proc.PrivateMemorySize64 / 1e+6;
+                    peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
                 }
 
-                if (_log != null) {
-                    if (remaining == 0) {
-                        _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been completed in {elapsed} ms.");
-                    } else if (remaining < originalRemaining) {
-                        _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
-                    } else {
-                        _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been canceled after {elapsed}.");
-                    }
+                var e = new TelemetryEvent() {
+                    EventName = "analysis_complete",
+                };
+
+                e.Measurements["privateMB"] = privateMB;
+                e.Measurements["peakPagedMB"] = peakPagedMB;
+                e.Measurements["elapsedMs"] = elapsed;
+                e.Measurements["entries"] = originalRemaining;
+                e.Measurements["version"] = walker.Version;
+
+                _telemetry.SendTelemetryAsync(e).DoNotWait();
+            }
+
+            if (_log != null) {
+                if (remaining == 0) {
+                    _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been completed in {elapsed} ms.");
+                } else if (remaining < originalRemaining) {
+                    _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} has been completed in {stopWatch.Elapsed.TotalMilliseconds} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
+                } else {
+                    _log.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has been canceled after {elapsed}.");
                 }
             }
         }
