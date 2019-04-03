@@ -13,8 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -123,6 +126,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             if (left.GetPythonType()?.TypeId == BuiltinTypeId.Long) {
                 return left;
+            }
+
+            if (binop.Operator == PythonOperator.Add
+                && left.GetPythonType()?.TypeId == BuiltinTypeId.List
+                && right.GetPythonType()?.TypeId == BuiltinTypeId.List) {
+
+                var leftVar = GetValueFromExpression(binop.Left) as IPythonCollection;
+                var rightVar = GetValueFromExpression(binop.Right) as IPythonCollection;
+
+                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), leftVar?.Contents, rightVar?.Contents);
             }
 
             return left.IsUnknown() ? right : left;
