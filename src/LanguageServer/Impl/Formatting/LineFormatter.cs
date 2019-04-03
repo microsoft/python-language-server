@@ -180,6 +180,7 @@ namespace Microsoft.Python.LanguageServer.Formatting {
                         break;
 
                     case TokenKind.Assign:
+                    case TokenKind.ColonEqual:
                         AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
 
