@@ -54,5 +54,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Runs linters on the modules
         /// </summary>
         IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module);
+
+        /// <summary>
+        /// Removes all the modules from the analysis, except Typeshed and builtin
+        /// </summary>
+        void ResetAnalyzer();
     }
 }

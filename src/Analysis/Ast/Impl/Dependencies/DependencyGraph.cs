@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
@@ -64,7 +65,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             
             _verticesByKey[key] = changedVertex;
 
-            var missingKeysHashSet = new HashSet<TKey>();
+            
             var vertices = _verticesByIndex
                 .Where(v => !v.IsSealed || v.HasMissingKeys)
                 .Select(v => GetOrCreateNonSealedVertex(version, v.Index))
@@ -75,6 +76,33 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 return changedVertex;
             }
 
+            CreateNewSnapshot(vertices, version);
+
+            return changedVertex;
+        }
+
+        public void RemoveKeys(ImmutableArray<TKey> keys) {
+            var version = Snapshot.Version + 1;
+
+            _verticesByIndex.Clear();
+            foreach (var key in keys) {
+                _verticesByKey.Remove(key);
+            }
+
+            foreach (var (key, currentVertex) in _verticesByKey) {
+                var changedVertex = new DependencyVertex<TKey, TValue>(key, currentVertex.Value, currentVertex.IncomingKeys, version, _verticesByIndex.Count);
+                _verticesByIndex.Add(changedVertex);
+            }
+
+            foreach (var vertex in _verticesByIndex) {
+                _verticesByKey[vertex.Key] = vertex;
+            }
+
+            CreateNewSnapshot(_verticesByIndex, version);
+        }
+
+        private void CreateNewSnapshot(IEnumerable<DependencyVertex<TKey, TValue>> vertices, int version) {
+            var missingKeysHashSet = new HashSet<TKey>();
             foreach (var vertex in vertices) {
                 var newIncoming = ImmutableArray<int>.Empty;
                 var oldIncoming = vertex.Incoming;
@@ -105,11 +133,9 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 vertex.Seal();
             }
 
-            Snapshot = new DependencyGraphSnapshot<TKey, TValue>(version, 
+            Snapshot = new DependencyGraphSnapshot<TKey, TValue>(version,
                 ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_verticesByIndex),
                 ImmutableArray<TKey>.Create(missingKeysHashSet));
-
-            return changedVertex;
         }
 
         private DependencyVertex<TKey, TValue> GetOrCreateNonSealedVertex(int version, int index) {
