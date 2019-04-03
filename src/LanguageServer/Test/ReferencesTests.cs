@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -249,11 +250,8 @@ b = y
             await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri1.AbsolutePath);
 
             var rdt = Services.GetService<IRunningDocumentTable>();
-            rdt.OpenDocument(uri1, code1);
-            rdt.OpenDocument(uri2, code2);
-
-            var doc1 = rdt.GetDocument(uri1);
-            var doc2 = rdt.GetDocument(uri2);
+            var doc1 = rdt.OpenDocument(uri1, code1);
+            var doc2 = rdt.OpenDocument(uri2, code2);
 
             var analysis = await GetDocumentAnalysisAsync(doc1);
 
@@ -285,6 +283,46 @@ b = y
             refs.Should().HaveCount(1);
             refs[0].range.Should().Be(6, 0, 6, 1);
             refs[0].uri.Should().Be(uri1);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UpdateReferencesOnEdit() {
+            const string code = @"
+import logging
+
+logging.getLogger()
+";
+            var uri = TestData.GetDefaultModuleUri();
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri.AbsolutePath);
+
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var doc = rdt.OpenDocument(uri, code);
+            var analysis = await GetDocumentAnalysisAsync(doc);
+
+            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(4, 12), ReferenceSearchOptions.All);
+
+            refs.Should().HaveCount(2);
+            refs[0].range.start.line.Should().BeGreaterThan(1);
+            refs[0].uri.AbsolutePath.Should().Contain("logging");
+            refs[1].range.Should().Be(3, 8, 3, 17);
+            refs[1].uri.Should().Be(uri);
+
+            doc.Update(new[] {
+                new DocumentChange {
+                    InsertedText = Environment.NewLine,
+                    ReplacedSpan = new SourceSpan(3, 1, 3, 1)
+                },
+            });
+            await GetDocumentAnalysisAsync(doc);
+
+            refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(5, 12), ReferenceSearchOptions.All);
+
+            refs.Should().HaveCount(2);
+            refs[0].range.start.line.Should().BeGreaterThan(1);
+            refs[0].uri.AbsolutePath.Should().Contain("logging");
+            refs[1].range.Should().Be(4, 8, 4, 17);
+            refs[1].uri.Should().Be(uri);
         }
 
         [TestMethod, Priority(0)]

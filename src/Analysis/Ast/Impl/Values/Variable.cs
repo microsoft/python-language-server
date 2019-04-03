@@ -76,6 +76,19 @@ namespace Microsoft.Python.Analysis.Values {
             }
             Parent?.AddReference(module, location);
         }
+
+        public override void RemoveReferences(IPythonModule module) {
+            if (module == null) {
+                return;
+            }
+            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Definition.DocumentUri == null)) {
+                // Variable is not user-declared and rather is holder of a function or class definition.
+                lm.RemoveReferences(module);
+            } else {
+                base.RemoveReferences(module);
+            }
+            Parent?.RemoveReferences(module);
+        }
         #endregion
 
         private string DebuggerDisplay {

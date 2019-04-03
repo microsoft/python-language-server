@@ -63,6 +63,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
         private PythonAst _ast;
+        private bool _updated;
 
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
@@ -321,6 +322,8 @@ namespace Microsoft.Python.Analysis.Modules {
                 _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
 
                 _buffer.Update(changes);
+                _updated = true;
+
                 Parse();
             }
 
@@ -411,10 +414,15 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IAnalyzable
 
         public void NotifyAnalysisBegins() {
-            var analyzer = Services.GetService<IPythonAnalyzer>();
-            foreach (var gs in analyzer.LoadedModules.Select(m => m.GlobalScope).OfType<IScope>().ExcludeDefault()) {
-                foreach (var v in gs.TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
-                    v.Parent?.RemoveReferences(this);
+            lock (AnalysisLock) {
+                if (_updated) {
+                    _updated = false;
+                    var analyzer = Services.GetService<IPythonAnalyzer>();
+                    foreach (var gs in analyzer.LoadedModules.Select(m => m.GlobalScope).OfType<IScope>().ExcludeDefault()) {
+                        foreach (var v in gs.TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
+                            v.RemoveReferences(this);
+                        }
+                    }
                 }
             }
         }

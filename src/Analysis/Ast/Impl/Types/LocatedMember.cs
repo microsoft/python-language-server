@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public void RemoveReferences(IPythonModule module) {
+        public virtual void RemoveReferences(IPythonModule module) {
             lock (_referencesLock) {
                 if (_references != null) {
                     foreach (var r in _references.ToArray().Where(r => r.Module == module)) {
