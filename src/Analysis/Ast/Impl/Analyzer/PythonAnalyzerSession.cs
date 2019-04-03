@@ -324,7 +324,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (module.ModuleType == ModuleType.User) {
                 var linterDiagnostics = _analyzer.LintModule(module);
-                _diagnosticsService.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+                _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
             }
         }
 
