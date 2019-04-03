@@ -87,15 +87,15 @@ namespace Microsoft.Python.Parsing.Tests {
         public void Errors35() {
             ParseErrors("Errors35.py",
                 PythonLanguageVersion.V35,
-                    new ErrorInfo("iterable unpacking cannot be used in comprehension", 1, 1, 2, 4, 1, 5),
-                    new ErrorInfo("invalid syntax", 38, 3, 11, 41, 3, 14),
-                    new ErrorInfo("can't use starred expression here", 45, 4, 2, 48, 4, 5),
-                    new ErrorInfo("invalid syntax", 57, 5, 7, 61, 5, 11),
-                    new ErrorInfo("invalid syntax", 71, 6, 8, 74, 6, 11),
-                    new ErrorInfo("iterable argument unpacking follows keyword argument unpacking", 85, 7, 9, 88, 7, 12),
-                    new ErrorInfo("invalid syntax", 98, 8, 8, 100, 8, 10),
-                    new ErrorInfo("invalid syntax", 108, 9, 6, 112, 9, 10),
-                    new ErrorInfo("invalid syntax", 116, 10, 2, 122, 10, 8)
+                    new ErrorResult("iterable unpacking cannot be used in comprehension", new SourceSpan(1, 2, 1, 5)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 11, 3, 14)),
+                    new ErrorResult("can't use starred expression here", new SourceSpan(4, 2, 4, 5)),
+                    new ErrorResult("invalid syntax", new SourceSpan(5, 7, 5, 11)),
+                    new ErrorResult("invalid syntax", new SourceSpan(6, 8, 6, 11)),
+                    new ErrorResult("iterable argument unpacking follows keyword argument unpacking", new SourceSpan(7, 9, 7, 12)),
+                    new ErrorResult("invalid syntax", new SourceSpan(8, 8, 8, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(9, 6, 9, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(10, 2, 10, 8))
             );
         }
 
@@ -103,27 +103,27 @@ namespace Microsoft.Python.Parsing.Tests {
         public void FStringErrors() {
             ParseErrors("FStringErrors.py",
                 PythonLanguageVersion.V36,
-                new ErrorInfo("f-string: expecting '}'", 3, 1, 4, 4, 1, 5),
-                new ErrorInfo("f-string expression part cannot include a backslash", 9, 2, 4, 10, 2, 5),
-                new ErrorInfo("unexpected token 'import'", 26, 4, 2, 32, 4, 8),
-                new ErrorInfo("unexpected token 'def'", 61, 7, 2, 64, 7, 5),
-                new ErrorInfo("cannot mix bytes and nonbytes literals", 94, 11, 5, 97, 11, 8),
-                new ErrorInfo("f-string: expecting '}'", 113, 13, 13, 114, 13, 14),
-                new ErrorInfo("f-string: single '}' is not allowed", 120, 15, 3, 121, 15, 4),
-                new ErrorInfo("f-string expression part cannot include '#'", 129, 17, 4, 130, 17, 5),
-                new ErrorInfo("f-string: expecting '}'", 139, 19, 4, 140, 19, 5),
-                new ErrorInfo("unexpected token 'import'", 147, 21, 4, 153, 21, 10),
-                new ErrorInfo("f-string: empty expression not allowed", 169, 23, 4, 170, 23, 5),
-                new ErrorInfo("unexpected token '='", 180, 25, 6, 181, 25, 7),
-                new ErrorInfo("expected ':'", 200, 27, 12, 200, 27, 12),
-                new ErrorInfo("f-string: lambda must be inside parentheses", 192, 27, 4, 200, 27, 12),
-                new ErrorInfo("f-string: expecting '}'", 214, 29, 6, 215, 29, 7),
-                new ErrorInfo("f-string: invalid conversion character: expected 's', 'r', or 'a'", 224, 31, 6, 225, 31, 7),
-                new ErrorInfo("f-string: invalid conversion character: k expected 's', 'r', or 'a'", 236, 33, 7, 237, 33, 8),
-                new ErrorInfo("f-string: unmatched ')'", 245, 35, 4, 246, 35, 5),
-                new ErrorInfo("f-string: unmatched ')'", 257, 37, 6, 258, 37, 7),
-                new ErrorInfo("f-string: closing parenthesis '}' does not match opening parenthesis '('", 269, 39, 6, 270, 39, 7),
-                new ErrorInfo("f-string: unmatched ']'", 280, 41, 4, 281, 41, 5)
+                new ErrorResult("f-string: expecting '}'", new SourceSpan(1, 4, 1, 5)),
+                new ErrorResult("f-string expression part cannot include a backslash", new SourceSpan(2, 4, 2, 5)),
+                new ErrorResult("unexpected token 'import'", new SourceSpan(4, 2, 4, 8)),
+                new ErrorResult("unexpected token 'def'", new SourceSpan(7, 2, 7, 5)),
+                new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(11, 5, 11, 8)),
+                new ErrorResult("f-string: expecting '}'", new SourceSpan(13, 13, 13, 14)),
+                new ErrorResult("f-string: single '}' is not allowed", new SourceSpan(15, 3, 15, 4)),
+                new ErrorResult("f-string expression part cannot include '#'", new SourceSpan(17, 4, 17, 5)),
+                new ErrorResult("f-string: expecting '}'", new SourceSpan(19, 4, 19, 5)),
+                new ErrorResult("unexpected token 'import'", new SourceSpan(21, 4, 21, 10)),
+                new ErrorResult("f-string: empty expression not allowed", new SourceSpan(23, 4, 23, 5)),
+                new ErrorResult("unexpected token '='", new SourceSpan(25, 6, 25, 7)),
+                new ErrorResult("expected ':'", new SourceSpan(27, 12, 27, 12)),
+                new ErrorResult("f-string: lambda must be inside parentheses", new SourceSpan(27, 4, 27, 12)),
+                new ErrorResult("f-string: expecting '}'", new SourceSpan(29, 6, 29, 7)),
+                new ErrorResult("f-string: invalid conversion character: expected 's', 'r', or 'a'", new SourceSpan(31, 6, 31, 7)),
+                new ErrorResult("f-string: invalid conversion character: k expected 's', 'r', or 'a'", new SourceSpan(33, 7, 33, 8)),
+                new ErrorResult("f-string: unmatched ')'", new SourceSpan(35, 4, 35, 5)),
+                new ErrorResult("f-string: unmatched ')'", new SourceSpan(37, 6, 37, 7)),
+                new ErrorResult("f-string: closing parenthesis '}' does not match opening parenthesis '('", new SourceSpan(39, 6, 39, 7)),
+                new ErrorResult("f-string: unmatched ']'", new SourceSpan(41, 4, 41, 5))
             );
         }
 
@@ -469,7 +469,7 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V30_V32Versions) {
                 ParseErrors("Errors3x.py",
                     version,
-                    new ErrorInfo("no binding for nonlocal '__class__' found", 23, 2, 14, 32, 2, 23)
+                    new ErrorResult("no binding for nonlocal '__class__' found", new SourceSpan(2, 14, 2, 23))
                 );
             }
 
@@ -478,329 +478,329 @@ namespace Microsoft.Python.Parsing.Tests {
             ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V24,
                 initLoc,
-                new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
-                new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
-                new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
-                new ErrorInfo("non-keyword arg after keyword arg", 134, 8, 12, 135, 8, 13),
-                new ErrorInfo("only one * allowed", 147, 9, 10, 149, 9, 12),
-                new ErrorInfo("only one ** allowed", 162, 10, 11, 165, 10, 14),
-                new ErrorInfo("keywords must come before ** args", 180, 11, 13, 186, 11, 19),
-                new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
-                new ErrorInfo("invalid sublist parameter", 217, 17, 11, 219, 17, 13),
-                new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
-                new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
-                new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
-                new ErrorInfo("print statement expected expression to be printed", 297, 28, 1, 311, 28, 15),
-                new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
-                new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
-                new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
-                new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
-                new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
-                new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
-                new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
-                new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
-                new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
-                new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
-                new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
-                new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
-                new ErrorInfo("'return' with argument inside generator", 539, 53, 5, 548, 53, 14),
-                new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
-                new ErrorInfo("'return' with argument inside generator", 581, 59, 5, 590, 59, 14),
-                new ErrorInfo("'return' with argument inside generator", 596, 60, 5, 606, 60, 15),
-                new ErrorInfo("invalid syntax", 657, 68, 5, 658, 68, 6),
-                new ErrorInfo("invalid syntax", 661, 68, 9, 662, 68, 10),
-                new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
-                new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
-                new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
-                new ErrorInfo("unexpected token 'blazzz'", 797, 82, 10, 803, 82, 16),
-                new ErrorInfo("invalid syntax, from cause not allowed in 2.x.", 837, 87, 11, 845, 87, 19),
-                new ErrorInfo("invalid syntax, class decorators require 2.6 or later.", 861, 93, 1, 866, 93, 6),
-                new ErrorInfo("invalid syntax, parameter annotations require 3.x", 889, 96, 7, 894, 96, 12),
-                new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
-                new ErrorInfo("positional parameter after * args not allowed", 953, 102, 13, 959, 102, 19),
-                new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
-                new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
-                new ErrorInfo("invalid syntax", 1044, 111, 10, 1045, 111, 11),
-                new ErrorInfo("invalid sublist parameter", 1107, 117, 11, 1109, 117, 13),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1177, 123, 16, 1180, 123, 19),
-                new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
-                new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
-                new ErrorInfo("'as' requires Python 2.6 or later", 1328, 139, 18, 1330, 139, 20),
-                new ErrorInfo("invalid syntax", 1398, 147, 2, 1403, 147, 7),
-                new ErrorInfo("invalid syntax", 1404, 147, 8, 1409, 147, 13),
-                new ErrorInfo("unexpected token 'b'", 1417, 148, 7, 1418, 148, 8),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1436, 150, 2, 1441, 150, 7),
-                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
-                new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
-                new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
-                new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1511, 160, 12, 1512, 160, 13),
-                new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
+                new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                new ErrorResult("non-keyword arg after keyword arg", new SourceSpan(8, 12, 8, 13)),
+                new ErrorResult("only one * allowed", new SourceSpan(9, 10, 9, 12)),
+                new ErrorResult("only one ** allowed", new SourceSpan(10, 11, 10, 14)),
+                new ErrorResult("keywords must come before ** args", new SourceSpan(11, 13, 11, 19)),
+                new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(17, 11, 17, 13)),
+                new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
+                new ErrorResult("print statement expected expression to be printed", new SourceSpan(28, 1, 28, 15)),
+                new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(53, 5, 53, 14)),
+                new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(59, 5, 59, 14)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(60, 5, 60, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 5, 68, 6)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 9, 68, 10)),
+                new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                new ErrorResult("unexpected token 'blazzz'", new SourceSpan(82, 10, 82, 16)),
+                new ErrorResult("invalid syntax, from cause not allowed in 2.x.", new SourceSpan(87, 11, 87, 19)),
+                new ErrorResult("invalid syntax, class decorators require 2.6 or later.", new SourceSpan(93, 1, 93, 6)),
+                new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(96, 7, 96, 12)),
+                new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                new ErrorResult("positional parameter after * args not allowed", new SourceSpan(102, 13, 102, 19)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(111, 10, 111, 11)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(117, 11, 117, 13)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(123, 16, 123, 19)),
+                new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                new ErrorResult("'as' requires Python 2.6 or later", new SourceSpan(139, 18, 139, 20)),
+                new ErrorResult("invalid syntax", new SourceSpan(147, 2, 147, 7)),
+                new ErrorResult("invalid syntax", new SourceSpan(147, 8, 147, 13)),
+                new ErrorResult("unexpected token 'b'", new SourceSpan(148, 7, 148, 8)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 2, 150, 7)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(160, 12, 160, 13)),
+                new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(161, 7, 161, 8))
             );
 
             ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V25,
                 initLoc,
-                new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
-                new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
-                new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
-                new ErrorInfo("non-keyword arg after keyword arg", 134, 8, 12, 135, 8, 13),
-                new ErrorInfo("only one * allowed", 147, 9, 10, 149, 9, 12),
-                new ErrorInfo("only one ** allowed", 162, 10, 11, 165, 10, 14),
-                new ErrorInfo("keywords must come before ** args", 180, 11, 13, 186, 11, 19),
-                new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
-                new ErrorInfo("invalid sublist parameter", 217, 17, 11, 219, 17, 13),
-                new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
-                new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
-                new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
-                new ErrorInfo("print statement expected expression to be printed", 297, 28, 1, 311, 28, 15),
-                new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
-                new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
-                new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
-                new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
-                new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
-                new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
-                new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
-                new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
-                new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
-                new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
-                new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
-                new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
-                new ErrorInfo("'return' with argument inside generator", 539, 53, 5, 548, 53, 14),
-                new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
-                new ErrorInfo("'return' with argument inside generator", 581, 59, 5, 590, 59, 14),
-                new ErrorInfo("'return' with argument inside generator", 596, 60, 5, 606, 60, 15),
-                new ErrorInfo("invalid syntax", 657, 68, 5, 658, 68, 6),
-                new ErrorInfo("invalid syntax", 661, 68, 9, 662, 68, 10),
-                new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
-                new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
-                new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
-                new ErrorInfo("unexpected token 'blazzz'", 797, 82, 10, 803, 82, 16),
-                new ErrorInfo("invalid syntax, from cause not allowed in 2.x.", 837, 87, 11, 845, 87, 19),
-                new ErrorInfo("invalid syntax, class decorators require 2.6 or later.", 861, 93, 1, 866, 93, 6),
-                new ErrorInfo("invalid syntax, parameter annotations require 3.x", 889, 96, 7, 894, 96, 12),
-                new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
-                new ErrorInfo("positional parameter after * args not allowed", 953, 102, 13, 959, 102, 19),
-                new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
-                new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
-                new ErrorInfo("invalid syntax", 1044, 111, 10, 1045, 111, 11),
-                new ErrorInfo("invalid sublist parameter", 1107, 117, 11, 1109, 117, 13),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1177, 123, 16, 1180, 123, 19),
-                new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
-                new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
-                new ErrorInfo("'as' requires Python 2.6 or later", 1328, 139, 18, 1330, 139, 20),
-                new ErrorInfo("invalid syntax", 1398, 147, 2, 1403, 147, 7),
-                new ErrorInfo("invalid syntax", 1404, 147, 8, 1409, 147, 13),
-                new ErrorInfo("unexpected token 'b'", 1417, 148, 7, 1418, 148, 8),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1436, 150, 2, 1441, 150, 7),
-                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
-                new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
-                new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
-                new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1511, 160, 12, 1512, 160, 13),
-                new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
+                new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                new ErrorResult("non-keyword arg after keyword arg", new SourceSpan(8, 12, 8, 13)),
+                new ErrorResult("only one * allowed", new SourceSpan(9, 10, 9, 12)),
+                new ErrorResult("only one ** allowed", new SourceSpan(10, 11, 10, 14)),
+                new ErrorResult("keywords must come before ** args", new SourceSpan(11, 13, 11, 19)),
+                new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(17, 11, 17, 13)),
+                new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
+                new ErrorResult("print statement expected expression to be printed", new SourceSpan(28, 1, 28, 15)),
+                new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(53, 5, 53, 14)),
+                new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(59, 5, 59, 14)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(60, 5, 60, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 5, 68, 6)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 9, 68, 10)),
+                new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                new ErrorResult("unexpected token 'blazzz'", new SourceSpan(82, 10, 82, 16)),
+                new ErrorResult("invalid syntax, from cause not allowed in 2.x.", new SourceSpan(87, 11, 87, 19)),
+                new ErrorResult("invalid syntax, class decorators require 2.6 or later.", new SourceSpan(93, 1, 93, 6)),
+                new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(96, 7, 96, 12)),
+                new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                new ErrorResult("positional parameter after * args not allowed", new SourceSpan(102, 13, 102, 19)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(111, 10, 111, 11)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(117, 11, 117, 13)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(123, 16, 123, 19)),
+                new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                new ErrorResult("'as' requires Python 2.6 or later", new SourceSpan(139, 18, 139, 20)),
+                new ErrorResult("invalid syntax", new SourceSpan(147, 2, 147, 7)),
+                new ErrorResult("invalid syntax", new SourceSpan(147, 8, 147, 13)),
+                new ErrorResult("unexpected token 'b'", new SourceSpan(148, 7, 148, 8)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 2, 150, 7)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(160, 12, 160, 13)),
+                new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(161, 7, 161, 8))
             );
 
             ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V26,
                 initLoc,
-                new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
-                new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
-                new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
-                new ErrorInfo("non-keyword arg after keyword arg", 134, 8, 12, 135, 8, 13),
-                new ErrorInfo("only one * allowed", 147, 9, 10, 149, 9, 12),
-                new ErrorInfo("only one ** allowed", 162, 10, 11, 165, 10, 14),
-                new ErrorInfo("keywords must come before ** args", 180, 11, 13, 186, 11, 19),
-                new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
-                new ErrorInfo("invalid sublist parameter", 217, 17, 11, 219, 17, 13),
-                new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
-                new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
-                new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
-                new ErrorInfo("print statement expected expression to be printed", 297, 28, 1, 311, 28, 15),
-                new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
-                new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
-                new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
-                new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
-                new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
-                new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
-                new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
-                new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
-                new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
-                new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
-                new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
-                new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
-                new ErrorInfo("'return' with argument inside generator", 539, 53, 5, 548, 53, 14),
-                new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
-                new ErrorInfo("'return' with argument inside generator", 581, 59, 5, 590, 59, 14),
-                new ErrorInfo("'return' with argument inside generator", 596, 60, 5, 606, 60, 15),
-                new ErrorInfo("invalid syntax", 657, 68, 5, 658, 68, 6),
-                new ErrorInfo("invalid syntax", 661, 68, 9, 662, 68, 10),
-                new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
-                new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
-                new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
-                new ErrorInfo("unexpected token 'blazzz'", 797, 82, 10, 803, 82, 16),
-                new ErrorInfo("invalid syntax, from cause not allowed in 2.x.", 837, 87, 11, 845, 87, 19),
-                new ErrorInfo("invalid syntax, parameter annotations require 3.x", 889, 96, 7, 894, 96, 12),
-                new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
-                new ErrorInfo("positional parameter after * args not allowed", 953, 102, 13, 959, 102, 19),
-                new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
-                new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
-                new ErrorInfo("invalid syntax", 1044, 111, 10, 1045, 111, 11),
-                new ErrorInfo("invalid sublist parameter", 1107, 117, 11, 1109, 117, 13),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1177, 123, 16, 1180, 123, 19),
-                new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
-                new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
-                new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
-                new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
-                new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1511, 160, 12, 1512, 160, 13),
-                new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1521, 161, 7, 1522, 161, 8)
+                new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                new ErrorResult("non-keyword arg after keyword arg", new SourceSpan(8, 12, 8, 13)),
+                new ErrorResult("only one * allowed", new SourceSpan(9, 10, 9, 12)),
+                new ErrorResult("only one ** allowed", new SourceSpan(10, 11, 10, 14)),
+                new ErrorResult("keywords must come before ** args", new SourceSpan(11, 13, 11, 19)),
+                new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(17, 11, 17, 13)),
+                new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
+                new ErrorResult("print statement expected expression to be printed", new SourceSpan(28, 1, 28, 15)),
+                new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(53, 5, 53, 14)),
+                new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(59, 5, 59, 14)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(60, 5, 60, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 5, 68, 6)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 9, 68, 10)),
+                new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                new ErrorResult("unexpected token 'blazzz'", new SourceSpan(82, 10, 82, 16)),
+                new ErrorResult("invalid syntax, from cause not allowed in 2.x.", new SourceSpan(87, 11, 87, 19)),
+                new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(96, 7, 96, 12)),
+                new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                new ErrorResult("positional parameter after * args not allowed", new SourceSpan(102, 13, 102, 19)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(111, 10, 111, 11)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(117, 11, 117, 13)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(123, 16, 123, 19)),
+                new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(160, 12, 160, 13)),
+                new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(161, 7, 161, 8))
             );
 
             ParseErrorsWithOffset("AllErrors.py",
                 PythonLanguageVersion.V27,
                 initLoc,
-                new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
-                new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
-                new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
-                new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
-                new ErrorInfo("non-keyword arg after keyword arg", 134, 8, 12, 135, 8, 13),
-                new ErrorInfo("only one * allowed", 147, 9, 10, 149, 9, 12),
-                new ErrorInfo("only one ** allowed", 162, 10, 11, 165, 10, 14),
-                new ErrorInfo("keywords must come before ** args", 180, 11, 13, 186, 11, 19),
-                new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
-                new ErrorInfo("invalid sublist parameter", 217, 17, 11, 219, 17, 13),
-                new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
-                new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
-                new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
-                new ErrorInfo("print statement expected expression to be printed", 297, 28, 1, 311, 28, 15),
-                new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
-                new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
-                new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
-                new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
-                new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
-                new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
-                new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
-                new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
-                new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
-                new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
-                new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
-                new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
-                new ErrorInfo("'return' with argument inside generator", 539, 53, 5, 548, 53, 14),
-                new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
-                new ErrorInfo("'return' with argument inside generator", 581, 59, 5, 590, 59, 14),
-                new ErrorInfo("'return' with argument inside generator", 596, 60, 5, 606, 60, 15),
-                new ErrorInfo("invalid syntax", 657, 68, 5, 658, 68, 6),
-                new ErrorInfo("invalid syntax", 661, 68, 9, 662, 68, 10),
-                new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
-                new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
-                new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
-                new ErrorInfo("unexpected token 'blazzz'", 797, 82, 10, 803, 82, 16),
-                new ErrorInfo("invalid syntax, from cause not allowed in 2.x.", 837, 87, 11, 845, 87, 19),
-                new ErrorInfo("invalid syntax, parameter annotations require 3.x", 889, 96, 7, 894, 96, 12),
-                new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
-                new ErrorInfo("positional parameter after * args not allowed", 953, 102, 13, 959, 102, 19),
-                new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
-                new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
-                new ErrorInfo("invalid syntax", 1044, 111, 10, 1045, 111, 11),
-                new ErrorInfo("invalid sublist parameter", 1107, 117, 11, 1109, 117, 13),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
-                new ErrorInfo("duplicate argument 'abc' in function definition", 1177, 123, 16, 1180, 123, 19),
-                new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
-                new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
-                new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
-                new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
-                new ErrorInfo("invalid syntax", 1511, 160, 12, 1512, 160, 13),
-                new ErrorInfo("invalid syntax", 1524, 161, 10, 1527, 161, 13)
+                new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                new ErrorResult("non-keyword arg after keyword arg", new SourceSpan(8, 12, 8, 13)),
+                new ErrorResult("only one * allowed", new SourceSpan(9, 10, 9, 12)),
+                new ErrorResult("only one ** allowed", new SourceSpan(10, 11, 10, 14)),
+                new ErrorResult("keywords must come before ** args", new SourceSpan(11, 13, 11, 19)),
+                new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(17, 11, 17, 13)),
+                new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
+                new ErrorResult("print statement expected expression to be printed", new SourceSpan(28, 1, 28, 15)),
+                new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(53, 5, 53, 14)),
+                new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(59, 5, 59, 14)),
+                new ErrorResult("'return' with argument inside generator", new SourceSpan(60, 5, 60, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 5, 68, 6)),
+                new ErrorResult("invalid syntax", new SourceSpan(68, 9, 68, 10)),
+                new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                new ErrorResult("unexpected token 'blazzz'", new SourceSpan(82, 10, 82, 16)),
+                new ErrorResult("invalid syntax, from cause not allowed in 2.x.", new SourceSpan(87, 11, 87, 19)),
+                new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(96, 7, 96, 12)),
+                new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                new ErrorResult("positional parameter after * args not allowed", new SourceSpan(102, 13, 102, 19)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                new ErrorResult("invalid syntax", new SourceSpan(111, 10, 111, 11)),
+                new ErrorResult("invalid sublist parameter", new SourceSpan(117, 11, 117, 13)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(123, 16, 123, 19)),
+                new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                new ErrorResult("invalid syntax", new SourceSpan(160, 12, 160, 13)),
+                new ErrorResult("invalid syntax", new SourceSpan(161, 10, 161, 13))
             );
 
             foreach (var version in V30_V32Versions) {
                 ParseErrorsWithOffset("AllErrors.py",
                     version,
                     initLoc,
-                    new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
-                    new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
-                    new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
-                    new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
-                    new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
-                    new ErrorInfo("non-keyword arg after keyword arg", 134, 8, 12, 135, 8, 13),
-                    new ErrorInfo("only one * allowed", 147, 9, 10, 149, 9, 12),
-                    new ErrorInfo("only one ** allowed", 162, 10, 11, 165, 10, 14),
-                    new ErrorInfo("keywords must come before ** args", 180, 11, 13, 186, 11, 19),
-                    new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 216, 17, 10, 223, 17, 17),
-                    new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
-                    new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
-                    new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
-                    new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
-                    new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
-                    new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
-                    new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
-                    new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
-                    new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
-                    new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
-                    new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
-                    new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
-                    new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
-                    new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
-                    new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
-                    new ErrorInfo("'return' with argument inside generator", 539, 53, 5, 548, 53, 14),
-                    new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
-                    new ErrorInfo("'return' with argument inside generator", 581, 59, 5, 590, 59, 14),
-                    new ErrorInfo("'return' with argument inside generator", 596, 60, 5, 606, 60, 15),
-                    new ErrorInfo("two starred expressions in assignment", 660, 68, 8, 662, 68, 10),
-                    new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
-                    new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
-                    new ErrorInfo("import * only allowed at module level", 734, 75, 19, 735, 75, 20),
-                    new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
-                    new ErrorInfo("nonlocal declaration not allowed at module level", 788, 82, 1, 796, 82, 9),
-                    new ErrorInfo("invalid syntax, only exception value is allowed in 3.x.", 814, 83, 10, 819, 83, 15),
-                    new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
-                    new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
-                    new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
-                    new ErrorInfo("named arguments must follow bare *", 1044, 111, 10, 1045, 111, 11),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1072, 114, 10, 1078, 114, 16),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1106, 117, 10, 1113, 117, 17),
-                    new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1171, 123, 10, 1181, 123, 20),
-                    new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
-                    new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1277, 134, 17, 1280, 134, 20),
-                    new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
-                    new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1379, 144, 17, 1382, 144, 20),
-                    new ErrorInfo("cannot mix bytes and nonbytes literals", 1404, 147, 8, 1409, 147, 13),
-                    new ErrorInfo("cannot mix bytes and nonbytes literals", 1417, 148, 7, 1423, 148, 13),
-                    new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                    new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                    new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                    new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                    new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
-                    new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
-                    new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
-                    new ErrorInfo("invalid syntax", 1511, 160, 12, 1512, 160, 13),
-                    new ErrorInfo("invalid syntax", 1524, 161, 10, 1527, 161, 13)
+                    new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                    new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                    new ErrorResult("non-keyword arg after keyword arg", new SourceSpan(8, 12, 8, 13)),
+                    new ErrorResult("only one * allowed", new SourceSpan(9, 10, 9, 12)),
+                    new ErrorResult("only one ** allowed", new SourceSpan(10, 11, 10, 14)),
+                    new ErrorResult("keywords must come before ** args", new SourceSpan(11, 13, 11, 19)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(17, 10, 17, 17)),
+                    new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                    new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                    new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
+                    new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                    new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                    new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                    new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                    new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                    new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                    new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                    new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                    new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                    new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                    new ErrorResult("'return' with argument inside generator", new SourceSpan(53, 5, 53, 14)),
+                    new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                    new ErrorResult("'return' with argument inside generator", new SourceSpan(59, 5, 59, 14)),
+                    new ErrorResult("'return' with argument inside generator", new SourceSpan(60, 5, 60, 15)),
+                    new ErrorResult("two starred expressions in assignment", new SourceSpan(68, 8, 68, 10)),
+                    new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                    new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                    new ErrorResult("import * only allowed at module level", new SourceSpan(75, 19, 75, 20)),
+                    new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                    new ErrorResult("nonlocal declaration not allowed at module level", new SourceSpan(82, 1, 82, 9)),
+                    new ErrorResult("invalid syntax, only exception value is allowed in 3.x.", new SourceSpan(83, 10, 83, 15)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                    new ErrorResult("named arguments must follow bare *", new SourceSpan(111, 10, 111, 11)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(114, 10, 114, 16)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(117, 10, 117, 17)),
+                    new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(123, 10, 123, 20)),
+                    new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(134, 17, 134, 20)),
+                    new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(144, 17, 144, 20)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(147, 8, 147, 13)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(148, 7, 148, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                    new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                    new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(160, 12, 160, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(161, 10, 161, 13))
                 );
             }
 
@@ -808,63 +808,63 @@ namespace Microsoft.Python.Parsing.Tests {
                 ParseErrorsWithOffset("AllErrors.py",
                     version,
                     initLoc,
-                    new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
-                    new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
-                    new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
-                    new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
-                    new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
-                    new ErrorInfo("non-keyword arg after keyword arg", 134, 8, 12, 135, 8, 13),
-                    new ErrorInfo("only one * allowed", 147, 9, 10, 149, 9, 12),
-                    new ErrorInfo("only one ** allowed", 162, 10, 11, 165, 10, 14),
-                    new ErrorInfo("keywords must come before ** args", 180, 11, 13, 186, 11, 19),
-                    new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 216, 17, 10, 223, 17, 17),
-                    new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
-                    new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
-                    new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
-                    new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
-                    new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
-                    new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
-                    new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
-                    new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
-                    new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
-                    new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
-                    new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
-                    new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
-                    new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
-                    new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
-                    new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
-                    new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
-                    new ErrorInfo("two starred expressions in assignment", 660, 68, 8, 662, 68, 10),
-                    new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
-                    new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
-                    new ErrorInfo("import * only allowed at module level", 734, 75, 19, 735, 75, 20),
-                    new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
-                    new ErrorInfo("nonlocal declaration not allowed at module level", 788, 82, 1, 796, 82, 9),
-                    new ErrorInfo("invalid syntax, only exception value is allowed in 3.x.", 814, 83, 10, 819, 83, 15),
-                    new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
-                    new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
-                    new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
-                    new ErrorInfo("named arguments must follow bare *", 1044, 111, 10, 1045, 111, 11),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1072, 114, 10, 1078, 114, 16),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1106, 117, 10, 1113, 117, 17),
-                    new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1171, 123, 10, 1181, 123, 20),
-                    new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
-                    new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1277, 134, 17, 1280, 134, 20),
-                    new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
-                    new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1379, 144, 17, 1382, 144, 20),
-                    new ErrorInfo("cannot mix bytes and nonbytes literals", 1404, 147, 8, 1409, 147, 13),
-                    new ErrorInfo("cannot mix bytes and nonbytes literals", 1417, 148, 7, 1423, 148, 13),
-                    new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                    new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                    new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                    new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                    new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
-                    new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
-                    new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
-                    new ErrorInfo("invalid syntax", 1511, 160, 12, 1512, 160, 13),
-                    new ErrorInfo("invalid syntax", 1524, 161, 10, 1527, 161, 13)
+                    new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                    new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                    new ErrorResult("non-keyword arg after keyword arg", new SourceSpan(8, 12, 8, 13)),
+                    new ErrorResult("only one * allowed", new SourceSpan(9, 10, 9, 12)),
+                    new ErrorResult("only one ** allowed", new SourceSpan(10, 11, 10, 14)),
+                    new ErrorResult("keywords must come before ** args", new SourceSpan(11, 13, 11, 19)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(17, 10, 17, 17)),
+                    new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                    new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                    new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
+                    new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                    new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                    new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                    new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                    new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                    new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                    new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                    new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                    new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                    new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                    new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                    new ErrorResult("two starred expressions in assignment", new SourceSpan(68, 8, 68, 10)),
+                    new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                    new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                    new ErrorResult("import * only allowed at module level", new SourceSpan(75, 19, 75, 20)),
+                    new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                    new ErrorResult("nonlocal declaration not allowed at module level", new SourceSpan(82, 1, 82, 9)),
+                    new ErrorResult("invalid syntax, only exception value is allowed in 3.x.", new SourceSpan(83, 10, 83, 15)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                    new ErrorResult("named arguments must follow bare *", new SourceSpan(111, 10, 111, 11)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(114, 10, 114, 16)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(117, 10, 117, 17)),
+                    new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(123, 10, 123, 20)),
+                    new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(134, 17, 134, 20)),
+                    new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(144, 17, 144, 20)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(147, 8, 147, 13)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(148, 7, 148, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                    new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                    new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(160, 12, 160, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(161, 10, 161, 13))
                 );
             }
 
@@ -872,82 +872,82 @@ namespace Microsoft.Python.Parsing.Tests {
                 ParseErrorsWithOffset("AllErrors.py",
                     version,
                     initLoc,
-                    new ErrorInfo("future statement does not support import *", 0, 1, 1, 24, 1, 25),
-                    new ErrorInfo("future feature is not defined: *", 0, 1, 1, 24, 1, 25),
-                    new ErrorInfo("not a chance", 26, 2, 1, 55, 2, 30),
-                    new ErrorInfo("future feature is not defined: unknown", 57, 3, 1, 87, 3, 31),
-                    new ErrorInfo("default value must be specified here", 106, 5, 16, 107, 5, 17),
-                    new ErrorInfo("positional argument follows keyword argument", 134, 8, 12, 135, 8, 13),
-                    new ErrorInfo("unexpected token 'pass'", 197, 14, 1, 201, 14, 5),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 216, 17, 10, 223, 17, 17),
-                    new ErrorInfo("invalid parameter", 251, 20, 10, 253, 20, 12),
-                    new ErrorInfo("'break' outside loop", 278, 25, 1, 283, 25, 6),
-                    new ErrorInfo("'continue' not properly in loop", 285, 26, 1, 293, 26, 9),
-                    new ErrorInfo("'continue' not supported inside 'finally' clause", 374, 34, 9, 382, 34, 17),
-                    new ErrorInfo("expected expression after del", 386, 36, 1, 389, 36, 4),
-                    new ErrorInfo("can't delete binary operator", 396, 37, 5, 399, 37, 8),
-                    new ErrorInfo("can't delete unary operator", 405, 38, 5, 407, 38, 7),
-                    new ErrorInfo("can't delete or expression", 413, 39, 5, 421, 39, 13),
-                    new ErrorInfo("can't delete and expression", 427, 40, 5, 436, 40, 14),
-                    new ErrorInfo("can't delete dictionary display", 442, 41, 5, 444, 41, 7),
-                    new ErrorInfo("can't delete literal", 450, 42, 5, 454, 42, 9),
-                    new ErrorInfo("can't delete literal", 460, 43, 5, 464, 43, 9),
-                    new ErrorInfo("can't assign to literal", 468, 45, 1, 472, 45, 5),
-                    new ErrorInfo("can't assign to literal", 482, 46, 1, 486, 46, 5),
-                    new ErrorInfo("'return' outside function", 498, 48, 1, 504, 48, 7),
-                    new ErrorInfo("misplaced yield", 552, 55, 1, 557, 55, 6),
-                    new ErrorInfo("two starred expressions in assignment", 660, 68, 8, 662, 68, 10),
-                    new ErrorInfo("illegal expression for augmented assignment", 674, 70, 1, 676, 70, 3),
-                    new ErrorInfo("missing module name", 692, 72, 6, 698, 72, 12),
-                    new ErrorInfo("import * only allowed at module level", 734, 75, 19, 735, 75, 20),
-                    new ErrorInfo("from __future__ imports must occur at the beginning of the file", 749, 78, 1, 780, 78, 32),
-                    new ErrorInfo("nonlocal declaration not allowed at module level", 788, 82, 1, 796, 82, 9),
-                    new ErrorInfo("invalid syntax, only exception value is allowed in 3.x.", 814, 83, 10, 819, 83, 15),
-                    new ErrorInfo("default value must be specified here", 924, 99, 15, 925, 99, 16),
-                    new ErrorInfo("duplicate * args arguments", 987, 105, 13, 989, 105, 15),
-                    new ErrorInfo("duplicate * args arguments", 1017, 108, 13, 1019, 108, 15),
-                    new ErrorInfo("named arguments must follow bare *", 1044, 111, 10, 1045, 111, 11),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1072, 114, 10, 1078, 114, 16),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1106, 117, 10, 1113, 117, 17),
-                    new ErrorInfo("duplicate argument 'abc' in function definition", 1143, 120, 12, 1146, 120, 15),
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 1171, 123, 10, 1181, 123, 20),
-                    new ErrorInfo("invalid parameter", 1208, 127, 7, 1210, 127, 9),
-                    new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1277, 134, 17, 1280, 134, 20),
-                    new ErrorInfo("default 'except' must be last", 1242, 132, 1, 1249, 132, 8),
-                    new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 1379, 144, 17, 1382, 144, 20),
-                    new ErrorInfo("cannot mix bytes and nonbytes literals", 1404, 147, 8, 1409, 147, 13),
-                    new ErrorInfo("cannot mix bytes and nonbytes literals", 1417, 148, 7, 1423, 148, 13),
-                    new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                    new ErrorInfo("invalid syntax", 1431, 149, 7, 1433, 149, 9),
-                    new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                    new ErrorInfo("invalid syntax", 1442, 150, 8, 1444, 150, 10),
-                    new ErrorInfo("invalid syntax", 1451, 152, 4, 1453, 152, 6),
-                    new ErrorInfo("expected name", 1459, 154, 3, 1461, 154, 5),
-                    new ErrorInfo("invalid parameter", 1476, 156, 7, 1482, 156, 13),
-                    new ErrorInfo("invalid syntax", 1511, 160, 12, 1512, 160, 13),
-                    new ErrorInfo("invalid syntax", 1524, 161, 10, 1527, 161, 13)
+                    new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                    new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                    new ErrorResult("positional argument follows keyword argument", new SourceSpan(8, 12, 8, 13)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(17, 10, 17, 17)),
+                    new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                    new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                    new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
+                    new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                    new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                    new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                    new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                    new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                    new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                    new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                    new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                    new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                    new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                    new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                    new ErrorResult("two starred expressions in assignment", new SourceSpan(68, 8, 68, 10)),
+                    new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                    new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                    new ErrorResult("import * only allowed at module level", new SourceSpan(75, 19, 75, 20)),
+                    new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                    new ErrorResult("nonlocal declaration not allowed at module level", new SourceSpan(82, 1, 82, 9)),
+                    new ErrorResult("invalid syntax, only exception value is allowed in 3.x.", new SourceSpan(83, 10, 83, 15)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                    new ErrorResult("named arguments must follow bare *", new SourceSpan(111, 10, 111, 11)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(114, 10, 114, 16)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(117, 10, 117, 17)),
+                    new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(123, 10, 123, 20)),
+                    new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(134, 17, 134, 20)),
+                    new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(144, 17, 144, 20)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(147, 8, 147, 13)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(148, 7, 148, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                    new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                    new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(160, 12, 160, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(161, 10, 161, 13))
                 );
             }
         }
 
         private void ParseErrorsWithOffset(string filename, PythonLanguageVersion version, SourceLocation initialLocation,
-            params ErrorInfo[] errors) {
+            params ErrorResult[] errors) {
             ParseErrors(filename, version, new ParserOptions() {
                 IndentationInconsistencySeverity = Severity.Hint,
                 InitialSourceLocation = initialLocation
-            }, errors.Select(e => ToErrorResult(AddOffset(initialLocation, e))).ToArray());
+            }, errors.Select(e => AddOffset(initialLocation, e)).ToArray());
         }
 
-        private ErrorInfo AddOffset(SourceLocation initLoc, ErrorInfo error) {
+        private ErrorResult AddOffset(SourceLocation initLoc, ErrorResult error) {
             var span = error.Span;
-            return new ErrorInfo(
+            return new ErrorResult(
                 error.Message,
-                span.Start.Index + initLoc.Index,
+                new SourceSpan(
                 span.Start.Line + initLoc.Line - 1,
                 span.Start.Line == 1 ? span.Start.Column + initLoc.Column - 1 : span.Start.Column,
-                span.End.Index + initLoc.Index,
                 span.End.Line + initLoc.Line - 1,
                 span.End.Line == 1 ? span.End.Column + initLoc.Column - 1 : span.End.Column
+                )
             );
         }
 
@@ -957,22 +957,22 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V26AndUp) {
                 ParseErrors("InvalidUnicodeLiteral26Up.py",
                     version,
-                    new ErrorInfo($"'unicodeescape' codec can't decode bytes in position {position}: truncated \\uXXXX escape",
-                        39 + Environment.NewLine.Length, 2, 1, 47 + Environment.NewLine.Length, 2, 9)
+                    new ErrorResult($"'unicodeescape' codec can't decode bytes in position {position}: truncated \\uXXXX escape",
+                       new SourceSpan(2, 1, 2, 9))
                 );
             }
 
             foreach (var version in V2Versions) {
                 ParseErrors("InvalidUnicodeLiteral2x.py",
                     version,
-                    new ErrorInfo("'unicodeescape' codec can't decode bytes in position 4: truncated \\uXXXX escape", 0, 1, 1, 9, 1, 10)
+                    new ErrorResult("'unicodeescape' codec can't decode bytes in position 4: truncated \\uXXXX escape", new SourceSpan(1, 1, 1, 10))
                 );
             }
 
             foreach (var version in V3Versions) {
                 ParseErrors("InvalidUnicodeLiteral.py",
                     version,
-                    new ErrorInfo("'unicodeescape' codec can't decode bytes in position 3: truncated \\uXXXX escape", 0, 1, 1, 8, 1, 9)
+                    new ErrorResult("'unicodeescape' codec can't decode bytes in position 3: truncated \\uXXXX escape", new SourceSpan(1, 1, 1, 9))
                 );
             }
         }
@@ -983,7 +983,7 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in AllVersions) {
                 ParseErrors("DedentError.py",
                     version,
-                    new ErrorInfo("unindent does not match any outer indentation level", 63, 4, 1, 68, 4, 6)
+                    new ErrorResult("unindent does not match any outer indentation level", new SourceSpan(4, 1, 4, 6))
                 );
             }
         }
@@ -993,7 +993,7 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in AllVersions) {
                 ParseErrors("DedentErrorLargeFile.py",
                     version,
-                    new ErrorInfo("unindent does not match any outer indentation level", 3037, 10, 1, 3043, 10, 7)
+                    new ErrorResult("unindent does not match any outer indentation level", new SourceSpan(10, 1, 10, 7))
                 );
             }
         }
@@ -1080,52 +1080,52 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V30_V32Versions) {
                 ParseErrors("LiteralsV2.py",
                     version,
-                    new ErrorInfo("invalid token", 4, 1, 5, 5, 1, 6),
-                    new ErrorInfo("invalid syntax", 8, 2, 2, 24, 2, 18),
-                    new ErrorInfo("invalid syntax", 27, 3, 2, 43, 3, 18),
-                    new ErrorInfo("invalid syntax", 47, 4, 3, 60, 4, 16),
-                    new ErrorInfo("invalid syntax", 64, 5, 3, 77, 5, 16),
-                    new ErrorInfo("invalid syntax", 81, 6, 3, 94, 6, 16),
-                    new ErrorInfo("invalid syntax", 98, 7, 3, 111, 7, 16),
-                    new ErrorInfo("invalid syntax", 114, 8, 2, 134, 8, 22),
-                    new ErrorInfo("invalid syntax", 137, 9, 2, 157, 9, 22),
-                    new ErrorInfo("invalid syntax", 161, 10, 3, 178, 10, 20),
-                    new ErrorInfo("invalid syntax", 182, 11, 3, 199, 11, 20),
-                    new ErrorInfo("invalid syntax", 203, 12, 3, 220, 12, 20),
-                    new ErrorInfo("invalid syntax", 224, 13, 3, 241, 13, 20),
-                    new ErrorInfo("invalid syntax", 244, 14, 2, 260, 14, 18),
-                    new ErrorInfo("invalid syntax", 263, 15, 2, 279, 15, 18),
-                    new ErrorInfo("invalid syntax", 283, 16, 3, 296, 16, 16),
-                    new ErrorInfo("invalid syntax", 300, 17, 3, 313, 17, 16),
-                    new ErrorInfo("invalid syntax", 317, 18, 3, 330, 18, 16),
-                    new ErrorInfo("invalid syntax", 334, 19, 3, 347, 19, 16),
-                    new ErrorInfo("invalid syntax", 350, 20, 2, 370, 20, 22),
-                    new ErrorInfo("invalid syntax", 373, 21, 2, 393, 21, 22),
-                    new ErrorInfo("invalid syntax", 397, 22, 3, 414, 22, 20),
-                    new ErrorInfo("invalid syntax", 418, 23, 3, 435, 23, 20),
-                    new ErrorInfo("invalid syntax", 439, 24, 3, 456, 24, 20),
-                    new ErrorInfo("invalid syntax", 460, 25, 3, 477, 25, 20),
-                    new ErrorInfo("invalid syntax", 480, 26, 2, 519, 27, 36),
-                    new ErrorInfo("invalid syntax", 522, 28, 2, 533, 28, 13),
-                    new ErrorInfo("invalid token", 546, 29, 12, 547, 29, 13),
-                    new ErrorInfo("invalid token", 560, 30, 12, 561, 30, 13),
-                    new ErrorInfo("invalid token", 563, 31, 1, 567, 31, 5),
-                    new ErrorInfo("invalid token", 573, 32, 5, 574, 32, 6),
-                    new ErrorInfo("invalid token", 581, 33, 6, 582, 33, 7),
-                    new ErrorInfo("invalid token", 590, 34, 7, 591, 34, 8)
+                    new ErrorResult("invalid token", new SourceSpan(1, 5, 1, 6)),
+                    new ErrorResult("invalid syntax", new SourceSpan(2, 2, 2, 18)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 2, 3, 18)),
+                    new ErrorResult("invalid syntax", new SourceSpan(4, 3, 4, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(5, 3, 5, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(6, 3, 6, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(7, 3, 7, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(8, 2, 8, 22)),
+                    new ErrorResult("invalid syntax", new SourceSpan(9, 2, 9, 22)),
+                    new ErrorResult("invalid syntax", new SourceSpan(10, 3, 10, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(11, 3, 11, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(12, 3, 12, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(13, 3, 13, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(14, 2, 14, 18)),
+                    new ErrorResult("invalid syntax", new SourceSpan(15, 2, 15, 18)),
+                    new ErrorResult("invalid syntax", new SourceSpan(16, 3, 16, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(17, 3, 17, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(18, 3, 18, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(19, 3, 19, 16)),
+                    new ErrorResult("invalid syntax", new SourceSpan(20, 2, 20, 22)),
+                    new ErrorResult("invalid syntax", new SourceSpan(21, 2, 21, 22)),
+                    new ErrorResult("invalid syntax", new SourceSpan(22, 3, 22, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(23, 3, 23, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(24, 3, 24, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(25, 3, 25, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(26, 2, 27, 36)),
+                    new ErrorResult("invalid syntax", new SourceSpan(28, 2, 28, 13)),
+                    new ErrorResult("invalid token", new SourceSpan(29, 12, 29, 13)),
+                    new ErrorResult("invalid token", new SourceSpan(30, 12, 30, 13)),
+                    new ErrorResult("invalid token", new SourceSpan(31, 1, 31, 5)),
+                    new ErrorResult("invalid token", new SourceSpan(32, 5, 32, 6)),
+                    new ErrorResult("invalid token", new SourceSpan(33, 6, 33, 7)),
+                    new ErrorResult("invalid token", new SourceSpan(34, 7, 34, 8))
                 );
             }
 
             foreach (var version in V33AndUp) {
                 ParseErrors("LiteralsV2.py",
                     version,
-                    new ErrorInfo("invalid token", 4, 1, 5, 5, 1, 6),
-                    new ErrorInfo("invalid token", 546, 29, 12, 547, 29, 13),
-                    new ErrorInfo("invalid token", 560, 30, 12, 561, 30, 13),
-                    new ErrorInfo("invalid token", 563, 31, 1, 567, 31, 5),
-                    new ErrorInfo("invalid token", 573, 32, 5, 574, 32, 6),
-                    new ErrorInfo("invalid token", 581, 33, 6, 582, 33, 7),
-                    new ErrorInfo("invalid token", 590, 34, 7, 591, 34, 8)
+                    new ErrorResult("invalid token", new SourceSpan(1, 5, 1, 6)),
+                    new ErrorResult("invalid token", new SourceSpan(29, 12, 29, 13)),
+                    new ErrorResult("invalid token", new SourceSpan(30, 12, 30, 13)),
+                    new ErrorResult("invalid token", new SourceSpan(31, 1, 31, 5)),
+                    new ErrorResult("invalid token", new SourceSpan(32, 5, 32, 6)),
+                    new ErrorResult("invalid token", new SourceSpan(33, 6, 33, 7)),
+                    new ErrorResult("invalid token", new SourceSpan(34, 7, 34, 8))
                 );
                 CheckAst(
                     ParseFile("LiteralsV3.py", ErrorSink.Null, version),
@@ -1179,8 +1179,8 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V24_V25Versions) {
                 ParseErrors("Literals26.py",
                     version,
-                    new ErrorInfo("unexpected token 'o720'", 1, 1, 2, 5, 1, 6),
-                    new ErrorInfo("unexpected token 'b100'", 8, 2, 2, 12, 2, 6)
+                    new ErrorResult("unexpected token 'o720'", new SourceSpan(1, 2, 1, 6)),
+                    new ErrorResult("unexpected token 'b100'", new SourceSpan(2, 2, 2, 6))
                 );
             }
         }
@@ -1214,36 +1214,36 @@ namespace Microsoft.Python.Parsing.Tests {
                 );
 
                 ParseErrors("Literals36.py", version,
-                    new ErrorInfo("invalid token", 83, 8, 1, 89, 8, 7),
-                    new ErrorInfo("invalid token", 91, 9, 1, 95, 9, 5),
-                    new ErrorInfo("invalid token", 97, 10, 1, 102, 10, 6),
-                    new ErrorInfo("invalid token", 104, 11, 1, 109, 11, 6),
-                    new ErrorInfo("invalid token", 118, 13, 1, 123, 13, 6),
-                    new ErrorInfo("invalid token", 139, 15, 1, 151, 15, 13),
-                    new ErrorInfo("invalid token", 177, 19, 1, 183, 19, 7)
+                    new ErrorResult("invalid token", new SourceSpan(8, 1, 8, 7)),
+                    new ErrorResult("invalid token", new SourceSpan(9, 1, 9, 5)),
+                    new ErrorResult("invalid token", new SourceSpan(10, 1, 10, 6)),
+                    new ErrorResult("invalid token", new SourceSpan(11, 1, 11, 6)),
+                    new ErrorResult("invalid token", new SourceSpan(13, 1, 13, 6)),
+                    new ErrorResult("invalid token", new SourceSpan(15, 1, 15, 13)),
+                    new ErrorResult("invalid token", new SourceSpan(19, 1, 19, 7))
                 );
             }
 
             foreach (var version in AllVersions.Where(v => v <= PythonLanguageVersion.V35)) {
                 ParseErrors("Literals36.py", version,
-                    new ErrorInfo("unexpected token '_000_000'", 2, 1, 3, 10, 1, 11),
-                    new ErrorInfo("unexpected token '_F00D'", 20, 2, 7, 25, 2, 12),
-                    new ErrorInfo("unexpected token '_0011_1111_0100_1110'", 29, 3, 3, 49, 3, 23),
-                    new ErrorInfo("unexpected token '_1111_0000'", 53, 4, 3, 63, 4, 13),
-                    new ErrorInfo("unexpected token '_0'", 70, 6, 2, 72, 6, 4),
-                    new ErrorInfo("unexpected token '_0e0_1'", 75, 7, 2, 81, 7, 8),
-                    new ErrorInfo("unexpected token '_0e_1'", 84, 8, 2, 89, 8, 7),
-                    new ErrorInfo("unexpected token '_e1'", 92, 9, 2, 95, 9, 5),
-                    new ErrorInfo("unexpected token '_'", 98, 10, 2, 99, 10, 3),
-                    new ErrorInfo("unexpected token '_14'", 106, 11, 3, 109, 11, 6),
-                    new ErrorInfo("unexpected token '_4'", 114, 12, 4, 116, 12, 6),
-                    new ErrorInfo("unexpected token '_'", 122, 13, 5, 123, 13, 6),
-                    new ErrorInfo("unexpected token '_CAFE_F00D'", 127, 14, 3, 137, 14, 13),
-                    new ErrorInfo("unexpected token '_F00D_'", 145, 15, 7, 151, 15, 13),
-                    new ErrorInfo("unexpected token '_777'", 155, 16, 3, 159, 16, 7),
-                    new ErrorInfo("unexpected token '_77'", 164, 17, 4, 167, 17, 7),
-                    new ErrorInfo("unexpected token '_7'", 173, 18, 5, 175, 18, 7),
-                    new ErrorInfo("unexpected token '_'", 182, 19, 6, 183, 19, 7)
+                    new ErrorResult("unexpected token '_000_000'", new SourceSpan(1, 3, 1, 11)),
+                    new ErrorResult("unexpected token '_F00D'", new SourceSpan(2, 7, 2, 12)),
+                    new ErrorResult("unexpected token '_0011_1111_0100_1110'", new SourceSpan(3, 3, 3, 23)),
+                    new ErrorResult("unexpected token '_1111_0000'", new SourceSpan(4, 3, 4, 13)),
+                    new ErrorResult("unexpected token '_0'", new SourceSpan(6, 2, 6, 4)),
+                    new ErrorResult("unexpected token '_0e0_1'", new SourceSpan(7, 2, 7, 8)),
+                    new ErrorResult("unexpected token '_0e_1'", new SourceSpan(8, 2, 8, 7)),
+                    new ErrorResult("unexpected token '_e1'", new SourceSpan(9, 2, 9, 5)),
+                    new ErrorResult("unexpected token '_'", new SourceSpan(10, 2, 10, 3)),
+                    new ErrorResult("unexpected token '_14'", new SourceSpan(11, 3, 11, 6)),
+                    new ErrorResult("unexpected token '_4'", new SourceSpan(12, 4, 12, 6)),
+                    new ErrorResult("unexpected token '_'", new SourceSpan(13, 5, 13, 6)),
+                    new ErrorResult("unexpected token '_CAFE_F00D'", new SourceSpan(14, 3, 14, 13)),
+                    new ErrorResult("unexpected token '_F00D_'", new SourceSpan(15, 7, 15, 13)),
+                    new ErrorResult("unexpected token '_777'", new SourceSpan(16, 3, 16, 7)),
+                    new ErrorResult("unexpected token '_77'", new SourceSpan(17, 4, 17, 7)),
+                    new ErrorResult("unexpected token '_7'", new SourceSpan(18, 5, 18, 7)),
+                    new ErrorResult("unexpected token '_'", new SourceSpan(19, 6, 19, 7))
                 );
             }
         }
@@ -1263,11 +1263,11 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V26AndUp) {
                 ParseErrors("Keywords25.py",
                     version,
-                    new ErrorInfo("unexpected token '='", 5, 1, 6, 6, 1, 7),
-                    new ErrorInfo("invalid syntax", 7, 1, 8, 8, 1, 9),
-                    new ErrorInfo("unexpected token '<newline>'", 8, 1, 9, 10, 2, 1),
-                    new ErrorInfo("unexpected token 'as'", 10, 2, 1, 12, 2, 3),
-                    new ErrorInfo("can't assign to error expression", 10, 2, 1, 12, 2, 3)
+                    new ErrorResult("unexpected token '='", new SourceSpan(1, 6, 1, 7)),
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 8, 1, 9)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(1, 9, 2, 1)),
+                    new ErrorResult("unexpected token 'as'", new SourceSpan(2, 1, 2, 3)),
+                    new ErrorResult("can't assign to error expression", new SourceSpan(2, 1, 2, 3))
                 );
             }
         }
@@ -1287,8 +1287,8 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V3Versions) {
                 ParseErrors("Keywords2x.py",
                     version,
-                    new ErrorInfo("can't assign to literal", 0, 1, 1, 4, 1, 5),
-                    new ErrorInfo("can't assign to literal", 10, 2, 1, 15, 2, 6)
+                    new ErrorResult("can't assign to literal", new SourceSpan(1, 1, 1, 5)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(2, 1, 2, 6))
                 );
             }
         }
@@ -1378,8 +1378,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V3Versions) {
                 ParseErrors("BinaryOperatorsV2.py", version, new[] {
-                    new ErrorInfo("unexpected token '>'", 3, 1, 4, 4, 1, 5),
-                    new ErrorInfo("invalid syntax", 5, 1, 6, 6, 1, 7)
+                    new ErrorResult("unexpected token '>'", new SourceSpan(1, 4, 1, 5)),
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 6, 1, 7))
                 });
             }
         }
@@ -1397,7 +1397,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V3Versions.Except(V35AndUp)) {
                 ParseErrors("MatMulOperator.py", version, new[] {
-                    new ErrorInfo("unexpected token '@'", 2, 1, 3, 3, 1, 4)
+                    new ErrorResult("unexpected token '@'", new SourceSpan(1, 3, 1, 4))
                 });
             }
         }
@@ -1469,8 +1469,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V24_V25Versions) {
                 ParseErrors("BytesPlus.py", version,
-                    new ErrorInfo("invalid syntax", 1, 1, 2, 8, 1, 9),
-                    new ErrorInfo("unexpected token 'b'", 9, 1, 10, 10, 1, 11)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 2, 1, 9)),
+                    new ErrorResult("unexpected token 'b'", new SourceSpan(1, 10, 1, 11))
                 );
             }
         }
@@ -1488,8 +1488,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V30_V32Versions) {
                 ParseErrors("UnicodePlus.py", version,
-                    new ErrorInfo("invalid syntax", 1, 1, 2, 8, 1, 9),
-                    new ErrorInfo("unexpected token 'u'", 9, 1, 10, 10, 1, 11)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 2, 1, 9)),
+                    new ErrorResult("unexpected token 'u'", new SourceSpan(1, 10, 1, 11))
                 );
 
             }
@@ -1523,22 +1523,22 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in AllVersions.Except(V33AndUp)) {
                 ParseErrors("RawBytes.py", version,
-                    new ErrorInfo("invalid syntax", 2, 1, 3, 8, 1, 9),
-                    new ErrorInfo("invalid syntax", 12, 2, 3, 22, 2, 13),
-                    new ErrorInfo("invalid syntax", 26, 3, 3, 32, 3, 9),
-                    new ErrorInfo("invalid syntax", 36, 4, 3, 46, 4, 13),
-                    new ErrorInfo("invalid syntax", 50, 5, 3, 56, 5, 9),
-                    new ErrorInfo("invalid syntax", 60, 6, 3, 70, 6, 13),
-                    new ErrorInfo("invalid syntax", 74, 7, 3, 80, 7, 9),
-                    new ErrorInfo("invalid syntax", 84, 8, 3, 94, 8, 13),
-                    new ErrorInfo("invalid syntax", 98, 9, 3, 104, 9, 9),
-                    new ErrorInfo("invalid syntax", 108, 10, 3, 118, 10, 13),
-                    new ErrorInfo("invalid syntax", 122, 11, 3, 128, 11, 9),
-                    new ErrorInfo("invalid syntax", 132, 12, 3, 142, 12, 13),
-                    new ErrorInfo("invalid syntax", 146, 13, 3, 152, 13, 9),
-                    new ErrorInfo("invalid syntax", 156, 14, 3, 166, 14, 13),
-                    new ErrorInfo("invalid syntax", 170, 15, 3, 176, 15, 9),
-                    new ErrorInfo("invalid syntax", 180, 16, 3, 190, 16, 13)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 3, 1, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(2, 3, 2, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 3, 3, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(4, 3, 4, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(5, 3, 5, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(6, 3, 6, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(7, 3, 7, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(8, 3, 8, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(9, 3, 9, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(10, 3, 10, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(11, 3, 11, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(12, 3, 12, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(13, 3, 13, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(14, 3, 14, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(15, 3, 15, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(16, 3, 16, 13))
                 );
             }
         }
@@ -1594,9 +1594,9 @@ namespace Microsoft.Python.Parsing.Tests {
                     "DelimitersV2.py",
                     version,
                     new[] {
-                        new ErrorInfo("unexpected token '`'", 0, 1, 1, 1, 1, 2),
-                        new ErrorInfo("unexpected token 'fob'", 1, 1, 2, 4, 1, 5),
-                        new ErrorInfo("unexpected token '`'", 4, 1, 5, 5, 1, 6)
+                        new ErrorResult("unexpected token '`'", new SourceSpan(1, 1, 1, 2)),
+                        new ErrorResult("unexpected token 'fob'", new SourceSpan(1, 2, 1, 5)),
+                        new ErrorResult("unexpected token '`'", new SourceSpan(1, 5, 1, 6))
                    }
                 );
             }
@@ -1636,25 +1636,25 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V24_V25Versions) {
                 ParseErrors("WithStmt.py", version,
-                    new ErrorInfo("unexpected token 'fob'", 5, 1, 6, 8, 1, 9),
-                    new ErrorInfo("unexpected token ':'", 8, 1, 9, 9, 1, 10),
-                    new ErrorInfo("unexpected token 'pass'", 10, 1, 11, 14, 1, 15),
-                    new ErrorInfo("unexpected token 'fob'", 23, 3, 6, 26, 3, 9),
-                    new ErrorInfo("unexpected token 'oar'", 30, 3, 13, 33, 3, 16),
-                    new ErrorInfo("unexpected token ':'", 33, 3, 16, 34, 3, 17),
-                    new ErrorInfo("unexpected token 'pass'", 35, 3, 18, 39, 3, 22),
-                    new ErrorInfo("unexpected token 'fob'", 48, 5, 6, 51, 5, 9),
-                    new ErrorInfo("unexpected token ','", 51, 5, 9, 52, 5, 10),
-                    new ErrorInfo("unexpected token 'oar'", 53, 5, 11, 56, 5, 14),
-                    new ErrorInfo("unexpected token ':'", 56, 5, 14, 57, 5, 15),
-                    new ErrorInfo("unexpected token 'pass'", 58, 5, 16, 62, 5, 20),
-                    new ErrorInfo("unexpected token 'fob'", 71, 7, 6, 74, 7, 9),
-                    new ErrorInfo("unexpected token 'oar'", 78, 7, 13, 81, 7, 16),
-                    new ErrorInfo("unexpected token ','", 81, 7, 16, 82, 7, 17),
-                    new ErrorInfo("unexpected token 'baz'", 83, 7, 18, 86, 7, 21),
-                    new ErrorInfo("unexpected token 'quox'", 90, 7, 25, 94, 7, 29),
-                    new ErrorInfo("unexpected token ':'", 94, 7, 29, 95, 7, 30),
-                    new ErrorInfo("unexpected token 'pass'", 96, 7, 31, 100, 7, 35)
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(1, 6, 1, 9)),
+                    new ErrorResult("unexpected token ':'", new SourceSpan(1, 9, 1, 10)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(1, 11, 1, 15)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(3, 6, 3, 9)),
+                    new ErrorResult("unexpected token 'oar'", new SourceSpan(3, 13, 3, 16)),
+                    new ErrorResult("unexpected token ':'", new SourceSpan(3, 16, 3, 17)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(3, 18, 3, 22)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(5, 6, 5, 9)),
+                    new ErrorResult("unexpected token ','", new SourceSpan(5, 9, 5, 10)),
+                    new ErrorResult("unexpected token 'oar'", new SourceSpan(5, 11, 5, 14)),
+                    new ErrorResult("unexpected token ':'", new SourceSpan(5, 14, 5, 15)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(5, 16, 5, 20)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(7, 6, 7, 9)),
+                    new ErrorResult("unexpected token 'oar'", new SourceSpan(7, 13, 7, 16)),
+                    new ErrorResult("unexpected token ','", new SourceSpan(7, 16, 7, 17)),
+                    new ErrorResult("unexpected token 'baz'", new SourceSpan(7, 18, 7, 21)),
+                    new ErrorResult("unexpected token 'quox'", new SourceSpan(7, 25, 7, 29)),
+                    new ErrorResult("unexpected token ':'", new SourceSpan(7, 29, 7, 30)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(7, 31, 7, 35))
                 );
             }
         }
@@ -1714,9 +1714,9 @@ namespace Microsoft.Python.Parsing.Tests {
         public void DelStmtIllegal() {
             foreach (var version in AllVersions) {
                 ParseErrors("DelStmtIllegal.py", version,
-                    new ErrorInfo("can't delete literal", 4, 1, 5, 5, 1, 6),
-                    new ErrorInfo("can't delete generator expression", 11, 2, 5, 31, 2, 25),
-                    new ErrorInfo("can't delete function call", 37, 3, 5, 45, 3, 13)
+                    new ErrorResult("can't delete literal", new SourceSpan(1, 5, 1, 6)),
+                    new ErrorResult("can't delete generator expression", new SourceSpan(2, 5, 2, 25)),
+                    new ErrorResult("can't delete function call", new SourceSpan(3, 5, 3, 13))
                 );
             }
         }
@@ -1758,11 +1758,11 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             ParseErrors("YieldExpr.py", PythonLanguageVersion.V24,
-                new ErrorInfo("invalid syntax", 19, 2, 10, 21, 3, 1),
-                new ErrorInfo("unexpected token 'yield'", 43, 5, 11, 48, 5, 16)
+                new ErrorResult("invalid syntax", new SourceSpan(2, 10, 3, 1)),
+                new ErrorResult("unexpected token 'yield'", new SourceSpan(5, 11, 5, 16))
             // [(yield oar) for ...] should be an error, but it is not raised.
             // V24 is not supported by PTVS, so don't fail the test because of this.
-            //new ErrorInfo("unexpected token 'yield'", 74, 8, 13, 79, 8, 18)
+            //new ErrorResult("unexpected token 'yield'", new SourceSpan(8, 13, 8, 18))
             );
         }
 
@@ -1770,16 +1770,16 @@ namespace Microsoft.Python.Parsing.Tests {
         public void YieldStmtIllegal() {
             foreach (var version in V2Versions.Concat(V30_V32Versions)) {
                 ParseErrors("YieldStmtIllegal.py", version,
-                    new ErrorInfo("misplaced yield", 0, 1, 1, 5, 1, 6),
-                    new ErrorInfo("'return' with argument inside generator", 25, 4, 5, 34, 4, 14),
-                    new ErrorInfo("'return' with argument inside generator", 78, 9, 5, 87, 9, 14)
+                    new ErrorResult("misplaced yield", new SourceSpan(1, 1, 1, 6)),
+                    new ErrorResult("'return' with argument inside generator", new SourceSpan(4, 5, 4, 14)),
+                    new ErrorResult("'return' with argument inside generator", new SourceSpan(9, 5, 9, 14))
                 );
             }
 
             // return inside generator is legal as of 3.3
             foreach (var version in V33AndUp) {
                 ParseErrors("YieldStmtIllegal.py", version,
-                    new ErrorInfo("misplaced yield", 0, 1, 1, 5, 1, 6)
+                    new ErrorResult("misplaced yield", new SourceSpan(1, 1, 1, 6))
                 );
             }
         }
@@ -1819,9 +1819,9 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V25_V27Versions.Concat(V30_V32Versions)) {
                 ParseErrors("YieldFromExpr.py", version,
-                    new ErrorInfo("invalid syntax", 20, 2, 11, 24, 2, 15),
-                    new ErrorInfo("invalid syntax", 46, 3, 17, 50, 3, 21),
-                    new ErrorInfo("invalid syntax", 74, 4, 19, 78, 4, 23)
+                    new ErrorResult("invalid syntax", new SourceSpan(2, 11, 2, 15)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 17, 3, 21)),
+                    new ErrorResult("invalid syntax", new SourceSpan(4, 19, 4, 23))
                 );
             }
         }
@@ -1833,22 +1833,22 @@ namespace Microsoft.Python.Parsing.Tests {
                     continue;
                 }
                 ParseErrors("YieldFromStmtIllegal.py", version,
-                    new ErrorInfo("misplaced yield", 0, 1, 1, 5, 1, 6),
-                    new ErrorInfo("invalid syntax", 6, 1, 7, 10, 1, 11),
-                    new ErrorInfo("'return' with argument inside generator", 30, 4, 5, 39, 4, 14),
-                    new ErrorInfo("invalid syntax", 51, 5, 11, 55, 5, 15),
-                    new ErrorInfo("invalid syntax", 81, 8, 11, 85, 8, 15),
-                    new ErrorInfo("'return' with argument inside generator", 93, 9, 5, 102, 9, 14),
-                    new ErrorInfo("invalid syntax", 126, 12, 11, 130, 12, 15),
-                    new ErrorInfo("invalid syntax", 154, 15, 11, 158, 15, 15)
+                    new ErrorResult("misplaced yield", new SourceSpan(1, 1, 1, 6)),
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 7, 1, 11)),
+                    new ErrorResult("'return' with argument inside generator", new SourceSpan(4, 5, 4, 14)),
+                    new ErrorResult("invalid syntax", new SourceSpan(5, 11, 5, 15)),
+                    new ErrorResult("invalid syntax", new SourceSpan(8, 11, 8, 15)),
+                    new ErrorResult("'return' with argument inside generator", new SourceSpan(9, 5, 9, 14)),
+                    new ErrorResult("invalid syntax", new SourceSpan(12, 11, 12, 15)),
+                    new ErrorResult("invalid syntax", new SourceSpan(15, 11, 15, 15))
                 );
             }
 
             foreach (var version in V33AndUp) {
                 ParseErrors("YieldFromStmtIllegal.py", version,
-                    new ErrorInfo("misplaced yield", 0, 1, 1, 5, 1, 6),
-                    new ErrorInfo("invalid syntax", 130, 12, 15, 132, 13, 1),
-                    new ErrorInfo("invalid syntax", 159, 15, 16, 166, 15, 23)
+                    new ErrorResult("misplaced yield", new SourceSpan(1, 1, 1, 6)),
+                    new ErrorResult("invalid syntax", new SourceSpan(12, 15, 13, 1)),
+                    new ErrorResult("invalid syntax", new SourceSpan(15, 16, 15, 23))
                 );
             }
         }
@@ -1871,11 +1871,11 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in AllVersions) {
                 ParseErrors("ImportStmtIllegal.py", version,
-                    new ErrorInfo("unexpected token '('", 17, 1, 18, 18, 1, 19),
-                    new ErrorInfo("unexpected token '('", 17, 1, 18, 18, 1, 19),
-                    new ErrorInfo("unexpected token '('", 17, 1, 18, 18, 1, 19),
-                    new ErrorInfo("unexpected token ')'", 24, 1, 25, 25, 1, 26),
-                    new ErrorInfo("unexpected token ')'", 25, 1, 26, 26, 1, 27)
+                    new ErrorResult("unexpected token '('", new SourceSpan(1, 18, 1, 19)),
+                    new ErrorResult("unexpected token '('", new SourceSpan(1, 18, 1, 19)),
+                    new ErrorResult("unexpected token '('", new SourceSpan(1, 18, 1, 19)),
+                    new ErrorResult("unexpected token ')'", new SourceSpan(1, 25, 1, 26)),
+                    new ErrorResult("unexpected token ')'", new SourceSpan(1, 26, 1, 27))
                 );
             }
         }
@@ -1951,24 +1951,24 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V2Versions) {
                 ParseErrors("NonlocalStmt.py", version,
-                    new ErrorInfo("unexpected token 'fob'", 67, 5, 18, 70, 5, 21),
-                    new ErrorInfo("unexpected token '<newline>'", 70, 5, 21, 80, 6, 9),
-                    new ErrorInfo("unexpected token 'nonlocal'", 80, 6, 9, 88, 6, 17),
-                    new ErrorInfo("unexpected token 'fob'", 144, 11, 18, 147, 11, 21),
-                    new ErrorInfo("unexpected token '<newline>'", 147, 11, 21, 149, 12, 1),
-                    new ErrorInfo("unexpected token '<NL>'", 149, 12, 1, 155, 13, 5),
-                    new ErrorInfo("unexpected token 'fob'", 209, 18, 18, 212, 18, 21),
-                    new ErrorInfo("unexpected token '<newline>'", 212, 18, 21, 222, 19, 9),
-                    new ErrorInfo("unexpected token 'fob'", 222, 19, 9, 225, 19, 12),
-                    new ErrorInfo("unexpected token '='", 226, 19, 13, 227, 19, 14),
-                    new ErrorInfo("unexpected token '1'", 228, 19, 15, 229, 19, 16),
-                    new ErrorInfo("unexpected token '<newline>'", 229, 19, 16, 235, 20, 5),
-                    new ErrorInfo("unexpected token '<dedent>'", 229, 19, 16, 235, 20, 5),
-                    new ErrorInfo("unexpected token '__class__'", 288, 24, 18, 297, 24, 27),
-                    new ErrorInfo("unexpected token '<newline>'", 297, 24, 27, 299, 25, 1),
-                    new ErrorInfo("unexpected token '<dedent>'", 297, 24, 27, 299, 25, 1),
-                    new ErrorInfo("unexpected end of file", 299, 25, 1, 299, 25, 1),
-                    new ErrorInfo("unexpected end of file", 299, 25, 1, 299, 25, 1)
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(5, 18, 5, 21)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(5, 21, 6, 9)),
+                    new ErrorResult("unexpected token 'nonlocal'", new SourceSpan(6, 9, 6, 17)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(11, 18, 11, 21)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(11, 21, 12, 1)),
+                    new ErrorResult("unexpected token '<NL>'", new SourceSpan(12, 1, 13, 5)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(18, 18, 18, 21)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(18, 21, 19, 9)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(19, 9, 19, 12)),
+                    new ErrorResult("unexpected token '='", new SourceSpan(19, 13, 19, 14)),
+                    new ErrorResult("unexpected token '1'", new SourceSpan(19, 15, 19, 16)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(19, 16, 20, 5)),
+                    new ErrorResult("unexpected token '<dedent>'", new SourceSpan(19, 16, 20, 5)),
+                    new ErrorResult("unexpected token '__class__'", new SourceSpan(24, 18, 24, 27)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(24, 27, 25, 1)),
+                    new ErrorResult("unexpected token '<dedent>'", new SourceSpan(24, 27, 25, 1)),
+                    new ErrorResult("unexpected end of file", new SourceSpan(25, 1, 25, 1)),
+                    new ErrorResult("unexpected end of file", new SourceSpan(25, 1, 25, 1))
                 );
             }
         }
@@ -1977,13 +1977,13 @@ namespace Microsoft.Python.Parsing.Tests {
         public void NonlocalStmtIllegal() {
             foreach (var version in V3Versions) {
                 ParseErrors("NonlocalStmtIllegal.py", version,
-                    new ErrorInfo("nonlocal declaration not allowed at module level", 195, 17, 1, 203, 17, 9),
-                    new ErrorInfo("name 'x' is nonlocal and global", 118, 10, 13, 128, 10, 23),
-                    new ErrorInfo("name 'x' is a parameter and nonlocal", 181, 15, 13, 191, 15, 23),
-                    new ErrorInfo("no binding for nonlocal 'x' found", 406, 35, 22, 407, 35, 23),
-                    new ErrorInfo("no binding for nonlocal 'x' found", 306, 27, 12, 307, 27, 13),
-                    new ErrorInfo("no binding for nonlocal 'globalvar' found", 250, 21, 14, 259, 21, 23),
-                    new ErrorInfo("no binding for nonlocal 'a' found", 41, 3, 18, 42, 3, 19)
+                    new ErrorResult("nonlocal declaration not allowed at module level", new SourceSpan(17, 1, 17, 9)),
+                    new ErrorResult("name 'x' is nonlocal and global", new SourceSpan(10, 13, 10, 23)),
+                    new ErrorResult("name 'x' is a parameter and nonlocal", new SourceSpan(15, 13, 15, 23)),
+                    new ErrorResult("no binding for nonlocal 'x' found", new SourceSpan(35, 22, 35, 23)),
+                    new ErrorResult("no binding for nonlocal 'x' found", new SourceSpan(27, 12, 27, 13)),
+                    new ErrorResult("no binding for nonlocal 'globalvar' found", new SourceSpan(21, 14, 21, 23)),
+                    new ErrorResult("no binding for nonlocal 'a' found", new SourceSpan(3, 18, 3, 19))
                 );
             }
 
@@ -2027,7 +2027,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 ParseErrors(
                     "TryStmtV3.py", version,
-                    new ErrorInfo("'as' requires Python 2.6 or later", 33, 3, 18, 35, 3, 20)
+                    new ErrorResult("'as' requires Python 2.6 or later", new SourceSpan(3, 18, 3, 20))
                 );
             }
 
@@ -2041,7 +2041,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 ParseErrors(
                     "TryStmtV2.py", version,
-                    new ErrorInfo("\", variable\" not allowed in 3.x - use \"as variable\" instead.", 32, 3, 17, 35, 3, 20)
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(3, 17, 3, 20))
                 );
             }
         }
@@ -2093,7 +2093,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 ParseErrors(
                     "RaiseStmtV3.py", version,
-                    new ErrorInfo("invalid syntax, from cause not allowed in 2.x.", 10, 1, 11, 18, 1, 19)
+                    new ErrorResult("invalid syntax, from cause not allowed in 2.x.", new SourceSpan(1, 11, 1, 19))
                 );
             }
 
@@ -2107,8 +2107,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 ParseErrors(
                     "RaiseStmtV2.py", version,
-                    new ErrorInfo("invalid syntax, only exception value is allowed in 3.x.", 9, 1, 10, 14, 1, 15),
-                    new ErrorInfo("invalid syntax, only exception value is allowed in 3.x.", 25, 2, 10, 30, 2, 15)
+                    new ErrorResult("invalid syntax, only exception value is allowed in 3.x.", new SourceSpan(1, 10, 1, 15)),
+                    new ErrorResult("invalid syntax, only exception value is allowed in 3.x.", new SourceSpan(2, 10, 2, 15))
                 );
             }
         }
@@ -2136,14 +2136,14 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V3Versions) {
                 ParseErrors(
                     "PrintStmt.py", version,
-                    new ErrorInfo("invalid syntax", 13, 2, 7, 14, 2, 8),
-                    new ErrorInfo("invalid syntax", 22, 3, 7, 23, 3, 8),
-                    new ErrorInfo("invalid syntax", 32, 4, 7, 33, 4, 8),
-                    new ErrorInfo("invalid syntax", 44, 5, 7, 45, 5, 8),
-                    new ErrorInfo("invalid syntax", 110, 9, 7, 111, 9, 8),
-                    new ErrorInfo("unexpected token 'lambda'", 124, 10, 7, 130, 10, 13),
-                    new ErrorInfo("unexpected token ':'", 130, 10, 13, 131, 10, 14),
-                    new ErrorInfo("unexpected token '1'", 132, 10, 15, 133, 10, 16)
+                    new ErrorResult("invalid syntax", new SourceSpan(2, 7, 2, 8)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 7, 3, 8)),
+                    new ErrorResult("invalid syntax", new SourceSpan(4, 7, 4, 8)),
+                    new ErrorResult("invalid syntax", new SourceSpan(5, 7, 5, 8)),
+                    new ErrorResult("invalid syntax", new SourceSpan(9, 7, 9, 8)),
+                    new ErrorResult("unexpected token 'lambda'", new SourceSpan(10, 7, 10, 13)),
+                    new ErrorResult("unexpected token ':'", new SourceSpan(10, 13, 10, 14)),
+                    new ErrorResult("unexpected token '1'", new SourceSpan(10, 15, 10, 16))
                 );
             }
         }
@@ -2188,8 +2188,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V3Versions) {
                 ParseErrors("ListComp2x.py", version,
-                    new ErrorInfo("unexpected token ','", 19, 1, 20, 20, 1, 21),
-                    new ErrorInfo("unexpected token ']'", 24, 1, 25, 25, 1, 26)
+                    new ErrorResult("unexpected token ','", new SourceSpan(1, 20, 1, 21)),
+                    new ErrorResult("unexpected token ']'", new SourceSpan(1, 25, 1, 26))
                 );
             }
         }
@@ -2224,9 +2224,9 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V24_V26Versions) {
                 ParseErrors("DictComp.py", version,
-                    new ErrorInfo("invalid syntax", 9, 1, 10, 12, 1, 13),
-                    new ErrorInfo("invalid syntax", 39, 2, 10, 42, 2, 13),
-                    new ErrorInfo("invalid syntax", 77, 3, 10, 80, 3, 13)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 10, 1, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(2, 10, 2, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 10, 3, 13))
                 );
             }
         }
@@ -2246,9 +2246,9 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V24_V26Versions) {
                 ParseErrors("SetComp.py", version,
-                    new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1, 1, 2, 4, 1, 5),
-                    new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 23, 2, 2, 26, 2, 5),
-                    new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 53, 3, 2, 56, 3, 5)
+                    new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(1, 2, 1, 5)),
+                    new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(2, 2, 2, 5)),
+                    new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(3, 2, 3, 5))
                 );
             }
         }
@@ -2267,8 +2267,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V24_V26Versions) {
                 ParseErrors("SetLiteral.py", version,
-                    new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 1, 1, 2, 2, 1, 3),
-                    new ErrorInfo("invalid syntax, set literals require Python 2.7 or later.", 6, 2, 2, 7, 2, 3)
+                    new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(1, 2, 1, 3)),
+                    new ErrorResult("invalid syntax, set literals require Python 2.7 or later.", new SourceSpan(2, 2, 2, 3))
                 );
             }
         }
@@ -2325,8 +2325,8 @@ namespace Microsoft.Python.Parsing.Tests {
                 ParseErrors(
                     "FromImportStmtV2.py",
                     version,
-                    new ErrorInfo("import * only allowed at module level", 30, 2, 21, 31, 2, 22),
-                    new ErrorInfo("import * only allowed at module level", 65, 5, 21, 66, 5, 22)
+                    new ErrorResult("import * only allowed at module level", new SourceSpan(2, 21, 2, 22)),
+                    new ErrorResult("import * only allowed at module level", new SourceSpan(5, 21, 5, 22))
                 );
             }
         }
@@ -2344,7 +2344,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 ParseErrors(
                     "FromImportStmtIllegal.py",
                     version,
-                    new ErrorInfo("missing module name", 5, 1, 6, 11, 1, 12)
+                    new ErrorResult("missing module name", new SourceSpan(1, 6, 1, 12))
                 );
             }
         }
@@ -2369,7 +2369,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 ParseErrors(
                     "FromImportStmtIncomplete.py",
                     version,
-                    new ErrorInfo("unexpected token '<newline>'", 35, 2, 26, 37, 3, 1)
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(2, 26, 3, 1))
                 );
             }
         }
@@ -2421,10 +2421,10 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in V24_V25Versions) {
                 ParseErrors("DecoratorsClassDef.py",
                     version,
-                    new ErrorInfo("invalid syntax, class decorators require 2.6 or later.", 6, 2, 1, 11, 2, 6),
-                    new ErrorInfo("invalid syntax, class decorators require 2.6 or later.", 33, 5, 1, 38, 5, 6),
-                    new ErrorInfo("invalid syntax, class decorators require 2.6 or later.", 63, 9, 1, 68, 9, 6),
-                    new ErrorInfo("invalid syntax, class decorators require 2.6 or later.", 92, 13, 1, 97, 13, 6)
+                    new ErrorResult("invalid syntax, class decorators require 2.6 or later.", new SourceSpan(2, 1, 2, 6)),
+                    new ErrorResult("invalid syntax, class decorators require 2.6 or later.", new SourceSpan(5, 1, 5, 6)),
+                    new ErrorResult("invalid syntax, class decorators require 2.6 or later.", new SourceSpan(9, 1, 9, 6)),
+                    new ErrorResult("invalid syntax, class decorators require 2.6 or later.", new SourceSpan(13, 1, 13, 6))
                 );
             }
         }
@@ -2444,7 +2444,7 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in AllVersions) {
                 ParseErrors("DecoratorsIllegal.py",
                     version,
-                    new ErrorInfo("unexpected token 'fob'", 6, 2, 1, 9, 2, 4)
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(2, 1, 2, 4))
                 );
             }
         }
@@ -2483,8 +2483,8 @@ namespace Microsoft.Python.Parsing.Tests {
             foreach (var version in AllVersions) {
                 ParseErrors("CallsIllegal.py",
                     version,
-                    new ErrorInfo("duplicate keyword argument", 20, 1, 21, 21, 1, 22),
-                    new ErrorInfo("expected name", 27, 2, 5, 28, 2, 6)
+                    new ErrorResult("duplicate keyword argument", new SourceSpan(1, 21, 1, 22)),
+                    new ErrorResult("expected name", new SourceSpan(2, 5, 2, 6))
                 );
             }
         }
@@ -2586,7 +2586,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V3Versions) {
                 ParseErrors("FuncDefV2.py", version,
-                    new ErrorInfo("sublist parameters are not supported in 3.x", 9, 1, 10, 15, 1, 16)
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(1, 10, 1, 16))
                 );
             }
         }
@@ -2618,19 +2618,19 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V2Versions) {
                 ParseErrors("FuncDefV3.py", version,
-                    new ErrorInfo("positional parameter after * args not allowed", 10, 1, 11, 11, 1, 12),
-                    new ErrorInfo("positional parameter after * args not allowed", 30, 2, 11, 35, 2, 16),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 52, 4, 7, 56, 4, 11),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 71, 5, 7, 76, 5, 12),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 91, 6, 7, 97, 6, 13),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 112, 7, 7, 116, 7, 11),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 118, 7, 13, 123, 7, 18),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 125, 7, 20, 131, 7, 26),
-                    new ErrorInfo("invalid syntax, return annotations require 3.x", 151, 9, 9, 155, 9, 13),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 171, 11, 7, 175, 11, 11),
-                    new ErrorInfo("invalid syntax, return annotations require 3.x", 177, 11, 13, 181, 11, 17),
-                    new ErrorInfo("invalid syntax, parameter annotations require 3.x", 197, 13, 7, 205, 13, 15),
-                    new ErrorInfo("invalid syntax", 222, 15, 7, 223, 15, 8)
+                    new ErrorResult("positional parameter after * args not allowed", new SourceSpan(1, 11, 1, 12)),
+                    new ErrorResult("positional parameter after * args not allowed", new SourceSpan(2, 11, 2, 16)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(4, 7, 4, 11)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(5, 7, 5, 12)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(6, 7, 6, 13)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(7, 7, 7, 11)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(7, 13, 7, 18)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(7, 20, 7, 26)),
+                    new ErrorResult("invalid syntax, return annotations require 3.x", new SourceSpan(9, 9, 9, 13)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(11, 7, 11, 11)),
+                    new ErrorResult("invalid syntax, return annotations require 3.x", new SourceSpan(11, 13, 11, 17)),
+                    new ErrorResult("invalid syntax, parameter annotations require 3.x", new SourceSpan(13, 7, 13, 15)),
+                    new ErrorResult("invalid syntax", new SourceSpan(15, 7, 15, 8))
                 );
             }
         }
@@ -2639,8 +2639,8 @@ namespace Microsoft.Python.Parsing.Tests {
         public void FuncDefV3Illegal() {
             foreach (var version in V3Versions) {
                 ParseErrors("FuncDefV3Illegal.py", version,
-                    new ErrorInfo("named arguments must follow bare *", 6, 1, 7, 7, 1, 8),
-                    new ErrorInfo("named arguments must follow bare *", 22, 2, 7, 23, 2, 8)
+                    new ErrorResult("named arguments must follow bare *", new SourceSpan(1, 7, 1, 8)),
+                    new ErrorResult("named arguments must follow bare *", new SourceSpan(2, 7, 2, 8))
                 );
             }
         }
@@ -2676,34 +2676,34 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             ParseErrors("CoroutineDefIllegal.py", PythonLanguageVersion.V35,
-                new ErrorInfo("'yield' inside async function", 20, 2, 5, 25, 2, 10),
-                new ErrorInfo("'yield' inside async function", 40, 3, 9, 45, 3, 14),
-                new ErrorInfo("unexpected token 'for'", 74, 6, 11, 77, 6, 14),
-                new ErrorInfo("unexpected token ':'", 88, 6, 25, 89, 6, 26),
-                new ErrorInfo("unexpected token '<newline>'", 89, 6, 26, 99, 7, 9),
-                new ErrorInfo("unexpected token '<indent>'", 89, 6, 26, 99, 7, 9),
-                new ErrorInfo("unexpected token '<dedent>'", 105, 8, 1, 107, 9, 1),
-                new ErrorInfo("unexpected token 'async'", 107, 9, 1, 112, 9, 6),
-                new ErrorInfo("unexpected token 'with'", 162, 13, 11, 166, 13, 15),
-                new ErrorInfo("unexpected token ':'", 170, 13, 19, 171, 13, 20),
-                new ErrorInfo("unexpected token '<newline>'", 171, 13, 20, 181, 14, 9),
-                new ErrorInfo("unexpected token '<indent>'", 171, 13, 20, 181, 14, 9),
-                new ErrorInfo("unexpected token '<dedent>'", 187, 15, 1, 189, 16, 1),
-                new ErrorInfo("unexpected token 'async'", 189, 16, 1, 194, 16, 6)
+                new ErrorResult("'yield' inside async function", new SourceSpan(2, 5, 2, 10)),
+                new ErrorResult("'yield' inside async function", new SourceSpan(3, 9, 3, 14)),
+                new ErrorResult("unexpected token 'for'", new SourceSpan(6, 11, 6, 14)),
+                new ErrorResult("unexpected token ':'", new SourceSpan(6, 25, 6, 26)),
+                new ErrorResult("unexpected token '<newline>'", new SourceSpan(6, 26, 7, 9)),
+                new ErrorResult("unexpected token '<indent>'", new SourceSpan(6, 26, 7, 9)),
+                new ErrorResult("unexpected token '<dedent>'", new SourceSpan(8, 1, 9, 1)),
+                new ErrorResult("unexpected token 'async'", new SourceSpan(9, 1, 9, 6)),
+                new ErrorResult("unexpected token 'with'", new SourceSpan(13, 11, 13, 15)),
+                new ErrorResult("unexpected token ':'", new SourceSpan(13, 19, 13, 20)),
+                new ErrorResult("unexpected token '<newline>'", new SourceSpan(13, 20, 14, 9)),
+                new ErrorResult("unexpected token '<indent>'", new SourceSpan(13, 20, 14, 9)),
+                new ErrorResult("unexpected token '<dedent>'", new SourceSpan(15, 1, 16, 1)),
+                new ErrorResult("unexpected token 'async'", new SourceSpan(16, 1, 16, 6))
             );
 
             foreach (var version in V36AndUp) {
                 ParseErrors("CoroutineDefIllegal.py", version,
-                    new ErrorInfo("unexpected token 'for'", 74, 6, 11, 77, 6, 14),
-                    new ErrorInfo("illegal target for annotation", 78, 6, 15, 89, 6, 26),
-                    new ErrorInfo("unexpected indent", 99, 7, 9, 103, 7, 13),
-                    new ErrorInfo("unexpected token '<dedent>'", 105, 8, 1, 107, 9, 1),
-                    new ErrorInfo("unexpected token 'async'", 107, 9, 1, 112, 9, 6),
-                    new ErrorInfo("unexpected token 'with'", 162, 13, 11, 166, 13, 15),
-                    new ErrorInfo("unexpected token '<newline>'", 171, 13, 20, 181, 14, 9),
-                    new ErrorInfo("unexpected indent", 181, 14, 9, 185, 14, 13),
-                    new ErrorInfo("unexpected token '<dedent>'", 187, 15, 1, 189, 16, 1),
-                    new ErrorInfo("unexpected token 'async'", 189, 16, 1, 194, 16, 6)
+                    new ErrorResult("unexpected token 'for'", new SourceSpan(6, 11, 6, 14)),
+                    new ErrorResult("illegal target for annotation", new SourceSpan(6, 15, 6, 26)),
+                    new ErrorResult("unexpected indent", new SourceSpan(7, 9, 7, 13)),
+                    new ErrorResult("unexpected token '<dedent>'", new SourceSpan(8, 1, 9, 1)),
+                    new ErrorResult("unexpected token 'async'", new SourceSpan(9, 1, 9, 6)),
+                    new ErrorResult("unexpected token 'with'", new SourceSpan(13, 11, 13, 15)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(13, 20, 14, 9)),
+                    new ErrorResult("unexpected indent", new SourceSpan(14, 9, 14, 13)),
+                    new ErrorResult("unexpected token '<dedent>'", new SourceSpan(15, 1, 16, 1)),
+                    new ErrorResult("unexpected token 'async'", new SourceSpan(16, 1, 16, 6))
                 );
             }
         }
@@ -2748,9 +2748,9 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V2Versions) {
                 ParseErrors("ClassDef3x.py", version,
-                    new ErrorInfo("invalid syntax", 8, 1, 9, 19, 1, 20),
-                    new ErrorInfo("invalid syntax", 44, 2, 17, 55, 2, 28),
-                    new ErrorInfo("invalid syntax", 86, 3, 23, 91, 3, 28)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 9, 1, 20)),
+                    new ErrorResult("invalid syntax", new SourceSpan(2, 17, 2, 28)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 23, 3, 28))
                 );
             }
         }
@@ -2809,10 +2809,10 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             ParseErrors("AssignStmt25.py", PythonLanguageVersion.V24,
-                new ErrorInfo("unexpected token 'yield'", 20, 2, 11, 25, 2, 16),
-                new ErrorInfo("invalid syntax", 26, 2, 17, 27, 2, 18),
-                new ErrorInfo("unexpected token 'yield'", 40, 3, 12, 45, 3, 17),
-                new ErrorInfo("invalid syntax", 46, 3, 18, 47, 3, 19)
+                new ErrorResult("unexpected token 'yield'", new SourceSpan(2, 11, 2, 16)),
+                new ErrorResult("invalid syntax", new SourceSpan(2, 17, 2, 18)),
+                new ErrorResult("unexpected token 'yield'", new SourceSpan(3, 12, 3, 17)),
+                new ErrorResult("invalid syntax", new SourceSpan(3, 18, 3, 19))
             );
         }
 
@@ -2832,10 +2832,10 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V2Versions) {
                 ParseErrors("AssignStmtV3.py", version,
-                    new ErrorInfo("invalid syntax", 1, 1, 2, 4, 1, 5),
-                    new ErrorInfo("invalid syntax", 35, 2, 7, 38, 2, 10),
-                    new ErrorInfo("invalid syntax", 65, 3, 8, 68, 3, 11),
-                    new ErrorInfo("invalid syntax", 91, 4, 3, 94, 4, 6)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 2, 1, 5)),
+                    new ErrorResult("invalid syntax", new SourceSpan(2, 7, 2, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(3, 8, 3, 11)),
+                    new ErrorResult("invalid syntax", new SourceSpan(4, 3, 4, 6))
                 );
             }
         }
@@ -2853,8 +2853,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V2Versions) {
                 ParseErrors("AssignStmtIllegalV3.py", version,
-                    new ErrorInfo("invalid syntax", 6, 1, 7, 9, 1, 10),
-                    new ErrorInfo("invalid syntax", 12, 1, 13, 15, 1, 16)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 7, 1, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 13, 1, 16))
                 );
             }
         }
@@ -2882,13 +2882,13 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in AllVersions) {
                 ParseErrors("AssignStmtIllegal.py", version,
-                    new ErrorInfo("can't assign to binary operator", 0, 1, 1, 9, 1, 10),
-                    new ErrorInfo("can't assign to function call", 15, 2, 1, 20, 2, 6),
-                    new ErrorInfo("assignment to None", 26, 3, 1, 30, 3, 5),
-                    new ErrorInfo("can't assign to literal", 36, 4, 1, 37, 4, 2),
-                    new ErrorInfo("can't assign to generator expression", 43, 5, 1, 63, 5, 21),
-                    new ErrorInfo("illegal expression for augmented assignment", 69, 6, 1, 77, 6, 9),
-                    new ErrorInfo("can't assign to yield expression", 98, 8, 5, 109, 8, 16)
+                    new ErrorResult("can't assign to binary operator", new SourceSpan(1, 1, 1, 10)),
+                    new ErrorResult("can't assign to function call", new SourceSpan(2, 1, 2, 6)),
+                    new ErrorResult("assignment to None", new SourceSpan(3, 1, 3, 5)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(4, 1, 4, 2)),
+                    new ErrorResult("can't assign to generator expression", new SourceSpan(5, 1, 5, 21)),
+                    new ErrorResult("illegal expression for augmented assignment", new SourceSpan(6, 1, 6, 9)),
+                    new ErrorResult("can't assign to yield expression", new SourceSpan(8, 5, 8, 16))
                 );
             }
         }
@@ -2917,20 +2917,20 @@ namespace Microsoft.Python.Parsing.Tests {
         public void AwaitStmtPreV35() {
             foreach (var version in AllVersions.Except(V35AndUp)) {
                 ParseErrors("AwaitStmt.py", version,
-                    new ErrorInfo("unexpected token 'def'", 6, 1, 7, 9, 1, 10),
-                    new ErrorInfo("unexpected token ':'", 16, 1, 17, 17, 1, 18),
-                    new ErrorInfo("unexpected indent", 23, 2, 5, 28, 2, 10),
-                    new ErrorInfo("unexpected token 'fob'", 29, 2, 11, 32, 2, 14),
-                    new ErrorInfo("unexpected token 'fob'", 44, 3, 11, 47, 3, 14),
-                    new ErrorInfo("unexpected token 'fob'", 62, 4, 12, 65, 4, 15),
-                    new ErrorInfo("unexpected token 'fob'", 62, 4, 12, 65, 4, 15),
-                    new ErrorInfo("unexpected token ')'", 65, 4, 15, 66, 4, 16),
-                    new ErrorInfo("unexpected token '('", 66, 4, 16, 67, 4, 17),
-                    new ErrorInfo("unexpected token ')'", 67, 4, 17, 68, 4, 18),
-                    new ErrorInfo("unexpected token 'fob'", 84, 5, 15, 87, 5, 18),
-                    new ErrorInfo("unexpected token 'fob'", 104, 6, 16, 107, 6, 19),
-                    new ErrorInfo("unexpected token 'fob'", 125, 7, 17, 128, 7, 20),
-                    new ErrorInfo("unexpected token '<dedent>'", 128, 7, 20, 130, 8, 1)
+                    new ErrorResult("unexpected token 'def'", new SourceSpan(1, 7, 1, 10)),
+                    new ErrorResult("unexpected token ':'", new SourceSpan(1, 17, 1, 18)),
+                    new ErrorResult("unexpected indent", new SourceSpan(2, 5, 2, 10)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(2, 11, 2, 14)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(3, 11, 3, 14)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(4, 12, 4, 15)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(4, 12, 4, 15)),
+                    new ErrorResult("unexpected token ')'", new SourceSpan(4, 15, 4, 16)),
+                    new ErrorResult("unexpected token '('", new SourceSpan(4, 16, 4, 17)),
+                    new ErrorResult("unexpected token ')'", new SourceSpan(4, 17, 4, 18)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(5, 15, 5, 18)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(6, 16, 6, 19)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(7, 17, 7, 20)),
+                    new ErrorResult("unexpected token '<dedent>'", new SourceSpan(7, 20, 8, 1))
                 );
             }
         }
@@ -2979,13 +2979,13 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V35AndUp) {
                 ParseErrors("AwaitStmtIllegal.py", version,
-                    new ErrorInfo("invalid syntax", 6, 1, 7, 10, 1, 11),
-                    new ErrorInfo("unexpected token 'fob'", 37, 4, 11, 40, 4, 14),
-                    new ErrorInfo("unexpected token '<newline>'", 40, 4, 14, 42, 5, 1),
-                    new ErrorInfo("unexpected token '<NL>'", 42, 5, 1, 44, 6, 1),
-                    new ErrorInfo("unexpected token 'fob'", 67, 7, 11, 70, 7, 14),
-                    new ErrorInfo("unexpected token '<newline>'", 70, 7, 14, 72, 8, 1),
-                    new ErrorInfo("unexpected token '<NL>'", 72, 8, 1, 74, 9, 1)
+                    new ErrorResult("invalid syntax", new SourceSpan(1, 7, 1, 11)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(4, 11, 4, 14)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(4, 14, 5, 1)),
+                    new ErrorResult("unexpected token '<NL>'", new SourceSpan(5, 1, 6, 1)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(7, 11, 7, 14)),
+                    new ErrorResult("unexpected token '<newline>'", new SourceSpan(7, 14, 8, 1)),
+                    new ErrorResult("unexpected token '<NL>'", new SourceSpan(8, 1, 9, 1))
                 );
             }
         }
@@ -3055,15 +3055,15 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V3Versions) {
                 ParseErrors("ExecStmt.py", version,
-                    new ErrorInfo("unexpected token 'fob'", 5, 1, 6, 8, 1, 9),
-                    new ErrorInfo("unexpected token 'fob'", 15, 2, 6, 18, 2, 9),
-                    new ErrorInfo("unexpected token 'in'", 19, 2, 10, 21, 2, 12),
-                    new ErrorInfo("unexpected token 'oar'", 22, 2, 13, 25, 2, 16),
-                    new ErrorInfo("unexpected token 'fob'", 32, 3, 6, 35, 3, 9),
-                    new ErrorInfo("unexpected token 'in'", 36, 3, 10, 38, 3, 12),
-                    new ErrorInfo("unexpected token 'oar'", 39, 3, 13, 42, 3, 16),
-                    new ErrorInfo("unexpected token ','", 42, 3, 16, 43, 3, 17),
-                    new ErrorInfo("unexpected token 'baz'", 44, 3, 18, 47, 3, 21)
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(1, 6, 1, 9)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(2, 6, 2, 9)),
+                    new ErrorResult("unexpected token 'in'", new SourceSpan(2, 10, 2, 12)),
+                    new ErrorResult("unexpected token 'oar'", new SourceSpan(2, 13, 2, 16)),
+                    new ErrorResult("unexpected token 'fob'", new SourceSpan(3, 6, 3, 9)),
+                    new ErrorResult("unexpected token 'in'", new SourceSpan(3, 10, 3, 12)),
+                    new ErrorResult("unexpected token 'oar'", new SourceSpan(3, 13, 3, 16)),
+                    new ErrorResult("unexpected token ','", new SourceSpan(3, 16, 3, 17)),
+                    new ErrorResult("unexpected token 'baz'", new SourceSpan(3, 18, 3, 21))
                 );
             }
 
@@ -3083,12 +3083,12 @@ namespace Microsoft.Python.Parsing.Tests {
 
             foreach (var version in V2Versions) {
                 ParseErrors("Ellipsis.py", version,
-                    new ErrorInfo("unexpected token '.'", 4, 1, 5, 5, 1, 6),
-                    new ErrorInfo("syntax error", 6, 1, 7, 7, 1, 8),
-                    new ErrorInfo("syntax error", 7, 1, 8, 8, 1, 9),
-                    new ErrorInfo("unexpected token '.'", 14, 2, 5, 15, 2, 6),
-                    new ErrorInfo("syntax error", 16, 2, 7, 17, 2, 8),
-                    new ErrorInfo("syntax error", 17, 2, 8, 19, 3, 1)
+                    new ErrorResult("unexpected token '.'", new SourceSpan(1, 5, 1, 6)),
+                    new ErrorResult("syntax error", new SourceSpan(1, 7, 1, 8)),
+                    new ErrorResult("syntax error", new SourceSpan(1, 8, 1, 9)),
+                    new ErrorResult("unexpected token '.'", new SourceSpan(2, 5, 2, 6)),
+                    new ErrorResult("syntax error", new SourceSpan(2, 7, 2, 8)),
+                    new ErrorResult("syntax error", new SourceSpan(2, 8, 3, 1))
                 );
             }
         }
@@ -3097,9 +3097,9 @@ namespace Microsoft.Python.Parsing.Tests {
         public void IncompleteMemberExpr() {
             foreach (var version in V2Versions) {
                 ParseErrors("IncompleteMemberExpr.py", version,
-                    new ErrorInfo("syntax error", 2, 1, 3, 3, 1, 4),
-                    new ErrorInfo("syntax error", 22, 3, 3, 24, 4, 1),
-                    new ErrorInfo("syntax error", 33, 5, 3, 33, 5, 3)
+                    new ErrorResult("syntax error", new SourceSpan(1, 3, 1, 4)),
+                    new ErrorResult("syntax error", new SourceSpan(3, 3, 4, 1)),
+                    new ErrorResult("syntax error", new SourceSpan(5, 3, 5, 3))
                 );
             }
         }
@@ -3117,8 +3117,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 if (version == PythonLanguageVersion.V24) {
                     ParseErrors("FromFuture25.py", version,
-                        new ErrorInfo("future feature is not defined: with_statement", 0, 1, 1, 37, 1, 38),
-                        new ErrorInfo("future feature is not defined: absolute_import", 39, 2, 1, 77, 2, 39)
+                        new ErrorResult("future feature is not defined: with_statement", new SourceSpan(1, 1, 1, 38)),
+                        new ErrorResult("future feature is not defined: absolute_import", new SourceSpan(2, 1, 2, 39))
                     );
                 } else {
                     CheckAst(
@@ -3132,8 +3132,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 if (version == PythonLanguageVersion.V24 || version == PythonLanguageVersion.V25) {
                     ParseErrors("FromFuture26.py", version,
-                        new ErrorInfo("future feature is not defined: print_function", 0, 1, 1, 37, 1, 38),
-                        new ErrorInfo("future feature is not defined: unicode_literals", 39, 2, 1, 78, 2, 40)
+                        new ErrorResult("future feature is not defined: print_function", new SourceSpan(1, 1, 1, 38)),
+                        new ErrorResult("future feature is not defined: unicode_literals", new SourceSpan(2, 1, 2, 40))
                     );
                 } else {
                     CheckAst(
@@ -3147,7 +3147,7 @@ namespace Microsoft.Python.Parsing.Tests {
 
                 if (version < PythonLanguageVersion.V35) {
                     ParseErrors("FromFuture35.py", version,
-                        new ErrorInfo("future feature is not defined: generator_stop", 0, 1, 1, 37, 1, 38)
+                        new ErrorResult("future feature is not defined: generator_stop", new SourceSpan(1, 1, 1, 38))
                     );
                 } else {
                     CheckAst(
@@ -3202,11 +3202,11 @@ namespace Microsoft.Python.Parsing.Tests {
                 );
 
                 ParseErrors("VarAnnotationIllegal.py", version,
-                    new ErrorInfo("only single target (not tuple) can be annotated", 0, 1, 1, 13, 1, 14),
-                    new ErrorInfo("unexpected token ','", 23, 2, 9, 24, 2, 10),
-                    new ErrorInfo("only single target (not tuple) can be annotated", 30, 3, 1, 47, 3, 18),
-                    new ErrorInfo("unexpected token ','", 57, 4, 9, 58, 4, 10),
-                    new ErrorInfo("invalid syntax", 83, 5, 16, 84, 5, 17)
+                    new ErrorResult("only single target (not tuple) can be annotated", new SourceSpan(1, 1, 1, 14)),
+                    new ErrorResult("unexpected token ','", new SourceSpan(2, 9, 2, 10)),
+                    new ErrorResult("only single target (not tuple) can be annotated", new SourceSpan(3, 1, 3, 18)),
+                    new ErrorResult("unexpected token ','", new SourceSpan(4, 9, 4, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(5, 16, 5, 17))
                );
             }
         }
@@ -3437,43 +3437,15 @@ pass
         #endregion
 
         #region Checker Factories / Helpers
-
-        class ErrorInfo {
-            public readonly string Message;
-            public readonly SourceSpan Span;
-
-            public ErrorInfo(string msg, int startIndex, int startLine, int startCol, int endIndex, int endLine, int endCol) {
-                Message = msg;
-                Span = new SourceSpan(new SourceLocation(startIndex, startLine, startCol), new SourceLocation(endIndex, endLine, endCol));
-            }
-        }
-
+        
         private static string FormatError(ErrorResult r) {
             var s = r.Span.Start;
             var e = r.Span.End;
-            return $"new ErrorInfo(\"{r.Message}\", {s.Index}, {s.Line}, {s.Column}, {e.Index}, {e.Line}, {e.Column})";
+            return $"new ErrorResult(\"{r.Message}\", new SourceSpan({s.Line}, {s.Column}, {e.Line}, {e.Column}))";
         }
 
-        private static string FormatError(ErrorInfo r) {
-            var s = r.Span.Start;
-            var e = r.Span.End;
-            return $"new ErrorInfo(\"{r.Message}\", {s.Index}, {s.Line}, {s.Column}, {e.Index}, {e.Line}, {e.Column})";
-        }
-
-
-        /* ToDo: delete this method
-         * We should stop using ErrorInfo for checking since it has indexes of the error location.
-         * Indexes are not cross-platform invariant, so ErrorResult should be used instead.
-         * (CRLF would cause and index displacement of 2 and LF a displacement of 1).
-         * */
-        private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorInfo[] errors) {
-            var errorResults = errors.Select(ToErrorResult).ToArray();
-            ParseErrors(filename, version, Severity.Hint, errorResults);
-        }
-
-        private static ErrorResult ToErrorResult(ErrorInfo e) {
-            var span = e.Span;
-            return new ErrorResult(e.Message, new SourceSpan(span.Start.Line, span.Start.Column, span.End.Line, span.End.Column));
+        private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorResult[] errors) {
+            ParseErrors(filename, version, Severity.Hint, errors);
         }
 
         private void ParseErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, params ErrorResult[] errors) {
