@@ -411,8 +411,9 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IAnalyzable
 
         public void NotifyAnalysisBegins() {
-            if (GlobalScope != null) {
-                foreach (var v in ((IScope)GlobalScope).TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+            foreach (var gs in analyzer.LoadedModules.Select(m => m.GlobalScope).OfType<IScope>().ExcludeDefault()) {
+                foreach (var v in gs.TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
                     v.Parent?.RemoveReferences(this);
                 }
             }

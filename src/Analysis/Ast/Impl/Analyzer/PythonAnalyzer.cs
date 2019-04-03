@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
@@ -174,6 +175,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
         }
 
+        public IReadOnlyList<IPythonModule> LoadedModules 
+            => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
 
         private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();

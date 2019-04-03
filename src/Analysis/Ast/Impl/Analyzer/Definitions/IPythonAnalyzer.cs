@@ -54,5 +54,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Runs linters on the modules
         /// </summary>
         IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module);
+
+        /// <summary>
+        /// Returns list of currently loaded modules.
+        /// </summary>
+        IReadOnlyList<IPythonModule> LoadedModules { get; }
     }
 }
