@@ -95,12 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case PythonOperator.NotIn:
                     // Assume all of these return True/False
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
-            }
 
-            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
-            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
-
-            switch (binop.Operator) {
                 case PythonOperator.Divide:
                 case PythonOperator.TrueDivide:
                     if (Interpreter.LanguageVersion.Is3x()) {
@@ -110,30 +105,33 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
             }
 
-            if (right.GetPythonType()?.TypeId == BuiltinTypeId.Float) {
+            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
+            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
+
+
+            var rightType = right.GetPythonType();
+            if (rightType?.TypeId == BuiltinTypeId.Float) {
                 return right;
             }
 
-            if (left.GetPythonType()?.TypeId == BuiltinTypeId.Float) {
+            var leftType = left.GetPythonType();
+            if (leftType?.TypeId == BuiltinTypeId.Float) {
                 return left;
             }
 
-            if (right.GetPythonType()?.TypeId == BuiltinTypeId.Long) {
+            if (rightType?.TypeId == BuiltinTypeId.Long) {
                 return right;
             }
 
-            if (left.GetPythonType()?.TypeId == BuiltinTypeId.Long) {
+            if (leftType?.TypeId == BuiltinTypeId.Long) {
                 return left;
             }
 
-            if (binop.Operator == PythonOperator.Add
-                && left.GetPythonType()?.TypeId == BuiltinTypeId.List
-                && right.GetPythonType()?.TypeId == BuiltinTypeId.List) {
+            if (binop.Operator == PythonOperator.Add 
+                && leftType?.TypeId == BuiltinTypeId.List && rightType?.TypeId == BuiltinTypeId.List
+                && left is IPythonCollection lc && right is IPythonCollection rc) {
 
-                var leftVar = GetValueFromExpression(binop.Left) as IPythonCollection;
-                var rightVar = GetValueFromExpression(binop.Right) as IPythonCollection;
-
-                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), leftVar?.Contents, rightVar?.Contents);
+                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), lc.Contents, rc.Contents);
             }
 
             return left.IsUnknown() ? right : left;
