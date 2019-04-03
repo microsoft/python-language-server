@@ -208,12 +208,7 @@ namespace Microsoft.Python.Core.Collections {
 
         [Pure]
         public ImmutableArray<T> Where(Func<T, bool> predicate) {
-            var count = 0;
-            for (var i = 0; i < _count; i++) {
-                if (predicate(_items[i])) {
-                    count++;
-                }
-            }
+            var count = GetCount(predicate);
 
             var index = 0;
             var items = new T[count];
@@ -225,6 +220,18 @@ namespace Microsoft.Python.Core.Collections {
             }
 
             return new ImmutableArray<T>(items, items.Length);
+        }
+
+        [Pure]
+        public int GetCount(Func<T, bool> predicate) {
+            var count = 0;
+            for (var i = 0; i < _count; i++) {
+                if (predicate(_items[i])) {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         [Pure]
