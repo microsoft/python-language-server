@@ -65,22 +65,22 @@ namespace Microsoft.Python.Parsing.Tests {
         [TestMethod, Priority(0)]
         public void MixedWhiteSpace() {
             // mixed, but in different blocks, which is ok
-            ParseErrors("MixedWhitespace1.py", PythonLanguageVersion.V27, Severity.Error);
+            ParseFileNoErrors("MixedWhitespace1.py", PythonLanguageVersion.V27, Severity.Error);
 
             // mixed in the same block, tabs first
-            ParseErrors("MixedWhitespace2.py", PythonLanguageVersion.V27, Severity.Error, new ErrorInfo("inconsistent whitespace", 294, 14, 1, 302, 14, 9));
+            ParseErrors("MixedWhitespace2.py", PythonLanguageVersion.V27, Severity.Error, new ErrorResult("inconsistent whitespace", new SourceSpan(14, 1, 14, 9)));
 
             // mixed in same block, spaces first
-            ParseErrors("MixedWhitespace3.py", PythonLanguageVersion.V27, Severity.Error, new ErrorInfo("inconsistent whitespace", 286, 14, 1, 287, 14, 2));
+            ParseErrors("MixedWhitespace3.py", PythonLanguageVersion.V27, Severity.Error, new ErrorResult("inconsistent whitespace", new SourceSpan(14, 1, 14, 2)));
 
             // mixed on same line, spaces first
-            ParseErrors("MixedWhitespace4.py", PythonLanguageVersion.V27, Severity.Error);
+            ParseFileNoErrors("MixedWhitespace4.py", PythonLanguageVersion.V27, Severity.Error);
 
             // mixed on same line, tabs first
-            ParseErrors("MixedWhitespace5.py", PythonLanguageVersion.V27, Severity.Error);
+            ParseFileNoErrors("MixedWhitespace5.py", PythonLanguageVersion.V27, Severity.Error);
 
             // mixed on a comment line - should not crash
-            ParseErrors("MixedWhitespace6.py", PythonLanguageVersion.V27, Severity.Error, new ErrorInfo("inconsistent whitespace", 127, 9, 1, 128, 9, 2));
+            ParseErrors("MixedWhitespace6.py", PythonLanguageVersion.V27, Severity.Error, new ErrorResult("inconsistent whitespace", new SourceSpan(9, 1, 9, 2)));
         }
 
         [TestMethod, Priority(0)]
@@ -935,7 +935,7 @@ namespace Microsoft.Python.Parsing.Tests {
             ParseErrors(filename, version, new ParserOptions() {
                 IndentationInconsistencySeverity = Severity.Hint,
                 InitialSourceLocation = initialLocation
-            }, errors.Select(e => AddOffset(initialLocation, e)).ToArray());
+            }, errors.Select(e => ToErrorResult(AddOffset(initialLocation, e))).ToArray());
         }
 
         private ErrorInfo AddOffset(SourceLocation initLoc, ErrorInfo error) {
@@ -2779,13 +2779,14 @@ namespace Microsoft.Python.Parsing.Tests {
         [TestMethod, Priority(0)]
         public void AssignStmt2x() {
             foreach (var version in V2Versions) {
+                var sink = new CollectingErrorSink();
                 CheckAst(
-                    ParseFile("AssignStmt2x.py", ErrorSink.Null, version),
+                    ParseFile("AssignStmt2x.py", sink, version),
                     CheckSuite(
                         CheckAssignment(Fob, CheckUnaryExpression(PythonOperator.Negate, CheckBinaryExpression(CheckConstant((BigInteger)2), PythonOperator.Power, CheckConstant(31))))
                     )
                 );
-                ParseErrors("AssignStmt2x.py", version);
+                sink.Errors.Should().BeEmpty();
             }
         }
 
@@ -2896,8 +2897,9 @@ namespace Microsoft.Python.Parsing.Tests {
         public void AwaitStmt() {
             var AwaitFob = CheckAwaitExpression(Fob);
             foreach (var version in V35AndUp) {
+                var sink = new CollectingErrorSink();
                 CheckAst(
-                    ParseFile("AwaitStmt.py", ErrorSink.Null, version),
+                    ParseFile("AwaitStmt.py", sink, version),
                     CheckSuite(CheckCoroutineDef(CheckFuncDef("quox", NoParameters, CheckSuite(
                         CheckExprStmt(AwaitFob),
                         CheckExprStmt(CheckAwaitExpression(CheckCallExpression(Fob))),
@@ -2907,7 +2909,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         CheckBinaryStmt(One, PythonOperator.Power, CheckUnaryExpression(PythonOperator.Negate, AwaitFob))
                     ))))
                 );
-                ParseErrors("AwaitStmt.py", version);
+                sink.Errors.Should().BeEmpty();
             }
         }
 
@@ -2961,7 +2963,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         CheckFuncDef("fob", new[] { CheckParameter("async"), CheckParameter("await") }, CheckSuite(Pass))
                     )
                 );
-                ParseErrors("AwaitAsyncNames.py", version);
+                ParseFileNoErrors("AwaitAsyncNames.py", version);
             }
         }
 
@@ -3446,10 +3448,6 @@ pass
             }
         }
 
-        private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorInfo[] errors) {
-            ParseErrors(filename, version, Severity.Hint, errors);
-        }
-
         private static string FormatError(ErrorResult r) {
             var s = r.Span.Start;
             var e = r.Span.End;
@@ -3462,13 +3460,29 @@ pass
             return $"new ErrorInfo(\"{r.Message}\", {s.Index}, {s.Line}, {s.Column}, {e.Index}, {e.Line}, {e.Column})";
         }
 
-        private void ParseErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, params ErrorInfo[] errors) {
+
+        /* ToDo: delete this method
+         * We should stop using ErrorInfo for checking since it has indexes of the error location.
+         * Indexes are not cross-platform invariant, so ErrorResult should be used instead.
+         * (CRLF would cause and index displacement of 2 and LF a displacement of 1).
+         * */
+        private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorInfo[] errors) {
+            var errorResults = errors.Select(ToErrorResult).ToArray();
+            ParseErrors(filename, version, Severity.Hint, errorResults);
+        }
+
+        private static ErrorResult ToErrorResult(ErrorInfo e) {
+            var span = e.Span;
+            return new ErrorResult(e.Message, new SourceSpan(span.Start.Line, span.Start.Column, span.End.Line, span.End.Column));
+        }
+
+        private void ParseErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, params ErrorResult[] errors) {
             ParseErrors(filename, version, new ParserOptions() {
                 IndentationInconsistencySeverity = indentationInconsistencySeverity,
             }, errors);
         }
 
-        private void ParseErrors(string filename, PythonLanguageVersion version, ParserOptions options, params ErrorInfo[] errors) {
+        private void ParseErrors(string filename, PythonLanguageVersion version, ParserOptions options, params ErrorResult[] errors) {
             var sink = new CollectingErrorSink();
             options.ErrorSink = sink;
             ParseFile(filename, version, options);
@@ -3495,13 +3509,7 @@ pass
                 if (sink.Errors[i].Span != errors[i].Span) {
                     Assert.Fail("Wrong span for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
                 }
-                // Span equality check is not looking at indexes, so we do that here
-                if (sink.Errors[i].Span.Start.Index != errors[i].Span.Start.Index) {
-                    Assert.Fail("Wrong start index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.Start.Index, errors[i].Span.Start.Index);
-                }
-                if (sink.Errors[i].Span.End.Index != errors[i].Span.End.Index) {
-                    Assert.Fail("Wrong end index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.End.Index, errors[i].Span.End.Index);
-                }
+                Assert.AreEqual(sink.Errors[i], errors[i]);
             }
             if (sink.Errors.Count > errors.Length) {
                 Assert.Fail("Unexpected errors occurred");

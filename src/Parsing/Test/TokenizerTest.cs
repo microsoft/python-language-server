@@ -37,18 +37,11 @@ namespace Microsoft.Python.Parsing.Tests {
             }
         }
 
-        [DataTestMethod, Priority(0)]
-        [DataRow(true)]
-        [DataRow(false)]
-        public void NewLines(bool useCRLF) {
+        [TestMethod, Priority(0)]
+        public void CRLFNewLines() {
             foreach (var version in AllVersions) {
-                var code = @"
-x
-y
-";
-                if (!useCRLF) {
-                    code = code.Replace("\r\n", "\n");
-                }
+                var code = "\r\nx\r\ny\r\n";
+
                 var initialLocation = SourceLocation.MinValue;
                 var tokenizer = MakeTokenizer(version, TokenizerOptions.None, code,
                     initialLocation);
@@ -58,6 +51,23 @@ y
                 CheckAndReadNext(tokenizer, new IndexSpan(3, 2), TokenKind.NewLine);
                 CheckAndReadNext(tokenizer, new IndexSpan(5, 1), TokenKind.Name);
                 CheckAndReadNext(tokenizer, new IndexSpan(6, 2), TokenKind.NewLine);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void LFNewLines() {
+            foreach (var version in AllVersions) {
+                var code = "\nx\ny\n";
+
+                var initialLocation = SourceLocation.MinValue;
+                var tokenizer = MakeTokenizer(version, TokenizerOptions.None, code,
+                    initialLocation);
+
+                CheckAndReadNext(tokenizer, new IndexSpan(0, 1), TokenKind.NLToken);
+                CheckAndReadNext(tokenizer, new IndexSpan(1, 1), TokenKind.Name);
+                CheckAndReadNext(tokenizer, new IndexSpan(2, 1), TokenKind.NewLine);
+                CheckAndReadNext(tokenizer, new IndexSpan(3, 1), TokenKind.Name);
+                CheckAndReadNext(tokenizer, new IndexSpan(4, 1), TokenKind.NewLine);
             }
         }
 
