@@ -52,7 +52,7 @@ y = func(x)
 x = 2
 ";
             var analysis = await GetAnalysisAsync(code);
-            var rs = new RenameSource(Services, TestData.Root);
+            var rs = new RenameSource(Services);
             var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(8, 1), "z");
 
             var uri = analysis.Document.Uri;
@@ -91,7 +91,7 @@ y = x
             var analysis = await GetDocumentAnalysisAsync(doc1);
             await GetDocumentAnalysisAsync(doc2);
 
-            var rs = new RenameSource(Services, TestData.GetTestSpecificPath());
+            var rs = new RenameSource(Services);
             var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(7, 10), "z");
 
             wse.changes.Should().HaveCount(2);
@@ -131,7 +131,7 @@ y = x
             var analysis = await GetAnalysisAsync(code);
             var uri1 = analysis.Document.Uri;
 
-            var rs = new RenameSource(Services, TestData.GetTestSpecificPath());
+            var rs = new RenameSource(Services);
             var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(7, 10), "z");
 
             wse.changes.Should().HaveCount(3);
@@ -155,7 +155,7 @@ y = x
             const string code = "from sys import path";
 
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var rs = new RenameSource(Services, TestData.GetTestSpecificPath());
+            var rs = new RenameSource(Services);
 
             var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(1, 7), "z");
             wse.Should().BeNull();
@@ -168,7 +168,7 @@ y = x
         public async Task NoRenameInLibrary() {
             const string code = @"from logging import BASIC_FORMAT";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var rs = new RenameSource(Services, TestData.GetTestSpecificPath());
+            var rs = new RenameSource(Services);
 
             var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(1, 10), "z");
             wse.Should().BeNull();

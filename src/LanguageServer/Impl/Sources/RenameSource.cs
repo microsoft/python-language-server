@@ -26,15 +26,13 @@ using Microsoft.Python.LanguageServer.Protocol;
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class RenameSource {
         private readonly IServiceContainer _services;
-        private readonly string _rootPath;
 
-        public RenameSource(IServiceContainer services, string rootPath) {
+        public RenameSource(IServiceContainer services) {
             _services = services;
-            _rootPath = rootPath;
         }
 
         public async Task<WorkspaceEdit> RenameAsync(Uri uri, SourceLocation location, string newName, CancellationToken cancellationToken = default) {
-            var rs = new ReferenceSource(_services, _rootPath);
+            var rs = new ReferenceSource(_services);
             var references = await rs.FindAllReferencesAsync(uri, location, ReferenceSearchOptions.ExcludeLibraries, cancellationToken);
             if (references.Length == 0) {
                 return null;

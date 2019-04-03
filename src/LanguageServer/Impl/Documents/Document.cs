@@ -24,15 +24,15 @@ using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.LanguageServer.Documents {
     internal static class Document {
-        public static Task<IDocumentAnalysis> GetAnalysisAsync(Uri uri, IServiceContainer services, int msTimeout = 300, CancellationToken cancellationToken = default) {
+        public static async Task<IDocumentAnalysis> GetAnalysisAsync(Uri uri, IServiceContainer services, int msTimeout = 300, CancellationToken cancellationToken = default) {
             var rdt = services.GetService<IRunningDocumentTable>();
             var document = rdt.GetDocument(uri);
             if (document == null) {
                 var log = services.GetService<ILogger>();
                 log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
-                return Task.FromResult(default(IDocumentAnalysis));
+                return null;
             }
-            return document.GetAnalysisAsync(msTimeout, cancellationToken);
+            return await document.GetAnalysisAsync(msTimeout, cancellationToken);
         }
     }
 }

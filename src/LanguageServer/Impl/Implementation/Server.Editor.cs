@@ -83,13 +83,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
-            return new ReferenceSource(Services, _rootDir).FindAllReferencesAsync(uri, @params.position, ReferenceSearchOptions.All, cancellationToken);
+            return new ReferenceSource(Services).FindAllReferencesAsync(uri, @params.position, ReferenceSearchOptions.All, cancellationToken);
         }
 
         public Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Rename in {uri} at {@params.position}");
-            return new RenameSource(Services, _rootDir).RenameAsync(uri, @params.position, @params.newName, cancellationToken);
+            return new RenameSource(Services).RenameAsync(uri, @params.position, @params.newName, cancellationToken);
         }
     }
 }

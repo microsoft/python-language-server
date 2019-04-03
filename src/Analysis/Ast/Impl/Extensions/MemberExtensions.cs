@@ -82,5 +82,14 @@ namespace Microsoft.Python.Analysis {
             for (; lm.Parent != null; lm = lm.Parent) { }
             return lm;
         }
+        public static string GetName(this IMember lm) {
+            switch(lm) {
+                case IVariable v:
+                    return v.Name;
+                case IPythonType t:
+                    return t.Name;
+            }
+            return null;
+        }
     }
 }

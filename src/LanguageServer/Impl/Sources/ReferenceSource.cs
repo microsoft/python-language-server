@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -40,11 +41,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class ReferenceSource {
         private const int FindReferencesAnalysisTimeout = 10000;
         private readonly IServiceContainer _services;
-        private readonly string _rootPath;
 
-        public ReferenceSource(IServiceContainer services, string rootPath) {
+        public ReferenceSource(IServiceContainer services) {
             _services = services;
-            _rootPath = rootPath;
         }
 
         public async Task<Reference[]> FindAllReferencesAsync(Uri uri, SourceLocation location, ReferenceSearchOptions options, CancellationToken cancellationToken = default) {
@@ -53,19 +52,19 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 var definition = new DefinitionSource(_services).FindDefinition(analysis, location, out var definingMember);
                 if (definition != null) {
                     var rootDefinition = definingMember.GetRootDefinition();
-                    if (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All) {
-                        return await FindAllReferencesAsync(rootDefinition, cancellationToken);
+                    var name = definingMember.GetName();
+                    if (!string.IsNullOrEmpty(name) && (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
+                        return await FindAllReferencesAsync(name, rootDefinition, cancellationToken);
                     }
                 }
             }
             return Array.Empty<Reference>();
         }
 
-        private async Task<Reference[]> FindAllReferencesAsync(ILocatedMember rootDefinition, CancellationToken cancellationToken) {
+        private async Task<Reference[]> FindAllReferencesAsync(string name, ILocatedMember rootDefinition, CancellationToken cancellationToken) {
             var module = rootDefinition.DeclaringModule;
 
-            var closedFiles = ParseClosedFiles(cancellationToken);
-            var candidateFiles = ScanFiles(closedFiles, Path.GetFileNameWithoutExtension(module.FilePath), cancellationToken);
+            var candidateFiles = ScanClosedFiles(name, cancellationToken);
             await AnalyzeFiles(candidateFiles, cancellationToken);
 
             return rootDefinition.References
@@ -73,14 +72,14 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 .ToArray();
         }
 
-        private Dictionary<string, PythonAst> ParseClosedFiles(CancellationToken cancellationToken) {
+        private IEnumerable<Uri> ScanClosedFiles(string name, CancellationToken cancellationToken) {
             var fs = _services.GetService<IFileSystem>();
             var rdt = _services.GetService<IRunningDocumentTable>();
             var interpreter = _services.GetService<IPythonInterpreter>();
-            var closedFiles = new Dictionary<string, PythonAst>();
 
             var root = interpreter.ModuleResolution.Root;
             var interpreterPaths = interpreter.ModuleResolution.InterpreterPaths.ToArray();
+            var files = new List<Uri>();
 
             foreach (var filePath in fs.GetFiles(root, "*.py", SearchOption.AllDirectories).Select(Path.GetFullPath)) {
                 try {
@@ -92,21 +91,20 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         continue;
                     }
 
-                    var doc = rdt.GetDocument(new Uri(filePath));
+                    var uri = new Uri(filePath);
+                    var doc = rdt.GetDocument(uri);
                     if (doc != null) {
                         continue;
                     }
 
                     var content = fs.ReadTextWithRetry(filePath);
-                    using (var s = new StringReader(content)) {
-                        var parser = Parser.CreateParser(s, interpreter.LanguageVersion);
-                        var ast = parser.ParseFile();
-                        closedFiles[filePath] = ast;
+                    if(content.Contains(name)) {
+                        files.Add(uri);
                     }
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
 
-            return closedFiles;
+            return files;
         }
 
         private IEnumerable<string> ScanFiles(IDictionary<string, PythonAst> closedFiles, string name, CancellationToken cancellationToken) {
@@ -135,26 +133,28 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return candidateFiles;
         }
 
-        private async Task AnalyzeFiles(IEnumerable<string> files, CancellationToken cancellationToken) {
+        private async Task AnalyzeFiles(IEnumerable<Uri> files, CancellationToken cancellationToken) {
             var rdt = _services.GetService<IRunningDocumentTable>();
             foreach (var f in files) {
-                await AnalyzeAsync(f, rdt, cancellationToken);
+                Analyze(f, rdt);
             }
+            var analyzer = _services.GetService<IPythonAnalyzer>();
+            await analyzer.WaitForCompleteAnalysisAsync(cancellationToken);
         }
 
-        private static async Task AnalyzeAsync(string filePath, IRunningDocumentTable rdt, CancellationToken cancellationToken) {
-            if (rdt.GetDocument(new Uri(filePath)) != null) {
+        private static void Analyze(Uri uri, IRunningDocumentTable rdt) {
+            if (rdt.GetDocument(uri) != null) {
                 return; // Already opened by another analysis.
             }
 
+            var filePath = uri.ToAbsolutePath();
             var mco = new ModuleCreationOptions {
                 ModuleName = Path.GetFileNameWithoutExtension(filePath),
                 FilePath = filePath,
-                Uri = new Uri(filePath),
+                Uri = uri,
                 ModuleType = ModuleType.User
             };
-            var document = rdt.AddModule(mco);
-            await document.GetAnalysisAsync(Timeout.Infinite, cancellationToken);
+            rdt.AddModule(mco);
         }
 
         private class ImportsWalker : PythonWalker {

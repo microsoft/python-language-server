@@ -52,7 +52,7 @@ y = func(x)
 x = 2
 ";
             var analysis = await GetAnalysisAsync(code);
-            var rs = new ReferenceSource(Services, TestData.Root);
+            var rs = new ReferenceSource(Services);
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(8, 1), ReferenceSearchOptions.All);
 
             refs.Should().HaveCount(3);
@@ -88,7 +88,7 @@ y = x
             var doc1 = rdt.GetDocument(uri1);
             var analysis = await GetDocumentAnalysisAsync(doc1);
 
-            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var rs = new ReferenceSource(Services);
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10), ReferenceSearchOptions.All);
 
             refs.Should().HaveCount(5);
@@ -129,7 +129,7 @@ y = x
             var uri3 = await TestData.CreateTestSpecificFileAsync("module3.py", mod3Code);
 
             var analysis = await GetAnalysisAsync(code);
-            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var rs = new ReferenceSource(Services);
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10), ReferenceSearchOptions.All);
 
             refs.Should().HaveCount(7);
@@ -176,7 +176,7 @@ y = x
 
             var analysis = await GetAnalysisAsync(code);
 
-            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var rs = new ReferenceSource(Services);
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10), ReferenceSearchOptions.All);
 
             refs.Should().HaveCount(7);
@@ -217,7 +217,7 @@ def baz(quux):
             await TestData.CreateTestSpecificFileAsync("bar.py", barCode);
             var analysis = await GetAnalysisAsync(code);
 
-            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var rs = new ReferenceSource(Services);
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(5, 8), ReferenceSearchOptions.All);
 
             refs.Should().HaveCount(2);
@@ -255,7 +255,7 @@ b = y
 
             var analysis = await GetDocumentAnalysisAsync(doc1);
 
-            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var rs = new ReferenceSource(Services);
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 1), ReferenceSearchOptions.All);
 
             refs.Should().HaveCount(3);
@@ -299,7 +299,7 @@ logging.getLogger()
             var doc = rdt.OpenDocument(uri, code);
             var analysis = await GetDocumentAnalysisAsync(doc);
 
-            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var rs = new ReferenceSource(Services);
             var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(4, 12), ReferenceSearchOptions.All);
 
             refs.Should().HaveCount(2);
@@ -328,7 +328,7 @@ logging.getLogger()
         [TestMethod, Priority(0)]
         public async Task EmptyAnalysis() {
             await GetAnalysisAsync(string.Empty);
-            var rs = new ReferenceSource(Services, TestData.GetTestSpecificPath());
+            var rs = new ReferenceSource(Services);
             var references = await rs.FindAllReferencesAsync(null, new SourceLocation(1, 1), ReferenceSearchOptions.All);
             references.Should().BeEmpty();
         }
