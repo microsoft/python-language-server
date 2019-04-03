@@ -297,5 +297,11 @@ a, b = 1
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Uts46dataModule() {
+            const string code = @"from idna.uts46data import *";
+            await GetAnalysisAsync(code);
+        }
     }
 }

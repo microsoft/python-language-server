@@ -459,5 +459,174 @@ module1.";
             comps = cs.GetCompletions(analysis, new SourceLocation(2, 21));
             comps.Should().HaveLabels("X");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task AllSimple() {
+            var module1Code = @"
+class A:
+    def foo(self):
+        pass
+    pass
+
+class B:
+    def bar(self):
+        pass
+    pass
+
+__all__ = ['A']
+";
+
+            var appCode = @"
+from module1 import *
+
+A().
+B().
+";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 5));
+            comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            comps.Should().NotContainLabels("bar");
+        }
+
+        [DataRow(@"
+other = ['B']
+__all__ = ['A'] + other")]
+        [DataRow(@"
+other = ['B']
+__all__ = ['A']
+__all__ += other")]
+        [DataRow(@"
+other = ['B']
+__all__ = ['A']
+__all__.extend(other)")]
+        [DataRow(@"
+__all__ = ['A']
+__all__.append('B')")]
+        [DataTestMethod, Priority(0)]
+        public async Task AllComplex(string allCode) {
+            var module1Code = @"
+class A:
+    def foo(self):
+        pass
+    pass
+
+class B:
+    def bar(self):
+        pass
+    pass
+
+class C:
+    def baz(self):
+        pass
+    pass
+" + allCode;
+
+            var appCode = @"
+from module1 import *
+
+A().
+B().
+C().
+";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 5));
+            comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            comps.Should().HaveLabels("bar");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(6, 5));
+            comps.Should().NotContainLabels("baz");
+        }
+
+        [DataRow(@"
+__all__ = ['A']
+__all__.something(A)")]
+        [DataRow(@"
+__all__ = ['A']
+__all__ *= ['B']")]
+        [DataRow(@"
+__all__ = ['A']
+__all__ += 1234")]
+        [DataRow(@"
+__all__ = ['A']
+__all__.extend(123)")]
+        [DataRow(@"
+__all__ = ['A']
+__all__.extend(nothing)")]
+        [DataTestMethod, Priority(0)]
+        public async Task AllUnsupported(string allCode) {
+            var module1Code = @"
+class A:
+    def foo(self):
+        pass
+    pass
+
+class B:
+    def bar(self):
+        pass
+    pass
+" + allCode;
+
+            var appCode = @"
+from module1 import *
+
+A().
+B().
+";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 5));
+            comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            comps.Should().HaveLabels("bar");
+        }
     }
 }

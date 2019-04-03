@@ -274,14 +274,14 @@ namespace Microsoft.Python.Parsing {
                     stringType = 1;
                 }
                 /* Start looking for the end of the string. */
-            } else if ((ch == ')' || ch == '}') && _nestedParens.Count > 0) {
+            } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count > 0) {
                 char opening = _nestedParens.Pop();
                 if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
-            } else if ((ch == ')' || ch == '}') && _nestedParens.Count == 0) {
+            } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count == 0) {
                 ReportSyntaxError(Resources.UnmatchedFStringErrorMsg.FormatInvariant(ch));
-            } else if (ch == '(' || ch == '{') {
+            } else if (ch == '(' || ch == '{' || ch == '[') {
                 _nestedParens.Push(ch);
             }
 
@@ -308,14 +308,14 @@ namespace Microsoft.Python.Parsing {
                 /* Start looking for the end of the string. */
             } else if (ch == '#') {
                 ReportSyntaxError(Resources.NumberSignFStringExpressionErrorMsg);
-            } else if ((ch == ')' || ch == '}') && _nestedParens.Count > 0) {
+            } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count > 0) {
                 char opening = _nestedParens.Pop();
                 if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
-            } else if ((ch == ')' || ch == '}') && _nestedParens.Count == 0) {
+            } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count == 0) {
                 ReportSyntaxError(Resources.UnmatchedFStringErrorMsg.FormatInvariant(ch));
-            } else if (ch == '(' || ch == '{') {
+            } else if (ch == '(' || ch == '{' || ch == '[') {
                 _nestedParens.Push(ch);
             }
 
@@ -326,6 +326,7 @@ namespace Microsoft.Python.Parsing {
             switch (opening) {
                 case '(' when ch == ')':
                 case '{' when ch == '}':
+                case '[' when ch == ']':
                     return true;
                 default:
                     return false;
