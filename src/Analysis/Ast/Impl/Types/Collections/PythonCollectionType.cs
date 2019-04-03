@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
@@ -97,6 +98,11 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
             return new PythonCollection(collectionType, location, contents, flatten);
+        }
+
+        public static IPythonCollection CreateConcatenatedList(IPythonInterpreter interpreter, LocationInfo location, params IReadOnlyList<IMember>[] manyContents) {
+            var contents = manyContents?.ExcludeDefault().SelectMany().ToList() ?? new List<IMember>();
+            return CreateList(interpreter, location, contents);
         }
 
         public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents) {

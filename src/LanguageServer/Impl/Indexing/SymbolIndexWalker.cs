@@ -125,14 +125,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public override bool Walk(AssignmentStatement node) {
             node.Right?.Walk(this);
             foreach (var exp in node.Left) {
-                switch (exp) {
-                    case ExpressionWithAnnotation ewa when ewa.Expression is NameExpression ne:
-                        AddVarSymbol(ne);
-                        break;
-                    case NameExpression ne:
-                        AddVarSymbol(ne);
-                        break;
-                }
+                AddVarSymbolRecursive(exp);
             }
 
             return false;
@@ -256,7 +249,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 case NameExpression ne:
                     AddVarSymbol(ne);
                     return;
-
+                case ExpressionWithAnnotation ewa:
+                    AddVarSymbolRecursive(ewa.Expression);
+                    return;
+                case ParenthesisExpression parenExpr:
+                    AddVarSymbolRecursive(parenExpr.Expression);
+                    return;
                 case SequenceExpression se:
                     foreach (var item in se.Items.MaybeEnumerate()) {
                         AddVarSymbolRecursive(item);

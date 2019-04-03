@@ -52,6 +52,16 @@ z = y";
         }
 
         [TestMethod, Priority(0)]
+        public void WalkerAssignmentsParenthesized() {
+            var code = @"(x) = 1";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 2, 1, 3)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
         public void WalkerMultipleAssignments() {
             var code = @"x = y = z = 1";
 
@@ -241,6 +251,18 @@ from os.path import ( join as osjoin2, exists as osexists, expanduser )
                         new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(2, 24, 2, 25)),
                     }, FunctionKind.Function),
                 }, FunctionKind.Class),
+            });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerComplexAssignmentLeftHand() {
+            var code = @"(x, [y, z]) = (1, [2, 3])";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 2, 1, 3)),
+                new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 6, 1, 7)),
+                new HierarchicalSymbol("z", SymbolKind.Variable, new SourceSpan(1, 9, 1, 10)),
             });
         }
 

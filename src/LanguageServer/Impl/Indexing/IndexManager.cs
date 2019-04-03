@@ -37,6 +37,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly string[] _excludeFiles;
         private readonly DisposableBag _disposables = new DisposableBag(nameof(IndexManager));
         private readonly ConcurrentDictionary<IDocument, DateTime> _pendingDocs = new ConcurrentDictionary<IDocument, DateTime>(new UriDocumentComparer());
+        private readonly DisposeToken _disposeToken = DisposeToken.Create<IndexManager>();
 
         public IndexManager(IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles, IIdleTimeService idleTimeService) {
@@ -56,19 +57,23 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
             _disposables
                 .Add(_symbolIndex)
+                .Add(() => _disposeToken.TryMarkDisposed())
                 .Add(() => idleTimeService.Idle -= OnIdle);
-
-            StartAddRootDir();
         }
 
         public int ReIndexingDelay { get; set; } = DefaultReIndexDelay;
 
-        private void StartAddRootDir() {
-            foreach (var fileInfo in WorkspaceFiles()) {
-                if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
-                    _symbolIndex.Parse(fileInfo.FullName);
+        public Task IndexWorkspace(CancellationToken ct = default) {
+            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, _disposeToken.CancellationToken);
+            var linkedCt = linkedCts.Token;
+            return Task.Run(() => {
+                foreach (var fileInfo in WorkspaceFiles()) {
+                    linkedCt.ThrowIfCancellationRequested();
+                    if (ModulePath.IsPythonSourceFile(fileInfo.FullName)) {
+                        _symbolIndex.Parse(fileInfo.FullName);
+                    }
                 }
-            }
+            }, linkedCt).ContinueWith(_ => linkedCts.Dispose());
         }
 
         private IEnumerable<IFileSystemInfo> WorkspaceFiles() {
