@@ -138,6 +138,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return false;
         }
 
+        public override bool Walk(NamedExpression namedExpr) {
+            namedExpr.Value?.Walk(this);
+            AddVarSymbolRecursive(namedExpr.Target);
+            return false;
+        }
+
         public override bool Walk(AugmentedAssignStatement node) {
             node.Right?.Walk(this);
             AddVarSymbol(node.Left as NameExpression);

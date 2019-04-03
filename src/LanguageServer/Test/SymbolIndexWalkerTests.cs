@@ -565,6 +565,16 @@ else:
         }
 
         [TestMethod, Priority(0)]
+        public void WalkerNamedExpressions() {
+            var code = @"(a := 1)";
+
+            var symbols = WalkSymbols(code, PythonLanguageVersion.V38);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("a", SymbolKind.Variable, new SourceSpan(1, 2, 1, 3)),
+            });
+        }
+
+        [TestMethod, Priority(0)]
         public void WalkerIncompleteFunction() {
             var code = @"def func(x, y):";
 
@@ -625,7 +635,7 @@ else:
             => Parser.CreateParser(new StringReader(code), version).ParseFile();
 
         private IReadOnlyList<HierarchicalSymbol> WalkSymbols(string code, PythonLanguageVersion version = PythonLanguageVersion.V37) {
-            var ast = GetParse(code);
+            var ast = GetParse(code, version);
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
             return walker.Symbols;
