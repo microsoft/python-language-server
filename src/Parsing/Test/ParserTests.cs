@@ -44,7 +44,7 @@ namespace Microsoft.Python.Parsing.Tests {
         [TestCleanup]
         public void TestCleanup() => TestEnvironmentImpl.TestCleanup();
 
-        internal static readonly PythonLanguageVersion[] AllVersions = new[] { PythonLanguageVersion.V26, PythonLanguageVersion.V27, PythonLanguageVersion.V30, PythonLanguageVersion.V31, PythonLanguageVersion.V32, PythonLanguageVersion.V33, PythonLanguageVersion.V34, PythonLanguageVersion.V35, PythonLanguageVersion.V36, PythonLanguageVersion.V37 };
+        internal static readonly PythonLanguageVersion[] AllVersions = new[] { PythonLanguageVersion.V26, PythonLanguageVersion.V27, PythonLanguageVersion.V30, PythonLanguageVersion.V31, PythonLanguageVersion.V32, PythonLanguageVersion.V33, PythonLanguageVersion.V34, PythonLanguageVersion.V35, PythonLanguageVersion.V36, PythonLanguageVersion.V37, PythonLanguageVersion.V38 };
         internal static readonly PythonLanguageVersion[] V26AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V26).ToArray();
         internal static readonly PythonLanguageVersion[] V27AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V27).ToArray();
         internal static readonly PythonLanguageVersion[] V2Versions = AllVersions.Where(v => v <= PythonLanguageVersion.V27).ToArray();
@@ -59,6 +59,7 @@ namespace Microsoft.Python.Parsing.Tests {
         internal static readonly PythonLanguageVersion[] V35AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V35).ToArray();
         internal static readonly PythonLanguageVersion[] V36AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V36).ToArray();
         internal static readonly PythonLanguageVersion[] V37AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V37).ToArray();
+        internal static readonly PythonLanguageVersion[] V38AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V38).ToArray();
 
         #region Test Cases
 
@@ -2756,6 +2757,191 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void NamedExpressions() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("NamedExpressions.py", errors, version),
+                    CheckSuite(
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    One
+                                )
+                            )
+                        ), CheckExprStmt(
+                            CheckListExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    One
+                                ),
+                                One
+                            )
+                        ),
+                        CheckFuncDef("f", new[] { CheckParameter("x") },
+                            CheckSuite(
+                                CheckReturnStmt(
+                                    One
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckListExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("y"),
+                                    CheckCallExpression(
+                                        CheckNameExpr("f"),
+                                        PositionalArg(One)
+                                    )
+                                ),
+                                CheckBinaryExpression(
+                                    CheckNameExpr("y"),
+                                    PythonOperator.Power,
+                                    Two
+                                )
+                            )
+                        ),
+                        CheckIfStmt(
+                            IfTests(
+                                IfTest(
+                                    CheckBinaryExpression(
+                                        CheckParenExpr(
+                                            CheckNamedExpr(
+                                                CheckNameExpr("match"),
+                                                One
+                                            )
+                                        ),
+                                        PythonOperator.IsNot,
+                                        // None
+                                        CheckConstant(
+                                            null
+                                        )
+                                    ),
+                                    CheckSuite(Pass)
+                                )
+                            )
+                        ),
+                        CheckWhileStmt(
+                            CheckNamedExpr(
+                                CheckNameExpr("chunk"),
+                                CheckCallExpression(
+                                    CheckNameExpr("f"),
+                                    PositionalArg(One)
+                                )
+                            ),
+                            CheckSuite(Pass)
+                        ),
+                        CheckFuncDef("foo", new[] {
+                                CheckParameter("answer", ParameterKind.Normal, CheckConstant(5),
+                                    CheckParenExpr(
+                                        CheckNamedExpr(
+                                            CheckNameExpr("p"),
+                                            CheckConstant(42)
+                                        )
+                                    )
+                                ), CheckParameter("cat", ParameterKind.Normal, CheckConstant(""))
+                            },
+                            CheckSuite(
+                                CheckReturnStmt(
+                                    One
+                                )
+                            )
+                        ),
+                        CheckLambdaStmt(
+                            NoParameters,
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("y"),
+                                    One
+                                )
+                            )
+                        ),
+                        CheckAssignment(
+                            CheckNameExpr("x"),
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("y"),
+                                    One
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckCallExpression(
+                                CheckNameExpr("foo"),
+                                new[] {
+                                    PositionalArg(
+                                        CheckNamedExpr(
+                                            CheckNameExpr("x"),
+                                            One
+                                        )
+                                    ),
+                                    CheckNamedArg(
+                                        "cat",
+                                        CheckConstant("vector")
+                                    )
+                                }
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    CheckAndExpression(
+                                        One,
+                                        None
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    CheckConditionalExpression(
+                                        One,
+                                        CheckConstant(false),
+                                        Two
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckParenExpr(
+                                        CheckNameExpr("x")
+                                    ),
+                                    One
+                                )
+                            )
+                        )
+                    )
+                );
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void NamedExpressionsErrors() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseFile("NamedExpressionsErrors.py", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(1, 3, 1, 5)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(2, 11, 2, 13)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(3, 7, 3, 9)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(4, 19, 4, 21)),
+                    new ErrorResult("Cannot use named assignment with subscript", new SourceSpan(8, 2, 8, 6)),
+                    new ErrorResult("Cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void AssignStmt() {
             foreach (var version in AllVersions) {
                 CheckAst(
@@ -2889,6 +3075,17 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorInfo("illegal expression for augmented assignment", 69, 6, 1, 77, 6, 9),
                     new ErrorInfo("can't assign to yield expression", 98, 8, 5, 109, 8, 16)
                 );
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void AssignToNamedExprIllegal() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseString("(a := 1) = 1", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[]{
+                    new ErrorResult("can't assign to named expression", new SourceSpan(1, 1, 1, 9))
+                });
             }
         }
 
@@ -4227,6 +4424,16 @@ pass
                     lhs[i](assign.Left[i]);
                 }
                 rhs(assign.Right);
+            };
+        }
+
+        private static Action<Expression> CheckNamedExpr(Action<Expression> target, Action<Expression> value) {
+            return expr => {
+                Assert.AreEqual(typeof(NamedExpression), expr.GetType());
+                var assignExpr = (NamedExpression)expr;
+
+                target(assignExpr.Target);
+                value(assignExpr.Value);
             };
         }
 

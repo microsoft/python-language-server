@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
@@ -40,9 +41,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Hover, out var node, out var statement, out var scope);
 
-            if (node is ConstantExpression || node is FString || !(node is Expression expr)) {
-                // node is FString only if it didn't save an f-string subexpression
-                return null; // No hover for literals.
+            if (!HasHover(node) || !(node is Expression expr)) {
+                return null;
             }
 
             var range = new Range {
@@ -121,6 +121,19 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 contents = _docSource.GetHover(name, value, self),
                 range = range
             };
+        }
+
+        private bool HasHover(Node node) {
+            switch (node) {
+                // No hover for literals
+                case ConstantExpression constExpr:
+                // node is FString only if it didn't save an f-string subexpression
+                case FString fStr:
+                case NamedExpression namedExpr:
+                    return false;
+                default:
+                    return true;
+            }
         }
 
         private MarkupContent HandleImport(ImportStatement imp, SourceLocation location, ScopeStatement scope, IDocumentAnalysis analysis) {
