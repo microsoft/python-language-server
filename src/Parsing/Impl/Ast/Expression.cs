@@ -14,6 +14,8 @@
 // permissions and limitations under the License.
 
 
+using Microsoft.Python.Core;
+
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class Expression : Node {
         internal Expression() {
@@ -30,5 +32,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal virtual string CheckDelete() => "can't delete " + NodeName;
+
+        internal virtual string CheckAssignExpr() => Resources.NamedAssignmentWithErrorMsg.FormatInvariant(NodeName);
     }
 }
