@@ -3696,21 +3696,7 @@ pass
             var finalErrors = foundErrors.ToString();
             Console.WriteLine(finalErrors);
 
-            for (var i = 0; i < errors.Length; i++) {
-                if (sink.Errors.Count <= i) {
-                    Assert.Fail("No error {0}: {1}", i, FormatError(errors[i]));
-                }
-                if (sink.Errors[i].Message != errors[i].Message) {
-                    Assert.Fail("Wrong msg for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
-                }
-                if (sink.Errors[i].Span != errors[i].Span) {
-                    Assert.Fail("Wrong span for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
-                }
-                Assert.AreEqual(sink.Errors[i], errors[i]);
-            }
-            if (sink.Errors.Count > errors.Length) {
-                Assert.Fail("Unexpected errors occurred");
-            }
+            sink.Errors.ToArray().Should().HaveErrors(errors);
         }
 
         private static PythonAst ParseFileNoErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {

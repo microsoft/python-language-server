@@ -27,20 +27,5 @@ namespace Microsoft.Python.Parsing {
         public string Message { get; }
 
         public SourceSpan Span { get; }
-
-        public override bool Equals(object obj) {
-            if (!(obj is ErrorResult otherError)) {
-                return false;
-            }
-            return otherError.Message.Equals(Message) &&
-                otherError.Span.Equals(Span);
-        }
-
-        public override int GetHashCode() {
-            var hashCode = -954867195;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Message);
-            hashCode = hashCode * -1521134295 + EqualityComparer<SourceSpan>.Default.GetHashCode(Span);
-            return hashCode;
-        }
     }
 }
