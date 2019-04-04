@@ -131,7 +131,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 && leftType?.TypeId == BuiltinTypeId.List && rightType?.TypeId == BuiltinTypeId.List
                 && left is IPythonCollection lc && right is IPythonCollection rc) {
 
-                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), lc.Contents, rc.Contents);
+                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), lc, rc);
             }
 
             return left.IsUnknown() ? right : left;
