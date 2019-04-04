@@ -153,8 +153,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 }
 
                 var module = mrb.CreateModule(name);
-                ((IDocument)module)?.Reset(null);
-
                 lock (_syncObj) {
                     _creating = false;
                     _module = module;

@@ -177,6 +177,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return new LinterAggregator().Lint(module.Analysis, _services);
         }
 
+        public void ResetAnalyzer() {
+            lock (_syncObj) {
+                _analysisEntries.Split(kvp => kvp.Key.IsTypeshed || kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
+                _analysisEntries.Clear();
+                foreach (var (key, entry) in entriesToPreserve) {
+                    _analysisEntries.Add(key, entry);
+                }
+
+                _dependencyResolver.RemoveKeys(entriesToRemove.Select(e => e.Key));
+            }
+        }
 
         private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();

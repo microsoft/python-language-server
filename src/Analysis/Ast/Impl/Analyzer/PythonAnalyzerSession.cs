@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 if (!isCanceled) {
-                    _progress.ReportRemaining(walker.Remaining);
+                    _progress.ReportRemaining(remaining);
                 }
             }
 
