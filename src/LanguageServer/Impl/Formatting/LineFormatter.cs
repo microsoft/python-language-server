@@ -278,6 +278,7 @@ namespace Microsoft.Python.LanguageServer.Formatting {
                     case TokenKind.NotEquals:
                     case TokenKind.LessThanGreaterThan:
                     case TokenKind.Arrow:
+                    case TokenKind.ColonEqual:
                         AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
 
