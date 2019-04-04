@@ -38,14 +38,6 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             return false;
         }
 
-        public override bool Walk(NamedExpression node) {
-            if (node.Value is ErrorExpression) {
-                return false;
-            }
-            node.Value.Walk(new ExpressionWalker(this));
-            return false;
-        }
-
         public override bool Walk(CallExpression node) {
             node.Target?.Walk(new ExpressionWalker(this));
             foreach (var arg in node.Args) {
