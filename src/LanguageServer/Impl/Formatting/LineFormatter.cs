@@ -197,7 +197,6 @@ namespace Microsoft.Python.LanguageServer.Formatting {
                     case TokenKind.BitwiseAndEqual:
                     case TokenKind.BitwiseOrEqual:
                     case TokenKind.ExclusiveOrEqual:
-
                         AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
 
