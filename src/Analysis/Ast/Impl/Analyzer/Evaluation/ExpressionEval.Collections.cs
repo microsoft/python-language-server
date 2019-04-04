@@ -103,6 +103,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var oldVariables = CurrentScope.Variables.OfType<Variable>().ToDictionary(k => k.Name, v => v);
             try {
                 ProcessComprehension(node);
+
+                // TODO: Evaluate comprehensions to produce exact contents, if possible.
                 switch (node) {
                     case ListComprehension lc:
                         var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
