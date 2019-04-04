@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (node.Args.Count == 0) {
                 return;
             }
-            
+
             var arg = node.Args[0].Expression;
             var v = Eval.GetValueFromExpression(arg);
             if (v == null) {
