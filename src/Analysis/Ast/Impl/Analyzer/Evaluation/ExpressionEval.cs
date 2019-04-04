@@ -45,6 +45,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             GlobalScope = new GlobalScope(module);
             CurrentScope = GlobalScope;
+            DefaultLocation = new Location(module);
             //Log = services.GetService<ILogger>();
         }
 
@@ -54,12 +55,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public ILogger Log { get; }
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType => Interpreter.UnknownType;
+        public Location DefaultLocation { get; }
 
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
             var module = CurrentScope.Module;
-            
+            if (node == null) {
+                return DefaultLocation;
+            }
+
             // If node is in  the current module, use AST from eval
             // since module analysis is not yet available. Otherwise
             // use AST from the module associated wth the current scope.
