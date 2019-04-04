@@ -180,7 +180,6 @@ namespace Microsoft.Python.LanguageServer.Formatting {
                         break;
 
                     case TokenKind.Assign:
-                    case TokenKind.ColonEqual:
                         AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
 
@@ -198,6 +197,9 @@ namespace Microsoft.Python.LanguageServer.Formatting {
                     case TokenKind.BitwiseAndEqual:
                     case TokenKind.BitwiseOrEqual:
                     case TokenKind.ExclusiveOrEqual:
+                    // Used in expressions as an operator
+                    case TokenKind.ColonEqual:
+
                         AppendTokenEnsureWhiteSpacesAround(builder, token);
                         break;
 
