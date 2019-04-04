@@ -297,6 +297,10 @@ namespace Microsoft.Python.Parsing.Ast {
         // FormattedValue
         public virtual Task<bool> WalkAsync(FormattedValue node, CancellationToken cancellationToken = default) => Task.FromResult(true);
         public virtual Task PostWalkAsync(FormattedValue node, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        // NamedExpression
+        public virtual Task<bool> WalkAsync(NamedExpression node, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public virtual Task PostWalkAsync(NamedExpression node, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
 
@@ -885,6 +889,10 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // FormattedValue
         public override Task<bool> WalkAsync(FormattedValue node, CancellationToken cancellationToken = default)
+            => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
+
+        // NamedExpression
+        public override Task<bool> WalkAsync(NamedExpression node, CancellationToken cancellationToken = default)
             => Task.FromResult(Location >= node.StartIndex && Location <= node.EndIndex);
     }
 }

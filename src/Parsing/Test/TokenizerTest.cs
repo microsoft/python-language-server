@@ -55,6 +55,23 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void CombineNewLines() {
+            foreach (var version in AllVersions) {
+                var code = "\r\nx\ny\r\n";
+
+                var initialLocation = SourceLocation.MinValue;
+                var tokenizer = MakeTokenizer(version, TokenizerOptions.None, code,
+                    initialLocation);
+
+                CheckAndReadNext(tokenizer, new IndexSpan(0, 2), TokenKind.NLToken);
+                CheckAndReadNext(tokenizer, new IndexSpan(2, 1), TokenKind.Name);
+                CheckAndReadNext(tokenizer, new IndexSpan(3, 1), TokenKind.NewLine);
+                CheckAndReadNext(tokenizer, new IndexSpan(4, 1), TokenKind.Name);
+                CheckAndReadNext(tokenizer, new IndexSpan(5, 2), TokenKind.NewLine);
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void LFNewLines() {
             foreach (var version in AllVersions) {
                 var code = "\nx\ny\n";
@@ -88,13 +105,6 @@ namespace Microsoft.Python.Parsing.Tests {
 
             tokenizer.Initialize(null, reader, initialSourceLocation ?? SourceLocation.MinValue);
             return tokenizer;
-        }
-
-        /* == operator doesn't compare indexes */
-        private void ShouldEqual(SourceLocation s1, SourceLocation s2) {
-            s1.Index.Should().Be(s2.Index);
-            s1.Line.Should().Be(s2.Line);
-            s1.Column.Should().Be(s2.Column);
         }
     }
 }

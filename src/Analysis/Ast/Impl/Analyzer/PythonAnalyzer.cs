@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
@@ -39,17 +40,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonAnalyzer>();
         private readonly object _syncObj = new object();
         private readonly AsyncManualResetEvent _analysisCompleteEvent = new AsyncManualResetEvent();
+        private readonly Action<Task> _startNextSession;
         private readonly ProgressReporter _progress;
         private readonly ILogger _log;
         private readonly int _maxTaskRunning = Environment.ProcessorCount;
         private int _version;
-        private PythonAnalyzerSession _session;
+        private PythonAnalyzerSession _currentSession;
+        private PythonAnalyzerSession _nextSession;
 
         public PythonAnalyzer(IServiceManager services) {
             _services = services;
             _log = services.GetService<ILogger>();
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
             _analysisCompleteEvent.Set();
+            _startNextSession = StartNextSession;
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
         }
@@ -195,23 +199,55 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
             }
 
-            PythonAnalyzerSession currentSession, nextSession;
+            if (TryCreateSession(walker, entry, cancellationToken, out var session)) {
+                session.Start(true);
+            }
+        }
+
+        private bool TryCreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry, CancellationToken cancellationToken, out PythonAnalyzerSession session) {
             lock (_syncObj) {
-                currentSession = _session;
-                if (currentSession != null && currentSession.Version > walker.Version) {
+                if (_currentSession == null) {
+                    _currentSession = session = CreateSession(walker, null, cancellationToken);
+                    return true;
+                }
+
+                if (_currentSession.Version > walker.Version || _nextSession != null && _nextSession.Version > walker.Version) {
+                    session = null;
+                    return false;
+                }
+
+                if (_version > walker.Version && (!_currentSession.IsCompleted || walker.AffectedValues.GetCount(e => e.NotAnalyzed) < _maxTaskRunning)) {
+                    session = null;
+                    return false;
+                }
+                
+                if (_currentSession.IsCompleted) {
+                    _currentSession = session = CreateSession(walker, null, cancellationToken);
+                    return true;
+                }
+
+                _currentSession.Cancel();
+                _nextSession = session = CreateSession(walker, entry.IsUserModule ? entry : null, cancellationToken);
+                return entry.IsUserModule;
+            }
+        }
+
+        private void StartNextSession(Task task) {
+            PythonAnalyzerSession session;
+            lock (_syncObj) {
+                if (_nextSession == null) {
                     return;
                 }
 
-                if (_version > walker.Version && currentSession != null && (!currentSession.IsCompleted || walker.AffectedValues.GetCount(e => e.NotAnalyzed) < _maxTaskRunning)) {
-                    return;
-                }
-
-                nextSession = new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _disposeToken.CancellationToken, cancellationToken, walker, _version);
-                _session = nextSession;
+                _currentSession = session = _nextSession;
+                _nextSession = null;
             }
 
-            nextSession.Start(currentSession, entry);
+            session.Start(false);
         }
+
+        private PythonAnalyzerSession CreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry, CancellationToken cancellationToken) 
+            => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, cancellationToken, walker, _version, entry);
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             foreach (var (moduleName, _, isTypeshed) in missingKeys) {
