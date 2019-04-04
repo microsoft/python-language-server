@@ -18,7 +18,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values.Collections;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>

@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     /// <summary>
@@ -28,7 +27,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         public TypingType(IPythonModule declaringModule, IPythonType type)
             : base(PythonMemberType.Class, declaringModule) {
-            _type = type ?? throw  new ArgumentNullException(nameof(type));
+            _type = type ?? throw new ArgumentNullException(nameof(type));
             Name = $"Type[{_type.Name}]";
         }
 
@@ -40,7 +39,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         public bool IsSpecialized => true;
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => _type.Call(instance, memberName, args);
-        public IMember CreateInstance(string typeName, IArgumentSet args ) => _type;
+        public IMember CreateInstance(string typeName, IArgumentSet args) => _type;
         public IMember GetMember(string name) => _type.GetMember(name);
         public IEnumerable<string> GetMemberNames() => _type.GetMemberNames();
         public IMember Index(IPythonInstance instance, object index) => _type.Index(instance, index);

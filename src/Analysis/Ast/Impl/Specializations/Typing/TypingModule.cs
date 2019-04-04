@@ -43,9 +43,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         #endregion
 
         private void SpecializeMembers() {
+            var location = new Location(this, default);
+
             // TypeVar
-            var fn = new PythonFunctionType("TypeVar", this, null, GetMemberDocumentation);
-            var o = new PythonFunctionOverload(fn.Name, this);
+            var fn = new PythonFunctionType("TypeVar", location, null, GetMemberDocumentation);
+            var o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, args)
@@ -55,8 +57,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["TypeVar"] = fn;
 
             // NewType
-            fn = new PythonFunctionType("NewType", this, null, GetMemberDocumentation);
-            o = new PythonFunctionOverload(fn.Name, this);
+            fn = new PythonFunctionType("NewType", location, null, GetMemberDocumentation);
+            o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, args) => CreateTypeAlias(args.Values<IMember>()));
@@ -64,8 +66,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["NewType"] = fn;
 
             // NewType
-            fn = new PythonFunctionType("Type", this, null, GetMemberDocumentation);
-            o = new PythonFunctionOverload(fn.Name, this);
+            fn = new PythonFunctionType("Type", location, null, GetMemberDocumentation);
+            o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, args) => {
@@ -122,8 +124,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
 
-            fn = new PythonFunctionType("NamedTuple", this, null, GetMemberDocumentation);
-            o = new PythonFunctionOverload(fn.Name, this);
+            fn = new PythonFunctionType("NamedTuple", location, null, GetMemberDocumentation);
+            o = new PythonFunctionOverload(fn.Name, location);
             o.SetReturnValueProvider((interpreter, overload, args) => CreateNamedTuple(args.Values<IMember>()));
             fn.AddOverload(o);
             _members["NamedTuple"] = fn;

@@ -26,7 +26,6 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -41,18 +40,17 @@ namespace Microsoft.Python.Analysis.Types {
         private Dictionary<string, IPythonType> _genericParameters;
 
         // For tests
-        internal PythonClassType(string name, IPythonModule declaringModule, IndexSpan definition = default)
-            : base(name, declaringModule, string.Empty, BuiltinTypeId.Type, definition) {
-            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
+        internal PythonClassType(string name, Location location)
+            : base(name, location, string.Empty, BuiltinTypeId.Type) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
         }
 
         public PythonClassType(
             ClassDefinition classDefinition,
-            IPythonModule declaringModule,
-            IndexSpan location,
+            Location location,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), builtinTypeId, location) {
-            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
+        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
             ClassDefinition = classDefinition;
         }
 
@@ -368,7 +366,7 @@ namespace Microsoft.Python.Analysis.Types {
                 .ToArray();
 
             var specificName = CodeFormatter.FormatSequence(Name, '[', specificTypes);
-            var classType = new PythonClassType(specificName, DeclaringModule);
+            var classType = new PythonClassType(specificName, new Location(DeclaringModule));
 
             // Methods returning generic types need to know how to match generic
             // parameter name to the actual supplied type.

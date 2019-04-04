@@ -17,24 +17,22 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonClassExtensions {
         public static bool IsGeneric(this IPythonClassType cls) 
             => cls.Bases != null && cls.Bases.Any(b => b is IGenericType || b is IGenericClassParameter);
 
-        public static void AddMemberReference(this IPythonType type, string name, IExpressionEvaluator eval, IPythonModule module, IndexSpan location) {
+        public static void AddMemberReference(this IPythonType type, string name, IExpressionEvaluator eval, Location location) {
             var m = type.GetMember(name);
             if (m is LocatedMember lm) {
-                lm.AddReference(module, location);
+                lm.AddReference(location);
             } else if(type is IPythonClassType cls) {
                 using (eval.OpenScope(cls.DeclaringModule, cls.ClassDefinition)) {
                     eval.LookupNameInScopes(name, out _, out var v, LookupOptions.Local);
-                    v?.AddReference(module, location);
+                    v?.AddReference(location);
                 }
             }
         }
-
     }
 }

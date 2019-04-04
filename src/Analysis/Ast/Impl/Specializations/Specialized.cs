@@ -18,16 +18,18 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Specializations {
     internal static class Specialized {
         public static IPythonPropertyType Property(string name, IPythonModule declaringModule, IPythonType declaringType, IMember returnValue) {
-            var prop = new PythonPropertyType(name, declaringModule, declaringType, false);
-            var o = new PythonFunctionOverload(prop.Name, declaringModule);
+            var location = new Location(declaringModule);
+            var prop = new PythonPropertyType(name, location, declaringType, false);
+            var o = new PythonFunctionOverload(prop.Name, location);
             o.AddReturnValue(returnValue);
             prop.AddOverload(o);
             return prop;
         }
 
         public static IPythonFunctionType Function(string name, IPythonModule declaringModule, IPythonType declaringType, string documentation, IMember returnValue) {
-            var prop = new PythonFunctionType(name, declaringModule, declaringType, documentation);
-            var o = new PythonFunctionOverload(prop.Name, declaringModule);
+            var location = new Location(declaringModule);
+            var prop = new PythonFunctionType(name, location, declaringType, documentation);
+            var o = new PythonFunctionOverload(prop.Name, location);
             o.AddReturnValue(returnValue);
             prop.AddOverload(o);
             return prop;

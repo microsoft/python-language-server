@@ -21,7 +21,6 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -37,12 +36,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates function for specializations
         /// </summary>
         public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule)
-            => new PythonFunctionType(name, declaringModule, true);
+            => new PythonFunctionType(name, new Location(declaringModule, default), true);
 
-        private PythonFunctionType(string name, IPythonModule declaringModule, bool isSpecialized = false) :
-            base(name, declaringModule, string.Empty, BuiltinTypeId.Function) {
-            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
-            DeclaringType = declaringModule;
+        private PythonFunctionType(string name, Location location, bool isSpecialized = false) :
+            base(name, location, string.Empty, BuiltinTypeId.Function) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
             _isSpecialized = isSpecialized;
         }
 
@@ -53,7 +51,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         public PythonFunctionType(
             string name,
-            IPythonModule declaringModule,
+            Location declaringModule,
             IPythonType declaringType,
             string documentation
         ) : this(name, declaringModule, declaringType, _ => documentation) {
@@ -67,20 +65,19 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         public PythonFunctionType(
             string name,
-            IPythonModule declaringModule,
+            Location location,
             IPythonType declaringType,
             Func<string, string> documentationProvider
-        ) : base(name, declaringModule, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+        ) : base(name, location, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
         }
 
         public PythonFunctionType(
             FunctionDefinition fd,
-            IPythonModule declaringModule,
             IPythonType declaringType,
-            IndexSpan location
-        ) : base(fd.Name, declaringModule, fd.Documentation,
-                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, location) {
+            Location location
+        ) : base(fd.Name, location, fd.Documentation,
+                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;

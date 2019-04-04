@@ -18,11 +18,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -51,7 +49,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
 
         public PythonVariableModule(string name, IPythonInterpreter interpreter)
-            : base(PythonMemberType.Module, null) {
+            : base(PythonMemberType.Module) {
             Name = name;
             Interpreter = interpreter;
             SetDeclaringModule(this);

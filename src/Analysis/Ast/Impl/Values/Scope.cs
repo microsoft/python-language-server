@@ -19,7 +19,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -74,17 +73,17 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module = null, IndexSpan location = default)
-            => VariableCollection.DeclareVariable(name, value, source, module ?? Module, location);
+        public void DeclareVariable(string name, IMember value, VariableSource source, Location location = default)
+            => VariableCollection.DeclareVariable(name, value, source, location);
 
-        public void LinkVariable(string name, IVariable v, IPythonModule module, IndexSpan location)
-            => VariableCollection.LinkVariable(name, v, module ?? Module, location);
+        public void LinkVariable(string name, IVariable v, Location location)
+            => VariableCollection.LinkVariable(name, v, location);
 
-        public void DeclareNonLocal(string name, IndexSpan location)
-            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, Module, location);
+        public void DeclareNonLocal(string name, Location location)
+            => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
 
-        public void DeclareGlobal(string name, IndexSpan location)
-            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, Module, location);
+        public void DeclareGlobal(string name, Location location)
+            => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
 
         #endregion
 
@@ -134,7 +133,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IVariableCollection NonLocals => VariableCollection.Empty;
         public IVariableCollection Globals => VariableCollection.Empty;
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, IndexSpan location) { }
-        public void LinkVariable(string name, IVariable v, IPythonModule module, IndexSpan location) { }
+        public void DeclareVariable(string name, IMember value, VariableSource source, Location location) { }
+        public void LinkVariable(string name, IVariable v, Location location) { }
     }
 }

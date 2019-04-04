@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
-        public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule) 
+        public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule)
             : base(PythonMemberType.Union, declaringModule) {
             _types.UnionWith(types);
         }

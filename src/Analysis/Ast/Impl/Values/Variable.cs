@@ -18,20 +18,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
     internal sealed class Variable : LocatedMember, IVariable {
-        public Variable(string name, IMember value, VariableSource source, IPythonModule declaringModule, IndexSpan location)
-            : base(PythonMemberType.Variable, declaringModule, location) {
+        public Variable(string name, IMember value, VariableSource source, Location location)
+            : base(PythonMemberType.Variable, location) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Value = value is IVariable v ? v.Value : value;
             Source = source;
         }
 
-        public Variable(string name, IVariable parent, IPythonModule declaringModule, IndexSpan location)
-            : base(PythonMemberType.Variable, declaringModule, location, parent) {
+        public Variable(string name, IVariable parent, Location location)
+            : base(PythonMemberType.Variable, location, parent) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Value = parent.Value;
             Source = VariableSource.Import;
@@ -42,7 +41,7 @@ namespace Microsoft.Python.Analysis.Values {
         public VariableSource Source { get; }
         public IMember Value { get; private set; }
 
-        public void Assign(IMember value, IPythonModule module, IndexSpan location) {
+        public void Assign(IMember value, Location location) {
             if (value is IVariable v) {
                 value = v.Value;
             }
@@ -50,7 +49,7 @@ namespace Microsoft.Python.Analysis.Values {
                 Debug.Assert(!(value is IVariable));
                 Value = value;
             }
-            AddReference(module, location);
+            AddReference(location);
         }
         #endregion
 
@@ -65,8 +64,8 @@ namespace Microsoft.Python.Analysis.Values {
                 ? base.References
                 : (Value as ILocatedMember)?.References;
 
-        public override void AddReference(IPythonModule module, IndexSpan location) {
-            if (module == null || location == default) {
+        public override void AddReference(Location location) {
+            if (location.Module == null || location.IndexSpan == default) {
                 return;
             }
             // If value is not a located member, then add reference to the variable.
@@ -75,11 +74,11 @@ namespace Microsoft.Python.Analysis.Values {
             // to add reference to the actual type instead.
             if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Location.IndexSpan == default)) {
                 // Variable is not user-declared and rather is holder of a function or class definition.
-                lm.AddReference(module, location);
+                lm.AddReference(location);
             } else {
-                base.AddReference(module, location);
+                base.AddReference(location);
             }
-            Parent?.AddReference(module, location);
+            Parent?.AddReference(location);
         }
 
         public override void RemoveReferences(IPythonModule module) {

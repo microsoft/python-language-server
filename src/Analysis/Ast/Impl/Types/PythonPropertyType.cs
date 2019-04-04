@@ -15,20 +15,19 @@
 
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     class PythonPropertyType : PythonType, IPythonPropertyType {
         private IPythonFunctionOverload _getter;
 
-        public PythonPropertyType(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, IndexSpan location = default)
-            : this(fd.Name, declaringModule, declaringType, isAbstract, location) {
+        public PythonPropertyType(FunctionDefinition fd, Location location, IPythonType declaringType, bool isAbstract)
+            : this(fd.Name, location, declaringType, isAbstract) {
             FunctionDefinition = fd;
         }
 
-        public PythonPropertyType(string name, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, IndexSpan location = default)
-            : base(name, declaringModule, string.Empty, BuiltinTypeId.Property, location) {
+        public PythonPropertyType(string name, Location location, IPythonType declaringType, bool isAbstract)
+            : base(name, location, string.Empty, BuiltinTypeId.Property) {
             DeclaringType = declaringType;
             IsAbstract = isAbstract;
         }

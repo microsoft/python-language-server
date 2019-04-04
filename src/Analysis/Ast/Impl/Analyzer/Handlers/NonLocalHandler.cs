@@ -23,8 +23,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var nex in node.Names) {
                 var m = Eval.LookupNameInScopes(nex.Name, out _, out var v, LookupOptions.Nonlocal);
                 if (m != null) {
-                    Eval.CurrentScope.DeclareNonLocal(nex.Name, nex.GetNameSpan(Ast));
-                    v?.AddReference(Module, nex.GetNameSpan(Ast));
+                    var location = Eval.GetLocationOfName(nex);
+                    Eval.CurrentScope.DeclareNonLocal(nex.Name, location);
+                    v?.AddReference(location);
                 }
             }
             return false;
@@ -34,8 +35,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var nex in node.Names) {
                 var m = Eval.LookupNameInScopes(nex.Name, out _, out var v, LookupOptions.Global);
                 if (m != null) {
-                    Eval.CurrentScope.DeclareGlobal(nex.Name, nex.GetNameSpan(Ast));
-                    v?.AddReference(Module, nex.GetNameSpan(Ast));
+                    var location = Eval.GetLocationOfName(nex);
+                    Eval.CurrentScope.DeclareGlobal(nex.Name, location);
+                    v?.AddReference(location);
                 }
             }
             return false;

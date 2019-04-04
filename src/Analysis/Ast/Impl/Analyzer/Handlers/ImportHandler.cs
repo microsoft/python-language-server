@@ -67,10 +67,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
             if (!string.IsNullOrEmpty(asNameExpression?.Name)) {
-                Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, Module, asNameExpression.GetNameSpan(Ast));
+                Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
             } else if (importNames.Count > 0 && !string.IsNullOrEmpty(importNames[0]) && _variableModules.TryGetValue(importNames[0], out variableModule)) {
                 var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, Module, firstName.GetNameSpan(Ast));
+                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
             }
         }
 
@@ -162,11 +162,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private void MakeUnresolvedImport(string variableName, string moduleName, Node location) {
             if (!string.IsNullOrEmpty(variableName)) {
-                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, Module, location.GetNameSpan(Ast));
+                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
             }
             Eval.ReportDiagnostics(Eval.Module.Uri, 
                 new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), 
-                    Eval.GetLoc(location).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
+                    Eval.GetLocationInfo(location).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in string fullName, in PythonVariableModule parentModule, in string memberName) {

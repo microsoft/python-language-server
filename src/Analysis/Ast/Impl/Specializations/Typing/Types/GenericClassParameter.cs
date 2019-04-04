@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// </summary>
     internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
         internal GenericClassParameter(IReadOnlyList<IGenericTypeDefinition> typeArgs, IPythonModule declaringModule)
-        : base("GenericParameter", declaringModule) {
+        : base("GenericParameter", new Location(declaringModule)) {
             TypeDefinitions = typeArgs;
         }
 

@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -24,6 +25,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -53,8 +55,38 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType => Interpreter.UnknownType;
 
-        public LocationInfo GetLoc(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
-        public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module) ?? LocationInfo.Empty;
+        public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
+
+        public Location GetLocationOfName(Node node) {
+            var module = CurrentScope.Module;
+            
+            // If node is in  the current module, use AST from eval
+            // since module analysis is not yet available. Otherwise
+            // use AST from the module associated wth the current scope.
+            var ast = module == Module ? Ast : module.Analysis.Ast;
+
+            IndexSpan indexSpan;
+            switch (node) {
+                case MemberExpression mex:
+                    indexSpan = mex.GetNameSpan(ast).ToIndexSpan(ast);
+                    break;
+                case ClassDefinition cd:
+                    indexSpan = cd.NameExpression.IndexSpan;
+                    break;
+                case FunctionDefinition fd:
+                    indexSpan = fd.NameExpression.IndexSpan;
+                    break;
+                case NameExpression nex:
+                    indexSpan = nex.IndexSpan;
+                    break;
+                default:
+                    indexSpan = node.GetSpan(ast).ToIndexSpan(ast);
+                    break;
+            }
+
+            Debug.Assert(indexSpan.ToSourceSpan(ast).Start.Column < 500);
+            return new Location(module, indexSpan);
+        }
 
         #region IExpressionEvaluator
         public PythonAst Ast { get; }
@@ -169,7 +201,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var member = LookupNameInScopes(expr.Name, out _, out var v, options);
             if (member != null) {
-                v?.AddReference(Module, expr.GetNameSpan(Ast));
+                v?.AddReference(GetLocationOfName(expr));
                 switch (member.GetPythonType()) {
                     case IPythonClassType cls:
                         SymbolTable.Evaluate(cls.ClassDefinition);
@@ -200,7 +232,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // If container is class/type info rather than the instance, then the method is an unbound function.
                 // Example: C.f where f is a method of C. Compare to C().f where f is bound to the instance of C.
                 if (member is PythonFunctionType f && !f.IsStatic && !f.IsClassMethod) {
-                    f.AddReference(Module, expr.GetNameSpan(Ast).ToIndexSpan(Ast));
+                    f.AddReference(GetLocationOfName(expr));
                     return f.ToUnbound();
                 }
                 instance = new PythonInstance(typeInfo);
@@ -210,7 +242,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var type = m?.GetPythonType(); // Try inner type
 
             var value = type?.GetMember(expr.Name);
-            type?.AddMemberReference(expr.Name, this, Module, expr.GetNameSpan(Ast).ToIndexSpan(Ast));
+            type?.AddMemberReference(expr.Name, this, GetLocationOfName(expr));
 
             if (type is IPythonModule) {
                 return value;

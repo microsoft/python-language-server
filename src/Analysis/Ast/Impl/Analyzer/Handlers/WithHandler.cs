@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 if (item.Variable is NameExpression nex && !string.IsNullOrEmpty(nex.Name)) {
-                    Eval.DeclareVariable(nex.Name, context, VariableSource.Declaration, Eval.Module, item.GetNameSpan(Ast));
+                    Eval.DeclareVariable(nex.Name, context, VariableSource.Declaration, item);
                 }
             }
         }

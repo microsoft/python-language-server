@@ -17,28 +17,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
         private HashSet<Location> _references;
 
-        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, IndexSpan location = default, ILocatedMember parent = null)
-            : this(declaringModule, location, parent) {
+        protected LocatedMember(PythonMemberType memberType) {
             MemberType = memberType;
         }
 
-        protected LocatedMember(IPythonModule declaringModule, IndexSpan location = default, ILocatedMember parent = null) {
-            DeclaringModule = declaringModule;
-            Parent = parent;
-            Parent?.AddReference(declaringModule, location);
-            Location = new Location(declaringModule, location);
+        protected LocatedMember(PythonMemberType memberType, IPythonModule module)
+            : this(memberType, new Location(module, default)) { }
+
+        protected LocatedMember(PythonMemberType memberType, Location location, ILocatedMember parent = null)
+            : this(location, parent) {
+            MemberType = memberType;
         }
 
-        public virtual PythonMemberType MemberType { get; }
+        private LocatedMember(Location location, ILocatedMember parent = null) {
+            Parent = parent;
+            Parent?.AddReference(location);
+            Location = location;
+        }
 
-        public virtual IPythonModule DeclaringModule { get; private set; }
+        public virtual PythonMemberType MemberType { get; } = PythonMemberType.Unknown;
+
+        public virtual IPythonModule DeclaringModule => Location.Module;
 
         public virtual LocationInfo Definition => Location.LocationInfo;
 
@@ -59,12 +63,12 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public virtual void AddReference(IPythonModule module, IndexSpan location) {
+        public virtual void AddReference(Location location) {
             lock (this) {
                 // Don't add references to library code.
-                if (module?.ModuleType == ModuleType.User && (module != DeclaringModule || location != Location.IndexSpan)) {
+                if (location.Module?.ModuleType == ModuleType.User && !location.Equals(Location)) {
                     _references = _references ?? new HashSet<Location>();
-                    _references.Add(new Location(module, location));
+                    _references.Add(location);
                 }
             }
         }
@@ -81,7 +85,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal Location Location { get; set; }
 
-        protected void SetDeclaringModule(IPythonModule module) => DeclaringModule = module;
+        protected void SetDeclaringModule(IPythonModule module) => Location = new Location(DeclaringModule, Location.IndexSpan);
     }
 
     internal abstract class EmptyLocatedMember : ILocatedMember {
@@ -94,7 +98,7 @@ namespace Microsoft.Python.Analysis.Types {
         public LocationInfo Definition => LocationInfo.Empty;
         public ILocatedMember Parent => null;
         public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
-        public void AddReference(IPythonModule module, IndexSpan location) { }
+        public void AddReference(Location location) { }
         public void RemoveReferences(IPythonModule module) { }
     }
 }

@@ -15,7 +15,6 @@
 
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>

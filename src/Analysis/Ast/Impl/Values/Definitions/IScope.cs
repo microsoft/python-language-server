@@ -15,7 +15,6 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -85,13 +84,12 @@ namespace Microsoft.Python.Analysis.Values {
         /// <param name="name">Variable name.</param>
         /// <param name="value">Variable value.</param>
         /// <param name="source">Variable source.</param>
-        /// <param name="module">Module that declares the variable.</param>
-        /// <param name="location">Variable name node in the module AST.</param>
-        void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, IndexSpan location = default);
+        /// <param name="location">Variable name node location.</param>
+        void DeclareVariable(string name, IMember value, VariableSource source, Location location = default);
 
         /// <summary>
         /// Links variable from another module such as when it is imported.
         /// </summary>
-        void LinkVariable(string name, IVariable v, IPythonModule module, IndexSpan location);
+        void LinkVariable(string name, IVariable v, Location location);
     }
 }

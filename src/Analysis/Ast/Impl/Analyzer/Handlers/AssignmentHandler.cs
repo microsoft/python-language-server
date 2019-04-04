@@ -60,18 +60,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var ne in node.Left.OfType<NameExpression>()) {
                 if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
-                    scope?.Variables[ne.Name].Assign(value, Module, ne.GetNameSpan(Eval.Ast));
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
                     continue;
                 }
 
                 if (Eval.CurrentScope.Globals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
-                    scope?.Variables[ne.Name].Assign(value, Module, ne.GetNameSpan(Eval.Ast));
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
                     continue;
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Module, ne.GetNameSpan(Ast));
+                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLocationOfName(ne));
             }
 
             TryHandleClassVariable(node, value);
@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var cls = m.GetPythonType<IPythonClassType>();
                 if (cls != null) {
                     using (Eval.OpenScope(Eval.Module, cls.ClassDefinition, out _)) {
-                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Module, mex.GetNameSpan(Eval.Ast).ToIndexSpan(Eval.Ast), true);
+                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Eval.GetLocationOfName(mex), true);
                     }
                 }
             }
@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             instance = instance ?? variableType?.CreateInstance(variableType.Name, ArgumentSet.Empty) ?? Eval.UnknownType;
 
             if (expr is NameExpression ne) {
-                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, Module, ne.GetNameSpan(Ast));
+                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, ne);
                 return;
             }
 

@@ -16,13 +16,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
-using System.Threading;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {

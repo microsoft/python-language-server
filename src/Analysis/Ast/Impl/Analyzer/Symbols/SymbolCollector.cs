@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var classInfo = CreateClass(cd);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
-                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, null, default);
+                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private PythonClassType CreateClass(ClassDefinition cd) {
-            var cls = new PythonClassType(cd, _eval.Module, cd.GetNameSpan(_eval.Ast),
+            var cls = new PythonClassType(cd, _eval.GetLocationOfName(cd),
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
             _typeMap[cd] = cls;
             return cls;
@@ -96,15 +96,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
         }
 
-        private IMember AddFunction(FunctionDefinition fd, IPythonType declaringType) {
+        private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType existing)) {
-                existing = new PythonFunctionType(fd, _eval.Module, declaringType, fd.GetNameSpan(_eval.Ast));
+                existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration, null, default);
+                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
             }
             AddOverload(fd, existing, o => existing.AddOverload(o));
-            return existing;
         }
 
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
@@ -125,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
-                var overload = new PythonFunctionOverload(fd, function, _eval.Module, fd.GetIndexSpan(_eval.Ast));
+                var overload = new PythonFunctionOverload(fd, function, _eval.GetLocationOfName(fd));
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, overload));
             }
@@ -160,10 +159,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void AddProperty(FunctionDefinition node, IPythonType declaringType, bool isAbstract) {
             if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(node, _eval.Module, declaringType, isAbstract, node.GetNameSpan(_eval.Ast));
+                existing = new PythonPropertyType(node, _eval.GetLocationOfName(node), declaringType, isAbstract);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration, null, default);
+                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration);
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
         }

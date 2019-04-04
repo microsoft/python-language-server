@@ -20,7 +20,6 @@ using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
@@ -40,27 +39,25 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonType(
             string name,
-            IPythonModule declaringModule,
+            Location location,
             string documentation,
-            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-            IndexSpan definition = default
-        ) : this(name, declaringModule, typeId, definition) {
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown
+        ) : this(name, location, typeId) {
             _documentation = documentation;
         }
 
         public PythonType(
                 string name,
-                IPythonModule declaringModule,
+                Location location,
                 Func<string, string> documentationProvider,
-                BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-                IndexSpan definition = default
-            ) : this(name, declaringModule, typeId, definition) {
+                BuiltinTypeId typeId = BuiltinTypeId.Unknown
+            ) : this(name, location, typeId) {
             _documentationProvider = documentationProvider;
         }
 
-        private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId, IndexSpan definition)
-            : base(declaringModule, definition) {
-            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
+        private PythonType(string name, Location location, BuiltinTypeId typeId)
+            : base(typeId.GetMemberId(), location) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
@@ -69,7 +66,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
         public virtual string Documentation => _documentationProvider != null ? _documentationProvider.Invoke(Name) : _documentation;
-        public override PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;

@@ -67,8 +67,9 @@ namespace Microsoft.Python.Analysis.Specializations {
         }
 
         public static IMember __iter__(IPythonInterpreter interpreter, BuiltinTypeId contentTypeId) {
-            var fn = new PythonFunctionType(@"__iter__", interpreter.ModuleResolution.BuiltinsModule, null, string.Empty);
-            var o = new PythonFunctionOverload(fn.Name, interpreter.ModuleResolution.BuiltinsModule);
+            var location = new Location(interpreter.ModuleResolution.BuiltinsModule, default);
+            var fn = new PythonFunctionType(@"__iter__", location, null, string.Empty);
+            var o = new PythonFunctionOverload(fn.Name, location);
             o.AddReturnValue(PythonTypeIterator.FromTypeId(interpreter, contentTypeId));
             fn.AddOverload(o);
             return fn;

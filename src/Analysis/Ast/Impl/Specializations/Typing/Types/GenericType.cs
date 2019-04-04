@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal delegate IPythonType SpecificTypeConstructor(IReadOnlyList<IPythonType> typeArgs);

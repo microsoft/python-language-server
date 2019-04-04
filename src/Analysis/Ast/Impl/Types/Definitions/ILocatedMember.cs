@@ -16,7 +16,6 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -47,7 +46,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Add member reference.
         /// </summary>
-        void AddReference(IPythonModule module, IndexSpan location);
+        void AddReference(Location location);
 
         /// <summary>
         /// Removes references to the module variable recorded in other modules.

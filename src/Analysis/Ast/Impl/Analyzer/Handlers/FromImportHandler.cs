@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var variableName = nameExpression?.Name ?? memberName;
                     var exported = variableModule.Analysis?.GlobalScope.Variables[memberName] ?? variableModule.GetMember(memberName);
                     var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression != null ? Module : variableModule, nameExpression.GetNameSpan(Ast));
+                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression);
                 }
             }
         }
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
-                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule, default);
+                Eval.DeclareVariable(memberName, member, VariableSource.Import, new Location(variableModule, default));
             }
         }
 
@@ -121,8 +121,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var printNameExpression = node.Names.FirstOrDefault(n => n?.Name == "print_function");
             if (printNameExpression != null) {
-                var fn = new PythonFunctionType("print", Module, null, string.Empty);
-                var o = new PythonFunctionOverload(fn.Name, Module);
+                var fn = new PythonFunctionType("print", new Location(Module, default), null, string.Empty);
+                var o = new PythonFunctionOverload(fn.Name, new Location(Module, default));
                 var parameters = new List<ParameterInfo> {
                     new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
                     new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 o.SetParameters(parameters);
                 o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), true);
                 fn.AddOverload(o);
-                Eval.DeclareVariable("print", fn, VariableSource.Import, Module, printNameExpression.GetNameSpan(Ast));
+                Eval.DeclareVariable("print", fn, VariableSource.Import, printNameExpression);
             }
         }
     }

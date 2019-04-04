@@ -58,13 +58,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     if (b != null) {
                         var t = b.GetPythonType();
                         bases.Add(t);
-                        t.AddReference(Module, a.Expression.GetNameSpan(Ast));
+                        t.AddReference(Eval.GetLocationOfName(a.Expression));
                     }
                 }
                 _class.SetBases(bases);
 
                 // Declare __class__ variable in the scope.
-                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration, null, default);
+                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
 
                 ProcessClassBody();
             }

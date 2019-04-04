@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services)
-            : base(PythonMemberType.Module, null) {
+            : base(PythonMemberType.Module) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;

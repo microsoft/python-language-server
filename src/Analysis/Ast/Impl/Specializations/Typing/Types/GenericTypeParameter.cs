@@ -20,12 +20,11 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
         public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
-            : base(name, declaringModule, documentation, BuiltinTypeId.Unknown, location) {
+            : base(name, new Location(declaringModule), documentation) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
         }
         public IReadOnlyList<IPythonType> Constraints { get; }

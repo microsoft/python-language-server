@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
     internal class PythonCollection : PythonInstance, IPythonCollection {
