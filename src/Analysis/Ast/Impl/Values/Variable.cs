@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region ILocatedMember
         public override LocationInfo Definition
-            => Location.Module != null && Location.IndexSpan != default
+            => Location.Module != null
                 ? base.Definition
                 : (Value as ILocatedMember)?.Definition ?? LocationInfo.Empty;
 

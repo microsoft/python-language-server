@@ -35,17 +35,18 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly List<DiagnosticsEntry> _errors = new List<DiagnosticsEntry>();
         private readonly ListArg _listArgument;
         private readonly DictArg _dictArgument;
-        private readonly ExpressionEval _eval;
         private bool _evaluated;
 
         public static IArgumentSet Empty = new ArgumentSet();
 
+        /// <summary>Module that declares the function</summary>
+        public IPythonModule DeclaringModule { get; }
         public IReadOnlyList<IArgument> Arguments => _arguments;
         public IListArgument ListArgument => _listArgument;
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
         public int OverloadIndex { get; }
-        public IExpressionEvaluator Eval => _eval;
+        public IExpressionEvaluator Eval { get; }
 
 
         private ArgumentSet() { }
@@ -75,9 +76,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="callExpr">Call expression that invokes the function.</param>
         /// <param name="module">Module that contains the call expression.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
-        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
-            _eval = eval;
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, IExpressionEvaluator eval) {
+            Eval = eval;
             OverloadIndex = overloadIndex;
+            DeclaringModule = fn.DeclaringModule;
 
             var overload = fn.Overloads[overloadIndex];
             var fd = overload.FunctionDefinition;
@@ -252,8 +254,10 @@ namespace Microsoft.Python.Analysis.Types {
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterMissing.FormatUI(slot.Name), callLocation.Span,
                                 ErrorCodes.ParameterMissing, Severity.Warning, DiagnosticSource.Analysis));
                         }
-
+                        // Note that parameter default value expression is from the function definition AST
+                        // while actual argument values are from the calling file AST.
                         slot.ValueExpression = parameter.DefaultValue;
+                        slot.ValueIsDefault = true;
                     }
                 }
             } finally {
@@ -268,20 +272,20 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = Eval.GetValueFromExpression(a.ValueExpression) ?? _eval.UnknownType;
+                a.Value = GetArgumentValue(a);
                 a.Type = Eval.GetValueFromExpression(a.TypeExpression) as IPythonType;
             }
 
             if (_listArgument != null) {
                 foreach (var e in _listArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e) ?? _eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e) ?? Eval.UnknownType;
                     _listArgument._Values.Add(value);
                 }
             }
 
             if (_dictArgument != null) {
                 foreach (var e in _dictArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e.Value) ?? _eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e.Value) ?? Eval.UnknownType;
                     _dictArgument._Args[e.Key] = value;
                 }
             }
@@ -290,13 +294,64 @@ namespace Microsoft.Python.Analysis.Types {
             return this;
         }
 
+        private IMember GetArgumentValue(Argument arg) {
+            // Evaluates expression in the specific module context. Typically used to evaluate
+            // expressions representing default values of function arguments since they are
+            // are defined in the function declaring module rather than in the caller context.
+            if (arg.ValueExpression == null) {
+                return Eval.UnknownType;
+            }
+
+            if (arg.ValueIsDefault) {
+                using (Eval.OpenScope(DeclaringModule.Analysis.GlobalScope)) {
+                    return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+                }
+            }
+            return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+        }
+
         private sealed class Argument : IArgument {
+            /// <summary>
+            /// Argument name.
+            /// </summary>
             public string Name { get; }
+
+            /// <summary>
+            /// Argument value, if known.
+            /// </summary>
             public object Value { get; internal set; }
+
+            /// <summary>
+            /// Argument kind, <see cref="ParameterKind"/>.
+            /// </summary>
             public ParameterKind Kind { get; }
+
+            /// <summary>
+            /// Expression that represents value of the argument in the
+            /// call expression. <see cref="CallExpression"/>.
+            /// </summary>
             public Expression ValueExpression { get; set; }
+
+            /// <summary>
+            /// Indicates if value is a default value expression. Default values
+            /// should be evaluated in the context of the file that declared
+            /// the function rather than in the caller context.
+            /// </summary>
+            public bool ValueIsDefault { get; set; }
+
+            /// <summary>
+            /// Type of the argument, if annotated.
+            /// </summary>
             public IPythonType Type { get; internal set; }
+
+            /// <summary>
+            /// Type annotation expression.
+            /// </summary>
             public Expression TypeExpression { get; }
+
+            /// <summary>
+            /// AST node that defines the argument.
+            /// </summary>
             public Node Location { get; }
 
             public Argument(Parameter p, Node location) :

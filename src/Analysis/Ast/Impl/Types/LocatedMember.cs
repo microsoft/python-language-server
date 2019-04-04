@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal Location Location { get; set; }
 
-        protected void SetDeclaringModule(IPythonModule module) => Location = new Location(DeclaringModule, Location.IndexSpan);
+        protected void SetDeclaringModule(IPythonModule module) => Location = new Location(module, Location.IndexSpan);
     }
 
     internal abstract class EmptyLocatedMember : ILocatedMember {

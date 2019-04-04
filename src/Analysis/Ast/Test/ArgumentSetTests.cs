@@ -26,7 +26,7 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class ArgumentSetTests: AnalysisTestBase {
+    public class ArgumentSetTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -234,7 +234,7 @@ f(1)
 ";
             var argSet = await GetArgSetAsync(code);
             // Collected arguments are optimistically returned even if there are errors;
-            argSet.Arguments.Count.Should().Be(2); 
+            argSet.Arguments.Count.Should().Be(2);
             argSet.Errors.Count.Should().Be(1);
             argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.ParameterMissing);
         }
@@ -344,18 +344,36 @@ pow(1, 2)
             argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().BeNull(); // Value has not been evaluated yet.
         }
 
+        [TestMethod, Priority(0)]
+        public async Task DefaultArgumentAnotherFile() {
+            const string code = @"
+from DefaultArgument import func
+func()
+";
+            var argSet = await GetArgSetAsync(code, "func");
+            argSet.Arguments.Count.Should().Be(1);
+            argSet.Evaluate();
+            var v = argSet.Arguments[0].Value;
+            var m = v.Should().BeAssignableTo<IMember>().Which;
+
+            var t = m.GetPythonType();
+            t.Name.Should().Be("A");
+            t.MemberType.Should().Be(PythonMemberType.Class);
+        }
+
+
         private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveFunction(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f, 0, null, call, analysis.Document, null);
+            return new ArgumentSet(f, 0, null, call, analysis.Document, analysis.ExpressionEvaluator);
         }
 
         private async Task<ArgumentSet> GetUnboundArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveVariable(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f.Value.GetPythonType<IPythonFunctionType>(), 0, null, call, analysis.Document, null);
+            return new ArgumentSet(f.Value.GetPythonType<IPythonFunctionType>(), 0, null, call, analysis.Document, analysis.ExpressionEvaluator);
         }
 
         private async Task<ArgumentSet> GetClassArgSetAsync(string code, string className = "A", string funcName = "f") {
@@ -363,7 +381,7 @@ pow(1, 2)
             var cls = analysis.Should().HaveClass(className).Which;
             var f = cls.Should().HaveMethod(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f, 0, new PythonInstance(cls), call, analysis.Document, null);
+            return new ArgumentSet(f, 0, new PythonInstance(cls), call, analysis.Document, analysis.ExpressionEvaluator);
         }
 
         private CallExpression GetCall(PythonAst ast) {

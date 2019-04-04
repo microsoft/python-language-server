@@ -61,12 +61,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         IPythonType GetTypeFromString(string typeString);
 
+        /// <summary>
+        /// Module AST.
+        /// </summary>
         PythonAst Ast { get; }
+
+        /// <summary>
+        /// Associated module.
+        /// </summary>
         IPythonModule Module { get; }
+
+        /// <summary>
+        /// Interpreter used in the module analysis.
+        /// </summary>
         IPythonInterpreter Interpreter { get; }
+
+        /// <summary>
+        /// Application service container.
+        /// </summary>
         IServiceContainer Services { get; }
 
         void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry);
+
         IEnumerable<DiagnosticsEntry> Diagnostics { get; }
+
+        /// <summary>
+        /// Represents built-in 'unknown' type. <see cref="BuiltinTypeId.Unknown"/>.
+        /// </summary>
+        IPythonType UnknownType { get; }
     }
 }

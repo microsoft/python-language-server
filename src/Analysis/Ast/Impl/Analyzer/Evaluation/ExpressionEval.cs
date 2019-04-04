@@ -60,20 +60,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
-            var module = CurrentScope.Module;
-            if (node == null) {
+            if (node == null || (Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library)) {
                 return DefaultLocation;
             }
 
-            // If node is in  the current module, use AST from eval
+            // If node is in the current module, use AST from eval
             // since module analysis is not yet available. Otherwise
             // use AST from the module associated wth the current scope.
-            var ast = module == Module ? Ast : module.Analysis.Ast;
+            var ast = Module.Analysis.Ast;
 
             IndexSpan indexSpan;
             switch (node) {
                 case MemberExpression mex:
-                    indexSpan = mex.GetNameSpan(ast).ToIndexSpan(ast);
+                    indexSpan = mex.GetNameSpan(Ast).ToIndexSpan(Ast);
                     break;
                 case ClassDefinition cd:
                     indexSpan = cd.NameExpression.IndexSpan;
@@ -89,8 +88,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
             }
 
-            Debug.Assert(indexSpan.ToSourceSpan(ast).Start.Column < 500);
-            return new Location(module, indexSpan);
+            Debug.Assert(indexSpan.ToSourceSpan(Ast).Start.Column < 500);
+            return new Location(Module, indexSpan);
         }
 
         #region IExpressionEvaluator
