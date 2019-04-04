@@ -13,32 +13,26 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal struct Location {
-        public Location(IPythonModule module, Node node) {
+        public Location(IPythonModule module, IndexSpan indexSpan) {
             Module = module;
-            Node = node;
+            IndexSpan = indexSpan;
         }
 
         public IPythonModule Module { get; }
-        public Node Node { get; }
+        public IndexSpan IndexSpan { get; }
 
-        public LocationInfo LocationInfo {
-            get {
-                if (Node is MemberExpression mex && Module.Analysis.Ast != null) {
-                    var span = mex.GetNameSpan(Module.Analysis.Ast);
-                    return new LocationInfo(Module.FilePath, Module.Uri, span);
-                }
-
-                return Node?.GetLocation(Module) ?? LocationInfo.Empty;
-            }
-        }
+        public LocationInfo LocationInfo => Module?.Analysis?.Ast != null
+            ? new LocationInfo(Module.FilePath, Module.Uri, IndexSpan.ToSourceSpan(Module.Analysis?.Ast))
+            : LocationInfo.Empty;
 
         public override bool Equals(object obj)
-            => obj is Location other && other.Node == Node;
+            => obj is Location other && other.Module == Module && other.IndexSpan == IndexSpan;
 
-        public override int GetHashCode() => Node.GetHashCode();
+        public override int GetHashCode() => (IndexSpan.GetHashCode() * 397) ^ Module?.GetHashCode() ?? 0;
     }
 }

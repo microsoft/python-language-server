@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             if (m == null) {
                 _walker.ReportUndefinedVariable(node);
             }
-            v?.AddReference(analysis.Document, node);
+            v?.AddReference(analysis.Document, node.GetNameSpan(_walker.Analysis.Ast));
 
             // Take into account where variable is defined so we do detect
             // undefined x in 

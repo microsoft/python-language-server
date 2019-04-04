@@ -17,23 +17,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
         private HashSet<Location> _references;
-        private readonly object _referencesLock = new object();
 
-        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, Node location = null, ILocatedMember parent = null)
+        protected LocatedMember(PythonMemberType memberType, IPythonModule declaringModule, IndexSpan location = default, ILocatedMember parent = null)
             : this(declaringModule, location, parent) {
             MemberType = memberType;
         }
 
-        protected LocatedMember(IPythonModule declaringModule, Node location = null, ILocatedMember parent = null) {
+        protected LocatedMember(IPythonModule declaringModule, IndexSpan location = default, ILocatedMember parent = null) {
             DeclaringModule = declaringModule;
             Parent = parent;
             Parent?.AddReference(declaringModule, location);
-
             Location = new Location(declaringModule, location);
         }
 
@@ -47,7 +46,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual IReadOnlyList<LocationInfo> References {
             get {
-                lock (_referencesLock) {
+                lock (this) {
                     if (_references == null) {
                         return new[] { Definition };
                     }
@@ -60,10 +59,10 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public virtual void AddReference(IPythonModule module, Node location) {
-            lock (_referencesLock) {
+        public virtual void AddReference(IPythonModule module, IndexSpan location) {
+            lock (this) {
                 // Don't add references to library code.
-                if (module?.ModuleType == ModuleType.User && location != null && location != Location.Node) {
+                if (module?.ModuleType == ModuleType.User && (module != DeclaringModule || location != Location.IndexSpan)) {
                     _references = _references ?? new HashSet<Location>();
                     _references.Add(new Location(module, location));
                 }
@@ -71,7 +70,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public virtual void RemoveReferences(IPythonModule module) {
-            lock (_referencesLock) {
+            lock (this) {
                 if (_references != null) {
                     foreach (var r in _references.ToArray().Where(r => r.Module == module)) {
                         _references.Remove(r);
@@ -95,7 +94,7 @@ namespace Microsoft.Python.Analysis.Types {
         public LocationInfo Definition => LocationInfo.Empty;
         public ILocatedMember Parent => null;
         public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
-        public void AddReference(IPythonModule module, Node location) { }
+        public void AddReference(IPythonModule module, IndexSpan location) { }
         public void RemoveReferences(IPythonModule module) { }
     }
 }

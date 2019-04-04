@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -40,7 +41,7 @@ namespace Microsoft.Python.Analysis.Types {
         private Dictionary<string, IPythonType> _genericParameters;
 
         // For tests
-        internal PythonClassType(string name, IPythonModule declaringModule, Node definition = null)
+        internal PythonClassType(string name, IPythonModule declaringModule, IndexSpan definition = default)
             : base(name, declaringModule, string.Empty, BuiltinTypeId.Type, definition) {
             Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
         }
@@ -48,8 +49,9 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonClassType(
             ClassDefinition classDefinition,
             IPythonModule declaringModule,
+            IndexSpan location,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), builtinTypeId, classDefinition.NameExpression) {
+        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), builtinTypeId, location) {
             Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
             ClassDefinition = classDefinition;
         }

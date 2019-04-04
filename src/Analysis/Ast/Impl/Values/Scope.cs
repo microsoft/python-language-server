@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -73,16 +74,16 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module = null, Node location = null)
+        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module = null, IndexSpan location = default)
             => VariableCollection.DeclareVariable(name, value, source, module ?? Module, location);
 
-        public void LinkVariable(string name, IVariable v, IPythonModule module, Node location)
+        public void LinkVariable(string name, IVariable v, IPythonModule module, IndexSpan location)
             => VariableCollection.LinkVariable(name, v, module ?? Module, location);
 
-        public void DeclareNonLocal(string name, Node location)
+        public void DeclareNonLocal(string name, IndexSpan location)
             => (_nonLocals ?? (_nonLocals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, Module, location);
 
-        public void DeclareGlobal(string name, Node location)
+        public void DeclareGlobal(string name, IndexSpan location)
             => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, Module, location);
 
         #endregion
@@ -90,7 +91,7 @@ namespace Microsoft.Python.Analysis.Values {
         internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
 
         private void DeclareBuiltinVariables() {
-            if(Node == null || Module.ModuleType != ModuleType.User || this is IGlobalScope) {
+            if (Node == null || Module.ModuleType != ModuleType.User || this is IGlobalScope) {
                 return;
             }
 
@@ -110,7 +111,7 @@ namespace Microsoft.Python.Analysis.Values {
                 VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin);
                 VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin);
                 VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin);
-            } else if(Node is ClassDefinition) {
+            } else if (Node is ClassDefinition) {
                 VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin);
             }
         }
@@ -131,9 +132,9 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
         public IVariableCollection Variables => VariableCollection.Empty;
         public IVariableCollection NonLocals => VariableCollection.Empty;
-        public  IVariableCollection Globals => VariableCollection.Empty;
+        public IVariableCollection Globals => VariableCollection.Empty;
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, Node location) { }
-        public void LinkVariable(string name, IVariable v, IPythonModule module, Node location) { }
+        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, IndexSpan location) { }
+        public void LinkVariable(string name, IVariable v, IPythonModule module, IndexSpan location) { }
     }
 }

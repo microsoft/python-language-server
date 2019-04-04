@@ -65,11 +65,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     Eval.ProcessComprehension(comp);
                     return false;
                 case CallExpression callex when callex.Target is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
-                    Eval.LookupNameInScopes(nex.Name)?.AddReference(Module, nex);
+                    Eval.LookupNameInScopes(nex.Name)?.AddReference(Module, nex.GetNameSpan(Eval.Ast));
                     return false;
                 case CallExpression callex when callex.Target is MemberExpression mex && !string.IsNullOrEmpty(mex.Name):
                     var t = Eval.GetValueFromExpression(mex.Target)?.GetPythonType();
-                    t?.GetMember(mex.Name).AddReference(Module, mex);
+                    t?.GetMember(mex.Name).AddReference(Module, mex.GetNameSpan(Eval.Ast).ToIndexSpan(Eval.Ast));
                     return false;
                 default:
                     return base.Walk(node);

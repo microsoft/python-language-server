@@ -18,19 +18,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
     internal sealed class Variable : LocatedMember, IVariable {
-        public Variable(string name, IMember value, VariableSource source, IPythonModule declaringModule, Node location)
+        public Variable(string name, IMember value, VariableSource source, IPythonModule declaringModule, IndexSpan location)
             : base(PythonMemberType.Variable, declaringModule, location) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Value = value is IVariable v ? v.Value : value ;
+            Value = value is IVariable v ? v.Value : value;
             Source = source;
         }
 
-        public Variable(string name, IVariable parent, IPythonModule declaringModule, Node location)
+        public Variable(string name, IVariable parent, IPythonModule declaringModule, IndexSpan location)
             : base(PythonMemberType.Variable, declaringModule, location, parent) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Value = parent.Value;
@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Values {
         public VariableSource Source { get; }
         public IMember Value { get; private set; }
 
-        public void Assign(IMember value, IPythonModule module, Node location) {
+        public void Assign(IMember value, IPythonModule module, IndexSpan location) {
             if (value is IVariable v) {
                 value = v.Value;
             }
@@ -56,19 +56,24 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region ILocatedMember
         public override LocationInfo Definition
-            => base.Definition.DocumentUri != null ? base.Definition : (Value as ILocatedMember)?.Definition ?? LocationInfo.Empty;
-        public override IReadOnlyList<LocationInfo> References
-            => base.Definition.DocumentUri != null ? base.References : (Value as ILocatedMember)?.References;
+            => Location.Module != null && Location.IndexSpan != default
+                ? base.Definition
+                : (Value as ILocatedMember)?.Definition ?? LocationInfo.Empty;
 
-        public override void AddReference(IPythonModule module, Node location) {
-            if(module == null || location == null) {
+        public override IReadOnlyList<LocationInfo> References
+            => Location.Module != null && Location.IndexSpan != default
+                ? base.References
+                : (Value as ILocatedMember)?.References;
+
+        public override void AddReference(IPythonModule module, IndexSpan location) {
+            if (module == null || location == default) {
                 return;
             }
             // If value is not a located member, then add reference to the variable.
             // If variable name is the same as the value member name, then the variable
             // is implicit declaration (like declared function or a class) and we need
             // to add reference to the actual type instead.
-            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Definition.DocumentUri == null)) {
+            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Location.IndexSpan == default)) {
                 // Variable is not user-declared and rather is holder of a function or class definition.
                 lm.AddReference(module, location);
             } else {
@@ -81,7 +86,7 @@ namespace Microsoft.Python.Analysis.Values {
             if (module == null) {
                 return;
             }
-            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Definition.DocumentUri == null)) {
+            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Location.IndexSpan == default)) {
                 // Variable is not user-declared and rather is holder of a function or class definition.
                 lm.RemoveReferences(module);
             } else {

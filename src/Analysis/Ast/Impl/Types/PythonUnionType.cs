@@ -20,7 +20,6 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonUnionType : LocatedMember, IPythonUnionType {

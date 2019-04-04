@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -50,15 +51,16 @@ namespace Microsoft.Python.Analysis.Types {
         private Func<string, string> _documentationProvider;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, IPythonModule declaringModule)
-            : this(fd.Name, declaringModule, fd) {
+        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, IPythonModule declaringModule, IndexSpan location)
+            : this(fd.Name, declaringModule, location) {
             FunctionDefinition = fd;
             ClassMember = classMember;
             var ast = (declaringModule as IDocument)?.Analysis.Ast;
             _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
-        public PythonFunctionOverload(string name, IPythonModule declaringModule, Node definition = null): base(declaringModule, definition) {
+        public PythonFunctionOverload(string name, IPythonModule declaringModule, IndexSpan definition = default)
+            : base(declaringModule, definition) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 

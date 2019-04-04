@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var variableName = nameExpression?.Name ?? memberName;
                     var exported = variableModule.Analysis?.GlobalScope.Variables[memberName] ?? variableModule.GetMember(memberName);
                     var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression != null ? Module : variableModule, nameExpression);
+                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression != null ? Module : variableModule, nameExpression.GetNameSpan(Ast));
                 }
             }
         }
@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
-                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule);
+                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule, default);
             }
         }
 
@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 o.SetParameters(parameters);
                 o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), true);
                 fn.AddOverload(o);
-                Eval.DeclareVariable("print", fn, VariableSource.Import, Module, printNameExpression);
+                Eval.DeclareVariable("print", fn, VariableSource.Import, Module, printNameExpression.GetNameSpan(Ast));
             }
         }
     }

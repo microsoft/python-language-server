@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -76,9 +77,10 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonFunctionType(
             FunctionDefinition fd,
             IPythonModule declaringModule,
-            IPythonType declaringType
+            IPythonType declaringType,
+            IndexSpan location
         ) : base(fd.Name, declaringModule, fd.Documentation,
-                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, fd.NameExpression) {
+                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function, location) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;

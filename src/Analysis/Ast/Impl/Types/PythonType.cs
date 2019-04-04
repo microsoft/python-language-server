@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonModule declaringModule,
             string documentation,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-            Node definition = null
+            IndexSpan definition = default
         ) : this(name, declaringModule, typeId, definition) {
             _documentation = documentation;
         }
@@ -52,12 +53,12 @@ namespace Microsoft.Python.Analysis.Types {
                 IPythonModule declaringModule,
                 Func<string, string> documentationProvider,
                 BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-                Node definition = null
+                IndexSpan definition = default
             ) : this(name, declaringModule, typeId, definition) {
             _documentationProvider = documentationProvider;
         }
 
-        private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId, Node definition)
+        private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId, IndexSpan definition)
             : base(declaringModule, definition) {
             Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
             _name = name ?? throw new ArgumentNullException(nameof(name));

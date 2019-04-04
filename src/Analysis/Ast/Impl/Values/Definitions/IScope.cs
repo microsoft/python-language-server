@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -22,21 +23,75 @@ namespace Microsoft.Python.Analysis.Values {
     /// Represents scope where variables can be declared.
     /// </summary>
     public interface IScope {
-        string Name { get; }
-        ScopeStatement Node { get; }
-        IScope OuterScope { get; }
-        IGlobalScope GlobalScope { get; }
-        IReadOnlyList<IScope> Children { get; }
-        IEnumerable<IScope> EnumerateTowardsGlobal { get; }
-        IEnumerable<IScope> EnumerateFromGlobal { get; }
-        IVariableCollection Variables { get; }
-        IVariableCollection NonLocals { get; }
-        IVariableCollection Globals { get; }
-        IPythonModule Module { get; }
-        void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, Node location = null);
         /// <summary>
-        /// Links variable from another module.
+        /// Scope name. Typically name of the scope-defining <see cref="IScope.Node"/>
         /// </summary>
-        void LinkVariable(string name, IVariable v, IPythonModule module, Node location);
+        string Name { get; }
+
+        /// <summary>
+        /// Node defining the scope. Typically <see cref="ClassDefinition"/>
+        /// or <see cref="FunctionDefinition"/>
+        /// </summary>
+        ScopeStatement Node { get; }
+
+        /// <summary>
+        /// Immediate parent of this scope.
+        /// </summary>
+        IScope OuterScope { get; }
+
+        /// <summary>
+        /// Module global scope.
+        /// </summary>
+        IGlobalScope GlobalScope { get; }
+
+        /// <summary>
+        /// Child scopes.
+        /// </summary>
+        IReadOnlyList<IScope> Children { get; }
+
+        /// <summary>
+        /// Enumerates scopes from this one to global scope.
+        /// </summary>
+        IEnumerable<IScope> EnumerateTowardsGlobal { get; }
+
+        /// <summary>
+        /// Enumerates scopes from global to this one.
+        /// </summary>
+        IEnumerable<IScope> EnumerateFromGlobal { get; }
+
+        /// <summary>
+        /// Collection of variables declared in the scope.
+        /// </summary>
+        IVariableCollection Variables { get; }
+
+        /// <summary>
+        /// Collection of variables declared via 'nonlocal' statement.
+        /// </summary>
+        IVariableCollection NonLocals { get; }
+
+        /// <summary>
+        /// Collection of global variables declared via 'global' statement.
+        /// </summary>
+        IVariableCollection Globals { get; }
+
+        /// <summary>
+        /// Module the scope belongs to.
+        /// </summary>
+        IPythonModule Module { get; }
+
+        /// <summary>
+        /// Declares variable in the scope.
+        /// </summary>
+        /// <param name="name">Variable name.</param>
+        /// <param name="value">Variable value.</param>
+        /// <param name="source">Variable source.</param>
+        /// <param name="module">Module that declares the variable.</param>
+        /// <param name="location">Variable name node in the module AST.</param>
+        void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, IndexSpan location = default);
+
+        /// <summary>
+        /// Links variable from another module such as when it is imported.
+        /// </summary>
+        void LinkVariable(string name, IVariable v, IPythonModule module, IndexSpan location);
     }
 }

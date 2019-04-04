@@ -15,6 +15,7 @@
 
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
@@ -67,6 +68,27 @@ namespace Microsoft.Python.Analysis {
                 e = parExpr.Expression;
             }
             return e;
+        }
+
+
+        public static IndexSpan GetIndexSpan(this Node node, PythonAst ast)
+            => ast != null && node != null ? node.GetSpan(ast).ToIndexSpan(ast) : default;
+
+        public static IndexSpan GetNameSpan(this Node node, PythonAst ast) {
+            if (ast == null) {
+                return default;
+            }
+
+            switch (node) {
+                case MemberExpression mex:
+                    return mex.GetNameSpan(ast).ToIndexSpan(ast);
+                case ClassDefinition cd:
+                    return cd.NameExpression.GetSpan(ast).ToIndexSpan(ast);
+                case FunctionDefinition fd:
+                    return fd.NameExpression.GetSpan(ast).ToIndexSpan(ast);
+                default:
+                    return node.GetSpan(ast).ToIndexSpan(ast);
+            }
         }
     }
 }

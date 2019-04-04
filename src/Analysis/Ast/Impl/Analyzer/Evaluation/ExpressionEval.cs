@@ -169,7 +169,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var member = LookupNameInScopes(expr.Name, out _, out var v, options);
             if (member != null) {
-                v?.AddReference(Module, expr);
+                v?.AddReference(Module, expr.GetNameSpan(Ast));
                 switch (member.GetPythonType()) {
                     case IPythonClassType cls:
                         SymbolTable.Evaluate(cls.ClassDefinition);
@@ -200,7 +200,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // If container is class/type info rather than the instance, then the method is an unbound function.
                 // Example: C.f where f is a method of C. Compare to C().f where f is bound to the instance of C.
                 if (member is PythonFunctionType f && !f.IsStatic && !f.IsClassMethod) {
-                    f.AddReference(Module, expr);
+                    f.AddReference(Module, expr.GetNameSpan(Ast).ToIndexSpan(Ast));
                     return f.ToUnbound();
                 }
                 instance = new PythonInstance(typeInfo);
@@ -210,7 +210,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var type = m?.GetPythonType(); // Try inner type
 
             var value = type?.GetMember(expr.Name);
-            type?.AddMemberReference(expr.Name, this, Module, expr);
+            type?.AddMemberReference(expr.Name, this, Module, expr.GetNameSpan(Ast).ToIndexSpan(Ast));
 
             if (type is IPythonModule) {
                 return value;

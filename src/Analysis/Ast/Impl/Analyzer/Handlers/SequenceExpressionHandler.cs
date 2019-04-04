@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 if (!string.IsNullOrEmpty(names[i]?.Name)) {
-                    eval.DeclareVariable(names[i].Name, value ?? eval.UnknownType, VariableSource.Declaration, eval.Module, names[i]);
+                    eval.DeclareVariable(names[i].Name, value ?? eval.UnknownType, VariableSource.Declaration, eval.Module, names[i].GetNameSpan(eval.Ast));
                 }
             }
         }
@@ -64,10 +64,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var item in items) {
                 switch (item) {
                     case StarredExpression stx when stx.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex);
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex.GetNameSpan(eval.Ast));
                         break;
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex);
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, eval.Module, nex.GetNameSpan(eval.Ast));
                         break;
                     case TupleExpression te:
                         Assign(te.Items, valueEnum, eval);

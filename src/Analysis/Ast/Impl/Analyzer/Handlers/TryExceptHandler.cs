@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var handler in node.Handlers.MaybeEnumerate()) {
                 if (handler.Test != null && handler.Target is NameExpression nex) {
                     var value = Eval.GetValueFromExpression(handler.Test);
-                    Eval.DeclareVariable(nex.Name, value ?? Eval.UnknownType, VariableSource.Declaration, Module, nex);
+                    Eval.DeclareVariable(nex.Name, value ?? Eval.UnknownType, VariableSource.Declaration, Module, nex.GetNameSpan(Ast));
                 }
                 handler.Body.Walk(Walker);
             }

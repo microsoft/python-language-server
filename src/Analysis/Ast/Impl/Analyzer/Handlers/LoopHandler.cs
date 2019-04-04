@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 case NameExpression nex:
                     // for x in y:
                     if (!string.IsNullOrEmpty(nex.Name)) {
-                        Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Module, nex);
+                        Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Module, nex.GetNameSpan(Ast));
                     }
                     break;
                 case SequenceExpression seq:

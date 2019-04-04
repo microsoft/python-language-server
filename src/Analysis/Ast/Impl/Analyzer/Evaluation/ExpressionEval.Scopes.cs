@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -36,7 +37,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember GetInScope(string name) => GetInScope(name, CurrentScope);
         public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module = null, Node location = null, bool overwrite = false) {
+        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module, IndexSpan location, bool overwrite = false) {
             if (source == VariableSource.Import && value is IVariable v) {
                 CurrentScope.LinkVariable(name, v, module, location);
                 return;

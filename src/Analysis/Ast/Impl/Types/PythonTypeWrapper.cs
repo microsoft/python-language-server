@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -77,7 +78,7 @@ namespace Microsoft.Python.Analysis.Types {
         public LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
         public ILocatedMember Parent => InnerType?.Parent;
         public IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
-        public void AddReference(IPythonModule module, Node location) => InnerType?.AddReference(module, location);
+        public void AddReference(IPythonModule module, IndexSpan location) => InnerType?.AddReference(module, location);
         public void RemoveReferences(IPythonModule module) => InnerType?.RemoveReferences(module);
         #endregion
 

@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = GetValueFromExpression(expr.Target);
-            target?.AddReference(Module, expr.Target);
+            target?.AddReference(Module, expr.Target.GetNameSpan(Ast));
 
             var result = GetValueFromGeneric(target, expr);
             if (result != null) {
@@ -76,8 +76,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var ft = new PythonFunctionType(expr.Function, Module, null);
-            var overload = new PythonFunctionOverload(expr.Function, ft, Module);
+            var location = expr.Function.GetNameSpan(Ast);
+            var ft = new PythonFunctionType(expr.Function, Module, null, location);
+            var overload = new PythonFunctionOverload(expr.Function, ft, Module, location);
             ft.AddOverload(overload);
             return ft;
         }

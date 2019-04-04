@@ -17,14 +17,14 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonClassExtensions {
         public static bool IsGeneric(this IPythonClassType cls) 
             => cls.Bases != null && cls.Bases.Any(b => b is IGenericType || b is IGenericClassParameter);
 
-        public static void AddMemberReference(this IPythonType type, string name, IExpressionEvaluator eval, IPythonModule module, Node location) {
+        public static void AddMemberReference(this IPythonType type, string name, IExpressionEvaluator eval, IPythonModule module, IndexSpan location) {
             var m = type.GetMember(name);
             if (m is LocatedMember lm) {
                 lm.AddReference(module, location);

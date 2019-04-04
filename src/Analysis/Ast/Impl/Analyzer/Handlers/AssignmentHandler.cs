@@ -60,18 +60,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var ne in node.Left.OfType<NameExpression>()) {
                 if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
-                    scope?.Variables[ne.Name].Assign(value, Module, ne);
+                    scope?.Variables[ne.Name].Assign(value, Module, ne.GetNameSpan(Eval.Ast));
                     continue;
                 }
 
                 if (Eval.CurrentScope.Globals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
-                    scope?.Variables[ne.Name].Assign(value, Module, ne);
+                    scope?.Variables[ne.Name].Assign(value, Module, ne.GetNameSpan(Eval.Ast));
                     continue;
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Module, ne);
+                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Module, ne.GetNameSpan(Ast));
             }
 
             TryHandleClassVariable(node, value);
@@ -92,12 +92,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private void TryHandleClassVariable(AssignmentStatement node, IMember value) {
             var mex = node.Left.OfType<MemberExpression>().FirstOrDefault();
-            if (!string.IsNullOrEmpty(mex?.Name) && mex?.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
+            if (!string.IsNullOrEmpty(mex?.Name) && mex.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
                 var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Local);
                 var cls = m.GetPythonType<IPythonClassType>();
                 if (cls != null) {
                     using (Eval.OpenScope(Eval.Module, cls.ClassDefinition, out _)) {
-                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Module, node, true);
+                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Module, mex.GetNameSpan(Eval.Ast).ToIndexSpan(Eval.Ast), true);
                     }
                 }
             }
@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             instance = instance ?? variableType?.CreateInstance(variableType.Name, ArgumentSet.Empty) ?? Eval.UnknownType;
 
             if (expr is NameExpression ne) {
-                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, Module, expr);
+                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, Module, ne.GetNameSpan(Ast));
                 return;
             }
 

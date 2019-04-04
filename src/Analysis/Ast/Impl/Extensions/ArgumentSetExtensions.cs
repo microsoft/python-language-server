@@ -52,19 +52,19 @@ namespace Microsoft.Python.Analysis {
 
             foreach (var a in args.Arguments) {
                 if (a.Value is IMember m && !string.IsNullOrEmpty(a.Name)) {
-                    eval.DeclareVariable(a.Name, m, VariableSource.Declaration, eval.Module, a.Location);
+                    eval.DeclareVariable(a.Name, m, VariableSource.Declaration, eval.Module, a.Location.GetNameSpan(eval.Ast));
                 }
             }
 
             if (args.ListArgument != null && !string.IsNullOrEmpty(args.ListArgument.Name)) {
                 var type = new PythonCollectionType(null, BuiltinTypeId.List, eval.Interpreter, false);
                 var list = new PythonCollection(type, args.ListArgument.Values);
-                eval.DeclareVariable(args.ListArgument.Name, list, VariableSource.Declaration, eval.Module, args.ListArgument.Location);
+                eval.DeclareVariable(args.ListArgument.Name, list, VariableSource.Declaration, eval.Module, args.ListArgument.Location.GetNameSpan(eval.Ast));
             }
 
             if (args.DictionaryArgument != null) {
                 foreach (var kvp in args.DictionaryArgument.Arguments) {
-                    eval.DeclareVariable(kvp.Key, kvp.Value, VariableSource.Declaration, eval.Module, args.DictionaryArgument.Location);
+                    eval.DeclareVariable(kvp.Key, kvp.Value, VariableSource.Declaration, eval.Module, args.DictionaryArgument.Location.GetNameSpan(eval.Ast));
                 }
             }
         }
