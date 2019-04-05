@@ -163,20 +163,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            double privateMb;
-            double peakPagedMb;
+            double privateMB;
+            double peakPagedMB;
 
             using (var proc = Process.GetCurrentProcess()) {
-                privateMb = proc.PrivateMemorySize64 / 1e+6;
-                peakPagedMb = proc.PeakPagedMemorySize64 / 1e+6;
+                privateMB = proc.PrivateMemorySize64 / 1e+6;
+                peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
             }
 
             var e = new TelemetryEvent {
                 EventName = "analysis_complete",
             };
 
-            e.Measurements["privateMB"] = privateMb;
-            e.Measurements["peakPagedMB"] = peakPagedMb;
+            e.Measurements["privateMB"] = privateMB;
+            e.Measurements["peakPagedMB"] = peakPagedMB;
             e.Measurements["elapsedMs"] = elapsed;
             e.Measurements["entries"] = originalRemaining;
             e.Measurements["version"] = version;
