@@ -95,7 +95,7 @@ namespace Microsoft.Python.Analysis.Values {
         #endregion
 
         private ILocatedMember GetValueMember()
-            => Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Location.IndexSpan == default) ? lm : null;
+            => Value is ILocatedMember lm && Name.EqualsOrdinal(lm.GetPythonType()?.Name) && Location.IndexSpan == default ? lm : null;
 
         private string DebuggerDisplay {
             get {
