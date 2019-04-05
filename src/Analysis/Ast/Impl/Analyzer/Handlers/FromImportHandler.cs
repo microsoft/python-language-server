@@ -95,9 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-                Debug.Assert(variable != null);
-
-                Eval.DeclareVariable(memberName, variable, VariableSource.Import);
+                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import);
             }
         }
 
