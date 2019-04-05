@@ -51,10 +51,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             var top = 1;
             if (scope != null) {
-                var scopeStart = scope.GetStart(tree);
+                var scopeStart = scope.GetStart();
                 if (scope.Body != null) {
-                    top = scope.Body.GetEnd(tree).Line == scopeStart.Line
-                        ? scope.Body.GetStart(tree).Column
+                    top = scope.Body.GetEnd().Line == scopeStart.Line
+                        ? scope.Body.GetStart().Column
                         : scopeStart.Column;
                 } else {
                     top = scopeStart.Column;

@@ -20,9 +20,6 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class ScopeExtensions {
-        public static bool IsClassScope(this IScope scope) => scope.Node is ClassDefinition;
-        public static bool IsFunctionScope(this IScope scope) => scope.Node is FunctionDefinition;
-
         public static int GetBodyStartIndex(this IScope scope, PythonAst ast) {
             switch (scope.Node) {
                 case ClassDefinition cd:
@@ -30,7 +27,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case FunctionDefinition fd:
                     return fd.HeaderIndex;
                 default:
-                    return ast.LocationToIndex(scope.Node.GetStart(ast));
+                    return ast.LocationToIndex(scope.Node.GetStart());
             }
         }
 
@@ -113,10 +110,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             switch (scope.Node) {
                 case ClassDefinition cd:
                     // Return column of "class" statement
-                    return cd.GetStart(ast).Column;
+                    return cd.GetStart().Column;
                 case FunctionDefinition fd when !fd.IsLambda:
                     // Return column of "def" statement
-                    return fd.GetStart(ast).Column;
+                    return fd.GetStart().Column;
                 default:
                     return -1;
             }

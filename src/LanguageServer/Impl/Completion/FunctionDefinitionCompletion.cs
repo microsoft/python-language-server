@@ -34,7 +34,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             if (function.Parent is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
-                var loc = function.GetStart(context.Ast);
+                var loc = function.GetStart();
                 var overrideable = GetOverrideable(context, location).ToArray();
                 overrideable = !string.IsNullOrEmpty(function.Name)
                         ? overrideable.Where(o => o.Name.StartsWithOrdinal(function.Name)).ToArray()

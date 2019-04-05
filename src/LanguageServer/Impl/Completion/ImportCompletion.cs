@@ -81,7 +81,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     }
 
                     if (context.Position >= name.StartIndex) {
-                        var applicableSpan = name.GetSpan(context.Ast);
+                        var applicableSpan = name.GetSpan();
                         var importSearchResult = mres.CurrentPathResolver.FindImports(document.FilePath, fromImport);
                         return GetResultFromImportSearch(importSearchResult, context, false, applicableSpan);
                     }

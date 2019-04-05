@@ -192,7 +192,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // Try and evaluate with specific arguments. Note that it does not
             // make sense to evaluate stubs since they already should be annotated.
-            if (fn.DeclaringModule is IDocument doc && fd?.IsInAst(doc.GetAnyAst()) == true) {
+            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
                 // Stubs are coming from another module.
                 return TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
             }

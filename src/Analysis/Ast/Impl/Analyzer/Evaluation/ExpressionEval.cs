@@ -64,15 +64,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return DefaultLocation;
             }
 
-            // If node is in the current module, use AST from eval
-            // since module analysis is not yet available. Otherwise
-            // use AST from the module associated wth the current scope.
-            var ast = Module.Analysis.Ast;
-
             IndexSpan indexSpan;
             switch (node) {
                 case MemberExpression mex:
-                    indexSpan = mex.GetNameSpan(Ast).ToIndexSpan(Ast);
+                    indexSpan = mex.GetNameSpan().ToIndexSpan(mex.Ast);
                     break;
                 case ClassDefinition cd:
                     indexSpan = cd.NameExpression.IndexSpan;
@@ -84,11 +79,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     indexSpan = nex.IndexSpan;
                     break;
                 default:
-                    indexSpan = node.GetSpan(ast).ToIndexSpan(ast);
+                    indexSpan = node.IndexSpan;
                     break;
             }
 
-            Debug.Assert(indexSpan.ToSourceSpan(Ast).Start.Column < 500);
+            Debug.Assert(indexSpan.ToSourceSpan(node.Ast).Start.Column < 500);
             return new Location(Module, indexSpan);
         }
 

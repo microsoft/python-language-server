@@ -34,18 +34,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             Options = options;
         }
 
-        public static Node GetNode(PythonAst ast, SourceLocation location, FindExpressionOptions options) {
-            var finder = new ExpressionFinder(ast, options);
-            return finder.GetExpression(location);
-        }
-
         public PythonAst Ast { get; }
         public FindExpressionOptions Options { get; }
 
         public Node GetExpression(int index) => GetExpression(index, index);
         public Node GetExpression(SourceLocation location) => GetExpression(new SourceSpan(location, location));
-        public SourceSpan? GetExpressionSpan(int index) => GetExpression(index, index)?.GetSpan(Ast);
-        public SourceSpan? GetExpressionSpan(SourceLocation location) => GetExpression(new SourceSpan(location, location))?.GetSpan(Ast);
 
         public void Get(int startIndex, int endIndex, out Node node, out Node statement, out ScopeStatement scope) {
             ExpressionWalker walker;
@@ -80,9 +73,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             var endIndex = Ast.LocationToIndex(range.End);
             return GetExpression(startIndex, endIndex);
         }
-
-        public SourceSpan? GetExpressionSpan(int startIndex, int endIndex) => GetExpression(startIndex, endIndex)?.GetSpan(Ast);
-        public SourceSpan? GetExpressionSpan(SourceSpan range) => GetExpression(range)?.GetSpan(Ast);
 
         private abstract class ExpressionWalker : PythonWalkerWithLocation {
             protected ExpressionWalker(int location) : base(location) { }

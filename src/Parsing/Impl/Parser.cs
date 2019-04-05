@@ -52,7 +52,6 @@ namespace Microsoft.Python.Parsing {
         private bool _parsingStarted, _allowIncomplete;
         private bool _inLoop, _inFinally, _isGenerator, _inGeneratorExpression;
         private List<IndexSpan> _returnsWithValue;
-        private int _errorCode;
         private readonly bool _verbatim;                            // true if we're in verbatim mode and the ASTs can be turned back into source code, preserving white space / comments
         private readonly bool _bindReferences;                      // true if we should bind the references in the ASTs
         private string _tokenWhiteSpace, _lookaheadWhiteSpace;      // the whitespace for the current and lookahead tokens as provided from the parser
@@ -178,7 +177,7 @@ namespace Microsoft.Python.Parsing {
                 );
             }
 
-            if (_errorCode == 0) {
+            if (ErrorCode == 0) {
                 // Detect if there are unexpected tokens
                 EatEndOfInput();
             }
@@ -188,7 +187,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private PythonAst CreateAst(Uri module, Statement ret) {
-            var ast = new PythonAst(module, ret, _tokenizer.GetLineLocations(), _tokenizer.LanguageVersion, _tokenizer.GetCommentLocations()) {HasVerbatim = _verbatim, PrivatePrefix = _privatePrefix};
+            var ast = new PythonAst(module, ret, _tokenizer.GetLineLocations(), _tokenizer.LanguageVersion, _tokenizer.GetCommentLocations()) { HasVerbatim = _verbatim, PrivatePrefix = _privatePrefix };
             if (_token.Token != null) {
                 ast.SetLoc(0, GetEndForStatement());
             }
@@ -198,6 +197,10 @@ namespace Microsoft.Python.Parsing {
 
             ast.SetAttributes(_attributes);
             PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
+
+            foreach (var n in ((Node)ast).TraverseDepthFirst(c => c.GetChildNodes())) {
+                n.Ast = ast;
+            }
 
             return ast;
         }
@@ -219,7 +222,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        public int ErrorCode => _errorCode;
+        public int ErrorCode { get; private set; }
 
         public void Reset(FutureOptions languageFeatures) {
             _languageFeatures = languageFeatures;
@@ -231,7 +234,7 @@ namespace Microsoft.Python.Parsing {
             _privatePrefix = null;
 
             _parsingStarted = false;
-            _errorCode = 0;
+            ErrorCode = 0;
         }
 
         public void Reset() => Reset(_languageFeatures);
@@ -276,8 +279,8 @@ namespace Microsoft.Python.Parsing {
 
         internal void ReportSyntaxError(int start, int end, string message, int errorCode) {
             // save the first one, the next error codes may be induced errors:
-            if (_errorCode == 0) {
-                _errorCode = errorCode;
+            if (ErrorCode == 0) {
+                ErrorCode = errorCode;
             }
             _errors.Add(
                 message,
@@ -4631,7 +4634,7 @@ namespace Microsoft.Python.Parsing {
                     Eat(TokenKind.EndOfFile);
                     if (_tokenizer.EndContinues) {
                         parsingMultiLineCmpdStmt = true;
-                        _errorCode = ErrorCodes.IncompleteStatement;
+                        ErrorCode = ErrorCodes.IncompleteStatement;
                     } else {
                         isEmptyStmt = true;
                     }
@@ -4876,8 +4879,8 @@ namespace Microsoft.Python.Parsing {
             }
 
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity) {
-                if (_parser._errorCode == 0 && severity == Severity.Error) {
-                    _parser._errorCode = errorCode;
+                if (_parser.ErrorCode == 0 && severity == Severity.Error) {
+                    _parser.ErrorCode = errorCode;
                 }
 
                 _parser.ErrorSink.Add(message, span, errorCode, severity);

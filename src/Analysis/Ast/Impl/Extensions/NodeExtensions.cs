@@ -13,10 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Diagnostics;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
@@ -26,42 +23,9 @@ namespace Microsoft.Python.Analysis {
                 return LocationInfo.Empty;
             }
 
-            var ast = (module as IDocument)?.GetAnyAst();
-            if (ast != null) {
-                var start = node.GetStart(ast);
-                var end = node.GetEnd(ast);
-                return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
-            }
-
-            return LocationInfo.Empty;
-        }
-
-        public static LocationInfo GetLocationOfName(this Node node, NameExpression header, IPythonModule module) {
-            if (header == null) {
-                return LocationInfo.Empty;
-            }
-
-            var loc = node.GetLocation(module);
-            if (!loc.Equals(LocationInfo.Empty)) {
-                var ast = (module as IDocument)?.GetAnyAst();
-                if (ast != null) {
-                    var nameStart = header.GetStart(ast);
-                    if (!nameStart.IsValid) {
-                        return loc;
-                    }
-                    if (nameStart.Line > loc.StartLine || (nameStart.Line == loc.StartLine && nameStart.Column > loc.StartColumn)) {
-                        return new LocationInfo(loc.FilePath, loc.DocumentUri, nameStart.Line, nameStart.Column, loc.EndLine, loc.EndColumn);
-                    }
-                }
-            }
-            return LocationInfo.Empty;
-        }
-
-        public static bool IsInAst(this ScopeStatement node, PythonAst ast) {
-            while (node.Parent != null) {
-                node = node.Parent;
-            }
-            return ast == node;
+            var start = node.GetStart();
+            var end = node.GetEnd();
+            return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 
         public static Expression RemoveParenthesis(this Expression e) {
@@ -70,9 +34,5 @@ namespace Microsoft.Python.Analysis {
             }
             return e;
         }
-
-
-        public static IndexSpan GetIndexSpan(this Node node, PythonAst ast)
-            => ast != null && node != null ? node.GetSpan(ast).ToIndexSpan(ast) : default;
     }
 }

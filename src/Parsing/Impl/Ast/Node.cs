@@ -21,10 +21,9 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class Node {
-        internal Node() {
-        }
 
         #region Public API
+        public virtual PythonAst Ast { get; internal set; }
 
         public int EndIndex {
             get => IndexSpan.End;
@@ -50,14 +49,11 @@ namespace Microsoft.Python.Parsing.Ast {
             return res.ToString();
         }
 
-        public SourceLocation GetStart(PythonAst parent) => parent.IndexToLocation(StartIndex);
+        public SourceLocation GetStart() => Ast.IndexToLocation(StartIndex);
 
-        public SourceLocation GetEnd(PythonAst parent) => parent.IndexToLocation(EndIndex);
+        public SourceLocation GetEnd() => Ast.IndexToLocation(EndIndex);
 
-        public SourceSpan GetSpan(PythonAst parent) => new SourceSpan(GetStart(parent), GetEnd(parent));
-
-        public static void CopyLeadingWhiteSpace(PythonAst parentNode, Node fromNode, Node toNode)
-            => parentNode.SetAttribute(toNode, NodeAttributes.PreceedingWhiteSpace, fromNode.GetLeadingWhiteSpace(parentNode));
+        public SourceSpan GetSpan() => new SourceSpan(GetStart(), GetEnd());
 
         /// <summary>
         /// Returns the proceeding whitespace (newlines and comments) that
@@ -74,27 +70,9 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <param name="ast"></param>
         /// <param name="whiteSpace"></param>
         public virtual void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace) => ast.SetAttribute(this, NodeAttributes.PreceedingWhiteSpace, whiteSpace);
-
-        /// <summary>
-        /// Gets the indentation level for the current statement.  Requires verbose
-        /// mode when parsing the trees.
-        /// </summary>
-        public string GetIndentationLevel(PythonAst parentNode) {
-            var leading = GetLeadingWhiteSpace(parentNode);
-            // we only want the trailing leading space for the current line...
-            for (var i = leading.Length - 1; i >= 0; i--) {
-                if (leading[i] == '\r' || leading[i] == '\n') {
-                    leading = leading.Substring(i + 1);
-                    break;
-                }
-            }
-            return leading;
-        }
-
         #endregion
 
         #region Internal APIs
-
         /// <summary>
         /// Appends the code representation of the node to the string builder.
         /// </summary>
