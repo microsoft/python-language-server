@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
 
-        public IReadOnlyList<IScope> Children => (IReadOnlyList<IScope>)_childScopes ?? Array.Empty<IScope>();
+        public IReadOnlyList<IScope> Children => _childScopes?.ToArray() ?? Array.Empty<IScope>();
         public IVariableCollection Variables => VariableCollection;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;

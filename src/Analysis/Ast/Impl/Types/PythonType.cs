@@ -19,7 +19,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]

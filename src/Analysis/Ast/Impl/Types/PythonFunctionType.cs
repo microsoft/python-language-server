@@ -51,11 +51,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         public PythonFunctionType(
             string name,
-            Location declaringModule,
+            Location location,
             IPythonType declaringType,
             string documentation
-        ) : this(name, declaringModule, declaringType, _ => documentation) {
-            Check.ArgumentNotNull(nameof(declaringModule), declaringModule);
+        ) : this(name, location, declaringType, _ => documentation) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
         }
 
         /// <summary>
