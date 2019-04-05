@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal Location Location { get; set; }
+        public Location Location { get; internal set; }
 
         protected void SetDeclaringModule(IPythonModule module) => Location = new Location(module, Location.IndexSpan);
     }
@@ -100,5 +100,6 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
         public void AddReference(Location location) { }
         public void RemoveReferences(IPythonModule module) { }
+        public Location Location { get; internal set; }
     }
 }

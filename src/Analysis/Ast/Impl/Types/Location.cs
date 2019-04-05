@@ -32,6 +32,8 @@ namespace Microsoft.Python.Analysis.Types {
             ? new LocationInfo(Module.FilePath, Module.Uri, IndexSpan.ToSourceSpan(Module.Analysis?.Ast))
             : LocationInfo.Empty;
 
+        public bool IsValid => Module != null;
+
         public override bool Equals(object obj)
             => obj is Location other && other.Module == Module && other.IndexSpan == IndexSpan;
 

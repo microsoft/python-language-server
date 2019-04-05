@@ -74,6 +74,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
+        public Location Location => InnerType?.Location ?? default;
         public LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
         public ILocatedMember Parent => InnerType?.Parent;
         public IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();

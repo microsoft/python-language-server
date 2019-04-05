@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
         public void DeclareVariable(string name, IMember value, VariableSource source)
-            => DeclareVariable(name, value, source, Module);
+            => DeclareVariable(name, value, source, default(Location));
 
         public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module)
             => DeclareVariable(name, value, source, new Location(module, default));

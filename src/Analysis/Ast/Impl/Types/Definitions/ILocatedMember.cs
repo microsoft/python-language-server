@@ -15,7 +15,6 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -27,6 +26,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Module that defines the member.
         /// </summary>
         IPythonModule DeclaringModule { get; }
+
+        /// <summary>
+        /// Location where the member is defined.
+        /// </summary>
+        Location Location { get; }
 
         /// <summary>
         /// Location where the member is defined.
