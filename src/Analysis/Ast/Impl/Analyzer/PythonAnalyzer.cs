@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
@@ -197,38 +196,49 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
-            var walker = _dependencyResolver.NotifyChanges(key, entry, dependencies);
-            if (_version + 1 == walker.Version) {
-                _progress.ReportRemaining(walker.Remaining);
-            }
-
+            var snapshot = _dependencyResolver.NotifyChanges(key, entry, dependencies);
+            
             lock (_syncObj) {
-                if (_version > walker.Version) {
+                if (_version > snapshot.Version) {
                     return;
                 }
 
-                _version = walker.Version;
+                _version = snapshot.Version;
             }
 
-            if (walker.MissingKeys.Count > 0) {
-                LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
+            if (snapshot.MissingKeys.Count > 0) {
+                LoadMissingDocuments(entry.Module.Interpreter, snapshot.MissingKeys);
             }
 
-            if (TryCreateSession(walker, entry, cancellationToken, out var session)) {
+            if (TryCreateSession(snapshot, entry, cancellationToken, out var session)) {
                 session.Start(true);
             }
         }
 
-        private bool TryCreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry, CancellationToken cancellationToken, out PythonAnalyzerSession session) {
+        private bool TryCreateSession(DependencyGraphSnapshot<AnalysisModuleKey, PythonAnalyzerEntry> snapshot, PythonAnalyzerEntry entry, CancellationToken cancellationToken, out PythonAnalyzerSession session) {
+            lock (_syncObj) {
+                if (_currentSession != null) {
+                    if (_currentSession.Version > snapshot.Version || _nextSession != null && _nextSession.Version > snapshot.Version) {
+                        session = null;
+                        return false;
+                    }
+
+                    if (_version > snapshot.Version && !_currentSession.IsCompleted && entry.IsUserModule) {
+                        session = CreateSession(null, entry, cancellationToken);
+                        return true;
+                    }
+                }
+            }
+
+            if (!_dependencyResolver.TryCreateWalker(snapshot.Version, out var walker)) {
+                session = null;
+                return false;
+            }
+
             lock (_syncObj) {
                 if (_currentSession == null) {
                     _currentSession = session = CreateSession(walker, null, cancellationToken);
                     return true;
-                }
-
-                if (_currentSession.Version > walker.Version || _nextSession != null && _nextSession.Version > walker.Version) {
-                    session = null;
-                    return false;
                 }
 
                 if (_version > walker.Version && (!_currentSession.IsCompleted || walker.AffectedValues.GetCount(e => e.NotAnalyzed) < _maxTaskRunning)) {
