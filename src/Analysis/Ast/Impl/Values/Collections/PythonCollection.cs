@@ -76,6 +76,6 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             }
         }
 
-        public bool IsExact { get; protected set; }
+        public bool IsExact { get; }
     }
 }
