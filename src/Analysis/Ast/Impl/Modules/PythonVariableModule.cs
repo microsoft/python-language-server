@@ -71,7 +71,5 @@ namespace Microsoft.Python.Analysis.Modules {
         public IMember CreateInstance(string typeName = null, IArgumentSet args = null) => this;
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
-
-        public Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException("Can't analyze analysis-only type");
     }
 }

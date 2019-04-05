@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Documents {
         void Update(IEnumerable<DocumentChange> changes);
 
         /// <summary>
-        /// Resets document buffer to the provided content.
+        /// Resets document buffer to the provided content or tries to load it if content is null, then parses and analyzes document.
         /// </summary>
         void Reset(string content);
 

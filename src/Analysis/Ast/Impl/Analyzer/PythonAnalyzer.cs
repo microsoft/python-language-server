@@ -178,6 +178,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
         }
 
+        public void ResetAnalyzer() {
+            lock (_syncObj) {
+                _analysisEntries.Split(kvp => kvp.Key.IsTypeshed || kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
+                _analysisEntries.Clear();
+                foreach (var (key, entry) in entriesToPreserve) {
+                    _analysisEntries.Add(key, entry);
+                }
+
+                _dependencyResolver.RemoveKeys(entriesToRemove.Select(e => e.Key));
+            }
+        }
+
         public IReadOnlyList<IPythonModule> LoadedModules 
             => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
 

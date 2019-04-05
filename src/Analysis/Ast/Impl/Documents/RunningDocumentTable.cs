@@ -224,6 +224,8 @@ namespace Microsoft.Python.Analysis.Documents {
             var entry = new DocumentEntry(document);
             _documentsByUri[document.Uri] = entry;
             _documentsByName[mco.ModuleName] = entry;
+
+            _services.GetService<IPythonAnalyzer>().InvalidateAnalysis(document);
             return entry;
         }
 

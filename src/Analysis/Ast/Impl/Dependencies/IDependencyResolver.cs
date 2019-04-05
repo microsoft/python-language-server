@@ -24,5 +24,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// </summary>
     internal interface IDependencyResolver<TKey, TValue> {
         IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
+        IDependencyChainWalker<TKey, TValue> RemoveKeys(ImmutableArray<TKey> keys);
     }
 }

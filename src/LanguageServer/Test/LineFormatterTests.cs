@@ -371,6 +371,11 @@ limit { limit_num}; """"""", line: 5);
             AssertSingleLineFormat("'''\nfoo\n''' # comment", "  # comment", line: 2, editStart: 3);
         }
 
+        [TestMethod, Priority(0)]
+        public void NamedExpressions() {
+            AssertSingleLineFormat("if a:=1:", "if a := 1:", languageVersion: PythonLanguageVersion.V38);
+        }
+
         [DataRow("`a`")]
         [DataRow("foo(`a`)")]
         [DataRow("`a` if a else 'oops'")]

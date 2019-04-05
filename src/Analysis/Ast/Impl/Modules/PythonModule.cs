@@ -113,7 +113,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ModuleType == ModuleType.Specialized || ModuleType == ModuleType.Unresolved) {
                 ContentState = State.Analyzed;
             }
-            InitializeContent(creationOptions.Content);
+            InitializeContent(creationOptions.Content, 0);
         }
 
         #region IPythonType
@@ -190,18 +190,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public IGlobalScope GlobalScope { get; private set; }
 
         /// <summary>
-        /// Ensures that module content is loaded and analysis has started.
-        /// Typically module content is loaded at the creation time, but delay
-        /// loaded (lazy) modules may choose to defer content retrieval and
-        /// analysis until later time, when module members are actually needed.
-        /// </summary>
-        public async Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default) {
-            InitializeContent(null);
-            await GetAstAsync(cancellationToken);
-            await Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, -1, cancellationToken);
-        }
-
-        /// <summary>
         /// If module is a stub points to the primary module.
         /// Typically used in code navigation scenarios when user
         /// wants to see library code and not a stub.
@@ -220,27 +208,22 @@ namespace Microsoft.Python.Analysis.Modules {
             return null; // Keep content as null so module can be loaded later.
         }
 
-        private void InitializeContent(string content) {
-            bool startParse;
+        private void InitializeContent(string content, int version) {
             lock (AnalysisLock) {
-                LoadContent(content);
+                LoadContent(content, version);
 
-                startParse = ContentState < State.Parsing && _parsingTask == null;
+                var startParse = ContentState < State.Parsing && _parsingTask == null;
                 if (startParse) {
                     Parse();
                 }
             }
-
-            if (startParse) {
-                Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
-            }
         }
 
-        private void LoadContent(string content) {
+        private void LoadContent(string content, int version) {
             if (ContentState < State.Loading) {
                 try {
                     content = content ?? LoadContent();
-                    _buffer.Reset(0, content);
+                    _buffer.Reset(version, content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
@@ -333,9 +316,12 @@ namespace Microsoft.Python.Analysis.Modules {
         public void Reset(string content) {
             lock (AnalysisLock) {
                 if (content != Content) {
-                    InitializeContent(content);
+                    ContentState = State.None;
+                    InitializeContent(content, _buffer.Version + 1);
                 }
             }
+
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
         private void Parse() {

@@ -171,6 +171,43 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod]
+        public async Task NotifyChanges_RemoveKeys() {
+            var resolver = new DependencyResolver<string, string>();
+            resolver.NotifyChanges("A", "A", "B", "C");
+            resolver.NotifyChanges("B", "B", "C");
+            resolver.NotifyChanges("C", "C", "D");
+            var walker = resolver.NotifyChanges("D", "D");
+
+            walker.MissingKeys.Should().BeEmpty();
+            var node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("D");
+            node.Commit();
+            
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("C");
+            node.Commit();
+            
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("B");
+            node.Commit();
+            
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("A");
+            node.Commit();
+
+            walker = resolver.RemoveKeys("B", "D");
+            walker.MissingKeys.Should().Equal("B", "D");
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("C");
+            node.Commit();
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("A");
+            node.Commit();
+        }
+
+        [TestMethod]
         public async Task NotifyChanges_Skip() {
             var resolver = new DependencyResolver<string, string>();
             resolver.NotifyChanges("A", "A:B", "B");

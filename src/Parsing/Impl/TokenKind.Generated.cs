@@ -29,6 +29,7 @@ namespace Microsoft.Python.Parsing {
         Ellipsis = 10,
         Arrow = 11,
         FString = 12,
+        ColonEqual = 13,
         Dot = 31,
 
 
@@ -195,6 +196,7 @@ namespace Microsoft.Python.Parsing {
         private static readonly Token symRightBraceToken = new SymbolToken(TokenKind.RightBrace, "}");
         private static readonly Token symCommaToken = new SymbolToken(TokenKind.Comma, ",");
         private static readonly Token symColonToken = new SymbolToken(TokenKind.Colon, ":");
+        private static readonly Token symColonEqualToken = new SymbolToken(TokenKind.ColonEqual, ":=");
         private static readonly Token symBackQuoteToken = new SymbolToken(TokenKind.BackQuote, "`");
         private static readonly Token symSemicolonToken = new SymbolToken(TokenKind.Semicolon, ";");
         private static readonly Token symAssignToken = new SymbolToken(TokenKind.Assign, "=");
@@ -364,6 +366,9 @@ namespace Microsoft.Python.Parsing {
 
         public static Token ColonToken {
             get { return symColonToken; }
+        }
+        public static Token ColonEqualToken {
+            get { return symColonEqualToken; }
         }
 
         public static Token BackQuoteToken {

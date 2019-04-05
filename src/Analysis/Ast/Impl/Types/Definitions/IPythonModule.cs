@@ -47,15 +47,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Global cope of the module.
         /// </summary>
         IGlobalScope GlobalScope { get; }
-
-        /// <summary>
-        /// Ensures that module content is loaded and analysis has completed.
-        /// Typically module content is loaded at the creation time, but delay
-        /// loaded (lazy) modules may choose to defer content retrieval and
-        /// analysis until later time, when module members are actually needed.
-        /// </summary>
-        Task LoadAndAnalyzeAsync(CancellationToken cancellationToken = default);
-
+        
         /// <summary>
         /// If module is a stub points to the primary module.
         /// Typically used in code navigation scenarios when user

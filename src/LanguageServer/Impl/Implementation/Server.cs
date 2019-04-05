@@ -23,7 +23,9 @@ using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
@@ -229,6 +231,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void RestartAnalysis() {
+            var analyzer = Services.GetService<IPythonAnalyzer>();;
+            analyzer.ResetAnalyzer();
             foreach (var doc in _rdt) {
                 doc.Reset(null);
             }
