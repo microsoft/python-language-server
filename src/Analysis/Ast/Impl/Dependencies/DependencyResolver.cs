@@ -25,36 +25,24 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
 
-        public IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, params TKey[] incomingKeys) 
+        public DependencyGraphSnapshot<TKey, TValue> NotifyChanges(TKey key, TValue value, params TKey[] incomingKeys) 
             => NotifyChanges(key, value, ImmutableArray<TKey>.Create(incomingKeys));
 
-        public IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
-            AddOrUpdate(key, value, incomingKeys, out var snapshot, out var changedVertices);
-            return CreateDependencyChainWalker(this, snapshot, changedVertices);
-        }
-
-        public IDependencyChainWalker<TKey, TValue> RemoveKeys(params TKey[] keys)
-            => RemoveKeys(ImmutableArray<TKey>.Create(keys));
-
-        public IDependencyChainWalker<TKey, TValue> RemoveKeys(ImmutableArray<TKey> keys) {
-            Remove(keys, out var snapshot, out var changedVertices);
-            return CreateDependencyChainWalker(this, snapshot, changedVertices);
-        }
-
-        private void AddOrUpdate(TKey key, TValue value, ImmutableArray<TKey> incomingKeys, out DependencyGraphSnapshot<TKey, TValue> snapshot, out ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices) {
+        public DependencyGraphSnapshot<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
             lock (_syncObj) {
                 var dependencyVertex = _vertices.AddOrUpdate(key, value, incomingKeys);
-                snapshot = _vertices.Snapshot;
-
                 _changedVertices[key] = dependencyVertex;
-                changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
+                return _vertices.Snapshot;
             }
         }
 
-        private void Remove(ImmutableArray<TKey> keys, out DependencyGraphSnapshot<TKey, TValue> snapshot, out ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices) {
+        public DependencyGraphSnapshot<TKey, TValue> RemoveKeys(params TKey[] keys) 
+            => RemoveKeys(ImmutableArray<TKey>.Create(keys));
+
+        public DependencyGraphSnapshot<TKey, TValue> RemoveKeys(ImmutableArray<TKey> keys) {
             lock (_syncObj) {
                 _vertices.RemoveKeys(keys);
-                snapshot = _vertices.Snapshot;
+                var snapshot = _vertices.Snapshot;
 
                 foreach (var key in keys) {
                     _changedVertices.Remove(key);
@@ -64,8 +52,36 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     _changedVertices[vertex.Key] = vertex;
                 }
 
+                return snapshot;
+            }
+        }
+
+        public bool TryCreateWalker(int version, out IDependencyChainWalker<TKey, TValue> walker) {
+            DependencyGraphSnapshot<TKey, TValue> snapshot;
+            ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
+            lock (_syncObj) {
+                snapshot = _vertices.Snapshot;
+                if (version != snapshot.Version) {
+                    walker = default;
+                    return false;
+                }
+
                 changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
             }
+
+            walker = CreateDependencyChainWalker(this, snapshot, changedVertices);
+            return true;
+        }
+
+        public IDependencyChainWalker<TKey, TValue> CreateWalker() {
+            DependencyGraphSnapshot<TKey, TValue> snapshot;
+            ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
+            lock (_syncObj) {
+                snapshot = _vertices.Snapshot;
+                changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
+            }
+
+            return CreateDependencyChainWalker(this, snapshot, changedVertices);
         }
 
         private static IDependencyChainWalker<TKey, TValue> CreateDependencyChainWalker(

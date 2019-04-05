@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (analyzeEntry && _entry != null) {
-                Task.Run(() => Analyze(_entry, _walker.Version, _cts.Token), _cts.Token).DoNotWait();
+                Task.Run(() => Analyze(_entry, Version, _cts.Token), _cts.Token).DoNotWait();
             } else {
                 StartAsync(_walker).ContinueWith(_startNextSession).DoNotWait();
             }
@@ -110,6 +110,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task StartAsync(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker) {
+            _progress.ReportRemaining(walker.Remaining);
+
             lock (_syncObj) {
                 var notAnalyzed = walker.AffectedValues.Count(e => e.NotAnalyzed);
 
@@ -161,20 +163,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            double privateMB;
-            double peakPagedMB;
+            double privateMb;
+            double peakPagedMb;
 
             using (var proc = Process.GetCurrentProcess()) {
-                privateMB = proc.PrivateMemorySize64 / 1e+6;
-                peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
+                privateMb = proc.PrivateMemorySize64 / 1e+6;
+                peakPagedMb = proc.PeakPagedMemorySize64 / 1e+6;
             }
 
-            var e = new TelemetryEvent() {
+            var e = new TelemetryEvent {
                 EventName = "analysis_complete",
             };
 
-            e.Measurements["privateMB"] = privateMB;
-            e.Measurements["peakPagedMB"] = peakPagedMB;
+            e.Measurements["privateMB"] = privateMb;
+            e.Measurements["peakPagedMB"] = peakPagedMb;
             e.Measurements["elapsedMs"] = elapsed;
             e.Measurements["entries"] = originalRemaining;
             e.Measurements["version"] = version;
