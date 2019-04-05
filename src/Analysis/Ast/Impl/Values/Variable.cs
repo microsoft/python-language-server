@@ -54,15 +54,11 @@ namespace Microsoft.Python.Analysis.Values {
         #endregion
 
         #region ILocatedMember
-        public override LocationInfo Definition
-            => Location.Module != null
-                ? base.Definition
-                : (Value as ILocatedMember)?.Definition ?? LocationInfo.Empty;
+        public override LocationInfo Definition 
+            => GetValueMember()?.Definition ?? base.Definition ?? LocationInfo.Empty;
 
         public override IReadOnlyList<LocationInfo> References
-            => Location.Module != null && Location.IndexSpan != default
-                ? base.References
-                : (Value as ILocatedMember)?.References;
+            => GetValueMember()?.References ?? base.References ?? Array.Empty<LocationInfo>();
 
         public override void AddReference(Location location) {
             if (location.Module == null || location.IndexSpan == default) {
@@ -72,7 +68,8 @@ namespace Microsoft.Python.Analysis.Values {
             // If variable name is the same as the value member name, then the variable
             // is implicit declaration (like declared function or a class) and we need
             // to add reference to the actual type instead.
-            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Location.IndexSpan == default)) {
+            var lm = GetValueMember();
+            if (lm != null) {
                 // Variable is not user-declared and rather is holder of a function or class definition.
                 lm.AddReference(location);
             } else {
@@ -85,7 +82,9 @@ namespace Microsoft.Python.Analysis.Values {
             if (module == null) {
                 return;
             }
-            if (Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Location.IndexSpan == default)) {
+
+            var lm = GetValueMember();
+            if (lm != null) {
                 // Variable is not user-declared and rather is holder of a function or class definition.
                 lm.RemoveReferences(module);
             } else {
@@ -94,6 +93,9 @@ namespace Microsoft.Python.Analysis.Values {
             Parent?.RemoveReferences(module);
         }
         #endregion
+
+        private ILocatedMember GetValueMember()
+            => Value is ILocatedMember lm && (Name.EqualsOrdinal(lm.GetPythonType()?.Name) || Location.IndexSpan == default) ? lm : null;
 
         private string DebuggerDisplay {
             get {
