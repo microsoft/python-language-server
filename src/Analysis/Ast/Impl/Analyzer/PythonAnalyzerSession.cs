@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (analyzeEntry && _entry != null) {
-                Task.Run(() => Analyze(_entry, _walker.Version, _cts.Token), _cts.Token).DoNotWait();
+                Task.Run(() => Analyze(_entry, Version, _cts.Token), _cts.Token).DoNotWait();
             } else {
                 StartAsync(_walker).ContinueWith(_startNextSession).DoNotWait();
             }
@@ -110,6 +110,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task StartAsync(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker) {
+            _progress.ReportRemaining(walker.Remaining);
+
             lock (_syncObj) {
                 var notAnalyzed = walker.AffectedValues.Count(e => e.NotAnalyzed);
 
@@ -169,7 +171,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
             }
 
-            var e = new TelemetryEvent() {
+            var e = new TelemetryEvent {
                 EventName = "analysis_complete",
             };
 

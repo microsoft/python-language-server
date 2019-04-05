@@ -52,13 +52,13 @@ namespace Microsoft.Python.Analysis.Tests {
             var resolver = new DependencyResolver<string, string>();
             var splitInput = input.Split("|");
 
-            var walker = default(IDependencyChainWalker<string, string>);
             foreach (var value in splitInput) {
                 var kv = value.Split(":");
                 var dependencies = kv.Length == 1 ? ImmutableArray<string>.Empty : ImmutableArray<string>.Create(kv[1].Select(c => c.ToString()).ToList());
-                walker = resolver.NotifyChanges(value.Split(":")[0], value, dependencies);
+                resolver.NotifyChanges(value.Split(":")[0], value, dependencies);
             }
 
+            var walker = resolver.CreateWalker();
             var result = new StringBuilder();
             var tasks = new List<Task<IDependencyChainNode<string>>>();
             while (walker.Remaining > 0) {
@@ -90,7 +90,8 @@ namespace Microsoft.Python.Analysis.Tests {
             var resolver = new DependencyResolver<string, string>();
             resolver.NotifyChanges("A", "A:B", "B");
             resolver.NotifyChanges("B", "B:C", "C");
-            var walker = resolver.NotifyChanges("C", "C");
+            resolver.NotifyChanges("C", "C");
+            var walker = resolver.CreateWalker();
 
             var result = new StringBuilder();
             while (walker.Remaining > 0) {
@@ -101,7 +102,9 @@ namespace Microsoft.Python.Analysis.Tests {
 
             result.ToString().Should().Be("CBA");
 
-            walker = resolver.NotifyChanges("B", "B:C", "C");
+            resolver.NotifyChanges("B", "B:C", "C");
+            walker = resolver.CreateWalker();
+
             result = new StringBuilder();
             while (walker.Remaining > 0) {
                 var node = await walker.GetNextAsync(default);
@@ -118,7 +121,8 @@ namespace Microsoft.Python.Analysis.Tests {
             resolver.NotifyChanges("A", "A:B", "B");
             resolver.NotifyChanges("B", "B");
             resolver.NotifyChanges("C", "C:D", "D");
-            var walker = resolver.NotifyChanges("D", "D");
+            resolver.NotifyChanges("D", "D");
+            var walker = resolver.CreateWalker();
 
             var result = new StringBuilder();
             while (walker.Remaining > 0) {
@@ -129,9 +133,10 @@ namespace Microsoft.Python.Analysis.Tests {
 
             result.ToString().Should().Be("BDAC");
 
-
             resolver.NotifyChanges("D", "D");
-            walker = resolver.NotifyChanges("B", "B:C", "C");
+            resolver.NotifyChanges("B", "B:C", "C");
+
+            walker = resolver.CreateWalker();
             result = new StringBuilder();
             while (walker.Remaining > 0) {
                 var node = await walker.GetNextAsync(default);
@@ -147,8 +152,9 @@ namespace Microsoft.Python.Analysis.Tests {
             var resolver = new DependencyResolver<string, string>();
             resolver.NotifyChanges("A", "A:B", "B");
             resolver.NotifyChanges("B", "B");
-            var walker = resolver.NotifyChanges("C", "C:D", "D");
-            
+            resolver.NotifyChanges("C", "C:D", "D");
+            var walker = resolver.CreateWalker();
+
             var result = new StringBuilder();
             var node = await walker.GetNextAsync(default);
             result.Append(node.Value[0]);
@@ -161,7 +167,8 @@ namespace Microsoft.Python.Analysis.Tests {
             walker.MissingKeys.Should().Equal("D");
             result.ToString().Should().Be("BC");
 
-            walker = resolver.NotifyChanges("D", "D");
+            resolver.NotifyChanges("D", "D");
+            walker = resolver.CreateWalker();
             result = new StringBuilder();
             result.Append((await walker.GetNextAsync(default)).Value[0]);
             result.Append((await walker.GetNextAsync(default)).Value[0]);
@@ -176,8 +183,9 @@ namespace Microsoft.Python.Analysis.Tests {
             resolver.NotifyChanges("A", "A", "B", "C");
             resolver.NotifyChanges("B", "B", "C");
             resolver.NotifyChanges("C", "C", "D");
-            var walker = resolver.NotifyChanges("D", "D");
+            resolver.NotifyChanges("D", "D");
 
+            var walker = resolver.CreateWalker();
             walker.MissingKeys.Should().BeEmpty();
             var node = await walker.GetNextAsync(default);
             node.Value.Should().Be("D");
@@ -195,7 +203,8 @@ namespace Microsoft.Python.Analysis.Tests {
             node.Value.Should().Be("A");
             node.Commit();
 
-            walker = resolver.RemoveKeys("B", "D");
+            resolver.RemoveKeys("B", "D");
+            walker = resolver.CreateWalker();
             walker.MissingKeys.Should().Equal("B", "D");
 
             node = await walker.GetNextAsync(default);
@@ -213,8 +222,9 @@ namespace Microsoft.Python.Analysis.Tests {
             resolver.NotifyChanges("A", "A:B", "B");
             resolver.NotifyChanges("B", "B");
             resolver.NotifyChanges("D", "D");
-            var walker = resolver.NotifyChanges("C", "C:D", "D");
-            
+            resolver.NotifyChanges("C", "C:D", "D");
+
+            var walker = resolver.CreateWalker();
             var result = new StringBuilder();
             var node = await walker.GetNextAsync(default);
             result.Append(node.Value[0]);
@@ -226,7 +236,8 @@ namespace Microsoft.Python.Analysis.Tests {
             
             result.ToString().Should().Be("BD");
 
-            walker = resolver.NotifyChanges("D", "D");
+            resolver.NotifyChanges("D", "D");
+            walker = resolver.CreateWalker();
             result = new StringBuilder();
             result.Append((await walker.GetNextAsync(default)).Value[0]);
             result.Append((await walker.GetNextAsync(default)).Value[0]);
