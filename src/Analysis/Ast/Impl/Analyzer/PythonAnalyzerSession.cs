@@ -159,7 +159,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            if (remaining == 0 && originalRemaining > 100) {
+            if (remaining != 0 || originalRemaining < 100) {
                 return;
             }
 
