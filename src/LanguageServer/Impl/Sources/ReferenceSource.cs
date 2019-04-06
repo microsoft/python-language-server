@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -49,21 +50,28 @@ namespace Microsoft.Python.LanguageServer.Sources {
         public async Task<Reference[]> FindAllReferencesAsync(Uri uri, SourceLocation location, ReferenceSearchOptions options, CancellationToken cancellationToken = default) {
             if (uri != null) {
                 var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
+
                 var definition = new DefinitionSource(_services).FindDefinition(analysis, location, out var definingMember);
-                if (definition != null) {
-                    var rootDefinition = definingMember.GetRootDefinition();
-                    var name = definingMember.GetName();
-                    if (!string.IsNullOrEmpty(name) && (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
-                        return await FindAllReferencesAsync(name, rootDefinition, cancellationToken);
-                    }
+                if (definition == null) {
+                    return Array.Empty<Reference>();
+                }
+
+                var rootDefinition = definingMember.GetRootDefinition();
+                var name = definingMember.GetName();
+
+                Debug.Assert(rootDefinition.DeclaringModule != null);
+                if (rootDefinition.DeclaringModule == null) {
+                    return Array.Empty<Reference>();
+                }
+
+                if (!string.IsNullOrEmpty(name) && (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
+                    return await FindAllReferencesAsync(name, rootDefinition, cancellationToken);
                 }
             }
             return Array.Empty<Reference>();
         }
 
         private async Task<Reference[]> FindAllReferencesAsync(string name, ILocatedMember rootDefinition, CancellationToken cancellationToken) {
-            var module = rootDefinition.DeclaringModule;
-
             var candidateFiles = ScanClosedFiles(name, cancellationToken);
             await AnalyzeFiles(candidateFiles, cancellationToken);
 
@@ -98,7 +106,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     }
 
                     var content = fs.ReadTextWithRetry(filePath);
-                    if(content.Contains(name)) {
+                    if (content.Contains(name)) {
                         files.Add(uri);
                     }
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }

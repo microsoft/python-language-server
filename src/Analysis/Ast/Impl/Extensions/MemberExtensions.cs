@@ -78,18 +78,24 @@ namespace Microsoft.Python.Analysis {
             => (m as ILocatedMember)?.AddReference(location);
 
         public static ILocatedMember GetRootDefinition(this ILocatedMember lm) {
-            if(!lm.Location.IsValid && lm is Variable v) {
-                lm = v.Value as ILocatedMember;
-                if(lm == null) {
-                    return null;
+            while (!lm.Location.IsValid) {
+                if (lm is Variable v) {
+                    lm = v.Value as ILocatedMember;
+                    if (lm == null) {
+                        return null;
+                    }
+                }
+                var lm1 = lm;
+                for (; lm1.Parent != null; lm1 = lm1.Parent) { }
+                if(lm1.Equals(lm)) {
+                    break;
                 }
             }
-            for (; lm.Parent != null; lm = lm.Parent) { }
             return lm;
         }
 
         public static string GetName(this IMember m) {
-            switch(m) {
+            switch (m) {
                 case IVariable v:
                     return v.Name;
                 case IPythonType t:
