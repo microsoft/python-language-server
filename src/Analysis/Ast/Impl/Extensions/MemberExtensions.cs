@@ -77,23 +77,6 @@ namespace Microsoft.Python.Analysis {
         public static void AddReference(this IMember m, Location location)
             => (m as ILocatedMember)?.AddReference(location);
 
-        public static ILocatedMember GetRootDefinition(this ILocatedMember lm) {
-            while (!lm.Location.IsValid) {
-                if (lm is Variable v) {
-                    lm = v.Value as ILocatedMember;
-                    if (lm == null) {
-                        return null;
-                    }
-                }
-                var lm1 = lm;
-                for (; lm1.Parent != null; lm1 = lm1.Parent) { }
-                if(lm1.Equals(lm)) {
-                    break;
-                }
-            }
-            return lm;
-        }
-
         public static string GetName(this IMember m) {
             switch (m) {
                 case IVariable v:

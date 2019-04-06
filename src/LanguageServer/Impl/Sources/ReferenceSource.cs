@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
@@ -56,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     return Array.Empty<Reference>();
                 }
 
-                var rootDefinition = definingMember.GetRootDefinition();
+                var rootDefinition = GetRootDefinition(definingMember);
                 var name = definingMember.GetName();
 
                 Debug.Assert(rootDefinition.DeclaringModule != null);
@@ -163,6 +164,14 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 ModuleType = ModuleType.User
             };
             rdt.AddModule(mco);
+        }
+
+        private ILocatedMember GetRootDefinition(ILocatedMember lm) {
+            if (lm is IVariable v && v.Value is ILocatedMember vlm) {
+                lm = vlm;
+            }
+            for (; lm.Parent != null; lm = lm.Parent) { }
+            return lm;
         }
 
         private class ImportsWalker : PythonWalker {
