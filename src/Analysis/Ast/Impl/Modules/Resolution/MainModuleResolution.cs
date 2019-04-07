@@ -90,13 +90,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
-            IPythonModule module;
-            if (!string.IsNullOrEmpty(moduleImport.ModulePath) && Uri.TryCreate(moduleImport.ModulePath, UriKind.Absolute, out var uri)) {
-                module = GetRdt().GetDocument(uri);
-                if (module != null) {
-                    GetRdt().LockDocument(uri);
-                    return module;
-                }
+            var module = GetRdt().GetDocument(moduleImport.FullName);
+            if (module != null) {
+                GetRdt().LockDocument(module.Uri);
+                return module;
             }
 
             // If there is a stub, make sure it is loaded and attached
@@ -177,7 +174,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         => _specialized.TryGetValue(name, out var module) ? module : null;
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
-            await BuiltinsModule.LoadAndAnalyzeAsync(cancellationToken);
+            var analyzer = _services.GetService<IPythonAnalyzer>();
+            await analyzer.GetAnalysisAsync(BuiltinsModule, -1, cancellationToken);
 
             Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "After await");
 

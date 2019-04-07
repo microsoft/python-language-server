@@ -25,22 +25,69 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
 
-        public IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, params TKey[] incomingKeys) 
+        public DependencyGraphSnapshot<TKey, TValue> NotifyChanges(TKey key, TValue value, params TKey[] incomingKeys) 
             => NotifyChanges(key, value, ImmutableArray<TKey>.Create(incomingKeys));
 
-        public IDependencyChainWalker<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
-            int version;
-            ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
-            DependencyGraphSnapshot<TKey, TValue> snapshot;
-
+        public DependencyGraphSnapshot<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
             lock (_syncObj) {
                 var dependencyVertex = _vertices.AddOrUpdate(key, value, incomingKeys);
-                snapshot = _vertices.Snapshot;
-
-                version = _vertices.Snapshot.Version;
                 _changedVertices[key] = dependencyVertex;
+                return _vertices.Snapshot;
+            }
+        }
+
+        public DependencyGraphSnapshot<TKey, TValue> RemoveKeys(params TKey[] keys) 
+            => RemoveKeys(ImmutableArray<TKey>.Create(keys));
+
+        public DependencyGraphSnapshot<TKey, TValue> RemoveKeys(ImmutableArray<TKey> keys) {
+            lock (_syncObj) {
+                _vertices.RemoveKeys(keys);
+                var snapshot = _vertices.Snapshot;
+
+                foreach (var key in keys) {
+                    _changedVertices.Remove(key);
+                }
+
+                foreach (var vertex in snapshot.Vertices.Where(v => v.HasMissingKeys)) {
+                    _changedVertices[vertex.Key] = vertex;
+                }
+
+                return snapshot;
+            }
+        }
+
+        public bool TryCreateWalker(int version, out IDependencyChainWalker<TKey, TValue> walker) {
+            DependencyGraphSnapshot<TKey, TValue> snapshot;
+            ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
+            lock (_syncObj) {
+                snapshot = _vertices.Snapshot;
+                if (version != snapshot.Version) {
+                    walker = default;
+                    return false;
+                }
+
                 changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
             }
+
+            walker = CreateDependencyChainWalker(this, snapshot, changedVertices);
+            return true;
+        }
+
+        public IDependencyChainWalker<TKey, TValue> CreateWalker() {
+            DependencyGraphSnapshot<TKey, TValue> snapshot;
+            ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
+            lock (_syncObj) {
+                snapshot = _vertices.Snapshot;
+                changedVertices = ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_changedVertices.Values);
+            }
+
+            return CreateDependencyChainWalker(this, snapshot, changedVertices);
+        }
+
+        private static IDependencyChainWalker<TKey, TValue> CreateDependencyChainWalker(
+            DependencyResolver<TKey, TValue> dependencyResolver,
+            DependencyGraphSnapshot<TKey, TValue> snapshot,
+            ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices) {
 
             var walkingGraph = CreateWalkingGraph(snapshot.Vertices, changedVertices);
             var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
@@ -52,7 +99,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 vertex.SecondPass?.Seal();
             }
 
-            return new DependencyChainWalker(this, startingVertices, affectedValues, snapshot.MissingKeys, totalNodesCount, version);
+            return new DependencyChainWalker(dependencyResolver, startingVertices, affectedValues, snapshot.MissingKeys, totalNodesCount, snapshot.Version);
         }
 
         private void CommitChanges(DependencyVertex<TKey, TValue> vertex) {
@@ -63,7 +110,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        private ImmutableArray<WalkingVertex<TKey, TValue>> CreateWalkingGraph(ImmutableArray<DependencyVertex<TKey, TValue>> snapshot, ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices) {
+        private static ImmutableArray<WalkingVertex<TKey, TValue>> CreateWalkingGraph(ImmutableArray<DependencyVertex<TKey, TValue>> snapshot, ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices) {
             var analysisGraph = ImmutableArray<WalkingVertex<TKey, TValue>>.Empty;
             var nodesByVertexIndex = new Dictionary<int, WalkingVertex<TKey, TValue>>();
 
@@ -92,7 +139,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             return analysisGraph;
         }
 
-        private int FindLoops(ImmutableArray<WalkingVertex<TKey, TValue>> graph) {
+        private static int FindLoops(ImmutableArray<WalkingVertex<TKey, TValue>> graph) {
             var index = 0;
             var loopNumber = 0;
             var stackP = new Stack<WalkingVertex<TKey, TValue>>();
@@ -107,7 +154,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             return loopNumber;
         }
 
-        private void CheckForLoop(WalkingVertex<TKey, TValue> vertex, Stack<WalkingVertex<TKey, TValue>> stackP, Stack<WalkingVertex<TKey, TValue>> stackS, ref int counter, ref int loopNumber) {
+        private static void CheckForLoop(WalkingVertex<TKey, TValue> vertex, Stack<WalkingVertex<TKey, TValue>> stackP, Stack<WalkingVertex<TKey, TValue>> stackS, ref int counter, ref int loopNumber) {
             vertex.Index = counter++;
             stackP.Push(vertex);
             stackS.Push(vertex);

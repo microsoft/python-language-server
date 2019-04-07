@@ -33,6 +33,19 @@ namespace Microsoft.Python.Core {
 
         public static IEnumerable<T> SelectMany<T>(this IEnumerable<IEnumerable<T>> source) => source.SelectMany(Identity);
 
+        public static void Split<T>(this IEnumerable<T> source, Func<T, bool> predicate, out ImmutableArray<T> included, out ImmutableArray<T> excluded) {
+            included = ImmutableArray<T>.Empty;
+            excluded = ImmutableArray<T>.Empty;
+
+            foreach (var item in source) {
+                if (predicate(item)) {
+                    included = included.Add(item);
+                } else {
+                    excluded = excluded.Add(item);
+                }
+            }
+        }
+
         public static IEnumerable<T> Ordered<T>(this IEnumerable<T> source)
             => source.OrderBy(Identity);
 
