@@ -25,13 +25,11 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
@@ -167,9 +165,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private ILocatedMember GetRootDefinition(ILocatedMember lm) {
-            if (lm is IVariable v && v.Value is ILocatedMember vlm) {
-                lm = vlm;
-            }
             for (; lm.Parent != null; lm = lm.Parent) { }
             return lm;
         }
