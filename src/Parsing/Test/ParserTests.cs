@@ -3635,12 +3635,6 @@ pass
 
         #region Checker Factories / Helpers
         
-        private static string FormatError(ErrorResult r) {
-            var s = r.Span.Start;
-            var e = r.Span.End;
-            return $"new ErrorResult(\"{r.Message}\", new SourceSpan({s.Line}, {s.Column}, {e.Line}, {e.Column}))";
-        }
-
         private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorResult[] errors) {
             ParseErrors(filename, version, Severity.Hint, errors);
         }
@@ -3659,7 +3653,7 @@ pass
             var foundErrors = new StringBuilder();
             for (var i = 0; i < sink.Errors.Count; i++) {
                 foundErrors.AppendFormat("{0}{1}{2}",
-                    FormatError(sink.Errors[i]),
+                    sink.Errors[i].Format(),
                     i == sink.Errors.Count - 1 ? string.Empty : ",",
                     Environment.NewLine
                 );
