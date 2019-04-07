@@ -44,7 +44,7 @@ namespace Microsoft.Python.Parsing.Tests {
         [TestCleanup]
         public void TestCleanup() => TestEnvironmentImpl.TestCleanup();
 
-        internal static readonly PythonLanguageVersion[] AllVersions = new[] { PythonLanguageVersion.V26, PythonLanguageVersion.V27, PythonLanguageVersion.V30, PythonLanguageVersion.V31, PythonLanguageVersion.V32, PythonLanguageVersion.V33, PythonLanguageVersion.V34, PythonLanguageVersion.V35, PythonLanguageVersion.V36, PythonLanguageVersion.V37 };
+        internal static readonly PythonLanguageVersion[] AllVersions = new[] { PythonLanguageVersion.V26, PythonLanguageVersion.V27, PythonLanguageVersion.V30, PythonLanguageVersion.V31, PythonLanguageVersion.V32, PythonLanguageVersion.V33, PythonLanguageVersion.V34, PythonLanguageVersion.V35, PythonLanguageVersion.V36, PythonLanguageVersion.V37, PythonLanguageVersion.V38 };
         internal static readonly PythonLanguageVersion[] V26AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V26).ToArray();
         internal static readonly PythonLanguageVersion[] V27AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V27).ToArray();
         internal static readonly PythonLanguageVersion[] V2Versions = AllVersions.Where(v => v <= PythonLanguageVersion.V27).ToArray();
@@ -59,28 +59,29 @@ namespace Microsoft.Python.Parsing.Tests {
         internal static readonly PythonLanguageVersion[] V35AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V35).ToArray();
         internal static readonly PythonLanguageVersion[] V36AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V36).ToArray();
         internal static readonly PythonLanguageVersion[] V37AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V37).ToArray();
+        internal static readonly PythonLanguageVersion[] V38AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V38).ToArray();
 
         #region Test Cases
 
         [TestMethod, Priority(0)]
         public void MixedWhiteSpace() {
             // mixed, but in different blocks, which is ok
-            ParseErrors("MixedWhitespace1.py", PythonLanguageVersion.V27, Severity.Error);
+            ParseFileNoErrors("MixedWhitespace1.py", PythonLanguageVersion.V27, Severity.Error);
 
             // mixed in the same block, tabs first
-            ParseErrors("MixedWhitespace2.py", PythonLanguageVersion.V27, Severity.Error, new ErrorInfo("inconsistent whitespace", 294, 14, 1, 302, 14, 9));
+            ParseErrors("MixedWhitespace2.py", PythonLanguageVersion.V27, Severity.Error, new ErrorResult("inconsistent whitespace", new SourceSpan(14, 1, 14, 9)));
 
             // mixed in same block, spaces first
-            ParseErrors("MixedWhitespace3.py", PythonLanguageVersion.V27, Severity.Error, new ErrorInfo("inconsistent whitespace", 286, 14, 1, 287, 14, 2));
+            ParseErrors("MixedWhitespace3.py", PythonLanguageVersion.V27, Severity.Error, new ErrorResult("inconsistent whitespace", new SourceSpan(14, 1, 14, 2)));
 
             // mixed on same line, spaces first
-            ParseErrors("MixedWhitespace4.py", PythonLanguageVersion.V27, Severity.Error);
+            ParseFileNoErrors("MixedWhitespace4.py", PythonLanguageVersion.V27, Severity.Error);
 
             // mixed on same line, tabs first
-            ParseErrors("MixedWhitespace5.py", PythonLanguageVersion.V27, Severity.Error);
+            ParseFileNoErrors("MixedWhitespace5.py", PythonLanguageVersion.V27, Severity.Error);
 
             // mixed on a comment line - should not crash
-            ParseErrors("MixedWhitespace6.py", PythonLanguageVersion.V27, Severity.Error, new ErrorInfo("inconsistent whitespace", 127, 9, 1, 128, 9, 2));
+            ParseErrors("MixedWhitespace6.py", PythonLanguageVersion.V27, Severity.Error, new ErrorResult("inconsistent whitespace", new SourceSpan(9, 1, 9, 2)));
         }
 
         [TestMethod, Priority(0)]
@@ -935,7 +936,7 @@ namespace Microsoft.Python.Parsing.Tests {
             ParseErrors(filename, version, new ParserOptions() {
                 IndentationInconsistencySeverity = Severity.Hint,
                 InitialSourceLocation = initialLocation
-            }, errors.Select(e => AddOffset(initialLocation, e)).ToArray());
+            }, errors.Select(e => ToErrorResult(AddOffset(initialLocation, e))).ToArray());
         }
 
         private ErrorInfo AddOffset(SourceLocation initLoc, ErrorInfo error) {
@@ -2756,6 +2757,191 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void NamedExpressions() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("NamedExpressions.py", errors, version),
+                    CheckSuite(
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    One
+                                )
+                            )
+                        ), CheckExprStmt(
+                            CheckListExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    One
+                                ),
+                                One
+                            )
+                        ),
+                        CheckFuncDef("f", new[] { CheckParameter("x") },
+                            CheckSuite(
+                                CheckReturnStmt(
+                                    One
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckListExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("y"),
+                                    CheckCallExpression(
+                                        CheckNameExpr("f"),
+                                        PositionalArg(One)
+                                    )
+                                ),
+                                CheckBinaryExpression(
+                                    CheckNameExpr("y"),
+                                    PythonOperator.Power,
+                                    Two
+                                )
+                            )
+                        ),
+                        CheckIfStmt(
+                            IfTests(
+                                IfTest(
+                                    CheckBinaryExpression(
+                                        CheckParenExpr(
+                                            CheckNamedExpr(
+                                                CheckNameExpr("match"),
+                                                One
+                                            )
+                                        ),
+                                        PythonOperator.IsNot,
+                                        // None
+                                        CheckConstant(
+                                            null
+                                        )
+                                    ),
+                                    CheckSuite(Pass)
+                                )
+                            )
+                        ),
+                        CheckWhileStmt(
+                            CheckNamedExpr(
+                                CheckNameExpr("chunk"),
+                                CheckCallExpression(
+                                    CheckNameExpr("f"),
+                                    PositionalArg(One)
+                                )
+                            ),
+                            CheckSuite(Pass)
+                        ),
+                        CheckFuncDef("foo", new[] {
+                                CheckParameter("answer", ParameterKind.Normal, CheckConstant(5),
+                                    CheckParenExpr(
+                                        CheckNamedExpr(
+                                            CheckNameExpr("p"),
+                                            CheckConstant(42)
+                                        )
+                                    )
+                                ), CheckParameter("cat", ParameterKind.Normal, CheckConstant(""))
+                            },
+                            CheckSuite(
+                                CheckReturnStmt(
+                                    One
+                                )
+                            )
+                        ),
+                        CheckLambdaStmt(
+                            NoParameters,
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("y"),
+                                    One
+                                )
+                            )
+                        ),
+                        CheckAssignment(
+                            CheckNameExpr("x"),
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("y"),
+                                    One
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckCallExpression(
+                                CheckNameExpr("foo"),
+                                new[] {
+                                    PositionalArg(
+                                        CheckNamedExpr(
+                                            CheckNameExpr("x"),
+                                            One
+                                        )
+                                    ),
+                                    CheckNamedArg(
+                                        "cat",
+                                        CheckConstant("vector")
+                                    )
+                                }
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    CheckAndExpression(
+                                        One,
+                                        None
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckNameExpr("a"),
+                                    CheckConditionalExpression(
+                                        One,
+                                        CheckConstant(false),
+                                        Two
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckParenExpr(
+                                CheckNamedExpr(
+                                    CheckParenExpr(
+                                        CheckNameExpr("x")
+                                    ),
+                                    One
+                                )
+                            )
+                        )
+                    )
+                );
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void NamedExpressionsErrors() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseFile("NamedExpressionsErrors.py", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(1, 3, 1, 5)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(2, 11, 2, 13)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(3, 7, 3, 9)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(4, 19, 4, 21)),
+                    new ErrorResult("Cannot use named assignment with subscript", new SourceSpan(8, 2, 8, 6)),
+                    new ErrorResult("Cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
+                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void AssignStmt() {
             foreach (var version in AllVersions) {
                 CheckAst(
@@ -2779,13 +2965,14 @@ namespace Microsoft.Python.Parsing.Tests {
         [TestMethod, Priority(0)]
         public void AssignStmt2x() {
             foreach (var version in V2Versions) {
+                var sink = new CollectingErrorSink();
                 CheckAst(
-                    ParseFile("AssignStmt2x.py", ErrorSink.Null, version),
+                    ParseFile("AssignStmt2x.py", sink, version),
                     CheckSuite(
                         CheckAssignment(Fob, CheckUnaryExpression(PythonOperator.Negate, CheckBinaryExpression(CheckConstant((BigInteger)2), PythonOperator.Power, CheckConstant(31))))
                     )
                 );
-                ParseErrors("AssignStmt2x.py", version);
+                sink.Errors.Should().BeEmpty();
             }
         }
 
@@ -2893,11 +3080,23 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void AssignToNamedExprIllegal() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseString("(a := 1) = 1", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[]{
+                    new ErrorResult("can't assign to named expression", new SourceSpan(1, 1, 1, 9))
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void AwaitStmt() {
             var AwaitFob = CheckAwaitExpression(Fob);
             foreach (var version in V35AndUp) {
+                var sink = new CollectingErrorSink();
                 CheckAst(
-                    ParseFile("AwaitStmt.py", ErrorSink.Null, version),
+                    ParseFile("AwaitStmt.py", sink, version),
                     CheckSuite(CheckCoroutineDef(CheckFuncDef("quox", NoParameters, CheckSuite(
                         CheckExprStmt(AwaitFob),
                         CheckExprStmt(CheckAwaitExpression(CheckCallExpression(Fob))),
@@ -2907,7 +3106,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         CheckBinaryStmt(One, PythonOperator.Power, CheckUnaryExpression(PythonOperator.Negate, AwaitFob))
                     ))))
                 );
-                ParseErrors("AwaitStmt.py", version);
+                sink.Errors.Should().BeEmpty();
             }
         }
 
@@ -2961,7 +3160,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         CheckFuncDef("fob", new[] { CheckParameter("async"), CheckParameter("await") }, CheckSuite(Pass))
                     )
                 );
-                ParseErrors("AwaitAsyncNames.py", version);
+                ParseFileNoErrors("AwaitAsyncNames.py", version);
             }
         }
 
@@ -3446,10 +3645,6 @@ pass
             }
         }
 
-        private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorInfo[] errors) {
-            ParseErrors(filename, version, Severity.Hint, errors);
-        }
-
         private static string FormatError(ErrorResult r) {
             var s = r.Span.Start;
             var e = r.Span.End;
@@ -3462,13 +3657,29 @@ pass
             return $"new ErrorInfo(\"{r.Message}\", {s.Index}, {s.Line}, {s.Column}, {e.Index}, {e.Line}, {e.Column})";
         }
 
-        private void ParseErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, params ErrorInfo[] errors) {
+
+        /* ToDo: delete this method
+         * We should stop using ErrorInfo for checking since it has indexes of the error location.
+         * Indexes are not cross-platform invariant, so ErrorResult should be used instead.
+         * (CRLF would cause and index displacement of 2 and LF a displacement of 1).
+         * */
+        private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorInfo[] errors) {
+            var errorResults = errors.Select(ToErrorResult).ToArray();
+            ParseErrors(filename, version, Severity.Hint, errorResults);
+        }
+
+        private static ErrorResult ToErrorResult(ErrorInfo e) {
+            var span = e.Span;
+            return new ErrorResult(e.Message, new SourceSpan(span.Start.Line, span.Start.Column, span.End.Line, span.End.Column));
+        }
+
+        private void ParseErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity, params ErrorResult[] errors) {
             ParseErrors(filename, version, new ParserOptions() {
                 IndentationInconsistencySeverity = indentationInconsistencySeverity,
             }, errors);
         }
 
-        private void ParseErrors(string filename, PythonLanguageVersion version, ParserOptions options, params ErrorInfo[] errors) {
+        private void ParseErrors(string filename, PythonLanguageVersion version, ParserOptions options, params ErrorResult[] errors) {
             var sink = new CollectingErrorSink();
             options.ErrorSink = sink;
             ParseFile(filename, version, options);
@@ -3485,27 +3696,7 @@ pass
             var finalErrors = foundErrors.ToString();
             Console.WriteLine(finalErrors);
 
-            for (var i = 0; i < errors.Length; i++) {
-                if (sink.Errors.Count <= i) {
-                    Assert.Fail("No error {0}: {1}", i, FormatError(errors[i]));
-                }
-                if (sink.Errors[i].Message != errors[i].Message) {
-                    Assert.Fail("Wrong msg for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
-                }
-                if (sink.Errors[i].Span != errors[i].Span) {
-                    Assert.Fail("Wrong span for error {0}: expected {1}, got {2}", i, FormatError(errors[i]), FormatError(sink.Errors[i]));
-                }
-                // Span equality check is not looking at indexes, so we do that here
-                if (sink.Errors[i].Span.Start.Index != errors[i].Span.Start.Index) {
-                    Assert.Fail("Wrong start index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.Start.Index, errors[i].Span.Start.Index);
-                }
-                if (sink.Errors[i].Span.End.Index != errors[i].Span.End.Index) {
-                    Assert.Fail("Wrong end index for error {0}: expected {1}, got {2}", i, sink.Errors[i].Span.End.Index, errors[i].Span.End.Index);
-                }
-            }
-            if (sink.Errors.Count > errors.Length) {
-                Assert.Fail("Unexpected errors occurred");
-            }
+            sink.Errors.ToArray().Should().HaveErrors(errors);
         }
 
         private static PythonAst ParseFileNoErrors(string filename, PythonLanguageVersion version, Severity indentationInconsistencySeverity = Severity.Hint) {
@@ -4227,6 +4418,16 @@ pass
                     lhs[i](assign.Left[i]);
                 }
                 rhs(assign.Right);
+            };
+        }
+
+        private static Action<Expression> CheckNamedExpr(Action<Expression> target, Action<Expression> value) {
+            return expr => {
+                Assert.AreEqual(typeof(NamedExpression), expr.GetType());
+                var assignExpr = (NamedExpression)expr;
+
+                target(assignExpr.Target);
+                value(assignExpr.Value);
             };
         }
 

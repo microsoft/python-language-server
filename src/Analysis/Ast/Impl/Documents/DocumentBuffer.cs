@@ -29,8 +29,8 @@ namespace Microsoft.Python.Analysis.Documents {
 
         public void Reset(int version, string content) {
             Version = version;
+            _content = content ?? string.Empty;
             _sb = null;
-            _content = content;
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {

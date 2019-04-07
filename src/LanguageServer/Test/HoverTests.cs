@@ -224,6 +224,17 @@ f'hey {some}'
             AssertHover(hs, analysis, new SourceLocation(6, 8), @"some: str", new SourceSpan(6, 8, 6, 12));
         }
 
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public async Task AssignmentExpressions() {
+            const string code = @"
+(a := 1)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            AssertHover(hs, analysis, new SourceLocation(2, 2), @"a: int", new SourceSpan(3, 1, 3, 2));
+        }
+
         private static void AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = hs.GetHover(analysis, position);
 

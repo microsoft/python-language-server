@@ -295,6 +295,10 @@ namespace Microsoft.Python.Parsing.Ast {
         // FormattedValue
         public virtual bool Walk(FormattedValue node) { return true; }
         public virtual void PostWalk(FormattedValue node) { }
+
+        // NamedExpression
+        public virtual bool Walk(NamedExpression node) { return true; }
+        public virtual void PostWalk(NamedExpression node) { }
     }
 
 
@@ -815,6 +819,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // FormattedValue
         public override bool Walk(FormattedValue node) { return Location >= node.StartIndex && Location <= node.EndIndex; }
+
+        // NamedExpression
+        public override bool Walk(NamedExpression node) { return Location >= node.StartIndex && Location <= node.EndIndex; }
     }
 
 }
