@@ -503,13 +503,13 @@ B().
             comps.Should().NotContainLabels("bar");
         }
 
-//        [DataRow(@"
-//other = ['B']
-//__all__ = ['A'] + other")]
-//        [DataRow(@"
-//other = ['B']
-//__all__ = ['A']
-//__all__ += other")]
+        [DataRow(@"
+other = ['B']
+__all__ = ['A'] + other")]
+        [DataRow(@"
+other = ['B']
+__all__ = ['A']
+__all__ += other")]
         [DataRow(@"
 other = ['B']
 __all__ = ['A']
