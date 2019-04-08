@@ -417,7 +417,17 @@ limit { limit_num}; """"""", line: 5);
         public void StringConcat(string code, string expected) {
             AssertSingleLineFormat(code, expected);
         }
-        
+
+        [DataRow("f'{x}'", "f'{x}'")]
+        [DataRow("f'{x+1}'", "f'{x+1}'")]
+        [DataRow("f'{x + 1}'", "f'{x + 1}'")]
+        [DataRow("foo(f'{x+1}')", "foo(f'{x+1}')")]
+        [DataRow("foo(    f'{x+1}' )", "foo(f'{x+1}')")]
+        [DataTestMethod, Priority(0)]
+        public void FStrings(string code, string expected) {
+            AssertSingleLineFormat(code, expected);
+        }
+
         [TestMethod, Priority(0)]
         public void GrammarFile() {
             var src = TestData.GetPath("TestData", "Formatting", "pythonGrammar.py");
