@@ -50,6 +50,9 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         IPythonModule GetOrLoadModule(string name);
 
+        /// <summary>
+        /// Reloads all modules. Typically after installation or removal of packages.
+        /// </summary>
         Task ReloadAsync(CancellationToken token = default);
     }
 }

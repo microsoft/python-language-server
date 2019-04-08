@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateList(Module.Interpreter, GetLoc(expression), contents, exact: true);
+            return PythonCollectionType.CreateList(Module.Interpreter, contents);
         }
 
         public IMember GetValueFromDictionary(DictionaryExpression expression) {
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
-            return new PythonDictionary(Interpreter, GetLoc(expression), contents, exact: true);
+            return new PythonDictionary(Interpreter, contents);
         }
 
         private IMember GetValueFromTuple(TupleExpression expression) {
@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateTuple(Module.Interpreter, GetLoc(expression), contents, exact: true);
+            return PythonCollectionType.CreateTuple(Module.Interpreter, contents);
         }
 
         public IMember GetValueFromSet(SetExpression expression) {
@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateSet(Interpreter, GetLoc(expression), contents, exact: true);
+            return PythonCollectionType.CreateSet(Interpreter, contents);
         }
 
         public IMember GetValueFromGenerator(GeneratorExpression expression) {
@@ -108,14 +108,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 switch (node) {
                     case ListComprehension lc:
                         var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateList(Interpreter, GetLoc(lc), new[] { v1 });
+                        return PythonCollectionType.CreateList(Interpreter, new[] { v1 });
                     case SetComprehension sc:
                         var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateSet(Interpreter, GetLoc(sc), new[] { v2 });
+                        return PythonCollectionType.CreateSet(Interpreter, new[] { v2 });
                     case DictionaryComprehension dc:
                         var k = GetValueFromExpression(dc.Key) ?? UnknownType;
                         var v = GetValueFromExpression(dc.Value) ?? UnknownType;
-                        return new PythonDictionary(new PythonDictionaryType(Interpreter), GetLoc(dc), new Dictionary<IMember, IMember> { { k, v } });
+                        return new PythonDictionary(new PythonDictionaryType(Interpreter), new Dictionary<IMember, IMember> { { k, v } });
                 }
 
                 return UnknownType;
@@ -138,20 +138,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (value != null) {
                     switch (cfor.Left) {
                         case NameExpression nex when value is IPythonCollection coll:
-                            DeclareVariable(nex.Name, coll.GetIterator().Next, VariableSource.Declaration, GetLoc(nex));
+                            DeclareVariable(nex.Name, coll.GetIterator().Next, VariableSource.Declaration, nex);
                             break;
                         case NameExpression nex:
-                            DeclareVariable(nex.Name, UnknownType, VariableSource.Declaration, GetLoc(nex));
+                            DeclareVariable(nex.Name, UnknownType, VariableSource.Declaration, nex);
                             break;
                         case TupleExpression tex when value is IPythonDictionary dict && tex.Items.Count > 0:
                             if (tex.Items[0] is NameExpression nx0 && !string.IsNullOrEmpty(nx0.Name)) {
-                                DeclareVariable(nx0.Name, dict.Keys.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, GetLoc(nx0));
+                                DeclareVariable(nx0.Name, dict.Keys.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx0);
                             }
                             if (tex.Items.Count > 1 && tex.Items[1] is NameExpression nx1 && !string.IsNullOrEmpty(nx1.Name)) {
-                                DeclareVariable(nx1.Name, dict.Values.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, GetLoc(nx1));
+                                DeclareVariable(nx1.Name, dict.Values.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx1);
                             }
                             foreach (var item in tex.Items.Skip(2).OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
-                                DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, GetLoc(item));
+                                DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, item);
                             }
                             break;
                     }

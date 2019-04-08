@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Values {
@@ -22,23 +21,23 @@ namespace Microsoft.Python.Analysis.Values {
     /// Python ASCII (bytes) string (default string in 2.x).
     /// </summary>
     internal sealed class PythonAsciiString : PythonConstant {
-        public PythonAsciiString(AsciiString s, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(s, interpreter.GetBuiltinType(interpreter.GetAsciiTypeId()), location) { }
+        public PythonAsciiString(AsciiString s, IPythonInterpreter interpreter)
+            : base(s, interpreter.GetBuiltinType(interpreter.GetAsciiTypeId())) { }
     }
 
     /// <summary>
     /// Python Unicode string (default string in 3.x+)
     /// </summary>
     internal sealed class PythonUnicodeString : PythonConstant {
-        public PythonUnicodeString(string s, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(s, interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId()), location) { }
+        public PythonUnicodeString(string s, IPythonInterpreter interpreter)
+            : base(s, interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId())) { }
     }
 
     internal sealed class PythonFString : PythonInstance, IEquatable<PythonFString> {
         public readonly string UnparsedFString;
 
-        public PythonFString(string unparsedFString, IPythonInterpreter interpreter, LocationInfo location = null)
-            : base(interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId()), location) {
+        public PythonFString(string unparsedFString, IPythonInterpreter interpreter)
+            : base(interpreter.GetBuiltinType(interpreter.GetUnicodeTypeId())) {
             UnparsedFString = unparsedFString;
         }
 

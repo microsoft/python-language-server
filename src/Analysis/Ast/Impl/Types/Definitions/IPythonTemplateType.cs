@@ -23,6 +23,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates instance of a type information with the specific
         /// type arguments from a generic template.
         /// </summary>
-        IPythonType CreateSpecificType(IArgumentSet typeArguments, IPythonModule declaringModule, LocationInfo location);
+        IPythonType CreateSpecificType(IArgumentSet typeArguments);
     }
 }

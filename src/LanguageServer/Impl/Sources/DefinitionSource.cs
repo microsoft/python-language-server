@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Linq;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -28,49 +30,112 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class DefinitionSource {
-        public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location) {
-            ExpressionLocator.FindExpression(analysis.Ast, location,
-                FindExpressionOptions.Hover, out var exprNode, out var statement, out var exprScope);
+        private readonly IServiceContainer _services;
 
-            if (exprNode is ConstantExpression) {
-                return null; // No hover for literals.
-            }
-            if (!(exprNode is Expression expr)) {
+        public DefinitionSource(IServiceContainer services) {
+            _services = services;
+        }
+
+        public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember member) {
+            member = null;
+            if(analysis?.Ast == null) {
                 return null;
             }
 
-            var eval = analysis.ExpressionEvaluator;
-            var name = (expr as NameExpression)?.Name;
+            ExpressionLocator.FindExpression(analysis.Ast, location,
+                FindExpressionOptions.Hover, out var exprNode, out var statement, out var exprScope);
 
+            if (exprNode is ConstantExpression || !(exprNode is Expression expr)) {
+                return null; // No hover for literals.
+            }
+
+            var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
-                // First try variables, except in imports
-                if (!string.IsNullOrEmpty(name) && !(statement is ImportStatement) && !(statement is FromImportStatement)) {
-                    var m = eval.LookupNameInScopes(name, out var scope);
-                    if (m != null && scope.Variables[name] is IVariable v) {
-                        var type = v.Value.GetPythonType();
-                        var module = type as IPythonModule ?? type?.DeclaringModule;
-                        if (CanNavigateToModule(module, analysis)) {
-                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                if (expr is MemberExpression mex) {
+                    return FromMemberExpression(mex, analysis, out member);
+                }
+
+                // Try variables
+                var name = (expr as NameExpression)?.Name;
+                IMember value = null;
+                if (!string.IsNullOrEmpty(name)) {
+                    var reference = TryFromVariable(name, analysis, location, statement, out member);
+                    if (reference != null) {
+                        return reference;
+                    }
+
+                    if (statement is ImportStatement || statement is FromImportStatement) {
+                        reference = TryFromImport(statement, name, analysis, out value);
+                        if (reference != null) {
+                            member = value as ILocatedMember;
+                            return reference;
                         }
                     }
                 }
 
-                var value = eval.GetValueFromExpression(expr);
-                if (value.IsUnknown() && !string.IsNullOrEmpty(name)) {
-                    var reference = FromImport(statement, name, analysis, out value);
-                    if (reference != null) {
-                        return reference;
-                    }
-                }
-
+                value = value ?? eval.GetValueFromExpression(expr);
                 if (value.IsUnknown()) {
                     return null;
                 }
-                return FromMember(value, expr, statement, analysis);
+                member = value as ILocatedMember;
+                return FromMember(value);
             }
         }
 
-        private Reference FromImport(Node statement, string name, IDocumentAnalysis analysis, out IMember value) {
+        private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement, out ILocatedMember member) {
+            member = null;
+
+            var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
+            if (m != null && scope.Variables[name] is IVariable v) {
+                member = v;
+                var definition = v.Definition;
+                if (statement is ImportStatement || statement is FromImportStatement) {
+                    // If we are on the variable definition in this module,
+                    // then goto definition should go to the parent, if any.
+                    var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
+                    var index = location.ToIndex(analysis.Ast);
+                    if (indexSpan.Start <= index && index < indexSpan.End) {
+                        if (v.Parent == null) {
+                            return null;
+                        }
+                        definition = v.Parent.Definition;
+                    }
+                }
+
+                if (CanNavigateToModule(definition.DocumentUri)) {
+                    return new Reference { range = definition.Span, uri = definition.DocumentUri };
+                }
+            }
+            return null;
+        }
+
+        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis, out ILocatedMember member) {
+            member = null;
+
+            var eval = analysis.ExpressionEvaluator;
+            var target = eval.GetValueFromExpression(mex.Target);
+            var type = target?.GetPythonType();
+
+            if (type?.GetMember(mex.Name) is ILocatedMember lm) {
+                member = lm;
+                return FromMember(lm);
+            }
+
+            if (type is IPythonClassType cls) {
+                // Data members may be instances that are not tracking locations.
+                // In this case we'll try look up the respective variable instead.
+                using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
+                    eval.LookupNameInScopes(mex.Name, out _, out var v, LookupOptions.Local);
+                    if (v != null) {
+                        member = v;
+                        return FromMember(v);
+                    }
+                }
+            }
+            return null;
+        }
+
+        private Reference TryFromImport(Node statement, string name, IDocumentAnalysis analysis, out IMember value) {
             value = null;
             string moduleName = null;
             switch (statement) {
@@ -83,109 +148,62 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             if (moduleName != null) {
                 var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName);
-                if (module != null && CanNavigateToModule(module, analysis)) {
-                    return new Reference { range = default, uri = module.Uri };
+                if (module != null) {
+                    value = module;
+                    return CanNavigateToModule(module) ? new Reference { range = default, uri = module.Uri } : null;
                 }
             }
 
             // Perhaps it is a member such as A in 'from X import A as B'
             switch (statement) {
                 case ImportStatement imp: {
-                    // Import A as B
-                    var index = imp.Names.IndexOf(x => x?.MakeString() == name);
-                    if (index >= 0 && index < imp.AsNames.Count) {
-                        value = analysis.ExpressionEvaluator.GetValueFromExpression(imp.AsNames[index]);
-                        return null;
+                        // Import A as B
+                        var index = imp.Names.IndexOf(x => x?.MakeString() == name);
+                        if (index >= 0 && index < imp.AsNames.Count) {
+                            value = analysis.ExpressionEvaluator.GetValueFromExpression(imp.AsNames[index]);
+                            return null;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case FromImportStatement fimp: {
-                    // From X import A as B
-                    var index = fimp.Names.IndexOf(x => x?.Name == name);
-                    if (index >= 0 && index < fimp.AsNames.Count) {
-                        value = analysis.ExpressionEvaluator.GetValueFromExpression(fimp.AsNames[index]);
-                        return null;
-                    }
-                    break;
-                }
-            }
-            return null;
-        }
-
-        private Reference FromMember(IMember value, Expression expr, Node statement, IDocumentAnalysis analysis) {
-            Node node = null;
-            IPythonModule module = null;
-            LocationInfo location = null;
-            var eval = analysis.ExpressionEvaluator;
-
-            switch (value) {
-                case IPythonClassType cls:
-                    node = cls.ClassDefinition;
-                    module = cls.DeclaringModule;
-                    location = cls.Location;
-                    break;
-                case IPythonFunctionType fn:
-                    node = fn.FunctionDefinition;
-                    module = fn.DeclaringModule;
-                    location = fn.Location;
-                    break;
-                case IPythonPropertyType prop:
-                    node = prop.FunctionDefinition;
-                    module = prop.DeclaringModule;
-                    location = prop.Location;
-                    break;
-                case IPythonModule mod:
-                    return HandleModule(mod, analysis, statement);
-                case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
-                    node = ft.FunctionDefinition;
-                    module = ft.DeclaringModule;
-                    location = ft.Location;
-                    break;
-                case IPythonInstance instance when instance.Type is IPythonFunctionType ft:
-                    node = ft.FunctionDefinition;
-                    module = ft.DeclaringModule;
-                    break;
-                case IPythonInstance _ when expr is NameExpression nex:
-                    var m1 = eval.LookupNameInScopes(nex.Name, out var scope);
-                    if (m1 != null && scope != null) {
-                        var v = scope.Variables[nex.Name];
-                        if (v != null) {
-                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
+                        // From X import A as B
+                        var index = fimp.Names.IndexOf(x => x?.Name == name);
+                        if (index >= 0 && index < fimp.AsNames.Count) {
+                            value = analysis.ExpressionEvaluator.GetValueFromExpression(fimp.AsNames[index]);
+                            return null;
                         }
+                        break;
                     }
-                    break;
-                case IPythonInstance _ when expr is MemberExpression mex: {
-                        var target = eval.GetValueFromExpression(mex.Target);
-                        var type = target?.GetPythonType();
-                        var m2 = type?.GetMember(mex.Name);
-                        if (m2 is IPythonInstance v) {
-                            return new Reference { range = v.Location.Span, uri = v.Location.DocumentUri };
-                        }
-                        return FromMember(m2, null, statement, analysis);
-                    }
-            }
-
-            module = module?.ModuleType == ModuleType.Stub ? module.PrimaryModule : module;
-            if (node != null && module is IDocument doc && CanNavigateToModule(module, analysis)) {
-                return new Reference {
-                    range = location?.Span ?? node.GetSpan(doc.GetAnyAst()), uri = doc.Uri
-                };
-            }
-
-            return null;
-        }
-
-        private static Reference HandleModule(IPythonModule module, IDocumentAnalysis analysis, Node statement) {
-            // If we are in import statement, open the module source if available.
-            if (statement is ImportStatement || statement is FromImportStatement) {
-                if (module.Uri != null && CanNavigateToModule(module, analysis)) {
-                    return new Reference { range = default, uri = module.Uri };
-                }
             }
             return null;
         }
 
-        private static bool CanNavigateToModule(IPythonModule m, IDocumentAnalysis analysis) {
+
+        private Reference FromMember(IMember m) {
+            var definition = (m as ILocatedMember)?.Definition;
+            var moduleUri = definition?.DocumentUri;
+            // Make sure module we are looking for is not a stub
+            if (m is IPythonType t) {
+                moduleUri = t.DeclaringModule.ModuleType == ModuleType.Stub
+                    ? t.DeclaringModule.PrimaryModule.Uri
+                    : t.DeclaringModule.Uri;
+            }
+            if (definition != null && CanNavigateToModule(moduleUri)) {
+                return new Reference { range = definition.Span, uri = moduleUri };
+            }
+            return null;
+        }
+
+        private bool CanNavigateToModule(Uri uri) {
+            if (uri == null) {
+                return false;
+            }
+            var rdt = _services.GetService<IRunningDocumentTable>();
+            var doc = rdt.GetDocument(uri);
+            return CanNavigateToModule(doc);
+        }
+
+        private static bool CanNavigateToModule(IPythonModule m) {
             if (m == null) {
                 return false;
             }

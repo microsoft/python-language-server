@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
@@ -181,7 +182,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
-            if (builtinModuleNamesMember.TryGetConstant<string>(out var s)) {
+            var value = (builtinModuleNamesMember as IVariable)?.Value ?? builtinModuleNamesMember;
+            if (value.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
                 PathResolver.SetBuiltins(builtinModuleNames);
             }
@@ -203,17 +205,17 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
             var addedRoots = new HashSet<string>();
-            addedRoots.UnionWith(PathResolver.SetRoot(_root));
+            addedRoots.UnionWith(PathResolver.SetRoot(Root));
 
-            var interpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(interpreterPaths));
+            InterpreterPaths = await GetSearchPathsAsync(cancellationToken);
+            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
 
-            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(interpreterPaths, StringExtensions.PathsStringComparer);
+            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(InterpreterPaths, StringExtensions.PathsStringComparer);
             addedRoots.UnionWith(SetUserSearchPaths(userSearchPaths));
             ReloadModulePaths(addedRoots);
         }
 
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) 
             => PathResolver.SetUserSearchPaths(searchPaths);
 
         // For tests

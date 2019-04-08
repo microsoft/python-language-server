@@ -19,11 +19,12 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
-        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, LocationInfo location)
-            : base(name, declaringModule, documentation, location) {
+        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
+            : base(name, new Location(declaringModule), documentation) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
         }
         public IReadOnlyList<IPythonType> Constraints { get; }
@@ -33,14 +34,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsSpecialized => true;
 
 
-        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, LocationInfo location) {
+        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
             var args = argSet.Values<IMember>();
             if (args.Count == 0) {
                 // TODO: report that at least one argument is required.
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var name = (args[0] as IPythonConstant)?.Value as string;
+            var name = (args[0] as IPythonConstant)?.GetString();
             if (string.IsNullOrEmpty(name)) {
                 // TODO: report that type name is not a string.
                 return declaringModule.Interpreter.UnknownType;
@@ -52,7 +53,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray();
             if (constraints.Any(c => c.IsUnknown())) {
-                // TODO: report that some constraints could be be resolved.
+                // TODO: report that some constraints could not be resolved.
             }
 
             var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.IsUnknown() ? "?" : c.Name));

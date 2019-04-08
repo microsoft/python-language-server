@@ -22,15 +22,17 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal sealed class PythonUnionType : IPythonUnionType {
+    internal sealed class PythonUnionType : LocatedMember, IPythonUnionType {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
-        public PythonUnionType(IEnumerable<IPythonType> types) {
+        public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule)
+            : base(PythonMemberType.Union, declaringModule) {
             _types.UnionWith(types);
         }
 
-        private PythonUnionType(IPythonType x, IPythonType y) {
+        private PythonUnionType(IPythonType x, IPythonType y)
+            : base(PythonMemberType.Union, x.DeclaringModule) {
             Check.Argument(nameof(x), () => !(x is IPythonUnionType));
             Check.Argument(nameof(y), () => !(y is IPythonUnionType));
             _types.Add(x);
@@ -47,12 +49,11 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IPythonModule DeclaringModule {
+        public override IPythonModule DeclaringModule {
             get { lock (_lock) { return _types.First().DeclaringModule; } }
         }
 
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
-        public PythonMemberType MemberType => PythonMemberType.Union;
         public string Documentation => Name;
 
         public bool IsBuiltin {
@@ -62,8 +63,7 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsAbstract => false;
         public bool IsSpecialized => true;
 
-        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
-            => new PythonUnion(this, location);
+        public IMember CreateInstance(string typeName, IArgumentSet args) => new PythonUnion(this);
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             IPythonType[] types;

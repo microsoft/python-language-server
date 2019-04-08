@@ -35,7 +35,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected readonly ILogger _log;
         protected readonly IUIService _ui;
         protected readonly bool _requireInitPy;
-        protected string _root;
 
         protected ConcurrentDictionary<string, ModuleRef> Modules { get; } = new ConcurrentDictionary<string, ModuleRef>();
         protected PathResolver PathResolver { get; set; }
@@ -43,7 +42,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected InterpreterConfiguration Configuration => _interpreter.Configuration;
 
         protected ModuleResolutionBase(string root, IServiceContainer services) {
-            _root = root;
+            Root = root;
+
             _services = services;
             _interpreter = services.GetService<IPythonInterpreter>();
             _fs = services.GetService<IFileSystem>();
@@ -52,6 +52,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
         }
+
+        public string Root { get; protected set; }
+        public IEnumerable<string> InterpreterPaths { get; protected set; } = Enumerable.Empty<string>();
 
         public IModuleCache ModuleCache { get; protected set; }
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);

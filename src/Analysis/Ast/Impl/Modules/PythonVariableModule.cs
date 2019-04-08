@@ -28,22 +28,19 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Contains either module members, members + imported children of explicit package or imported implicit package children
     /// Instance is unique for each module analysis
     /// </summary>
-    internal sealed class PythonVariableModule : IPythonModule, IEquatable<IPythonModule> {
+    internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
 
         public string Name { get; }
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
-        public LocationInfo Location { get; }
 
         public IDocumentAnalysis Analysis => Module?.Analysis;
-        public IPythonModule DeclaringModule => null;
         public string Documentation => Module?.Documentation ?? string.Empty;
         public string FilePath => Module?.FilePath;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
         public bool IsSpecialized => Module?.IsSpecialized ?? false;
-        public PythonMemberType MemberType => PythonMemberType.Module;
         public ModuleType ModuleType => Module?.ModuleType ?? ModuleType.Package;
         public IPythonModule PrimaryModule => null;
         public IPythonModule Stub => null;
@@ -51,17 +48,16 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter) {
+        public PythonVariableModule(string name, IPythonInterpreter interpreter)
+            : base(PythonMemberType.Module) {
             Name = name;
-            Location = LocationInfo.Empty;
             Interpreter = interpreter;
+            SetDeclaringModule(this);
         }
 
-        public PythonVariableModule(IPythonModule module) {
+        public PythonVariableModule(IPythonModule module): base(PythonMemberType.Module, module) {
             Name = module.Name;
-            Location = module.Location;
             Interpreter = module.Interpreter;
-
             Module = module;
         }
 
@@ -72,7 +68,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName = null, LocationInfo location = null, IArgumentSet args = null) => this;
+        public IMember CreateInstance(string typeName = null, IArgumentSet args = null) => this;
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
     }

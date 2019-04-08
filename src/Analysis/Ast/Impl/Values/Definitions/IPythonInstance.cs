@@ -13,14 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
     /// Represents instance of a type.
     /// </summary>
-    public interface IPythonInstance : ILocatedMember, IPythonIterable {
+    public interface IPythonInstance : IMember, IPythonIterable {
         /// <summary>
         /// Type of the object the instance represents.
         /// </summary>

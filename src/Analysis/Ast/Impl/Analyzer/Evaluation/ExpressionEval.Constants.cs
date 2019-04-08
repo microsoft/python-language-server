@@ -24,20 +24,19 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
         public IPythonInstance GetConstantFromLiteral(Expression expr, LookupOptions options) {
-            var location = GetLoc(expr);
             if (expr is ConstantExpression ce) {
                 switch (ce.Value) {
                     case string s:
-                        return new PythonUnicodeString(s, Interpreter, location);
+                        return new PythonUnicodeString(s, Interpreter);
                     case AsciiString b:
-                        return new PythonAsciiString(b, Interpreter, location);
+                        return new PythonAsciiString(b, Interpreter);
                     case int integer:
-                        return new PythonConstant(integer, Interpreter.GetBuiltinType(BuiltinTypeId.Int), location);
+                        return new PythonConstant(integer, Interpreter.GetBuiltinType(BuiltinTypeId.Int));
                 }
             }
 
             var t = SuppressBuiltinLookup ? UnknownType : (GetTypeFromLiteral(expr) ?? UnknownType);
-            return new PythonInstance(t, location);
+            return new PythonInstance(t);
         }
 
         public IPythonType GetTypeFromLiteral(Expression expr) {

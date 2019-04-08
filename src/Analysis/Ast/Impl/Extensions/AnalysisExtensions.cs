@@ -22,7 +22,7 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Analysis {
     public static class AnalysisExtensions {
         public static IScope FindScope(this IDocumentAnalysis analysis, SourceLocation location)
-            => analysis.GlobalScope.FindScope(analysis.Ast, location);
+            => analysis.GlobalScope.FindScope(analysis.Document, location);
 
         /// <summary>
         /// Provides ability to specialize function return type manually.
@@ -54,8 +54,8 @@ namespace Microsoft.Python.Analysis {
             // 'type()' in code is a function call, not a type class instantiation.
             if (!(analysis.GlobalScope.Variables[name]?.Value is PythonFunctionType f)) {
                 f = PythonFunctionType.ForSpecialization(name, analysis.Document);
-                f.AddOverload(new PythonFunctionOverload(name, analysis.Document, _ => LocationInfo.Empty));
-                analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration, LocationInfo.Empty);
+                f.AddOverload(new PythonFunctionOverload(name, new Location(analysis.Document)));
+                analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration);
             }
             return f;
         }

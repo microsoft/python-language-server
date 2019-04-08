@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
@@ -168,12 +169,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return Array.Empty<DiagnosticsEntry>();
             }
 
-            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            if (optionsProvider?.Options?.LintingEnabled == false) {
-                return Array.Empty<DiagnosticsEntry>();
-            }
+            // Linter always runs no matter of the option since it looks up variables
+            // which also enumerates and updates variable references for find all
+            // references and rename operations.
+            var result = new LinterAggregator().Lint(module.Analysis, _services);
 
-            return new LinterAggregator().Lint(module.Analysis, _services);
+            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+            return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
         }
 
         public void ResetAnalyzer() {
@@ -187,6 +189,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _dependencyResolver.RemoveKeys(entriesToRemove.Select(e => e.Key));
             }
         }
+
+        public IReadOnlyList<IPythonModule> LoadedModules 
+            => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
 
         private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();

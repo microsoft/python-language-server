@@ -52,8 +52,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return new TypingListType(typeName, BuiltinTypeId.DictItems, itemType, interpreter, false, false);
         }
 
-        public static IPythonType CreateUnionType(IPythonInterpreter interpreter, IReadOnlyList<IMember> types)
-            => new PythonUnionType(types.Select(a => a.GetPythonType()));
+        public static IPythonType CreateUnionType(IPythonInterpreter interpreter, IReadOnlyList<IMember> types, IPythonModule declaringModule)
+            => new PythonUnionType(types.Select(a => a.GetPythonType()), declaringModule);
 
         public static ITypingNamedTupleType CreateNamedTupleType(IPythonInterpreter interpreter, string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes)
             => new NamedTupleType(tupleName, itemNames, itemTypes, interpreter);

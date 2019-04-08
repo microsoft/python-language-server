@@ -18,10 +18,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
@@ -81,7 +79,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     }
 
                     if (context.Position >= name.StartIndex) {
-                        var applicableSpan = name.GetSpan(context.Ast);
+                        var applicableSpan = name.GetSpan();
                         var importSearchResult = mres.CurrentPathResolver.FindImports(document.FilePath, fromImport);
                         return GetResultFromImportSearch(importSearchResult, context, false, applicableSpan);
                     }

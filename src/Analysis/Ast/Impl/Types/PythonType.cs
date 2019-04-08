@@ -18,16 +18,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
-    internal class PythonType : IPythonType, ILocatedMember, IHasQualifiedName, IEquatable<IPythonType> {
+    internal class PythonType : LocatedMember, IPythonType, IHasQualifiedName, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private readonly string _name;
         private Func<string, string> _documentationProvider;
-        private readonly Func<string, LocationInfo> _locationProvider;
         private string _documentation;
-        private LocationInfo _location;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;
@@ -39,29 +38,26 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonType(
             string name,
-            IPythonModule declaringModule,
+            Location location,
             string documentation,
-            LocationInfo location,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
-        ) : this(name, declaringModule, typeId) {
+        ) : this(name, location, typeId) {
             _documentation = documentation;
-            _location = location;
         }
 
         public PythonType(
                 string name,
-                IPythonModule declaringModule,
+                Location location,
                 Func<string, string> documentationProvider,
-                Func<string, LocationInfo> locationProvider,
                 BuiltinTypeId typeId = BuiltinTypeId.Unknown
-            ) : this(name, declaringModule, typeId) {
+            ) : this(name, location, typeId) {
             _documentationProvider = documentationProvider;
-            _locationProvider = locationProvider;
         }
 
-        private PythonType(string name, IPythonModule declaringModule, BuiltinTypeId typeId = BuiltinTypeId.Unknown) {
+        private PythonType(string name, Location location, BuiltinTypeId typeId)
+            : base(typeId.GetMemberId(), location) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
             _name = name ?? throw new ArgumentNullException(nameof(name));
-            DeclaringModule = declaringModule;
             _typeId = typeId;
         }
 
@@ -69,8 +65,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
         public virtual string Documentation => _documentationProvider != null ? _documentationProvider.Invoke(Name) : _documentation;
-        public IPythonModule DeclaringModule { get; }
-        public virtual PythonMemberType MemberType => _typeId.GetMemberId();
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
@@ -81,10 +75,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="typeName">Name of the type. Used in specialization scenarios
         /// where constructor may want to create specialized type.</param>
-        /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        public virtual IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
-            => new PythonInstance(this, location);
+        public virtual IMember CreateInstance(string typeName, IArgumentSet args) => new PythonInstance(this);
 
         /// <summary>
         /// Invokes method or property on the specified instance.
@@ -101,11 +93,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="instance">Instance of the type.</param>
         /// <param name="index">Index arguments.</param>
         public virtual IMember Index(IPythonInstance instance, object index) => instance?.Index(index) ?? UnknownType;
-        #endregion
-
-        #region ILocatedMember
-        public virtual LocationInfo Location => _locationProvider != null
-            ? _locationProvider?.Invoke(Name) : _location ?? LocationInfo.Empty;
         #endregion
 
         #region IHasQualifiedName
@@ -129,12 +116,13 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal virtual void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
         internal virtual void SetDocumentation(string documentation) => _documentation = documentation;
-        internal virtual void SetLocation(LocationInfo location) => _location = location;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {
                 if (!_readonly) {
                     foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
+                        // If variable holds function or a class, use value as member. 
+                        // If it holds an instance, use the variable itself (i.e. it is a data member).
                         WritableMembers[v.Name] = v.Value;
                     }
                 }

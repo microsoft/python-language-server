@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// </summary>
     internal sealed partial class ExpressionEval {
         public IPythonType GetTypeFromPepHint(Node node) {
-            var location = GetLoc(node);
+            var location = GetLocationInfo(node);
             var content = (Module as IDocument)?.Content;
             if (string.IsNullOrEmpty(content) || !location.EndLine.HasValue) {
                 return null;

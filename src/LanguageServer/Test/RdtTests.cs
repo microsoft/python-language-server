@@ -15,7 +15,6 @@
 
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
@@ -23,9 +22,9 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using TestUtilities;
 
 namespace Microsoft.Python.LanguageServer.Tests {
@@ -125,7 +124,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             rdt.OpenDocument(docLc1.Uri, null);
             PublishDiagnostics();
             ds.Diagnostics[uri].Should().BeEmpty();
-            ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
+            ds.Diagnostics[docLc1.Uri].Count.Should().Be(3);
             ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
             ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
 
@@ -142,7 +141,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             PublishDiagnostics();
             ds.Diagnostics[uri].Should().BeEmpty();
-            ds.Diagnostics[docLc1.Uri].Count.Should().Be(2);
+            ds.Diagnostics[docLc1.Uri].Count.Should().Be(3);
             ds.Diagnostics[docLc2.Uri].Should().BeEmpty();
             ds.Diagnostics[docLc3.Uri].Should().BeEmpty();
         }

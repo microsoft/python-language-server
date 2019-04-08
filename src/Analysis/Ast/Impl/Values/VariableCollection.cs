@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IEnumerable<string> GetMemberNames() => _variables.Keys.ToArray();
         #endregion
 
-        internal void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location) {
+        internal void DeclareVariable(string name, IMember value, VariableSource source, Location location = default) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
             if (_variables.TryGetValue(name, out var existing)) {
                 existing.Assign(value, location);
@@ -62,7 +62,11 @@ namespace Microsoft.Python.Analysis.Values {
             }
         }
 
-        internal void DeclareVariable(Variable variable) =>_variables[variable.Name] = variable;
+        internal void LinkVariable(string name, IVariable v, Location location) {
+            name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
+            _variables[name] = new Variable(name, v, location);
+        }
+
         internal void RemoveVariable(string name) => _variables.TryRemove(name, out _);
     }
 }

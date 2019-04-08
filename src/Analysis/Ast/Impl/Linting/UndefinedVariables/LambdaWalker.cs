@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -21,24 +20,23 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class LambdaWalker : PythonWalker {
         private readonly UndefinedVariablesWalker _walker;
-        private readonly HashSet<string> _names = new HashSet<string>();
-        private readonly HashSet<NameExpression> _additionalNameNodes = new HashSet<NameExpression>();
 
         public LambdaWalker(UndefinedVariablesWalker walker) {
             _walker = walker;
         }
 
         public override bool Walk(FunctionDefinition node) {
-            CollectNames(node);
-            node.Body?.Walk(new ExpressionWalker(_walker, _names, _additionalNameNodes));
+            var nc = CollectNames(node);
+            node.Body?.Walk(new ExpressionWalker(_walker, nc.Names, nc.NameExpressions));
             return false;
         }
 
-        private void CollectNames(FunctionDefinition fd) {
-            var nc = new NameCollectorWalker(_names, _additionalNameNodes);
+        private NameCollectorWalker CollectNames(FunctionDefinition fd) {
+            var nc = new NameCollectorWalker();
             foreach (var nex in fd.Parameters.Select(p => p.NameExpression).ExcludeDefault()) {
                 nex.Walk(nc);
             }
+            return nc;
         }
     }
 }

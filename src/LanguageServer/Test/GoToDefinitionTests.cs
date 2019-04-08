@@ -13,10 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
@@ -61,34 +60,43 @@ c = C()
 c.method(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(4, 5));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(4, 5), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(1, 7, 1, 9);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(9, 9));
+            reference = ds.FindDefinition(analysis, new SourceLocation(9, 9), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(7, 15, 7, 19);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(9, 14));
+            reference = ds.FindDefinition(analysis, new SourceLocation(9, 14), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(6, 4, 6, 5);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(13, 5));
+            reference = ds.FindDefinition(analysis, new SourceLocation(13, 5), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(11, 9, 11, 10);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(14, 9));
+            reference = ds.FindDefinition(analysis, new SourceLocation(14, 9), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(11, 9, 11, 10);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(17, 5));
-            reference.range.Should().Be(11, 0, 14, 12);
+            reference = ds.FindDefinition(analysis, new SourceLocation(17, 5), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(11, 4, 11, 8);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(18, 1));
-            reference.range.Should().Be(3, 0, 3, 1); // TODO: store all locations
+            reference = ds.FindDefinition(analysis, new SourceLocation(18, 1), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(3, 0, 3, 1);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(19, 5));
-            reference.range.Should().Be(5, 6, 9, 18);
+            reference = ds.FindDefinition(analysis, new SourceLocation(19, 5), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(5, 6, 5, 7);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(20, 5));
-            reference.range.Should().Be(7, 4, 9, 18);
+            reference = ds.FindDefinition(analysis, new SourceLocation(20, 5), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(7, 8, 7, 14);
         }
 
         [TestMethod, Priority(0)]
@@ -100,20 +108,23 @@ import logging
 logging.info('')
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 9));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 9), out _);
             reference.Should().BeNull();
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(5, 3));
+            reference = ds.FindDefinition(analysis, new SourceLocation(5, 3), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(2, 7, 2, 14);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(3, 10));
+            reference = ds.FindDefinition(analysis, new SourceLocation(3, 10), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(5, 11));
+            reference = ds.FindDefinition(analysis, new SourceLocation(5, 11), out _);
+            reference.Should().NotBeNull();
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
@@ -125,40 +136,63 @@ import logging as log
 log
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 10));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 10), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(3, 2));
+            reference = ds.FindDefinition(analysis, new SourceLocation(3, 2), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(1, 18, 1, 21);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(2, 20));
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 20), out _);
+            reference.Should().NotBeNull();
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
 
         [TestMethod, Priority(0)]
-        public async Task GotoModuleSourceFromImport() {
+        public async Task GotoModuleSourceFromImport1() {
             const string code = @"from logging import A";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 7));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 7), out _);
+            reference.Should().NotBeNull();
             reference.range.Should().Be(0, 0, 0, 0);
             reference.uri.AbsolutePath.Should().Contain("logging");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoModuleSourceFromImport2() {
+            const string code = @"
+from MultiValues import t
+x = t
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 5), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(1, 24, 1, 25);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 25), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 0, 2, 1);
+            reference.uri.AbsolutePath.Should().Contain("MultiValues.py");
         }
 
         [TestMethod, Priority(0)]
         public async Task GotoModuleSourceFromImportAs() {
             const string code = @"from logging import RootLogger as rl";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 23));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 23), out _);
             reference.Should().NotBeNull();
             reference.range.start.line.Should().BeGreaterThan(500);
             reference.uri.AbsolutePath.Should().Contain("logging");
@@ -172,9 +206,9 @@ class A(object):
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            var ds = new DefinitionSource();
+            var ds = new DefinitionSource(Services);
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 12));
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 12), out _);
             reference.Should().BeNull();
         }
 
@@ -195,9 +229,38 @@ class A(object):
             var submod = rdt.OpenDocument(submodPath, "from .. import mod");
 
             var analysis = await submod.GetAnalysisAsync(-1);
-            var ds = new DefinitionSource();
-            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 18));
+            var ds = new DefinitionSource(Services);
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 18), out _);
+            reference.Should().NotBeNull();
             reference.uri.Should().Be(modPath);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task EmptyAnalysis() {
+            var analysis = await GetAnalysisAsync(string.Empty);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(new EmptyAnalysis(Services, analysis.Document), new SourceLocation(1, 1), out _);
+            reference.Should().BeNull();
+
+            reference = ds.FindDefinition(null, new SourceLocation(1, 1), out _);
+            reference.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReCompile() {
+            const string code = @"
+import re
+x = re.compile(r'hello', re.IGNORECASE)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 10), out _);
+            reference.Should().NotBeNull();
+            reference.range.start.line.Should().BeGreaterThan(0);
+            reference.uri.AbsolutePath.Should().Contain("re.py");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
     }
 }

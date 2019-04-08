@@ -44,6 +44,16 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override IEnumerable<Node> GetChildNodes() => Names;
 
+        public override PythonAst Ast {
+            get => base.Ast;
+            internal set {
+                base.Ast = value;
+                foreach (var n in Names) {
+                    n.Ast = value;
+                }
+            }
+        }
+
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
             }
@@ -58,7 +68,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var whitespace = this.GetNamesWhiteSpace(ast);
-            
+
             for (int i = 0, whitespaceIndex = 0; i < Names.Count; i++) {
                 if (whitespace != null) {
                     res.Append(whitespace[whitespaceIndex++]);

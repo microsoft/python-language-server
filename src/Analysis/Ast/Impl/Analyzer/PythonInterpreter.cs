@@ -50,9 +50,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_lock) {
                 var builtinModule = _moduleResolution.CreateBuiltinsModule();
                 _builtinTypes[BuiltinTypeId.NoneType]
-                    = new PythonType("NoneType", builtinModule, string.Empty, LocationInfo.Empty, BuiltinTypeId.NoneType);
+                    = new PythonType("NoneType", new Location(builtinModule, default), string.Empty, BuiltinTypeId.NoneType);
                 _builtinTypes[BuiltinTypeId.Unknown]
-                    = UnknownType = new PythonType("Unknown", builtinModule, string.Empty, LocationInfo.Empty);
+                    = UnknownType = new PythonType("Unknown", new Location(builtinModule, default), string.Empty);
             }
             await _moduleResolution.InitializeAsync(cancellationToken);
 

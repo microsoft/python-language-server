@@ -59,5 +59,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Removes all the modules from the analysis, except Typeshed and builtin
         /// </summary>
         void ResetAnalyzer();
+
+        /// <summary>
+        /// Returns list of currently loaded modules.
+        /// </summary>
+        IReadOnlyList<IPythonModule> LoadedModules { get; }
     }
 }

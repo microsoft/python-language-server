@@ -44,10 +44,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 value = Eval.UnknownType;
             }
 
-            if (node.Left.FirstOrDefault() is TupleExpression lhs) {
+            if (node.Left.FirstOrDefault() is SequenceExpression seq) {
                 // Tuple = Tuple. Transfer values.
-                var texHandler = new TupleExpressionHandler(Walker);
-                texHandler.HandleTupleAssignment(lhs, node.Right, value);
+                var seqHandler = new SequenceExpressionHandler(Walker);
+                seqHandler.HandleAssignment(seq.Items, node.Right, value);
                 return;
             }
 
@@ -60,26 +60,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var ne in node.Left.OfType<NameExpression>()) {
                 if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
-                    if (scope != null) {
-                        scope.Variables[ne.Name].Assign(value, Eval.GetLoc(ne));
-                    } else {
-                        // TODO: report variable is not declared in outer scopes.
-                    }
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
                     continue;
                 }
 
                 if (Eval.CurrentScope.Globals[ne.Name] != null) {
                     Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
-                    if (scope != null) {
-                        scope.Variables[ne.Name].Assign(value, Eval.GetLoc(ne));
-                    } else {
-                        // TODO: report variable is not declared in global scope.
-                    }
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
                     continue;
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLoc(ne));
+                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLocationOfName(ne));
             }
 
             TryHandleClassVariable(node, value);
@@ -100,12 +92,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private void TryHandleClassVariable(AssignmentStatement node, IMember value) {
             var mex = node.Left.OfType<MemberExpression>().FirstOrDefault();
-            if (!string.IsNullOrEmpty(mex?.Name) && mex?.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
+            if (!string.IsNullOrEmpty(mex?.Name) && mex.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
                 var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Local);
                 var cls = m.GetPythonType<IPythonClassType>();
                 if (cls != null) {
                     using (Eval.OpenScope(Eval.Module, cls.ClassDefinition, out _)) {
-                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Eval.GetLoc(node), true);
+                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Eval.GetLocationOfName(mex), true);
                     }
                 }
             }
@@ -124,10 +116,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     instance = value;
                 }
             }
-            instance = instance ?? variableType?.CreateInstance(variableType.Name, Eval.GetLoc(expr), ArgumentSet.Empty) ?? Eval.UnknownType;
+            instance = instance ?? variableType?.CreateInstance(variableType.Name, ArgumentSet.Empty) ?? Eval.UnknownType;
 
             if (expr is NameExpression ne) {
-                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, expr);
+                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, ne);
                 return;
             }
 

@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// module. Specialized module can use actual library module as a source
     /// of documentation for its members. See <see cref="TypingModule"/>.
     /// </remarks>
-    public abstract class SpecializedModule : PythonModule {
+    internal abstract class SpecializedModule : PythonModule {
         protected SpecializedModule(string name, string modulePath, IServiceContainer services)
             : base(name, modulePath, ModuleType.Specialized, null, services) { }
 

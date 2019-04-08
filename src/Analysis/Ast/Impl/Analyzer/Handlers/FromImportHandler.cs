@@ -40,9 +40,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
 
-            var location = Eval.GetLoc(node.Root);
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-            if (HandleImportSearchResult(imports, null, null, location, out var variableModule)) {
+            if (HandleImportSearchResult(imports, null, null, node.Root, out var variableModule)) {
                 AssignVariables(node, imports, variableModule);
             }
             return false;
@@ -67,10 +66,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             for (var i = 0; i < names.Count; i++) {
                 var memberName = names[i].Name;
                 if (!string.IsNullOrEmpty(memberName)) {
-                    var variableName = asNames[i]?.Name ?? memberName;
-                    var value = variableModule.GetMember(memberName) ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-
-                    Eval.DeclareVariable(variableName, value, VariableSource.Import, names[i]);
+                    var nameExpression = asNames[i] ?? names[i];
+                    var variableName = nameExpression?.Name ?? memberName;
+                    var exported = variableModule.Analysis?.GlobalScope.Variables[memberName] ?? variableModule.GetMember(memberName);
+                    var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression);
                 }
             }
         }
@@ -94,7 +94,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
-                Eval.DeclareVariable(memberName, member, VariableSource.Import, variableModule.Location);
+                var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
+                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import);
             }
         }
 
@@ -121,8 +122,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var printNameExpression = node.Names.FirstOrDefault(n => n?.Name == "print_function");
             if (printNameExpression != null) {
-                var fn = new PythonFunctionType("print", Module, null, string.Empty, LocationInfo.Empty);
-                var o = new PythonFunctionOverload(fn.Name, Module, _ => LocationInfo.Empty);
+                var fn = new PythonFunctionType("print", new Location(Module, default), null, string.Empty);
+                var o = new PythonFunctionOverload(fn.Name, new Location(Module, default));
                 var parameters = new List<ParameterInfo> {
                     new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
                     new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),

@@ -28,16 +28,16 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
         private readonly IPythonInterpreter _interpreter;
 
-        public PythonDictionary(PythonDictionaryType dictType, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
-            base(dictType, location, contents.Keys.ToArray(), exact: exact) {
+        public PythonDictionary(PythonDictionaryType dictType, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
+            base(dictType, contents.Keys.ToArray(), exact: exact) {
             foreach (var kvp in contents) {
                 _contents[kvp.Key] = kvp.Value;
             }
             _interpreter = dictType.DeclaringModule.Interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IMember contents, bool exact = false) :
-            base(new PythonDictionaryType(interpreter), location, Array.Empty<IMember>(), exact: exact) {
+        public PythonDictionary(IPythonInterpreter interpreter, IMember contents, bool exact = false) :
+            base(new PythonDictionaryType(interpreter), Array.Empty<IMember>(), exact: exact) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {
                     _contents[key] = dict[key];
@@ -47,8 +47,8 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _interpreter = interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
-            this(new PythonDictionaryType(interpreter), location, contents, exact: exact) {
+        public PythonDictionary(IPythonInterpreter interpreter, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
+            this(new PythonDictionaryType(interpreter), contents, exact: exact) {
             _interpreter = interpreter;
         }
 
@@ -56,12 +56,12 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
         public IReadOnlyList<IPythonCollection> Items
-            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, Location, new[] { kvp.Key, kvp.Value })).ToArray();
+            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
 
-        public override IPythonIterator GetIterator() => 
+        public override IPythonIterator GetIterator() =>
             Call(@"iterkeys", ArgumentSet.Empty) as IPythonIterator ?? new EmptyIterator(Type.DeclaringModule.Interpreter.UnknownType);
 
         public override IMember Index(object key) => key is IMember m ? this[m] : UnknownType;
@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         private IPythonCollection CreateList(IReadOnlyList<IMember> items)
-            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, LocationInfo.Empty, items, false);
+            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, items, false);
 
         private sealed class KeyComparer : IEqualityComparer<IMember> {
             public bool Equals(IMember x, IMember y) {

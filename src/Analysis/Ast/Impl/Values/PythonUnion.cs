@@ -21,8 +21,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// Primarily used to describe multiple types that a function
     /// may be returning in different cases.
     /// </summary>
-    internal sealed class PythonUnion: PythonInstance {
-        public PythonUnion(IPythonUnionType unionType, LocationInfo location = null) 
-            : base(unionType, location) { }
+    internal sealed class PythonUnion : PythonInstance {
+        public PythonUnion(IPythonUnionType unionType) : base(unionType) { }
     }
 }

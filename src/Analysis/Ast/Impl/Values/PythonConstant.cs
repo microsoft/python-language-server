@@ -18,8 +18,7 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Values {
     internal class PythonConstant : PythonInstance, IPythonConstant, IEquatable<IPythonConstant> {
-        public PythonConstant(object value, IPythonType type, LocationInfo location)
-            : base(type, location) {
+        public PythonConstant(object value, IPythonType type) : base(type) {
             Value = value;
         }
         public object Value { get; }
@@ -34,7 +33,7 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         public bool Equals(IPythonConstant other) {
-            if(!base.Equals(other)) {
+            if (!base.Equals(other)) {
                 return false;
             }
             return Value?.Equals(other?.Value) == true;

@@ -15,13 +15,13 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -37,10 +37,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember GetInScope(string name) => GetInScope(name, CurrentScope);
         public T GetInScope<T>(string name) where T : class, IMember => GetInScope<T>(name, CurrentScope);
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, Node expression)
-            => DeclareVariable(name, value, source, GetLoc(expression));
+        public void DeclareVariable(string name, IMember value, VariableSource source)
+            => DeclareVariable(name, value, source, default(Location));
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, LocationInfo location, bool overwrite = false) {
+        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module)
+            => DeclareVariable(name, value, source, new Location(module, default));
+
+        public void DeclareVariable(string name, IMember value, VariableSource source, Node location, bool overwrite = false)
+            => DeclareVariable(name, value, source, GetLocationOfName(location), overwrite);
+
+        public void DeclareVariable(string name, IMember value, VariableSource source, Location location, bool overwrite = false) {
+            if (source == VariableSource.Import && value is IVariable v) {
+                CurrentScope.LinkVariable(name, v, location);
+                return;
+            }
             var member = GetInScope(name);
             if (member != null) {
                 if (!value.IsUnknown()) {
@@ -51,52 +61,50 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name, out IScope scope) => LookupNameInScopes(name, out scope, DefaultLookupOptions);
-
-        [DebuggerStepThrough]
-        public IMember LookupNameInScopes(string name, LookupOptions options) => LookupNameInScopes(name, out _, options);
-
-        public IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options) {
+        public IMember LookupNameInScopes(string name, out IScope scope, out IVariable v, LookupOptions options) {
             scope = null;
 
-            if (options == LookupOptions.Normal) {
-                // Default mode, no skipping, do direct search
-                for (var s = CurrentScope; s != null ; s = (Scope)s.OuterScope) {
-                    if (s.Variables.Contains(name)) {
-                        scope = s;
-                        break;
-                    }
-                }
-            } else {
-                var scopes = new List<Scope>();
-                for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
-                    scopes.Add(s);
-                }
-
-                if (scopes.Count == 1) {
-                    if (!options.HasFlag(LookupOptions.Local) && !options.HasFlag(LookupOptions.Global)) {
-                        scopes.Clear();
-                    }
-                } else if (scopes.Count >= 2) {
-                    if (!options.HasFlag(LookupOptions.Nonlocal)) {
-                        while (scopes.Count > 2) {
-                            scopes.RemoveAt(1);
+            switch (options) {
+                case LookupOptions.Normal:
+                    // Regular lookup: all scopes and builtins.
+                    for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
+                        if (s.Variables.Contains(name)) {
+                            scope = s;
+                            break;
                         }
                     }
-
-                    if (!options.HasFlag(LookupOptions.Local)) {
-                        scopes.RemoveAt(0);
+                    break;
+                case LookupOptions.Global:
+                case LookupOptions.Global | LookupOptions.Builtins:
+                    // Global scope only.
+                    if (GlobalScope.Variables.Contains(name)) {
+                        scope = GlobalScope;
                     }
-
-                    if (!options.HasFlag(LookupOptions.Global)) {
-                        scopes.RemoveAt(scopes.Count - 1);
+                    break;
+                case LookupOptions.Nonlocal:
+                case LookupOptions.Nonlocal | LookupOptions.Builtins:
+                    // All scopes but current and global ones.
+                    for (var s = CurrentScope.OuterScope as Scope; s != null && s != GlobalScope; s = (Scope)s.OuterScope) {
+                        if (s.Variables.Contains(name)) {
+                            scope = s;
+                            break;
+                        }
                     }
-                }
-                scope = scopes.FirstOrDefault(s => s.Variables.Contains(name));
+                    break;
+                case LookupOptions.Local:
+                case LookupOptions.Local | LookupOptions.Builtins:
+                    // Just the current scope
+                    if (CurrentScope.Variables.Contains(name)) {
+                        scope = CurrentScope;
+                    }
+                    break;
+                default:
+                    Debug.Fail("Unsupported name lookup combination");
+                    break;
             }
 
-            var value = scope?.Variables[name].Value;
+            v = scope?.Variables[name];
+            var value = v?.Value;
             if (value == null && options.HasFlag(LookupOptions.Builtins)) {
                 var builtins = Interpreter.ModuleResolution.BuiltinsModule;
                 value = Interpreter.ModuleResolution.BuiltinsModule.GetMember(name);

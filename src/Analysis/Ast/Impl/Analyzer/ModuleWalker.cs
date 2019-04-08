@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -110,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             switch (me.Name) {
                 case "append":
-                    values = PythonCollectionType.CreateList(Module.Interpreter, Eval.GetLoc(arg), new List<IMember>() { v }, exact: true);
+                    values = PythonCollectionType.CreateList(Module.Interpreter, new List<IMember> { v }, exact: true);
                     break;
                 case "extend":
                     values = v as IPythonCollection;
@@ -125,20 +124,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ExtendAll(node, values);
         }
 
-        private void ExtendAll(Node declNode, IPythonCollection values) {
+        private void ExtendAll(Node location, IPythonCollection values) {
             Eval.LookupNameInScopes(AllVariableName, out var scope, LookupOptions.Global);
             if (scope == null) {
                 return;
             }
 
-            var loc = Eval.GetLoc(declNode);
-
             var all = scope.Variables[AllVariableName]?.Value as IPythonCollection;
-
-            var list = PythonCollectionType.CreateConcatenatedList(Module.Interpreter, loc, all, values);
+            var list = PythonCollectionType.CreateConcatenatedList(Module.Interpreter, all, values);
             var source = list.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
 
-            Eval.DeclareVariable(AllVariableName, list, source, loc);
+            Eval.DeclareVariable(AllVariableName, list, source, location);
         }
 
         private bool IsHandleableAll(Node node) {
@@ -270,7 +266,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
-                        Eval.DeclareVariable(v.Name, v.Value, source, LocationInfo.Empty, overwrite: true);
+                        Eval.DeclareVariable(v.Name, v.Value, source, Module);
                     }
                 }
             }

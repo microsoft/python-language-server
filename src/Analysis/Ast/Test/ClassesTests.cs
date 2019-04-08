@@ -89,13 +89,14 @@ namespace Microsoft.Python.Analysis.Tests {
                 var o = interpreter.GetBuiltinType(BuiltinTypeId.Object);
                 var m = new SentinelModule("test", s);
 
-                var O = new PythonClassType("O", m);
-                var A = new PythonClassType("A", m);
-                var B = new PythonClassType("B", m);
-                var C = new PythonClassType("C", m);
-                var D = new PythonClassType("D", m);
-                var E = new PythonClassType("E", m);
-                var F = new PythonClassType("F", m);
+                var location = new Location(m, default);
+                var O = new PythonClassType("O", location);
+                var A = new PythonClassType("A", location);
+                var B = new PythonClassType("B", location);
+                var C = new PythonClassType("C", location);
+                var D = new PythonClassType("D", location);
+                var E = new PythonClassType("E", location);
+                var F = new PythonClassType("F", location);
 
                 O.SetBases(new[] { o });
                 F.SetBases(new[] { O });

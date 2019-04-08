@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
@@ -46,8 +45,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             var range = new Range {
-                start = expr.GetStart(analysis.Ast),
-                end = expr.GetEnd(analysis.Ast)
+                start = expr.GetStart(),
+                end = expr.GetEnd()
             };
 
             var eval = analysis.ExpressionEvaluator;
@@ -92,7 +91,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             if (expr is MemberExpression mex) {
                 name = mex.Name;
                 range = new Range {
-                    start = mex.Target.GetEnd(analysis.Ast),
+                    start = mex.Target.GetEnd(),
                     end = range.end
                 };
 

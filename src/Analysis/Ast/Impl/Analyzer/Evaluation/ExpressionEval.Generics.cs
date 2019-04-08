@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (gt.Name.EqualsOrdinal("Generic")) {
                 // Generic[T1, T2, ...] expression. Create generic base for the class.
                 if (genericTypeArgs.Length > 0) {
-                    return new GenericClassParameter(genericTypeArgs, Module, GetLoc(expr));
+                    return new GenericClassParameter(genericTypeArgs, Module);
                 } else {
                     // TODO: report too few type arguments for Generic[].
                     return UnknownType;
@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // For other types just use supplied arguments
             if (indices.Count > 0) {
-                return gt.CreateSpecificType(new ArgumentSet(indices), Module, GetLoc(expr));
+                return gt.CreateSpecificType(new ArgumentSet(indices));
             }
             // TODO: report too few type arguments for the generic expression.
             return UnknownType;
@@ -127,7 +127,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private IMember CreateClassInstance(PythonClassType cls, IReadOnlyList<IMember> constructorArguments, CallExpression callExpr) {
             // Look at the constructor arguments and create argument set
             // based on the __init__ definition.
-            var location = GetLoc(callExpr);
             var initFunc = cls.GetMember(@"__init__") as IPythonFunctionType;
             var initOverload = initFunc?.DeclaringType == cls ? initFunc.Overloads.FirstOrDefault() : null;
 
@@ -136,8 +135,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     : new ArgumentSet(constructorArguments);
 
             argSet.Evaluate();
-            var specificType = cls.CreateSpecificType(argSet, Module, location);
-            return new PythonInstance(specificType, location);
+            var specificType = cls.CreateSpecificType(argSet);
+            return new PythonInstance(specificType);
         }
 
         private ScopeStatement GetScope(IMember m) {

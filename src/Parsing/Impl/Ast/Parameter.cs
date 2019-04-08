@@ -55,6 +55,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public ParameterKind Kind { get; }
 
         public override IEnumerable<Node> GetChildNodes() {
+            if (NameExpression != null) yield return NameExpression;
             if (Annotation != null) yield return Annotation;
             if (DefaultValue != null) yield return DefaultValue;
         }

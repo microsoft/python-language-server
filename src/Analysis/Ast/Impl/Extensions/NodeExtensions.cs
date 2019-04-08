@@ -13,53 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class NodeExtensions {
-        public static LocationInfo GetLocation(this Node node, IPythonModule module, PythonAst ast = null) {
+        public static LocationInfo GetLocation(this Node node, IPythonModule module) {
             if (node == null || node.StartIndex >= node.EndIndex) {
                 return LocationInfo.Empty;
             }
 
-            ast = ast ?? (module as IDocument)?.GetAnyAst();
-            if (ast != null) {
-                var start = node.GetStart(ast);
-                var end = node.GetEnd(ast);
-                return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
-            }
-
-            return LocationInfo.Empty;
-        }
-
-        public static LocationInfo GetLocationOfName(this Node node, NameExpression header, IPythonModule module, PythonAst ast = null) {
-            if (header == null) {
-                return LocationInfo.Empty;
-            }
-
-            var loc = node.GetLocation(module, ast);
-            if (!loc.Equals(LocationInfo.Empty)) {
-                ast = ast ?? (module as IDocument)?.GetAnyAst();
-                if (ast != null) {
-                    var nameStart = header.GetStart(ast);
-                    if (!nameStart.IsValid) {
-                        return loc;
-                    }
-                    if (nameStart.Line > loc.StartLine || (nameStart.Line == loc.StartLine && nameStart.Column > loc.StartColumn)) {
-                        return new LocationInfo(loc.FilePath, loc.DocumentUri, nameStart.Line, nameStart.Column, loc.EndLine, loc.EndColumn);
-                    }
-                }
-            }
-            return LocationInfo.Empty;
-        }
-
-        public static bool IsInAst(this ScopeStatement node, PythonAst ast) {
-            while (node.Parent != null) {
-                node = node.Parent;
-            }
-            return ast == node;
+            var start = node.GetStart();
+            var end = node.GetEnd();
+            return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 
         public static Expression RemoveParenthesis(this Expression e) {

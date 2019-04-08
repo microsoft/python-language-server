@@ -122,12 +122,12 @@ namespace Microsoft.Python.Analysis.Modules {
             _hiddenNames.Add("__builtin_module_names__");
 
             if (_boolType != null) {
-                Analysis.GlobalScope.DeclareVariable("True", _boolType, VariableSource.Declaration, LocationInfo.Empty);
-                Analysis.GlobalScope.DeclareVariable("False", _boolType, VariableSource.Declaration, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("True", _boolType, VariableSource.Builtin, new Location(this, default));
+                Analysis.GlobalScope.DeclareVariable("False", _boolType, VariableSource.Builtin, new Location(this, default));
             }
 
             if (noneType != null) {
-                Analysis.GlobalScope.DeclareVariable("None", noneType, VariableSource.Declaration, LocationInfo.Empty);
+                Analysis.GlobalScope.DeclareVariable("None", noneType, VariableSource.Builtin, new Location(this, default));
             }
 
             foreach (var n in GetMemberNames()) {

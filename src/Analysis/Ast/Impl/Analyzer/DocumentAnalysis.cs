@@ -86,7 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Document = document ?? throw new ArgumentNullException(nameof(document));
             GlobalScope = new EmptyGlobalScope(document);
 
-            _emptyAst = _emptyAst ?? (_emptyAst = Parser.CreateParser(new StringReader(string.Empty), PythonLanguageVersion.None).ParseFile());
+            _emptyAst = _emptyAst ?? (_emptyAst = Parser.CreateParser(new StringReader(string.Empty), PythonLanguageVersion.None).ParseFile(document.Uri));
             ExpressionEvaluator = new ExpressionEval(services, document, Ast);
         }
 

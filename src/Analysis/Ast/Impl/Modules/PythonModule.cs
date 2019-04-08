@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    public class PythonModule : IDocument, IAnalyzable, IEquatable<IPythonModule> {
+    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule> {
         private enum State {
             None,
             Loading,
@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
-        private readonly DisposeToken _disposeToken = DisposeToken.Create< PythonModule>();
+        private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly IDiagnosticsService _diagnosticsService;
 
@@ -63,6 +63,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
         private PythonAst _ast;
+        private bool _updated;
 
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
@@ -70,7 +71,8 @@ namespace Microsoft.Python.Analysis.Modules {
         private object AnalysisLock { get; } = new object();
         private State ContentState { get; set; } = State.None;
 
-        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) {
+        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services)
+            : base(PythonMemberType.Module) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
@@ -80,6 +82,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis = new EmptyAnalysis(services, this);
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
+            SetDeclaringModule(this);
         }
 
         protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
@@ -95,7 +98,6 @@ namespace Microsoft.Python.Analysis.Modules {
             Check.ArgumentNotNull(nameof(services), services);
 
             FileSystem = services.GetService<IFileSystem>();
-            Location = new LocationInfo(creationOptions.FilePath, creationOptions.Uri, 1, 1);
 
             var uri = creationOptions.Uri;
             if (uri == null && !string.IsNullOrEmpty(creationOptions.FilePath)) {
@@ -116,14 +118,13 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IPythonType
         public string Name { get; }
-        public virtual IPythonModule DeclaringModule => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
 
-        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) => this;
-        public PythonMemberType MemberType => PythonMemberType.Module;
+        public IMember CreateInstance(string typeName, IArgumentSet args) => this;
+        public override PythonMemberType MemberType => PythonMemberType.Module;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
 
@@ -161,6 +162,10 @@ namespace Microsoft.Python.Analysis.Modules {
                             && !(v.Value?.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
                 .Select(v => v.Name);
         }
+        #endregion
+
+        #region ILocatedMember
+        public override LocationInfo Definition => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
         #endregion
 
         #region IPythonFile
@@ -223,10 +228,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
         }
-        #endregion
-
-        #region ILocatedMember
-        public virtual LocationInfo Location { get; }
         #endregion
 
         #region IDisposable
@@ -304,6 +305,8 @@ namespace Microsoft.Python.Analysis.Modules {
                 _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
 
                 _buffer.Update(changes);
+                _updated = true;
+
                 Parse();
             }
 
@@ -351,7 +354,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, options);
             }
 
-            var ast = parser.ParseFile();
+            var ast = parser.ParseFile(Uri);
 
             //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 
@@ -395,6 +398,21 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
+
+        public void NotifyAnalysisBegins() {
+            lock (AnalysisLock) {
+                if (_updated) {
+                    _updated = false;
+                    var analyzer = Services.GetService<IPythonAnalyzer>();
+                    foreach (var gs in analyzer.LoadedModules.Select(m => m.GlobalScope).OfType<IScope>().ExcludeDefault()) {
+                        foreach (var v in gs.TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
+                            v.RemoveReferences(this);
+                        }
+                    }
+                }
+            }
+        }
+
         public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (AnalysisLock) {
                 if (analysis.Version < Analysis.Version) {

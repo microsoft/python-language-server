@@ -3591,7 +3591,7 @@ f = pass";
 
         private static Action<int, int?> ParseCall(string code) {
             var parser = Parser.CreateParser(new StringReader(code), PythonLanguageVersion.V36, new ParserOptions { Verbatim = true });
-            var tree = parser.ParseTopExpression();
+            var tree = parser.ParseTopExpression(null);
             if (Statement.GetExpression(tree.Body) is CallExpression ce) {
                 return (index, expected) => {
                     var actual = ce.GetArgumentAtIndex(tree, index, out var i) ? i : (int?)null;

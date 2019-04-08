@@ -16,12 +16,13 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Delegates most of the methods to the wrapped/inner class.
     /// </summary>
-    internal class PythonTypeWrapper : IPythonType, ILocatedMember, IHasQualifiedName {
+    internal class PythonTypeWrapper : IPythonType, IHasQualifiedName {
         private readonly BuiltinTypeId _builtinTypeId;
         private IPythonType _innerType;
 
@@ -32,8 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates delegate type wrapper over an existing type.
         /// Use dedicated constructor for wrapping builtin types.
         /// </summary>
-        public PythonTypeWrapper(IPythonType type)
-            : this(type, type.DeclaringModule) {
+        public PythonTypeWrapper(IPythonType type) : this(type, type.DeclaringModule) {
         }
 
         /// <summary>
@@ -60,13 +60,13 @@ namespace Microsoft.Python.Analysis.Types {
         public IPythonModule DeclaringModule { get; }
         public virtual string Documentation => InnerType.Documentation;
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
-        public virtual  PythonMemberType MemberType => InnerType.MemberType;
+        public virtual PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
         public virtual bool IsAbstract => InnerType.IsAbstract;
         public virtual bool IsSpecialized => InnerType.IsSpecialized;
 
-        public virtual IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
-            => IsAbstract ? null : InnerType.CreateInstance(typeName, location, args);
+        public virtual IMember CreateInstance(string typeName, IArgumentSet args)
+            => IsAbstract ? null : InnerType.CreateInstance(typeName, args);
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => InnerType.Call(instance, memberName, args);
         public virtual IMember Index(IPythonInstance instance, object index) 
@@ -74,7 +74,12 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
-        public virtual LocationInfo Location => (InnerType as ILocatedMember)?.Location ?? LocationInfo.Empty;
+        public Location Location => InnerType?.Location ?? default;
+        public LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
+        public ILocatedMember Parent => InnerType?.Parent;
+        public IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
+        public void AddReference(Location location) => InnerType?.AddReference(location);
+        public void RemoveReferences(IPythonModule module) => InnerType?.RemoveReferences(module);
         #endregion
 
         #region IMemberContainer

@@ -19,16 +19,11 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Type information of an instance.
     /// </summary>
-    public interface IPythonType : IMember, IMemberContainer {
+    public interface IPythonType : ILocatedMember, IMemberContainer {
         /// <summary>
         /// Type name.
         /// </summary>
         string Name { get; }
-
-        /// <summary>
-        /// Module the type is declared in.
-        /// </summary>
-        IPythonModule DeclaringModule { get; }
 
         /// <summary>
         /// Indicates built-in type id such as 'int' or 'str'
@@ -61,9 +56,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="typeName">Name of the type. Used in specialization scenarios
         /// where constructor may want to create specialized type.</param>
-        /// <param name="location">Instance location</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        IMember CreateInstance(string typeName = null, LocationInfo location = null, IArgumentSet args = null);
+        IMember CreateInstance(string typeName = null, IArgumentSet args = null);
 
         /// <summary>
         /// Invokes method or property on the specified instance.

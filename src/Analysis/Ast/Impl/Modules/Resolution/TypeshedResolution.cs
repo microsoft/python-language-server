@@ -36,9 +36,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             Modules[BuiltinModuleName] = new ModuleRef(BuiltinsModule);
 
             var stubs = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Stubs");
-            _root = _interpreter.Configuration?.TypeshedPath;
+            Root = _interpreter.Configuration?.TypeshedPath;
             // TODO: merge with user-provided stub paths
-            _typeStubPaths = GetTypeShedPaths(_root)
+            _typeStubPaths = GetTypeShedPaths(Root)
                 .Concat(GetTypeShedPaths(stubs))
                 .Where(services.GetService<IFileSystem>().DirectoryExists)
                 .ToArray();
@@ -76,7 +76,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             Modules.Clear();
             PathResolver = new PathResolver(_interpreter.LanguageVersion);
 
-            var addedRoots = PathResolver.SetRoot(_root);
+            var addedRoots = PathResolver.SetRoot(Root);
             ReloadModulePaths(addedRoots);
 
             addedRoots = PathResolver.SetInterpreterSearchPaths(_typeStubPaths);

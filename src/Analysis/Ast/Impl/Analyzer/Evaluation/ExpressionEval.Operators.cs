@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -54,14 +52,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     }
                 }
                 return instance is IPythonConstant c && instance.TryGetConstant<int>(out var value)
-                    ? new PythonConstant(-value, c.Type, GetLoc(expr))
+                    ? new PythonConstant(-value, c.Type)
                     : instance;
             }
             return UnknownType;
         }
 
         private IMember GetValueFromBinaryOp(Expression expr) {
-            if (expr is AndExpression) {
+            if (expr is AndExpression a) {
+                GetValueFromExpression(a.Left);
+                GetValueFromExpression(a.Right);
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
 
@@ -108,7 +108,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var left = GetValueFromExpression(binop.Left) ?? UnknownType;
             var right = GetValueFromExpression(binop.Right) ?? UnknownType;
 
-
             var rightType = right.GetPythonType();
             if (rightType?.TypeId == BuiltinTypeId.Float) {
                 return right;
@@ -131,7 +130,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 && leftType?.TypeId == BuiltinTypeId.List && rightType?.TypeId == BuiltinTypeId.List
                 && left is IPythonCollection lc && right is IPythonCollection rc) {
 
-                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, GetLoc(expr), lc, rc);
+                return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, lc, rc);
             }
 
             return left.IsUnknown() ? right : left;

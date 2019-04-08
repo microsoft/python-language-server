@@ -50,8 +50,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute) {
-            var location = Eval.GetLoc(moduleImportExpression);
-
             // "import fob.oar.baz" means
             // import_module('fob')
             // import_module('fob.oar')
@@ -61,22 +59,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var nameExpression in moduleImportExpression.Names) {
                 importNames = importNames.Add(nameExpression.Name);
                 var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, forceAbsolute);
-                if (!HandleImportSearchResult(imports, variableModule, asNameExpression, location, out variableModule)) {
+                if (!HandleImportSearchResult(imports, variableModule, asNameExpression, moduleImportExpression, out variableModule)) {
                     return;
                 }
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (asNameExpression != null) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name)) {
                 Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
-            } else if (importNames.Count > 0 && _variableModules.TryGetValue(importNames[0], out variableModule)) {
+            } else if (importNames.Count > 0 && !string.IsNullOrEmpty(importNames[0]) && _variableModules.TryGetValue(importNames[0], out variableModule)) {
                 var firstName = moduleImportExpression.Names[0];
                 Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
             }
         }
 
-        private bool HandleImportSearchResult(in IImportSearchResult imports, in PythonVariableModule parent, in NameExpression asNameExpression, in LocationInfo location, out PythonVariableModule variableModule) {
+        private bool HandleImportSearchResult(in IImportSearchResult imports, in PythonVariableModule parent, in NameExpression asNameExpression, in Node location, out PythonVariableModule variableModule) {
             switch (imports) {
                 case ModuleImport moduleImport when Module.ModuleType == ModuleType.Stub && moduleImport.FullName == Module.Name:
                     return TryGetModuleFromSelf(parent, moduleImport.Name, out variableModule);
@@ -88,7 +86,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return TryGetPackageFromImport(packageImport, parent, out variableModule);
                 case RelativeImportBeyondTopLevel importBeyondTopLevel:
                     var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
-                    Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(message, location.Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
+                    Eval.ReportDiagnostics(Eval.Module.Uri, 
+                        new DiagnosticsEntry(message, location.GetLocation(Eval.Module).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
                     variableModule = default;
                     return false;
                 case ImportNotFound importNotFound:
@@ -107,7 +106,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return true;
         }
 
-        private bool TryGetModuleFromImport(in ModuleImport moduleImport, in PythonVariableModule parent, LocationInfo location, out PythonVariableModule variableModule) {
+        private bool TryGetModuleFromImport(in ModuleImport moduleImport, in PythonVariableModule parent, Node location, out PythonVariableModule variableModule) {
             var module = ModuleResolution.GetOrLoadModule(moduleImport.FullName);
             if (module != null) {
                 variableModule = GetOrCreateVariableModule(module, parent, moduleImport.Name);
@@ -119,7 +118,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private bool TryGetModulePossibleImport(PossibleModuleImport possibleModuleImport, PythonVariableModule parent, LocationInfo location, out PythonVariableModule variableModule) {
+        private bool TryGetModulePossibleImport(PossibleModuleImport possibleModuleImport, PythonVariableModule parent, Node location, out PythonVariableModule variableModule) {
             if (_variableModules.TryGetValue(possibleModuleImport.PossibleModuleFullName, out variableModule)) {
                 return true;
             }
@@ -161,11 +160,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return true;
         }
 
-        private void MakeUnresolvedImport(string variableName, string moduleName, LocationInfo location) {
+        private void MakeUnresolvedImport(string variableName, string moduleName, Node location) {
             if (!string.IsNullOrEmpty(variableName)) {
                 Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
             }
-            Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), location.Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
+            Eval.ReportDiagnostics(Eval.Module.Uri, 
+                new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), 
+                    Eval.GetLocationInfo(location).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in string fullName, in PythonVariableModule parentModule, in string memberName) {
