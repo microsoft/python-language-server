@@ -310,6 +310,7 @@ namespace Microsoft.Python.LanguageServer.Formatting {
                         break;
 
                     case TokenKind.Constant:
+                    case TokenKind.FString: // TODO: format inside fstrings
                         builder.Append(token);
                         break;
 
@@ -446,7 +447,8 @@ namespace Microsoft.Python.LanguageServer.Formatting {
 
             public bool IsKeyword => (Kind >= TokenKind.FirstKeyword && Kind <= TokenKind.LastKeyword) || Kind == TokenKind.KeywordAsync || Kind == TokenKind.KeywordAwait;
 
-            public bool IsString => Kind == TokenKind.Constant && Token != Tokens.NoneToken && (Token.Value is string || Token.Value is AsciiString);
+            public bool IsString => Kind == TokenKind.FString // TODO: format inside fstrings
+                || (Kind == TokenKind.Constant && Token != Tokens.NoneToken && (Token.Value is string || Token.Value is AsciiString));
 
             public bool IsSimpleSliceToLeft {
                 get {
