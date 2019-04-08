@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -56,18 +55,39 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Evaluates expression in the currently open scope.
         /// </summary>
-        IMember GetValueFromExpression(Expression expr);
+        IMember GetValueFromExpression(Expression expr, LookupOptions options = LookupOptions.Normal);
 
-        IMember LookupNameInScopes(string name, out IScope scope, LookupOptions options = LookupOptions.Normal);
+        IMember LookupNameInScopes(string name, out IScope scope, out IVariable v, LookupOptions options = LookupOptions.Normal);
 
         IPythonType GetTypeFromString(string typeString);
 
+        /// <summary>
+        /// Module AST.
+        /// </summary>
         PythonAst Ast { get; }
+
+        /// <summary>
+        /// Associated module.
+        /// </summary>
         IPythonModule Module { get; }
+
+        /// <summary>
+        /// Interpreter used in the module analysis.
+        /// </summary>
         IPythonInterpreter Interpreter { get; }
+
+        /// <summary>
+        /// Application service container.
+        /// </summary>
         IServiceContainer Services { get; }
 
         void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry);
+
         IEnumerable<DiagnosticsEntry> Diagnostics { get; }
+
+        /// <summary>
+        /// Represents built-in 'unknown' type. <see cref="BuiltinTypeId.Unknown"/>.
+        /// </summary>
+        IPythonType UnknownType { get; }
     }
 }

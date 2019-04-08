@@ -35,13 +35,13 @@ namespace Microsoft.Python.Analysis.Values {
             var listType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.List);
             var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
 
-            VariableCollection.DeclareVariable("__debug__", boolType, VariableSource.Builtin, LocationInfo.Empty);
-            VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin, LocationInfo.Empty);
-            VariableCollection.DeclareVariable("__file__", strType, VariableSource.Builtin, LocationInfo.Empty);
-            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin, LocationInfo.Empty);
-            VariableCollection.DeclareVariable("__package__", strType, VariableSource.Builtin, LocationInfo.Empty);
-            VariableCollection.DeclareVariable("__path__", listType, VariableSource.Builtin, LocationInfo.Empty);
-            VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin, LocationInfo.Empty);
+            VariableCollection.DeclareVariable("__debug__", boolType, VariableSource.Builtin);
+            VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin);
+            VariableCollection.DeclareVariable("__file__", strType, VariableSource.Builtin);
+            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin);
+            VariableCollection.DeclareVariable("__package__", strType, VariableSource.Builtin);
+            VariableCollection.DeclareVariable("__path__", listType, VariableSource.Builtin);
+            VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin);
         }
     }
 }

@@ -19,10 +19,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
     [Flags]
     public enum LookupOptions {
         None = 0,
-        Local,
-        Nonlocal,
-        Global,
-        Builtins,
+        Local = 1,
+        Nonlocal = 2,
+        Global = 4,
+        Builtins = 8,
         Normal = Local | Nonlocal | Global | Builtins
     }
 }

@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
@@ -287,7 +288,7 @@ class A:
 ";
             var d = await LintAsync(code);
             d.Should().HaveCount(1);
-            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].ErrorCode.Should().Be(ErrorCodes.VariableNotDefinedNonLocal);
             d[0].SourceSpan.Should().Be(5, 21, 5, 22);
         }
 
@@ -303,7 +304,7 @@ class A:
 ";
             var d = await LintAsync(code);
             d.Should().HaveCount(1);
-            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].ErrorCode.Should().Be(ErrorCodes.VariableNotDefinedGlobally);
             d[0].SourceSpan.Should().Be(6, 19, 6, 20);
         }
 
@@ -394,12 +395,6 @@ x(1)
             d.Should().BeEmpty();
         }
 
-        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code) {
-            var analysis = await GetAnalysisAsync(code);
-            var a = Services.GetService<IPythonAnalyzer>();
-            return a.LintModule(analysis.Document);
-        }
-
         [TestMethod, Priority(0)]
         public async Task BuiltinModuleVariables() {
             const string code = @"
@@ -410,8 +405,8 @@ x4 = __package__
 x5 = __path__
 x6 = __dict__
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -428,8 +423,8 @@ def func():
     x8 = __globals__
     x9 = __name__
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -449,17 +444,17 @@ class A:
         x9 = __name__
         x10 = __self__
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
-        public async Task LambdaComrehension() {
+        public async Task LambdaComprehension() {
             const string code = @"
 y = lambda x: [e for e in x if e == 1]
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -468,8 +463,8 @@ y = lambda x: [e for e in x if e == 1]
 from __future__ import print_function
 print()
 ";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code, PythonVersions.LatestAvailable2X);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -483,8 +478,93 @@ class XXX:
         with (self.path / 'object.xml').open() as f:
             self.root = ElementTree.parse(f)
 ";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task Various() {
+            const string code = @"
+print x
+assert x
+del x
+";
+            var d = await LintAsync(code, PythonVersions.LatestAvailable2X);
+            d.Should().HaveCount(3);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FString() {
+            const string code = @"
+print(f'Hello, {name}. You are {age}.')
+";
+            var d = await LintAsync(code, PythonVersions.LatestAvailable3X);
+            d.Should().HaveCount(2);
+        }
+        
+        [TestMethod, Priority(0)]
+        public async Task ClassMemberAssignment() {
+            const string code = @"
+class A:
+    x: int
+
+a = A()
+a.x = 1
+a.y = 2
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ListAssignment() {
+            const string code = @"
+from datetime import date
+[year, month] = date.split(' - ')";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoRightSideCheck() {
+            const string code = @"
+x = 
+y = ";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ListComprehensionFunction() {
+            const string code = @"
+def func_a(value):
+    return value
+
+def func_b():
+    list_a = [1, 2, 3, 4]
+
+    return [func_a(value=elem) for elem in list_a]
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoLeakFromComprehension() {
+            const string code = @"
+len([1 for e in [1, 2]]) + len([e])
+";
+            var d = await LintAsync(code);
+            d.Should().HaveCount(1);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(2, 33, 2, 34);
+        }
+
+        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
+            var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
+            var a = Services.GetService<IPythonAnalyzer>();
+            return a.LintModule(analysis.Document);
         }
 
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {

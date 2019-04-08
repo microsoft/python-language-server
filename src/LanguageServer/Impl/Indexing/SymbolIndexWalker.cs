@@ -41,8 +41,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             _stack.AddSymbol(new HierarchicalSymbol(
                 node.Name,
                 SymbolKind.Class,
-                node.GetSpan(_ast),
-                node.NameExpression.GetSpan(_ast),
+                node.GetSpan(),
+                node.NameExpression.GetSpan(),
                 children,
                 FunctionKind.Class
             ));
@@ -58,13 +58,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             node.Body?.Walk(this);
             var children = _stack.Exit();
 
-            var span = node.GetSpan(_ast);
+            var span = node.GetSpan();
 
             var ds = new HierarchicalSymbol(
                 node.Name,
                 SymbolKind.Function,
                 span,
-                node.IsLambda ? span : node.NameExpression.GetSpan(_ast),
+                node.IsLambda ? span : node.NameExpression.GetSpan(),
                 children,
                 FunctionKind.Function
             );
@@ -102,7 +102,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public override bool Walk(ImportStatement node) {
             foreach (var (nameNode, nameString) in node.Names.Zip(node.AsNames, (name, asName) => asName != null ? (asName, asName.Name) : ((Node)name, name.MakeString()))) {
-                var span = nameNode.GetSpan(_ast);
+                var span = nameNode.GetSpan();
                 _stack.AddSymbol(new HierarchicalSymbol(nameString, SymbolKind.Module, span));
             }
 
@@ -115,7 +115,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
 
             foreach (var name in node.Names.Zip(node.AsNames, (name, asName) => asName ?? name)) {
-                var span = name.GetSpan(_ast);
+                var span = name.GetSpan();
                 _stack.AddSymbol(new HierarchicalSymbol(name.Name, SymbolKind.Module, span));
             }
 
@@ -202,7 +202,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private void ExitComprehension(Comprehension node) {
             var children = _stack.Exit();
-            var span = node.GetSpan(_ast);
+            var span = node.GetSpan();
 
             _stack.AddSymbol(new HierarchicalSymbol(
                 $"<{node.NodeName}>",
@@ -229,7 +229,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     break;
             }
 
-            var span = node.GetSpan(_ast);
+            var span = node.GetSpan();
 
             _stack.AddSymbol(new HierarchicalSymbol(node.Name, kind, span));
         }

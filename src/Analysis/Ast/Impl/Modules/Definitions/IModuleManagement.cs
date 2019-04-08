@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Modules {
         bool TryAddModulePath(in string path, out string fullName);
 
         /// <summary>
-        /// Sets user search paths. This changes <see cref="CurrentPathResolver"/>.
+        /// Sets user search paths. This changes <see cref="IModuleResolution.CurrentPathResolver"/>.
         /// </summary>
         /// <returns>Added roots.</returns>
         IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths);
@@ -58,5 +58,15 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Returns specialized module, if any.
         /// </summary>
         IPythonModule GetSpecializedModule(string name);
+
+        /// <summary>
+        /// Root directory of the path resolver.
+        /// </summary>
+        string Root { get; }
+
+        /// <summary>
+        /// Set of interpreter paths.
+        /// </summary>
+        IEnumerable<string> InterpreterPaths { get; }
     }
 }

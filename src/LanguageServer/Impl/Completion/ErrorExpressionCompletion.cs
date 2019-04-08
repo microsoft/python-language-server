@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis;
@@ -97,7 +96,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             scope = context.Analysis.FindScope(context.Location);
             using (var reader = new StringReader(text)) {
                 var parser = Parser.CreateParser(reader, context.Ast.LanguageVersion, new ParserOptions());
-                expressionAst = parser.ParseTopExpression();
+                expressionAst = parser.ParseTopExpression(null);
                 return Statement.GetExpression(expressionAst.Body);
             }
         }

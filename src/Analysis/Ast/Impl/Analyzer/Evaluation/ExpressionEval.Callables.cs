@@ -32,6 +32,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var target = GetValueFromExpression(expr.Target);
+            target?.AddReference(GetLocationOfName(expr.Target));
+
             var result = GetValueFromGeneric(target, expr);
             if (result != null) {
                 return result;
@@ -58,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonType t:
                     // Target is type (info), the call creates instance.
                     // For example, 'x = C; y = x()' or 'x = C()' where C is class
-                    value = new PythonInstance(t, GetLoc(expr));
+                    value = new PythonInstance(t);
                     break;
             }
 
@@ -74,9 +76,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var loc = GetLoc(expr);
-            var ft = new PythonFunctionType(expr.Function, Module, null, loc);
-            var overload = new PythonFunctionOverload(expr.Function, ft, Module, GetLoc(expr));
+            var location = GetLocationOfName(expr.Function);
+            var ft = new PythonFunctionType(expr.Function, null, location);
+            var overload = new PythonFunctionOverload(expr.Function, ft, location);
             ft.AddOverload(overload);
             return ft;
         }
@@ -93,7 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
                 args = a.Evaluate();
             }
-            return cls.CreateInstance(cls.Name, GetLoc(expr), args);
+            return cls.CreateInstance(cls.Name, args);
         }
 
         public IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {
@@ -190,7 +192,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // Try and evaluate with specific arguments. Note that it does not
             // make sense to evaluate stubs since they already should be annotated.
-            if (fn.DeclaringModule is IDocument doc && fd?.IsInAst(doc.GetAnyAst()) == true) {
+            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
                 // Stubs are coming from another module.
                 return TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
             }

@@ -16,7 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.Reflection;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -32,10 +33,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval: IExpressionEvaluator {
+    internal sealed partial class ExpressionEval : IExpressionEvaluator {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly object _lock = new object();
-        private List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
         public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
@@ -44,21 +45,47 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             GlobalScope = new GlobalScope(module);
             CurrentScope = GlobalScope;
-            DefaultLookupOptions = LookupOptions.Normal;
-
+            DefaultLocation = new Location(module);
             //Log = services.GetService<ILogger>();
         }
 
-        public LookupOptions DefaultLookupOptions { get; set; }
         public GlobalScope GlobalScope { get; }
         public Scope CurrentScope { get; private set; }
         public bool SuppressBuiltinLookup => Module.ModuleType == ModuleType.Builtins;
         public ILogger Log { get; }
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType => Interpreter.UnknownType;
+        public Location DefaultLocation { get; }
 
-        public LocationInfo GetLoc(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
-        public LocationInfo GetLocOfName(Node node, NameExpression header) => node?.GetLocationOfName(header, Module, Ast) ?? LocationInfo.Empty;
+        public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
+
+        public Location GetLocationOfName(Node node) {
+            if (node == null || (Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library)) {
+                return DefaultLocation;
+            }
+
+            IndexSpan indexSpan;
+            switch (node) {
+                case MemberExpression mex:
+                    indexSpan = mex.GetNameSpan().ToIndexSpan(mex.Ast);
+                    break;
+                case ClassDefinition cd:
+                    indexSpan = cd.NameExpression.IndexSpan;
+                    break;
+                case FunctionDefinition fd:
+                    indexSpan = fd.NameExpression.IndexSpan;
+                    break;
+                case NameExpression nex:
+                    indexSpan = nex.IndexSpan;
+                    break;
+                default:
+                    indexSpan = node.IndexSpan;
+                    break;
+            }
+
+            Debug.Assert(indexSpan.ToSourceSpan(node.Ast).Start.Column < 500);
+            return new Location(Module, indexSpan);
+        }
 
         #region IExpressionEvaluator
         public PythonAst Ast { get; }
@@ -67,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IServiceContainer Services { get; }
         IScope IExpressionEvaluator.CurrentScope => CurrentScope;
         IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
-        public LocationInfo GetLocation(Node node) => node?.GetLocation(Module, Ast) ?? LocationInfo.Empty;
+        public LocationInfo GetLocation(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
         public IEnumerable<DiagnosticsEntry> Diagnostics => _diagnostics;
 
         public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
@@ -78,12 +105,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
         }
-
-        public void RemoveDiagnostics(DiagnosticSource source) 
-            => _diagnostics = _diagnostics.Where(d => d.Source != source).ToList();
-
-        public IMember GetValueFromExpression(Expression expr)
-            => GetValueFromExpression(expr, DefaultLookupOptions);
 
         public IDisposable OpenScope(IScope scope) {
             if (!(scope is Scope s)) {
@@ -97,7 +118,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IDisposable OpenScope(IPythonModule module, ScopeStatement scope) => OpenScope(module, scope, out _);
         #endregion
 
-        public IMember GetValueFromExpression(Expression expr, LookupOptions options) {
+        public IMember GetValueFromExpression(Expression expr, LookupOptions options = LookupOptions.Normal) {
             if (expr == null) {
                 return null;
             }
@@ -169,21 +190,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         internal void ClearCache() => _scopeLookupCache.Clear();
 
-        private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier) {
-            return new PythonFString(formatSpecifier.Unparsed, Interpreter, GetLoc(formatSpecifier));
-        }
+        private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier)
+            => new PythonFString(formatSpecifier.Unparsed, Interpreter);
 
-        private IMember GetValueFromFString(FString fString) {
-            return new PythonFString(fString.Unparsed, Interpreter, GetLoc(fString));
-        }
+        private IMember GetValueFromFString(FString fString)
+            => new PythonFString(fString.Unparsed, Interpreter);
 
-        private IMember GetValueFromName(NameExpression expr, LookupOptions options) {
+        private IMember GetValueFromName(NameExpression expr, LookupOptions options = LookupOptions.Normal) {
             if (expr == null || string.IsNullOrEmpty(expr.Name)) {
                 return null;
             }
 
-            var member = LookupNameInScopes(expr.Name, options);
+            var member = LookupNameInScopes(expr.Name, out _, out var v, options);
             if (member != null) {
+                v?.AddReference(GetLocationOfName(expr));
                 switch (member.GetPythonType()) {
                     case IPythonClassType cls:
                         SymbolTable.Evaluate(cls.ClassDefinition);
@@ -214,6 +234,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // If container is class/type info rather than the instance, then the method is an unbound function.
                 // Example: C.f where f is a method of C. Compare to C().f where f is bound to the instance of C.
                 if (member is PythonFunctionType f && !f.IsStatic && !f.IsClassMethod) {
+                    f.AddReference(GetLocationOfName(expr));
                     return f.ToUnbound();
                 }
                 instance = new PythonInstance(typeInfo);
@@ -221,7 +242,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             instance = instance ?? m as IPythonInstance;
             var type = m?.GetPythonType(); // Try inner type
+
             var value = type?.GetMember(expr.Name);
+            type?.AddMemberReference(expr.Name, this, GetLocationOfName(expr));
 
             if (type is IPythonModule) {
                 return value;
@@ -241,7 +264,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonPropertyType prop:
                     return prop.Call(instance, prop.Name, ArgumentSet.Empty);
                 case IPythonType p:
-                    return new PythonBoundType(p, instance, GetLoc(expr));
+                    return new PythonBoundType(p, instance);
                 case null:
                     Log?.Log(TraceEventType.Verbose, $"Unknown member {expr.ToCodeString(Ast).Trim()}");
                     return UnknownType;

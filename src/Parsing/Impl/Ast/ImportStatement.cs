@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
@@ -37,13 +38,24 @@ namespace Microsoft.Python.Parsing.Ast {
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays", Justification = "breaking change")]
         public PythonVariable[] Variables { get; set; }
 
-        public PythonReference[] GetReferences(PythonAst ast) => GetVariableReferences(this, ast);
-
         public ImmutableArray<ModuleName> Names { get; }
         public ImmutableArray<NameExpression> AsNames { get; }
 
         // TODO: return names and aliases when they are united into one node
         public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
+
+        public override PythonAst Ast {
+            get => base.Ast;
+            internal set {
+                foreach (var n in Names.ExcludeDefault()) {
+                    n.Ast = value;
+                }
+                foreach (var n in AsNames.ExcludeDefault()) {
+                    n.Ast = value;
+                }
+                base.Ast = value;
+            }
+        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -63,10 +75,10 @@ namespace Microsoft.Python.Parsing.Ast {
             if (format.ReplaceMultipleImportsWithMultipleStatements) {
                 var proceeding = this.GetPreceedingWhiteSpace(ast);
                 var additionalProceeding = format.GetNextLineProceedingText(proceeding);
-                
+
                 for (int i = 0, asIndex = 0; i < Names.Count; i++) {
                     if (i == 0) {
-                        format.ReflowComment(res, proceeding) ;
+                        format.ReflowComment(res, proceeding);
                     } else {
                         res.Append(additionalProceeding);
                     }

@@ -13,15 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class ScopeExtensions {
-        public static bool IsClassScope(this IScope scope) => scope.Node is ClassDefinition;
-        public static bool IsFunctionScope(this IScope scope) => scope.Node is FunctionDefinition;
-
         public static int GetBodyStartIndex(this IScope scope, PythonAst ast) {
             switch (scope.Node) {
                 case ClassDefinition cd:
@@ -29,20 +27,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case FunctionDefinition fd:
                     return fd.HeaderIndex;
                 default:
-                    return ast.LocationToIndex(scope.Node.GetStart(ast));
+                    return ast.LocationToIndex(scope.Node.GetStart());
             }
         }
 
-        public static IScope FindScope(this IScope parent, PythonAst ast, SourceLocation location) {
+        public static IScope FindScope(this IScope parent, IDocument document, SourceLocation location) {
             var children = parent.Children;
+            var ast = document.Analysis.Ast;
             var index = ast.LocationToIndex(location);
             IScope candidate = null;
 
             for (var i = 0; i < children.Count; ++i) {
                 if (children[i].Node is FunctionDefinition fd && fd.IsInParameter(ast, location)) {
                     // In parameter name scope, so consider the function scope.
-                    candidate = children[i];
-                    continue;
+                    return children[i];
                 }
 
                 var start = children[i].GetBodyStartIndex(ast);
@@ -69,15 +67,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return parent;
             }
 
-            var scopeIndent = GetParentScopeIndent(candidate, ast);
-            if (location.Column <= scopeIndent) {
+            var scopeIndent = GetParentScopeIndent(candidate, document.Analysis.Ast);
+            var indent = GetLineIndent(document, index, out var lineIsEmpty);
+            indent = lineIsEmpty ? location.Column : indent; // Take into account virtual space.
+            if (indent <= scopeIndent) {
                 // Candidate is at deeper indentation than location and the
                 // candidate is scoped, so return the parent instead.
                 return parent;
             }
 
             // Recurse to check children of candidate scope
-            var child = FindScope(candidate, ast, location);
+            var child = FindScope(candidate, document, location);
 
             if (child.Node is FunctionDefinition fd1 && fd1.IsLambda && child.Node.EndIndex < index) {
                 // Do not want to extend a lambda function's scope to the end of
@@ -88,14 +88,32 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return child;
         }
 
+        private static int GetLineIndent(IDocument document, int index, out bool lineIsEmpty) {
+            var content = document.Content;
+            lineIsEmpty = true;
+            if (!string.IsNullOrEmpty(content)) {
+                var i = index - 1;
+                for (; i >= 0 && content[i] != '\n' && content[i] != '\r'; i--) { }
+                var lineStart = i + 1;
+                for (i = lineStart; i < content.Length && content[i] != '\n' && content[i] != '\r'; i++) {
+                    if (!char.IsWhiteSpace(content[i])) {
+                        lineIsEmpty = false;
+                        break;
+                    }
+                }
+                return i - lineStart + 1;
+            }
+            return 1;
+        }
+
         private static int GetParentScopeIndent(IScope scope, PythonAst ast) {
             switch (scope.Node) {
                 case ClassDefinition cd:
                     // Return column of "class" statement
-                    return cd.GetStart(ast).Column;
+                    return cd.GetStart().Column;
                 case FunctionDefinition fd when !fd.IsLambda:
                     // Return column of "def" statement
-                    return fd.GetStart(ast).Column;
+                    return fd.GetStart().Column;
                 default:
                     return -1;
             }

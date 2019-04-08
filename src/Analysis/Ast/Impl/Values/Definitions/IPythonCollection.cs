@@ -25,5 +25,10 @@ namespace Microsoft.Python.Analysis.Values {
         /// Collection contents
         /// </summary>
         IReadOnlyList<IMember> Contents { get; }
+
+        /// <summary>
+        /// True if the collection contents contain an accurate representation of the collection's contents.
+        /// </summary>
+        bool IsExact { get; }
     }
 }

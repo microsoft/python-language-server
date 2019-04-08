@@ -29,14 +29,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
 
         public ExpressionFinder(string expression, PythonLanguageVersion version, FindExpressionOptions options) {
             var parser = Parser.CreateParser(new StringReader(expression), version, ParserOptions.Default);
-            Ast = parser.ParseTopExpression();
+            Ast = parser.ParseTopExpression(null);
             Ast.Body.SetLoc(0, expression.Length);
             Options = options;
-        }
-
-        public static Node GetNode(PythonAst ast, SourceLocation location, FindExpressionOptions options) {
-            var finder = new ExpressionFinder(ast, options);
-            return finder.GetExpression(location);
         }
 
         public PythonAst Ast { get; }
@@ -44,8 +39,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
 
         public Node GetExpression(int index) => GetExpression(index, index);
         public Node GetExpression(SourceLocation location) => GetExpression(new SourceSpan(location, location));
-        public SourceSpan? GetExpressionSpan(int index) => GetExpression(index, index)?.GetSpan(Ast);
-        public SourceSpan? GetExpressionSpan(SourceLocation location) => GetExpression(new SourceSpan(location, location))?.GetSpan(Ast);
 
         public void Get(int startIndex, int endIndex, out Node node, out Node statement, out ScopeStatement scope) {
             ExpressionWalker walker;
@@ -80,9 +73,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             var endIndex = Ast.LocationToIndex(range.End);
             return GetExpression(startIndex, endIndex);
         }
-
-        public SourceSpan? GetExpressionSpan(int startIndex, int endIndex) => GetExpression(startIndex, endIndex)?.GetSpan(Ast);
-        public SourceSpan? GetExpressionSpan(SourceSpan range) => GetExpression(range)?.GetSpan(Ast);
 
         private abstract class ExpressionWalker : PythonWalkerWithLocation {
             protected ExpressionWalker(int location) : base(location) { }

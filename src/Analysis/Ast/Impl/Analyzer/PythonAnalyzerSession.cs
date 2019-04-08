@@ -165,18 +165,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             double privateMB;
             double peakPagedMB;
+            double workingMB;
 
             using (var proc = Process.GetCurrentProcess()) {
                 privateMB = proc.PrivateMemorySize64 / 1e+6;
                 peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
+                workingMB = proc.WorkingSet64 / 1e+6;
             }
 
             var e = new TelemetryEvent {
-                EventName = "analysis_complete",
+                EventName = "python_language_server/analysis_complete", // TODO: Move this common prefix into Core.
             };
 
             e.Measurements["privateMB"] = privateMB;
             e.Measurements["peakPagedMB"] = peakPagedMB;
+            e.Measurements["workingMB"] = workingMB;
             e.Measurements["elapsedMs"] = elapsed;
             e.Measurements["entries"] = originalRemaining;
             e.Measurements["version"] = version;
@@ -309,21 +312,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version, CancellationToken cancellationToken) {
             // Now run the analysis.
-            var walker = new ModuleWalker(_services, module, ast);
+            var analyzable = module as IAnalyzable;
+            analyzable?.NotifyAnalysisBegins();
 
+            var walker = new ModuleWalker(_services, module, ast);
             ast.Walk(walker);
+
             cancellationToken.ThrowIfCancellationRequested();
 
             walker.Complete();
             cancellationToken.ThrowIfCancellationRequested();
             var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval, walker.ExportedMemberNames);
 
-            (module as IAnalyzable)?.NotifyAnalysisComplete(analysis);
+            analyzable?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
 
             if (module.ModuleType == ModuleType.User) {
                 var linterDiagnostics = _analyzer.LintModule(module);
-                _diagnosticsService.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+                _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
             }
         }
 

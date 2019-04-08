@@ -20,6 +20,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -35,11 +36,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates function for specializations
         /// </summary>
         public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule)
-            => new PythonFunctionType(name, declaringModule, true);
+            => new PythonFunctionType(name, new Location(declaringModule, default), true);
 
-        private PythonFunctionType(string name, IPythonModule declaringModule, bool isSpecialized = false) :
-            base(name, declaringModule, null, LocationInfo.Empty, BuiltinTypeId.Function) {
-            DeclaringType = declaringModule;
+        private PythonFunctionType(string name, Location location, bool isSpecialized = false) :
+            base(name, location, string.Empty, BuiltinTypeId.Function) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
             _isSpecialized = isSpecialized;
         }
 
@@ -50,11 +51,12 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         public PythonFunctionType(
             string name,
-            IPythonModule declaringModule,
+            Location location,
             IPythonType declaringType,
-            string documentation,
-            LocationInfo location = null
-        ) : this(name, declaringModule, declaringType, _ => documentation, _ => location ?? LocationInfo.Empty) { }
+            string documentation
+        ) : this(name, location, declaringType, _ => documentation) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
+        }
 
         /// <summary>
         /// Creates function type to use in special cases when function is dynamically
@@ -63,26 +65,19 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         public PythonFunctionType(
             string name,
-            IPythonModule declaringModule,
+            Location location,
             IPythonType declaringType,
-            Func<string, string> documentationProvider,
-            Func<string, LocationInfo> locationProvider,
-            IPythonFunctionOverload overload = null
-        ) : base(name, declaringModule, documentationProvider, locationProvider,
-            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            Func<string, string> documentationProvider
+        ) : base(name, location, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
-            if (overload != null) {
-                AddOverload(overload);
-            }
         }
 
         public PythonFunctionType(
             FunctionDefinition fd,
-            IPythonModule declaringModule,
             IPythonType declaringType,
-            LocationInfo location = null
-        ) : base(fd.Name, declaringModule, fd.Documentation, location ?? LocationInfo.Empty,
-            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            Location location
+        ) : base(fd.Name, location, fd.Documentation,
+                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;
@@ -101,7 +96,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             // Now we can go and find overload with matching arguments.
             var overload = Overloads[args.OverloadIndex];
-            return overload?.Call(args, instance?.GetPythonType() ?? DeclaringType, instance?.Location);
+            return overload?.Call(args, instance?.GetPythonType() ?? DeclaringType);
         }
 
         internal override void SetDocumentationProvider(Func<string, string> provider) {

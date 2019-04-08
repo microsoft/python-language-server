@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,7 +33,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             if (function.Parent is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
-                var loc = function.GetStart(context.Ast);
+                var loc = function.GetStart();
                 var overrideable = GetOverrideable(context, location).ToArray();
                 overrideable = !string.IsNullOrEmpty(function.Name)
                         ? overrideable.Where(o => o.Name.StartsWithOrdinal(function.Name)).ToArray()

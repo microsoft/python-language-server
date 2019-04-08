@@ -14,9 +14,11 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
@@ -24,50 +26,45 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesWalker : LinterWalker {
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+        private bool _suppressDiagnostics;
 
         public UndefinedVariablesWalker(IDocumentAnalysis analysis, IServiceContainer services)
             : base(analysis, services) { }
 
         public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
 
-        public override bool Walk(AssignmentStatement node) {
-            if (node.Right is ErrorExpression) {
-                return false;
-            }
-            node.Right?.Walk(new ExpressionWalker(this));
-            return false;
-        }
-
-        public override bool Walk(CallExpression node) {
-            node.Target?.Walk(new ExpressionWalker(this));
-            foreach (var arg in node.Args) {
-                arg?.Expression?.Walk(new ExpressionWalker(this));
-            }
-            return false;
-        }
-
-        public override bool Walk(IfStatement node) {
-            foreach (var test in node.Tests) {
-                test.Test.Walk(new ExpressionWalker(this));
-            }
-            return true;
-        }
-
-        public override bool Walk(GlobalStatement node) {
-            foreach (var nex in node.Names) {
-                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Global);
-                if (m == null) {
-                    ReportUndefinedVariable(nex);
-                }
-            }
-            return false;
-        }
-
-        public override bool Walk(NonlocalStatement node) {
-            foreach (var nex in node.Names) {
-                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Nonlocal);
-                if (m == null) {
-                    ReportUndefinedVariable(nex);
+        public override bool Walk(SuiteStatement node) {
+            foreach (var statement in node.Statements) {
+                switch (statement) {
+                    case ClassDefinition cd:
+                        HandleScope(cd);
+                        break;
+                    case FunctionDefinition fd:
+                        HandleScope(fd);
+                        break;
+                    case GlobalStatement gs:
+                        HandleGlobal(gs);
+                        break;
+                    case NonlocalStatement nls:
+                        HandleNonLocal(nls);
+                        break;
+                    case AugmentedAssignStatement augs:
+                        _suppressDiagnostics = true;
+                        augs.Left?.Walk(new ExpressionWalker(this));
+                        _suppressDiagnostics = false;
+                        augs.Right?.Walk(new ExpressionWalker(this));
+                        break;
+                    case AssignmentStatement asst:
+                        _suppressDiagnostics = true;
+                        foreach (var lhs in asst.Left ?? Enumerable.Empty<Expression>()) {
+                            lhs?.Walk(new ExpressionWalker(this));
+                        }
+                        _suppressDiagnostics = false;
+                        asst.Right?.Walk(new ExpressionWalker(this));
+                        break;
+                    default:
+                        statement.Walk(new ExpressionWalker(this));
+                        break;
                 }
             }
             return false;
@@ -75,9 +72,46 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         public void ReportUndefinedVariable(NameExpression node) {
             var eval = Analysis.ExpressionEvaluator;
-            _diagnostics.Add(new DiagnosticsEntry(
-                Resources.UndefinedVariable.FormatInvariant(node.Name),
-                eval.GetLocation(node).Span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Linter));
+            ReportUndefinedVariable(node.Name, eval.GetLocation(node).Span);
+        }
+
+        public void ReportUndefinedVariable(string name, SourceSpan span) {
+            if (!_suppressDiagnostics) {
+                _diagnostics.Add(new DiagnosticsEntry(
+                    Resources.UndefinedVariable.FormatInvariant(name),
+                    span, ErrorCodes.UndefinedVariable, Severity.Warning, DiagnosticSource.Linter));
+            }
+        }
+
+        private void HandleGlobal(GlobalStatement node) {
+            foreach (var nex in node.Names) {
+                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Global);
+                if (m == null) {
+                    _diagnostics.Add(new DiagnosticsEntry(
+                        Resources.ErrorVariableNotDefinedGlobally.FormatInvariant(nex.Name),
+                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedGlobally, Severity.Warning, DiagnosticSource.Linter));
+                }
+            }
+        }
+
+        private void HandleNonLocal(NonlocalStatement node) {
+            foreach (var nex in node.Names) {
+                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Nonlocal);
+                if (m == null) {
+                    _diagnostics.Add(new DiagnosticsEntry(
+                        Resources.ErrorVariableNotDefinedNonLocal.FormatInvariant(nex.Name),
+                        Eval.GetLocation(nex).Span, ErrorCodes.VariableNotDefinedNonLocal, Severity.Warning, DiagnosticSource.Linter));
+                }
+            }
+        }
+
+        private void HandleScope(ScopeStatement node) {
+            try {
+                OpenScope(node);
+                node.Walk(this);
+            } finally {
+                CloseScope();
+            }
         }
     }
 }

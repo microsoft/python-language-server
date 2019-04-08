@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -22,8 +21,8 @@ using Microsoft.Python.Analysis.Values.Collections;
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingTuple : PythonCollection {
         private readonly TypingTupleType _collectionType;
-        public TypingTuple(TypingTupleType collectionType, LocationInfo location = null)
-            : base(collectionType, location ?? LocationInfo.Empty, collectionType.ItemTypes) {
+        public TypingTuple(TypingTupleType collectionType)
+            : base(collectionType, collectionType.ItemTypes) {
             _collectionType = collectionType;
         }
 
@@ -34,6 +33,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         }
 
         public override IMember Index(object index) 
-            => _collectionType.Index(this, index).GetPythonType().CreateInstance(null, LocationInfo.Empty, ArgumentSet.Empty);
+            => _collectionType.Index(this, index).GetPythonType().CreateInstance(null, ArgumentSet.Empty);
     }
 }

@@ -13,20 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
-    public sealed partial class Server {
-        public async Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
-
-            var uri = @params.textDocument.uri;
-            _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
-
-            return Array.Empty<Reference>();
-        }
+namespace Microsoft.Python.Analysis {
+    public static class EvaluatorExtensions {
+        public static IMember LookupNameInScopes(this IExpressionEvaluator eval, string name, out IScope scope, LookupOptions options = LookupOptions.Normal)
+            => eval.LookupNameInScopes(name, out scope, out _, options);
+        public static IMember LookupNameInScopes(this IExpressionEvaluator eval, string name, LookupOptions options = LookupOptions.Normal)
+            => eval.LookupNameInScopes(name, out _, out _, options);
     }
 }

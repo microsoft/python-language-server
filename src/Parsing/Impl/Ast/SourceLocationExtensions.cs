@@ -27,4 +27,9 @@ namespace Microsoft.Python.Parsing.Ast {
         public static IndexSpan ToIndexSpan(this Range range, PythonAst ast)
             => IndexSpan.FromBounds(ast.LocationToIndex(range.start), ast.LocationToIndex(range.end));
     }
+
+    public static class IndexSpanExtensions {
+        public static SourceSpan ToSourceSpan(this IndexSpan span, PythonAst ast)
+            => ast != null ? new SourceSpan(ast.IndexToLocation(span.Start), ast.IndexToLocation(span.End)) : default;
+    }
 }

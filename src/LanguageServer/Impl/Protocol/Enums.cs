@@ -179,11 +179,4 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         Read = 2,
         Write = 3
     }
-
-    // Not in the LSP spec.
-    public enum ReferenceKind {
-        Definition = 1,
-        Reference = 2,
-        Value = 3
-    }
 }

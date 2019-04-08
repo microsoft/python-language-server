@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
@@ -29,14 +28,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 case NameExpression nex:
                     // for x in y:
                     if (!string.IsNullOrEmpty(nex.Name)) {
-                        Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, Eval.GetLoc(nex));
+                        Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, nex);
                     }
                     break;
-                case TupleExpression tex:
+                case SequenceExpression seq:
                     // x = [('abc', 42, True), ('abc', 23, False)]
                     // for some_str, (some_int, some_bool) in x:
-                    var h = new TupleExpressionHandler(Walker);
-                    h.HandleTupleAssignment(tex, node.List, value);
+                    var h = new SequenceExpressionHandler(Walker);
+                    h.HandleAssignment(seq.Items, node.List, value);
                     break;
             }
 

@@ -67,12 +67,19 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsInParameter(this FunctionDefinition fd, PythonAst tree, SourceLocation location) {
             var index = tree.LocationToIndex(location);
-            if (index < fd.StartIndex 
-                || (fd.Body != null && index >= fd.Body.StartIndex) 
-                || (fd.NameExpression != null && index > fd.NameExpression.EndIndex)) {
-                // Not within the def line
+            if (index < fd.StartIndex) {
+                return false; // before the node
+            }
+
+            if (fd.Body != null && index >= fd.Body.StartIndex) {
+                return false; // in the body of the function
+            }
+
+            if (fd.NameExpression != null && index < fd.NameExpression.EndIndex) {
+                // before the name end
                 return false;
             }
+
             return fd.Parameters.Any(p => {
                 var paramName = p.GetVerbatimImage(tree) ?? p.Name;
                 return index >= p.StartIndex && index <= p.StartIndex + paramName.Length;

@@ -23,9 +23,7 @@ using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
@@ -48,6 +46,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private ClientCapabilities _clientCaps;
         private ILogger _log;
         private IIndexManager _indexManager;
+        private string _rootDir;
 
         public Server(IServiceManager services) {
             _services = services;
@@ -103,9 +102,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
-            // TODO: multi-root workspaces.
-            var rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : PathUtils.NormalizePath(@params.rootPath);
-
+            _rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : PathUtils.NormalizePath(@params.rootPath);
             Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);
 
             var configuration = new InterpreterConfiguration(null, null,
@@ -119,11 +116,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
             };
 
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, rootDir, _services, cancellationToken);
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken);
             _services.AddService(_interpreter);
 
             var fileSystem = _services.GetService<IFileSystem>();
-            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, rootDir,
+            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, _rootDir,
                                             @params.initializationOptions.includeFiles,
                                             @params.initializationOptions.excludeFiles,
                                             _services.GetService<IIdleTimeService>());

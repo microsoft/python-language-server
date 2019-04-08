@@ -19,23 +19,20 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal sealed class AnyType : IPythonType {
-        public AnyType(IPythonModule declaringModule) {
-            DeclaringModule = declaringModule;
-        }
+    internal sealed class AnyType : LocatedMember, IPythonType {
+        public AnyType(IPythonModule declaringModule)
+            : base(PythonMemberType.Class, declaringModule) { }
+
         public string Name => "Any";
-        public IPythonModule DeclaringModule { get; }
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => false;
         public bool IsSpecialized => true;
 
-        public PythonMemberType MemberType => PythonMemberType.Class;
-        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
+        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
             => DeclaringModule.Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) 
-            => new PythonInstance(this, location);
+        public IMember CreateInstance(string typeName, IArgumentSet args) => new PythonInstance(this);
 
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Array.Empty<string>();

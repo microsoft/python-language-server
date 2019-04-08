@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -27,8 +26,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingDictionary : PythonDictionary {
         private readonly TypingDictionaryType _dictType;
         
-        public TypingDictionary(TypingDictionaryType dictType, LocationInfo location = null)
-            : base(dictType, location ?? LocationInfo.Empty, EmptyDictionary<IMember, IMember>.Instance) {
+        public TypingDictionary(TypingDictionaryType dictType)
+            : base(dictType, EmptyDictionary<IMember, IMember>.Instance) {
             _dictType = dictType;
         }
 

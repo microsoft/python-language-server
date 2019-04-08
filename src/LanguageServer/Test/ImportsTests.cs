@@ -16,7 +16,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
@@ -24,7 +23,6 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -586,6 +584,8 @@ __all__.extend(123)")]
         [DataRow(@"
 __all__ = ['A']
 __all__.extend(nothing)")]
+        [DataRow(@"
+__all__ = [chr(x + 65) for x in range(1, 2)]")]
         [DataTestMethod, Priority(0)]
         public async Task AllUnsupported(string allCode) {
             var module1Code = @"

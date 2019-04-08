@@ -160,5 +160,11 @@ namespace Microsoft.Python.Analysis.Tests {
 
             return analysis;
         }
+
+        protected async Task<IDocumentAnalysis> GetDocumentAnalysisAsync(IDocument document) {
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+            await analyzer.WaitForCompleteAnalysisAsync();
+            return await document.GetAnalysisAsync(Timeout.Infinite);
+        }
     }
 }

@@ -196,6 +196,24 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; is not defined in the global scope.
+        /// </summary>
+        internal static string ErrorVariableNotDefinedGlobally {
+            get {
+                return ResourceManager.GetString("ErrorVariableNotDefinedGlobally", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; is not defined in non-local scopes.
+        /// </summary>
+        internal static string ErrorVariableNotDefinedNonLocal {
+            get {
+                return ResourceManager.GetString("ErrorVariableNotDefinedNonLocal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An exception occured while discovering search paths; analysis will not be available..
         /// </summary>
         internal static string ExceptionGettingSearchPaths {

@@ -51,8 +51,8 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         public override bool Walk(DictionaryComprehension node) {
-            CollectNames(node);
-            var ew = new ExpressionWalker(_walker, _localNames, _localNameNodes);
+            var nc = CollectNames(node);
+            var ew = new ExpressionWalker(_walker, nc.Names, nc.NameExpressions);
             node.Key?.Walk(ew);
             node.Value?.Walk(ew);
             foreach (var iter in node.Iterators) {
@@ -61,16 +61,17 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             return true;
         }
 
-        private void CollectNames(Comprehension c) {
+        private NameCollectorWalker CollectNames(Comprehension c) {
             var nc = new NameCollectorWalker(_localNames, _localNameNodes);
             foreach (var cfor in c.Iterators.OfType<ComprehensionFor>()) {
                 cfor.Left?.Walk(nc);
             }
+            return nc;
         }
 
         private void ProcessComprehension(Comprehension c, Node item, IEnumerable<ComprehensionIterator> iterators) {
-            CollectNames(c);
-            var ew = new ExpressionWalker(_walker, _localNames, _localNameNodes);
+            var nc = CollectNames(c);
+            var ew = new ExpressionWalker(_walker, nc.Names, nc.NameExpressions);
             item?.Walk(ew);
             foreach (var iter in iterators) {
                 iter.Walk(ew);

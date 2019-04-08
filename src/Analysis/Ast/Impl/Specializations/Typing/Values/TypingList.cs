@@ -23,8 +23,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingList : PythonCollection {
         private readonly ITypingListType _collectionType;
 
-        public TypingList(ITypingListType collectionType, LocationInfo location = null)
-            : base(collectionType, location ?? LocationInfo.Empty, Array.Empty<IMember>()) {
+        public TypingList(ITypingListType collectionType)
+            : base(collectionType, Array.Empty<IMember>()) {
             _collectionType = collectionType;
         }
 

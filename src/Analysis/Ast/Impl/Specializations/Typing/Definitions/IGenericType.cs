@@ -28,6 +28,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// </summary>
         IReadOnlyList<IGenericTypeDefinition> Parameters { get; }
 
-        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments, IPythonModule declaringModule, LocationInfo location = null);
+        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments);
     }
 }

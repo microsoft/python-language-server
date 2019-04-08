@@ -21,6 +21,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionLocator {
 
         public static void FindExpression(PythonAst ast, SourceLocation position, FindExpressionOptions options, out Node expression, out Node statement, out ScopeStatement scope) {
+            expression = null;
+            statement = null;
+            scope = null;
+
+            if (ast == null) {
+                return;
+            }
+
             var finder = new ExpressionFinder(ast, options);
 
             var index = ast.LocationToIndex(position);
@@ -43,10 +51,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             var top = 1;
             if (scope != null) {
-                var scopeStart = scope.GetStart(tree);
+                var scopeStart = scope.GetStart();
                 if (scope.Body != null) {
-                    top = scope.Body.GetEnd(tree).Line == scopeStart.Line
-                        ? scope.Body.GetStart(tree).Column
+                    top = scope.Body.GetEnd().Line == scopeStart.Line
+                        ? scope.Body.GetStart().Column
                         : scopeStart.Column;
                 } else {
                     top = scopeStart.Column;

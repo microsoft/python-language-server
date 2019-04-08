@@ -35,7 +35,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         private Expression ParseSubExpression(string expr) {
             var parser = Parser.CreateParser(new StringReader(expr), LanguageVersion);
-            return Statement.GetExpression(parser.ParseTopExpression()?.Body);
+            return Statement.GetExpression(parser.ParseTopExpression(null)?.Body);
         }
 
         /// <summary>

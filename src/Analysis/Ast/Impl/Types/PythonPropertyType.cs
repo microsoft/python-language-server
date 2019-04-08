@@ -21,13 +21,13 @@ namespace Microsoft.Python.Analysis.Types {
     class PythonPropertyType : PythonType, IPythonPropertyType {
         private IPythonFunctionOverload _getter;
 
-        public PythonPropertyType(FunctionDefinition fd, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo location)
-            : this(fd.Name, declaringModule, declaringType, isAbstract, location) {
+        public PythonPropertyType(FunctionDefinition fd, Location location, IPythonType declaringType, bool isAbstract)
+            : this(fd.Name, location, declaringType, isAbstract) {
             FunctionDefinition = fd;
         }
 
-        public PythonPropertyType(string name, IPythonModule declaringModule, IPythonType declaringType, bool isAbstract, LocationInfo location)
-            : base(name, declaringModule, null, location) {
+        public PythonPropertyType(string name, Location location, IPythonType declaringType, bool isAbstract)
+            : base(name, location, string.Empty, BuiltinTypeId.Property) {
             DeclaringType = declaringType;
             IsAbstract = isAbstract;
         }
@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Types {
         public string Description 
             => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType,  instance?.Location);
+            => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;

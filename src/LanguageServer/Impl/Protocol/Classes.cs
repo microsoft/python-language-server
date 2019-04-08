@@ -63,13 +63,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// empty string.
         /// </summary>
         public string newText;
-
-        /// <summary>
-        /// Extended version information specifying the source version
-        /// that range applies to. Should be used by the client to
-        /// adjust range before applying the edit.
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]
@@ -610,11 +603,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     public sealed class Reference {
         public Uri uri;
         public Range range;
-
-        /// <summary>
-        /// The kind of reference
-        /// </summary>
-        public ReferenceKind? _kind;
     }
 
     [Serializable]

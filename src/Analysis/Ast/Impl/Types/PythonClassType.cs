@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -39,15 +40,17 @@ namespace Microsoft.Python.Analysis.Types {
         private Dictionary<string, IPythonType> _genericParameters;
 
         // For tests
-        internal PythonClassType(string name, IPythonModule declaringModule, LocationInfo location = null)
-            : base(name, declaringModule, string.Empty, location ?? LocationInfo.Empty, BuiltinTypeId.Type) { }
+        internal PythonClassType(string name, Location location)
+            : base(name, location, string.Empty, BuiltinTypeId.Type) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
+        }
 
         public PythonClassType(
             ClassDefinition classDefinition,
-            IPythonModule declaringModule,
-            LocationInfo location,
+            Location location,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, declaringModule, classDefinition.GetDocumentation(), location, builtinTypeId) {
+        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
             ClassDefinition = classDefinition;
         }
 
@@ -77,7 +80,7 @@ namespace Microsoft.Python.Analysis.Types {
                 switch (name) {
                     case "__mro__":
                     case "mro":
-                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, Mro) : UnknownType;
+                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType;
                     case "__dict__":
                         return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
                     case @"__weakref__":
@@ -118,22 +121,22 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args) {
+        public override IMember CreateInstance(string typeName, IArgumentSet args) {
             // Specializations
             switch (typeName) {
                 case "list":
-                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, location, args);
+                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, args);
                 case "dict": {
                         // self, then contents
                         var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
-                        return new PythonDictionary(DeclaringModule.Interpreter, location, contents);
+                        return new PythonDictionary(DeclaringModule.Interpreter, contents);
                     }
                 case "tuple": {
                         var contents = args.Values<IMember>();
-                        return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, location, contents);
+                        return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, contents);
                     }
             }
-            return new PythonInstance(this, location);
+            return new PythonInstance(this);
         }
 
         public override IMember Index(IPythonInstance instance, object index) {
@@ -202,7 +205,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return;
                 }
 
-                AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, LocationInfo.Empty, _bases), true);
+                AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, _bases), true);
             }
         }
 
@@ -272,8 +275,7 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
-        public IPythonType CreateSpecificType(IArgumentSet args, IPythonModule declaringModule, LocationInfo location = null) {
-            location = location ?? LocationInfo.Empty;
+        public IPythonType CreateSpecificType(IArgumentSet args) {
             // Get declared generic parameters of the class, i.e. list of Ts in Generic[T1, T2, ...]
             var genericClassParameters = Bases.OfType<IGenericClassParameter>().ToArray();
             // Optimistically use the first one
@@ -364,7 +366,7 @@ namespace Microsoft.Python.Analysis.Types {
                 .ToArray();
 
             var specificName = CodeFormatter.FormatSequence(Name, '[', specificTypes);
-            var classType = new PythonClassType(specificName, declaringModule);
+            var classType = new PythonClassType(specificName, new Location(DeclaringModule));
 
             // Methods returning generic types need to know how to match generic
             // parameter name to the actual supplied type.
@@ -392,7 +394,7 @@ namespace Microsoft.Python.Analysis.Types {
                         .Where(p => !p.IsUnknown())
                         .ToArray();
                     if (st.Length > 0) {
-                        var type = gt.CreateSpecificType(new ArgumentSet(st), classType.DeclaringModule, location);
+                        var type = gt.CreateSpecificType(new ArgumentSet(st));
                         if (!type.IsUnknown()) {
                             bases.Add(type);
                         }
@@ -401,7 +403,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // Set specific class bases
                 classType.SetBases(bases.Concat(newBases));
                 // Transfer members from generic to specific type.
-                SetClassMembers(classType, args, declaringModule, location);
+                SetClassMembers(classType, args);
             } finally {
                 Pop();
             }
@@ -461,7 +463,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Transfers members from generic class to the specific class type
         /// while instantiating specific types for the members.
         /// </summary>
-        private void SetClassMembers(PythonClassType classType, IArgumentSet args, IPythonModule declaringModule, LocationInfo location) {
+        private void SetClassMembers(PythonClassType classType, IArgumentSet args) {
             // Add members from the template class (this one).
             // Members must be clones rather than references since
             // we are going to set specific types on them.
@@ -477,7 +479,7 @@ namespace Microsoft.Python.Analysis.Types {
             foreach (var m in members) {
                 switch (m.Value) {
                     case IPythonTemplateType tt: {
-                            var specificType = tt.CreateSpecificType(args, declaringModule, location);
+                            var specificType = tt.CreateSpecificType(args);
                             classType.AddMember(m.Key, specificType, true);
                             break;
                         }
@@ -486,7 +488,7 @@ namespace Microsoft.Python.Analysis.Types {
                             IPythonType specificType = null;
                             switch (t) {
                                 case IPythonTemplateType tt when tt.IsGeneric():
-                                    specificType = tt.CreateSpecificType(args, declaringModule, location);
+                                    specificType = tt.CreateSpecificType(args);
                                     break;
                                 case IGenericTypeDefinition gtd:
                                     classType.GenericParameters.TryGetValue(gtd.Name, out specificType);
@@ -494,7 +496,7 @@ namespace Microsoft.Python.Analysis.Types {
                             }
 
                             if (specificType != null) {
-                                classType.AddMember(m.Key, new PythonInstance(specificType, location), true);
+                                classType.AddMember(m.Key, new PythonInstance(specificType), true);
                             }
                             break;
                         }

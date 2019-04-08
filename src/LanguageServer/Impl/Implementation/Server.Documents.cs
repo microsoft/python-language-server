@@ -13,12 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -71,16 +67,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _rdt.CloseDocument(uri);
             _indexManager.ProcessClosedFile(uri.AbsolutePath);
-        }
-
-        private Task<IDocumentAnalysis> GetAnalysisAsync(Uri uri, CancellationToken cancellationToken) {
-            var document = _rdt.GetDocument(uri);
-            if (document == null) {
-                _log?.Log(TraceEventType.Error, $"Unable to find document {uri}");
-                return Task.FromResult(default(IDocumentAnalysis));
-            }
-
-            return document.GetAnalysisAsync(200, cancellationToken);
         }
     }
 }

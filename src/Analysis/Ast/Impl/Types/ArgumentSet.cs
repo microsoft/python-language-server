@@ -35,28 +35,29 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly List<DiagnosticsEntry> _errors = new List<DiagnosticsEntry>();
         private readonly ListArg _listArgument;
         private readonly DictArg _dictArgument;
-        private readonly ExpressionEval _eval;
         private bool _evaluated;
 
         public static IArgumentSet Empty = new ArgumentSet();
 
+        /// <summary>Module that declares the function</summary>
+        public IPythonModule DeclaringModule { get; }
         public IReadOnlyList<IArgument> Arguments => _arguments;
         public IListArgument ListArgument => _listArgument;
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
         public int OverloadIndex { get; }
-        public IExpressionEvaluator Eval => _eval;
+        public IExpressionEvaluator Eval { get; }
 
 
         private ArgumentSet() { }
 
         public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
-            _arguments = typeArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
+            _arguments = typeArgs.Select(t => new Argument(t)).ToList();
             _evaluated = true;
         }
 
         public ArgumentSet(IReadOnlyList<IMember> memberArgs) {
-            _arguments = memberArgs.Select(t => new Argument(t, LocationInfo.Empty)).ToList();
+            _arguments = memberArgs.Select(t => new Argument(t)).ToList();
             _evaluated = true;
         }
 
@@ -75,9 +76,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="callExpr">Call expression that invokes the function.</param>
         /// <param name="module">Module that contains the call expression.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
-        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, ExpressionEval eval) {
-            _eval = eval;
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, IExpressionEvaluator eval) {
+            Eval = eval;
             OverloadIndex = overloadIndex;
+            DeclaringModule = fn.DeclaringModule;
 
             var overload = fn.Overloads[overloadIndex];
             var fd = overload.FunctionDefinition;
@@ -89,12 +91,12 @@ namespace Microsoft.Python.Analysis.Types {
                 _arguments = new List<Argument>();
                 for (var i = 0; i < callExpr.Args.Count; i++) {
                     var name = callExpr.Args[i].Name;
-                    var location = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].GetLocation(fn.DeclaringModule) : LocationInfo.Empty;
                     if (string.IsNullOrEmpty(name)) {
                         name = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].Name : null;
                     }
                     name = name ?? $"arg{i}";
-                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, location));
+                    var parameter = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
+                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, parameter));
                 }
                 return;
             }
@@ -113,7 +115,7 @@ namespace Microsoft.Python.Analysis.Types {
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
 
-            var slots = fd.Parameters.Select(p => new Argument(p, p.GetLocation(module))).ToArray();
+            var slots = fd.Parameters.Select(p => new Argument(p, p)).ToArray();
             // Locate sequence argument, if any
             var sa = slots.Where(s => s.Kind == ParameterKind.List).ToArray();
             if (sa.Length > 1) {
@@ -252,8 +254,10 @@ namespace Microsoft.Python.Analysis.Types {
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterMissing.FormatUI(slot.Name), callLocation.Span,
                                 ErrorCodes.ParameterMissing, Severity.Warning, DiagnosticSource.Analysis));
                         }
-
+                        // Note that parameter default value expression is from the function definition AST
+                        // while actual argument values are from the calling file AST.
                         slot.ValueExpression = parameter.DefaultValue;
+                        slot.ValueIsDefault = true;
                     }
                 }
             } finally {
@@ -268,20 +272,20 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = Eval.GetValueFromExpression(a.ValueExpression) ?? _eval.UnknownType;
+                a.Value = GetArgumentValue(a);
                 a.Type = Eval.GetValueFromExpression(a.TypeExpression) as IPythonType;
             }
 
             if (_listArgument != null) {
                 foreach (var e in _listArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e) ?? _eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e) ?? Eval.UnknownType;
                     _listArgument._Values.Add(value);
                 }
             }
 
             if (_dictArgument != null) {
                 foreach (var e in _dictArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e.Value) ?? _eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e.Value) ?? Eval.UnknownType;
                     _dictArgument._Args[e.Key] = value;
                 }
             }
@@ -290,19 +294,70 @@ namespace Microsoft.Python.Analysis.Types {
             return this;
         }
 
+        private IMember GetArgumentValue(Argument arg) {
+            // Evaluates expression in the specific module context. Typically used to evaluate
+            // expressions representing default values of function arguments since they are
+            // are defined in the function declaring module rather than in the caller context.
+            if (arg.ValueExpression == null) {
+                return Eval.UnknownType;
+            }
+
+            if (arg.ValueIsDefault) {
+                using (Eval.OpenScope(DeclaringModule.Analysis.GlobalScope)) {
+                    return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+                }
+            }
+            return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+        }
+
         private sealed class Argument : IArgument {
+            /// <summary>
+            /// Argument name.
+            /// </summary>
             public string Name { get; }
+
+            /// <summary>
+            /// Argument value, if known.
+            /// </summary>
             public object Value { get; internal set; }
+
+            /// <summary>
+            /// Argument kind, <see cref="ParameterKind"/>.
+            /// </summary>
             public ParameterKind Kind { get; }
+
+            /// <summary>
+            /// Expression that represents value of the argument in the
+            /// call expression. <see cref="CallExpression"/>.
+            /// </summary>
             public Expression ValueExpression { get; set; }
-            public LocationInfo Location { get; }
+
+            /// <summary>
+            /// Indicates if value is a default value expression. Default values
+            /// should be evaluated in the context of the file that declared
+            /// the function rather than in the caller context.
+            /// </summary>
+            public bool ValueIsDefault { get; set; }
+
+            /// <summary>
+            /// Type of the argument, if annotated.
+            /// </summary>
             public IPythonType Type { get; internal set; }
+
+            /// <summary>
+            /// Type annotation expression.
+            /// </summary>
             public Expression TypeExpression { get; }
 
-            public Argument(Parameter p, LocationInfo location) :
+            /// <summary>
+            /// AST node that defines the argument.
+            /// </summary>
+            public Node Location { get; }
+
+            public Argument(Parameter p, Node location) :
                 this(p.Name, p.Kind, null, p.Annotation, location) { }
 
-            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, LocationInfo location) {
+            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, Node location) {
                 Name = name;
                 Kind = kind;
                 ValueExpression = valueValueExpression;
@@ -310,20 +365,19 @@ namespace Microsoft.Python.Analysis.Types {
                 Location = location;
             }
 
-            public Argument(IPythonType type, LocationInfo location) : this(type.Name, type, location) { }
-            public Argument(IMember member, LocationInfo location) : this(string.Empty, member, location) { }
+            public Argument(IPythonType type) : this(type.Name, type) { }
+            public Argument(IMember member) : this(string.Empty, member) { }
 
-            private Argument(string name, object value, LocationInfo location) {
+            private Argument(string name, object value) {
                 Name = name;
                 Value = value;
-                Location = location;
             }
         }
 
         private sealed class ListArg : IListArgument {
             public string Name { get; }
             public Expression Expression { get; }
-            public LocationInfo Location { get; }
+            public Node Location { get; }
 
             public IReadOnlyList<IMember> Values => _Values;
             public IReadOnlyList<Expression> Expressions => _Expressions;
@@ -331,7 +385,7 @@ namespace Microsoft.Python.Analysis.Types {
             public List<IMember> _Values { get; } = new List<IMember>();
             public List<Expression> _Expressions { get; } = new List<Expression>();
 
-            public ListArg(string name, Expression expression, LocationInfo location) {
+            public ListArg(string name, Expression expression, Node location) {
                 Name = name;
                 Expression = expression;
                 Location = location;
@@ -341,7 +395,7 @@ namespace Microsoft.Python.Analysis.Types {
         private sealed class DictArg : IDictionaryArgument {
             public string Name { get; }
             public Expression Expression { get; }
-            public LocationInfo Location { get; }
+            public Node Location { get; }
 
             public IReadOnlyDictionary<string, IMember> Arguments => _Args;
             public IReadOnlyDictionary<string, Expression> Expressions => _Expressions;
@@ -349,10 +403,10 @@ namespace Microsoft.Python.Analysis.Types {
             public Dictionary<string, IMember> _Args { get; } = new Dictionary<string, IMember>();
             public Dictionary<string, Expression> _Expressions { get; } = new Dictionary<string, Expression>();
 
-            public DictArg(string name, Expression expression, LocationInfo location) {
+            public DictArg(string name, Expression expression, Node location) {
                 Name = name;
                 Expression = expression;
-                Location = location;
+                Location = Location;
             }
         }
     }

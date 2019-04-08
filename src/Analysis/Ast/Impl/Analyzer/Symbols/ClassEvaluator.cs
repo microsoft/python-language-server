@@ -56,13 +56,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // We cheat slightly and treat base classes as annotations.
                     var b = Eval.GetTypeFromAnnotation(a.Expression);
                     if (b != null) {
-                        bases.Add(b.GetPythonType());
+                        var t = b.GetPythonType();
+                        bases.Add(t);
+                        t.AddReference(Eval.GetLocationOfName(a.Expression));
                     }
                 }
                 _class.SetBases(bases);
 
                 // Declare __class__ variable in the scope.
-                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration, _classDef);
+                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
 
                 ProcessClassBody();
             }

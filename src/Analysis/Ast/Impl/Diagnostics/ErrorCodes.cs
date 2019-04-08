@@ -23,5 +23,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string ParameterMissing = "parameter-missing";
         public const string UnresolvedImport = "unresolved-import";
         public const string UndefinedVariable = "undefined-variable";
+        public const string VariableNotDefinedGlobally= "variable-not-defined-globally";
+        public const string VariableNotDefinedNonLocal = "variable-not-defined-nonlocal";
     }
 }

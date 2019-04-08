@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (!annotationType.IsUnknown()) {
                     // Annotations are typically types while actually functions return
                     // instances unless specifically annotated to a type such as Type[T].
-                    var instance = annotationType.CreateInstance(annotationType.Name, Eval.GetLoc(FunctionDefinition), ArgumentSet.Empty);
+                    var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
                     _overload.SetReturnValue(instance, true);
                 } else {
                     // Check if function is a generator
@@ -114,10 +114,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         // Classes and functions are walked by their respective evaluators
         public override bool Walk(ClassDefinition node) => false;
         public override bool Walk(FunctionDefinition node) {
-            // Inner function, declare as variable.
+            // Inner function, declare as variable. Do not set variable location
+            // since it is not an assignment visible to the user.
             var m = SymbolTable.Evaluate(node);
             if (m != null) {
-                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, Eval.GetLoc(node));
+                Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, node.NameExpression);
             }
             return false;
         }

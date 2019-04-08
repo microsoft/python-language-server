@@ -13,13 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
     /// </summary>
     internal interface IAnalyzable {
+        /// <summary>
+        /// Notifies document that analysis is about to begin.
+        /// </summary>
+        void NotifyAnalysisBegins();
+
         /// <summary>
         /// Notifies document that its analysis is now complete.
         /// </summary>

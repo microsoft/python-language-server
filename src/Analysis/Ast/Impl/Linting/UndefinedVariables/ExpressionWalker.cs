@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ExpressionWalker : PythonWalker {
         private readonly UndefinedVariablesWalker _walker;
         private readonly HashSet<string> _localNames;
-        private readonly HashSet<NameExpression> _localNameNodes;
+        private readonly HashSet<NameExpression> _localNameExpressions;
 
         public ExpressionWalker(UndefinedVariablesWalker walker)
             : this(walker, null, null) { }
@@ -34,18 +34,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         /// </summary>
         /// <param name="walker">Undefined variables walker.</param>
         /// <param name="localNames">Locally defined names, such as variables in a comprehension.</param>
-        /// <param name="localNameNodes">Name nodes for local names.</param>
-        public ExpressionWalker(UndefinedVariablesWalker walker, HashSet<string> localNames, HashSet<NameExpression> localNameNodes) {
+        /// <param name="localNameExpressions">Name nodes for local names.</param>
+        public ExpressionWalker(UndefinedVariablesWalker walker, IEnumerable<string> localNames, IEnumerable<NameExpression> localNameExpressions) {
             _walker = walker;
-            _localNames = localNames ?? new HashSet<string>();
-            _localNameNodes = localNameNodes ?? new HashSet<NameExpression>();
-        }
-
-        public override bool Walk(CallExpression node) {
-            foreach (var arg in node.Args) {
-                arg?.Expression?.Walk(this);
-            }
-            return false;
+            _localNames = new HashSet<string>(localNames ?? Enumerable.Empty<string>());
+            _localNameExpressions = new HashSet<NameExpression>(localNameExpressions ?? Enumerable.Empty<NameExpression>());
         }
 
         public override bool Walk(LambdaExpression node) {
@@ -54,21 +47,22 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         public override bool Walk(ListComprehension node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
 
         public override bool Walk(SetComprehension node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
+
         public override bool Walk(DictionaryComprehension node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
 
         public override bool Walk(GeneratorExpression node) {
-            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameNodes));
+            node.Walk(new ComprehensionWalker(_walker, _localNames, _localNameExpressions));
             return false;
         }
 
@@ -76,24 +70,25 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             if (_localNames?.Contains(node.Name) == true) {
                 return false;
             }
-            if (_localNameNodes?.Contains(node) == true) {
+            if (_localNameExpressions?.Contains(node) == true) {
                 return false;
             }
 
             var analysis = _walker.Analysis;
-            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var scope);
+            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out _, out var v);
             if (m == null) {
                 _walker.ReportUndefinedVariable(node);
             }
+            v?.AddReference(new Location(analysis.Document, node.IndexSpan));
+
             // Take into account where variable is defined so we do detect
             // undefined x in 
             //    y = x
             //    x = 1
-            var v = scope?.Variables[node.Name];
-            if (v != null && v.Location.DocumentUri == analysis.Document.Uri) {
+            if (v?.Definition != null && v.Definition.DocumentUri == analysis.Document.Uri) {
                 // Do not complain about functions and classes that appear later in the file
                 if (!(v.Value is IPythonFunctionType || v.Value is IPythonClassType)) {
-                    var span = v.Locations.First().Span;
+                    var span = v.Definition.Span;
                     var nodeLoc = node.GetLocation(analysis.Document);
                     // Exclude same-name variables declared within the same statement
                     // like 'e' that appears before its declaration in '[e in for e in {}]'

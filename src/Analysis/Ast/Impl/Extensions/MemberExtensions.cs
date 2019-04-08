@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -41,6 +42,7 @@ namespace Microsoft.Python.Analysis {
                 case IPythonInstance pi:
                     return pi.Type;
                 case IVariable v when v.Value != null:
+                    Debug.Assert(!(v.Value is IVariable));
                     return v.Value.GetPythonType();
             }
             return null;
@@ -70,6 +72,19 @@ namespace Microsoft.Python.Analysis {
             }
             value = default;
             return false;
+        }
+
+        public static void AddReference(this IMember m, Location location)
+            => (m as ILocatedMember)?.AddReference(location);
+
+        public static string GetName(this IMember m) {
+            switch (m) {
+                case IVariable v:
+                    return v.Name;
+                case IPythonType t:
+                    return t.Name;
+            }
+            return null;
         }
     }
 }

@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer {

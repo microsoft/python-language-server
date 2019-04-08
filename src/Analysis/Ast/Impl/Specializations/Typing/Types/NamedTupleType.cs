@@ -43,9 +43,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override string Name { get; }
         public override bool IsSpecialized => true;
 
-
-        public override IMember CreateInstance(string typeName, LocationInfo location, IArgumentSet args)
-            => new TypingTuple(this, location);
+        public override IMember CreateInstance(string typeName, IArgumentSet args) => new TypingTuple(this);
 
         // NamedTuple does not create instances, it defines a type.
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => this;

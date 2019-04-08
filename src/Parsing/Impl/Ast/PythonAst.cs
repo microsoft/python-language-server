@@ -30,11 +30,13 @@ namespace Microsoft.Python.Parsing.Ast {
         private readonly Statement _body;
         private readonly Dictionary<Node, Dictionary<object, object>> _attributes = new Dictionary<Node, Dictionary<object, object>>();
 
-        public PythonAst(Statement body, NewLineLocation[] lineLocations, PythonLanguageVersion langVersion, SourceLocation[] commentLocations) {
+        public PythonAst(Uri module, Statement body, NewLineLocation[] lineLocations, PythonLanguageVersion langVersion, SourceLocation[] commentLocations) {
             _body = body ?? throw new ArgumentNullException(nameof(body));
+            Module = module;
             LanguageVersion = langVersion;
             NewLineLocations = lineLocations;
             CommentLocations = commentLocations;
+
         }
 
         public PythonAst(IEnumerable<PythonAst> existingAst) {
@@ -57,6 +59,7 @@ namespace Microsoft.Python.Parsing.Ast {
             CommentLocations = comments.ToArray();
         }
 
+        public Uri Module { get; }
         public NewLineLocation[] NewLineLocations { get; }
         public SourceLocation[] CommentLocations { get; }
 

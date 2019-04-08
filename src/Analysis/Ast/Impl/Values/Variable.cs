@@ -17,37 +17,124 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
-    internal sealed class Variable : IVariable {
-        private List<LocationInfo> _locations;
-
-        public Variable(string name, IMember value, VariableSource source, LocationInfo location = null) {
-            Name = name;
-            Value = value;
+    internal sealed class Variable : LocatedMember, IVariable {
+        public Variable(string name, IMember value, VariableSource source, Location location)
+            : base(PythonMemberType.Variable, location) {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Value = value is IVariable v ? v.Value : value;
             Source = source;
-            Location = location ?? (value is ILocatedMember lm ? lm.Location : LocationInfo.Empty);
         }
 
+        public Variable(string name, IVariable parent, Location location)
+            : base(PythonMemberType.Variable, location, parent) {
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Value = parent.Value;
+            Source = VariableSource.Import;
+        }
+
+        #region IVariable
         public string Name { get; }
         public VariableSource Source { get; }
         public IMember Value { get; private set; }
-        public LocationInfo Location { get; }
-        public PythonMemberType MemberType => PythonMemberType.Variable;
-        public IReadOnlyList<LocationInfo> Locations => _locations as IReadOnlyList<LocationInfo> ?? new[] { Location };
 
-        public void Assign(IMember value, LocationInfo location) {
+        public void Assign(IMember value, Location location) {
+            if (value is IVariable v) {
+                value = v.Value;
+            }
             if (Value == null || Value.GetPythonType().IsUnknown() || value?.GetPythonType().IsUnknown() == false) {
+                Debug.Assert(!(value is IVariable));
                 Value = value;
             }
-            AddLocation(location);
+            AddReference(location);
+        }
+        #endregion
+
+        #region ILocatedMember
+        public override LocationInfo Definition {
+            get {
+                if (!Location.IsValid) {
+                    if (Parent != null) {
+                        return Parent?.Definition ?? LocationInfo.Empty;
+                    }
+                    var lmv = GetImplicitlyDeclaredValue();
+                    if (lmv != null) {
+                        return lmv.Definition;
+                    }
+                }
+                return base.Definition ?? LocationInfo.Empty;
+            }
         }
 
-        private void AddLocation(LocationInfo location) {
-            _locations = _locations ?? new List<LocationInfo> { Location };
-            _locations.Add(location);
+        public override IReadOnlyList<LocationInfo> References {
+            get {
+                if (!Location.IsValid) {
+                    if (Parent != null) {
+                        return Parent?.References ?? Array.Empty<LocationInfo>();
+                    }
+                    var lmv = GetImplicitlyDeclaredValue();
+                    if (lmv != null) {
+                        return lmv.References;
+                    }
+                }
+                return base.References ?? Array.Empty<LocationInfo>();
+            }
         }
+
+        public override void AddReference(Location location) {
+            if (location.IsValid) {
+                if (!AddOrRemoveReference(lm => lm?.AddReference(location))) {
+                    base.AddReference(location);
+                }
+            }
+        }
+
+        public override void RemoveReferences(IPythonModule module) {
+            if (module == null) {
+                return;
+            }
+            if (!AddOrRemoveReference(lm => lm?.RemoveReferences(module))) {
+                base.RemoveReferences(module);
+            }
+        }
+
+        private bool AddOrRemoveReference(Action<ILocatedMember> action) {
+            // Variable can be 
+            //   a) Declared locally in the module. In this case it has non-default
+            //      definition location and no parent (link).
+            //   b) Imported from another module via 'from module import X'.
+            //      In this case it has non-default definition location and non-null parent (link).
+            //   c) Imported from another module via 'from module import *'.
+            //      In this case it has default location (which means it is not explicitly declared)
+            //      and the non-null parent (link).
+            var explicitlyDeclared = Location.IsValid;
+            if (!explicitlyDeclared && Parent != null) {
+                action(Parent);
+                return true;
+            }
+            // Explicitly declared. 
+            // Values:
+            //   a) If value is not a located member, then add reference to the variable.
+            //   b) If variable name is the same as the value member name, then the variable
+            //      is implicit declaration (like declared function or a class) and we need
+            //      to add reference to the actual type instead.
+            var lmv = GetImplicitlyDeclaredValue();
+            if (lmv != null) {
+                // Variable is not user-declared and rather is holder of a function or class definition.
+                action(lmv);
+                return true;
+            }
+            action(Parent);
+            return false;
+        }
+
+        #endregion
+
+        private ILocatedMember GetImplicitlyDeclaredValue()
+            => Value is ILocatedMember lm && Name.EqualsOrdinal(lm.GetPythonType()?.Name) && !Location.IsValid ? lm : null;
 
         private string DebuggerDisplay {
             get {

@@ -52,7 +52,6 @@ namespace Microsoft.Python.Parsing {
         private bool _parsingStarted, _allowIncomplete;
         private bool _inLoop, _inFinally, _isGenerator, _inGeneratorExpression;
         private List<IndexSpan> _returnsWithValue;
-        private int _errorCode;
         private readonly bool _verbatim;                            // true if we're in verbatim mode and the ASTs can be turned back into source code, preserving white space / comments
         private readonly bool _bindReferences;                      // true if we should bind the references in the ASTs
         private string _tokenWhiteSpace, _lookaheadWhiteSpace;      // the whitespace for the current and lookahead tokens as provided from the parser
@@ -146,56 +145,7 @@ namespace Microsoft.Python.Parsing {
         //single_input: Newline | simple_stmt | compound_stmt Newline
         //eval_input: testlist Newline* ENDMARKER
         //file_input: (Newline | stmt)* ENDMARKER
-        public PythonAst ParseFile() => ParseFileWorker();
-
-        //[stmt_list] Newline | compound_stmt Newline
-        //stmt_list ::= simple_stmt (";" simple_stmt)* [";"]
-        //compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
-        //Returns a simple or coumpound_stmt or null if input is incomplete
-        /// <summary>
-        /// Parse one or more lines of interactive input
-        /// </summary>
-        /// <returns>null if input is not yet valid but could be with more lines</returns>
-        public PythonAst ParseInteractiveCode(out ParseResult properties) {
-
-            properties = ParseResult.Complete;
-
-            StartParsing();
-            var ret = InternalParseInteractiveInput(out var parsingMultiLineCmpdStmt, out var isEmptyStmt);
-
-            if (_errorCode == 0) {
-                if (isEmptyStmt) {
-                    properties = ParseResult.Empty;
-                } else if (parsingMultiLineCmpdStmt) {
-                    properties = ParseResult.IncompleteStatement;
-                }
-
-                if (isEmptyStmt) {
-                    return null;
-                }
-
-                return CreateAst(ret);
-            } else {
-                if ((_errorCode & ErrorCodes.IncompleteMask) != 0) {
-                    if ((_errorCode & ErrorCodes.IncompleteToken) != 0) {
-                        properties = ParseResult.IncompleteToken;
-                        return null;
-                    }
-
-                    if ((_errorCode & ErrorCodes.IncompleteStatement) != 0) {
-                        if (parsingMultiLineCmpdStmt) {
-                            properties = ParseResult.IncompleteStatement;
-                        } else {
-                            properties = ParseResult.IncompleteToken;
-                        }
-                        return null;
-                    }
-                }
-
-                properties = ParseResult.Invalid;
-                return null;
-            }
-        }
+        public PythonAst ParseFile(Uri module = null) => ParseFileWorker(module);
 
         public Expression ParseFStrSubExpr() {
             _alwaysAllowContextDependentSyntax = true;
@@ -227,7 +177,7 @@ namespace Microsoft.Python.Parsing {
                 );
             }
 
-            if (_errorCode == 0) {
+            if (ErrorCode == 0) {
                 // Detect if there are unexpected tokens
                 EatEndOfInput();
             }
@@ -236,10 +186,8 @@ namespace Microsoft.Python.Parsing {
             return node;
         }
 
-        private PythonAst CreateAst(Statement ret) {
-            var ast = new PythonAst(ret, _tokenizer.GetLineLocations(), _tokenizer.LanguageVersion, _tokenizer.GetCommentLocations());
-            ast.HasVerbatim = _verbatim;
-            ast.PrivatePrefix = _privatePrefix;
+        private PythonAst CreateAst(Uri module, Statement ret) {
+            var ast = new PythonAst(module, ret, _tokenizer.GetLineLocations(), _tokenizer.LanguageVersion, _tokenizer.GetCommentLocations()) { HasVerbatim = _verbatim, PrivatePrefix = _privatePrefix };
             if (_token.Token != null) {
                 ast.SetLoc(0, GetEndForStatement());
             }
@@ -250,25 +198,20 @@ namespace Microsoft.Python.Parsing {
             ast.SetAttributes(_attributes);
             PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
 
+            foreach (var n in ((Node)ast).TraverseDepthFirst(c => c.GetChildNodes())) {
+                n.Ast = ast;
+            }
+
             return ast;
         }
 
-        public PythonAst ParseSingleStatement() {
-            StartParsing();
-
-            MaybeEatNewLine();
-            var statement = ParseStmt();
-            EatEndOfInput();
-            return CreateAst(statement);
-        }
-
-        public PythonAst ParseTopExpression() {
+        public PythonAst ParseTopExpression(Uri module) {
             // TODO: move from source unit  .TrimStart(' ', '\t')
             _alwaysAllowContextDependentSyntax = true;
             var ret = new ReturnStatement(ParseTestListAsExpression());
             _alwaysAllowContextDependentSyntax = false;
             ret.SetLoc(0, 0);
-            return CreateAst(ret);
+            return CreateAst(module, ret);
         }
 
         internal ErrorSink ErrorSink {
@@ -279,7 +222,7 @@ namespace Microsoft.Python.Parsing {
             }
         }
 
-        public int ErrorCode => _errorCode;
+        public int ErrorCode { get; private set; }
 
         public void Reset(FutureOptions languageFeatures) {
             _languageFeatures = languageFeatures;
@@ -291,7 +234,7 @@ namespace Microsoft.Python.Parsing {
             _privatePrefix = null;
 
             _parsingStarted = false;
-            _errorCode = 0;
+            ErrorCode = 0;
         }
 
         public void Reset() => Reset(_languageFeatures);
@@ -336,8 +279,8 @@ namespace Microsoft.Python.Parsing {
 
         internal void ReportSyntaxError(int start, int end, string message, int errorCode) {
             // save the first one, the next error codes may be induced errors:
-            if (_errorCode == 0) {
-                _errorCode = errorCode;
+            if (ErrorCode == 0) {
+                ErrorCode = errorCode;
             }
             _errors.Add(
                 message,
@@ -4621,7 +4564,7 @@ namespace Microsoft.Python.Parsing {
 
         #region Implementation Details
 
-        private PythonAst ParseFileWorker() {
+        private PythonAst ParseFileWorker(Uri module) {
             StartParsing();
 
             var l = new List<Statement>();
@@ -4686,7 +4629,7 @@ namespace Microsoft.Python.Parsing {
             if (_token.Token != null) {
                 ret.SetLoc(0, GetEndForStatement());
             }
-            return CreateAst(ret);
+            return CreateAst(module, ret);
         }
 
         private bool IsString(ConstantExpression ce) {
@@ -4707,7 +4650,7 @@ namespace Microsoft.Python.Parsing {
                     Eat(TokenKind.EndOfFile);
                     if (_tokenizer.EndContinues) {
                         parsingMultiLineCmpdStmt = true;
-                        _errorCode = ErrorCodes.IncompleteStatement;
+                        ErrorCode = ErrorCodes.IncompleteStatement;
                     } else {
                         isEmptyStmt = true;
                     }
@@ -4952,8 +4895,8 @@ namespace Microsoft.Python.Parsing {
             }
 
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity) {
-                if (_parser._errorCode == 0 && severity == Severity.Error) {
-                    _parser._errorCode = errorCode;
+                if (_parser.ErrorCode == 0 && severity == Severity.Error) {
+                    _parser.ErrorCode = errorCode;
                 }
 
                 _parser.ErrorSink.Add(message, span, errorCode, severity);

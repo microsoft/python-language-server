@@ -22,19 +22,17 @@ using Microsoft.Python.Analysis.Values.Collections;
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
     /// Represents an instance of type or the type information.
-    /// Actual instance has <see cref="MemberType"/> set to <see cref="PythonMemberType.Instance"/>.
+    /// Actual instance has <see cref="LocatedMember.MemberType"/> set to <see cref="PythonMemberType.Instance"/>.
     /// Type information is marked as the type it describes, such as <see cref="PythonMemberType.Class"/>.
     /// </summary>
     [DebuggerDisplay("Instance of {Type.Name}")]
     internal class PythonInstance : IPythonInstance, IEquatable<IPythonInstance> {
-        public PythonInstance(IPythonType type, LocationInfo location = null) {
+        public PythonInstance(IPythonType type) {
             Type = type ?? throw new ArgumentNullException(nameof(type));
-            Location = location ?? LocationInfo.Empty;
         }
 
         public virtual IPythonType Type { get; }
-        public LocationInfo Location { get; }
-        public virtual PythonMemberType MemberType => PythonMemberType.Instance;
+        public PythonMemberType MemberType => PythonMemberType.Instance;
 
         public virtual IMember Call(string memberName, IArgumentSet args) {
             var t = Type.GetMember(memberName).GetPythonType();
@@ -59,7 +57,7 @@ namespace Microsoft.Python.Analysis.Values {
             var iteratorFunc = Type.GetMember(@"__iter__") as IPythonFunctionType;
             var o = iteratorFunc?.Overloads.FirstOrDefault();
             var instance = o?.Call(ArgumentSet.Empty, Type);
-            if (instance != null) { 
+            if (instance != null) {
                 return new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter);
             }
 

@@ -13,14 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.LanguageServer.Protocol;
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
-    public sealed partial class Server {
-        public async Task<WorkspaceEdit> Rename(RenameParams @params, CancellationToken cancellationToken) {
-            return new WorkspaceEdit();
-        }
+namespace Microsoft.Python.Analysis {
+    public interface IReferenceCollection {
+        IReadOnlyList<Expression> GetReferences(IPythonType type);
     }
 }
