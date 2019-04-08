@@ -84,34 +84,39 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         #endregion
 
         public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IArgumentSet args) {
-            IReadOnlyList<IMember> contents = null;
+            var exact = true;
+            IReadOnlyList<IMember> contents;
+
             if (args.Arguments.Count > 1) {
                 // self and list like in list.__init__ and 'list([1, 'str', 3.0])'
-                contents = (args.Arguments[1].Value as PythonCollection)?.Contents;
+                var arg = args.Arguments[1].Value as PythonCollection;
+                exact = arg?.IsExact ?? false;
+                contents = arg?.Contents;
             } else {
-                // Try list argument as n '__init__(self, *args, **kwargs)'
                 contents = args.ListArgument?.Values;
             }
-            return CreateList(interpreter, location, contents ?? Array.Empty<IMember>());
+
+            return CreateList(interpreter, location, contents ?? Array.Empty<IMember>(), exact: exact);
         }
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
+        public static IPythonCollection CreateList(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
-            return new PythonCollection(collectionType, location, contents, flatten);
+            return new PythonCollection(collectionType, location, contents, flatten, exact);
         }
 
-        public static IPythonCollection CreateConcatenatedList(IPythonInterpreter interpreter, LocationInfo location, params IReadOnlyList<IMember>[] manyContents) {
-            var contents = manyContents?.ExcludeDefault().SelectMany().ToList() ?? new List<IMember>();
-            return CreateList(interpreter, location, contents);
+        public static IPythonCollection CreateConcatenatedList(IPythonInterpreter interpreter, LocationInfo location, params IPythonCollection[] many) {
+            var exact = many?.All(c => c != null && c.IsExact) ?? false;
+            var contents = many?.ExcludeDefault().Select(c => c.Contents).SelectMany().ToList() ?? new List<IMember>();
+            return CreateList(interpreter, location, contents, false, exact: exact);
         }
 
-        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents) {
+        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool exact = false) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
-            return new PythonCollection(collectionType, location, contents);
+            return new PythonCollection(collectionType, location, contents, exact: exact);
         }
-        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true) {
+        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, LocationInfo location, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
-            return new PythonCollection(collectionType, location, contents, flatten);
+            return new PythonCollection(collectionType, location, contents, flatten, exact: exact);
         }
 
         public override bool Equals(object obj) 

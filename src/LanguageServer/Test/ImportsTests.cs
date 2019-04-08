@@ -586,6 +586,8 @@ __all__.extend(123)")]
         [DataRow(@"
 __all__ = ['A']
 __all__.extend(nothing)")]
+        [DataRow(@"
+__all__ = [chr(x + 65) for x in range(1, 2)]")]
         [DataTestMethod, Priority(0)]
         public async Task AllUnsupported(string allCode) {
             var module1Code = @"
