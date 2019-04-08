@@ -165,18 +165,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             double privateMB;
             double peakPagedMB;
+            double workingMB;
 
             using (var proc = Process.GetCurrentProcess()) {
                 privateMB = proc.PrivateMemorySize64 / 1e+6;
                 peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
+                workingMB = proc.WorkingSet64 / 1e+6;
             }
 
             var e = new TelemetryEvent {
-                EventName = "analysis_complete",
+                EventName = "python_language_server/analysis_complete", // TODO: Move this common prefix into Core.
             };
 
             e.Measurements["privateMB"] = privateMB;
             e.Measurements["peakPagedMB"] = peakPagedMB;
+            e.Measurements["workingMB"] = workingMB;
             e.Measurements["elapsedMs"] = elapsed;
             e.Measurements["entries"] = originalRemaining;
             e.Measurements["version"] = version;
