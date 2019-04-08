@@ -28,16 +28,16 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
         private readonly IPythonInterpreter _interpreter;
 
-        public PythonDictionary(PythonDictionaryType dictType, IReadOnlyDictionary<IMember, IMember> contents) :
-            base(dictType, contents.Keys.ToArray()) {
+        public PythonDictionary(PythonDictionaryType dictType, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
+            base(dictType, contents.Keys.ToArray(), exact: exact) {
             foreach (var kvp in contents) {
                 _contents[kvp.Key] = kvp.Value;
             }
             _interpreter = dictType.DeclaringModule.Interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, IMember contents) :
-            base(new PythonDictionaryType(interpreter), Array.Empty<IMember>()) {
+        public PythonDictionary(IPythonInterpreter interpreter, IMember contents, bool exact = false) :
+            base(new PythonDictionaryType(interpreter), Array.Empty<IMember>(), exact: exact) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {
                     _contents[key] = dict[key];
@@ -47,8 +47,8 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _interpreter = interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, IReadOnlyDictionary<IMember, IMember> contents) :
-            this(new PythonDictionaryType(interpreter), contents) {
+        public PythonDictionary(IPythonInterpreter interpreter, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
+            this(new PythonDictionaryType(interpreter), contents, exact: exact) {
             _interpreter = interpreter;
         }
 

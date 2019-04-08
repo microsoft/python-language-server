@@ -24,16 +24,23 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         /// </summary>
         /// <param name="collectionType">Collection type.</param>
         /// <param name="contents">Contents of the collection (typically elements from the initialization).</param>
-        /// <param name="flatten">If true and contents is a single element
+        /// <param name="flatten">If true and contents is a single element</param>
+        /// <param name="exact">True if the contents are an exact representation of the collection contents.</param>
         /// and is a sequence, the sequence elements are copied rather than creating
         /// a sequence of sequences with a single element.</param>
-        public PythonCollection(IPythonType collectionType, IReadOnlyList<IMember> contents, bool flatten = true) : base(collectionType) {
+        public PythonCollection(
+            IPythonType collectionType,
+            IReadOnlyList<IMember> contents,
+            bool flatten = true,
+            bool exact = false
+        ) : base(collectionType) {
             var c = contents ?? Array.Empty<IMember>();
             if (flatten && c.Count == 1 && c[0] is IPythonCollection seq) {
                 Contents = seq.Contents;
             } else {
                 Contents = c;
             }
+            IsExact = exact;
         }
 
         /// <summary>
@@ -66,5 +73,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                     return 0;
             }
         }
+
+        public bool IsExact { get; }
     }
 }

@@ -75,14 +75,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var rightVar = Eval.GetValueFromExpression(node.Right);
-            var rightContents = (rightVar as IPythonCollection)?.Contents;
+            var right = rightVar as IPythonCollection;
 
-            if (rightContents == null) {
+            if (right == null) {
                 _allIsUsable = false;
                 return;
             }
 
-            ExtendAll(node.Left, rightContents);
+            ExtendAll(node.Left, right);
         }
 
         private void HandleAllAppendExtend(CallExpression node) {
@@ -98,39 +98,41 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            IReadOnlyList<IMember> contents = null;
-            var v = Eval.GetValueFromExpression(node.Args[0].Expression);
+            var arg = node.Args[0].Expression;
+            var v = Eval.GetValueFromExpression(arg);
             if (v == null) {
                 _allIsUsable = false;
                 return;
             }
 
+            IPythonCollection values = null;
+
             switch (me.Name) {
                 case "append":
-                    contents = new List<IMember>() { v };
+                    values = PythonCollectionType.CreateList(Module.Interpreter, new List<IMember> { v }, exact: true);
                     break;
                 case "extend":
-                    contents = (v as IPythonCollection)?.Contents;
+                    values = v as IPythonCollection;
                     break;
             }
 
-            if (contents == null) {
+            if (values == null) {
                 _allIsUsable = false;
                 return;
             }
 
-            ExtendAll(node, contents);
+            ExtendAll(node, values);
         }
 
-        private void ExtendAll(Node declNode, IReadOnlyList<IMember> values) {
+        private void ExtendAll(Node declNode, IPythonCollection values) {
             Eval.LookupNameInScopes(AllVariableName, out var scope, LookupOptions.Normal);
             if (scope == null) {
                 return;
             }
 
-            var allContents = (scope.Variables[AllVariableName].Value as IPythonCollection)?.Contents;
 
-            var list = PythonCollectionType.CreateConcatenatedList(Module.Interpreter, allContents, values);
+            var all = scope.Variables[AllVariableName].Value as IPythonCollection;
+            var list = PythonCollectionType.CreateConcatenatedList(Module.Interpreter, all, values);
             var source = list.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
 
             Eval.DeclareVariable(AllVariableName, list, source, Module);
@@ -196,7 +198,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
 
-            if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable) && variable?.Value is IPythonCollection collection) {
+            if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable)
+                && variable?.Value is IPythonCollection collection && collection.IsExact) {
                 ExportedMemberNames = collection.Contents
                     .OfType<IPythonConstant>()
                     .Select(c => c.GetString())
