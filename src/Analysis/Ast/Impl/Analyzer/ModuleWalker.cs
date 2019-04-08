@@ -124,18 +124,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ExtendAll(node, values);
         }
 
-        private void ExtendAll(Node declNode, IPythonCollection values) {
-            Eval.LookupNameInScopes(AllVariableName, out var scope, LookupOptions.Normal);
+        private void ExtendAll(Node location, IPythonCollection values) {
+            Eval.LookupNameInScopes(AllVariableName, out var scope, LookupOptions.Global);
             if (scope == null) {
                 return;
             }
 
-
-            var all = scope.Variables[AllVariableName].Value as IPythonCollection;
+            var all = scope.Variables[AllVariableName]?.Value as IPythonCollection;
             var list = PythonCollectionType.CreateConcatenatedList(Module.Interpreter, all, values);
             var source = list.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
 
-            Eval.DeclareVariable(AllVariableName, list, source, Module);
+            Eval.DeclareVariable(AllVariableName, list, source, location);
         }
 
         private bool IsHandleableAll(Node node) {

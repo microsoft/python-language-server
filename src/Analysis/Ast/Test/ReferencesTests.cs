@@ -400,5 +400,34 @@ def func(a, b):
             dest.References[3].Span.Should().Be(5, 10, 5, 14);
             dest.References[4].Span.Should().Be(5, 33, 5, 37);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ExtendAllAssignment() {
+            const string code = @"
+x_a = 1
+x_b = 2
+x_c = 3
+x_d = 4
+x_e = 5
+x_f = 6
+x_g = 7
+__all__ = ['x_a', 'x_b']
+__all__ += ['x_c']
+__all__ += ['x_d'] + ['x_e']
+__all__.extend(['x_f'])
+__all__.append('x_g')
+x_h = 8
+# __all__ += ['x_h']
+";
+            var analysis = await GetAnalysisAsync(code);
+            var all = analysis.Should().HaveVariable("__all__").Which;
+            all.Definition.Span.Should().Be(9, 1, 9, 8);
+            all.References.Should().HaveCount(5);
+            all.References[0].Span.Should().Be(9, 1, 9, 8);
+            all.References[1].Span.Should().Be(10, 1, 10, 8);
+            all.References[2].Span.Should().Be(11, 1, 11, 8);
+            all.References[3].Span.Should().Be(12, 1, 12, 8);
+            all.References[4].Span.Should().Be(13, 1, 13, 8);
+        }
     }
 }
