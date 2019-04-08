@@ -95,7 +95,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             } else {
                 contents = args.ListArgument?.Values;
             }
-            return CreateList(interpreter, contents ?? Array.Empty<IMember>());
+            return CreateList(interpreter, contents ?? Array.Empty<IMember>(), exact: exact);
         }
 
         public static IPythonCollection CreateList(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
