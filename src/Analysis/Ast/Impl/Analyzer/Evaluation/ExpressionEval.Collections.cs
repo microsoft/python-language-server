@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateList(Module.Interpreter, contents);
+            return PythonCollectionType.CreateList(Module.Interpreter, contents, exact: true);
         }
 
         public IMember GetValueFromDictionary(DictionaryExpression expression) {
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
-            return new PythonDictionary(Interpreter, contents);
+            return new PythonDictionary(Interpreter, contents, exact: true);
         }
 
         private IMember GetValueFromTuple(TupleExpression expression) {
@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateTuple(Module.Interpreter, contents);
+            return PythonCollectionType.CreateTuple(Module.Interpreter, contents, exact: true);
         }
 
         public IMember GetValueFromSet(SetExpression expression) {
@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateSet(Interpreter, contents);
+            return PythonCollectionType.CreateSet(Interpreter, contents, exact: true);
         }
 
         public IMember GetValueFromGenerator(GeneratorExpression expression) {
