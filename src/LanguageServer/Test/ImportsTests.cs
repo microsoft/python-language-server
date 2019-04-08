@@ -536,7 +536,7 @@ class C:
     pass
 " + allCode;
 
-            var appCode = @"
+            const string appCode = @"
 from module1 import *
 
 A().
