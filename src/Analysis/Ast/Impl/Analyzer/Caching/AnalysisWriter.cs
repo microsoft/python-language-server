@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Text;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -28,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
         public string WriteModuleData() {
             // Write original module info as a comment
-            _sb.AppendLine($"# {_module.Name} [{_module.FilePath}]");
+            _sb.AppendLine();
 
             foreach (var v in _module.GlobalScope.Variables) {
                 var t = v.Value.GetPythonType();
@@ -44,19 +45,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                     case IPythonFunctionType ft:
                         WriteFunction(ft);
                         break;
-
-                    case IPythonPropertyType prop:
-                        WriteProperty(prop);
-                        break;
                 }
             }
 
-            var s = _sb.ToString();
+            var s = _sb.Length > 0 ? $"# {_module.Name} [{_module.FilePath}]{Environment.NewLine}{Environment.NewLine}{_sb}" : null;
             return s;
         }
 
         private void WriteClass(IPythonClassType cls) {
             _sb.AppendLine();
+            _sb.AppendLine($"c: {cls.Name}");
             foreach (var name in cls.GetMemberNames()) {
                 var m = cls.GetMember(name);
                 switch (m) {
@@ -69,7 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                         break;
 
                     case IPythonInstance inst:
-                        WriteInstance(cls.FullyQualifiedName, name, inst);
+                        WriteInstance(name, inst);
                         break;
                 }
             }
@@ -82,30 +80,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             }
 
             if (ft.Overloads.Count == 1) {
-                WriteOverload(ft.FullyQualifiedName, ft.Overloads[0], -1);
+                WriteOverload($"f: {ft.Name}", ft.Overloads[0], -1);
                 return;
             }
             for (var i = 0; i < ft.Overloads.Count; i++) {
-                WriteOverload(ft.FullyQualifiedName, ft.Overloads[i], i);
+                WriteOverload($"fo: {ft.Name}", ft.Overloads[i], i);
             }
         }
 
         private void WriteProperty(IPythonPropertyType prop) {
             var propType = prop.Type;
             var t = propType?.IsUnknown() == false ? propType.Name : "?";
-            _sb.AppendLine($"{prop.FullyQualifiedName} -> {t}");
+            _sb.AppendLine($"p: {prop.Name} -> {t}");
         }
 
-        private void WriteOverload(string functionName, IPythonFunctionOverload o, int index) {
+        private void WriteOverload(string prefix, IPythonFunctionOverload o, int index) {
             var retVal = o.StaticReturnValue?.GetPythonType()?.Name ?? "?";
-            var s = index >= 0 ? $"{functionName}.{index} -> {retVal}" : $"{functionName} -> {retVal}";
+            var s = index >= 0 ? $"{prefix}.{index} -> {retVal}" : $"{prefix} -> {retVal}";
             _sb.AppendLine(s);
         }
 
-        private void WriteInstance(string className, string memberName, IPythonInstance inst) {
+        private void WriteInstance(string memberName, IPythonInstance inst) {
             var type = inst.GetPythonType();
             var t = type?.IsUnknown() == false ? type.Name : "?";
-            _sb.AppendLine($"{className}.{memberName} -> {t}");
+            _sb.AppendLine($"m: {memberName} -> {t}");
         }
     }
 }

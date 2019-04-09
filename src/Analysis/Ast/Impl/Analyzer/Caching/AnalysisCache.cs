@@ -14,47 +14,51 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
-    internal sealed class AnalysisCache: IAnalysisCache {
+    internal sealed class AnalysisCache : IAnalysisCache {
         private const int _analysisCacheFormatVersion = 1;
         private const int _stubCacheFormatVersion = 1;
 
-        private readonly string _cacheRootFolder;
         private readonly string _stubsRootFolder;
         private readonly string _analysisRootFolder;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
 
-        public AnalysisCache(string cacheRootFolder, IServiceContainer services) {
-            _cacheRootFolder = cacheRootFolder;
-            _analysisRootFolder = Path.Combine(_cacheRootFolder, $"analysis.v{_analysisCacheFormatVersion}");
-            _stubsRootFolder = Path.Combine(_cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
+        public AnalysisCache(IServiceContainer services, string cacheRootFolder = null) {
+            var platform = services.GetService<IOSPlatform>();
+
+            cacheRootFolder = cacheRootFolder ?? GetCacheFolder(platform);
+            _analysisRootFolder = Path.Combine(cacheRootFolder, $"analysis.v{_analysisCacheFormatVersion}");
+            _stubsRootFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
 
             _log = services.GetService<ILogger>();
             _fs = services.GetService<IFileSystem>();
         }
 
         public Task WriteAnalysisAsync(IDocument document, CancellationToken cancellationToken) {
-            if (document.Stub != null || document.ModuleType != ModuleType.Library || string.IsNullOrEmpty(document.Content)) {
+            if (document.Stub != null || document.ModuleType != ModuleType.Library
+                || string.IsNullOrEmpty(document.Content) || document.GlobalScope == null) {
                 return Task.CompletedTask;
             }
 
             var aw = new AnalysisWriter(document);
             var md = aw.WriteModuleData();
+            if (string.IsNullOrEmpty(md)) {
+                return Task.CompletedTask;
+            }
+
             var filePath = GetAnalysisCacheFilePath(document.Name, document.Content);
             return Task.Run(() => _fs.WriteTextWithRetry(filePath, md), cancellationToken);
         }
@@ -76,7 +80,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             var folder = Path.Combine(root, moduleName);
 
             var filePath = Path.Combine(root, folder, $"{FileNameFromContent(content)}.pyi");
-            if (_fs.StringComparison == StringComparison.OrdinalIgnoreCase) {
+            if (_fs.StringComparison == StringComparison.Ordinal) {
                 filePath = filePath.ToLowerInvariant();
             }
             return filePath;
@@ -88,6 +92,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             return Convert
                 .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
                 .Replace('/', '_').Replace('+', '-');
+        }
+
+        private string GetCacheFolder(IOSPlatform platform) {
+            if (platform.IsWindows) {
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "Python Language Server");
+            }
+            if (platform.IsMac) {
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "microsoft.python.ls");
+            }
+            return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         }
     }
 }
