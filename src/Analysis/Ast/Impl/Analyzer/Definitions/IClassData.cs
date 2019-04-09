@@ -13,25 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Types;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal interface IAnalysisCache {
-        /// <summary>
-        /// Returns path to the stub file for the given module.
-        /// Typically used to store stubs generated from compiled modules.
-        /// </summary>
-        string GetStubCacheFilePath(string moduleName, string content);
-
-        /// <summary>
-        /// Writes document analysis to a disk file.
-        /// </summary>
-        Task WriteAnalysisAsync(IDocument document, CancellationToken cancellationToken = default);
-
-        string GetReturnType(IPythonFunctionType ft);
-        string GetReturnType(IPythonPropertyType ft);
+    internal interface IClassData {
+        IReadOnlyDictionary<string, string> Fields { get; }
+        IReadOnlyDictionary<string, string> Methods { get; }
+        IReadOnlyDictionary<string, string> Properties { get; }
+        IReadOnlyDictionary<string, IClassData> Classes { get; }
     }
 }

@@ -71,6 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                         break;
                 }
             }
+            _sb.AppendLine("e:");
             _sb.AppendLine();
         }
 

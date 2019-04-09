@@ -14,13 +14,13 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
@@ -35,19 +35,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         private readonly string _analysisRootFolder;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
+        private readonly AnalysisReader _reader;
 
         public AnalysisCache(IServiceContainer services, string cacheRootFolder = null) {
             var platform = services.GetService<IOSPlatform>();
 
-            cacheRootFolder = cacheRootFolder ?? GetCacheFolder(platform);
+            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(platform);
             _analysisRootFolder = Path.Combine(cacheRootFolder, $"analysis.v{_analysisCacheFormatVersion}");
             _stubsRootFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
 
             _log = services.GetService<ILogger>();
             _fs = services.GetService<IFileSystem>();
+            _reader = new AnalysisReader(_analysisRootFolder, _fs);
         }
 
-        public Task WriteAnalysisAsync(IDocument document, CancellationToken cancellationToken) {
+        public Task WriteAnalysisAsync(IDocument document, CancellationToken cancellationToken = default) {
             if (document.Stub != null || document.ModuleType != ModuleType.Library
                 || string.IsNullOrEmpty(document.Content) || document.GlobalScope == null) {
                 return Task.CompletedTask;
@@ -59,49 +61,44 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                 return Task.CompletedTask;
             }
 
-            var filePath = GetAnalysisCacheFilePath(document.Name, document.Content);
+            var filePath = CacheFolders.GetAnalysisCacheFilePath(_analysisRootFolder, document.Name, document.Content, _fs);
             return Task.Run(() => _fs.WriteTextWithRetry(filePath, md), cancellationToken);
         }
 
-        public string GetMemberValueTypeName(string fullyQualifiedName) {
-            throw new NotImplementedException();
+        public string GetReturnType(IPythonFunctionType ft) {
+            if (!(ft.DeclaringModule is IDocument doc)) {
+                return null;
+            }
+
+            var md = _reader.GetModuleData(doc.Name, doc.Content);
+            if(md == null) {
+                return null;
+            }
+
+            ft.
+            return md.Functions
+        }
+
+        public IPythonClassType GetClass(string name) {
+
         }
 
 
         public string GetStubCacheFilePath(string moduleName, string content)
-            => GetCacheFilePath(_stubsRootFolder, moduleName, content);
+            => CacheFolders.GetCacheFilePath(_stubsRootFolder, moduleName, content, _fs);
 
-        private string GetAnalysisCacheFilePath(string moduleName, string content)
-            => GetCacheFilePath(_analysisRootFolder, moduleName, content);
+        private List<IPythonType> GetDeclaringTypeChain(IPythonTypeContainer cm) {
+            var chain = new List<IPythonType>();
+            for(var dt = cm.DeclaringType; dt != null; dt = dt.DeclaringType) {
+                ;
+                if(dt == null) {
+                    break;
+                }
+                chain.Add(dt);
+                switch(dt) {
 
-        private string GetCacheFilePath(string root, string moduleName, string content) {
-            // Folder for all module versions and variants
-            // {root}/module_name/content_hash.pyi
-            var folder = Path.Combine(root, moduleName);
-
-            var filePath = Path.Combine(root, folder, $"{FileNameFromContent(content)}.pyi");
-            if (_fs.StringComparison == StringComparison.Ordinal) {
-                filePath = filePath.ToLowerInvariant();
+                }
             }
-            return filePath;
-        }
-
-        private static string FileNameFromContent(string content) {
-            // File name depends on the content so we can distinguish between different versions.
-            var hash = SHA256.Create();
-            return Convert
-                .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
-                .Replace('/', '_').Replace('+', '-');
-        }
-
-        private string GetCacheFolder(IOSPlatform platform) {
-            if (platform.IsWindows) {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "Python Language Server");
-            }
-            if (platform.IsMac) {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "microsoft.python.ls");
-            }
-            return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         }
     }
 }
