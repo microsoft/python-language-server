@@ -111,7 +111,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
-        public IPythonType DeclaringType { get; }
         public override string Documentation => _documentation ?? base.Documentation ?? _overloads.FirstOrDefault()?.Documentation;
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
@@ -125,10 +124,9 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
         #endregion
 
-        #region IHasQualifiedName
-        public override string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public override KeyValuePair<string, string> FullyQualifiedNamePair =>
-            new KeyValuePair<string, string>((DeclaringType as IHasQualifiedName)?.FullyQualifiedName ?? DeclaringType?.Name ?? DeclaringModule?.Name, Name);
+        #region IPythonClassMember
+        public IPythonType DeclaringType { get; }
+        public string FullyQualifiedName => $"{DeclaringType?.Name ?? DeclaringModule.Name}.{Name}";
         #endregion
 
         internal void Specialize(string[] dependencies) {
@@ -190,8 +188,11 @@ namespace Microsoft.Python.Analysis.Types {
                 _pf = function;
             }
 
-            public FunctionDefinition FunctionDefinition => _pf.FunctionDefinition;
             public IPythonType DeclaringType => _pf.DeclaringType;
+            public string FullyQualifiedName => _pf.FullyQualifiedName;
+
+
+            public FunctionDefinition FunctionDefinition => _pf.FunctionDefinition;
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;
             public bool IsOverload => _pf.IsOverload;

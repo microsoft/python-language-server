@@ -40,11 +40,15 @@ namespace Microsoft.Python.Analysis.Types {
         public FunctionDefinition FunctionDefinition { get; }
         public override bool IsAbstract { get; }
         public bool IsReadOnly => true;
-        public IPythonType DeclaringType { get; }
         public string Description 
             => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
             => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
+        #endregion
+
+        #region IPythonClassMember
+        public IPythonType DeclaringType { get; }
+        public string FullyQualifiedName => $"{DeclaringType?.Name ?? DeclaringModule.Name}.{Name}";
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;

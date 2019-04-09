@@ -174,6 +174,23 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IReadOnlyDictionary<string, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
+
+        #endregion
+
+        #region IPythonClassMember
+        public IPythonType DeclaringType => null;
+        public string FullyQualifiedName {
+            get {
+                var names = new List<string> {Name};
+                for(var parent = ClassDefinition.Parent; parent is ClassDefinition cd; parent = parent.Parent) {
+                    names.Add(cd.Name);
+                }
+
+                names.Reverse();
+                const string joiner = ".";
+                return $"{DeclaringModule.Name}.{string.Join(joiner, names)}";
+            }
+        }
         #endregion
 
         internal void SetBases(IEnumerable<IPythonType> bases) {

@@ -18,6 +18,14 @@ namespace Microsoft.Python.Analysis.Types {
     /// Represents member of a class.
     /// </summary>
     public interface IPythonClassMember : IPythonType {
+        /// <summary>
+        /// Outer type, such as class our outer function.
+        /// </summary>
         IPythonType DeclaringType { get; }
+
+        /// <summary>
+        /// Fully qualified name such as 'module.class.class.function'.
+        /// </summary>
+        string FullyQualifiedName { get; }
     }
 }

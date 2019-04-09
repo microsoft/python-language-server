@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents Python class type definition.
     /// </summary>
-    public interface IPythonClassType : IPythonType, ILocatedMember {
+    public interface IPythonClassType : IPythonClassMember {
         /// <summary>
         /// Class definition node in the AST.
         /// </summary>

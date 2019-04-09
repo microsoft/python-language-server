@@ -22,7 +22,7 @@ using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
-    internal class PythonType : LocatedMember, IPythonType, IHasQualifiedName, IEquatable<IPythonType> {
+    internal class PythonType : LocatedMember, IPythonType, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private readonly string _name;
         private Func<string, string> _documentationProvider;
@@ -93,12 +93,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="instance">Instance of the type.</param>
         /// <param name="index">Index arguments.</param>
         public virtual IMember Index(IPythonInstance instance, object index) => instance?.Index(index) ?? UnknownType;
-        #endregion
-
-        #region IHasQualifiedName
-        public virtual string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public virtual KeyValuePair<string, string> FullyQualifiedNamePair
-            => new KeyValuePair<string, string>(DeclaringModule?.Name ?? string.Empty, Name);
         #endregion
 
         #region IMemberContainer

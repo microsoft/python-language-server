@@ -13,58 +13,99 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
     internal sealed class AnalysisWriter {
-        public void WriteModuleData(StringBuilder sb, IPythonModule module) {
-            var obj = new[] { module.Interpreter.GetBuiltinType(BuiltinTypeId.Object) };
-            foreach (var v in module.GlobalScope.Variables) {
+        private readonly StringBuilder _sb = new StringBuilder();
+        private readonly IPythonModule _module;
+
+        public AnalysisWriter(IPythonModule module) {
+            _module = module;
+        }
+
+        public string WriteModuleData() {
+            // Write original module info as a comment
+            _sb.AppendLine($"# {_module.Name} [{_module.FilePath}]");
+
+            foreach (var v in _module.GlobalScope.Variables) {
                 var t = v.Value.GetPythonType();
-                if (t.DeclaringModule != module || v.Name.StartsWith("__")) {
+                if (t.DeclaringModule != _module || v.Name.StartsWith("__")) {
                     continue;
                 }
 
                 switch (t) {
                     case IPythonClassType cls:
-                        WriteScope(sb, indent + 4, cls.ClassDefinition);
+                        WriteClass(cls);
                         break;
 
                     case IPythonFunctionType ft:
-                        var o = ft.Overloads.FirstOrDefault();
-                        if (o == null) {
-                            continue;
-                        }
-
-                        var sbp = new StringBuilder();
-                        var count = 0;
-                        foreach (var p in o.Parameters) {
-                            sbp.AppendIf(count > 0, ", ");
-                            sbp.Append(p.Name);
-                            if (!p.Type.IsUnknown()) {
-                                sbp.Append($": {p.Type.Name}");
-                            }
-                            count++;
-                        }
-
-                        var paramString = sbp.ToString();
-                        sb.Append($"{new string(' ', indent)}def {ft.Name}({paramString})");
-                        var retType = o.StaticReturnValue?.GetPythonType();
-                        sb.AppendLine(retType?.IsUnknown() == false ? $" -> {retType.Name}: ..." : ": ...");
+                        WriteFunction(ft);
                         break;
 
                     case IPythonPropertyType prop:
-                        sb.AppendLine("@property");
-                        sb.Append($"{new string(' ', indent)}def {prop.Name}(self)");
-                        var propType = prop.Type;
-                        sb.AppendLine(propType?.IsUnknown() == false ? $" -> {propType.Name}: ..." : ": ...");
+                        WriteProperty(prop);
                         break;
                 }
             }
+
+            var s = _sb.ToString();
+            return s;
         }
 
+        private void WriteClass(IPythonClassType cls) {
+            _sb.AppendLine();
+            foreach (var name in cls.GetMemberNames()) {
+                var m = cls.GetMember(name);
+                switch (m) {
+                    case IPythonFunctionType ft:
+                        WriteFunction(ft);
+                        break;
+
+                    case IPythonPropertyType prop:
+                        WriteProperty(prop);
+                        break;
+
+                    case IPythonInstance inst:
+                        WriteInstance(cls.FullyQualifiedName, name, inst);
+                        break;
+                }
+            }
+            _sb.AppendLine();
+        }
+
+        private void WriteFunction(IPythonFunctionType ft) {
+            if (ft.Overloads.Count == 0) {
+                return;
+            }
+
+            if (ft.Overloads.Count == 1) {
+                WriteOverload(ft.FullyQualifiedName, ft.Overloads[0], -1);
+                return;
+            }
+            for (var i = 0; i < ft.Overloads.Count; i++) {
+                WriteOverload(ft.FullyQualifiedName, ft.Overloads[i], i);
+            }
+        }
+
+        private void WriteProperty(IPythonPropertyType prop) {
+            var propType = prop.Type;
+            var t = propType?.IsUnknown() == false ? propType.Name : "?";
+            _sb.AppendLine($"{prop.FullyQualifiedName} -> {t}");
+        }
+
+        private void WriteOverload(string functionName, IPythonFunctionOverload o, int index) {
+            var retVal = o.StaticReturnValue?.GetPythonType()?.Name ?? "?";
+            var s = index >= 0 ? $"{functionName}.{index} -> {retVal}" : $"{functionName} -> {retVal}";
+            _sb.AppendLine(s);
+        }
+
+        private void WriteInstance(string className, string memberName, IPythonInstance inst) {
+            var type = inst.GetPythonType();
+            var t = type?.IsUnknown() == false ? type.Name : "?";
+            _sb.AppendLine($"{className}.{memberName} -> {t}");
+        }
     }
 }

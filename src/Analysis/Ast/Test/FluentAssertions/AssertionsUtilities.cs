@@ -165,7 +165,6 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public static string GetQuotedName(object value) {
             string name;
             switch (value) {
-                case IHasQualifiedName _:
                 case IPythonModule _:
                     name = GetName(value);
                     return string.IsNullOrEmpty(name) ? string.Empty : $"'{name}'";
@@ -177,8 +176,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public static string GetName(object value) {
             switch (value) {
-                case IHasQualifiedName qualifiedName:
-                    return qualifiedName.FullyQualifiedName;
+                case IPythonClassMember cm:
+                    return cm.FullyQualifiedName;
                 case IPythonModule pythonModule:
                     return pythonModule.Name;
                 case IScope scope:

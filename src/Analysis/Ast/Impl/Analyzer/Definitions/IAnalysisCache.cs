@@ -15,13 +15,25 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal interface IAnalysisCache {
-        string GetStubCacheFilePath(string moduleName, string modulePath, string stubContent);
+        /// <summary>
+        /// Returns path to the stub file for the given module.
+        /// Typically used to store stubs generated from compiled modules.
+        /// </summary>
+        string GetStubCacheFilePath(string moduleName, string content);
 
-        Task SaveAnalysisAsync(IPythonModule module, CancellationToken cancellationToken = default);
-        IMember GetFunctionReturnValue(IPythonFunctionType ft);
+        /// <summary>
+        /// Writes document analysis to a disk file.
+        /// </summary>
+        Task WriteAnalysisAsync(IDocument document, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Given fully qualified name of a module member such as function, class or a class member
+        /// returns name of the type that member returns.
+        /// </summary>
+        string GetMemberValueTypeName(string fullyQualifiedMemberName);
     }
 }

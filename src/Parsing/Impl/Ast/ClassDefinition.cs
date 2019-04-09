@@ -14,23 +14,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ClassDefinition : ScopeStatement {
-        private readonly NameExpression/*!*/ _name;
         private readonly Statement _body;
-        private DecoratorStatement _decorators;
 
         public ClassDefinition(NameExpression/*!*/ name, ImmutableArray<Arg> bases, Statement body) {
-            _name = name;
+            NameExpression = name;
             Bases = bases;
             _body = body;
         }
@@ -39,28 +35,20 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int HeaderIndex { get; set; }
 
-        public override string/*!*/ Name => _name.Name ?? "";
+        public override string/*!*/ Name => NameExpression.Name ?? string.Empty;
 
-        public NameExpression/*!*/ NameExpression => _name;
+        public NameExpression/*!*/ NameExpression { get; }
 
         public ImmutableArray<Arg> Bases { get; }
 
         public override Statement Body => _body;
 
-        public DecoratorStatement Decorators {
-            get => _decorators;
-            internal set => _decorators = value;
-        }
+        public DecoratorStatement Decorators { get; internal set; }
 
         /// <summary>
         /// Gets the variable that this class definition was assigned to.
         /// </summary>
         public PythonVariable Variable { get; set; }
-
-        /// <summary>
-        /// Gets the variable reference for the specific assignment to the variable for this class definition.
-        /// </summary>
-        public PythonReference GetVariableReference(PythonAst ast) => GetVariableReference(this, ast);
 
         /// <summary>
         /// Variable for the classes __class__ cell var on 3.x
@@ -130,8 +118,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override IEnumerable<Node> GetChildNodes() {
-            if (_name != null) yield return _name;
-            if (_decorators != null) yield return _decorators;
+            if (NameExpression != null) yield return NameExpression;
+            if (Decorators != null) yield return Decorators;
             foreach (var b in Bases) {
                 yield return b;
             }
@@ -140,8 +128,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
-                _name?.Walk(walker);
-                _decorators?.Walk(walker);
+                NameExpression?.Walk(walker);
+                Decorators?.Walk(walker);
                 foreach (var b in Bases) {
                     b.Walk(walker);
                 }
@@ -152,12 +140,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
-                if (_name != null) {
-                    await _name.WalkAsync(walker, cancellationToken);
+                if (NameExpression != null) {
+                    await NameExpression.WalkAsync(walker, cancellationToken);
                 }
 
-                if (_decorators != null) {
-                    await _decorators.WalkAsync(walker, cancellationToken);
+                if (Decorators != null) {
+                    await Decorators.WalkAsync(walker, cancellationToken);
                 }
                 foreach (var b in Bases) {
                     await b.WalkAsync(walker, cancellationToken);
