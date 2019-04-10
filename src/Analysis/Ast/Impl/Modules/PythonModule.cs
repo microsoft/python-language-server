@@ -28,6 +28,7 @@ using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
@@ -398,17 +399,19 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
+        public void NotifyInvalidated(ImmutableArray<AnalysisModuleKey> dependencies) {
+            var analyzer = (PythonAnalyzer)Services.GetService<IPythonAnalyzer>();
+            foreach (var gs in dependencies.Select(d => analyzer.GetModule(d)).Select(m => m.GlobalScope).OfType<IScope>().ExcludeDefault()) {
+                foreach (var v in gs.TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
+                    v.RemoveReferences(this);
+                }
+            }
+        }
 
         public void NotifyAnalysisBegins() {
             lock (AnalysisLock) {
                 if (_updated) {
                     _updated = false;
-                    //var analyzer = Services.GetService<IPythonAnalyzer>();
-                    //foreach (var gs in analyzer.LoadedModules.Select(m => m.GlobalScope).OfType<IScope>().ExcludeDefault()) {
-                    //    foreach (var v in gs.TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
-                    //        v.RemoveReferences(this);
-                    //    }
-                    //}
                 }
             }
         }

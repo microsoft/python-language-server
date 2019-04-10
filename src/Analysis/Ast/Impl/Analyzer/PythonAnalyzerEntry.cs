@@ -190,6 +190,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 dependencies = _parserDependencies != null
                     ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
                     : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);
+
+                var analyzable = module as IAnalyzable;
+                analyzable?.NotifyInvalidated(dependencies);
+
                 return true;
             }
         }

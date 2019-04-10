@@ -13,11 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Core.Collections;
+
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
     /// </summary>
     internal interface IAnalyzable {
+        /// <summary>
+        /// Notifies document that analysis has been invalidated.
+        /// </summary>
+        void NotifyInvalidated(ImmutableArray<AnalysisModuleKey> dependencies);
+
         /// <summary>
         /// Notifies document that analysis is about to begin.
         /// </summary>

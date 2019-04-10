@@ -190,15 +190,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public IReadOnlyList<IPythonModule> LoadedModules 
+        public IReadOnlyList<IPythonModule> LoadedModules
             => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
+
+        internal IPythonModule GetModule(AnalysisModuleKey key)
+            => _analysisEntries.TryGetValue(key, out var m) ? m.Module : null;
 
         private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
             var snapshot = _dependencyResolver.NotifyChanges(key, entry, dependencies);
-            
+
             lock (_syncObj) {
                 if (_version > snapshot.Version) {
                     return;
@@ -248,7 +251,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     session = null;
                     return false;
                 }
-                
+
                 if (_currentSession.IsCompleted) {
                     _currentSession = session = CreateSession(walker, null, cancellationToken);
                     return true;
@@ -274,7 +277,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             session.Start(false);
         }
 
-        private PythonAnalyzerSession CreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry, CancellationToken cancellationToken) 
+        private PythonAnalyzerSession CreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry, CancellationToken cancellationToken)
             => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, cancellationToken, walker, _version, entry);
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
