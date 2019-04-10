@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
@@ -56,8 +57,9 @@ namespace Microsoft.Python.Analysis.Types {
                     }
 
                     var refs = _references
-                        .GroupBy(x => x.LocationInfo.DocumentUri)
-                        .SelectMany(g => g.Select(x => x.LocationInfo).OrderBy(x => x.Span));
+                        .Select(x => x.LocationInfo)
+                        .OrderBy(x => x.DocumentUri.AbsolutePath, StringExtensions.PathsStringComparer)
+                        .ThenBy(x => x.Span);
                     return Enumerable.Repeat(Definition, 1).Concat(refs).ToArray();
                 }
             }

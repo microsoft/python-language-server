@@ -212,7 +212,7 @@ namespace Microsoft.Python.Analysis.Modules {
             lock (AnalysisLock) {
                 LoadContent(content, version);
 
-                var startParse = ContentState < State.Parsing && _parsingTask == null;
+                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
                 if (startParse) {
                     Parse();
                 }
