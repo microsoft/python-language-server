@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -64,6 +63,8 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
         public virtual bool IsAbstract => InnerType.IsAbstract;
         public virtual bool IsSpecialized => InnerType.IsSpecialized;
+        public virtual IPythonType DeclaringType => InnerType.DeclaringType;
+
 
         public virtual IMember CreateInstance(string typeName, IArgumentSet args)
             => IsAbstract ? null : InnerType.CreateInstance(typeName, args);

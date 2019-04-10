@@ -36,6 +36,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public IPythonInterpreter Interpreter { get; }
 
         public IDocumentAnalysis Analysis => Module?.Analysis;
+        public IPythonType DeclaringType => null;
         public string Documentation => Module?.Documentation ?? string.Empty;
         public string FilePath => Module?.FilePath;
         public bool IsBuiltin => true;

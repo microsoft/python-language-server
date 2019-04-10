@@ -176,10 +176,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public static string GetName(object value) {
             switch (value) {
-                case IPythonClassMember cm:
-                    return cm.FullyQualifiedName;
                 case IPythonModule pythonModule:
                     return pythonModule.Name;
+                case IPythonType t:
+                    return t.Name;
                 case IScope scope:
                     return scope.Name;
                 case string str:

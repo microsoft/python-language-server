@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Caching {
     internal interface IAnalysisCache {
         /// <summary>
         /// Returns path to the stub file for the given module.
@@ -31,7 +31,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         Task WriteAnalysisAsync(IDocument document, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Give function type provides return value type name as stored in the cache.
+        /// Null return means function is either not in the cache or type is not known.
+        /// </summary>
         string GetReturnType(IPythonFunctionType ft);
         string GetReturnType(IPythonPropertyType ft);
+        IClassData GetClassData(IPythonClassType cls);
     }
 }

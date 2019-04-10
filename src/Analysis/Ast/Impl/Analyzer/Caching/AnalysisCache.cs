@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             }
 
             var aw = new AnalysisWriter(document);
-            var md = aw.WriteModuleData();
+            var md = aw.SerializeModuleData();
             if (string.IsNullOrEmpty(md)) {
                 return Task.CompletedTask;
             }
@@ -66,38 +64,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         }
 
         public string GetReturnType(IPythonFunctionType ft) {
-            if (!(ft.DeclaringModule is IDocument doc)) {
-                return null;
-            }
-
-            var md = _reader.GetModuleData(doc.Name, doc.Content);
-            if(md == null) {
-                return null;
-            }
-
-            ft.
-            return md.Functions
+            GetItemData(ft, out var name, out var md);
+            return name != null ? (md.Functions.TryGetValue(name, out var v) ? v : null) : null;
         }
 
-        public IPythonClassType GetClass(string name) {
-
+        public string GetReturnType(IPythonPropertyType pt) {
+            GetItemData(pt, out var name, out var md);
+            return name != null ? (md.Functions.TryGetValue(name, out var v) ? v : null) : null;
         }
 
+        public IClassData GetClassData(IPythonClassType cls) {
+            GetItemData(cls, out var name, out var md);
+            return name != null ? (md.Classes.TryGetValue(name, out var v) ? v : null) : null;
+        }
 
         public string GetStubCacheFilePath(string moduleName, string content)
             => CacheFolders.GetCacheFilePath(_stubsRootFolder, moduleName, content, _fs);
 
-        private List<IPythonType> GetDeclaringTypeChain(IPythonTypeContainer cm) {
-            var chain = new List<IPythonType>();
-            for(var dt = cm.DeclaringType; dt != null; dt = dt.DeclaringType) {
-                ;
-                if(dt == null) {
-                    break;
-                }
-                chain.Add(dt);
-                switch(dt) {
-
-                }
+        private void GetItemData(IPythonType t, out string name, out ModuleData md) {
+            name = null;
+            md = null;
+            if (t.DeclaringModule is IDocument doc) {
+                md = _reader.GetModuleData(doc.Name, doc.Content);
+                name = t.GetFullyQualifiedName();
             }
         }
     }

@@ -69,7 +69,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             var sb = new StringBuilder();
 
             var first = overload.Parameters.FirstOrDefault();
-            var fn = overload.ClassMember as IPythonFunctionType;
+            var fn = overload.Function as IPythonFunctionType;
             var skipFirstParameters = fn?.IsStatic == true ? overload.Parameters : overload.Parameters.Skip(1);
 
             sb.AppendLine(overload.Name + "(" + string.Join(", ", overload.Parameters.Select(p => MakeOverrideParameter(p, p.DefaultValueString))) + "):");

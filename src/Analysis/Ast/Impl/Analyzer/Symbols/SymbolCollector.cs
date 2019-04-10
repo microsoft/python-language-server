@@ -47,7 +47,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public override bool Walk(ClassDefinition cd) {
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
-                var classInfo = CreateClass(cd);
+                var declaringType = cd.Parent != null ? (_typeMap.TryGetValue(cd.Parent, out var t) ? t : null) : null;
+                var classInfo = CreateClass(cd, declaringType);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
@@ -81,8 +82,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             base.PostWalk(fd);
         }
 
-        private PythonClassType CreateClass(ClassDefinition cd) {
-            var cls = new PythonClassType(cd, _eval.GetLocationOfName(cd),
+        private PythonClassType CreateClass(ClassDefinition cd, IPythonType declaringType) {
+            var cls = new PythonClassType(cd, declaringType, _eval.GetLocationOfName(cd),
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
             _typeMap[cd] = cls;
             return cls;
@@ -106,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             AddOverload(fd, existing, o => existing.AddOverload(o));
         }
 
-        private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
+        private void AddOverload(FunctionDefinition fd, IPythonType function, Action<IPythonFunctionOverload> addOverload) {
             // Check if function exists in stubs. If so, take overload from stub
             // and the documentation from this actual module.
             if (!_table.ReplacedByStubs.Contains(fd)) {

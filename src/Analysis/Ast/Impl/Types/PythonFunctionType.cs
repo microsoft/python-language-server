@@ -89,6 +89,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
+        public override IPythonType DeclaringType { get; }
 
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
@@ -106,7 +107,6 @@ namespace Microsoft.Python.Analysis.Types {
 
             base.SetDocumentationProvider(provider);
         }
-
         #endregion
 
         #region IPythonFunction
@@ -122,11 +122,6 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsUnbound => DeclaringType == null;
 
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
-        #endregion
-
-        #region IPythonClassMember
-        public IPythonType DeclaringType { get; }
-        public string FullyQualifiedName => $"{DeclaringType?.Name ?? DeclaringModule.Name}.{Name}";
         #endregion
 
         internal void Specialize(string[] dependencies) {
@@ -188,10 +183,7 @@ namespace Microsoft.Python.Analysis.Types {
                 _pf = function;
             }
 
-            public IPythonType DeclaringType => _pf.DeclaringType;
-            public string FullyQualifiedName => _pf.FullyQualifiedName;
-
-
+            public override IPythonType DeclaringType => _pf.DeclaringType;
             public FunctionDefinition FunctionDefinition => _pf.FunctionDefinition;
             public bool IsStatic => _pf.IsStatic;
             public bool IsClassMethod => _pf.IsClassMethod;

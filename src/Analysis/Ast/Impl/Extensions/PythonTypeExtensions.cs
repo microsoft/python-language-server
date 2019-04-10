@@ -13,16 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonTypeExtensions {
         public static bool IsUnknown(this IPythonType value) =>
             value == null || (value.TypeId == BuiltinTypeId.Unknown && value.MemberType == PythonMemberType.Unknown && value.Name.Equals("Unknown"));
 
-        public static bool IsGenericParameter(this IPythonType value) 
+        public static bool IsGenericParameter(this IPythonType value)
             => value is IGenericTypeDefinition;
 
         public static bool IsGeneric(this IPythonType value)
@@ -38,7 +39,26 @@ namespace Microsoft.Python.Analysis {
             }
         }
 
-        public static bool IsConstructor(this IPythonClassMember m)
-            => m.Name.EqualsOrdinal("__init__") ||  m.Name.EqualsOrdinal("__new__");
+        public static IPythonType GetDeclaringClass(this IPythonType type) {
+            for (var t = type.DeclaringType; t != null; t = t.DeclaringType) {
+                if (t is IPythonClassType cls) {
+                    return cls;
+                }
+            }
+            return null;
+        }
+
+        public static IReadOnlyList<IPythonType> GetDeclaringTypeChain(this IPythonType t) {
+            var chain = new List<IPythonType>();
+            for (var dt = t.DeclaringType; dt != null; dt = dt.DeclaringType) {
+                chain.Add(dt);
+            }
+
+            chain.Reverse();
+            return chain;
+        }
+
+        public static string GetFullyQualifiedName(this IPythonType t)
+            => string.Join(".", t.GetDeclaringTypeChain().Select(x => x.Name).Concat(Enumerable.Repeat(t.Name, 1)));
     }
 }

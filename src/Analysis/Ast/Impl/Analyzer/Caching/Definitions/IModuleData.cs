@@ -1,4 +1,4 @@
-// Copyright(c) Microsoft Corporation
+﻿// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,19 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Types {
-    /// <summary>
-    /// Represents member of a class.
-    /// </summary>
-    public interface IPythonClassMember : IPythonType {
-        /// <summary>
-        /// Outer type, such as class our outer function.
-        /// </summary>
-        IPythonType DeclaringType { get; }
+using System.Collections.Generic;
 
-        /// <summary>
-        /// Fully qualified name such as 'module.class.class.function'.
-        /// </summary>
-        string FullyQualifiedName { get; }
+namespace Microsoft.Python.Analysis.Analyzer.Caching {
+    internal interface IModuleData {
+        string ModuleName { get; }
+        string ModulePath { get; }
+        IReadOnlyDictionary<string, IClassData> Classes { get; }
+        IReadOnlyDictionary<string, string> Functions { get; }
     }
 }

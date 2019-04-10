@@ -33,6 +33,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         public string Name { get; }
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
+        public IPythonType DeclaringType => null;
         public string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => false;

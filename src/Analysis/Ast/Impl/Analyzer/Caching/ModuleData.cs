@@ -13,11 +13,75 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Python.Analysis.Types;
+using Newtonsoft.Json;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
-    internal sealed class ModuleData {
-        public Dictionary<string, ClassData> Classes { get; } = new Dictionary<string, ClassData>();
-        public Dictionary<string, string> Functions { get; } = new Dictionary<string, string>();
+    [Serializable]
+    internal sealed class ModuleData : IModuleData {
+        [JsonProperty]
+        public string ModuleName { get; set; }
+        [JsonProperty]
+        public string ModulePath { get; set; }
+        [JsonProperty]
+        public Dictionary<string, ClassData> Classes { get; set; } = new Dictionary<string, ClassData>();
+        [JsonProperty]
+        public Dictionary<string, string> Functions { get; set; } = new Dictionary<string, string>();
+
+        [JsonConstructor]
+        public ModuleData() { }
+
+        public ModuleData(IPythonModule module) {
+            ModuleName = module.Name;
+            ModulePath = module.FilePath;
+        }
+
+
+        IReadOnlyDictionary<string, IClassData> IModuleData.Classes => Classes.ToDictionary(k => k.Key, k => (IClassData)k.Value);
+        IReadOnlyDictionary<string, string> IModuleData.Functions => Functions;
+
+        public static ModuleData FromModule(IPythonModule module) {
+            var guard = new HashSet<IMember>();
+            var md = new ModuleData(module);
+
+            foreach (var v in module.GlobalScope.Variables) {
+                var t = v.Value.GetPythonType();
+                if (t.DeclaringModule != module || v.Name.StartsWith("__")) {
+                    continue;
+                }
+
+                try {
+                    guard.Add(t);
+                    switch (t) {
+                        case IPythonClassType cls:
+                            md.Classes[cls.Name] = ClassData.FromClass(cls, guard);
+                            break;
+                        case IPythonFunctionType ft when ft.Name != "<lambda>":
+                            MakeFunctionData(ft, md);
+                            break;
+                    }
+                } finally {
+                    guard.Remove(t);
+                }
+            }
+            return md;
+        }
+
+        private static void MakeFunctionData(IPythonFunctionType ft, ModuleData md) {
+            switch (ft.Overloads.Count) {
+                case 0:
+                    return;
+                case 1:
+                    md.Functions[ft.Name] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
+                    return;
+            }
+
+            for (var i = 0; i < ft.Overloads.Count; i++) {
+                md.Functions[$"{ft.Name}.{i}"] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
+            }
+        }
     }
 }

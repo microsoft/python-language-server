@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -29,7 +28,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     [DebuggerDisplay("{FunctionDefinition.Name}")]
     internal sealed class FunctionEvaluator : MemberEvaluator {
-        private readonly IPythonClassMember _function;
+        private readonly IPythonType _function;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
 
@@ -37,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             : base(eval, overload.FunctionDefinition) {
 
             _overload = overload;
-            _function = overload.ClassMember ?? throw new NullReferenceException(nameof(overload.ClassMember));
+            _function = overload.Function ?? throw new NullReferenceException(nameof(overload.Function));
             _self = _function.DeclaringType as PythonClassType;
 
             FunctionDefinition = overload.FunctionDefinition;

@@ -33,6 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
+        public override IPythonType DeclaringType { get; }
         public override PythonMemberType MemberType => PythonMemberType.Property;
         #endregion
 
@@ -44,11 +45,6 @@ namespace Microsoft.Python.Analysis.Types {
             => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
             => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
-        #endregion
-
-        #region IPythonClassMember
-        public IPythonType DeclaringType { get; }
-        public string FullyQualifiedName => $"{DeclaringType?.Name ?? DeclaringModule.Name}.{Name}";
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;

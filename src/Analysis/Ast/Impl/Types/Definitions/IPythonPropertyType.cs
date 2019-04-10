@@ -17,9 +17,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
-    /// Represents a built-in property which has a getter/setter.  
+    /// Represents a built-in property which has a getter/setter.
     /// </summary>
-    public interface IPythonPropertyType : IPythonClassMember {
+    public interface IPythonPropertyType : IPythonType {
         /// <summary>
         /// Function definition in the AST.
         /// </summary>

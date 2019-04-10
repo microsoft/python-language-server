@@ -16,9 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
+using Newtonsoft.Json;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
     internal sealed class AnalysisReader {
@@ -45,80 +44,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             }
 
             try {
-                var lines = _fs.FileReadAllLines(filePath).ToArray();
-                var md = new ModuleData();
-
-                for (var i = 0; i < lines.Length; i++) {
-                    var line = lines[i];
-
-                    if (line.Length > 0 && line[i] == '#') {
-                        continue;
-                    }
-
-                    if (line.StartsWith("c:")) {
-                        var classData = ReadClass(lines, ref i, out var className);
-                        md.Classes[className] = classData;
-                    } else if (line.StartsWith("f:")) {
-                        ReadItem(line, out var functionName, out var returnValue);
-                        md.Functions[functionName] = returnValue;
-                    } else {
-                        Check.InvalidOperation(false);
-                    }
-                }
-                return md;
+                var text = _fs.ReadTextWithRetry(filePath);
+                return JsonSerializer.Create().Deserialize(new StringReader(text), typeof(ModuleData)) as ModuleData;
             } catch (IOException) {
             } catch (UnauthorizedAccessException) {
-            } catch (InvalidOperationException) {
+            } catch (JsonException) {
                 // The file is malformed.
                 _fs.DeleteFileWithRetries(filePath);
             }
             return null;
-        }
-
-        private ClassData ReadClass(string[] lines, ref int i, out string className) {
-            var cd = new ClassData();
-            className = null;
-
-            for (; i < lines.Length; i++) {
-                var line = lines[i];
-
-                if (line.StartsWith("e:")) {
-                    break;
-                }
-
-                if (line.StartsWith("c:")) {
-                    var classData = ReadClass(lines, ref i, out var cn);
-                    cd.Classes[cn] = classData;
-                }
-
-                if (line.StartsWith("f:")) {
-                    ReadItem(line, out var itemName, out var returnValue);
-                    cd.Methods[itemName] = returnValue;
-                }
-
-                if (line.StartsWith("p:")) {
-                    ReadItem(line, out var itemName, out var returnValue);
-                    cd.Properties[itemName] = returnValue;
-                }
-
-                if (line.StartsWith("m:")) {
-                    ReadItem(line, out var itemName, out var returnValue);
-                    cd.Fields[itemName] = returnValue;
-                }
-            }
-
-            return cd;
-        }
-
-        /// <summary>
-        /// Reads function name and return type from the cache file line
-        /// such as 'f: name returnType.
-        /// </summary>
-        private void ReadItem(string line, out string itemName, out string returnValue) {
-            var chunks = line.Split(new[] { ' ' });
-            Check.InvalidOperation(chunks.Length == 3);
-            itemName = chunks[1];
-            returnValue = chunks[2];
         }
     }
 }

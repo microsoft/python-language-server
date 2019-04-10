@@ -79,6 +79,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         #region IPythonType
         public string Name { get; }
+        public IPythonType DeclaringType => null;
+
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
         public BuiltinTypeId TypeId { get; } = BuiltinTypeId.Unknown;

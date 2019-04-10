@@ -119,6 +119,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IPythonType
         public string Name { get; }
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
+        public IPythonType DeclaringType => null;
+
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
         public virtual bool IsSpecialized => false;

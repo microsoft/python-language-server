@@ -53,6 +53,7 @@ namespace Microsoft.Python.Analysis.Types {
             get { lock (_lock) { return _types.First().DeclaringModule; } }
         }
 
+        public IPythonType DeclaringType => null;
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public string Documentation => Name;
 

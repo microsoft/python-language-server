@@ -37,6 +37,11 @@ namespace Microsoft.Python.Analysis.Types {
         string Documentation { get; }
 
         /// <summary>
+        /// Outer type, such as class our outer function.
+        /// </summary>
+        IPythonType DeclaringType { get; }
+
+        /// <summary>
         /// Indicates if type is a built-in type.
         /// </summary>
         bool IsBuiltin { get; }

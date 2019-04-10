@@ -25,6 +25,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public string Name => "Any";
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
+        public IPythonType DeclaringType => null;
         public string Documentation => Name;
         public bool IsBuiltin => false;
         public bool IsAbstract => false;

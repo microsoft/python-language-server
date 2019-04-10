@@ -66,6 +66,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
         public virtual string Documentation => _documentationProvider != null ? _documentationProvider.Invoke(Name) : _documentation;
         public virtual BuiltinTypeId TypeId => _typeId;
+        public virtual IPythonType DeclaringType => null;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
         public virtual bool IsSpecialized => false;

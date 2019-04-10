@@ -18,7 +18,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Extensions {
+namespace Microsoft.Python.Analysis {
     public static class PythonFunctionExtensions {
         public static bool IsUnbound(this IPythonFunctionType f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Function;
@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Extensions {
         public static bool IsBound(this IPythonFunctionType f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Method;
 
-        public static bool HasClassFirstArgument(this IPythonClassMember m)
+        public static bool HasClassFirstArgument(this IPythonType m)
             => (m is IPythonFunctionType f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
                (m is IPythonPropertyType prop);
 

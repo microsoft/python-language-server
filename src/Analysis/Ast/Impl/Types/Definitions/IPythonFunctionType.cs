@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a function.
     /// </summary>
-    public interface IPythonFunctionType : IPythonClassMember {
+    public interface IPythonFunctionType : IPythonType {
         /// <summary>
         /// Function definition in the AST.
         /// </summary>

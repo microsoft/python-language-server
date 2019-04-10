@@ -50,10 +50,10 @@ namespace Microsoft.Python.Analysis.Types {
         private Func<string, string> _documentationProvider;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, Location location)
+        public PythonFunctionOverload(FunctionDefinition fd, IPythonType function, Location location)
             : this(fd.Name, location) {
             FunctionDefinition = fd;
-            ClassMember = classMember;
+            Function = function;
             var ast = (location.Module as IDocument)?.Analysis.Ast;
             _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonFunctionOverload
         public FunctionDefinition FunctionDefinition { get; }
-        public IPythonClassMember ClassMember { get; }
+        public IPythonType Function { get; }
         public string Name { get; }
 
         public string Documentation {

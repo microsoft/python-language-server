@@ -15,8 +15,9 @@
 
 using System.Collections.Generic;
 
-namespace Microsoft.Python.Analysis.Analyzer {
+namespace Microsoft.Python.Analysis.Analyzer.Caching {
     internal interface IClassData {
+        string ClassName { get; }
         IReadOnlyDictionary<string, string> Fields { get; }
         IReadOnlyDictionary<string, string> Methods { get; }
         IReadOnlyDictionary<string, string> Properties { get; }
