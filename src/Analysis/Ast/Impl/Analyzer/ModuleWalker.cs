@@ -120,7 +120,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            ExtendAll(node, values);
+            ExtendAll(me.Target, values);
         }
 
         private void ExtendAll(Node location, IPythonCollection values) {
