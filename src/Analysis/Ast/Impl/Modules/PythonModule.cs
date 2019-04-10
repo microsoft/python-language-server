@@ -214,7 +214,7 @@ namespace Microsoft.Python.Analysis.Modules {
             lock (AnalysisLock) {
                 LoadContent(content, version);
 
-                var startParse = ContentState < State.Parsing && _parsingTask == null;
+                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
                 if (startParse) {
                     Parse();
                 }
@@ -405,10 +405,18 @@ namespace Microsoft.Python.Analysis.Modules {
             lock (AnalysisLock) {
                 if (_updated) {
                     _updated = false;
-                    var analyzer = Services.GetService<IPythonAnalyzer>();
-                    foreach (var gs in analyzer.LoadedModules.Select(m => m.GlobalScope).OfType<IScope>().ExcludeDefault()) {
-                        foreach (var v in gs.TraverseDepthFirst(c => c.Children).SelectMany(s => s.Variables)) {
-                            v.RemoveReferences(this);
+                    // In all variables find those imported, then traverse imported modules
+                    // and remove references to this module. If variable refers to a module,
+                    // recurse into module but only process global scope.
+                    var importedVariables = ((IScope)GlobalScope)
+                        .TraverseDepthFirst(c => c.Children)
+                        .SelectMany(s => s.Variables)
+                        .Where(v => v.Source == VariableSource.Import);
+
+                    foreach (var v in importedVariables) {
+                        v.RemoveReferences(this);
+                        if(v.Value is IPythonModule module) {
+                            RemoveReferencesInModule(module);
                         }
                     }
                 }
@@ -449,6 +457,12 @@ namespace Microsoft.Python.Analysis.Modules {
             => Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, waitTime, cancellationToken);
 
         #endregion
+
+        private void RemoveReferencesInModule(IPythonModule module) {
+            foreach (var v in module.GlobalScope.Variables) {
+                v.RemoveReferences(this);
+            }
+        }
 
         private string TryGetDocFromModuleInitFile() {
             if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
