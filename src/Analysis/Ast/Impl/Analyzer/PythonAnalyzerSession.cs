@@ -58,6 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public int Version { get; }
+        public int AffectedEntriesCount { get; }
 
         public PythonAnalyzerSession(IServiceManager services,
             IProgressReporter progress,
@@ -73,6 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisCompleteEvent = analysisCompleteEvent;
             _startNextSession = startNextSession;
             Version = version;
+            AffectedEntriesCount = walker.AffectedValues.Count;
             _walker = walker;
             _entry = entry;
             _state = State.NotStarted;
@@ -99,7 +101,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (analyzeEntry && _entry != null) {
                 Task.Run(() => Analyze(_entry, Version, _cts.Token), _cts.Token).DoNotWait();
             } else {
-                StartAsync(_walker).ContinueWith(_startNextSession).DoNotWait();
+                StartAsync().ContinueWith(_startNextSession).DoNotWait();
             }
         }
 
@@ -109,11 +111,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private async Task StartAsync(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker) {
-            _progress.ReportRemaining(walker.Remaining);
+        private async Task StartAsync() {
+            _progress.ReportRemaining(_walker.Remaining);
 
             lock (_syncObj) {
-                var notAnalyzed = walker.AffectedValues.Count(e => e.NotAnalyzed);
+                var notAnalyzed = _walker.AffectedValues.Count(e => e.NotAnalyzed);
 
                 if (_isCanceled && notAnalyzed < _maxTaskRunning) {
                     _state = State.Completed;
@@ -124,15 +126,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var cancellationToken = _cts.Token;
             var stopWatch = Stopwatch.StartNew();
-            foreach (var affectedEntry in walker.AffectedValues) {
+            foreach (var affectedEntry in _walker.AffectedValues) {
                 affectedEntry.Invalidate(Version);
             }
 
-            var originalRemaining = walker.Remaining;
+            var originalRemaining = _walker.Remaining;
             var remaining = originalRemaining;
             try {
-                _log?.Log(TraceEventType.Verbose, $"Analysis version {walker.Version} of {originalRemaining} entries has started.");
-                remaining = await AnalyzeAffectedEntriesAsync(walker, stopWatch, cancellationToken);
+                _log?.Log(TraceEventType.Verbose, $"Analysis version {_walker.Version} of {originalRemaining} entries has started.");
+                remaining = await AnalyzeAffectedEntriesAsync(stopWatch, cancellationToken);
             } finally {
                 _cts.Dispose();
                 stopWatch.Stop();
@@ -150,8 +152,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var elapsed = stopWatch.Elapsed.TotalMilliseconds;
 
-            SendTelemetry(elapsed, originalRemaining, remaining, walker.Version);
-            LogResults(elapsed, originalRemaining, remaining, walker.Version);
+            SendTelemetry(elapsed, originalRemaining, remaining, _walker.Version);
+            LogResults(elapsed, originalRemaining, remaining, _walker.Version);
         }
 
         private void SendTelemetry(double elapsed, int originalRemaining, int remaining, int version) {
@@ -201,10 +203,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private async Task<int> AnalyzeAffectedEntriesAsync(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private async Task<int> AnalyzeAffectedEntriesAsync(Stopwatch stopWatch, CancellationToken cancellationToken) {
             IDependencyChainNode<PythonAnalyzerEntry> node;
             var remaining = 0;
-            while ((node = await walker.GetNextAsync(cancellationToken)) != null) {
+            var ace = new AsyncCountdownEvent(0);
+
+            while ((node = await _walker.GetNextAsync(cancellationToken)) != null) {
                 bool isCanceled;
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
@@ -216,14 +220,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue;
                 }
 
-                if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || walker.Remaining == 1) {
-                    Analyze(walker, node, stopWatch, cancellationToken);
+                if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || _walker.Remaining == 1) {
+                    Analyze(node, null, stopWatch, cancellationToken);
                 } else {
-                    StartAnalysis(walker, node, stopWatch, cancellationToken).DoNotWait();
+                    StartAnalysis(node, ace, stopWatch, cancellationToken).DoNotWait();
                 }
             }
 
-            if (walker.MissingKeys.All(k => k.IsTypeshed)) {
+            await ace.WaitAsync(cancellationToken);
+
+            if (_walker.MissingKeys.All(k => k.IsTypeshed)) {
                 Interlocked.Exchange(ref _runningTasks, 0);
                 bool isCanceled;
                 lock (_syncObj) {
@@ -239,36 +245,37 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private Task StartAnalysis(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch, CancellationToken cancellationToken)
-            => Task.Run(() => Analyze(walker, node, stopWatch, cancellationToken), cancellationToken);
+        private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch, CancellationToken cancellationToken)
+            => Task.Run(() => Analyze(node, ace, stopWatch, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Performs analysis of the document. Returns document global scope
         /// with declared variables and inner scopes. Does not analyze chain
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
-        private void Analyze(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch, CancellationToken cancellationToken) {
             IPythonModule module;
             try {
+                ace?.AddOne();
                 var entry = node.Value;
-                if (!entry.IsValidVersion(walker.Version, out module, out var ast)) {
+                if (!entry.IsValidVersion(_walker.Version, out module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     node.Skip();
                     return;
                 }
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(entry, module, ast, walker.Version, cancellationToken);
+                AnalyzeEntry(entry, module, ast, _walker.Version, cancellationToken);
                 node.Commit();
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
-                node.Value.TryCancel(oce, walker.Version);
+                node.Value.TryCancel(oce, _walker.Version);
                 node.Skip();
                 module = node.Value.Module;
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
             } catch (Exception exception) {
                 module = node.Value.Module;
-                node.Value.TrySetException(exception, walker.Version);
+                node.Value.TrySetException(exception, _walker.Version);
                 node.Commit();
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
             } finally {
@@ -278,8 +285,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 if (!isCanceled) {
-                    _progress.ReportRemaining(walker.Remaining);
+                    _progress.ReportRemaining(_walker.Remaining);
                 }
+                ace?.Signal();
                 Interlocked.Decrement(ref _runningTasks);
             }
         }
