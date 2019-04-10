@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Caching;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -31,6 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly IPythonType _function;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
+        private readonly IAnalysisCache _cache;
 
         public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload) 
             : base(eval, overload.FunctionDefinition) {
@@ -38,6 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             _overload = overload;
             _function = overload.Function ?? throw new NullReferenceException(nameof(overload.Function));
             _self = _function.DeclaringType as PythonClassType;
+            _cache = eval.Services.GetService<IAnalysisCache>();
 
             FunctionDefinition = overload.FunctionDefinition;
         }
@@ -50,8 +53,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                        || Module.ModuleType == ModuleType.Specialized;
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
+                // Use cached data, if any
+                IPythonType annotationType = null;
+                if (Module.ModuleType == ModuleType.Library) {
+                    var returnType = _cache?.GetReturnType(_function);
+                    if (!string.IsNullOrEmpty(returnType)) {
+                        annotationType = Eval.LookupNameInScopes(returnType, out _, out _, LookupOptions.Normal) as IPythonType;
+                    }
+                }
+
                 // Process annotations.
-                var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+                annotationType = annotationType ?? Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
                 if (!annotationType.IsUnknown()) {
                     // Annotations are typically types while actually functions return
                     // instances unless specifically annotated to a type such as Type[T].

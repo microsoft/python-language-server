@@ -63,13 +63,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             return Task.Run(() => _fs.WriteTextWithRetry(filePath, md), cancellationToken);
         }
 
-        public string GetReturnType(IPythonFunctionType ft) {
+        public string GetReturnType(IPythonType ft) {
             GetItemData(ft, out var name, out var md);
-            return name != null ? (md.Functions.TryGetValue(name, out var v) ? v : null) : null;
-        }
-
-        public string GetReturnType(IPythonPropertyType pt) {
-            GetItemData(pt, out var name, out var md);
             return name != null ? (md.Functions.TryGetValue(name, out var v) ? v : null) : null;
         }
 
@@ -86,7 +81,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             md = null;
             if (t.DeclaringModule is IDocument doc) {
                 md = _reader.GetModuleData(doc.Name, doc.Content);
-                name = t.GetFullyQualifiedName();
+                if (md != null) {
+                    name = t.GetFullyQualifiedName();
+                }
             }
         }
     }
