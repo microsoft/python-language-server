@@ -58,12 +58,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 var rootDefinition = GetRootDefinition(definingMember);
                 var name = definingMember.GetName();
 
-                Debug.Assert(rootDefinition.DeclaringModule != null);
-                if (rootDefinition.DeclaringModule == null) {
-                    return Array.Empty<Reference>();
-                }
-
-                if (!string.IsNullOrEmpty(name) && (rootDefinition.DeclaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
+                // If it is an implicitly declared variable, such as function
+                // or a class. Use current module then.
+                var declaringModule = rootDefinition.DeclaringModule ?? analysis.Document;
+                if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
                     return await FindAllReferencesAsync(name, rootDefinition, cancellationToken);
                 }
             }
