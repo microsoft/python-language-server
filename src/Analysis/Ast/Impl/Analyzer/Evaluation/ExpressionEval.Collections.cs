@@ -23,6 +23,8 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
+        private const int MaxCollectionSize = 1000;
+
         public IMember GetValueFromIndex(IndexExpression expr) {
             if (expr?.Target == null) {
                 return null;
@@ -56,39 +58,39 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public IMember GetValueFromList(ListExpression expression) {
             var contents = new List<IMember>();
-            foreach (var item in expression.Items) {
+            foreach (var item in expression.Items.Take(MaxCollectionSize)) {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateList(Module.Interpreter, contents, exact: true);
+            return PythonCollectionType.CreateList(Module.Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         public IMember GetValueFromDictionary(DictionaryExpression expression) {
             var contents = new Dictionary<IMember, IMember>();
-            foreach (var item in expression.Items) {
+            foreach (var item in expression.Items.Take(MaxCollectionSize)) {
                 var key = GetValueFromExpression(item.SliceStart) ?? UnknownType;
                 var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
-            return new PythonDictionary(Interpreter, contents, exact: true);
+            return new PythonDictionary(Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         private IMember GetValueFromTuple(TupleExpression expression) {
             var contents = new List<IMember>();
-            foreach (var item in expression.Items) {
+            foreach (var item in expression.Items.Take(MaxCollectionSize)) {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateTuple(Module.Interpreter, contents, exact: true);
+            return PythonCollectionType.CreateTuple(Module.Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         public IMember GetValueFromSet(SetExpression expression) {
             var contents = new List<IMember>();
-            foreach (var item in expression.Items) {
+            foreach (var item in expression.Items.Take(MaxCollectionSize)) {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateSet(Interpreter, contents, exact: true);
+            return PythonCollectionType.CreateSet(Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         public IMember GetValueFromGenerator(GeneratorExpression expression) {
