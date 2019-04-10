@@ -462,19 +462,6 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        private void RemoveReferencesToModule(IPythonModule module) {
-            // In all variables find those imported, then traverse imported modules
-            // and remove references to this module. If 
-            var importedVariables = ((IScope)module.GlobalScope)
-                .TraverseDepthFirst(c => c.Children)
-                .SelectMany(s => s.Variables)
-                .Where(v => v.Source == VariableSource.Import);
-
-            foreach (var importedVar in importedVariables) {
-                importedVar.RemoveReferences(this);
-            }
-        }
-
         private string TryGetDocFromModuleInitFile() {
             if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
                 return string.Empty;
