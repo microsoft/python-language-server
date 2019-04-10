@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisCompleteEvent = analysisCompleteEvent;
             _startNextSession = startNextSession;
             Version = version;
-            AffectedEntriesCount = walker.AffectedValues.Count;
+            AffectedEntriesCount = walker?.AffectedValues.Count ?? 1;
             _walker = walker;
             _entry = entry;
             _state = State.NotStarted;
