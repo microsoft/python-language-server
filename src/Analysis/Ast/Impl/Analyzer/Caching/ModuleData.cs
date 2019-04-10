@@ -67,6 +67,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                     guard.Remove(t);
                 }
             }
+
+            // Add all methods and properties to the top-level
+            // functions list for faster retrieval
+            AddInnerFunctionsToGlobalList(md.Classes, md, string.Empty);
             return md;
         }
 
@@ -81,6 +85,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
             for (var i = 0; i < ft.Overloads.Count; i++) {
                 md.Functions[$"{ft.Name}.{i}"] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
+            }
+        }
+
+        private static void AddInnerFunctionsToGlobalList(IReadOnlyDictionary<string, ClassData> classes, ModuleData md, string prefix) {
+            foreach (var c in classes) {
+                var className = c.Key;
+                var cls = c.Value;
+
+                var nextPrefix = string.IsNullOrWhiteSpace(prefix) ? className : $"{prefix}.{className}";
+                AddInnerFunctionsToGlobalList(cls.Classes, md, nextPrefix);
+
+                foreach (var kvp in cls.Methods) {
+                    md.Functions[$"{prefix}.{kvp.Key}"] = kvp.Value;
+                }
+                foreach (var kvp in cls.Properties) {
+                    md.Functions[$"{prefix}.{kvp.Key}"] = kvp.Value;
+                }
             }
         }
     }
