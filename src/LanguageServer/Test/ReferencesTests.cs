@@ -70,13 +70,14 @@ def func(x):
 y = func(x)
 x = 2
 ";
-            var uri1 = TestData.GetDefaultModuleUri();
-            var uri2 = TestData.GetNextModuleUri();
 
             var code2 = $@"
-from {Path.GetFileNameWithoutExtension(uri1.AbsolutePath)} import x
+from module1 import x
 y = x
 ";
+            var uri1 = await TestData.CreateTestSpecificFileAsync("module1.py", code1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync("module2.py", code2);
+
             await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri1.AbsolutePath);
 
             var rdt = Services.GetService<IRunningDocumentTable>();
@@ -98,7 +99,7 @@ y = x
             refs[2].range.Should().Be(7, 0, 7, 1);
             refs[2].uri.Should().Be(uri1);
 
-            refs[3].range.Should().Be(1, 19, 1, 20);
+            refs[3].range.Should().Be(1, 20, 1, 21);
             refs[3].uri.Should().Be(uri2);
             refs[4].range.Should().Be(2, 4, 2, 5);
             refs[4].uri.Should().Be(uri2);
@@ -240,7 +241,7 @@ x = 2
             var uri1 = TestData.GetDefaultModuleUri();
             var uri2 = TestData.GetNextModuleUri();
 
-            var code2 = $@"
+            const string code2 = @"
 from module import x, y
 a = x
 b = y
@@ -281,6 +282,78 @@ b = y
             refs.Should().HaveCount(1);
             refs[0].range.Should().Be(6, 0, 6, 1);
             refs[0].uri.Should().Be(uri1);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RemoveReferenceNested() {
+            const string code1 = @"
+x = 1
+
+def func(x):
+    return x
+
+y = func(x)
+x = 2
+";
+            const string code2 = @"
+from module import x, y
+a = x
+b = y
+";
+            var code3 = @"
+from module1 import x, y
+a = x
+b = y
+";
+            var uri1 = TestData.GetDefaultModuleUri();
+            var uri2 = TestData.GetNextModuleUri();
+            var uri3 = TestData.GetNextModuleUri();
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri1.AbsolutePath);
+
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var doc1 = rdt.OpenDocument(uri1, code1);
+            var doc2 = rdt.OpenDocument(uri2, code2);
+            var doc3 = rdt.OpenDocument(uri3, code3);
+
+            var analysis = await GetDocumentAnalysisAsync(doc1);
+
+            var rs = new ReferenceSource(Services);
+            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 1), ReferenceSearchOptions.All);
+
+            refs.Should().HaveCount(5);
+            refs[0].range.Should().Be(6, 0, 6, 1);
+            refs[0].uri.Should().Be(uri1);
+            refs[1].range.Should().Be(1, 22, 1, 23);
+            refs[1].uri.Should().Be(uri2);
+            refs[2].range.Should().Be(3, 4, 3, 5);
+            refs[2].uri.Should().Be(uri2);
+            refs[3].range.Should().Be(1, 23, 1, 24);
+            refs[3].uri.Should().Be(uri3);
+            refs[4].range.Should().Be(3, 4, 3, 5);
+            refs[4].uri.Should().Be(uri3);
+
+            doc3.Update(new[] {
+                new DocumentChange {
+                    InsertedText = string.Empty,
+                    ReplacedSpan = new SourceSpan(4, 1, 4, 6)
+                },
+                new DocumentChange {
+                    InsertedText = string.Empty,
+                    ReplacedSpan = new SourceSpan(2, 22, 2, 25)
+                }
+            });
+            await GetDocumentAnalysisAsync(doc3);
+
+            refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 1), ReferenceSearchOptions.All);
+
+            refs.Should().HaveCount(3);
+            refs[0].range.Should().Be(6, 0, 6, 1);
+            refs[0].uri.Should().Be(uri1);
+            refs[1].range.Should().Be(1, 22, 1, 23);
+            refs[1].uri.Should().Be(uri2);
+            refs[2].range.Should().Be(3, 4, 3, 5);
+            refs[2].uri.Should().Be(uri2);
         }
 
         [TestMethod, Priority(0)]
