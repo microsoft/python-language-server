@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
             foreach (var v in module.GlobalScope.Variables) {
                 var t = v.Value.GetPythonType();
-                if (t.DeclaringModule != module || v.Name.StartsWith("__")) {
+                if (t?.DeclaringModule != module || v.Name.StartsWith("__")) {
                     continue;
                 }
 
