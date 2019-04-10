@@ -217,6 +217,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private bool TryCreateSession(DependencyGraphSnapshot<AnalysisModuleKey, PythonAnalyzerEntry> snapshot, PythonAnalyzerEntry entry, CancellationToken cancellationToken, out PythonAnalyzerSession session) {
+            var analyzeUserModuleOutOfOrder = false;
             lock (_syncObj) {
                 if (_currentSession != null) {
                     if (_currentSession.Version > snapshot.Version || _nextSession != null && _nextSession.Version > snapshot.Version) {
@@ -224,7 +225,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         return false;
                     }
 
-                    if (_version > snapshot.Version && !_currentSession.IsCompleted && entry.IsUserModule) {
+                    analyzeUserModuleOutOfOrder = !_currentSession.IsCompleted && entry.IsUserModule && _currentSession.AffectedEntriesCount >= _maxTaskRunning;
+                    if (_version > snapshot.Version && analyzeUserModuleOutOfOrder) {
                         session = CreateSession(null, entry, cancellationToken);
                         return true;
                     }
@@ -253,8 +255,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 _currentSession.Cancel();
-                _nextSession = session = CreateSession(walker, entry.IsUserModule ? entry : null, cancellationToken);
-                return entry.IsUserModule;
+                _nextSession = session = CreateSession(walker, analyzeUserModuleOutOfOrder ? entry : null, cancellationToken);
+                return analyzeUserModuleOutOfOrder;
             }
         }
 
