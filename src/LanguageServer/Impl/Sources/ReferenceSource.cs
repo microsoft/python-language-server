@@ -142,16 +142,20 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         private async Task AnalyzeFiles(IEnumerable<Uri> files, CancellationToken cancellationToken) {
             var rdt = _services.GetService<IRunningDocumentTable>();
+            var analysisTasks = new List<Task>();
             foreach (var f in files) {
-                Analyze(f, rdt);
+                var module = Analyze(f, rdt);
+                if (module != null) {
+                    analysisTasks.Add(module.GetAnalysisAsync(cancellationToken: cancellationToken));
+                }
             }
-            var analyzer = _services.GetService<IPythonAnalyzer>();
-            await analyzer.WaitForCompleteAnalysisAsync(cancellationToken);
+
+            await Task.WhenAll(analysisTasks);
         }
 
-        private static void Analyze(Uri uri, IRunningDocumentTable rdt) {
+        private static IDocument Analyze(Uri uri, IRunningDocumentTable rdt) {
             if (rdt.GetDocument(uri) != null) {
-                return; // Already opened by another analysis.
+                return null; // Already opened by another analysis.
             }
 
             var filePath = uri.ToAbsolutePath();
@@ -161,7 +165,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 Uri = uri,
                 ModuleType = ModuleType.User
             };
-            rdt.AddModule(mco);
+
+            return rdt.AddModule(mco);
         }
 
         private ILocatedMember GetRootDefinition(ILocatedMember lm) {

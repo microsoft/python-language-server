@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Returns document analysis.
         /// </summary>
-        Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime, CancellationToken cancellationToken = default);
+        Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns last known document AST. The AST may be out of date or null.
