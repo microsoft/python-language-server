@@ -58,6 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public int Version { get; }
+        public int AffectedEntriesCount { get; }
 
         public PythonAnalyzerSession(IServiceManager services,
             IProgressReporter progress,
@@ -73,6 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisCompleteEvent = analysisCompleteEvent;
             _startNextSession = startNextSession;
             Version = version;
+            AffectedEntriesCount = walker.AffectedValues.Count;
             _walker = walker;
             _entry = entry;
             _state = State.NotStarted;

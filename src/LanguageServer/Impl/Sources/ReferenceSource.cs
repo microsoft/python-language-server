@@ -144,18 +144,16 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var rdt = _services.GetService<IRunningDocumentTable>();
             var analysisTasks = new List<Task>();
             foreach (var f in files) {
-                var module = Analyze(f, rdt);
-                if (module != null) {
-                    analysisTasks.Add(module.GetAnalysisAsync(cancellationToken: cancellationToken));
-                }
+                analysisTasks.Add(GetOrOpenModule(f, rdt).GetAnalysisAsync(cancellationToken: cancellationToken));
             }
 
             await Task.WhenAll(analysisTasks);
         }
 
-        private static IDocument Analyze(Uri uri, IRunningDocumentTable rdt) {
-            if (rdt.GetDocument(uri) != null) {
-                return null; // Already opened by another analysis.
+        private static IDocument GetOrOpenModule(Uri uri, IRunningDocumentTable rdt) {
+            var document = rdt.GetDocument(uri);
+            if (document != null) {
+                return document; // Already opened by another analysis.
             }
 
             var filePath = uri.ToAbsolutePath();
