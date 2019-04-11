@@ -84,7 +84,7 @@ namespace Microsoft.Python.Core.Services {
 
         public void RemoveService(object service) => _s.TryRemove(service.GetType(), out var dummy);
 
-        public IEnumerable<Type> AllServices => _s.Keys.ToList();
+        internal void ReplaceService(Type type, object service) => _s.GetOrAdd(type, service);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private object CheckDisposed(object service) {

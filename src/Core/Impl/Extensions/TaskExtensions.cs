@@ -52,6 +52,10 @@ namespace Microsoft.Python.Core {
         /// <see cref="OperationCanceledException"/> is always ignored.
         /// </remarks>
         public static void DoNotWait(this Task task) {
+            if (task == null) {
+                return;
+            }
+
             if (task.IsCompleted) {
                 ReThrowTaskException(task);
                 return;

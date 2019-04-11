@@ -110,6 +110,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
                 _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+                _typeMap[fd] = existing;
             }
             AddOverload(fd, existing, o => existing.AddOverload(o));
         }
@@ -171,6 +172,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
                 _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration);
+                _typeMap[node] = existing;
             }
             AddOverload(node, existing, o => existing.AddOverload(o));
         }

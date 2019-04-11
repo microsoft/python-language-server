@@ -47,8 +47,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             ClassName = className;
         }
 
-        public static ClassData FromClass(IPythonClassType cls, HashSet<IMember> guard) {
+        public static ClassData FromClass(IPythonClassType cls, IScope scope, HashSet<IMember> guard) {
             var cd = new ClassData(cls.GetFullyQualifiedName());
+
+            var classScope = scope.Children.FirstOrDefault(c => c.Node == cls.ClassDefinition);
+            if (classScope == null) {
+                return cd;
+            }
 
             foreach (var name in cls.GetMemberNames()) {
                 if (name.StartsWithOrdinal("__")) {
@@ -64,13 +69,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                     guard.Add(m);
                     switch (m) {
                         case IPythonClassType ct:
-                            cd.Classes[name] = FromClass(ct, guard);
+                            cd.Classes[name] = FromClass(ct, classScope, guard);
                             break;
-                        case IPythonFunctionType ft when ft.Name != "<lambda>":
-                            MakeFunctionData(ft, cd);
+                        case IPythonFunctionType ft when !ft.IsLambda():
+                            FunctionData.FromFunction(ft, cd.Methods, classScope);
                             break;
                         case IPythonPropertyType prop:
-                            cd.Properties[name] = prop.Type?.Name;
+                            cd.Properties[prop.GetFullyQualifiedName()] = prop.Type?.Name;
                             break;
                         case IPythonInstance inst:
                             cd.Fields[name] = inst.GetPythonType()?.Name;
@@ -81,12 +86,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                 }
             }
             return cd;
-        }
-
-        private static void MakeFunctionData(IPythonFunctionType ft, ClassData cd) {
-            if (ft.Overloads.Count > 0) {
-                cd.Methods[ft.Name] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
-            }
         }
     }
 }

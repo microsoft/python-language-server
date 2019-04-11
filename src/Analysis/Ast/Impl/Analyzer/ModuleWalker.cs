@@ -197,8 +197,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
 
-            var cache = Eval.Services.GetService<IAnalysisCache>();
-            cache?.WriteAnalysis((IDocument)Module, Eval.GlobalScope);
+            if (Module.ModuleType == ModuleType.Library) {
+                var cache = Eval.Services.GetService<IAnalysisCache>();
+                cache?.WriteAnalysisAsync((IDocument)Module, Eval.GlobalScope).DoNotWait();
+            }
 
             if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable)
                 && variable?.Value is IPythonCollection collection && collection.IsExact) {

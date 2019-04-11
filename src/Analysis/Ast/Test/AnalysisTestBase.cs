@@ -102,17 +102,22 @@ namespace Microsoft.Python.Analysis.Tests {
         protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, PythonLanguageVersion version, IServiceManager sm = null, string modulePath = null)
             => GetAnalysisAsync(code, PythonVersions.GetRequiredCPythonConfiguration(version), sm, modulePath);
 
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, Action callBeforeAnalysis)
+            => GetAnalysisAsync(code, null, null, null, callBeforeAnalysis);
+
         protected async Task<IDocumentAnalysis> GetAnalysisAsync(
             string code,
             InterpreterConfiguration configuration = null,
             IServiceManager sm = null,
-            string modulePath = null) {
+            string modulePath = null,
+            Action callBeforeAnalysis = null) {
 
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
             var moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
             var services = await CreateServicesAsync(moduleDirectory, configuration, sm);
+            callBeforeAnalysis?.Invoke();
             return await GetAnalysisAsync(code, services, moduleName, modulePath);
         }
 

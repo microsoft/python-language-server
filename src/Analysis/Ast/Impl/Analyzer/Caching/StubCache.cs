@@ -120,7 +120,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             if (!string.IsNullOrEmpty(cache)) {
                 _log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
                 // Don't block analysis on cache writes.
-                CacheWritingTask = Task.Run(() => _fs.WriteTextWithRetry(cache, code));
+                CacheWritingTask = Task.Run(() => _fs.WriteAllTextEx(cache, code));
                 CacheWritingTask.DoNotWait();
             }
         }

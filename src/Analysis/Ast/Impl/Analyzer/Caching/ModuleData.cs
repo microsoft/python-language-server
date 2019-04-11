@@ -19,6 +19,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 using Newtonsoft.Json;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
@@ -59,10 +61,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                     guard.Add(t);
                     switch (t) {
                         case IPythonClassType cls:
-                            md.Classes[cls.Name] = ClassData.FromClass(cls, guard);
+                            md.Classes[cls.Name] = ClassData.FromClass(cls, globalScope, guard);
                             break;
-                        case IPythonFunctionType ft when ft.Name != "<lambda>":
-                            MakeFunctionData(ft, md);
+                        case IPythonFunctionType ft when !ft.IsLambda():
+                            FunctionData.FromFunction(ft, md.Functions, globalScope);
                             break;
                     }
                 } finally {
@@ -72,37 +74,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
             // Add all methods and properties to the top-level
             // functions list for faster retrieval
-            AddClassMethodsToGlobalList(md.Classes, md, string.Empty);
+            AddClassMethodsToGlobalList(md.Classes.Values, md);
             return md;
         }
 
-        private static void MakeFunctionData(IPythonFunctionType ft, ModuleData md) {
-            switch (ft.Overloads.Count) {
-                case 0:
-                    return;
-                case 1:
-                    md.Functions[ft.Name] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
-                    return;
-            }
-
-            for (var i = 0; i < ft.Overloads.Count; i++) {
-                md.Functions[$"{ft.Name}.{i}"] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
-            }
-        }
-
-        private static void AddClassMethodsToGlobalList(IReadOnlyDictionary<string, ClassData> classes, ModuleData md, string prefix) {
-            foreach (var c in classes) {
-                var className = c.Key;
-                var cls = c.Value;
-
-                var newPrefix = $"{prefix}{className}.";
-                AddClassMethodsToGlobalList(cls.Classes, md, newPrefix);
+        private static void AddClassMethodsToGlobalList(IEnumerable<ClassData> classes, ModuleData md) {
+            foreach (var cls in classes) {
+                AddClassMethodsToGlobalList(cls.Classes.Values, md);
 
                 foreach (var kvp in cls.Methods) {
-                    md.Functions[$"{newPrefix}{kvp.Key}"] = kvp.Value;
+                    md.Functions[kvp.Key] = kvp.Value;
                 }
                 foreach (var kvp in cls.Properties) {
-                    md.Functions[$"{newPrefix}{kvp.Key}"] = kvp.Value;
+                    md.Functions[kvp.Key] = kvp.Value;
                 }
             }
         }

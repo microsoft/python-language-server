@@ -18,7 +18,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -45,17 +44,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             Task.Run(() => WriterTask()).DoNotWait();
         }
 
-        public void WriteAnalysis(IDocument document, IScope globalScope) {
+        public Task WriteAnalysisAsync(IDocument document, IScope globalScope) {
             if (globalScope == null
                 || document.Stub != null
-                || document.ModuleType != ModuleType.Library
                 || string.IsNullOrEmpty(document.Content)) {
-                return;
+                return Task.CompletedTask;
             }
 
             var newData = ModuleData.FromModule(document, globalScope);
             if (newData.Classes.Count == 0 && newData.Functions.Count == 0) {
-                return;
+                return Task.CompletedTask;
             }
 
             var newDataString = newData.Serialize();
@@ -63,15 +61,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                 var filePath = CacheFolders.GetAnalysisCacheFilePath(_analysisRootFolder, document.Name, document.Content, _fs);
                 // Write if file does not exist or something has changed in the module data.
                 var write = !_fs.FileExists(filePath);
+
                 if (!write) {
                     var existingDataString = _reader.GetModuleData(document.Name, document.Content)?.Serialize();
                     write = newDataString != existingDataString;
                 }
+
                 if (write) {
                     _reader.SetModuleData(document.Name, newData);
-                    Enqueue(() => _fs.WriteTextWithRetry(filePath, newDataString));
+                    var tcs = new TaskCompletionSource<bool>();
+                    Enqueue(() => {
+                        _fs.WriteAllTextEx(filePath, newDataString);
+                        tcs.SetResult(true);
+                    });
+                    return tcs.Task;
                 }
             }
+            return Task.CompletedTask;
         }
 
         public CacheSearchResult GetReturnType(IPythonType ft, out string returnType) {

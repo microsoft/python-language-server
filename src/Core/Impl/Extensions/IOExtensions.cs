@@ -36,11 +36,11 @@ namespace Microsoft.Python.Core.IO {
                         fs.DeleteFile(path);
                         return true;
                     }
-                } catch (UnauthorizedAccessException) {
-                } catch (IOException) {
-                }
+                } catch (UnauthorizedAccessException) { } catch (IOException) { }
+
                 Thread.Sleep(10);
             }
+
             return !fs.FileExists(path);
         }
 
@@ -55,9 +55,7 @@ namespace Microsoft.Python.Core.IO {
                 try {
                     fs.DeleteDirectory(path, true);
                     return true;
-                } catch (UnauthorizedAccessException) {
-                } catch (IOException) {
-                }
+                } catch (UnauthorizedAccessException) { } catch (IOException) { }
             }
 
             // Regular delete failed, so let's start removing the contents ourselves
@@ -69,9 +67,7 @@ namespace Microsoft.Python.Core.IO {
 
                 try {
                     fs.DeleteDirectory(dir, true);
-                } catch (UnauthorizedAccessException) {
-                } catch (IOException) {
-                }
+                } catch (UnauthorizedAccessException) { } catch (IOException) { }
             }
 
             // If we get to this point and the directory still exists, there's
@@ -97,15 +93,16 @@ namespace Microsoft.Python.Core.IO {
                         try {
                             fs.CreateDirectory(dir);
                         } catch (IOException) {
-                            // Cannot create directory for DB, so just bail out
                             return null;
                         }
                     }
+
                     Thread.Sleep(10);
                 } catch (NotSupportedException) {
                     return null;
                 }
             }
+
             return null;
         }
 
@@ -120,22 +117,15 @@ namespace Microsoft.Python.Core.IO {
                     Thread.Sleep(10);
                 }
             }
+
             return null;
         }
 
-        public static void WriteTextWithRetry(this IFileSystem fs, string filePath, string text) {
+        public static void WriteAllTextEx(this IFileSystem fs, string filePath, string text) {
+            var dir = Path.GetDirectoryName(filePath);
             try {
-                using (var stream = fs.OpenWithRetry(filePath, FileMode.Create, FileAccess.Write, FileShare.Read)) {
-                    if (stream != null) {
-                        var bytes = Encoding.UTF8.GetBytes(text);
-                        stream.Write(bytes, 0, bytes.Length);
-                        return;
-                    }
-                }
-            } catch (IOException) { } catch (UnauthorizedAccessException) { }
-
-            try {
-                fs.DeleteFile(filePath);
+                fs.CreateDirectory(dir);
+                fs.WriteAllText(filePath, text);
             } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
     }
