@@ -112,7 +112,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             ) {
                 // TODO: Remove this split once the extension is updated and no longer passes the interpreter search paths directly.
                 // This is generally harmless to keep around.
-                SearchPaths = @params.initializationOptions.searchPaths.Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany().ToList(),
+                SearchPaths = @params.initializationOptions.searchPaths
+                    .Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany()
+                    .Where(p => p != "/" && p != ".")
+                    .ToList(),
                 TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
             };
 
