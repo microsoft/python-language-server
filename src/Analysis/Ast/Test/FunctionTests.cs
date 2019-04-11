@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -566,6 +567,27 @@ z = y()
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Function)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Deprecated() {
+            const string code = @"
+@deprecation.deprecated('')
+class A:
+    def a(self): pass
+
+@deprecation.deprecated('')
+def func(): ...
+
+class B:
+    @deprecation.deprecated('')
+    def b(self): pass
+
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().NotHaveVariable("A");
+            analysis.Should().NotHaveVariable("func");
+            analysis.Should().HaveVariable("B").Which.Should().NotHaveMember("b");
         }
     }
 }
