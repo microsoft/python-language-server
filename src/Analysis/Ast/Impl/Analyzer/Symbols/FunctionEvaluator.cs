@@ -52,32 +52,37 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                        || _function.DeclaringModule.ModuleType == ModuleType.Stub
                        || Module.ModuleType == ModuleType.Specialized;
 
+            var functionIsInCache = false;
+            var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 // Use cached data, if any
                 IPythonType annotationType = null;
-                if (Module.ModuleType == ModuleType.Library) {
-                    var returnType = _cache?.GetReturnType(_function);
-                    if (!string.IsNullOrEmpty(returnType)) {
-                        annotationType = Eval.LookupNameInScopes(returnType, out _, out _, LookupOptions.Normal) as IPythonType;
+                if (!ctor) {
+                    if (Module.ModuleType == ModuleType.Library && _cache != null) {
+                        functionIsInCache = _cache.GetReturnType(_function, out var returnType);
+                        if (!string.IsNullOrEmpty(returnType)) {
+                            annotationType = Eval.LookupNameInScopes(returnType, out _, out _, LookupOptions.Normal) as IPythonType;
+                        }
                     }
-                }
 
-                // Process annotations.
-                annotationType = annotationType ?? Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-                if (!annotationType.IsUnknown()) {
-                    // Annotations are typically types while actually functions return
-                    // instances unless specifically annotated to a type such as Type[T].
-                    var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
-                    _overload.SetReturnValue(instance, true);
-                } else {
-                    // Check if function is a generator
-                    var suite = FunctionDefinition.Body as SuiteStatement;
-                    var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                    if (yieldExpr != null) {
-                        // Function return is an iterator
-                        var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                        var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                        _overload.SetReturnValue(returnValue, true);
+                    // Process annotations.
+                    annotationType = annotationType ?? Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+                    if (!annotationType.IsUnknown()) {
+                        // Annotations are typically types while actually functions return
+                        // instances unless specifically annotated to a type such as Type[T].
+                        var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                        _overload.SetReturnValue(instance, true);
+                    } else {
+                        // Check if function is a generator
+                        var suite = FunctionDefinition.Body as SuiteStatement;
+                        var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                        if (yieldExpr != null) {
+                            // Function return is an iterator
+                            var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                            var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                            _overload.SetReturnValue(returnValue, true);
+                        }
                     }
                 }
 
@@ -86,7 +91,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Do process body of constructors since they may be declaring
                 // variables that are later used to determine return type of other
                 // methods and properties.
-                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
                 if (!stub && (ctor || Module.ModuleType == ModuleType.User)) {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.

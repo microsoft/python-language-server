@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
             // Add all methods and properties to the top-level
             // functions list for faster retrieval
-            AddInnerFunctionsToGlobalList(md.Classes, md, string.Empty);
+            AddClassMethodsToGlobalList(md.Classes, md, string.Empty);
             return md;
         }
 
@@ -88,19 +88,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             }
         }
 
-        private static void AddInnerFunctionsToGlobalList(IReadOnlyDictionary<string, ClassData> classes, ModuleData md, string prefix) {
+        private static void AddClassMethodsToGlobalList(IReadOnlyDictionary<string, ClassData> classes, ModuleData md, string prefix) {
             foreach (var c in classes) {
                 var className = c.Key;
                 var cls = c.Value;
 
-                var nextPrefix = string.IsNullOrWhiteSpace(prefix) ? className : $"{prefix}.{className}";
-                AddInnerFunctionsToGlobalList(cls.Classes, md, nextPrefix);
+                var newPrefix = $"{prefix}{className}.";
+                AddClassMethodsToGlobalList(cls.Classes, md, newPrefix);
 
                 foreach (var kvp in cls.Methods) {
-                    md.Functions[$"{prefix}.{kvp.Key}"] = kvp.Value;
+                    md.Functions[$"{newPrefix}{kvp.Key}"] = kvp.Value;
                 }
                 foreach (var kvp in cls.Properties) {
-                    md.Functions[$"{prefix}.{kvp.Key}"] = kvp.Value;
+                    md.Functions[$"{newPrefix}{kvp.Key}"] = kvp.Value;
                 }
             }
         }

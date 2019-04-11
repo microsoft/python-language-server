@@ -27,8 +27,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
         /// <summary>
         /// Give function type provides return value type name as stored in the cache.
-        /// Null return means function is either not in the cache or type is not known.
+        /// Null returnType means function is in the cache but analysis was unable
+        /// to determine its return type.
         /// </summary>
-        string GetReturnType(IPythonType ft);
+        bool GetReturnType(IPythonType ft, out string returnType);
     }
 }

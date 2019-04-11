@@ -47,19 +47,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                 return Task.CompletedTask;
             }
 
-            var aw = new AnalysisWriter(document);
-            var md = aw.SerializeModuleData();
-            if (string.IsNullOrEmpty(md)) {
-                return Task.CompletedTask;
-            }
-
             var filePath = CacheFolders.GetAnalysisCacheFilePath(_analysisRootFolder, document.Name, document.Content, _fs);
-            return Task.Run(() => _fs.WriteTextWithRetry(filePath, md), cancellationToken);
+            if (!_fs.FileExists(filePath)) {
+                var aw = new AnalysisWriter(document);
+                var md = aw.SerializeModuleData();
+                if (!string.IsNullOrEmpty(md)) {
+                    return Task.Run(() => _fs.WriteTextWithRetry(filePath, md), cancellationToken);
+                }
+            }
+            return Task.CompletedTask;
         }
 
-        public string GetReturnType(IPythonType ft) {
+        public bool GetReturnType(IPythonType ft, out string returnType) {
+            returnType = null;
             GetItemData(ft, out var name, out var md);
-            return name != null ? (md.Functions.TryGetValue(name, out var v) ? v : null) : null;
+            return name != null && md.Functions.TryGetValue(name, out returnType);
         }
 
         //public IClassData GetClassData(IPythonClassType cls) {
