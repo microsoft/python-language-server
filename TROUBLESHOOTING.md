@@ -18,6 +18,10 @@ There are a few known issues in the current version of the language server:
     language server, as the error occurs in another process. A popup may appear in Windows or macOS
     when the crash is detected by the operating system.
     See [#740](https://github.com/Microsoft/python-language-server/issues/740).
+- Analyzing large Conda environments leads to spikes in CPU usage.
+    - In some cases, CPU usage is as high as 100%. See [#875](https://github.com/Microsoft/python-language-server/issues/875).
+- Persistent issues with high memory consumption for users. 
+    - In some contexts, users are experiencing higher than average amounts of memory being consumed. See [#832](https://github.com/Microsoft/python-language-server/issues/832).
 
 
 ## Requirements
@@ -55,10 +59,13 @@ complete when the status message (in the bottom bar) disappears.
 
 When filing an issue, make sure you do the following:
 
-- Check existing issues for the same problem.
-- Enable trace logging by adding `"python.analysis.logLevel": "Trace"` to your configuration.
+- Check existing issues for the same problem (also see the "Known Issues" section above for widespread problems).
+- Enable trace logging by adding `"python.analysis.logLevel": "Trace"` to your settings.json configuration file.
     - Adding this will cause a large amount of info to be printed to the Python output panel.
     This should not be left long term, as the performance impact of the logging is significant.
-- State which langauge server version you are using. This will be printed when the language server starts.
+- State which language server version you are using: 
+    -   To find your version: (CTRL + Shift + P >> Python: Create Terminal >> Select "Output" >> Select "Python" from the dropdown menu         in the top right of the output window). Look for the line `Microsoft Python Language Server version X` in the console.
 - State the environment where your code is running; i.e. Python version, the virtual environment type, etc.
-- A code example (or other information) we can use to reproduce the issue.
+    - If using a virtual environment, please include the requirements.txt file.
+    - If working with a conda environment, attach the environment.yml file.
+- A code example (or any other additional information) we can use to reproduce the issue.
