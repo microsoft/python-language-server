@@ -459,8 +459,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         private void RemoveReferencesInModule(IPythonModule module) {
-            foreach (var v in module.GlobalScope.Variables) {
-                v.RemoveReferences(this);
+            if (module.GlobalScope?.Variables != null) {
+                foreach (var v in module.GlobalScope.Variables) {
+                    v.RemoveReferences(this);
+                }
             }
         }
 
