@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // variables that are later used to determine return type of other
                 // methods and properties.
                 var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
-                if (!stub && (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User)) {
+                if (!stub && (ctor || Module.ModuleType == ModuleType.User)) {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);

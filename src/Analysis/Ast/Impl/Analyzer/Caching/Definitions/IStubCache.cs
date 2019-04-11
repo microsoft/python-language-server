@@ -13,8 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Modules {
-    public interface IModuleCache {
+namespace Microsoft.Python.Analysis.Analyzer.Caching {
+    public interface IStubCache {
         string GetCacheFilePath(string filePath);
         string ReadCachedModule(string filePath);
         void WriteCachedModule(string filePath, string code);

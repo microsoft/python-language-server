@@ -22,6 +22,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Caching;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
@@ -46,8 +47,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 // Initialize built-in
                 var moduleName = BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
 
-                ModuleCache = new ModuleCache(_interpreter, _services);
-                var modulePath = ModuleCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
+                StubCache = _services.GetService<IStubCache>();
+                var modulePath = StubCache.GetCacheFilePath(_interpreter.Configuration.InterpreterPath);
 
                 var b = new BuiltinsPythonModule(moduleName, modulePath, _services);
                 BuiltinsModule = b;

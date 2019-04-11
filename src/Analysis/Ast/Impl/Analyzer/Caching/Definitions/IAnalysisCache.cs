@@ -21,12 +21,6 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
     internal interface IAnalysisCache {
         /// <summary>
-        /// Returns path to the stub file for the given module.
-        /// Typically used to store stubs generated from compiled modules.
-        /// </summary>
-        string GetStubCacheFilePath(string moduleName, string content);
-
-        /// <summary>
         /// Writes document analysis to a disk file.
         /// </summary>
         Task WriteAnalysisAsync(IDocument document, CancellationToken cancellationToken = default);
@@ -36,6 +30,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         /// Null return means function is either not in the cache or type is not known.
         /// </summary>
         string GetReturnType(IPythonType ft);
-        IClassData GetClassData(IPythonClassType cls);
     }
 }

@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -105,8 +106,8 @@ namespace Microsoft.Python.Analysis.Tests {
             foreach (var mod in modules) {
                 Assert.IsInstanceOfType(mod, typeof(CompiledPythonModule));
 
-                await ((ModuleCache)interpreter.ModuleResolution.ModuleCache).CacheWritingTask;
-                var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(mod.FilePath);
+                await ((StubCache)interpreter.ModuleResolution.StubCache).CacheWritingTask;
+                var modPath = interpreter.ModuleResolution.StubCache.GetCacheFilePath(mod.FilePath);
                 Assert.IsTrue(File.Exists(modPath), "No cache file created");
 
                 var doc = (IDocument)mod;
@@ -156,14 +157,14 @@ namespace Microsoft.Python.Analysis.Tests {
             var mod = interpreter.ModuleResolution.GetOrLoadModule(interpreter.ModuleResolution.BuiltinModuleName);
             await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             Assert.IsInstanceOfType(mod, typeof(BuiltinsPythonModule));
-            var modPath = interpreter.ModuleResolution.ModuleCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
+            var modPath = interpreter.ModuleResolution.StubCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
 
             var doc = mod as IDocument;
             var errors = doc.GetParseErrors().ToArray();
             foreach (var err in errors) {
                 Console.WriteLine(err);
             }
-            Assert.AreEqual(0, errors.Count(), "Parse errors occurred");
+            Assert.AreEqual(0, errors.Length, "Parse errors occurred");
 
             var ast = await doc.GetAstAsync();
             var seen = new HashSet<string>();

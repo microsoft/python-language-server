@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Microsoft.Python.Analysis.Analyzer.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 
@@ -33,7 +34,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
 
-        IModuleCache ModuleCache { get; }
+        IStubCache StubCache { get; }
 
         bool TryAddModulePath(in string path, out string fullName);
 

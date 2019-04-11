@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         public string ModuleName { get; set; }
         [JsonProperty]
         public string ModulePath { get; set; }
-        [JsonProperty]
+        [JsonIgnore] // Not caching classes just yet.
         public Dictionary<string, ClassData> Classes { get; set; } = new Dictionary<string, ClassData>();
         [JsonProperty]
         public Dictionary<string, string> Functions { get; set; } = new Dictionary<string, string>();

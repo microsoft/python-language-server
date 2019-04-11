@@ -17,13 +17,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using Microsoft.Python.Analysis.Analyzer.Caching;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
-        protected IModuleCache ModuleCache => Interpreter.ModuleResolution.ModuleCache;
+        protected IStubCache StubCache => Interpreter.ModuleResolution.StubCache;
 
         public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, IServiceContainer services)
             : base(moduleName, filePath, moduleType, stub, services) { }
@@ -53,7 +54,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         protected override string LoadContent() {
             // Exceptions are handled in the base
-            var code = ModuleCache.ReadCachedModule(FilePath);
+            var code = StubCache.ReadCachedModule(FilePath);
             if (string.IsNullOrEmpty(code)) {
                 if (!FileSystem.FileExists(Interpreter.Configuration.InterpreterPath)) {
                     return string.Empty;
@@ -65,7 +66,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return code;
         }
 
-        protected virtual void SaveCachedCode(string code) => ModuleCache.WriteCachedModule(FilePath, code);
+        protected virtual void SaveCachedCode(string code) => StubCache.WriteCachedModule(FilePath, code);
 
         private string ScrapeModule() {
             var args = GetScrapeArguments(Interpreter);

@@ -16,48 +16,39 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.OS;
 
-namespace Microsoft.Python.Analysis.Modules {
-    internal sealed class ModuleCache : IModuleCache {
+namespace Microsoft.Python.Analysis.Analyzer.Caching {
+    internal sealed class StubCache : IStubCache {
+        private const int _stubCacheFormatVersion = 1;
+
         private readonly IServiceContainer _services;
-        private readonly IPythonInterpreter _interpreter;
         private readonly IFileSystem _fs;
         private readonly ILogger _log;
-        private readonly bool _skipCache;
-        private bool _loggedBadDbPath;
+        private readonly string _stubsRootFolder;
 
-        private string ModuleCachePath => _interpreter.Configuration.DatabasePath;
-
-        public ModuleCache(IPythonInterpreter interpreter, IServiceContainer services) {
-            _interpreter = interpreter;
+        public StubCache(IServiceContainer services, string cacheRootFolder = null) {
             _services = services;
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
-            _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.DatabasePath);
+
+            var platform = services.GetService<IOSPlatform>();
+            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(platform);
+            _stubsRootFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
         }
 
         public string GetCacheFilePath(string filePath) {
-            if (string.IsNullOrEmpty(filePath) || !PathEqualityComparer.IsValidPath(ModuleCachePath)) {
-                if (!_loggedBadDbPath) {
-                    _loggedBadDbPath = true;
-                    _log?.Log(TraceEventType.Warning, $"Invalid module cache path: {ModuleCachePath}");
-                }
-                return null;
-            }
-
             var name = PathUtils.GetFileName(filePath);
             if (!PathEqualityComparer.IsValidPath(name)) {
                 _log?.Log(TraceEventType.Warning, $"Invalid cache name: {name}");
                 return null;
             }
             try {
-                var candidate = Path.ChangeExtension(Path.Combine(ModuleCachePath, name), ".pyi");
+                var candidate = Path.ChangeExtension(Path.Combine(_stubsRootFolder, name), ".pyi");
                 if (_fs.FileExists(candidate)) {
                     return candidate;
                 }
@@ -65,26 +56,17 @@ namespace Microsoft.Python.Analysis.Modules {
                 return null;
             }
 
-            var hash = SHA256.Create();
             var dir = Path.GetDirectoryName(filePath) ?? string.Empty;
             if (_fs.StringComparison == StringComparison.OrdinalIgnoreCase) {
                 dir = dir.ToLowerInvariant();
             }
 
-            var dirHash = Convert.ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(dir)))
-                .Replace('/', '_').Replace('+', '-');
-
-            return Path.ChangeExtension(Path.Combine(
-                ModuleCachePath,
-                Path.Combine(dirHash, name)
-            ), ".pyi");
+            var dirHash = CacheFolders.FileNameFromContent(dir);
+            var stubFile = Path.Combine(_stubsRootFolder, Path.Combine(dirHash, name));
+            return Path.ChangeExtension(stubFile, ".pyi");
         }
 
         public string ReadCachedModule(string filePath) {
-            if (_skipCache) {
-                return string.Empty;
-            }
-
             var cachePath = GetCacheFilePath(filePath);
             if (string.IsNullOrEmpty(cachePath)) {
                 return string.Empty;
@@ -117,7 +99,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 exception = ex;
             }
 
-            var reason = "Unknown";
+            string reason;
             if (!cachedFileExists) {
                 reason = "Cached file does not exist";
             } else if (cachedFileOlderThanAssembly) {

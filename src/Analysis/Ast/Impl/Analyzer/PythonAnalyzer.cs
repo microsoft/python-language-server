@@ -58,6 +58,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
             _services.AddService(new AnalysisCache(_services, cacheFolderPath));
+            _services.AddService(new StubCache(_services, cacheFolderPath));
         }
 
         public void Dispose() {
