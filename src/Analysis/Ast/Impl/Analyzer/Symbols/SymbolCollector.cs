@@ -46,6 +46,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private void Walk() => _eval.Ast.Walk(this);
 
         public override bool Walk(ClassDefinition cd) {
+            if (IsDeprecated(cd)) {
+                return false;
+            }
+
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var declaringType = cd.Parent != null ? (_typeMap.TryGetValue(cd.Parent, out var t) ? t : null) : null;
                 var classInfo = CreateClass(cd, declaringType);
@@ -60,13 +64,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(ClassDefinition cd) {
-            if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
+            if (!IsDeprecated(cd) && !string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(cd);
         }
 
         public override bool Walk(FunctionDefinition fd) {
+            if (IsDeprecated(fd)) {
+                return false;
+            }
             if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
@@ -76,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(FunctionDefinition fd) {
-            if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
+            if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.NameExpression?.Name)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(fd);
@@ -194,5 +201,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             return member;
         }
+
+        private static bool IsDeprecated(ClassDefinition cd)
+            => cd.Decorators?.Decorators != null && IsDeprecated(cd.Decorators.Decorators);
+
+        private static bool IsDeprecated(FunctionDefinition fd)
+            => fd.Decorators?.Decorators != null && IsDeprecated(fd.Decorators.Decorators);
+
+        private static bool IsDeprecated(IEnumerable<Expression> decorators)
+            => decorators.OfType<CallExpression>().Any(IsDeprecationDecorator);
+
+        private static bool IsDeprecationDecorator(CallExpression c)
+            => (c.Target is MemberExpression n1 && n1.Name == "deprecated") ||
+               (c.Target is NameExpression n2 && n2.Name == "deprecated");
     }
 }
