@@ -208,9 +208,16 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             addedRoots.UnionWith(PathResolver.SetRoot(Root));
 
             InterpreterPaths = await GetSearchPathsAsync(cancellationToken);
-            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
 
             var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(InterpreterPaths, StringExtensions.PathsStringComparer);
+
+            if (Root != null) {
+                var underRoot = userSearchPaths.ToLookup(p => _fs.IsPathUnderRoot(Root, p));
+                userSearchPaths = underRoot[true];
+                InterpreterPaths = underRoot[false].Concat(InterpreterPaths);
+            }
+
+            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
             addedRoots.UnionWith(SetUserSearchPaths(userSearchPaths));
             ReloadModulePaths(addedRoots);
         }
