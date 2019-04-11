@@ -15,8 +15,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Newtonsoft.Json;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
@@ -43,11 +45,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         IReadOnlyDictionary<string, IClassData> IModuleData.Classes => Classes.ToDictionary(k => k.Key, k => (IClassData)k.Value);
         IReadOnlyDictionary<string, string> IModuleData.Functions => Functions;
 
-        public static ModuleData FromModule(IPythonModule module) {
+        public static ModuleData FromModule(IPythonModule module, IScope globalScope) {
             var guard = new HashSet<IMember>();
             var md = new ModuleData(module);
 
-            foreach (var v in module.GlobalScope.Variables) {
+            foreach (var v in globalScope.Variables) {
                 var t = v.Value.GetPythonType();
                 if (t?.DeclaringModule != module || v.Name.StartsWith("__")) {
                     continue;
@@ -102,6 +104,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                 foreach (var kvp in cls.Properties) {
                     md.Functions[$"{newPrefix}{kvp.Key}"] = kvp.Value;
                 }
+            }
+        }
+
+        public string Serialize() {
+            using (var sw = new StringWriter())
+            using (var jw = new JsonTextWriter(sw)) {
+#if DEBUG
+                jw.Formatting = Formatting.Indented;
+                jw.Indentation = 2;
+                jw.IndentChar = ' ';
+#endif
+                JsonSerializer.Create().Serialize(jw, this);
+                return sw.GetStringBuilder().ToString();
             }
         }
     }

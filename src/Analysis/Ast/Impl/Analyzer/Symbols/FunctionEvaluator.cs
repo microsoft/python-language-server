@@ -32,15 +32,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly IPythonType _function;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
-        private readonly IAnalysisCache _cache;
+        private readonly IAnalysisCache _analysisCache;
 
-        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload) 
+        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload)
             : base(eval, overload.FunctionDefinition) {
 
             _overload = overload;
             _function = overload.Function ?? throw new NullReferenceException(nameof(overload.Function));
             _self = _function.DeclaringType as PythonClassType;
-            _cache = eval.Services.GetService<IAnalysisCache>();
+            _analysisCache = eval.Services.GetService<IAnalysisCache>();
 
             FunctionDefinition = overload.FunctionDefinition;
         }
@@ -52,22 +52,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                        || _function.DeclaringModule.ModuleType == ModuleType.Stub
                        || Module.ModuleType == ModuleType.Specialized;
 
-            var functionIsInCache = false;
             var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 // Use cached data, if any
-                IPythonType annotationType = null;
                 if (!ctor) {
-                    if (Module.ModuleType == ModuleType.Library && _cache != null) {
-                        functionIsInCache = _cache.GetReturnType(_function, out var returnType);
-                        if (!string.IsNullOrEmpty(returnType)) {
-                            annotationType = Eval.LookupNameInScopes(returnType, out _, out _, LookupOptions.Normal) as IPythonType;
-                        }
-                    }
-
                     // Process annotations.
-                    annotationType = annotationType ?? Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+                    var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
                     if (!annotationType.IsUnknown()) {
                         // Annotations are typically types while actually functions return
                         // instances unless specifically annotated to a type such as Type[T].
@@ -84,6 +75,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                             _overload.SetReturnValue(returnValue, true);
                         }
                     }
+
+                    // If still unclear, try cache
+                    if (_overload.StaticReturnValue == null && Module.ModuleType == ModuleType.Library && _analysisCache != null) {
+                        var cacheSearchResult = _analysisCache.GetReturnType(_function, out var returnTypeName);
+                        if (cacheSearchResult == CacheSearchResult.Found && !string.IsNullOrEmpty(returnTypeName)) {
+                            var returnType = Eval.LookupNameInScopes(returnTypeName, out _, out _, LookupOptions.Normal);
+                            if (returnType is IPythonType t && !t.IsUnknown()) {
+                                var instance = t.CreateInstance(t.Name, ArgumentSet.Empty);
+                                _overload.SetReturnValue(instance, true);
+                            }
+                        }
+                    }
                 }
 
                 DeclareParameters(!stub);
@@ -91,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Do process body of constructors since they may be declaring
                 // variables that are later used to determine return type of other
                 // methods and properties.
-                if (!stub && (ctor || Module.ModuleType == ModuleType.User)) {
+                if (!stub && (ctor || _overload.StaticReturnValue == null || Module.ModuleType == ModuleType.User)) {
                     // Return type from the annotation is sufficient for libraries
                     // and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);

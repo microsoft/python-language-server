@@ -13,20 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
-    internal interface IAnalysisCache {
+    internal enum CacheSearchResult {
         /// <summary>
-        /// Writes document analysis to a disk file.
+        /// There is no cache for the module.
         /// </summary>
-        void WriteAnalysis(IDocument document, IScope globalScope);
+        NoCache,
 
         /// <summary>
-        /// Given function type provides return value type name as stored in the cache.
+        /// Cache exists but item was not found in it.
         /// </summary>
-        CacheSearchResult GetReturnType(IPythonType ft, out string returnType);
+        NotFound,
+
+        /// <summary>
+        /// Cached data found for the item.
+        /// </summary>
+        Found
     }
 }

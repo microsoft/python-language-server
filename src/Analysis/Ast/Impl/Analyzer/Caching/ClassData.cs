@@ -84,16 +84,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         }
 
         private static void MakeFunctionData(IPythonFunctionType ft, ClassData cd) {
-            switch (ft.Overloads.Count) {
-                case 0:
-                    return;
-                case 1:
-                    cd.Methods[ft.Name] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
-                    return;
-            }
-
-            for (var i = 0; i < ft.Overloads.Count; i++) {
-                cd.Methods[$"{ft.Name}.{i}"] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
+            if (ft.Overloads.Count > 0) {
+                cd.Methods[ft.Name] = ft.Overloads[0].StaticReturnValue?.GetPythonType()?.Name;
             }
         }
     }

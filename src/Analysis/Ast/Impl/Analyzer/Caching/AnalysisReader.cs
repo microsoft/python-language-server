@@ -32,10 +32,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
         public ModuleData GetModuleData(string moduleName, string content) {
             if (!_modules.TryGetValue(moduleName, out var data)) {
-                _modules[moduleName] = data = LoadModuleData(moduleName, content);
+                data = LoadModuleData(moduleName, content);
+                if (data != null) {
+                    _modules[moduleName] = data;
+                }
             }
             return data;
         }
+
+        public void SetModuleData(string moduleName, ModuleData md)
+            => _modules[moduleName] = md;
 
         private ModuleData LoadModuleData(string moduleName, string content) {
             var filePath = CacheFolders.GetAnalysisCacheFilePath(_cacheRootFolder, moduleName, content, _fs);
