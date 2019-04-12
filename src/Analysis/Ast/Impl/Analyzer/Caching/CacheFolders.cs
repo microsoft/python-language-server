@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             try {
                 // %% are used to work around https://github.com/dotnet/corefx/issues/28890
                 const string plsSubfolder = "Microsoft/Python.Language.Server";
-                var homeFolder = Environment.ExpandEnvironmentVariables("%HOME%");
+                var homeFolder = Environment.GetEnvironmentVariable("HOME");
 
                 if (platform.IsMac && !string.IsNullOrEmpty(homeFolder)) {
                     var p = Path.Combine(homeFolder, "Library/Caches", plsSubfolder);
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
                 }
 
                 if (platform.IsLinux) {
-                    var xdgCacheHome = Environment.ExpandEnvironmentVariables("%XDG_CACHE_HOME%");
+                    var xdgCacheHome = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
                     string path = null;
 
                     if (!string.IsNullOrEmpty(xdgCacheHome)) {
