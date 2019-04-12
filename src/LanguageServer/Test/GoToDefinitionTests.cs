@@ -262,5 +262,20 @@ x = re.compile(r'hello', re.IGNORECASE)
             reference.uri.AbsolutePath.Should().Contain("re.py");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Constant() {
+            const string code = @"
+import helper
+helper.message
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 11), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(0, 0, 0, 7);
+            reference.uri.AbsolutePath.Should().Contain("__init__.py");
+        }
     }
 }
