@@ -20,24 +20,20 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
     internal sealed class StubCache : IStubCache {
         private const int _stubCacheFormatVersion = 1;
 
-        private readonly IServiceContainer _services;
         private readonly IFileSystem _fs;
         private readonly ILogger _log;
         private readonly string _stubsRootFolder;
 
         public StubCache(IServiceContainer services, string cacheRootFolder = null) {
-            _services = services;
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
 
-            var platform = services.GetService<IOSPlatform>();
-            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(platform);
+            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(services);
             _stubsRootFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
         }
 

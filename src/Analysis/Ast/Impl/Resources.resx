@@ -360,4 +360,7 @@
   <data name="InterpreterNotFound" xml:space="preserve">
     <value>Interpreter does not exist; analysis will not be available.</value>
   </data>
+  <data name="ErrorUnableToDetermineCachePath" xml:space="preserve">
+    <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
+  </data>
 </root>

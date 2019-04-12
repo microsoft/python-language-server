@@ -178,6 +178,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to determine analysis cache path. Exception: {0}. Using default &apos;{1}&apos;..
+        /// </summary>
+        internal static string ErrorUnableToDetermineCachePath {
+            get {
+                return ResourceManager.GetString("ErrorUnableToDetermineCachePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to unresolved import &apos;{0}&apos;.
         /// </summary>
         internal static string ErrorUnresolvedImport {

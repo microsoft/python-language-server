@@ -14,10 +14,13 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
@@ -34,18 +37,35 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             return filePath;
         }
 
-        public static string GetCacheFolder(IOSPlatform platform) {
-            if (platform.IsWindows) {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "Python Language Server");
-            }
+        public static string GetCacheFolder(IServiceContainer services) {
+            var platform = services.GetService<IOSPlatform>();
+            var logger = services.GetService<ILogger>();
+            
+            // Default. Not ideal on all platforms, but used as a fall back.
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var defaultCachePath = Path.Combine(localAppData, "Microsoft", "Python Language Server");
 
-            if (platform.IsMac) {
-                var macCachesFolder = Path.GetFullPath("~/Library/Caches");
-                return Path.Combine(macCachesFolder, "Microsoft/Python.Language.Server");
+            string path = null;
+            try {
+                const string plsSubfolder = "Microsoft/Python.Language.Server";
+                if (platform.IsMac) {
+                    var expanded = Environment.ExpandEnvironmentVariables($"$(HOME)/Library/Caches/{plsSubfolder}");
+                    path = Path.GetFullPath(expanded);
+                } else if(platform.IsLinux) {
+                    var expanded = Environment.ExpandEnvironmentVariables("$XDG_CACHE_HOME");
+                    if (!string.IsNullOrEmpty(expanded)) {
+                        path = Path.Combine(Path.GetFullPath(expanded), plsSubfolder);
+                    } else {
+                        expanded = Environment.ExpandEnvironmentVariables("$HOME/.cache");
+                        path = Path.Combine(Path.GetFullPath(expanded), plsSubfolder);
+                    }
+                }
+            } catch (Exception ex) when (!ex.IsCriticalException()) {
+                logger?.Log(TraceEventType.Warning, Resources.ErrorUnableToDetermineCachePath.FormatInvariant(ex.Message, defaultCachePath));
             }
-
-            var linuxCachesFolder = Path.GetFullPath("~/.cache");
-            return Path.Combine(linuxCachesFolder, "Microsoft/Python.Language.Server");
+            // Default is same as Windows. Not ideal on all platforms, but used as a fall back.
+            path = path ?? defaultCachePath;
+            return path;
         }
 
         public static string FileNameFromContent(string content) {

@@ -22,7 +22,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Analysis.Analyzer.Caching {
@@ -34,9 +33,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         private readonly AnalysisReader _reader;
 
         public AnalysisCache(IServiceContainer services, string cacheRootFolder = null) {
-            var platform = services.GetService<IOSPlatform>();
 
-            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(platform);
+            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(services);
             _analysisRootFolder = Path.Combine(cacheRootFolder, $"analysis.v{_analysisCacheFormatVersion}");
 
             _fs = services.GetService<IFileSystem>();
