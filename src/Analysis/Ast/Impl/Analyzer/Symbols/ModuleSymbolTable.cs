@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -28,9 +27,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// or there is nothing left to walk.
     /// </summary>
     internal sealed class ModuleSymbolTable {
-        private readonly ConcurrentDictionary<ScopeStatement, MemberEvaluator> _evaluators
-            = new ConcurrentDictionary<ScopeStatement, MemberEvaluator>();
-        private readonly ConcurrentBag<ScopeStatement> _processed = new ConcurrentBag<ScopeStatement>();
+        private readonly Dictionary<ScopeStatement, MemberEvaluator> _evaluators = new Dictionary<ScopeStatement, MemberEvaluator>();
+        private readonly HashSet<ScopeStatement> _processed = new HashSet<ScopeStatement>();
 
         public HashSet<Node> ReplacedByStubs { get; } = new HashSet<Node>();
 
@@ -98,7 +96,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // NOTE: first add then remove so we don't get moment when
             // walker is missing from either set.
             _processed.Add(e.Target);
-            _evaluators.TryRemove(e.Target, out _);
+            _evaluators.Remove(e.Target);
             e.Evaluate();
         }
     }
