@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -59,6 +58,9 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<DocumentEventArgs> Opened;
         public event EventHandler<DocumentEventArgs> Closed;
         public event EventHandler<DocumentEventArgs> Removed;
+
+        public IEnumerable<IDocument> Documents 
+            => _documentsByName.Values.Select(e => e.Document).ToArray();
 
         /// <summary>
         /// Adds file to the list of available documents.
@@ -149,8 +151,6 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public IEnumerator<IDocument> GetEnumerator() => _documentsByUri.Values.Select(e => e.Document).GetEnumerator();
-
         public void CloseDocument(Uri documentUri) {
             var closed = false;
             var removed = false;
@@ -181,8 +181,6 @@ namespace Microsoft.Python.Analysis.Documents {
                 Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
             }
         }
-
-        IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
 
         public void Dispose() {
             lock (_lock) {

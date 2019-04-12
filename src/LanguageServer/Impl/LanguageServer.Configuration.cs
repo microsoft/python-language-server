@@ -83,7 +83,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var wasEnabled = optionsProvider.Options.LintingEnabled;
             optionsProvider.Options.LintingEnabled = linterEnabled;
 
-            foreach (var m in rdt.Where(m => m.ModuleType == ModuleType.User)) {
+            foreach (var m in rdt.Documents.Where(m => m.ModuleType == ModuleType.User)) {
                 IReadOnlyList<DiagnosticsEntry> entries = Array.Empty<DiagnosticsEntry>();
                 if (!wasEnabled && linterEnabled) {
                     // Lint all user files in the RDT
