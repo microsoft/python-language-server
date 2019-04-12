@@ -26,10 +26,10 @@ namespace Microsoft.Python.Analysis.Documents {
     /// </summary>
     public interface IRunningDocumentTable {
         /// <summary>
-        /// Collection of currently open or loaded modules.
+        /// Returns collection of currently open or loaded modules.
         /// Does not include stubs or compiled/scraped modules.
         /// </summary>
-        IEnumerable<IDocument> Documents { get; }
+        IEnumerable<IDocument> GetDocuments();
 
         /// <summary>
         /// Opens document. Adds file to the list of available documents

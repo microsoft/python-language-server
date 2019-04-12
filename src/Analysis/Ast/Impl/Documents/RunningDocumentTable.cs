@@ -59,8 +59,14 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<DocumentEventArgs> Closed;
         public event EventHandler<DocumentEventArgs> Removed;
 
-        public IEnumerable<IDocument> Documents {
-            get { lock (_lock) { return _documentsByName.Values.Select(e => e.Document).ToArray(); } }
+        /// <summary>
+        /// Returns collection of currently open or loaded modules.
+        /// Does not include stubs or compiled/scraped modules.
+        /// </summary>
+        public IEnumerable<IDocument> GetDocuments() {
+            lock (_lock) {
+                return _documentsByName.Values.Select(e => e.Document).ToArray();
+            }
         }
 
         /// <summary>

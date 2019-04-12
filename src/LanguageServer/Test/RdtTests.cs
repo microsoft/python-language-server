@@ -79,9 +79,9 @@ namespace Microsoft.Python.LanguageServer.Tests {
             rdt.OpenDocument(uri1, "from LockCount1 import *");
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
 
-            var docLc1 = rdt.Documents.First(d => d.Name.Contains("LockCount1"));
-            var docLc2 = rdt.Documents.First(d => d.Name.Contains("LockCount2"));
-            var docLc3 = rdt.Documents.First(d => d.Name.Contains("LockCount3"));
+            var docLc1 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount1"));
+            var docLc2 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount2"));
+            var docLc3 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount3"));
 
             VerifyLockCount(rdt, docLc1.Uri, 1);
             VerifyLockCount(rdt, docLc2.Uri, 1);
@@ -109,9 +109,9 @@ namespace Microsoft.Python.LanguageServer.Tests {
             rdt.OpenDocument(uri, "from LockCount1 import *");
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
 
-            var docLc1 = rdt.Documents.First(d => d.Name.Contains("LockCount1"));
-            var docLc2 = rdt.Documents.First(d => d.Name.Contains("LockCount2"));
-            var docLc3 = rdt.Documents.First(d => d.Name.Contains("LockCount3"));
+            var docLc1 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount1"));
+            var docLc2 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount2"));
+            var docLc3 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount3"));
 
             var ds = GetDiagnosticsService();
             PublishDiagnostics();
