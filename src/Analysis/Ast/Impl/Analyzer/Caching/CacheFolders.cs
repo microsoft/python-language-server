@@ -40,33 +40,43 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
         public static string GetCacheFolder(IServiceContainer services) {
             var platform = services.GetService<IOSPlatform>();
             var logger = services.GetService<ILogger>();
-            
+
             // Default. Not ideal on all platforms, but used as a fall back.
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var defaultCachePath = Path.Combine(localAppData, "Microsoft", "Python Language Server");
 
-            string path = null;
+            string cachePath = null;
             try {
                 // %% are used to work around https://github.com/dotnet/corefx/issues/28890
                 const string plsSubfolder = "Microsoft/Python.Language.Server";
-                if (platform.IsMac) {
-                    var expanded = Environment.ExpandEnvironmentVariables($"%HOME%/Library/Caches/{plsSubfolder}");
-                    path = Path.GetFullPath(expanded);
-                } else if(platform.IsLinux) {
-                    var expanded = Environment.ExpandEnvironmentVariables("%XDG_CACHE_HOME%");
-                    if (!string.IsNullOrEmpty(expanded)) {
-                        path = Path.Combine(Path.GetFullPath(expanded), plsSubfolder);
-                    } else {
-                        expanded = Environment.ExpandEnvironmentVariables("%HOME%/.cache");
-                        path = Path.Combine(Path.GetFullPath(expanded), plsSubfolder);
+                var homeFolder = Environment.ExpandEnvironmentVariables("%HOME%");
+
+                if (platform.IsMac && !string.IsNullOrEmpty(homeFolder)) {
+                    var p = Path.Combine(homeFolder, "Library/Caches", plsSubfolder);
+                    cachePath = Path.GetFullPath(p);
+                }
+
+                if (platform.IsLinux) {
+                    var xdgCacheHome = Environment.ExpandEnvironmentVariables("%XDG_CACHE_HOME%");
+                    string path = null;
+
+                    if (!string.IsNullOrEmpty(xdgCacheHome)) {
+                        path = Path.Combine(xdgCacheHome, plsSubfolder);
                     }
+
+                    if (path == null && !string.IsNullOrEmpty(homeFolder)) {
+                        path = Path.Combine(homeFolder, ".cache", plsSubfolder);
+                    }
+
+                    cachePath = path != null ? Path.GetFullPath(path) : null;
                 }
             } catch (Exception ex) when (!ex.IsCriticalException()) {
                 logger?.Log(TraceEventType.Warning, Resources.ErrorUnableToDetermineCachePath.FormatInvariant(ex.Message, defaultCachePath));
             }
+            
             // Default is same as Windows. Not ideal on all platforms, but used as a fall back.
-            path = path ?? defaultCachePath;
-            return path;
+            cachePath = cachePath ?? defaultCachePath;
+            return cachePath;
         }
 
         public static string FileNameFromContent(string content) {
