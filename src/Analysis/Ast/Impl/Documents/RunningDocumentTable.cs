@@ -59,8 +59,9 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<DocumentEventArgs> Closed;
         public event EventHandler<DocumentEventArgs> Removed;
 
-        public IEnumerable<IDocument> Documents 
-            => _documentsByName.Values.Select(e => e.Document).ToArray();
+        public IEnumerable<IDocument> Documents {
+            get { lock (_lock) { return _documentsByName.Values.Select(e => e.Document).ToArray(); } }
+        }
 
         /// <summary>
         /// Adds file to the list of available documents.
@@ -194,6 +195,7 @@ namespace Microsoft.Python.Analysis.Documents {
             if (uri != null && _documentsByUri.TryGetValue(uri, out var entry)) {
                 return entry;
             }
+
             if (!string.IsNullOrEmpty(moduleName) && _documentsByName.TryGetValue(moduleName, out entry)) {
                 return entry;
             }
