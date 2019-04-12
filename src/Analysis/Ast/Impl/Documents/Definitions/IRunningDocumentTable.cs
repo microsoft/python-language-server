@@ -24,7 +24,13 @@ namespace Microsoft.Python.Analysis.Documents {
     /// the running document table in Visual Studio, see
     /// "https://docs.microsoft.com/en-us/visualstudio/extensibility/internals/running-document-table"/>
     /// </summary>
-    public interface IRunningDocumentTable: IEnumerable<IDocument> {
+    public interface IRunningDocumentTable {
+        /// <summary>
+        /// Returns collection of currently open or loaded modules.
+        /// Does not include stubs or compiled/scraped modules.
+        /// </summary>
+        IEnumerable<IDocument> GetDocuments();
+
         /// <summary>
         /// Opens document. Adds file to the list of available documents
         /// unless it was already loaded via indirect import.
