@@ -48,46 +48,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
-            var stub = SymbolTable.ReplacedByStubs.Contains(Target)
-                       || _function.DeclaringModule.ModuleType == ModuleType.Stub
-                       || Module.ModuleType == ModuleType.Specialized;
-
-            var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+            // Try cache first.
+            if (GetCachedReturnType()) {
+                Result = _function;
+                return;
+            }
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
-                // Use cached data, if any
+                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
                 if (!ctor) {
-                    // Process annotations.
-                    var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-                    if (!annotationType.IsUnknown()) {
-                        // Annotations are typically types while actually functions return
-                        // instances unless specifically annotated to a type such as Type[T].
-                        var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
-                        _overload.SetReturnValue(instance, true);
-                    } else {
-                        // Check if function is a generator
-                        var suite = FunctionDefinition.Body as SuiteStatement;
-                        var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                        if (yieldExpr != null) {
-                            // Function return is an iterator
-                            var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                            var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                            _overload.SetReturnValue(returnValue, true);
-                        }
-                    }
-
-                    // If still unclear, try cache
-                    if (_overload.StaticReturnValue == null && Module.ModuleType == ModuleType.Library && _analysisCache != null) {
-                        var cacheSearchResult = _analysisCache.GetReturnType(_function, out var returnTypeName);
-                        if (cacheSearchResult == CacheSearchResult.Found && !string.IsNullOrEmpty(returnTypeName)) {
-                            var returnType = Eval.LookupNameInScopes(returnTypeName, out _, out _, LookupOptions.Normal);
-                            if (returnType is IPythonType t && !t.IsUnknown()) {
-                                var instance = t.CreateInstance(t.Name, ArgumentSet.Empty);
-                                _overload.SetReturnValue(instance, true);
-                            }
-                        }
-                    }
+                    GetReturnTypeFromAnnotation();
                 }
+
+                var stub = SymbolTable.ReplacedByStubs.Contains(Target)
+                           || _function.DeclaringModule.ModuleType == ModuleType.Stub
+                           || Module.ModuleType == ModuleType.Specialized;
 
                 DeclareParameters(!stub);
 
@@ -139,6 +114,51 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, node.NameExpression);
             }
             return false;
+        }
+
+        private bool GetCachedReturnType() {
+            if (Module.ModuleType != ModuleType.Library || _analysisCache == null) {
+                return false;
+            }
+
+            var cacheSearchResult = _analysisCache.GetReturnType(_function, out var returnTypeName);
+            if (cacheSearchResult != CacheSearchResult.Found) {
+                return false;
+            }
+
+            // Cache may contain the return type of null. It means we analyzed
+            // the function body but could not determine its return type.
+            // Therefore function needs to be evaluated with specific arguments
+            // and there is no reason to walk the body again here.
+            if (!string.IsNullOrEmpty(returnTypeName)) {
+                var returnType = Eval.LookupNameInScopes(returnTypeName, out _, out _, LookupOptions.Normal);
+                if (returnType is IPythonType t && !t.IsUnknown()) {
+                    var instance = t.CreateInstance(t.Name, ArgumentSet.Empty);
+                    _overload.SetReturnValue(instance, true);
+                }
+            }
+            return true;
+        }
+
+        private void GetReturnTypeFromAnnotation() {
+            // Process annotations.
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            if (!annotationType.IsUnknown()) {
+                // Annotations are typically types while actually functions return
+                // instances unless specifically annotated to a type such as Type[T].
+                var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                _overload.SetReturnValue(instance, true);
+            } else {
+                // Check if function is a generator
+                var suite = FunctionDefinition.Body as SuiteStatement;
+                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                if (yieldExpr != null) {
+                    // Function return is an iterator
+                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                    _overload.SetReturnValue(returnValue, true);
+                }
+            }
         }
 
         private void DeclareParameters(bool declareVariables) {

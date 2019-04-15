@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -33,7 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
-    internal sealed partial class ExpressionEval : IExpressionEvaluator {
+    internal sealed partial class ExpressionEval : IExpressionEvaluator, IScopeLookup {
         private readonly Stack<Scope> _openScopes = new Stack<Scope>();
         private readonly object _lock = new object();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
@@ -193,8 +192,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             return m;
         }
-
-        internal void ClearCache() => _scopeLookupCache.Clear();
 
         private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier)
             => new PythonFString(formatSpecifier.Unparsed, Interpreter);

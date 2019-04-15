@@ -14,20 +14,15 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        private readonly ConcurrentDictionary<ScopeStatement, Scope> _scopeLookupCache = new ConcurrentDictionary<ScopeStatement, Scope>();
-
         public IMember GetInScope(string name, IScope scope)
             => scope.Variables.TryGetVariable(name, out var variable) ? variable.Value : null;
 
@@ -163,35 +158,41 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Disposable.Empty;
             }
 
-            if (node.Parent != null) {
-                if (!_scopeLookupCache.TryGetValue(node.Parent, out outerScope)) {
-                    outerScope = gs
-                        .TraverseDepthFirst(s => s.Children.OfType<Scope>())
-                        .FirstOrDefault(s => s.Node == node.Parent);
-                    _scopeLookupCache[node.Parent] = outerScope;
-                }
+            // Get the outer scope first, it must exist.
+            var lookup = module?.Analysis.ExpressionEvaluator as IScopeLookup ?? this;
+            outerScope = lookup.GetScope(node.Parent);
+            Debug.Assert(outerScope != null);
+
+            // AST itself means global scope.
+            var scope = GetScope(node);
+            if (scope == null) {
+                scope = new Scope(node, outerScope, Module);
+                outerScope.AddChildScope(scope);
+                lookup.AddScope(scope, node);
             }
 
-            outerScope = outerScope ?? gs;
-            if (outerScope != null) {
-                Scope scope;
-                if (node is PythonAst) {
-                    // node points to global scope, it is not a function or a class.
-                    scope = gs;
-                } else {
-                    scope = outerScope.Children.OfType<Scope>().FirstOrDefault(s => s.Node == node);
-                    if (scope == null) {
-                        scope = new Scope(node, outerScope, Module);
-                        outerScope.AddChildScope(scope);
-                        _scopeLookupCache[node] = scope;
-                    }
-                }
+            _openScopes.Push(scope);
+            CurrentScope = scope;
 
-                _openScopes.Push(scope);
-                CurrentScope = scope;
-            }
             return new ScopeTracker(this);
         }
+
+        #region IScopeLookup
+        private readonly Dictionary<ScopeStatement, Scope> _scopeLookup = new Dictionary<ScopeStatement, Scope>();
+
+        public void AddScope(Scope scope, ScopeStatement statement) {
+            if (statement != null) {
+                _scopeLookup[statement] = scope; ;
+            }
+        }
+
+        public Scope GetScope(ScopeStatement statement) {
+            if (statement == null || statement is PythonAst) {
+                return GlobalScope;
+            }
+            return _scopeLookup.TryGetValue(statement, out var s) ? s : null;
+        }
+        #endregion
 
         private class ScopeTracker : IDisposable {
             private readonly ExpressionEval _eval;
