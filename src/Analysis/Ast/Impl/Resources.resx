@@ -360,7 +360,19 @@
   <data name="InterpreterNotFound" xml:space="preserve">
     <value>Interpreter does not exist; analysis will not be available.</value>
   </data>
-  <data name="ErrorUnableToDetermineCachePath" xml:space="preserve">
+  <data name="UnableToDetermineCachePathException" xml:space="preserve">
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
+  </data>
+  <data name="AnalysisCachePath" xml:space="preserve">
+    <value>Analysis cache path: {0}</value>
+  </data>
+  <data name="EnvVariableNotSet" xml:space="preserve">
+    <value>Environment variable '{0}' is not set, using the default cache location instead.</value>
+  </data>
+  <data name="EnvVariablePathNotRooted" xml:space="preserve">
+    <value>Path '{0}' is not rooted, using the default cache location instead.</value>
+  </data>
+  <data name="UnableToDetermineCachePath" xml:space="preserve">
+    <value>Unable to determine analysis cache path. Using default '{1}'.</value>
   </data>
 </root>

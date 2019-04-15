@@ -19,7 +19,7 @@ namespace Microsoft.Python.Analysis {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -115,6 +115,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Analysis cache path: {0}.
+        /// </summary>
+        internal static string AnalysisCachePath {
+            get {
+                return ResourceManager.GetString("AnalysisCachePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Analyzing in background, {0} items left....
         /// </summary>
         internal static string AnalysisProgress {
@@ -151,6 +160,24 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Environment variable &apos;{0}&apos; is not set, using the default cache location instead..
+        /// </summary>
+        internal static string EnvVariableNotSet {
+            get {
+                return ResourceManager.GetString("EnvVariableNotSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Path &apos;{0}&apos; is not rooted, using the default cache location instead..
+        /// </summary>
+        internal static string EnvVariablePathNotRooted {
+            get {
+                return ResourceManager.GetString("EnvVariablePathNotRooted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &apos;{0}&apos; may not be callable.
         /// </summary>
         internal static string ErrorNotCallable {
@@ -174,15 +201,6 @@ namespace Microsoft.Python.Analysis {
         internal static string ErrorRelativeImportBeyondTopLevel {
             get {
                 return ResourceManager.GetString("ErrorRelativeImportBeyondTopLevel", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unable to determine analysis cache path. Exception: {0}. Using default &apos;{1}&apos;..
-        /// </summary>
-        internal static string ErrorUnableToDetermineCachePath {
-            get {
-                return ResourceManager.GetString("ErrorUnableToDetermineCachePath", resourceCulture);
             }
         }
         
@@ -705,6 +723,24 @@ namespace Microsoft.Python.Analysis {
         internal static string SpaceWithinIndexBracketsShort {
             get {
                 return ResourceManager.GetString("SpaceWithinIndexBracketsShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to determine analysis cache path. Using default &apos;{1}&apos;..
+        /// </summary>
+        internal static string UnableToDetermineCachePath {
+            get {
+                return ResourceManager.GetString("UnableToDetermineCachePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to determine analysis cache path. Exception: {0}. Using default &apos;{1}&apos;..
+        /// </summary>
+        internal static string UnableToDetermineCachePathException {
+            get {
+                return ResourceManager.GetString("UnableToDetermineCachePathException", resourceCulture);
             }
         }
         

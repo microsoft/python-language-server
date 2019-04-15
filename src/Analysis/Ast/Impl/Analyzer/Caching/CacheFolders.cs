@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             if (fs.StringComparison == StringComparison.Ordinal) {
                 filePath = filePath.ToLowerInvariant();
             }
+
             return filePath;
         }
 
@@ -43,39 +44,50 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
             // Default. Not ideal on all platforms, but used as a fall back.
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var defaultCachePath = Path.Combine(localAppData, "Microsoft", "Python Language Server");
+            var plsSubfolder = $"Microsoft{Path.DirectorySeparatorChar}Python.Language.Server";
+            var defaultCachePath = Path.Combine(localAppData, plsSubfolder);
 
             string cachePath = null;
             try {
-                // %% are used to work around https://github.com/dotnet/corefx/issues/28890
-                const string plsSubfolder = "Microsoft/Python.Language.Server";
-                var homeFolder = Environment.GetEnvironmentVariable("HOME");
+                const string homeVarName = "HOME";
+                var homeFolderPath = Environment.GetEnvironmentVariable(homeVarName);
 
-                if (platform.IsMac && !string.IsNullOrEmpty(homeFolder)) {
-                    var p = Path.Combine(homeFolder, "Library/Caches", plsSubfolder);
-                    cachePath = Path.GetFullPath(p);
+                if (platform.IsMac) {
+                    if (CheckVariableSet(homeVarName, homeFolderPath, logger) 
+                        && CheckPathRooted(homeVarName, homeFolderPath, logger)
+                        && !string.IsNullOrWhiteSpace(homeFolderPath)) {
+                        cachePath = Path.Combine(homeFolderPath, "Library/Caches", plsSubfolder);
+                    } else {
+                        logger?.Log(TraceEventType.Warning, Resources.EnvVariablePathNotRooted.FormatInvariant(homeVarName));
+                    }
                 }
 
                 if (platform.IsLinux) {
-                    var xdgCacheHome = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
-                    string path = null;
+                    const string xdgCacheVarName = "XDG_CACHE_HOME";
+                    var xdgCacheHomePath = Environment.GetEnvironmentVariable(xdgCacheVarName);
 
-                    if (!string.IsNullOrEmpty(xdgCacheHome)) {
-                        path = Path.Combine(xdgCacheHome, plsSubfolder);
+                    if (!string.IsNullOrWhiteSpace(xdgCacheHomePath)
+                        && CheckPathRooted(xdgCacheVarName, xdgCacheHomePath, logger)) {
+                        cachePath = Path.Combine(xdgCacheVarName, plsSubfolder);
+                    } else if (!string.IsNullOrWhiteSpace(homeFolderPath)
+                               && CheckVariableSet(homeVarName, homeFolderPath, logger)
+                               && CheckPathRooted(homeVarName, homeFolderPath, logger)) {
+                        cachePath = Path.Combine(homeFolderPath, ".cache", plsSubfolder);
+                    } else {
+                        logger?.Log(TraceEventType.Warning, Resources.EnvVariablePathNotRooted.FormatInvariant(homeVarName));
                     }
-
-                    if (path == null && !string.IsNullOrEmpty(homeFolder)) {
-                        path = Path.Combine(homeFolder, ".cache", plsSubfolder);
-                    }
-
-                    cachePath = path != null ? Path.GetFullPath(path) : null;
                 }
             } catch (Exception ex) when (!ex.IsCriticalException()) {
-                logger?.Log(TraceEventType.Warning, Resources.ErrorUnableToDetermineCachePath.FormatInvariant(ex.Message, defaultCachePath));
+                logger?.Log(TraceEventType.Warning, Resources.UnableToDetermineCachePathException.FormatInvariant(ex.Message, defaultCachePath));
             }
-            
-            // Default is same as Windows. Not ideal on all platforms, but used as a fall back.
-            cachePath = cachePath ?? defaultCachePath;
+
+            // Default is same as Windows. Not ideal on all platforms, but it is a fallback anyway.
+            if (cachePath == null) {
+                logger?.Log(TraceEventType.Warning, Resources.UnableToDetermineCachePath.FormatInvariant(defaultCachePath));
+                cachePath = defaultCachePath;
+            }
+
+            logger?.Log(TraceEventType.Information, Resources.AnalysisCachePath.FormatInvariant(cachePath));
             return cachePath;
         }
 
@@ -89,5 +101,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
 
         public static string GetAnalysisCacheFilePath(string analysisRootFolder, string moduleName, string content, IFileSystem fs)
             => GetCacheFilePath(analysisRootFolder, moduleName, content, fs);
+
+        private static bool CheckPathRooted(string varName, string path, ILogger logger) {
+            if (!string.IsNullOrWhiteSpace(path) && Path.IsPathRooted(path)) {
+                return true;
+            }
+
+            logger?.Log(TraceEventType.Warning, Resources.EnvVariablePathNotRooted.FormatInvariant(varName));
+            return false;
+        }
+
+        private static bool CheckVariableSet(string varName, string value, ILogger logger) {
+            if (!string.IsNullOrWhiteSpace(value)) {
+                return true;
+            }
+
+            logger?.Log(TraceEventType.Warning, Resources.EnvVariableNotSet.FormatInvariant(varName));
+            return false;
+        }
     }
 }
