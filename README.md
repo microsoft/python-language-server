@@ -48,7 +48,7 @@ that can be set in the user configuration which make use of each diagnostic's er
 | - | - |
 | `python.analysis.errors` | Diagnostics which should be shown as errors. |
 | `python.analysis.warnings` | Diagnostics which should be shown as warnings. |
-| `python.analysis.info` | Diagnostics which should be shown as informational. |
+| `python.analysis.information` | Diagnostics which should be shown as informational. |
 | `python.analysis.disabled` | Diagnotics which should not be shown at all. |
 
 An example of a user configuration which sets these options:
