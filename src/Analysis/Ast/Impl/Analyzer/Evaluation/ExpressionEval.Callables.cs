@@ -143,8 +143,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Pick the best overload.
             FunctionDefinition fd;
             ArgumentSet args;
+            IPythonFunctionOverload overload;
+
             if (fn.Overloads.Count == 1) {
-                fd = fn.Overloads[0].FunctionDefinition;
+                overload = fn.Overloads[0];
+                if (overload.StaticReturnValue != null) {
+                    return overload.StaticReturnValue;
+                }
+
+                fd = overload.FunctionDefinition;
                 args = new ArgumentSet(fn, 0, instance, expr, this);
                 args = args.Evaluate();
             } else {
@@ -152,7 +159,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (args == null) {
                     return UnknownType;
                 }
-                fd = fn.Overloads.Count > 0 ? fn.Overloads[args.OverloadIndex].FunctionDefinition : null;
+                overload = fn.Overloads.Count > 0 ? fn.Overloads[args.OverloadIndex] : null;
+                if (overload?.StaticReturnValue != null) {
+                    return overload.StaticReturnValue;
+                }
+                fd = overload?.FunctionDefinition;
+            }
+
+            // Stubs are coming from another module and their return type is static.
+            var isStub = fn.DeclaringModule is IDocument doc && fd?.Ast != doc.GetAnyAst();
+            if (overload != null && isStub) {
+                return overload.StaticReturnValue ?? UnknownType;
             }
 
             // Re-declare parameters in the function scope since originally
@@ -192,13 +209,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
 
-            // Try and evaluate with specific arguments. Note that it does not
-            // make sense to evaluate stubs since they already should be annotated.
-            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
-                // Stubs are coming from another module.
-                return TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
+            var result = TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
+
+            // If we could not figure out the return value, most probably we won't be
+            // able to determine it with other arguments either. In simple functions like
+            //
+            //  def func(a, b):
+            //      return a + b
+            //
+            // the return type is dynamic, but it is always specific and is never null
+            // or unknown with any set of arguments.
+            if (result.IsUnknown()) {
+                (overload as PythonFunctionOverload)?.SetReturnValue(UnknownType, true);
             }
-            return UnknownType;
+            return result;
         }
 
         public IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {

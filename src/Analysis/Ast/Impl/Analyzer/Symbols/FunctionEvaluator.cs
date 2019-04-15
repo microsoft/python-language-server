@@ -46,40 +46,39 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
-            var stub = SymbolTable.ReplacedByStubs.Contains(Target)
-                       || _function.DeclaringModule.ModuleType == ModuleType.Stub
-                       || Module.ModuleType == ModuleType.Specialized;
+            // Ignore empty analysis
+            if (Module.Analysis.GlobalScope == null) {
+                return;
+            }
+
+            // Ignore __methods__ except constructors
+            var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+            if (!ctor && _function.Name.StartsWithOrdinal("__")) {
+                Result = _function;
+                return;
+            }
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
-                // Process annotations.
-                var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-                if (!annotationType.IsUnknown()) {
-                    // Annotations are typically types while actually functions return
-                    // instances unless specifically annotated to a type such as Type[T].
-                    var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
-                    _overload.SetReturnValue(instance, true);
-                } else {
-                    // Check if function is a generator
-                    var suite = FunctionDefinition.Body as SuiteStatement;
-                    var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                    if (yieldExpr != null) {
-                        // Function return is an iterator
-                        var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                        var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                        _overload.SetReturnValue(returnValue, true);
-                    }
+                if (!ctor) {
+                    GetReturnTypeFromAnnotation();
                 }
 
-                DeclareParameters(!stub);
+                // Do no walk functions in modules that have stubs or in compiled modules
+                if (Module.ModuleType == ModuleType.User || (Module.ModuleType == ModuleType.Library && Module.Stub == null)) {
+                    var stubFunction = SymbolTable.ReplacedByStubs.Contains(Target)
+                                       || _function.DeclaringModule.ModuleType == ModuleType.Stub
+                                       || Module.ModuleType == ModuleType.Specialized;
 
-                // Do process body of constructors since they may be declaring
-                // variables that are later used to determine return type of other
-                // methods and properties.
-                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
-                if (!stub && (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User)) {
-                    // Return type from the annotation is sufficient for libraries
-                    // and stubs, no need to walk the body.
-                    FunctionDefinition.Body?.Walk(this);
+                    DeclareParameters(!stubFunction);
+
+                    // Do process body of constructors since they may be declaring
+                    // variables that are later used to determine return type of other
+                    // methods and properties.
+                    if (!stubFunction && (ctor || _overload.StaticReturnValue == null || Module.ModuleType == ModuleType.User)) {
+                        // Return type from the annotation is sufficient for libraries
+                        // and stubs, no need to walk the body.
+                        FunctionDefinition.Body?.Walk(this);
+                    }
                 }
             }
             Result = _function;
@@ -121,6 +120,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, node.NameExpression);
             }
             return false;
+        }
+
+        private void GetReturnTypeFromAnnotation() {
+            // Process annotations.
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            if (!annotationType.IsUnknown()) {
+                // Annotations are typically types while actually functions return
+                // instances unless specifically annotated to a type such as Type[T].
+                var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                _overload.SetReturnValue(instance, true);
+            } else {
+                // Check if function is a generator
+                var suite = FunctionDefinition.Body as SuiteStatement;
+                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                if (yieldExpr != null) {
+                    // Function return is an iterator
+                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                    _overload.SetReturnValue(returnValue, true);
+                }
+            }
         }
 
         private void DeclareParameters(bool declareVariables) {
