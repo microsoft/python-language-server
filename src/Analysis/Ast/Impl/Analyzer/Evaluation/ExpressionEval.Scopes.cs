@@ -150,21 +150,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Disposable.Empty;
             }
 
-            // During analysis module global scope has not changed yet since it updates
-            // When the analysis completed. Therefore if module is the one we are
+            // During analysis module global scope is not available since it updates
+            // when the analysis completes. Therefore if module is the one we are
             // analyzing, use scope from the evaluator rather than from the module.
             var gs = Module.Equals(module) || module == null ? GlobalScope : module.GlobalScope as Scope;
             if (gs == null) {
                 return Disposable.Empty;
             }
 
-            // Get the outer scope first, it must exist.
-            var lookup = module?.Analysis.ExpressionEvaluator as IScopeLookup ?? this;
-            outerScope = lookup.GetScope(node.Parent);
+            // Get the outer scope first, it must exist. Use either the module
+            // or this evaluator if analysis is still in progress.
+            var lookup = Module.Equals(module) || module == null ? this : module.Analysis.ExpressionEvaluator as IScopeLookup;
+            outerScope = lookup?.GetScope(node.Parent);
             Debug.Assert(outerScope != null);
 
             // AST itself means global scope.
-            var scope = GetScope(node);
+            var scope = lookup.GetScope(node);
             if (scope == null) {
                 scope = new Scope(node, outerScope, Module);
                 outerScope.AddChildScope(scope);

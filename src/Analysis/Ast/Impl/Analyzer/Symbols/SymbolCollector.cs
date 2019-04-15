@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
@@ -52,7 +53,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var declaringType = cd.Parent != null ? (_typeMap.TryGetValue(cd.Parent, out var t) ? t : null) : null;
+
+                Debug.Assert(cd.Ast == _eval.Ast);
                 var classInfo = CreateClass(cd, declaringType);
+                
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
@@ -106,7 +110,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType existing)) {
+
+                Debug.Assert(fd.Ast == _eval.Ast);
                 existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
+
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
                 _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);

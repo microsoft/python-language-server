@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
@@ -23,11 +24,13 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonPropertyType(FunctionDefinition fd, Location location, IPythonType declaringType, bool isAbstract)
             : this(fd.Name, location, declaringType, isAbstract) {
+            Debug.Assert(declaringType == null || declaringType.DeclaringModule == location.Module);
             FunctionDefinition = fd;
         }
 
         public PythonPropertyType(string name, Location location, IPythonType declaringType, bool isAbstract)
             : base(name, location, string.Empty, BuiltinTypeId.Property) {
+            Debug.Assert(declaringType == null || declaringType.DeclaringModule == location.Module);
             DeclaringType = declaringType;
             IsAbstract = isAbstract;
         }

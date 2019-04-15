@@ -69,6 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             Func<string, string> documentationProvider
         ) : base(name, location, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            Debug.Assert(declaringType == null || declaringType.DeclaringModule == location.Module);
             DeclaringType = declaringType;
         }
 
@@ -78,6 +79,8 @@ namespace Microsoft.Python.Analysis.Types {
             Location location
         ) : base(fd.Name, location, fd.Documentation,
                  declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+
+            Debug.Assert(declaringType == null || declaringType.DeclaringModule == location.Module);
 
             FunctionDefinition = fd;
             DeclaringType = declaringType;

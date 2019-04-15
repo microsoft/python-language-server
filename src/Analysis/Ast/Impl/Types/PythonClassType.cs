@@ -52,6 +52,7 @@ namespace Microsoft.Python.Analysis.Types {
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
         ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
+            Debug.Assert(declaringType == null || declaringType.DeclaringModule == location.Module);
             ClassDefinition = classDefinition;
             DeclaringType = declaringType;
         }
