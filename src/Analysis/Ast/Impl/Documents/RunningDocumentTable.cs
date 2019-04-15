@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -59,6 +58,16 @@ namespace Microsoft.Python.Analysis.Documents {
         public event EventHandler<DocumentEventArgs> Opened;
         public event EventHandler<DocumentEventArgs> Closed;
         public event EventHandler<DocumentEventArgs> Removed;
+
+        /// <summary>
+        /// Returns collection of currently open or loaded modules.
+        /// Does not include stubs or compiled/scraped modules.
+        /// </summary>
+        public IEnumerable<IDocument> GetDocuments() {
+            lock (_lock) {
+                return _documentsByName.Values.Select(e => e.Document).ToArray();
+            }
+        }
 
         /// <summary>
         /// Adds file to the list of available documents.
@@ -149,8 +158,6 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public IEnumerator<IDocument> GetEnumerator() => _documentsByUri.Values.Select(e => e.Document).GetEnumerator();
-
         public void CloseDocument(Uri documentUri) {
             var closed = false;
             var removed = false;
@@ -182,8 +189,6 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => _documentsByUri.Values.GetEnumerator();
-
         public void Dispose() {
             lock (_lock) {
                 foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {
@@ -196,6 +201,7 @@ namespace Microsoft.Python.Analysis.Documents {
             if (uri != null && _documentsByUri.TryGetValue(uri, out var entry)) {
                 return entry;
             }
+
             if (!string.IsNullOrEmpty(moduleName) && _documentsByName.TryGetValue(moduleName, out entry)) {
                 return entry;
             }

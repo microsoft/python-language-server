@@ -38,7 +38,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember member) {
             member = null;
-            if(analysis?.Ast == null) {
+            if (analysis?.Ast == null) {
                 return null;
             }
 
@@ -116,26 +116,41 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var target = eval.GetValueFromExpression(mex.Target);
             var type = target?.GetPythonType();
 
-            if (type?.GetMember(mex.Name) is ILocatedMember lm) {
-                member = lm;
-                return FromMember(lm);
-            }
-
-            if (type is IPythonClassType cls) {
-                // Data members may be instances that are not tracking locations.
-                // In this case we'll try look up the respective variable instead.
-                using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
-                    eval.LookupNameInScopes(mex.Name, out _, out var v, LookupOptions.Local);
-                    if (v != null) {
-                        member = v;
-                        return FromMember(v);
+            switch (type) {
+                case IPythonModule m when m.Analysis.GlobalScope != null:
+                    // Module GetMember returns module variable value while we
+                    // want the variable itself since we want to know its location.
+                    var v1 = m.Analysis.GlobalScope.Variables[mex.Name];
+                    if (v1 != null) {
+                        member = v1;
+                        return FromMember(v1);
                     }
-                }
+                    break;
+
+                case IPythonClassType cls:
+                    // Data members may be instances that are not tracking locations.
+                    // In this case we'll try look up the respective variable instead.
+                    using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
+                        eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
+                        if (v2 != null) {
+                            member = v2;
+                            return FromMember(v2);
+                        }
+                    }
+                    break;
+
+                default:
+                    if (type?.GetMember(mex.Name) is ILocatedMember lm) {
+                        member = lm;
+                        return FromMember(lm);
+                    }
+
+                    break;
             }
             return null;
         }
 
-        private Reference TryFromImport(Node statement, string name, IDocumentAnalysis analysis, out IMember value) {
+        private static Reference TryFromImport(Node statement, string name, IDocumentAnalysis analysis, out IMember value) {
             value = null;
             string moduleName = null;
             switch (statement) {

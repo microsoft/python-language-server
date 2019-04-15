@@ -34,7 +34,7 @@ Visual Studio:
 9. In VS Code set setting `python.jediEnabled` to `false`.
 
 ### Debugging code in Python Extension to VS Code
-Folow regular TypeScript debugging steps
+Follow regular TypeScript debugging steps
 
 ### Debugging C# code in Microsoft Python Language Server
 1. Launch another instance of VS Code
