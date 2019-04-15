@@ -239,7 +239,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void RestartAnalysis() {
             var analyzer = Services.GetService<IPythonAnalyzer>();;
             analyzer.ResetAnalyzer();
-            foreach (var doc in _rdt) {
+            foreach (var doc in _rdt.GetDocuments()) {
                 doc.Reset(null);
             }
         }
