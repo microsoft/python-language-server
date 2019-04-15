@@ -373,6 +373,6 @@
     <value>Path '{0}' is not rooted, using the default cache location instead.</value>
   </data>
   <data name="UnableToDetermineCachePath" xml:space="preserve">
-    <value>Unable to determine analysis cache path. Using default '{1}'.</value>
+    <value>Unable to determine analysis cache path. Using default '{0}'.</value>
   </data>
 </root>

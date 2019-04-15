@@ -727,7 +727,7 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unable to determine analysis cache path. Using default &apos;{1}&apos;..
+        ///   Looks up a localized string similar to Unable to determine analysis cache path. Using default &apos;{0}&apos;..
         /// </summary>
         internal static string UnableToDetermineCachePath {
             get {

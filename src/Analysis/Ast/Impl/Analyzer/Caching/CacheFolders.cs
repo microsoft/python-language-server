@@ -46,11 +46,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Caching {
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var plsSubfolder = $"Microsoft{Path.DirectorySeparatorChar}Python.Language.Server";
             var defaultCachePath = Path.Combine(localAppData, plsSubfolder);
-
+            
             string cachePath = null;
             try {
                 const string homeVarName = "HOME";
                 var homeFolderPath = Environment.GetEnvironmentVariable(homeVarName);
+
+                if(platform.IsWindows) {
+                    cachePath = defaultCachePath;
+                }
 
                 if (platform.IsMac) {
                     if (CheckVariableSet(homeVarName, homeFolderPath, logger) 
