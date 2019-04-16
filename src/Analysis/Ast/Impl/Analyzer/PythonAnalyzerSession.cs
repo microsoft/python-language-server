@@ -261,6 +261,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ace?.AddOne();
                 var entry = node.Value;
                 if (!entry.IsValidVersion(_walker.Version, out module, out var ast)) {
+                    if (ast == null) {
+                        // Entry doesn't have ast yet. There should be at least one more session.
+                        Cancel();
+                    }
+
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     node.Skip();
                     return;
@@ -298,6 +303,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var stopWatch = Stopwatch.StartNew();
             try {
                 if (!entry.IsValidVersion(version, out var module, out var ast)) {
+                    if (ast == null) {
+                        // Entry doesn't have ast yet. There should be at least one more session.
+                        Cancel();
+                    }
+
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     return;
                 }

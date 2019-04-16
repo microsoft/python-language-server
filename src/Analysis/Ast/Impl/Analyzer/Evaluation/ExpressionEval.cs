@@ -13,6 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -23,9 +26,6 @@ using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// <summary>
