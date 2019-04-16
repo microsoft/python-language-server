@@ -406,15 +406,20 @@ namespace Microsoft.Python.Analysis.Modules {
                     // In all variables find those imported, then traverse imported modules
                     // and remove references to this module. If variable refers to a module,
                     // recurse into module but only process global scope.
+
+                    if (GlobalScope == null) {
+                        return;
+                    }
+
+                    // TODO: Figure out where the nulls below are coming from.
                     var importedVariables = ((IScope)GlobalScope)
-                        .TraverseDepthFirst(c => c.Children)
-                        .ExcludeDefault()
-                        .SelectMany(s => s.Variables)
-                        .Where(v => v.Source == VariableSource.Import);
+                        .TraverseDepthFirst(c => c?.Children ?? Enumerable.Empty<IScope>())
+                        .SelectMany(s => s?.Variables ?? VariableCollection.Empty)
+                        .Where(v => v?.Source == VariableSource.Import);
 
                     foreach (var v in importedVariables) {
                         v.RemoveReferences(this);
-                        if(v.Value is IPythonModule module) {
+                        if (v.Value is IPythonModule module) {
                             RemoveReferencesInModule(module);
                         }
                     }
