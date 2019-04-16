@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
 
-        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload) 
+        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload)
             : base(eval, overload.FunctionDefinition) {
 
             _overload = overload;
@@ -51,26 +51,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 return;
             }
 
-            // Ignore __methods__ except constructors
-            var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
-            if (!ctor && _function.Name.StartsWithOrdinal("__")) {
-                Result = _function;
-                return;
-            }
-
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
+                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
                 if (!ctor) {
                     GetReturnTypeFromAnnotation();
                 }
 
+                var stubFunction = SymbolTable.ReplacedByStubs.Contains(Target)
+                                   || _function.DeclaringModule.ModuleType == ModuleType.Stub
+                                   || Module.ModuleType == ModuleType.Specialized;
+
+                DeclareParameters(!stubFunction);
+
                 // Do no walk functions in modules that have stubs or in compiled modules
                 if (Module.ModuleType == ModuleType.User || (Module.ModuleType == ModuleType.Library && Module.Stub == null)) {
-                    var stubFunction = SymbolTable.ReplacedByStubs.Contains(Target)
-                                       || _function.DeclaringModule.ModuleType == ModuleType.Stub
-                                       || Module.ModuleType == ModuleType.Specialized;
-
-                    DeclareParameters(!stubFunction);
-
                     // Do process body of constructors since they may be declaring
                     // variables that are later used to determine return type of other
                     // methods and properties.
