@@ -417,7 +417,7 @@ namespace Microsoft.Python.Analysis.Modules {
                         .SelectMany(s => s?.Variables ?? VariableCollection.Empty)
                         .Where(v => v?.Source == VariableSource.Import);
 
-                    foreach (var v in importedVariables ?? Enumerable.Empty<IVariable>()) {
+                    foreach (var v in importedVariables) {
                         v.RemoveReferences(this);
                         if (v.Value is IPythonModule module) {
                             RemoveReferencesInModule(module);
