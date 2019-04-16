@@ -183,7 +183,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
                 instanceType.Equals(fn.DeclaringType) ||
-                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
+                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation())) {
 
                 if (fn.IsSpecialized && fn is PythonFunctionType ft && ft.Dependencies.Count > 0) {
                     var dependencies = ImmutableArray<IPythonModule>.Empty;
@@ -212,7 +212,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             //
             // the return type is dynamic, but it is always specific and is never null
             // or unknown with any set of arguments.
-            if (result.IsUnknown()) {
+            if (!fn.IsStub && !fn.IsSpecialized && result.IsUnknown()) {
                 (overload as PythonFunctionOverload)?.SetReturnValue(UnknownType, true);
             }
             return result;
