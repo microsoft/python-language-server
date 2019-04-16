@@ -83,7 +83,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
             }
 
-            Debug.Assert(indexSpan.ToSourceSpan(node.Ast).Start.Column < 500);
+            // Sanity check that AST matches. If it is not, indexSpan typically
+            // turns into span at line 1 and very large column. This DOES can
+            // produce false positives occasionally.
+#if DEBUG
+            var sourceSpan = indexSpan.ToSourceSpan(node.Ast);
+            Debug.Assert(sourceSpan.Start.Line > 1 || sourceSpan.Start.Column < 1000);
+#endif
             return new Location(Module, indexSpan);
         }
 
