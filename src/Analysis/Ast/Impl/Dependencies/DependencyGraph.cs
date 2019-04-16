@@ -45,15 +45,43 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _verticesByKey = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly List<DependencyVertex<TKey, TValue>> _verticesByIndex = new List<DependencyVertex<TKey, TValue>>();
 
-        public DependencyGraphSnapshot<TKey, TValue> Snapshot { get; private set; }
+        private bool _snapshotIsInvalid;
+        private DependencyGraphSnapshot<TKey, TValue> _snapshot;
+        public int Version { get; private set; }
 
+        public DependencyGraphSnapshot<TKey, TValue> Snapshot {
+            get {
+                if (_snapshotIsInvalid) {
+                    CreateNewSnapshot();
+                }
+
+                return _snapshot;
+            }
+        }
+        
         public DependencyGraph() {
-            Snapshot = new DependencyGraphSnapshot<TKey, TValue>(0);
+            _snapshot = new DependencyGraphSnapshot<TKey, TValue>(0);
+            _snapshotIsInvalid = false;
+        }
+
+        public DependencyVertex<TKey, TValue> TryAdd(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
+            var version = ++Version;
+            _snapshotIsInvalid = true;
+
+            if (_verticesByKey.TryGetValue(key, out _)) {
+                return null;
+            }
+
+            var changedVertex = new DependencyVertex<TKey, TValue>(key, value, incomingKeys, version, _verticesByIndex.Count);
+            _verticesByIndex.Add(changedVertex);
+            _verticesByKey[key] = changedVertex;
+            return changedVertex;
         }
 
         public DependencyVertex<TKey, TValue> AddOrUpdate(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
-            var version = Snapshot.Version + 1;
-            
+            var version = ++Version;
+            _snapshotIsInvalid = true;
+
             DependencyVertex<TKey, TValue> changedVertex;
             if (_verticesByKey.TryGetValue(key, out var currentVertex)) {
                 changedVertex = new DependencyVertex<TKey, TValue>(currentVertex, value, incomingKeys, version);
@@ -64,25 +92,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
             
             _verticesByKey[key] = changedVertex;
-
-            
-            var vertices = _verticesByIndex
-                .Where(v => !v.IsSealed || v.HasMissingKeys)
-                .Select(v => GetOrCreateNonSealedVertex(version, v.Index))
-                .ToArray();
-
-            if (vertices.Length == 0) {
-                Snapshot = new DependencyGraphSnapshot<TKey, TValue>(version);
-                return changedVertex;
-            }
-
-            CreateNewSnapshot(vertices, version);
-
             return changedVertex;
         }
 
         public void RemoveKeys(ImmutableArray<TKey> keys) {
-            var version = Snapshot.Version + 1;
+            var version = ++Version;
+            _snapshotIsInvalid = true;
 
             _verticesByIndex.Clear();
             foreach (var key in keys) {
@@ -98,12 +113,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 _verticesByKey[vertex.Key] = vertex;
             }
 
-            CreateNewSnapshot(_verticesByIndex, version);
+            CreateNewSnapshot();
         }
 
-        private void CreateNewSnapshot(IEnumerable<DependencyVertex<TKey, TValue>> vertices, int version) {
+        private void CreateNewSnapshot() {
+            var version = Version;
             var missingKeysHashSet = new HashSet<TKey>();
-            foreach (var vertex in vertices) {
+            for (var i = 0; i < _verticesByIndex.Count; i++) {
+                var vertex = _verticesByIndex[i];
                 var newIncoming = ImmutableArray<int>.Empty;
                 var oldIncoming = vertex.Incoming;
 
@@ -112,8 +129,15 @@ namespace Microsoft.Python.Analysis.Dependencies {
                         newIncoming = newIncoming.Add(dependency.Index);
                     } else {
                         missingKeysHashSet.Add(dependencyKey);
+                        if (vertex.IsSealed) {
+                            vertex = CreateNonSealedVertex(vertex, version, i);
+                        }
                         vertex.SetHasMissingKeys();
                     }
+                }
+
+                if (newIncoming.SequentiallyEquals(oldIncoming)) {
+                    continue;
                 }
 
                 foreach (var index in oldIncoming.Except(newIncoming)) {
@@ -126,6 +150,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     incomingVertex.AddOutgoing(vertex.Index);
                 }
 
+                if (vertex.IsSealed) {
+                    vertex = CreateNonSealedVertex(vertex, version, i);
+                }
+
                 vertex.SetIncoming(newIncoming);
             }
 
@@ -133,7 +161,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 vertex.Seal();
             }
 
-            Snapshot = new DependencyGraphSnapshot<TKey, TValue>(version,
+            _snapshotIsInvalid = false;
+            _snapshot = new DependencyGraphSnapshot<TKey, TValue>(version,
                 ImmutableArray<DependencyVertex<TKey, TValue>>.Create(_verticesByIndex),
                 ImmutableArray<TKey>.Create(missingKeysHashSet));
         }
@@ -149,5 +178,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
             _verticesByKey[vertex.Key] = vertex;
             return vertex;
         }
+
+        private DependencyVertex<TKey, TValue> CreateNonSealedVertex(DependencyVertex<TKey, TValue> oldVertex, int version, int index) {
+            var vertex = new DependencyVertex<TKey, TValue>(oldVertex, oldVertex.Value, oldVertex.IncomingKeys, version);
+            _verticesByIndex[index] = vertex;
+            _verticesByKey[vertex.Key] = vertex;
+            return vertex;
+        }
+
+
     }
 }

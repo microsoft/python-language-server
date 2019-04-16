@@ -13,9 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Threading;
 
@@ -25,21 +27,39 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _changedVertices = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
 
-        public DependencyGraphSnapshot<TKey, TValue> NotifyChanges(TKey key, TValue value, params TKey[] incomingKeys) 
-            => NotifyChanges(key, value, ImmutableArray<TKey>.Create(incomingKeys));
-
-        public DependencyGraphSnapshot<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
-            lock (_syncObj) {
-                var dependencyVertex = _vertices.AddOrUpdate(key, value, incomingKeys);
-                _changedVertices[key] = dependencyVertex;
-                return _vertices.Snapshot;
+        public DependencyGraphSnapshot<TKey, TValue> CurrentGraphSnapshot {
+            get {
+                lock (_syncObj) {
+                    return _vertices.Snapshot;
+                }
             }
         }
 
-        public DependencyGraphSnapshot<TKey, TValue> RemoveKeys(params TKey[] keys) 
-            => RemoveKeys(ImmutableArray<TKey>.Create(keys));
+        public int ChangeValue(TKey key, TValue value, params TKey[] incomingKeys) 
+            => ChangeValue(key, value, ImmutableArray<TKey>.Create(incomingKeys));
 
-        public DependencyGraphSnapshot<TKey, TValue> RemoveKeys(ImmutableArray<TKey> keys) {
+        public int ChangeValue(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
+            lock (_syncObj) {
+                var dependencyVertex = _vertices.AddOrUpdate(key, value, incomingKeys);
+                _changedVertices[key] = dependencyVertex;
+                return _vertices.Version;
+            }
+        }
+
+        public int TryAddValue(TKey key, TValue value, ImmutableArray<TKey> incomingKeys) {
+            lock (_syncObj) {
+                var dependencyVertex = _vertices.TryAdd(key, value, incomingKeys);
+                if (dependencyVertex != null) {
+                    _changedVertices[key] = dependencyVertex;
+                }
+
+                return _vertices.Version;
+            }
+        }
+
+        public int RemoveKeys(params TKey[] keys) => RemoveKeys(ImmutableArray<TKey>.Create(keys));
+
+        public int RemoveKeys(ImmutableArray<TKey> keys) {
             lock (_syncObj) {
                 _vertices.RemoveKeys(keys);
                 var snapshot = _vertices.Snapshot;
@@ -52,16 +72,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     _changedVertices[vertex.Key] = vertex;
                 }
 
-                return snapshot;
+                return _vertices.Version;
             }
         }
 
-        public bool TryCreateWalker(int version, out IDependencyChainWalker<TKey, TValue> walker) {
-            DependencyGraphSnapshot<TKey, TValue> snapshot;
+        public bool TryCreateWalker(DependencyGraphSnapshot<TKey, TValue> snapshot, out IDependencyChainWalker<TKey, TValue> walker) {
             ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices;
             lock (_syncObj) {
-                snapshot = _vertices.Snapshot;
-                if (version != snapshot.Version) {
+                if (snapshot.Version != _vertices.Version) {
                     walker = default;
                     return false;
                 }

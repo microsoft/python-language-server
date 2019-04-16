@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
@@ -23,9 +24,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// concurrently.
     /// </summary>
     internal interface IDependencyResolver<TKey, TValue> {
-        DependencyGraphSnapshot<TKey, TValue> NotifyChanges(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
-        DependencyGraphSnapshot<TKey, TValue> RemoveKeys(ImmutableArray<TKey> keys);
+        DependencyGraphSnapshot<TKey, TValue> CurrentGraphSnapshot { get; }
+
+        int TryAddValue(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
+        int ChangeValue(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
+        int RemoveKeys(ImmutableArray<TKey> keys);
+
         IDependencyChainWalker<TKey, TValue> CreateWalker();
-        bool TryCreateWalker(int version, out IDependencyChainWalker<TKey, TValue> walker);
+        bool TryCreateWalker(DependencyGraphSnapshot<TKey, TValue> snapshot, out IDependencyChainWalker<TKey, TValue> walker);
     }
 }

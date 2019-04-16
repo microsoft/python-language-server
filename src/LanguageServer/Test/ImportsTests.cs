@@ -318,6 +318,102 @@ package.sub_package.module2.";
         }
 
         [TestMethod, Priority(0)]
+        public async Task InitPyVsModuleNameImport_AbsoluteImport() {
+            const string appCode = @"
+import package.module as module
+import package.module.submodule as submodule
+module.
+submodule.";
+
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            var moduleUri = TestData.GetTestSpecificUri("package", "module.py");
+            var initPyUri = TestData.GetTestSpecificUri("package", "module", "__init__.py");
+            var submoduleUri = TestData.GetTestSpecificUri("package", "module", "submodule.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(initPyUri, "Y = 6 * 9");
+            rdt.OpenDocument(moduleUri, "X = 42");
+            rdt.OpenDocument(submoduleUri, "Z = 0");
+
+            var doc = rdt.OpenDocument(appUri, appCode);
+            var analysis = await doc.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
+            comps.Should().HaveLabels("Y").And.NotContainLabels("X");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(5, 11));
+            comps.Should().HaveLabels("Z");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InitPyVsModuleNameImport_FromAbsoluteImport() {
+            const string appCode = @"
+from package import module
+from package.module import submodule
+module.
+submodule.";
+
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            var moduleUri = TestData.GetTestSpecificUri("package", "module.py");
+            var initPyUri = TestData.GetTestSpecificUri("package", "module", "__init__.py");
+            var submoduleUri = TestData.GetTestSpecificUri("package", "module", "submodule.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(initPyUri, "Y = 6 * 9");
+            rdt.OpenDocument(moduleUri, "X = 42");
+            rdt.OpenDocument(submoduleUri, "Z = 0");
+
+            var doc = rdt.OpenDocument(appUri, appCode);
+            var analysis = await doc.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
+            comps.Should().HaveLabels("Y").And.NotContainLabels("X");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(5, 11));
+            comps.Should().HaveLabels("Z");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InitPyVsModuleNameImport_FromRelativeImport() {
+            const string appCode = @"
+from .sub_package import module
+from .sub_package.module import submodule
+module.
+submodule.";
+
+            var appPath = TestData.GetTestSpecificPath("package", "app.py");
+            var modulePath = TestData.GetTestSpecificPath("package", "sub_package", "module.py");
+            var initPyPath = TestData.GetTestSpecificPath("package", "sub_package", "module", "__init__.py");
+            var submoduleUri = TestData.GetTestSpecificUri("package", "sub_package", "module", "submodule.py");
+
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(new Uri(initPyPath), "Y = 6 * 9");
+            rdt.OpenDocument(new Uri(modulePath), "X = 42");
+            rdt.OpenDocument(submoduleUri, "Z = 0");
+
+            var doc = rdt.OpenDocument(new Uri(appPath), appCode);
+            var analysis = await doc.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
+            comps.Should().HaveLabels("Y").And.NotContainLabels("X");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(5, 11));
+            comps.Should().HaveLabels("Z");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task LoopImports() {
             var module1Code = @"
 class B1:

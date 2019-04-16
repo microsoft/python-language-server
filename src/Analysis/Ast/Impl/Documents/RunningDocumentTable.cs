@@ -32,7 +32,6 @@ namespace Microsoft.Python.Analysis.Documents {
     /// </summary>
     public sealed class RunningDocumentTable : IRunningDocumentTable, IDisposable {
         private readonly Dictionary<Uri, DocumentEntry> _documentsByUri = new Dictionary<Uri, DocumentEntry>();
-        private readonly Dictionary<string, DocumentEntry> _documentsByName = new Dictionary<string, DocumentEntry>();
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly object _lock = new object();
@@ -65,7 +64,7 @@ namespace Microsoft.Python.Analysis.Documents {
         /// </summary>
         public IEnumerable<IDocument> GetDocuments() {
             lock (_lock) {
-                return _documentsByName.Values.Select(e => e.Document).ToArray();
+                return _documentsByUri.Values.Select(e => e.Document).ToArray();
             }
         }
 
@@ -77,9 +76,9 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="filePath">Optional file path, if different from the URI.</param>
         public IDocument OpenDocument(Uri uri, string content, string filePath = null) {
             bool justOpened;
-            DocumentEntry entry;
+            IDocument document;
             lock (_lock) {
-                entry = FindDocument(null, uri);
+                var entry = FindDocument(uri);
                 if (entry == null) {
                     var resolver = _services.GetService<IPythonInterpreter>().ModuleResolution.CurrentPathResolver;
 
@@ -99,17 +98,23 @@ namespace Microsoft.Python.Analysis.Documents {
                     entry = CreateDocument(mco);
                 }
                 justOpened = TryOpenDocument(entry, content);
+                document = entry.Document;
             }
+
             if (justOpened) {
-                Opened?.Invoke(this, new DocumentEventArgs(entry.Document));
+                Opened?.Invoke(this, new DocumentEventArgs(document));
+                _services.GetService<IPythonAnalyzer>().InvalidateAnalysis(document);
             }
-            return entry.Document;
+
+            return document;
         }
 
         /// <summary>
         /// Adds library module to the list of available documents.
         /// </summary>
         public IDocument AddModule(ModuleCreationOptions mco) {
+            IDocument document;
+
             lock (_lock) {
                 if (mco.Uri == null) {
                     mco.FilePath = mco.FilePath ?? throw new ArgumentNullException(nameof(mco.FilePath));
@@ -122,21 +127,18 @@ namespace Microsoft.Python.Analysis.Documents {
                     mco.Uri = uri;
                 }
 
-                var entry = FindDocument(mco.ModuleName, mco.Uri) ?? CreateDocument(mco);
+                var entry = FindDocument(mco.Uri) ?? CreateDocument(mco);
                 entry.LockCount++;
-                return entry.Document;
+                document = entry.Document;
             }
+
+            _services.GetService<IPythonAnalyzer>().InvalidateAnalysis(document);
+            return document;
         }
 
         public IDocument GetDocument(Uri documentUri) {
             lock (_lock) {
                 return _documentsByUri.TryGetValue(documentUri, out var entry) ? entry.Document : null;
-            }
-        }
-
-        public IDocument GetDocument(string name) {
-            lock (_lock) {
-                return _documentsByName.TryGetValue(name, out var entry) ? entry.Document : null;
             }
         }
 
@@ -175,7 +177,6 @@ namespace Microsoft.Python.Analysis.Documents {
 
                     if (entry.LockCount == 0) {
                         _documentsByUri.Remove(documentUri);
-                        _documentsByName.Remove(entry.Document.Name);
                         removed = true;
                         entry.Document.Dispose();
                     }
@@ -197,14 +198,11 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        private DocumentEntry FindDocument(string moduleName, Uri uri) {
+        private DocumentEntry FindDocument(Uri uri) {
             if (uri != null && _documentsByUri.TryGetValue(uri, out var entry)) {
                 return entry;
             }
 
-            if (!string.IsNullOrEmpty(moduleName) && _documentsByName.TryGetValue(moduleName, out entry)) {
-                return entry;
-            }
             return null;
         }
 
@@ -230,9 +228,6 @@ namespace Microsoft.Python.Analysis.Documents {
 
             var entry = new DocumentEntry(document);
             _documentsByUri[document.Uri] = entry;
-            _documentsByName[mco.ModuleName] = entry;
-
-            _services.GetService<IPythonAnalyzer>().InvalidateAnalysis(document);
             return entry;
         }
 
@@ -242,7 +237,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 throw new InvalidOperationException("Can't create document with no file path or URI specified");
             }
 
-            if (!ModuleManagement.TryAddModulePath(filePath, out var fullName)) {
+            if (!ModuleManagement.TryAddModulePath(filePath, true, out var fullName)) {
                 return false;
             }
 

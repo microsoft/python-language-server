@@ -39,9 +39,9 @@ namespace Microsoft.Python.Analysis.Tests {
             var analysis = await GetAnalysisAsync("from random import *", PythonVersions.LatestAvailable3X);
 
             foreach (var fnName in new[] { @"seed", @"randrange", @"gauss" }) {
-                var v = analysis.Should().HaveVariable(fnName).Which;
-                v.Should().HaveType(BuiltinTypeId.Function);
-                v.Value.GetPythonType().Documentation.Should().NotBeNullOrEmpty();
+                analysis.Should().HaveVariable(fnName).Which
+                    .Should().HaveType(BuiltinTypeId.Function)
+                    .And.Value.GetPythonType().Documentation.Should().NotBeNullOrEmpty();
             }
         }
 
