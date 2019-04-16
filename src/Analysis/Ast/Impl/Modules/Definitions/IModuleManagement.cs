@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         IModuleCache ModuleCache { get; }
 
-        bool TryAddModulePath(in string path, out string fullName);
+        bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullName);
 
         /// <summary>
         /// Sets user search paths. This changes <see cref="IModuleResolution.CurrentPathResolver"/>.

@@ -193,7 +193,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (_log == null) {
                 return;
             }
-
+            
             if (remaining == 0) {
                 _log.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been completed in {elapsed} ms.");
             } else if (remaining < originalRemaining) {
@@ -208,8 +208,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var remaining = 0;
             var ace = new AsyncCountdownEvent(0);
 
+            bool isCanceled;
             while ((node = await _walker.GetNextAsync(cancellationToken)) != null) {
-                bool isCanceled;
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                 }
@@ -229,16 +229,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             await ace.WaitAsync(cancellationToken);
 
-            if (_walker.MissingKeys.All(k => k.IsTypeshed)) {
-                Interlocked.Exchange(ref _runningTasks, 0);
-                bool isCanceled;
-                lock (_syncObj) {
-                    isCanceled = _isCanceled;
-                }
+            lock (_syncObj) {
+                isCanceled = _isCanceled;
+            }
 
+            if (_walker.MissingKeys.Count == 0 || _walker.MissingKeys.All(k => k.IsTypeshed)) {
+                Interlocked.Exchange(ref _runningTasks, 0);
+                
                 if (!isCanceled) {
                     _analysisCompleteEvent.Set();
                 }
+            } else if (!isCanceled && _log != null && _log.LogLevel >= TraceEventType.Verbose) {
+                _log?.Log(TraceEventType.Verbose, $"Missing keys: {string.Join(", ", _walker.MissingKeys)}");
             }
 
             return remaining;
@@ -259,6 +261,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ace?.AddOne();
                 var entry = node.Value;
                 if (!entry.IsValidVersion(_walker.Version, out module, out var ast)) {
+                    if (ast == null) {
+                        // Entry doesn't have ast yet. There should be at least one more session.
+                        Cancel();
+                    }
+
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     node.Skip();
                     return;
@@ -296,6 +303,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var stopWatch = Stopwatch.StartNew();
             try {
                 if (!entry.IsValidVersion(version, out var module, out var ast)) {
+                    if (ast == null) {
+                        // Entry doesn't have ast yet. There should be at least one more session.
+                        Cancel();
+                    }
+
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     return;
                 }

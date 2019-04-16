@@ -15,13 +15,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -30,7 +28,6 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal enum ReferenceSearchOptions {
@@ -62,15 +59,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 // then the location is invalid and the module is null. Use current module.
                 var declaringModule = rootDefinition.DeclaringModule ?? analysis.Document;
                 if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
-                    return await FindAllReferencesAsync(name, rootDefinition, cancellationToken);
+                    return await FindAllReferencesAsync(name, declaringModule, rootDefinition, cancellationToken);
                 }
             }
             return Array.Empty<Reference>();
         }
 
-        private async Task<Reference[]> FindAllReferencesAsync(string name, ILocatedMember rootDefinition, CancellationToken cancellationToken) {
+        private async Task<Reference[]> FindAllReferencesAsync(string name, IPythonModule declaringModule, ILocatedMember rootDefinition, CancellationToken cancellationToken) {
             var candidateFiles = ScanClosedFiles(name, cancellationToken);
-            await AnalyzeFiles(candidateFiles, cancellationToken);
+            await AnalyzeFiles(declaringModule.Interpreter.ModuleResolution, candidateFiles, cancellationToken);
 
             return rootDefinition.References
                 .Select(r => new Reference { uri = new Uri(r.FilePath), range = r.Span })
@@ -112,88 +109,23 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return files;
         }
 
-        private IEnumerable<string> ScanFiles(IDictionary<string, PythonAst> closedFiles, string name, CancellationToken cancellationToken) {
-            var candidateNames = new HashSet<string> { name };
-            var candidateFiles = new HashSet<string>();
-
-            while (candidateNames.Count > 0) {
-                var nextCandidateNames = new HashSet<string>();
-
-                foreach (var kvp in closedFiles.ToArray()) {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    var w = new ImportsWalker(candidateNames);
-                    try {
-                        kvp.Value.Walk(w);
-                    } catch (OperationCanceledException) { }
-
-                    if (w.IsCandidate) {
-                        candidateFiles.Add(kvp.Key);
-                        nextCandidateNames.Add(Path.GetFileNameWithoutExtension(kvp.Key));
-                        closedFiles.Remove(kvp.Key);
-                    }
-                }
-                candidateNames = nextCandidateNames;
-            }
-            return candidateFiles;
-        }
-
-        private async Task AnalyzeFiles(IEnumerable<Uri> files, CancellationToken cancellationToken) {
-            var rdt = _services.GetService<IRunningDocumentTable>();
+        private static async Task AnalyzeFiles(IModuleManagement moduleManagement, IEnumerable<Uri> files, CancellationToken cancellationToken) {
             var analysisTasks = new List<Task>();
             foreach (var f in files) {
-                analysisTasks.Add(GetOrOpenModule(f, rdt).GetAnalysisAsync(cancellationToken: cancellationToken));
+                if (moduleManagement.TryAddModulePath(f.ToAbsolutePath(), false, out var fullName)) {
+                    var module = moduleManagement.GetOrLoadModule(fullName);
+                    if (module is IDocument document) {
+                        analysisTasks.Add(document.GetAnalysisAsync(cancellationToken: cancellationToken));
+                    }   
+                }
             }
 
             await Task.WhenAll(analysisTasks);
         }
-
-        private static IDocument GetOrOpenModule(Uri uri, IRunningDocumentTable rdt) {
-            var document = rdt.GetDocument(uri);
-            if (document != null) {
-                return document; // Already opened by another analysis.
-            }
-
-            var filePath = uri.ToAbsolutePath();
-            var mco = new ModuleCreationOptions {
-                ModuleName = Path.GetFileNameWithoutExtension(filePath),
-                FilePath = filePath,
-                Uri = uri,
-                ModuleType = ModuleType.User
-            };
-
-            return rdt.AddModule(mco);
-        }
-
+        
         private ILocatedMember GetRootDefinition(ILocatedMember lm) {
             for (; lm.Parent != null; lm = lm.Parent) { }
             return lm;
-        }
-
-        private class ImportsWalker : PythonWalker {
-            private readonly HashSet<string> _names;
-
-            public bool IsCandidate { get; private set; }
-
-            public ImportsWalker(HashSet<string> names) {
-                _names = names;
-            }
-
-            public override bool Walk(ImportStatement node) {
-                if (node.Names.ExcludeDefault().Any(n => _names.Any(x => n.MakeString().Contains(x)))) {
-                    IsCandidate = true;
-                    throw new OperationCanceledException();
-                }
-                return false;
-            }
-
-            public override bool Walk(FromImportStatement node) {
-                if (_names.Any(x => node.Root.MakeString().Contains(x))) {
-                    IsCandidate = true;
-                    throw new OperationCanceledException();
-                }
-                return false;
-            }
         }
     }
 }

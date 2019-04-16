@@ -329,15 +329,13 @@ x = t
 
             var parent = t.Parent;
             parent.Should().NotBeNull();
-            parent.References.Should().HaveCount(4);
+            parent.References.Should().HaveCount(3);
             parent.References[0].Span.Should().Be(3, 1, 3, 2);
             parent.References[0].DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
-            parent.References[1].Span.Should().Be(12, 5, 12, 6);
-            parent.References[1].DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
-            parent.References[2].Span.Should().Be(2, 25, 2, 26);
+            parent.References[1].Span.Should().Be(2, 25, 2, 26);
+            parent.References[1].DocumentUri.AbsolutePath.Should().Contain("module.py");
+            parent.References[2].Span.Should().Be(3, 5, 3, 6);
             parent.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
-            parent.References[3].Span.Should().Be(3, 5, 3, 6);
-            parent.References[3].DocumentUri.AbsolutePath.Should().Contain("module.py");
         }
 
         [TestMethod, Priority(0)]
@@ -350,13 +348,11 @@ x = t
             var t = analysis.Should().HaveVariable("t").Which;
             t.Definition.Span.Should().Be(3, 1, 3, 2);
             t.Definition.DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
-            t.References.Should().HaveCount(3);
+            t.References.Should().HaveCount(2);
             t.References[0].Span.Should().Be(3, 1, 3, 2);
             t.References[0].DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
-            t.References[1].Span.Should().Be(12, 5, 12, 6);
-            t.References[1].DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
-            t.References[2].Span.Should().Be(3, 5, 3, 6);
-            t.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
+            t.References[1].Span.Should().Be(3, 5, 3, 6);
+            t.References[1].DocumentUri.AbsolutePath.Should().Contain("module.py");
         }
 
         [TestMethod, Priority(0)]

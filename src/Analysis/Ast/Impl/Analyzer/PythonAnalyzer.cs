@@ -197,43 +197,73 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
-            var snapshot = _dependencyResolver.NotifyChanges(key, entry, dependencies);
-            
+            var graphVersion = _dependencyResolver.ChangeValue(key, entry, dependencies);
+
             lock (_syncObj) {
-                if (_version > snapshot.Version) {
+                if (_version > graphVersion) {
                     return;
                 }
 
-                _version = snapshot.Version;
+                _version = graphVersion;
+                _currentSession?.Cancel();
             }
 
-            if (snapshot.MissingKeys.Count > 0) {
-                LoadMissingDocuments(entry.Module.Interpreter, snapshot.MissingKeys);
-            }
+            UpdateDependentEntriesDepth(entry, dependencies, graphVersion);
 
-            if (TryCreateSession(snapshot, entry, cancellationToken, out var session)) {
+            if (TryCreateSession(graphVersion, entry, cancellationToken, out var session)) {
                 session.Start(true);
             }
         }
 
-        private bool TryCreateSession(DependencyGraphSnapshot<AnalysisModuleKey, PythonAnalyzerEntry> snapshot, PythonAnalyzerEntry entry, CancellationToken cancellationToken, out PythonAnalyzerSession session) {
+        private void UpdateDependentEntriesDepth(PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependentKeys, int graphVersion) {
+            if (dependentKeys.Count == 0) {
+                return;
+            }
+
+            var dependentEntries = new List<PythonAnalyzerEntry>();
+            lock (_syncObj) {
+                if (_version > graphVersion) {
+                    return;
+                }
+
+                foreach (var key in dependentKeys) {
+                    if (_analysisEntries.TryGetValue(key, out var value)) {
+                        dependentEntries.Add(value);
+                    }
+                }
+            }
+
+            if (dependentEntries.Count == 0) {
+                return;
+            }
+
+            var depth = entry.Depth;
+            foreach (var dependentEntry in dependentEntries) {
+                dependentEntry.SetDepth(graphVersion, depth);
+            }
+        }
+
+        private bool TryCreateSession(int graphVersion, PythonAnalyzerEntry entry, CancellationToken cancellationToken, out PythonAnalyzerSession session) {
             var analyzeUserModuleOutOfOrder = false;
             lock (_syncObj) {
                 if (_currentSession != null) {
-                    if (_currentSession.Version > snapshot.Version || _nextSession != null && _nextSession.Version > snapshot.Version) {
+                    if (_currentSession.Version > graphVersion || _nextSession != null && _nextSession.Version > graphVersion) {
                         session = null;
                         return false;
                     }
 
                     analyzeUserModuleOutOfOrder = !_currentSession.IsCompleted && entry.IsUserModule && _currentSession.AffectedEntriesCount >= _maxTaskRunning;
-                    if (_version > snapshot.Version && analyzeUserModuleOutOfOrder) {
+                    if (_version > graphVersion && analyzeUserModuleOutOfOrder) {
                         session = CreateSession(null, entry, cancellationToken);
                         return true;
                     }
                 }
             }
 
-            if (!_dependencyResolver.TryCreateWalker(snapshot.Version, out var walker)) {
+            var snapshot = _dependencyResolver.CurrentGraphSnapshot;
+            LoadMissingDocuments(entry.Module.Interpreter, snapshot.MissingKeys);
+
+            if (!_dependencyResolver.TryCreateWalker(snapshot, out var walker)) {
                 session = null;
                 return false;
             }
@@ -254,7 +284,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return true;
                 }
 
-                _currentSession.Cancel();
                 _nextSession = session = CreateSession(walker, analyzeUserModuleOutOfOrder ? entry : null, cancellationToken);
                 return analyzeUserModuleOutOfOrder;
             }
@@ -278,9 +307,37 @@ namespace Microsoft.Python.Analysis.Analyzer {
             => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, cancellationToken, walker, _version, entry);
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
-            foreach (var (moduleName, _, isTypeshed) in missingKeys) {
+            if (missingKeys.Count == 0) {
+                return;
+            }
+            
+            var foundKeys = ImmutableArray<AnalysisModuleKey>.Empty;
+            foreach (var missingKey in missingKeys) {
+                lock (_syncObj) {
+                    if (_analysisEntries.TryGetValue(missingKey, out _)) {
+                        continue;
+                    }
+                }
+
+                var (moduleName, _, isTypeshed) = missingKey;
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
-                moduleResolution.GetOrLoadModule(moduleName);
+                var module = moduleResolution.GetOrLoadModule(moduleName);
+                if (module != null && module.ModuleType != ModuleType.Unresolved) {
+                    foundKeys = foundKeys.Add(missingKey);
+                }
+            }
+
+            if (foundKeys.Count > 0) {
+                foreach (var foundKey in foundKeys) {
+                    PythonAnalyzerEntry entry;
+                    lock (_syncObj) {
+                        if (!_analysisEntries.TryGetValue(foundKey, out entry)) {
+                            continue;
+                        }
+                    }
+
+                    _dependencyResolver.TryAddValue(foundKey, entry, ImmutableArray<AnalysisModuleKey>.Empty);
+                }
             }
         }
     }
