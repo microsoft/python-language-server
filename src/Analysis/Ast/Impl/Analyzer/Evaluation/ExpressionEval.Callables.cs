@@ -147,10 +147,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             if (fn.Overloads.Count == 1) {
                 overload = fn.Overloads[0];
-                if (overload.StaticReturnValue != null) {
-                    return overload.StaticReturnValue;
-                }
-
                 fd = overload.FunctionDefinition;
                 args = new ArgumentSet(fn, 0, instance, expr, this);
                 args = args.Evaluate();
@@ -160,9 +156,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return UnknownType;
                 }
                 overload = fn.Overloads.Count > 0 ? fn.Overloads[args.OverloadIndex] : null;
-                if (overload?.StaticReturnValue != null) {
-                    return overload.StaticReturnValue;
-                }
                 fd = overload?.FunctionDefinition;
             }
 
