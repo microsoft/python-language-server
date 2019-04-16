@@ -411,6 +411,7 @@ namespace Microsoft.Python.Analysis.Modules {
                         return;
                     }
 
+                    // TODO: Figure out where the nulls below are coming from.
                     var importedVariables = ((IScope)GlobalScope)
                         .TraverseDepthFirst(c => c?.Children ?? Enumerable.Empty<IScope>())
                         .SelectMany(s => s?.Variables ?? VariableCollection.Empty)
