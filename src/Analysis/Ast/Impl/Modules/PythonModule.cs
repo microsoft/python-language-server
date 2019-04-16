@@ -408,6 +408,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     // recurse into module but only process global scope.
                     var importedVariables = ((IScope)GlobalScope)
                         .TraverseDepthFirst(c => c.Children)
+                        .ExcludeDefault()
                         .SelectMany(s => s.Variables)
                         .Where(v => v.Source == VariableSource.Import);
 
