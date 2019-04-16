@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private HashSet<AnalysisModuleKey> _analysisDependencies;
         private int _bufferVersion;
         private int _analysisVersion;
+        private int _depth;
 
         public IPythonModule Module {
             get {
@@ -74,11 +75,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
+        public int Depth {
+            get {
+                lock (_syncObj) {
+                    return _depth;
+                }
+            }
+        }
+
         public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis;
         
         public PythonAnalyzerEntry(EmptyAnalysis emptyAnalysis) {
             _previousAnalysis = emptyAnalysis;
+            _module = emptyAnalysis.Document;
             _isUserModule = emptyAnalysis.Document.ModuleType == ModuleType.User;
+            _depth = _isUserModule ? 0 : -1;
 
             _bufferVersion = -1;
             _analysisVersion = 0;
@@ -92,7 +103,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_syncObj) {
                 module = _module;
                 ast = _ast;
+                if (ast == null || module == null) {
+                    return false;
+                }
+
                 return _previousAnalysis is EmptyAnalysis || _isUserModule || _analysisVersion <= version;
+            }
+        }
+
+        public void SetDepth(int version, int depth) {
+            lock (_syncObj) {
+                if (_analysisVersion > version) {
+                    return;
+                }
+
+                _depth = _depth == -1 ? depth : Math.Min(_depth, depth);
             }
         }
 
@@ -139,7 +164,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void Invalidate(int analysisVersion) {
             lock (_syncObj) {
-                if (_analysisVersion >= analysisVersion) {
+                if (_analysisVersion >= analysisVersion || !_analysisTcs.Task.IsCompleted) {
                     return;
                 }
 
@@ -176,7 +201,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return false;
                 }
 
-                UpdateAnalysisTcs(analysisVersion);
                 if (_analysisDependencies == null) {
                     _analysisDependencies = dependenciesHashSet;
                 } else {
@@ -187,6 +211,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                 }
 
+                UpdateAnalysisTcs(analysisVersion);
                 dependencies = _parserDependencies != null
                     ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
                     : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);

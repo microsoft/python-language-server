@@ -33,12 +33,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
         public ImmutableArray<int> Outgoing { get; private set; }
 
         public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, TValue value, ImmutableArray<TKey> incomingKeys, int version) {
-            Key = oldVertex.Key;
             Value = value;
             Version = version;
-            Index = oldVertex.Index;
-            
             IncomingKeys = incomingKeys;
+
+            Key = oldVertex.Key;
+            Index = oldVertex.Index;
             Incoming = oldVertex.Incoming;
             Outgoing = oldVertex.Outgoing;
         }

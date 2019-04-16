@@ -97,8 +97,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return moduleRef.GetOrCreate(name, this);
         }
 
-        public bool TryAddModulePath(in string path, out string fullModuleName) 
-            => PathResolver.TryAddModulePath(path, true, out fullModuleName);
+        public bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullModuleName) 
+            => PathResolver.TryAddModulePath(path, allowNonRooted, out fullModuleName);
 
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;

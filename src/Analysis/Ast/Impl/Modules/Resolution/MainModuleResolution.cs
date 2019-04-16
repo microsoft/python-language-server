@@ -91,12 +91,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
-            var module = GetRdt().GetDocument(moduleImport.FullName);
-            if (module != null) {
-                GetRdt().LockDocument(module.Uri);
-                return module;
+            if (moduleImport.ModulePath != null) {
+                var module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
+                if (module != null) {
+                    GetRdt().LockDocument(module.Uri);
+                    return module;
+                }
             }
-
+            
             // If there is a stub, make sure it is loaded and attached
             // First check stub next to the module.
             if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
@@ -111,24 +113,25 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
-                module = new CompiledBuiltinPythonModule(name, stub, _services);
-            } else if (moduleImport.IsCompiled) {
-                _log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                module = new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, _services);
-            } else {
-                _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
-                // Module inside workspace == user code.
-
-                var mco = new ModuleCreationOptions {
-                    ModuleName = moduleImport.FullName,
-                    ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
-                    FilePath = moduleImport.ModulePath,
-                    Stub = stub
-                };
-                module = GetRdt().AddModule(mco);
+                return new CompiledBuiltinPythonModule(name, stub, _services);
             }
 
-            return module;
+            if (moduleImport.IsCompiled) {
+                _log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
+                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, _services);
+            }
+
+            _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
+            // Module inside workspace == user code.
+
+            var mco = new ModuleCreationOptions {
+                ModuleName = moduleImport.FullName,
+                ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
+                FilePath = moduleImport.ModulePath,
+                Stub = stub
+            };
+
+            return GetRdt().AddModule(mco);
         }
 
         private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {

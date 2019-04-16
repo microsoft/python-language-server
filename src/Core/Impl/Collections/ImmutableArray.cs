@@ -265,6 +265,21 @@ namespace Microsoft.Python.Core.Collections {
             return capacity;
         }
 
+        public bool SequentiallyEquals(ImmutableArray<T> other) {
+            if (_count != other._count) {
+                return false;
+            }
+
+            var comparer = EqualityComparer<T>.Default;
+            for (var i = 0; i < _count; i++) {
+                if (!comparer.Equals(_items[i], other._items[i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         public bool Equals(ImmutableArray<T> other)
             => Equals(_items, other._items) && _count == other._count;
 

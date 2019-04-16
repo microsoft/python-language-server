@@ -55,12 +55,7 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Fetches document by its URI. Returns null if document is not loaded.
         /// </summary>
         IDocument GetDocument(Uri uri);
-
-        /// <summary>
-        /// Fetches document by name. Returns null if document is not loaded.
-        /// </summary>
-        IDocument GetDocument(string name);
-
+        
         /// <summary>
         /// Increase reference count of the document.
         /// </summary>
