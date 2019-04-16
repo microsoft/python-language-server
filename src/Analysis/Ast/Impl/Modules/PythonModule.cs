@@ -407,14 +407,14 @@ namespace Microsoft.Python.Analysis.Modules {
                     // and remove references to this module. If variable refers to a module,
                     // recurse into module but only process global scope.
                     var importedVariables = ((IScope)GlobalScope)
-                        .TraverseDepthFirst(c => c.Children)
+                        .TraverseDepthFirst(c => c?.Children ?? Enumerable.Empty<IScope>())
                         .ExcludeDefault()
-                        .SelectMany(s => s.Variables)
-                        .Where(v => v.Source == VariableSource.Import);
+                        .SelectMany(s => s?.Variables ?? VariableCollection.Empty)
+                        .Where(v => v?.Source == VariableSource.Import);
 
-                    foreach (var v in importedVariables) {
+                    foreach (var v in importedVariables ?? Enumerable.Empty<IVariable>()) {
                         v.RemoveReferences(this);
-                        if(v.Value is IPythonModule module) {
+                        if (v.Value is IPythonModule module) {
                             RemoveReferencesInModule(module);
                         }
                     }
