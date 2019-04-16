@@ -118,14 +118,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // 2) Normalize paths.
                 // 3) If a path isn't rooted, then root it relative to the workspace root.
                 // 4) Trim off any ending separator for a consistent style.
-                // 5) Filter out any entries which are the same as the workspace root; they are redundant.
+                // 5) Filter out any entries which are the same as the workspace root; they are redundant. Also ignore "/" to work around the extension (for now).
                 // 6) Remove duplicates.
                 SearchPaths = @params.initializationOptions.searchPaths
                     .Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany()
                     .Select(PathUtils.NormalizePath)
                     .Select(p => Path.IsPathRooted(p) ? p : Path.GetFullPath(p, _rootDir))
                     .Select(PathUtils.TrimEndSeparator)
-                    .Where(p => !string.IsNullOrWhiteSpace(p) && !p.PathEquals(_rootDir))
+                    .Where(p => !string.IsNullOrWhiteSpace(p) && p != "/" && !p.PathEquals(_rootDir))
                     .Distinct(PathEqualityComparer.Instance)
                     .ToList(),
                 TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
