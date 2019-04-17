@@ -561,6 +561,17 @@ len([1 for e in [1, 2]]) + len([e])
             d[0].SourceSpan.Should().Be(2, 33, 2, 34);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task NestedDictComprehension() {
+            const string code = @"
+dmap = {}
+sizes = {}
+x = {srv:sum([sizes[d] for d in dbs]) for srv, dbs in dmap.items()}
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();

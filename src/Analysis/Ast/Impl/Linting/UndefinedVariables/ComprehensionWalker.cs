@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             foreach (var iter in node.Iterators) {
                 iter?.Walk(ew);
             }
-            return true;
+            return false;
         }
 
         private NameCollectorWalker CollectNames(Comprehension c) {
