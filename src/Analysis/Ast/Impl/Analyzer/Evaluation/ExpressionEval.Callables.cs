@@ -196,7 +196,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // make sense to evaluate stubs since they already should be annotated.
             if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
                 // Stubs are coming from another module.
-                return TryEvaluateWithArguments(fn.DeclaringModule, fd, args);
+                return TryEvaluateWithArguments(fn, args);
             }
             return UnknownType;
         }
@@ -207,9 +207,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return instance.Call(p.Name, ArgumentSet.Empty);
         }
 
-        private IMember TryEvaluateWithArguments(IPythonModule module, FunctionDefinition fd, IArgumentSet args) {
+
+        private readonly Dictionary<int, IMember> _argEvalCache = new Dictionary<int, IMember>();
+
+        private IMember TryEvaluateWithArguments(IPythonFunctionType fn, IArgumentSet args) {
+            var name = fn.DeclaringType != null ? $"{fn.DeclaringType.Name}.{fn.Name}" : fn.Name;
+            var argHash = args
+                .Values<IMember>()
+                .Select(m => m.GetPythonType().GetHashCode())
+                .Aggregate(0, (current, d) => 31 * current ^ d);
+            var key = fn.DeclaringModule.Name.GetHashCode() ^ name.GetHashCode() ^ (397 * argHash);
+
+            if (_argEvalCache.TryGetValue(key, out var result)) {
+                return result;
+            }
+
+            var fd = fn.FunctionDefinition;
+            var module = fn.DeclaringModule;
+
             // Attempt to evaluate with specific arguments but prevent recursion.
-            IMember result = UnknownType;
+            result = UnknownType;
             if (fd != null && !_callEvalStack.Contains(fd)) {
                 using (OpenScope(module, fd.Parent, out _)) {
                     _callEvalStack.Push(fd);
@@ -222,6 +239,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     }
                 }
             }
+
+            _argEvalCache[key] = result;
             return result;
         }
 
