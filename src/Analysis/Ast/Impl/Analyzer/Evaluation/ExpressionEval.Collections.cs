@@ -139,8 +139,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(cfor.List);
                 if (value != null) {
                     switch (cfor.Left) {
-                        case NameExpression nex when value is IPythonCollection coll:
-                            DeclareVariable(nex.Name, coll.GetIterator().Next, VariableSource.Declaration, nex);
+                        case NameExpression nex when value is IPythonCollection c1:
+                            DeclareVariable(nex.Name, c1.GetIterator().Next, VariableSource.Declaration, nex);
                             break;
                         case NameExpression nex:
                             DeclareVariable(nex.Name, UnknownType, VariableSource.Declaration, nex);
@@ -154,6 +154,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                             }
                             foreach (var item in tex.Items.Skip(2).OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
                                 DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, item);
+                            }
+                            break;
+                        case TupleExpression tex when value is IPythonCollection c2 && tex.Items.Count > 0:
+                            var iter = c2.GetIterator();
+                            foreach (var item in tex.Items.OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
+                                DeclareVariable(item.Name, iter.Next, VariableSource.Declaration, item);
                             }
                             break;
                     }
