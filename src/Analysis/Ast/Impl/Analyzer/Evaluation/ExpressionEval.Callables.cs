@@ -211,10 +211,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly Dictionary<int, IMember> _argEvalCache = new Dictionary<int, IMember>();
 
         private IMember TryEvaluateWithArguments(IPythonFunctionType fn, IArgumentSet args) {
-            var name = fn.DeclaringType != null ? $"{fn.DeclaringType.Name}.{fn.Name}" : fn.Name;
+            var name = fn.DeclaringType != null ? $"{fn.DeclaringModule.Name}.{fn.Name}" : fn.Name;
             var argHash = args
-                .Values<IMember>()
-                .Select(m => m.GetPythonType().GetHashCode())
+                .Arguments
+                .Select(a => a.Name.GetHashCode() ^ 397 * (a.Value?.GetHashCode() ?? 0))
                 .Aggregate(0, (current, d) => 31 * current ^ d);
             var key = fn.DeclaringModule.Name.GetHashCode() ^ name.GetHashCode() ^ (397 * argHash);
 
