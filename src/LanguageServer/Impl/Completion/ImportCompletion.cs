@@ -135,9 +135,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         private static IEnumerable<CompletionItem> GetAllImportableModules(CompletionContext context) {
             var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-            var modules = mres.CurrentPathResolver.GetAllModuleNames().Distinct();
+            var modules = mres.CurrentPathResolver.GetAllModuleNames();
             return modules
                 .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
                 .Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
         }
 
@@ -168,7 +169,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             if (module != null) {
                 completions.AddRange(module.GetMemberNames()
                     .Where(n => !string.IsNullOrEmpty(n))
-                    .Select(n => context.ItemSource.CreateCompletionItem(n, module?.GetMember(n))));
+                    .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
             }
 
             if (importSearchResult is IImportChildrenSource children) {
