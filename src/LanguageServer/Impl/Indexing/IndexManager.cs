@@ -42,7 +42,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public IndexManager(IFileSystem fileSystem, PythonLanguageVersion version, string rootPath, string[] includeFiles,
             string[] excludeFiles, IIdleTimeService idleTimeService) {
             Check.ArgumentNotNull(nameof(fileSystem), fileSystem);
-            Check.ArgumentNotNull(nameof(rootPath), rootPath);
             Check.ArgumentNotNull(nameof(includeFiles), includeFiles);
             Check.ArgumentNotNull(nameof(excludeFiles), excludeFiles);
             Check.ArgumentNotNull(nameof(idleTimeService), idleTimeService);
