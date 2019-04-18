@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// NOT THREAD SAFE. All concurrent operations should happen under lock
     /// </summary>
     internal sealed class DependencyGraph<TKey, TValue> {
-        private readonly Dictionary<TKey, DependencyVertex<TKey, TValue>> _verticesByKey = new Dictionary<TKey, DependencyVertex<TKey, TValue>>();
+        private readonly Dictionary<TKey, int> _keyToVertexIndex = new Dictionary<TKey, int>();
         private readonly List<DependencyVertex<TKey, TValue>> _verticesByIndex = new List<DependencyVertex<TKey, TValue>>();
 
         private bool _snapshotIsInvalid;
@@ -68,13 +68,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
             var version = ++Version;
             _snapshotIsInvalid = true;
 
-            if (_verticesByKey.TryGetValue(key, out _)) {
+            if (_keyToVertexIndex.TryGetValue(key, out _)) {
                 return null;
             }
 
-            var changedVertex = new DependencyVertex<TKey, TValue>(key, value, incomingKeys, version, _verticesByIndex.Count);
+            var index = _verticesByIndex.Count;
+            var changedVertex = new DependencyVertex<TKey, TValue>(key, value, incomingKeys, version, index);
             _verticesByIndex.Add(changedVertex);
-            _verticesByKey[key] = changedVertex;
+            _keyToVertexIndex[key] = index;
             return changedVertex;
         }
 
@@ -83,15 +84,17 @@ namespace Microsoft.Python.Analysis.Dependencies {
             _snapshotIsInvalid = true;
 
             DependencyVertex<TKey, TValue> changedVertex;
-            if (_verticesByKey.TryGetValue(key, out var currentVertex)) {
+            if (_keyToVertexIndex.TryGetValue(key, out var index)) {
+                var currentVertex = _verticesByIndex[index];
                 changedVertex = new DependencyVertex<TKey, TValue>(currentVertex, value, incomingKeys, version);
                 _verticesByIndex[changedVertex.Index] = changedVertex;
             } else {
-                changedVertex = new DependencyVertex<TKey, TValue>(key, value, incomingKeys, version, _verticesByIndex.Count);
+                index = _verticesByIndex.Count;
+                changedVertex = new DependencyVertex<TKey, TValue>(key, value, incomingKeys, version, index);
                 _verticesByIndex.Add(changedVertex);
+                _keyToVertexIndex[key] = index;
             }
             
-            _verticesByKey[key] = changedVertex;
             return changedVertex;
         }
 
@@ -99,20 +102,27 @@ namespace Microsoft.Python.Analysis.Dependencies {
             var version = ++Version;
             _snapshotIsInvalid = true;
 
-            _verticesByIndex.Clear();
             foreach (var key in keys) {
-                _verticesByKey.Remove(key);
+                _keyToVertexIndex.Remove(key);
             }
 
-            foreach (var (key, currentVertex) in _verticesByKey) {
-                var changedVertex = new DependencyVertex<TKey, TValue>(key, currentVertex.Value, currentVertex.IncomingKeys, version, _verticesByIndex.Count);
-                _verticesByIndex.Add(changedVertex);
+            var newVertices = new DependencyVertex<TKey, TValue>[_keyToVertexIndex.Count];
+            var newIndex = 0;
+            foreach (var (key, index) in _keyToVertexIndex) {
+                var currentVertex = _verticesByIndex[index];
+
+                var changedVertex = new DependencyVertex<TKey, TValue>(key, currentVertex.Value, currentVertex.IncomingKeys, version, newIndex);
+                newVertices[newIndex] = changedVertex;
+                newIndex++;
             }
 
-            foreach (var vertex in _verticesByIndex) {
-                _verticesByKey[vertex.Key] = vertex;
-            }
+            _keyToVertexIndex.Clear();
+            _verticesByIndex.Clear();
 
+            _verticesByIndex.AddRange(newVertices);
+            foreach (var vertex in newVertices) {
+                _keyToVertexIndex.Add(vertex.Key, vertex.Index);
+            }
             CreateNewSnapshot();
         }
 
@@ -125,8 +135,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 var oldIncoming = vertex.Incoming;
 
                 foreach (var dependencyKey in vertex.IncomingKeys) {
-                    if (_verticesByKey.TryGetValue(dependencyKey, out var dependency)) {
-                        newIncoming = newIncoming.Add(dependency.Index);
+                    if (_keyToVertexIndex.TryGetValue(dependencyKey, out var index)) {
+                        newIncoming = newIncoming.Add(index);
                     } else {
                         missingKeysHashSet.Add(dependencyKey);
                         if (vertex.IsSealed) {
@@ -175,17 +185,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             vertex = new DependencyVertex<TKey, TValue>(vertex, vertex.Value, vertex.IncomingKeys, version);
             _verticesByIndex[index] = vertex;
-            _verticesByKey[vertex.Key] = vertex;
             return vertex;
         }
 
         private DependencyVertex<TKey, TValue> CreateNonSealedVertex(DependencyVertex<TKey, TValue> oldVertex, int version, int index) {
             var vertex = new DependencyVertex<TKey, TValue>(oldVertex, oldVertex.Value, oldVertex.IncomingKeys, version);
             _verticesByIndex[index] = vertex;
-            _verticesByKey[vertex.Key] = vertex;
             return vertex;
         }
-
-
     }
 }
