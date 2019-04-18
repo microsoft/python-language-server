@@ -496,7 +496,8 @@ namespace Microsoft.Python.Analysis.Modules {
                     }
 
                     if (quote != null) {
-                        // Check if it is a single-liner
+                        // Check if it is a single-liner, but do distinguish from """<eol>
+                        line = line.Trim();
                         if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) {
                             return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
                         }
