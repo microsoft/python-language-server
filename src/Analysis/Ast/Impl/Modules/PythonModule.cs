@@ -496,8 +496,11 @@ namespace Microsoft.Python.Analysis.Modules {
                     }
 
                     if (quote != null) {
-                        // Check if it is a single-liner
-                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) {
+                        // Check if it is a single-liner, but do distinguish from """<eol>
+                        // Also, handle quadruple+ quotes.
+                        line = line.Trim();
+                        line = line.All(c => c == quote[0]) ? quote : line;
+                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) { 
                             return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
                         }
                         var sb = new StringBuilder();
