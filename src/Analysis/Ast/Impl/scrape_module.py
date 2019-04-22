@@ -149,6 +149,16 @@ def safe_module_name(n):
         return '_mod_' + n.replace('.', '_')
     return n
 
+def do_not_inspect(v):
+    # https://github.com/Microsoft/python-language-server/issues/740
+    # https://github.com/cython/cython/issues/1470
+    if type(v).__name__ != "fused_cython_function":
+        return False
+
+    # If a fused function has __defaults__, then attempting to access
+    # __kwdefaults__ will fail if generated before cython 0.29.6.
+    return bool(getattr(v, "__defaults__", False))
+
 class Signature(object):
     # These two dictionaries start with Python 3 values.
     # There is an update below for Python 2 differences.
@@ -330,6 +340,9 @@ class Signature(object):
         return self.fullsig
 
     def _init_argspec_fromsignature(self, defaults):
+        if do_not_inspect(self.callable):
+            return
+
         try:
             sig = inspect.signature(self.callable)
         except Exception:
@@ -351,6 +364,9 @@ class Signature(object):
         return self.name + str(sig)
 
     def _init_restype_fromsignature(self):
+        if do_not_inspect(self.callable):
+            return
+
         try:
             sig = inspect.signature(self.callable)
         except Exception:
@@ -366,6 +382,9 @@ class Signature(object):
         return 'return ' + ann
 
     def _init_argspec_fromargspec(self, defaults):
+        if do_not_inspect(self.callable):
+            return
+
         try:
             args = (getattr(inspect, 'getfullargspec', None) or inspect.getargspec)(self.callable)
         except Exception:
