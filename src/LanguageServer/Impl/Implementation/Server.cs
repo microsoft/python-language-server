@@ -38,6 +38,8 @@ using Microsoft.Python.LanguageServer.Sources;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class Server : IDisposable {
+        private const string EmptyDirectoryName = "Microsoft.Python.LanguageServer.Empty";
+
         private readonly DisposableBag _disposableBag = DisposableBag.Create<Server>();
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
         private readonly IServiceManager _services;
@@ -104,10 +106,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _rdt = _services.GetService<IRunningDocumentTable>();
 
             _rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : @params.rootPath;
-            if (_rootDir != null) {
-                _rootDir = PathUtils.NormalizePath(_rootDir);
-                _rootDir = PathUtils.TrimEndSeparator(_rootDir);
+
+            // If there is no root, create a canonical empty directory to use instead.
+            if (string.IsNullOrWhiteSpace(_rootDir)) {
+                var emptyDir = Path.Combine(Path.GetTempPath(), EmptyDirectoryName);
+                Directory.CreateDirectory(emptyDir);
+                _rootDir = emptyDir;
             }
+
+            _rootDir = PathUtils.NormalizePath(_rootDir);
+            _rootDir = PathUtils.TrimEndSeparator(_rootDir);
 
             Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);
 
@@ -171,12 +179,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
             _disposableBag.ThrowIfDisposed();
             switch (@params.settings) {
-                case ServerSettings settings: {
+                case ServerSettings settings:
                     if (HandleConfigurationChanges(settings)) {
                         RestartAnalysis();
                     }
                     break;
-                }
                 default:
                     _log?.Log(TraceEventType.Error, "change configuration notification sent unsupported settings");
                     break;
@@ -246,7 +253,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void RestartAnalysis() {
-            var analyzer = Services.GetService<IPythonAnalyzer>();;
+            var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.ResetAnalyzer();
             foreach (var doc in _rdt.GetDocuments()) {
                 doc.Reset(null);

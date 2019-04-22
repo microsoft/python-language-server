@@ -70,7 +70,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             await AnalyzeFiles(declaringModule.Interpreter.ModuleResolution, candidateFiles, cancellationToken);
 
             return rootDefinition.References
-                .Select(r => new Reference { uri = new Uri(r.FilePath), range = r.Span })
+                .Select(r => new Reference { uri = r.DocumentUri, range = r.Span })
                 .ToArray();
         }
 
