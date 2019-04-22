@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -79,6 +80,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
+            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
+            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
+
+            var (funcName, swappedFuncName) = OpMethodName(binop.Operator);
+
+            var leftType = left.GetPythonType();
+
+            if (funcName != null && left is IPythonInstance lpi) {
+                var ret = leftType?.Call(lpi, funcName, new ArgumentSet(new[] { right }));
+                if (ret != null) {
+                    return ret;
+                }
+            }
+
+            var rightType = right.GetPythonType();
+
+            if (swappedFuncName != null && right is IPythonInstance rpi) {
+                var ret = rightType?.Call(rpi, swappedFuncName, new ArgumentSet(new[] { left }));
+                if (ret != null) {
+                    return ret;
+                }
+            }
+
             // TODO: Specific parsing
             // TODO: warn about incompatible types like 'str' + 1
             switch (binop.Operator) {
@@ -105,15 +129,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
             }
 
-            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
-            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
-
-            var rightType = right.GetPythonType();
             if (rightType?.TypeId == BuiltinTypeId.Float) {
                 return right;
             }
 
-            var leftType = left.GetPythonType();
+
             if (leftType?.TypeId == BuiltinTypeId.Float) {
                 return left;
             }
@@ -126,7 +146,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return left;
             }
 
-            if (binop.Operator == PythonOperator.Add 
+            if (binop.Operator == PythonOperator.Add
                 && leftType?.TypeId == BuiltinTypeId.List && rightType?.TypeId == BuiltinTypeId.List
                 && left is IPythonCollection lc && right is IPythonCollection rc) {
 
@@ -134,6 +154,42 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             return left.IsUnknown() ? right : left;
+        }
+
+        private static (string name, string swappedName) OpMethodName(PythonOperator op) {
+            switch (op) {
+                // Unary operators
+                // Not cannot be overridden, there is no method for it.
+                case PythonOperator.Pos: return ("__pos__", null);
+                case PythonOperator.Invert: return ("__invert__", null);
+                case PythonOperator.Negate: return ("__neg__", null);
+
+                // Numeric operators, can be swapped
+                case PythonOperator.Add: return ("__add__", "__radd__");
+                case PythonOperator.Subtract: return ("__sub__", "__rsub__");
+                case PythonOperator.Multiply: return ("__mul__", "__rmul__");
+                case PythonOperator.MatMultiply: return ("__matmul__", "__rmatmul__");
+                case PythonOperator.Divide: return ("__div__", "__rdiv__"); // The parser has already chosen the correct operator here; no need to check versions.
+                case PythonOperator.TrueDivide: return ("__truediv__", "__rtruediv__");
+                case PythonOperator.Mod: return ("__mod__", "__rmod__");
+                case PythonOperator.BitwiseAnd: return ("__and__", "__rand__");
+                case PythonOperator.BitwiseOr: return ("__or__", "__ror__");
+                case PythonOperator.Xor: return ("__xor__", "__rxor__");
+                case PythonOperator.LeftShift: return ("__lshift__", "__rlshift__");
+                case PythonOperator.RightShift: return ("__rshift__", "__rrshift__");
+                case PythonOperator.Power: return ("__pow__", "__ppow__");
+                case PythonOperator.FloorDivide: return ("__floordiv__", "__rfloordiv__");
+
+                // Comparison operators
+                case PythonOperator.LessThan: return ("__lt__", null);
+                case PythonOperator.LessThanOrEqual: return ("__le__", null);
+                case PythonOperator.GreaterThan: return ("__gt__", null);
+                case PythonOperator.GreaterThanOrEqual: return ("__ge__", null);
+                case PythonOperator.Equal: return ("__eq__", null);
+                case PythonOperator.NotEqual: return ("__ne__", null);
+            }
+
+            return (null, null);
         }
     }
 }
