@@ -126,8 +126,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             if (leftIsOperable) {
-                // Try calling swapped function on the right side, otherwise just return left.
-                var ret = CallOperator(op, left, leftType, right, rightType, tryLeft: false);
+                IMember ret;
+
+                if (op.IsComparison()) {
+                    // If the op is a comparison, and the thing on the left is the builtin,
+                    // flip the operation and call it instead.
+                    op = op.InvertComparison();
+
+                    ret = CallOperator(op, right, rightType, left, leftType, tryRight: false);
+                } else {
+                    ret = CallOperator(op, left, leftType, right, rightType, tryLeft: false);
+                }
 
                 if (!ret.IsUnknown()) {
                     return ret;
@@ -201,11 +210,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return null;
         }
 
-        // TODO: Proper comment
-        //
-        // This function assumes left/right are builtin types. Maybe change this to better indicate which side needs to be checked in the future.
+        /// <summary>
+        /// Try to get the result of a binary operation on builtin types. This does not actually do the operation, but maybe should.
+        /// </summary>
+        /// <param name="op">The operation being done.</param>
+        /// <param name="left">The left side's type ID.</param>
+        /// <param name="right">The right side's type ID.</param>
+        /// <param name="is3x">True if the Python version is 3.x.</param>
+        /// <param name="member">The resulting member.</param>
+        /// <returns>True, if member is correct and no further checks should be done.</returns>
         private bool TryGetValueFromBuiltinBinaryOp(PythonOperator op, BuiltinTypeId left, BuiltinTypeId right, bool is3x, out IMember member) {
-            member = null;
+            member = UnknownType;
 
             // TODO: comparison operations
 
@@ -243,10 +258,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // At this point, @ & | ^ are all handled and do not need to be considered.
 
-            // TODO: If one of these is complex and the other a custom time, then the operation
-            // may still be supported; TryGetValueFromBuiltinBinaryOp needs to also return a possible
-            // side of the binop to test. For example, 1.0j + np.array([1.0]) should "fail", but also
-            // indicate that __radd__ should be checked for a possible type.
             if (CoalesceComplex(left, right)) {
                 switch (op) {
                     case PythonOperator.Add:
@@ -279,7 +290,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // If a complex value made it to here, then it wasn't coalesced or used in a string format; bail.
             if (left == BuiltinTypeId.Complex || right == BuiltinTypeId.Complex) {
-                return false;
+                return true;
             }
 
             switch (op) {
@@ -289,23 +300,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 case PythonOperator.LeftShift:
                 case PythonOperator.RightShift:
-                    switch (left) {
-                        case BuiltinTypeId.Bool when right == BuiltinTypeId.Bool:
-                        case BuiltinTypeId.Bool when right == BuiltinTypeId.Int:
-                        case BuiltinTypeId.Int when right == BuiltinTypeId.Bool:
-                        case BuiltinTypeId.Int when right == BuiltinTypeId.Int:
-                            member = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
-                            return true;
-
-                        case BuiltinTypeId.Long when right == BuiltinTypeId.Long:
-                        case BuiltinTypeId.Long when right == BuiltinTypeId.Bool:
-                        case BuiltinTypeId.Long when right == BuiltinTypeId.Int:
-                        case BuiltinTypeId.Int when right == BuiltinTypeId.Long:
-                        case BuiltinTypeId.Bool when right == BuiltinTypeId.Long:
+                    if (IsIntegerLike(left) && IsIntegerLike(right)) {
+                        if (left == BuiltinTypeId.Long || right == BuiltinTypeId.Long) {
                             member = Interpreter.GetBuiltinType(BuiltinTypeId.Long);
-                            return true;
+                        } else {
+                            member = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
+                        }
+                        return true;
                     }
-                    break;
+
+                    // If they aren't integer-like, then they can't be shifted.
+                    return true;
 
                 case PythonOperator.Add:
                 case PythonOperator.Divide:
@@ -375,11 +380,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             switch (op) {
                 case PythonOperator.Multiply when other == BuiltinTypeId.Bool || other == BuiltinTypeId.Int || other == BuiltinTypeId.Long:
                 case PythonOperator.Add when str == other:
-                case PythonOperator.Add when str == BuiltinTypeId.Unicode || other == BuiltinTypeId.Unicode:
                     return Interpreter.GetBuiltinType(str);
+
+                case PythonOperator.Add when str == BuiltinTypeId.Unicode || other == BuiltinTypeId.Unicode:
+                    return Interpreter.GetBuiltinType(BuiltinTypeId.Unicode);
             }
 
-            return null;
+            return UnknownType;
         }
 
         private static (string name, string swappedName) OpMethodName(PythonOperator op) {
