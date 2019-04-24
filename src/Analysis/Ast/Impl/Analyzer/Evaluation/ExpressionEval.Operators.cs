@@ -116,22 +116,35 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Interpreter.GetBuiltinType(leftTypeId);
             }
 
-            if (IsOperableBuiltin(leftTypeId) && IsOperableBuiltin(rightTypeId)) {
+            var leftIsOperable = IsOperableBuiltin(leftTypeId);
+            var rightIsOperable = IsOperableBuiltin(rightTypeId);
+
+            if (leftIsOperable && rightIsOperable) {
                 if (TryGetValueFromBuiltinBinaryOp(op, leftTypeId, rightTypeId, Interpreter.LanguageVersion.Is3x(), out var member)) {
                     return member;
                 }
             }
 
-            if (IsOperableBuiltin(leftTypeId)) {
+            if (leftIsOperable) {
                 // Try calling swapped function on the right side, otherwise just return left.
                 var ret = CallOperator(op, left, leftType, right, rightType, tryLeft: false);
-                return ret.IsUnknown() ? left : ret;
+
+                if (!ret.IsUnknown()) {
+                    return ret;
+                }
+
+                return op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : left;
             }
 
-            if (IsOperableBuiltin(rightTypeId)) {
+            if (rightIsOperable) {
                 // Try calling the function on the left side, otherwise just return right.
                 var ret = CallOperator(op, left, leftType, right, rightType, tryRight: false);
-                return ret.IsUnknown() ? right : ret;
+
+                if (!ret.IsUnknown()) {
+                    return ret;
+                }
+
+                return op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : right;
             }
 
             var callRet = CallOperator(op, left, leftType, right, rightType);
