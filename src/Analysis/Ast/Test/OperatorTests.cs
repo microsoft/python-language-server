@@ -246,6 +246,22 @@ c = 'abc' % a
             analysis.Should().HaveVariable("x").OfType(typ);
         }
 
+        [DataRow("x = 1 < 2", true)]
+        [DataRow("x = True > False", true)]
+        [DataRow("x = 1 <= False", true)]
+        [DataRow("x = False >= 1", true)]
+        [DataRow("x = 1L == 2L", false)]
+        [DataRow("x = False != 1L", false)]
+        [DataRow("x = 1L < False", false)]
+        [DataRow("x = 1L > 2", false)]
+        [DataRow("x = 1 != 2L", false)]
+        [DataRow("x = 1.0 == 3j", true)]
+        [DataTestMethod, Priority(0)]
+        public async Task BuiltinComparison(string code, bool is3x) {
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Bool);
+        }
+
         [DataRow("x = 'x' + u'x'")]
         [DataRow("x = u'x' + u'x'")]
         [DataRow("x = u'x' + 'x'")]

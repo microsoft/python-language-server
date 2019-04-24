@@ -116,16 +116,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Interpreter.GetBuiltinType(leftTypeId);
             }
 
-            var leftIsOperable = IsOperableBuiltin(leftTypeId);
-            var rightIsOperable = IsOperableBuiltin(rightTypeId);
+            var leftIsSupported = IsSupportedBinopBuiltin(leftTypeId);
+            var rightIsSupported = IsSupportedBinopBuiltin(rightTypeId);
 
-            if (leftIsOperable && rightIsOperable) {
+            if (leftIsSupported && rightIsSupported) {
                 if (TryGetValueFromBuiltinBinaryOp(op, leftTypeId, rightTypeId, Interpreter.LanguageVersion.Is3x(), out var member)) {
                     return member;
                 }
             }
 
-            if (leftIsOperable) {
+            if (leftIsSupported) {
                 IMember ret;
 
                 if (op.IsComparison()) {
@@ -145,7 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : left;
             }
 
-            if (rightIsOperable) {
+            if (rightIsSupported) {
                 // Try calling the function on the left side, otherwise just return right.
                 var ret = CallOperator(op, left, leftType, right, rightType, tryRight: false);
 
@@ -220,6 +220,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// <param name="member">The resulting member.</param>
         /// <returns>True, if member is correct and no further checks should be done.</returns>
         private bool TryGetValueFromBuiltinBinaryOp(PythonOperator op, BuiltinTypeId left, BuiltinTypeId right, bool is3x, out IMember member) {
+            if (op.IsComparison()) {
+                member = Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
+                return true;
+            }
+
             member = UnknownType;
 
             // TODO: comparison operations
@@ -335,7 +340,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return false;
         }
 
-        private static bool IsOperableBuiltin(BuiltinTypeId id) {
+        private static bool IsSupportedBinopBuiltin(BuiltinTypeId id) {
             switch (id) {
                 case BuiltinTypeId.Bool:
                 case BuiltinTypeId.Int:
