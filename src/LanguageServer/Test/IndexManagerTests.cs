@@ -64,6 +64,18 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void NullDirectoryThrowsException() {
+            var context = new IndexTestContext(this);
+            Action construct = () => {
+                PythonLanguageVersion version = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
+                IIndexManager indexManager = new IndexManager(context.FileSystem,
+                                                              version, null, new string[] { }, new string[] { },
+                                                              new IdleTimeService());
+            };
+            construct.Should().Throw<ArgumentNullException>();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task IgnoresNonPythonFiles() {
             var context = new IndexTestContext(this);
 
