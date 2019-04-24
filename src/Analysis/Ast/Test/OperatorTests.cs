@@ -110,7 +110,6 @@ b = ~~C()
         }
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public async Task TrueDividePython3X() {
             const string code = @"
 class C:
