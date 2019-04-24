@@ -221,13 +221,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// <returns>True, if member is correct and no further checks should be done.</returns>
         private bool TryGetValueFromBuiltinBinaryOp(PythonOperator op, BuiltinTypeId left, BuiltinTypeId right, bool is3x, out IMember member) {
             if (op.IsComparison()) {
+                // All builtins compare to bool.
                 member = Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
                 return true;
             }
 
             member = UnknownType;
-
-            // TODO: comparison operations
 
             switch (op) {
                 case PythonOperator.MatMultiply:
