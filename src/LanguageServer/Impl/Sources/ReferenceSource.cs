@@ -70,7 +70,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             await AnalyzeFiles(declaringModule.Interpreter.ModuleResolution, candidateFiles, cancellationToken);
 
             return rootDefinition.References
-                .Select(r => new Reference { uri = new Uri(r.FilePath), range = r.Span })
+                .Select(r => new Reference { uri = r.DocumentUri, range = r.Span })
                 .ToArray();
         }
 
@@ -80,6 +80,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var interpreter = _services.GetService<IPythonInterpreter>();
 
             var root = interpreter.ModuleResolution.Root;
+            if (root == null) {
+                return Enumerable.Empty<Uri>();
+            }
+
             var interpreterPaths = interpreter.ModuleResolution.InterpreterPaths.ToArray();
             var files = new List<Uri>();
 
