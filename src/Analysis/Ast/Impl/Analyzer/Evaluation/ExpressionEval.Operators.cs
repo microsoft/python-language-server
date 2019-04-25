@@ -140,9 +140,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (op.IsComparison()) {
                     // If the op is a comparison, and the thing on the left is the builtin,
                     // flip the operation and call it instead.
-                    op = op.InvertComparison();
-
-                    ret = CallOperator(op, right, rightType, left, leftType, tryRight: false);
+                    ret = CallOperator(op.InvertComparison(), right, rightType, left, leftType, tryRight: false);
                 } else {
                     ret = CallOperator(op, left, leftType, right, rightType, tryLeft: false);
                 }
@@ -168,6 +166,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var callRet = CallOperator(op, left, leftType, right, rightType);
             if (!callRet.IsUnknown()) {
                 return callRet;
+            }
+
+            if (op.IsComparison()) {
+                callRet = CallOperator(op.InvertComparison(), right, rightType, left, leftType);
+
+                if (!callRet.IsUnknown()) {
+                    return callRet;
+                }
             }
 
             // TODO: Specific parsing
