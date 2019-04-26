@@ -41,6 +41,8 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             _localNameExpressions = new HashSet<NameExpression>(localNameExpressions ?? Enumerable.Empty<NameExpression>());
         }
 
+        public override bool Walk(SuiteStatement node) => _walker.Walk(node);
+
         public override bool Walk(LambdaExpression node) {
             node.Walk(new LambdaWalker(_walker));
             return false;
