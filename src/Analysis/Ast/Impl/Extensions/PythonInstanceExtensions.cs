@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis {
     public static class PythonInstanceExtensions {
         public static bool IsUnknown(this IPythonInstance value) =>
             value?.Type == null || 
-            (value.Type.TypeId == BuiltinTypeId.Unknown && value.Type.TypeId == BuiltinTypeId.Unknown && 
+            (value.Type.TypeId == BuiltinTypeId.Unknown && 
              value.Type.MemberType == PythonMemberType.Unknown && value.Type.Name.Equals("Unknown"));
     }
 }
