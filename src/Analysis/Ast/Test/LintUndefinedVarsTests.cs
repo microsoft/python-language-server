@@ -572,6 +572,21 @@ x = {srv:sum([sizes[d] for d in dbs]) for srv, dbs in dmap.items()}
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task FunctionInIf() {
+            const string code = @"
+def foo(a, b, c):
+    return a + b + c
+
+if True:
+    def bar(x, y, z):
+        x += y
+        return x + y + z
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();
