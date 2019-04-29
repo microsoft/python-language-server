@@ -495,7 +495,7 @@ namespace Microsoft.Python.Analysis.Modules {
                         break;
                     }
 
-                    if (quote != null) {
+                    if (line != null && quote != null) {
                         // Check if it is a single-liner, but do distinguish from """<eol>
                         // Also, handle quadruple+ quotes.
                         line = line.Trim();

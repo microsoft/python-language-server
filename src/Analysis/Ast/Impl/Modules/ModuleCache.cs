@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 reason = "Cached file is older than the assembly.";
             } else if (cachedFileOlderThanSource) {
                 reason = $"Cached file is older than the source {filePath}.";
-            } else {
+            } else if (exception != null) {
                 reason = $"Exception during cache file check {exception.Message}.";
             }
 
