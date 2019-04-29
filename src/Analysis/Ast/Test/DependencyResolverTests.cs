@@ -214,6 +214,8 @@ namespace Microsoft.Python.Analysis.Tests {
             node = await walker.GetNextAsync(default);
             node.Value.Should().Be("A");
             node.Commit();
+
+            walker.Remaining.Should().Be(0);
         }
 
         [TestMethod]

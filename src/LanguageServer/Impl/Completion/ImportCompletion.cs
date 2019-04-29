@@ -135,8 +135,11 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         private static IEnumerable<CompletionItem> GetAllImportableModules(CompletionContext context) {
             var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-            var modules = mres.CurrentPathResolver.GetAllModuleNames().Distinct();
-            return modules.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
+            var modules = mres.CurrentPathResolver.GetAllModuleNames();
+            return modules
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
         }
 
         private static CompletionResult GetResultFromImportSearch(IImportSearchResult importSearchResult, CompletionContext context, bool prependStar, SourceSpan? applicableSpan = null) {
@@ -164,7 +167,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             if (module != null) {
-                completions.AddRange(module.GetMemberNames().Select(n => context.ItemSource.CreateCompletionItem(n, module?.GetMember(n))));
+                completions.AddRange(module.GetMemberNames()
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
             }
 
             if (importSearchResult is IImportChildrenSource children) {
@@ -185,23 +190,6 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             return new CompletionResult(completions, applicableSpan);
-        }
-
-        private static IReadOnlyList<CompletionItem> GetChildModules(string[] names, CompletionContext context) {
-            if (!names.Any()) {
-                return Array.Empty<CompletionItem>();
-            }
-
-            var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-            var fullName = string.Join(".", names.Take(names.Length - 1));
-
-            var import = mres.CurrentPathResolver.GetModuleImportFromModuleName(fullName);
-            if (string.IsNullOrEmpty(import?.ModulePath)) {
-                return Array.Empty<CompletionItem>();
-            }
-
-            var packages = mres.GetPackagesFromDirectory(Path.GetDirectoryName(import.ModulePath));
-            return packages.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module)).ToArray();
         }
 
         private static IEnumerable<(T1, T2)> ZipLongest<T1, T2>(IEnumerable<T1> src1, IEnumerable<T2> src2) {

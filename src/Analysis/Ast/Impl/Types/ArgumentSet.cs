@@ -406,7 +406,7 @@ namespace Microsoft.Python.Analysis.Types {
             public DictArg(string name, Expression expression, Node location) {
                 Name = name;
                 Expression = expression;
-                Location = Location;
+                Location = location;
             }
         }
     }
