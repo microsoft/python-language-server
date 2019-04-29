@@ -14,10 +14,10 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -46,72 +46,125 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 FindExpressionOptions.Hover, out var exprNode, out var statement, out var exprScope);
 
             if (exprNode is ConstantExpression || !(exprNode is Expression expr)) {
-                return null; // No hover for literals.
+                return null; // No goto definition for literals.
+            }
+
+            Reference reference = null;
+            switch (statement) {
+                // Check if this is a relative import
+                case FromImportStatement fromImport:
+                    reference = HandleFromImport(analysis, location, fromImport, exprNode);
+                    break;
+                case ImportStatement import:
+                    reference = HandleImport(analysis, import, exprNode);
+                    break;
+            }
+
+            if (reference != null) {
+                return reference;
             }
 
             var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
                 if (expr is MemberExpression mex) {
-                    return FromMemberExpression(mex, analysis, out member);
+                    return FromMemberExpression(mex, analysis);
                 }
 
                 // Try variables
                 var name = (expr as NameExpression)?.Name;
-                IMember value = null;
                 if (!string.IsNullOrEmpty(name)) {
-                    var reference = TryFromVariable(name, analysis, location, statement, out member);
-                    if (reference != null) {
-                        return reference;
-                    }
-
-                    if (statement is ImportStatement || statement is FromImportStatement) {
-                        reference = TryFromImport(statement, name, analysis, out value);
-                        if (reference != null) {
-                            member = value as ILocatedMember;
-                            return reference;
-                        }
-                    }
+                    reference = TryFromVariable(name, analysis, location, statement);
                 }
-
-                value = value ?? eval.GetValueFromExpression(expr);
-                if (value.IsUnknown()) {
-                    return null;
-                }
-                member = value as ILocatedMember;
-                return FromMember(value);
             }
+
+            return reference;
         }
 
-        private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement, out ILocatedMember member) {
-            member = null;
-
-            var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
-            if (m != null && scope.Variables[name] is IVariable v) {
-                member = v;
-                var definition = v.Definition;
-                if (statement is ImportStatement || statement is FromImportStatement) {
-                    // If we are on the variable definition in this module,
-                    // then goto definition should go to the parent, if any.
-                    var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
-                    var index = location.ToIndex(analysis.Ast);
-                    if (indexSpan.Start <= index && index < indexSpan.End) {
-                        if (v.Parent == null) {
-                            return null;
-                        }
-                        definition = v.Parent.Definition;
-                    }
+        private Reference HandleFromImport(IDocumentAnalysis analysis, SourceLocation location, FromImportStatement statement, Node expr) {
+            // Are in the dotted name?
+            var locationIndex = location.ToIndex(analysis.Ast);
+            if (statement.Root.StartIndex <= locationIndex && locationIndex <= statement.Root.EndIndex) {
+                var mres = analysis.Document.Interpreter.ModuleResolution;
+                var imports = mres.CurrentPathResolver.FindImports(analysis.Document.FilePath, statement);
+                IPythonModule module = null;
+                switch (imports) {
+                    case ModuleImport moduleImport:
+                        module = mres.GetImportedModule(moduleImport.FullName);
+                        break;
+                    case ImplicitPackageImport packageImport:
+                        module = mres.GetImportedModule(packageImport.FullName);
+                        break;
                 }
+                return module != null && CanNavigateToModule(module) ? new Reference { range = default, uri = module.Uri } : null;
+            }
 
-                if (CanNavigateToModule(definition.DocumentUri)) {
-                    return new Reference { range = definition.Span, uri = definition.DocumentUri };
+            // We are in what/as part
+            var nex = expr as NameExpression;
+            var name = nex?.Name;
+            if (string.IsNullOrEmpty(name)) {
+                return null;
+            }
+
+            // From X import A
+            var value = analysis.ExpressionEvaluator.GetValueFromExpression(nex);
+            if (value.IsUnknown()) {
+                // From X import A as B
+                var index = statement.Names.IndexOf(x => x?.Name == name);
+                if (index >= 0 && index < statement.AsNames.Count) {
+                    value = analysis.ExpressionEvaluator.GetValueFromExpression(statement.AsNames[index]);
                 }
+            }
+
+            return value.IsUnknown() ? null : FromMember(value as ILocatedMember);
+        }
+
+        private Reference HandleImport(IDocumentAnalysis analysis, ImportStatement statement, Node expr) {
+            var name = (expr as NameExpression)?.Name;
+            if (string.IsNullOrEmpty(name)) {
+                return null;
+            }
+
+            var index = statement.Names.IndexOf(x => x?.MakeString() == name);
+            if (index < 0) {
+                return null;
+            }
+
+            var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
+            if (module != null) {
+                return CanNavigateToModule(module) ? new Reference { range = default, uri = module.Uri } : null;
+            }
+
+            // Import A as B
+            if (index >= 0 && index < statement.AsNames.Count) {
+                var value = analysis.ExpressionEvaluator.GetValueFromExpression(statement.AsNames[index]);
+                return value.IsUnknown() ? null : FromMember(value as ILocatedMember);
             }
             return null;
         }
 
-        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis, out ILocatedMember member) {
-            member = null;
 
+        private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement) {
+            var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
+            if (m == null || !(scope.Variables[name] is IVariable v)) {
+                return null;
+            }
+
+            if (statement is ImportStatement || statement is FromImportStatement) {
+                // If we are on the variable definition in this module,
+                // then goto definition should go to the parent, if any.
+                var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
+                var index = location.ToIndex(analysis.Ast);
+                if (indexSpan.Start <= index && index < indexSpan.End) {
+                    var definition = v.Parent != null ? v.Parent.Definition : (v.Value as ILocatedMember)?.Definition;
+                    if (definition != null && CanNavigateToModule(definition.DocumentUri)) {
+                        return new Reference { range = definition.Span, uri = definition.DocumentUri };
+                    }
+                }
+            }
+            return FromMember(v);
+        }
+
+        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis) {
             var eval = analysis.ExpressionEvaluator;
             var target = eval.GetValueFromExpression(mex.Target);
             var type = target?.GetPythonType();
@@ -122,7 +175,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     // want the variable itself since we want to know its location.
                     var v1 = m.Analysis.GlobalScope.Variables[mex.Name];
                     if (v1 != null) {
-                        member = v1;
                         return FromMember(v1);
                     }
                     break;
@@ -133,7 +185,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
                         eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
                         if (v2 != null) {
-                            member = v2;
                             return FromMember(v2);
                         }
                     }
@@ -141,7 +192,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                 default:
                     if (type?.GetMember(mex.Name) is ILocatedMember lm) {
-                        member = lm;
                         return FromMember(lm);
                     }
 
@@ -149,50 +199,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
             return null;
         }
-
-        private static Reference TryFromImport(Node statement, string name, IDocumentAnalysis analysis, out IMember value) {
-            value = null;
-            string moduleName = null;
-            switch (statement) {
-                // In 'import A as B' A is not declared as a variable, so try locating B.
-                case ImportStatement imp when imp.Names.Any(x => x?.MakeString() == name):
-                case FromImportStatement fimp when fimp.Root.Names.Any(x => x?.Name == name):
-                    moduleName = name;
-                    break;
-            }
-
-            if (moduleName != null) {
-                var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName);
-                if (module != null) {
-                    value = module;
-                    return CanNavigateToModule(module) ? new Reference { range = default, uri = module.Uri } : null;
-                }
-            }
-
-            // Perhaps it is a member such as A in 'from X import A as B'
-            switch (statement) {
-                case ImportStatement imp: {
-                        // Import A as B
-                        var index = imp.Names.IndexOf(x => x?.MakeString() == name);
-                        if (index >= 0 && index < imp.AsNames.Count) {
-                            value = analysis.ExpressionEvaluator.GetValueFromExpression(imp.AsNames[index]);
-                            return null;
-                        }
-                        break;
-                    }
-                case FromImportStatement fimp: {
-                        // From X import A as B
-                        var index = fimp.Names.IndexOf(x => x?.Name == name);
-                        if (index >= 0 && index < fimp.AsNames.Count) {
-                            value = analysis.ExpressionEvaluator.GetValueFromExpression(fimp.AsNames[index]);
-                            return null;
-                        }
-                        break;
-                    }
-            }
-            return null;
-        }
-
 
         private Reference FromMember(IMember m) {
             var definition = (m as ILocatedMember)?.Definition;
