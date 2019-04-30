@@ -201,7 +201,10 @@ namespace Microsoft.Python.Analysis.Types {
                         var name = StaticReturnValue.GetPythonType()?.Name;
                         var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
                         if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
-                            return gtp2.Constraints.FirstOrDefault();
+                            // See if the instance (self) type satisfies one of the constraints.
+                            return selfClassType.Mro.Any(b => gtp2.Constraints.Any(c => c.Equals(b)))
+                                ? selfClassType
+                                : gtp2.Constraints.FirstOrDefault();
                         }
 
                         break;
