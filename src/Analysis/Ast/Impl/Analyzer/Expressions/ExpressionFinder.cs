@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 }
 
                 if (baseWalk && ifTrue) {
-                    Expression = node is ModuleName m && m.Names != null
+                    Expression = node is ModuleName m
                         ? m.Names.FirstOrDefault(n => n.StartIndex <= _endLocation && _endLocation <= n.EndIndex)
                         : node;
                 }
