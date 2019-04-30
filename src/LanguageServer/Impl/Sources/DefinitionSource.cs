@@ -61,7 +61,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             if (reference != null) {
-                return reference;
+                return reference.uri == null ? null : reference;
             }
 
             var eval = analysis.ExpressionEvaluator;
@@ -95,7 +95,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         module = mres.GetImportedModule(packageImport.FullName);
                         break;
                 }
-                return module != null && CanNavigateToModule(module) ? new Reference { range = default, uri = module.Uri } : null;
+                return module != null
+                    ? new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null }
+                    : null;
             }
 
             // We are in what/as part
@@ -131,7 +133,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
             if (module != null) {
-                return CanNavigateToModule(module) ? new Reference { range = default, uri = module.Uri } : null;
+                return new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null };
             }
 
             // Import A as B
@@ -224,16 +226,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return CanNavigateToModule(doc);
         }
 
-        private static bool CanNavigateToModule(IPythonModule m) {
-            if (m == null) {
-                return false;
-            }
-            var canNavigate = m.ModuleType == ModuleType.User || m.ModuleType == ModuleType.Package || m.ModuleType == ModuleType.Library;
-#if DEBUG
-            // Allow navigation anywhere in debug.
-            canNavigate |= m.ModuleType == ModuleType.Stub || m.ModuleType == ModuleType.Compiled;
-#endif
-            return canNavigate;
-        }
+        private static bool CanNavigateToModule(IPythonModule m)
+            => m?.ModuleType == ModuleType.User ||
+               m?.ModuleType == ModuleType.Package ||
+               m?.ModuleType == ModuleType.Library;
     }
 }
