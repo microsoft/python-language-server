@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Threading;
 
@@ -129,12 +130,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
         }
 
         private static ImmutableArray<WalkingVertex<TKey, TValue>> CreateWalkingGraph(ImmutableArray<DependencyVertex<TKey, TValue>> snapshot, ImmutableArray<DependencyVertex<TKey, TValue>> changedVertices) {
-            var analysisGraph = ImmutableArray<WalkingVertex<TKey, TValue>>.Empty;
+            var analysisGraph = new List<WalkingVertex<TKey, TValue>>(changedVertices.Count);
             var nodesByVertexIndex = new Dictionary<int, WalkingVertex<TKey, TValue>>();
 
             foreach (var vertex in changedVertices) {
                 var node = new WalkingVertex<TKey, TValue>(snapshot[vertex.Index]);
-                analysisGraph = analysisGraph.Add(node);
+                analysisGraph.Add(node);
                 nodesByVertexIndex[vertex.Index] = node;
             }
 
@@ -144,7 +145,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 foreach (var outgoingIndex in node.DependencyVertex.Outgoing) {
                     if (!nodesByVertexIndex.TryGetValue(outgoingIndex, out var outgoingNode)) {
                         outgoingNode = new WalkingVertex<TKey, TValue>(snapshot[outgoingIndex]);
-                        analysisGraph = analysisGraph.Add(outgoingNode);
+                        analysisGraph.Add(outgoingNode);
                         nodesByVertexIndex[outgoingIndex] = outgoingNode;
 
                         queue.Enqueue(outgoingNode);
@@ -154,7 +155,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
-            return analysisGraph;
+            return analysisGraph.ToImmutableArray();
         }
 
         private static int FindLoops(ImmutableArray<WalkingVertex<TKey, TValue>> graph) {

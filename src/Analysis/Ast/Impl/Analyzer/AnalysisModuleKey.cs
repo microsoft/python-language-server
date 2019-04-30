@@ -26,16 +26,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public string FilePath { get; }
         public bool IsTypeshed { get; }
 
+        private readonly int _hashCode;
+
         public AnalysisModuleKey(IPythonModule module) {
             Name = module.Name;
             FilePath = module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath;
             IsTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
+            _hashCode = CreateHashCode(Name, FilePath, IsTypeshed);
         }
 
         public AnalysisModuleKey(string name, string filePath, bool isTypeshed) {
             Name = name;
             FilePath = filePath;
             IsTypeshed = isTypeshed;
+            _hashCode = CreateHashCode(Name, FilePath, IsTypeshed);
         }
 
         public bool Equals(AnalysisModuleKey other)
@@ -43,11 +47,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override bool Equals(object obj) => obj is AnalysisModuleKey other && Equals(other);
 
-        public override int GetHashCode() {
+        public override int GetHashCode() => _hashCode;
+
+        private static int CreateHashCode(string name, string filePath, bool isTypeshed) {
             unchecked {
-                var hashCode = (Name != null ? Name.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (FilePath != null ? FilePath.GetPathHashCode() : 0);
-                hashCode = (hashCode * 397) ^ IsTypeshed.GetHashCode();
+                var hashCode = (name != null ? name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (filePath != null ? filePath.GetPathHashCode() : 0);
+                hashCode = (hashCode * 397) ^ isTypeshed.GetHashCode();
                 return hashCode;
             }
         }
