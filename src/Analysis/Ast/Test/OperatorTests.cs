@@ -296,5 +296,28 @@ x = datetime() - datetime()
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("x").OfType("timedelta");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task CompareModules() {
+            const string code = @"
+import os
+import sys
+
+x = os < sys
+";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Bool);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task CompareUnknown() {
+            const string code = @"
+x = foo < bar
+";
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Bool);
+        }
     }
 }
