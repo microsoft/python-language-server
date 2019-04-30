@@ -131,12 +131,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
             var missingKeysHashSet = new HashSet<TKey>();
             for (var i = 0; i < _verticesByIndex.Count; i++) {
                 var vertex = _verticesByIndex[i];
-                var newIncoming = new List<int>(vertex.IncomingKeys.Count);
+                var newIncomingArr = vertex.IncomingKeys;
+                var newIncomingList = new List<int>(newIncomingArr.Count);
                 var oldIncoming = vertex.Incoming;
 
-                foreach (var dependencyKey in vertex.IncomingKeys) {
+                foreach (var dependencyKey in newIncomingArr) {
                     if (_keyToVertexIndex.TryGetValue(dependencyKey, out var index)) {
-                        newIncoming.Add(index);
+                        newIncomingList.Add(index);
                     } else {
                         missingKeysHashSet.Add(dependencyKey);
                         if (vertex.IsSealed) {
@@ -146,7 +147,9 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
 
-                if (newIncoming.Count == oldIncoming.Count && newIncoming.SequenceEqual(oldIncoming)) {
+                var newIncoming = newIncomingList.ToImmutableArray();
+
+                if (newIncoming.SequentiallyEquals(oldIncoming)) {
                     continue;
                 }
 
