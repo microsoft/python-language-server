@@ -36,8 +36,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _services = services;
         }
 
-        public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember member) {
-            member = null;
+        public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember definingMember) {
+            definingMember = null;
             if (analysis?.Ast == null) {
                 return null;
             }
@@ -53,10 +53,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             switch (statement) {
                 // Check if this is a relative import
                 case FromImportStatement fromImport:
-                    reference = HandleFromImport(analysis, location, fromImport, exprNode);
+                    reference = HandleFromImport(analysis, location, fromImport, exprNode, out definingMember);
                     break;
                 case ImportStatement import:
-                    reference = HandleImport(analysis, import, exprNode);
+                    reference = HandleImport(analysis, import, exprNode, out definingMember);
                     break;
             }
 
@@ -67,20 +67,22 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var eval = analysis.ExpressionEvaluator;
             using (eval.OpenScope(analysis.Document, exprScope)) {
                 if (expr is MemberExpression mex) {
-                    return FromMemberExpression(mex, analysis);
+                    return FromMemberExpression(mex, analysis, out definingMember);
                 }
 
                 // Try variables
                 var name = (expr as NameExpression)?.Name;
                 if (!string.IsNullOrEmpty(name)) {
-                    reference = TryFromVariable(name, analysis, location, statement);
+                    reference = TryFromVariable(name, analysis, location, statement, out definingMember);
                 }
             }
 
             return reference;
         }
 
-        private Reference HandleFromImport(IDocumentAnalysis analysis, SourceLocation location, FromImportStatement statement, Node expr) {
+        private Reference HandleFromImport(IDocumentAnalysis analysis, SourceLocation location, FromImportStatement statement, Node expr, out ILocatedMember definingMember) {
+            definingMember = null;
+            
             // Are in the dotted name?
             var locationIndex = location.ToIndex(analysis.Ast);
             if (statement.Root.StartIndex <= locationIndex && locationIndex <= statement.Root.EndIndex) {
@@ -95,6 +97,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         module = mres.GetImportedModule(packageImport.FullName);
                         break;
                 }
+
+                definingMember = module;
                 return module != null
                     ? new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null }
                     : null;
@@ -117,10 +121,17 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
             }
 
-            return value.IsUnknown() ? null : FromMember(value as ILocatedMember);
+            if (!value.IsUnknown()) {
+                definingMember = value as ILocatedMember;
+                return FromMember(definingMember);
+            }
+
+            return null;
         }
 
-        private Reference HandleImport(IDocumentAnalysis analysis, ImportStatement statement, Node expr) {
+        private Reference HandleImport(IDocumentAnalysis analysis, ImportStatement statement, Node expr, out ILocatedMember definingMember) {
+            definingMember = null;
+
             var name = (expr as NameExpression)?.Name;
             if (string.IsNullOrEmpty(name)) {
                 return null;
@@ -133,24 +144,31 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
             if (module != null) {
+                definingMember = module;
                 return new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null };
             }
 
             // Import A as B
             if (index >= 0 && index < statement.AsNames.Count) {
                 var value = analysis.ExpressionEvaluator.GetValueFromExpression(statement.AsNames[index]);
-                return value.IsUnknown() ? null : FromMember(value as ILocatedMember);
+                if (!value.IsUnknown()) {
+                    definingMember = value as ILocatedMember;
+                    return FromMember(definingMember);
+                }
             }
             return null;
         }
 
 
-        private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement) {
+        private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement, out ILocatedMember definingMember) {
+            definingMember = null;
+
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
             if (m == null || !(scope.Variables[name] is IVariable v)) {
                 return null;
             }
 
+            definingMember = v;
             if (statement is ImportStatement || statement is FromImportStatement) {
                 // If we are on the variable definition in this module,
                 // then goto definition should go to the parent, if any.
@@ -166,7 +184,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return FromMember(v);
         }
 
-        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis) {
+        private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis, out ILocatedMember definingMember) {
+            definingMember = null;
+
             var eval = analysis.ExpressionEvaluator;
             var target = eval.GetValueFromExpression(mex.Target);
             var type = target?.GetPythonType();
@@ -177,6 +197,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     // want the variable itself since we want to know its location.
                     var v1 = m.Analysis.GlobalScope.Variables[mex.Name];
                     if (v1 != null) {
+                        definingMember = v1;
                         return FromMember(v1);
                     }
                     break;
@@ -187,6 +208,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
                         eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
                         if (v2 != null) {
+                            definingMember = v2;
                             return FromMember(v2);
                         }
                     }
@@ -194,6 +216,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                 default:
                     if (type?.GetMember(mex.Name) is ILocatedMember lm) {
+                        definingMember = lm;
                         return FromMember(lm);
                     }
 
