@@ -97,14 +97,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var leftType = left.GetPythonType();
             var rightType = right.GetPythonType();
 
-            if (leftType == null) {
-                return right;
-            }
-
-            if (rightType == null) {
-                return left;
-            }
-
             var leftTypeId = leftType.TypeId;
             var rightTypeId = rightType.TypeId;
 
