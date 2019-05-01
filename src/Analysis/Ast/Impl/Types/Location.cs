@@ -28,9 +28,15 @@ namespace Microsoft.Python.Analysis.Types {
         public IPythonModule Module { get; }
         public IndexSpan IndexSpan { get; }
 
-        public LocationInfo LocationInfo => Module?.Analysis?.Ast != null
-            ? new LocationInfo(Module.FilePath, Module.Uri, IndexSpan.ToSourceSpan(Module.Analysis?.Ast))
-            : LocationInfo.Empty;
+        public LocationInfo LocationInfo {
+            get {
+                var ast = Module?.Analysis.Ast;
+                if (ast != null && !string.IsNullOrEmpty(Module?.FilePath) && Module?.Uri != null) {
+                    return new LocationInfo(Module.FilePath, Module.Uri, IndexSpan.ToSourceSpan(ast));
+                }
+                return LocationInfo.Empty;
+            }
+        }
 
         public bool IsValid => Module != null;
 
