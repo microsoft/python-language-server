@@ -57,6 +57,9 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
 
+        protected Task<IServiceManager> CreateServicesAsync(InterpreterConfiguration configuration, IServiceManager sm = null)
+            => CreateServicesAsync(TestData.GetTestSpecificRootUri().AbsolutePath, configuration, sm);
+
         protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration, IServiceManager sm = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();

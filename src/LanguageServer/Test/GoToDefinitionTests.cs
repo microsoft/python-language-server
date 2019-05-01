@@ -219,8 +219,7 @@ class A(object):
             var subpkgPath = TestData.GetTestSpecificUri("pkg", "subpkg", "__init__.py");
             var submodPath = TestData.GetTestSpecificUri("pkg", "submod", "__init__.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(pkgPath, string.Empty);
@@ -240,8 +239,7 @@ class A(object):
             var modAPath = TestData.GetTestSpecificUri("a.py");
             var modBPath = TestData.GetTestSpecificUri("b.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var modA = rdt.OpenDocument(modAPath, "from .b import X");
