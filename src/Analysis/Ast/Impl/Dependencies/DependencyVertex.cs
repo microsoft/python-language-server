@@ -47,6 +47,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             Version = version;
 
+            _outgoing = oldVertex.Outgoing;
             _state = (int)State.New;
         }
 
@@ -68,7 +69,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         public void Seal(HashSet<int> outgoing) {
             Debug.Assert(_state == (int)State.New);
-            _state = (int)State.Sealed;
+            _state = _outgoing != null && _outgoing.SetEquals(outgoing) ? (int)State.Walked : (int)State.Sealed;
             _outgoing = outgoing;
         }
 
