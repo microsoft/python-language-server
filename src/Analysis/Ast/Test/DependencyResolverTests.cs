@@ -36,26 +36,26 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         // ReSharper disable StringLiteralTypo
-        [DataRow("A:BC|B:C|C", "CBA")]
-        [DataRow("C|A:BC|B:C", "CBA")]
-        [DataRow("C|B:AC|A:BC", "CBABA")]
-        [DataRow("A:CE|B:A|C:B|D:B|E", "[BE]CABCAD")]
-        [DataRow("A:D|B:DA|C:BA|D:AE|E", "[AE]DADBC")]
-        [DataRow("A:C|C:B|B:A|D:AF|F:CE|E:BD", "ABCABCDEFDEF")]
-        [DataRow("A:BC|B:AC|C:BA|D:BC", "ACBACBD")]
-        [DataRow("A|B|C|D:AB|E:BC", "[ABC][DE]")]
-        [DataRow("A:CE|B:A|C:B|D:BC|E|F:C", "[BE]CABCA[DF]")]
-        [DataRow("A:D|B:E|C:F|D:E|E:F|F:D", "DFEDFE[ABC]")]
-// ReSharper restore StringLiteralTypo
+        [DataRow("A:BC|B:C|C", "CBA", "A")]
+        [DataRow("C|A:BC|B:C", "CBA", "A")]
+        [DataRow("C|B:AC|A:BC", "CBABA", "A")]
+        [DataRow("A:CE|B:A|C:B|D:B|E", "[CE]ABCABD", "D")]
+        [DataRow("A:D|B:DA|C:BA|D:AE|E", "[AE]DADBC", "C")]
+        [DataRow("A:C|C:B|B:A|D:AF|F:CE|E:BD", "ABCABCDEFDEF", "F")]
+        [DataRow("A:BC|B:AC|C:BA|D:BC", "ACBACBD", "D")]
+        [DataRow("A|B|C|D:AB|E:BC", "[ABC][DE]", "E")]
+        [DataRow("A:CE|B:A|C:B|D:BC|E|F:C", "[CE]ABCAB[DF]", "F")]
+        [DataRow("A:D|B:E|C:F|D:E|E:F|F:D", "DFEDFE[ABC]", "A")]
+        // ReSharper restore StringLiteralTypo
         [DataTestMethod]
-        public void ChangeValue(string input, string output) {
+        public void ChangeValue(string input, string output, string root) {
             var resolver = new DependencyResolver<string, string>();
             var splitInput = input.Split("|");
 
             foreach (var value in splitInput) {
                 var kv = value.Split(":");
                 var dependencies = kv.Length == 1 ? ImmutableArray<string>.Empty : ImmutableArray<string>.Create(kv[1].Select(c => c.ToString()).ToList());
-                resolver.ChangeValue(value.Split(":")[0], value, dependencies);
+                resolver.ChangeValue(kv[0], value, kv[0] == root, dependencies);
             }
 
             var walker = resolver.CreateWalker();
@@ -88,9 +88,9 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod]
         public async Task ChangeValue_RepeatedChange() {
             var resolver = new DependencyResolver<string, string>();
-            resolver.ChangeValue("A", "A:B", "B");
-            resolver.ChangeValue("B", "B:C", "C");
-            resolver.ChangeValue("C", "C");
+            resolver.ChangeValue("A", "A:B", true, "B");
+            resolver.ChangeValue("B", "B:C", false, "C");
+            resolver.ChangeValue("C", "C", false);
             var walker = resolver.CreateWalker();
 
             var result = new StringBuilder();
@@ -102,7 +102,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             result.ToString().Should().Be("CBA");
 
-            resolver.ChangeValue("B", "B:C", "C");
+            resolver.ChangeValue("B", "B:C", false, "C");
             walker = resolver.CreateWalker();
 
             result = new StringBuilder();
@@ -118,10 +118,10 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod]
         public async Task ChangeValue_RepeatedChange2() {
             var resolver = new DependencyResolver<string, string>();
-            resolver.ChangeValue("A", "A:B", "B");
-            resolver.ChangeValue("B", "B");
-            resolver.ChangeValue("C", "C:D", "D");
-            resolver.ChangeValue("D", "D");
+            resolver.ChangeValue("A", "A:B", true, "B");
+            resolver.ChangeValue("B", "B", true);
+            resolver.ChangeValue("C", "C:D", true, "D");
+            resolver.ChangeValue("D", "D", false);
             var walker = resolver.CreateWalker();
 
             var result = new StringBuilder();
@@ -133,8 +133,8 @@ namespace Microsoft.Python.Analysis.Tests {
 
             result.ToString().Should().Be("BDAC");
 
-            resolver.ChangeValue("D", "D");
-            resolver.ChangeValue("B", "B:C", "C");
+            resolver.ChangeValue("D", "D", false);
+            resolver.ChangeValue("B", "B:C", true, "C");
 
             walker = resolver.CreateWalker();
             result = new StringBuilder();
@@ -150,9 +150,9 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod]
         public async Task ChangeValue_MissingKeys() {
             var resolver = new DependencyResolver<string, string>();
-            resolver.ChangeValue("A", "A:B", "B");
-            resolver.ChangeValue("B", "B");
-            resolver.ChangeValue("C", "C:D", "D");
+            resolver.ChangeValue("A", "A:B", true, "B");
+            resolver.ChangeValue("B", "B", false);
+            resolver.ChangeValue("C", "C:D", true, "D");
             var walker = resolver.CreateWalker();
 
             var result = new StringBuilder();
@@ -167,7 +167,7 @@ namespace Microsoft.Python.Analysis.Tests {
             walker.MissingKeys.Should().Equal("D");
             result.ToString().Should().Be("BC");
 
-            resolver.ChangeValue("D", "D");
+            resolver.ChangeValue("D", "D", false);
             walker = resolver.CreateWalker();
             result = new StringBuilder();
             result.Append((await walker.GetNextAsync(default)).Value[0]);
@@ -180,10 +180,10 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod]
         public async Task ChangeValue_RemoveKeys() {
             var resolver = new DependencyResolver<string, string>();
-            resolver.ChangeValue("A", "A", "B", "C");
-            resolver.ChangeValue("B", "B", "C");
-            resolver.ChangeValue("C", "C", "D");
-            resolver.ChangeValue("D", "D");
+            resolver.ChangeValue("A", "A:BC", true, "B", "C");
+            resolver.ChangeValue("B", "B:C", false, "C");
+            resolver.ChangeValue("C", "C:D", false, "D");
+            resolver.ChangeValue("D", "D", false);
 
             var walker = resolver.CreateWalker();
             walker.MissingKeys.Should().BeEmpty();
@@ -192,15 +192,15 @@ namespace Microsoft.Python.Analysis.Tests {
             node.Commit();
             
             node = await walker.GetNextAsync(default);
-            node.Value.Should().Be("C");
+            node.Value.Should().Be("C:D");
             node.Commit();
             
             node = await walker.GetNextAsync(default);
-            node.Value.Should().Be("B");
+            node.Value.Should().Be("B:C");
             node.Commit();
             
             node = await walker.GetNextAsync(default);
-            node.Value.Should().Be("A");
+            node.Value.Should().Be("A:BC");
             node.Commit();
 
             resolver.RemoveKeys("B", "D");
@@ -208,11 +208,11 @@ namespace Microsoft.Python.Analysis.Tests {
             walker.MissingKeys.Should().Equal("B", "D");
 
             node = await walker.GetNextAsync(default);
-            node.Value.Should().Be("C");
+            node.Value.Should().Be("C:D");
             node.Commit();
 
             node = await walker.GetNextAsync(default);
-            node.Value.Should().Be("A");
+            node.Value.Should().Be("A:BC");
             node.Commit();
 
             walker.Remaining.Should().Be(0);
@@ -221,10 +221,10 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod]
         public async Task ChangeValue_Skip() {
             var resolver = new DependencyResolver<string, string>();
-            resolver.ChangeValue("A", "A:B", "B");
-            resolver.ChangeValue("B", "B");
-            resolver.ChangeValue("D", "D");
-            resolver.ChangeValue("C", "C:D", "D");
+            resolver.ChangeValue("A", "A:B", true, "B");
+            resolver.ChangeValue("B", "B", false);
+            resolver.ChangeValue("D", "D", false);
+            resolver.ChangeValue("C", "C:D", true, "D");
 
             var walker = resolver.CreateWalker();
             var result = new StringBuilder();
@@ -238,7 +238,7 @@ namespace Microsoft.Python.Analysis.Tests {
             
             result.ToString().Should().Be("BD");
 
-            resolver.ChangeValue("D", "D");
+            resolver.ChangeValue("D", "D", false);
             walker = resolver.CreateWalker();
             result = new StringBuilder();
             result.Append((await walker.GetNextAsync(default)).Value[0]);

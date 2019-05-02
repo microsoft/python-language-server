@@ -246,58 +246,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module, PythonAst ast, int bufferVersion) {
-            var isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
-            var moduleResolution = module.Interpreter.ModuleResolution;
-            var pathResolver = isTypeshed
-                ? module.Interpreter.TypeshedResolution.CurrentPathResolver
-                : moduleResolution.CurrentPathResolver;
-
-            var dependencies = new HashSet<AnalysisModuleKey>();
-
-            if (module.Stub != null) {
-                dependencies.Add(new AnalysisModuleKey(module.Stub));
+            if (_bufferVersion > bufferVersion) {
+                return new HashSet<AnalysisModuleKey>();
             }
 
-            foreach (var node in ast.TraverseDepthFirst<Node>(n => n.GetChildNodes())) {
-                if (_bufferVersion > bufferVersion) {
-                    return dependencies;
-                }
-
-                switch (node) {
-                    case ImportStatement import:
-                        foreach (var moduleName in import.Names) {
-                            HandleSearchResults(isTypeshed, dependencies, moduleResolution, pathResolver.FindImports(module.FilePath, moduleName, import.ForceAbsolute));
-                        }
-                        break;
-                    case FromImportStatement fromImport:
-                        var imports = pathResolver.FindImports(module.FilePath, fromImport);
-                        HandleSearchResults(isTypeshed, dependencies, moduleResolution, imports);
-                        if (imports is IImportChildrenSource childrenSource) {
-                            foreach (var name in fromImport.Names) {
-                                if (childrenSource.TryGetChildImport(name.Name, out var childImport)) {
-                                    HandleSearchResults(isTypeshed, dependencies, moduleResolution, childImport);
-                                }
-                            }
-                        }
-                        break;
-                }
-            }
-
+            var walker = new DependencyWalker(this, module);
+            ast.Walk(walker);
+            var dependencies = walker.Dependencies;
             dependencies.Remove(new AnalysisModuleKey(module));
             return dependencies;
-        }
-
-        private static void HandleSearchResults(bool isTypeshed, HashSet<AnalysisModuleKey> dependencies, IModuleManagement moduleResolution, IImportSearchResult searchResult) {
-            switch (searchResult) {
-                case ModuleImport moduleImport when !Ignore(moduleResolution, moduleImport.FullName):
-                    dependencies.Add(new AnalysisModuleKey(moduleImport.FullName, moduleImport.ModulePath, isTypeshed));
-                    return;
-                case PossibleModuleImport possibleModuleImport when !Ignore(moduleResolution, possibleModuleImport.PrecedingModuleFullName):
-                    dependencies.Add(new AnalysisModuleKey(possibleModuleImport.PrecedingModuleFullName, possibleModuleImport.PrecedingModulePath, isTypeshed));
-                    return;
-                default:
-                    return;
-            }
         }
 
         private static bool Ignore(IModuleManagement moduleResolution, string name)
@@ -312,6 +269,67 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (_analysisTcs.Task.IsCompleted) {
                 _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+        }
+
+        private class DependencyWalker : PythonWalker {
+            private readonly PythonAnalyzerEntry _entry;
+            private readonly IPythonModule _module;
+            private readonly bool _isTypeshed;
+            private readonly IModuleManagement _moduleResolution;
+            private readonly PathResolverSnapshot _pathResolver;
+
+            public HashSet<AnalysisModuleKey> Dependencies { get; }
+
+            public DependencyWalker(PythonAnalyzerEntry entry, IPythonModule module) {
+                _entry = entry;
+                _module = module;
+                _isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
+                _moduleResolution = module.Interpreter.ModuleResolution;
+                _pathResolver = _isTypeshed
+                    ? module.Interpreter.TypeshedResolution.CurrentPathResolver
+                    : _moduleResolution.CurrentPathResolver;
+
+                Dependencies = new HashSet<AnalysisModuleKey>();
+
+                if (module.Stub != null) {
+                    Dependencies.Add(new AnalysisModuleKey(module.Stub));
+                }
+            }
+
+            public override bool Walk(ImportStatement import) {
+                foreach (var moduleName in import.Names) {
+                    HandleSearchResults(_pathResolver.FindImports(_module.FilePath, moduleName, import.ForceAbsolute));
+                }
+
+                return false;
+            }
+
+            public override bool Walk(FromImportStatement fromImport) {
+                var imports = _pathResolver.FindImports(_module.FilePath, fromImport);
+                HandleSearchResults(imports);
+                if (imports is IImportChildrenSource childrenSource) {
+                    foreach (var name in fromImport.Names) {
+                        if (childrenSource.TryGetChildImport(name.Name, out var childImport)) {
+                            HandleSearchResults(childImport);
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            private void HandleSearchResults(IImportSearchResult searchResult) {
+                switch (searchResult) {
+                    case ModuleImport moduleImport when !Ignore(_moduleResolution, moduleImport.FullName):
+                        Dependencies.Add(new AnalysisModuleKey(moduleImport.FullName, moduleImport.ModulePath, _isTypeshed));
+                        return;
+                    case PossibleModuleImport possibleModuleImport when !Ignore(_moduleResolution, possibleModuleImport.PrecedingModuleFullName):
+                        Dependencies.Add(new AnalysisModuleKey(possibleModuleImport.PrecedingModuleFullName, possibleModuleImport.PrecedingModulePath, _isTypeshed));
+                        return;
+                    default:
+                        return;
+                }
             }
         }
     }

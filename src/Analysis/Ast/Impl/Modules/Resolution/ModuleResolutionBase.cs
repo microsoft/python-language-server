@@ -139,7 +139,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             public IPythonModule GetOrCreate(string name, ModuleResolutionBase mrb) {
-                bool create = false;
+                var create = false;
                 lock (_syncObj) {
                     if (_module != null) {
                         return _module;

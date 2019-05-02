@@ -24,13 +24,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// concurrently.
     /// </summary>
     internal interface IDependencyResolver<TKey, TValue> {
-        DependencyGraphSnapshot<TKey, TValue> CurrentGraphSnapshot { get; }
-
-        int TryAddValue(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
-        int ChangeValue(TKey key, TValue value, ImmutableArray<TKey> incomingKeys);
+        int TryAddValue(TKey key, TValue value, bool isRoot, ImmutableArray<TKey> incomingKeys);
+        int ChangeValue(TKey key, TValue value, bool isRoot, ImmutableArray<TKey> incomingKeys);
+        int Remove(TKey key);
         int RemoveKeys(ImmutableArray<TKey> keys);
 
         IDependencyChainWalker<TKey, TValue> CreateWalker();
-        bool TryCreateWalker(DependencyGraphSnapshot<TKey, TValue> snapshot, out IDependencyChainWalker<TKey, TValue> walker);
+        bool TryCreateWalker(int version, int walkerDepthLimit, out IDependencyChainWalker<TKey, TValue> walker);
     }
 }

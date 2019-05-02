@@ -236,6 +236,8 @@ namespace Microsoft.Python.Analysis.Modules {
         protected virtual void Dispose(bool disposing) {
             _diagnosticsService?.Remove(Uri);
             _disposeToken.TryMarkDisposed();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+            analyzer.RemoveAnalysis(this);
         }
         #endregion
 
@@ -380,7 +382,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzing;
 
                 var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.EnqueueDocumentForAnalysis(this, ast, version, _disposeToken.CancellationToken);
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version);
             }
 
             lock (AnalysisLock) {
