@@ -57,7 +57,7 @@ An example of a user configuration which sets these options:
 {
     "python.analysis.errors": ["undefined-variable"],
     "python.analysis.warnings": ["unknown-parameter-name"],
-    "python.analysis.info": ["unresolved-import"],
+    "python.analysis.information": ["unresolved-import"],
     "python.analysis.disabled": ["too-many-function-arguments", "parameter-missing"],
 }
 ```
