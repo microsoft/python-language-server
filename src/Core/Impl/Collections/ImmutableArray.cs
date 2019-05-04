@@ -311,14 +311,11 @@ namespace Microsoft.Python.Core.Collections {
             return !left.Equals(right);
         }
 
-        public Enumerator GetEnumerator()
-        => new Enumerator(this);
+        public Enumerator GetEnumerator() => new Enumerator(this);
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
-            => new Enumerator(this);
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
 
-        IEnumerator IEnumerable.GetEnumerator()
-            => new Enumerator(this);
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
         public struct Enumerator : IEnumerator<T> {
             private readonly ImmutableArray<T> _owner;

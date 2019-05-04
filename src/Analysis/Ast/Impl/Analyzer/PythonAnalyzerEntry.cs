@@ -133,6 +133,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 _analysisDependencies = null;
                 UpdateAnalysisTcs(version);
+                _previousAnalysis = analysis;
             }
 
             _analysisTcs.TrySetResult(analysis);

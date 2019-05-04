@@ -16,6 +16,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
@@ -148,8 +149,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var elapsed = stopWatch.Elapsed.TotalMilliseconds;
 
+            ForceGCIfNeeded(originalRemaining, remaining);
             SendTelemetry(elapsed, originalRemaining, remaining, _walker.Version);
             LogResults(elapsed, originalRemaining, remaining, _walker.Version);
+        }
+
+        private static void ForceGCIfNeeded(int originalRemaining, int remaining) {
+            if (originalRemaining - remaining > 1000) {
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect();
+            }
         }
 
         private void SendTelemetry(double elapsed, int originalRemaining, int remaining, int version) {
