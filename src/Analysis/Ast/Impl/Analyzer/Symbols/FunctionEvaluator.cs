@@ -32,6 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly IPythonClassMember _function;
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
+        private bool _isConstructor;
 
         public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload) 
             : base(eval, overload.FunctionDefinition) {
@@ -70,24 +71,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     }
                 }
 
-                DeclareParameters(!stub);
-
-                // Do process body of constructors since they may be declaring
-                // variables that are later used to determine return type of other
-                // methods and properties.
-                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
-                if (!stub && (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User)) {
-                    // Return type from the annotation is sufficient for libraries
-                    // and stubs, no need to walk the body.
-                    FunctionDefinition.Body?.Walk(this);
+                if (!stub) {
+                    // Do process body of constructors since they may be declaring
+                    // variables that are later used to determine return type of other
+                    // methods and properties.
+                    _isConstructor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+                    if (_isConstructor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                        // Return type from the annotation is sufficient for libraries
+                        // and stubs, no need to walk the body.
+                        DeclareParameters(true);
+                        FunctionDefinition.Body?.Walk(this);
+                    }
                 }
             }
             Result = _function;
         }
 
         public override bool Walk(AssignmentStatement node) {
-            var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
+            // Skip over bodies in libraries except when it is a constructor.
+            if (!_isConstructor && _function.DeclaringModule.ModuleType == ModuleType.Library) {
+                return false;
+            }
 
+            var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             foreach (var lhs in node.Left) {
                 switch (lhs) {
                     case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {

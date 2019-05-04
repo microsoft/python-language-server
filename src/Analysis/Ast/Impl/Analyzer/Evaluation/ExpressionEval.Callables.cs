@@ -165,10 +165,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
 
-            // If instance is not the same as the declaring type, then call
-            // most probably comes from the derived class which means that
-            // the original 'self' and 'cls' variables are no longer valid
-            // and function has to be re-evaluated with new arguments.
+            // If instance is not the same as the declaring type, then call most probably comes
+            // from the derived class which means that the original 'self' and 'cls' variables
+            // are no longer valid and function has to be re-evaluated with new arguments.
             // Note that there is nothing to re-evaluate in stubs.
             var instanceType = instance?.GetPythonType();
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
@@ -176,16 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 instanceType.Equals(fn.DeclaringType) ||
                 fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
 
-                if (fn.IsSpecialized && fn is PythonFunctionType ft && ft.Dependencies.Count > 0) {
-                    var dependencies = ImmutableArray<IPythonModule>.Empty;
-                    foreach (var moduleName in ft.Dependencies) {
-                        var dependency = Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
-                        if (dependency != null) {
-                            dependencies = dependencies.Add(dependency);
-                        }
-                    }
-                    Services.GetService<IPythonAnalyzer>().EnqueueDocumentForAnalysis(Module, dependencies);
-                }
+                LoadFunctionDependencyModules(fn);
 
                 var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
                 if (!t.IsUnknown()) {
@@ -301,5 +291,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         private bool EvaluateFunctionBody(IPythonFunctionType fn)
             => fn.DeclaringModule.ModuleType != ModuleType.Library;
+
+        private void LoadFunctionDependencyModules(IPythonFunctionType fn) {
+            if (fn.IsSpecialized && fn is PythonFunctionType ft && ft.Dependencies.Count > 0) {
+                var dependencies = ImmutableArray<IPythonModule>.Empty;
+                foreach (var moduleName in ft.Dependencies) {
+                    var dependency = Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                    if (dependency != null) {
+                        dependencies = dependencies.Add(dependency);
+                    }
+                }
+                Services.GetService<IPythonAnalyzer>().EnqueueDocumentForAnalysis(Module, dependencies);
+            }
+        }
     }
 }
