@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Collections;
@@ -158,7 +159,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Re-declare parameters in the function scope since originally
             // their types might not have been known and now argument set
             // may contain concrete values.
-            if (fd != null) {
+            if (fd != null && EvaluateFunctionBody(fn)) {
                 using (OpenScope(fn.DeclaringModule, fn.FunctionDefinition, out _)) {
                     args.DeclareParametersInScope(this);
                 }
@@ -194,7 +195,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // Try and evaluate with specific arguments. Note that it does not
             // make sense to evaluate stubs since they already should be annotated.
-            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
+            if (EvaluateFunctionBody(fn) && fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
                 // Stubs are coming from another module.
                 return TryEvaluateWithArguments(fn, args);
             }
@@ -297,5 +298,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             return true;
         }
+
+        private bool EvaluateFunctionBody(IPythonFunctionType fn)
+            => fn.DeclaringModule.ModuleType != ModuleType.Library;
     }
 }
