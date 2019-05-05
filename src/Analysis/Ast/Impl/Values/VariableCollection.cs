@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,48 +24,93 @@ namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
     internal sealed class VariableCollection : IVariableCollection {
         public static readonly IVariableCollection Empty = new VariableCollection();
-        private readonly ConcurrentDictionary<string, Variable> _variables = new ConcurrentDictionary<string, Variable>();
+        private readonly Lazy<Dictionary<string, Variable>> _variables
+            = new Lazy<Dictionary<string, Variable>>(() => new Dictionary<string, Variable>());
+        private readonly object _lock = new object();
 
         #region ICollection
-        public int Count => _variables.Count;
-        public IEnumerator<IVariable> GetEnumerator() => _variables.Values.ToList().GetEnumerator();
+        public int Count {
+            get {
+                lock (_lock) {
+                    return _variables.IsValueCreated ? _variables.Value.Count : 0;
+                }
+            }
+        }
+
+        public IEnumerator<IVariable> GetEnumerator() {
+            lock (_lock) {
+                return _variables.IsValueCreated
+                    ? _variables.Value.Values.ToList().GetEnumerator()
+                    : Enumerable.Empty<IVariable>().GetEnumerator();
+            }
+        }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #endregion
 
         #region IVariableCollection
-        public IVariable this[string name] => _variables.TryGetValue(name, out var v) ? v : null;
-        public bool Contains(string name) => _variables.ContainsKey(name);
-        public IReadOnlyList<string> Names => _variables.Keys.ToArray();
+
+        public IVariable this[string name] {
+            get {
+                lock (_lock) {
+                    return _variables.IsValueCreated
+                         ? _variables.Value.TryGetValue(name, out var v) ? v : null
+                        : null;
+                }
+            }
+        }
+
+        public bool Contains(string name) {
+            lock (_lock) {
+                return _variables.IsValueCreated && _variables.Value.ContainsKey(name);
+            }
+        }
+
+        public IReadOnlyList<string> Names {
+            get {
+                lock (_lock) {
+                    return _variables.IsValueCreated ? _variables.Value.Keys.ToArray() : Array.Empty<string>();
+                }
+            }
+        }
 
         public bool TryGetVariable(string key, out IVariable value) {
             value = null;
-            if (_variables.TryGetValue(key, out var v)) {
-                value = v;
-                return true;
+            lock (_lock) {
+                if (_variables.IsValueCreated && _variables.Value.TryGetValue(key, out var v)) {
+                    value = v;
+                }
             }
-            return false;
+            return value != null;
         }
         #endregion
 
         #region IMemberContainer
-        public IMember GetMember(string name) => _variables.TryGetValue(name, out var v) ? v : null;
-        public IEnumerable<string> GetMemberNames() => _variables.Keys.ToArray();
+        public IMember GetMember(string name) => TryGetVariable(name, out var v) ? v : null;
+        public IEnumerable<string> GetMemberNames() => Names;
         #endregion
 
         internal void DeclareVariable(string name, IMember value, VariableSource source, Location location = default) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            if (_variables.TryGetValue(name, out var existing)) {
-                existing.Assign(value, location);
-            } else {
-                _variables[name] = new Variable(name, value, source, location);
+            lock (_lock) {
+                if (_variables.Value.TryGetValue(name, out var existing)) {
+                    existing.Assign(value, location);
+                } else {
+                    _variables.Value[name] = new Variable(name, value, source, location);
+                }
             }
         }
 
         internal void LinkVariable(string name, IVariable v, Location location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            _variables[name] = new Variable(name, v, location);
+            lock (_lock) {
+                _variables.Value[name] = new Variable(name, v, location);
+            }
         }
 
-        internal void RemoveVariable(string name) => _variables.TryRemove(name, out _);
+        internal void RemoveVariable(string name) {
+            lock (_lock) {
+                _variables.Value.Remove(name);
+            }
+        }
     }
 }
