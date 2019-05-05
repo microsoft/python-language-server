@@ -196,7 +196,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             ast.SetAttributes(_attributes);
-            PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
+            //PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
 
             foreach (var n in ((Node)ast).TraverseDepthFirst(c => c.GetChildNodes())) {
                 n.Ast = ast;

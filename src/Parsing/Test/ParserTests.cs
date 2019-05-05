@@ -467,12 +467,12 @@ namespace Microsoft.Python.Parsing.Tests {
         [DataRow(10, 3, 2)]
         [DataTestMethod, Priority(0)]
         public void Errors(int index, int line, int column) {
-            foreach (var version in V30_V32Versions) {
-                ParseErrors("Errors3x.py",
-                    version,
-                    new ErrorInfo("no binding for nonlocal '__class__' found", 23, 2, 14, 32, 2, 23)
-                );
-            }
+            //foreach (var version in V30_V32Versions) {
+            //    ParseErrors("Errors3x.py",
+            //        version,
+            //        new ErrorInfo("no binding for nonlocal '__class__' found", 23, 2, 14, 32, 2, 23)
+            //    );
+            //}
 
             var initLoc = new SourceLocation(index, line, column);
 
