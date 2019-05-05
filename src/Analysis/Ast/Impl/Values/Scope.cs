@@ -26,11 +26,10 @@ namespace Microsoft.Python.Analysis.Values {
     /// Represents scope where variables can be declared.
     /// </summary>
     internal class Scope : IScope {
+        private VariableCollection _variables;
         private VariableCollection _nonLocals;
         private VariableCollection _globals;
         private List<Scope> _childScopes;
-
-        protected VariableCollection VariableCollection { get; } = new VariableCollection();
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
             Node = node;
@@ -47,7 +46,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IPythonModule Module { get; }
 
         public IReadOnlyList<IScope> Children => _childScopes?.ToArray() ?? Array.Empty<IScope>();
-        public IVariableCollection Variables => VariableCollection;
+        public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
 
@@ -88,6 +87,8 @@ namespace Microsoft.Python.Analysis.Values {
         #endregion
 
         internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
+
+        private VariableCollection VariableCollection => _variables ?? (_variables = new VariableCollection());
 
         private void DeclareBuiltinVariables() {
             if (Node == null || Module.ModuleType != ModuleType.User || this is IGlobalScope) {

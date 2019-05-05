@@ -23,24 +23,31 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
     internal sealed class VariableCollection : IVariableCollection {
-        public static readonly IVariableCollection Empty = new VariableCollection();
-        private readonly Lazy<Dictionary<string, Variable>> _variables
-            = new Lazy<Dictionary<string, Variable>>(() => new Dictionary<string, Variable>());
+        public static readonly VariableCollection Empty = new VariableCollection();
+        private Dictionary<string, Variable> _variables;
         private readonly object _lock = new object();
+
+        private Dictionary<string, Variable> Variables {
+            get {
+                lock (_lock) {
+                    return _variables ?? (_variables = new Dictionary<string, Variable>());
+                }
+            }
+        }
 
         #region ICollection
         public int Count {
             get {
                 lock (_lock) {
-                    return _variables.IsValueCreated ? _variables.Value.Count : 0;
+                    return _variables?.Count ?? 0;
                 }
             }
         }
 
         public IEnumerator<IVariable> GetEnumerator() {
             lock (_lock) {
-                return _variables.IsValueCreated
-                    ? _variables.Value.Values.ToList().GetEnumerator()
+                return _variables != null
+                    ? _variables.Values.ToList().GetEnumerator()
                     : Enumerable.Empty<IVariable>().GetEnumerator();
             }
         }
@@ -52,8 +59,8 @@ namespace Microsoft.Python.Analysis.Values {
         public IVariable this[string name] {
             get {
                 lock (_lock) {
-                    return _variables.IsValueCreated
-                         ? _variables.Value.TryGetValue(name, out var v) ? v : null
+                    return _variables != null 
+                        ? _variables.TryGetValue(name, out var v) ? v : null
                         : null;
                 }
             }
@@ -61,14 +68,14 @@ namespace Microsoft.Python.Analysis.Values {
 
         public bool Contains(string name) {
             lock (_lock) {
-                return _variables.IsValueCreated && _variables.Value.ContainsKey(name);
+                return _variables != null && _variables.ContainsKey(name);
             }
         }
 
         public IReadOnlyList<string> Names {
             get {
                 lock (_lock) {
-                    return _variables.IsValueCreated ? _variables.Value.Keys.ToArray() : Array.Empty<string>();
+                    return _variables != null ? _variables.Keys.ToArray() : Array.Empty<string>();
                 }
             }
         }
@@ -76,7 +83,7 @@ namespace Microsoft.Python.Analysis.Values {
         public bool TryGetVariable(string key, out IVariable value) {
             value = null;
             lock (_lock) {
-                if (_variables.IsValueCreated && _variables.Value.TryGetValue(key, out var v)) {
+                if (_variables != null && _variables.TryGetValue(key, out var v)) {
                     value = v;
                 }
             }
@@ -92,10 +99,10 @@ namespace Microsoft.Python.Analysis.Values {
         internal void DeclareVariable(string name, IMember value, VariableSource source, Location location = default) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
             lock (_lock) {
-                if (_variables.Value.TryGetValue(name, out var existing)) {
+                if (Variables.TryGetValue(name, out var existing)) {
                     existing.Assign(value, location);
                 } else {
-                    _variables.Value[name] = new Variable(name, value, source, location);
+                    Variables[name] = new Variable(name, value, source, location);
                 }
             }
         }
@@ -103,13 +110,13 @@ namespace Microsoft.Python.Analysis.Values {
         internal void LinkVariable(string name, IVariable v, Location location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
             lock (_lock) {
-                _variables.Value[name] = new Variable(name, v, location);
+                Variables[name] = new Variable(name, v, location);
             }
         }
 
         internal void RemoveVariable(string name) {
             lock (_lock) {
-                _variables.Value.Remove(name);
+                _variables?.Remove(name);
             }
         }
     }
