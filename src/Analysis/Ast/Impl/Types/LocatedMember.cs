@@ -23,31 +23,18 @@ namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
         private HashSet<Location> _references;
 
-        protected LocatedMember(PythonMemberType memberType) {
-            MemberType = memberType;
-        }
+        protected LocatedMember(IPythonModule module) : this(new Location(module, default)) { }
 
-        protected LocatedMember(PythonMemberType memberType, IPythonModule module)
-            : this(memberType, new Location(module, default)) { }
-
-        protected LocatedMember(PythonMemberType memberType, Location location, ILocatedMember parent = null)
-            : this(location, parent) {
-            MemberType = memberType;
-        }
-
-        private LocatedMember(Location location, ILocatedMember parent = null) {
-            Parent = parent;
-            Parent?.AddReference(location);
+        protected LocatedMember(Location location) {
             Location = location;
         }
 
-        public virtual PythonMemberType MemberType { get; } = PythonMemberType.Unknown;
+        public abstract PythonMemberType MemberType { get; }
 
         public virtual IPythonModule DeclaringModule => Location.Module;
 
         public virtual LocationInfo Definition => Location.LocationInfo;
 
-        public ILocatedMember Parent { get; }
 
         public virtual IReadOnlyList<LocationInfo> References {
             get {
@@ -98,7 +85,6 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonMemberType MemberType { get; }
         public IPythonModule DeclaringModule => null;
         public LocationInfo Definition => LocationInfo.Empty;
-        public ILocatedMember Parent => null;
         public IReadOnlyList<LocationInfo> References => Array.Empty<LocationInfo>();
         public void AddReference(Location location) { }
         public void RemoveReferences(IPythonModule module) { }

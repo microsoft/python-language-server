@@ -54,12 +54,15 @@ namespace Microsoft.Python.Analysis.Types {
             _documentationProvider = documentationProvider;
         }
 
-        private PythonType(string name, Location location, BuiltinTypeId typeId)
-            : base(typeId.GetMemberId(), location) {
+        private PythonType(string name, Location location, BuiltinTypeId typeId) : base(location) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
+
+        #region ILocatedMember
+        public override PythonMemberType MemberType => _typeId.GetMemberId();
+        #endregion
 
         #region IPythonType
 

@@ -110,7 +110,7 @@ namespace Microsoft.Python.Analysis.Values {
         internal void LinkVariable(string name, IVariable v, Location location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
             lock (_lock) {
-                Variables[name] = new Variable(name, v, location);
+                Variables[name] = new ImportedVariable(name, v, location);
             }
         }
 

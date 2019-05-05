@@ -95,10 +95,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
                     var index = location.ToIndex(analysis.Ast);
                     if (indexSpan.Start <= index && index < indexSpan.End) {
-                        if (v.Parent == null) {
+                        if (!(v is IImportedMember im)) {
                             return null;
                         }
-                        definition = v.Parent.Definition;
+                        definition = im.Parent.Definition;
                     }
                 }
 

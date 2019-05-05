@@ -120,16 +120,26 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     var module = moduleManagement.GetOrLoadModule(fullName);
                     if (module is IDocument document) {
                         analysisTasks.Add(document.GetAnalysisAsync(cancellationToken: cancellationToken));
-                    }   
+                    }
                 }
             }
 
             await Task.WhenAll(analysisTasks);
         }
-        
+
         private ILocatedMember GetRootDefinition(ILocatedMember lm) {
-            for (; lm.Parent != null; lm = lm.Parent) { }
-            return lm;
+            if (!(lm is IImportedMember im) || im.Parent == null) {
+                return lm;
+            }
+
+            var parent = im.Parent;
+            for (; parent != null;) {
+                if (!(parent is IImportedMember im1) || im1.Parent == null) {
+                    break;
+                }
+                parent = im1.Parent;
+            }
+            return parent;
         }
     }
 }

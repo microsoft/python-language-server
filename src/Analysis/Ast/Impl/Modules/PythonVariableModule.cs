@@ -47,15 +47,15 @@ namespace Microsoft.Python.Analysis.Modules {
         public IGlobalScope GlobalScope => Module?.GlobalScope;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
+        public override PythonMemberType MemberType => PythonMemberType.Module;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter)
-            : base(PythonMemberType.Module) {
+        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(null) {
             Name = name;
             Interpreter = interpreter;
             SetDeclaringModule(this);
         }
 
-        public PythonVariableModule(IPythonModule module): base(PythonMemberType.Module, module) {
+        public PythonVariableModule(IPythonModule module): base(module) {
             Name = module.Name;
             Interpreter = module.Interpreter;
             Module = module;

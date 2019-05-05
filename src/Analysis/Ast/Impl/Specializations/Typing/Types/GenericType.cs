@@ -59,10 +59,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Parameters = parameters ?? Array.Empty<IGenericTypeDefinition>();
         }
 
-        private GenericType(string name, IPythonModule declaringModule) 
-            : base(PythonMemberType.Generic, declaringModule) {
+        private GenericType(string name, IPythonModule declaringModule) : base(declaringModule) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
+
+        public override PythonMemberType MemberType => PythonMemberType.Generic;
 
         /// <summary>
         /// Type parameters such as in Tuple[T1, T2. ...] or

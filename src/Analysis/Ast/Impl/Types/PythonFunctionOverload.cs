@@ -58,10 +58,13 @@ namespace Microsoft.Python.Analysis.Types {
             _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
-        public PythonFunctionOverload(string name, Location location)
-            : base(PythonMemberType.Function, location) {
+        public PythonFunctionOverload(string name, Location location) : base(location) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
+
+        #region ILocatedMember
+        public override PythonMemberType MemberType => PythonMemberType.Function;
+        #endregion
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
 
@@ -147,7 +150,6 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
-        public override PythonMemberType MemberType => PythonMemberType.Function;
         public IMember StaticReturnValue { get; private set; }
 
         public IMember Call(IArgumentSet args, IPythonType self, Node callLocation = null) {
