@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ConditionalExpression : Expression {
+        private const string _nodeName = "conditional expression";
+
         public ConditionalExpression(Expression testExpression, Expression trueExpression, Expression falseExpression, int ifIndex, int elseIndex) {
             Test = testExpression;
             TrueExpression = trueExpression;
@@ -28,7 +30,7 @@ namespace Microsoft.Python.Parsing.Ast {
             ElseIndex = elseIndex;
         }
 
-        public override string NodeName => "conditional expression";
+        public override string NodeName => _nodeName;
         public Expression FalseExpression { get; }
         public Expression Test { get; }
         public Expression TrueExpression { get; }

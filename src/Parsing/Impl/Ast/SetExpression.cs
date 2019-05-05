@@ -23,13 +23,14 @@ using Microsoft.Python.Core.Collections;
 namespace Microsoft.Python.Parsing.Ast {
 
     public class SetExpression : Expression {
+        private const string _nodeName = "set display";
         public SetExpression(ImmutableArray<Expression> items) {
             Items = items;
         }
 
         public ImmutableArray<Expression> Items { get; }
 
-        public override string NodeName => "set display";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() => Items.WhereNotNull();
 

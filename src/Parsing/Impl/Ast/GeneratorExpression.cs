@@ -22,6 +22,8 @@ using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public sealed class GeneratorExpression : Comprehension {
+        private const string _nodeName = "generator expression";
+
         public GeneratorExpression(Expression item, ImmutableArray<ComprehensionIterator> iterators) {
             Item = item;
             Iterators = iterators;
@@ -29,15 +31,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override ImmutableArray<ComprehensionIterator> Iterators { get; }
 
-        public override string NodeName => "generator";
+        public override string NodeName => _nodeName;
 
         public Expression Item { get; }
 
-        internal override string CheckAssign() => "can't assign to generator expression";
-
         internal override string CheckAugmentedAssign() => CheckAssign();
-
-        internal override string CheckDelete() => "can't delete generator expression";
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Item != null) yield return Item;

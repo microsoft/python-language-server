@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class NamedExpression : Expression {
+        private const string _nodeName = "named expression";
+
         public NamedExpression(Expression lhs, Expression rhs) {
             Target = lhs;
             Value = rhs;
@@ -14,7 +16,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public Expression Target { get; }
         public Expression Value { get; }
 
-        public override string NodeName => "named expression";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             yield return Target;
@@ -29,9 +31,9 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
-            if (await walker.WalkAsync(this)) {
-                await Target.WalkAsync(walker);
-                await Value.WalkAsync(walker);
+            if (await walker.WalkAsync(this, cancellationToken)) {
+                await Target.WalkAsync(walker, cancellationToken);
+                await Value.WalkAsync(walker, cancellationToken);
             }
         }
 

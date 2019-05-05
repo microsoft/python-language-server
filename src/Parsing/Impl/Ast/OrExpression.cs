@@ -21,6 +21,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class OrExpression : Expression {
+        private const string _nodeName = "or expression";
+
         public OrExpression(Expression left, Expression right, int orIndex) {
             Left = left ?? throw new ArgumentNullException(nameof(left));
             Right = right;
@@ -35,7 +37,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int OrIndex { get; }
 
-        public override string NodeName => "or expression";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             yield return Left;

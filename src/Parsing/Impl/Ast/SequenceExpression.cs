@@ -14,11 +14,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class SequenceExpression : Expression {
+        private const string _nodeName = "sequence";
+        private const string _augmentedAssignError = "illegal expression for augmented assignment";
+
         protected SequenceExpression(ImmutableArray<Expression> items) {
             Items = items;
         }
@@ -36,7 +38,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     // we don't return the same message here as CPython doesn't seem to either, 
                     // for example ((yield a), 2,3) = (2,3,4) gives a different error than
                     // a = yield 3 = yield 4.
-                    return "can't assign to " + e.NodeName;
+                    return $"can't assign to {e.NodeName}";
                 }
             }
             return null;
@@ -50,15 +52,15 @@ namespace Microsoft.Python.Parsing.Ast {
                     // we don't return the same message here as CPython doesn't seem to either, 
                     // for example ((yield a), 2,3) = (2,3,4) gives a different error than
                     // a = yield 3 = yield 4.
-                    return "can't delete " + e.NodeName;
+                    return $"can't delete {e.NodeName}";
                 }
             }
             return null;
         }
 
-        internal override string CheckAugmentedAssign() => "illegal expression for augmented assignment";
+        internal override string CheckAugmentedAssign() => _augmentedAssignError;
 
-        public override string NodeName => "sequence";
+        public override string NodeName => _nodeName;
 
         private static bool IsComplexAssignment(Expression expr) => !(expr is NameExpression);
     }

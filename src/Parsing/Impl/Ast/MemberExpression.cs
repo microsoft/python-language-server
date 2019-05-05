@@ -21,6 +21,8 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public sealed class MemberExpression : Expression {
+        private const string _nodeName = "attribute";
+
         public MemberExpression(Expression target, string name) {
             Target = target;
             Name = name;
@@ -51,7 +53,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckDelete() => null;
 
-        public override string NodeName => "attribute";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Target != null) yield return Target;

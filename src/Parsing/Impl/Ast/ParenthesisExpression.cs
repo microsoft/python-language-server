@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ParenthesisExpression : Expression {
+        private const string _nodeName = "parenthesized expression";
+
         public ParenthesisExpression(Expression expression) {
             Expression = expression;
         }
@@ -31,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         internal override string CheckDelete() => Expression.CheckDelete();
 
         internal override string CheckAssignExpr() => Expression.CheckAssignExpr();
-        public override string NodeName => "parenthesized expression";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Expression != null) yield return Expression;

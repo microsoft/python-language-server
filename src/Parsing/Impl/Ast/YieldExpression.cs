@@ -24,6 +24,8 @@ namespace Microsoft.Python.Parsing.Ast {
     //    x = yield z
     // The return value (x) is provided by calling Generator.Send()
     public class YieldExpression : Expression {
+        private const string _nodeName = "yield expression";
+
         public YieldExpression(Expression expression) {
             Expression = expression;
         }
@@ -52,7 +54,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckAugmentedAssign() => CheckAssign();
 
-        public override string NodeName => "yield expression";
+        public override string NodeName => _nodeName;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));

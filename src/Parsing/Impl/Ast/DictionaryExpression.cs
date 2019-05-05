@@ -17,18 +17,19 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class DictionaryExpression : Expression {
+        private const string _nodeName = "dictionary display";
+
         public DictionaryExpression(ImmutableArray<SliceExpression> items) {
             Items = items;
         }
 
         public ImmutableArray<SliceExpression> Items { get; }
 
-        public override string NodeName => "dictionary display";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() => Items;
 

@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class IndexExpression : Expression {
+        private const string _nodeName = "subscript";
+
         public IndexExpression(Expression target, Expression index) {
             Target = target;
             Index = index;
@@ -33,7 +35,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckDelete() => null;
 
-        public override string NodeName => "subscript";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Target != null) yield return Target;

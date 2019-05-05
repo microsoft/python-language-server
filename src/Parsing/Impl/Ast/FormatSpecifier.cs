@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FormatSpecifier : Expression {
+        private const string _nodeName = "format specifier";
+
         private readonly Node[] _children;
 
         public FormatSpecifier(Node[] children, string unparsed) {
@@ -18,7 +20,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public readonly string Unparsed;
 
-        public override string NodeName => "format specifier";
+        public override string NodeName => _nodeName;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

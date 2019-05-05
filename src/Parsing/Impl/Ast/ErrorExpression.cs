@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ErrorExpression : Expression {
+        private const string _nodeName = "error expression";
+
         private readonly Expression _preceding;
         private readonly string _verbatimImage;
         private readonly ErrorExpression _nested;
@@ -32,11 +34,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public ErrorExpression(string verbatimImage, Expression preceding) : this(verbatimImage, preceding, null) { }
 
-        public override string NodeName => "error expression";
+        public override string NodeName => _nodeName;
 
         public ErrorExpression AddPrefix(string verbatimImage, Expression preceding) => new ErrorExpression(verbatimImage, preceding, this);
-
-        public string VerbatimImage => _verbatimImage;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             _preceding?.AppendCodeString(res, ast, format);

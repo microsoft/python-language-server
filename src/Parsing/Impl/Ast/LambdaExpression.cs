@@ -21,13 +21,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class LambdaExpression : Expression {
+        private const string _nodeName = "lambda";
+
         public LambdaExpression(FunctionDefinition function) {
             Function = function;
         }
 
         public FunctionDefinition Function { get; }
 
-        public override string NodeName => "lambda";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Function != null) yield return Function;

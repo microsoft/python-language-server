@@ -48,6 +48,8 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public sealed class ListComprehension : Comprehension {
+        private const string _nodeName = "list comprehension";
+
         public ListComprehension(Expression item, ImmutableArray<ComprehensionIterator> iterators) {
             Item = item;
             Iterators = iterators;
@@ -57,7 +59,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override ImmutableArray<ComprehensionIterator> Iterators { get; }
 
-        public override string NodeName => "list comprehension";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Item != null) yield return Item;
@@ -92,6 +94,8 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public sealed class SetComprehension : Comprehension {
+        private const string _nodeName = "set comprehension";
+
         public SetComprehension(Expression item, ImmutableArray<ComprehensionIterator> iterators) {
             Item = item;
             Iterators = iterators;
@@ -101,7 +105,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override ImmutableArray<ComprehensionIterator> Iterators { get; }
 
-        public override string NodeName => "set comprehension";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Item != null) yield return Item;
@@ -136,6 +140,7 @@ namespace Microsoft.Python.Parsing.Ast {
     }
 
     public sealed class DictionaryComprehension : Comprehension {
+        private const string _nodeName = "dict comprehension";
         private readonly SliceExpression _value;
 
         public DictionaryComprehension(SliceExpression value, ImmutableArray<ComprehensionIterator> iterators) {
@@ -144,12 +149,11 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public Expression Key => _value.SliceStart;
-
         public Expression Value => _value.SliceStop;
 
         public override ImmutableArray<ComprehensionIterator> Iterators { get; }
 
-        public override string NodeName => "dict comprehension";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (_value != null) yield return _value;

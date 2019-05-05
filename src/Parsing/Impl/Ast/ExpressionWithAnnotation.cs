@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ExpressionWithAnnotation : Expression {
+        private const string _nodeName = "annotated expression";
+
         public ExpressionWithAnnotation(Expression expression, Expression annotation) {
             Expression = expression;
             Annotation = annotation;
@@ -35,11 +37,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public Expression Expression { get; }
         public Expression Annotation { get; }
 
-        public override string NodeName => "annotated expression";
+        public override string NodeName => _nodeName;
 
         internal override string CheckAssign() => null;
-        internal override string CheckAugmentedAssign() => "cannot assign to " + NodeName;
-        internal override string CheckDelete() => "cannot delete " + NodeName;
+        internal override string CheckAugmentedAssign() => $"cannot assign to {NodeName}";
+        internal override string CheckDelete() => $"cannot delete {NodeName}";
 
         public override IEnumerable<Node> GetChildNodes() => new[] {Expression, Annotation};
 
@@ -51,7 +53,7 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
-        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken) {
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
                 if (Expression != null) {
                     await Expression.WalkAsync(walker, cancellationToken);

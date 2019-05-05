@@ -25,13 +25,15 @@ namespace Microsoft.Python.Parsing.Ast {
     // The return value (x) is taken from the value attribute of a StopIteration
     // error raised by next(z) or z.send().
     public class YieldFromExpression : Expression {
+        private const string _nodeName = "yield from expression";
+
         public YieldFromExpression(Expression expression) {
             Expression = expression;
         }
 
         public Expression Expression { get; }
 
-        public override string NodeName => "yield from expression";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Expression != null) yield return Expression;

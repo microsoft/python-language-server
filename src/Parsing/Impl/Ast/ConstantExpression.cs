@@ -25,6 +25,8 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ConstantExpression : Expression {
+        private const string _nodeName = "literal";
+
         public ConstantExpression(object value) {
             Value = value;
         }
@@ -47,7 +49,7 @@ namespace Microsoft.Python.Parsing.Ast {
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public override string NodeName => "literal";
+        public override string NodeName => _nodeName;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             var verbatimPieces = this.GetVerbatimNames(ast);

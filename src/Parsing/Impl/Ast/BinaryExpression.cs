@@ -21,7 +21,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public partial class BinaryExpression : Expression {
+    public class BinaryExpression : Expression {
+        private const string _nodeName = "binary operator";
+
         public BinaryExpression(PythonOperator op, Expression left, Expression right, int operatorIndex) {
             if (op == PythonOperator.None) {
                 throw new ArgumentException("bad operator");
@@ -60,7 +62,7 @@ namespace Microsoft.Python.Parsing.Ast {
             return false;
         }
 
-        public override string NodeName => "binary operator";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Left != null) yield return Left;

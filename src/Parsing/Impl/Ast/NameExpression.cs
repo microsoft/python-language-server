@@ -21,8 +21,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class NameExpression : Expression {
-        public static readonly NameExpression[] EmptyArray = new NameExpression[0];
-        public static readonly NameExpression Empty = new NameExpression(string.Empty);
+        private const string _nodeName = "name";
 
         public NameExpression(string name) {
             Name = name ?? "";
@@ -30,11 +29,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public string/*!*/ Name { get; }
 
-        public override string ToString() => base.ToString() + ":" + Name;
+        public override string ToString() => $"{base.ToString()}:{Name}";
         internal override string CheckAssign() => null;
         internal override string CheckDelete() => null;
         internal override string CheckAssignExpr() => null;
-        public override string NodeName => "name";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
 
@@ -49,11 +48,6 @@ namespace Microsoft.Python.Parsing.Ast {
             }
             await walker.PostWalkAsync(this, cancellationToken);
         }
-
-        public PythonReference GetVariableReference(PythonAst ast) => GetVariableReference(this, ast);
-
-        public void AddPreceedingWhiteSpace(PythonAst ast, string whiteSpace) 
-            => ast.SetAttribute(this, NodeAttributes.PreceedingWhiteSpace, whiteSpace);
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpaceDefaultNull(ast));

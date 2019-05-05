@@ -24,6 +24,8 @@ namespace Microsoft.Python.Parsing.Ast {
     //    x = await z
     // TODO: The return value (x) is provided by calling ...
     public class AwaitExpression : Expression {
+        private const string _nodeName = "await expression";
+
         public AwaitExpression(Expression expression) {
             Expression = expression;
         }
@@ -52,7 +54,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckAugmentedAssign() => CheckAssign();
 
-        public override string NodeName => "await expression";
+        public override string NodeName => _nodeName;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));

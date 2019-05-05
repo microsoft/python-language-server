@@ -20,13 +20,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class BackQuoteExpression : Expression {
+        private const string _nodeName = "string conversion";
+
         public BackQuoteExpression(Expression expression) {
             Expression = expression;
         }
 
         public Expression Expression { get; }
 
-        public override string NodeName => "string conversion";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Expression != null) yield return Expression;

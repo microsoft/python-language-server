@@ -20,6 +20,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class UnaryExpression : Expression {
+        private const string _nodeName = "unary operator";
+
         public UnaryExpression(PythonOperator op, Expression expression) {
             Op = op;
             Expression = expression;
@@ -30,7 +32,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public PythonOperator Op { get; }
 
-        public override string NodeName => "unary operator";
+        public override string NodeName => _nodeName;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             format.ReflowComment(res, this.GetPreceedingWhiteSpace(ast));

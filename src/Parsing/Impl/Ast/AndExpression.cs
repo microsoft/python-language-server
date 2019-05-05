@@ -21,6 +21,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class AndExpression : Expression {
+        private const string _nodeName = "and expression";
+
         public AndExpression(Expression left, Expression right, int andIndex) {
             Left = left ?? throw new ArgumentNullException(nameof(left));
             Right = right;
@@ -33,7 +35,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public Expression Right { get; }
         public int AndIndex { get; }
 
-        public override string NodeName => "and expression";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             yield return Left;

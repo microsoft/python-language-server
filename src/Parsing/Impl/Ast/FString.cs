@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FString : Expression {
+        private const string _nodeName = "f-string expression";
+
         private readonly Node[] _children;
         private readonly string _openQuotes;
 
@@ -20,7 +22,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public readonly string Unparsed;
 
-        public override string NodeName => "f-string expression";
+        public override string NodeName => _nodeName;
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -31,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
             walker.PostWalk(this);
         }
 
-        public async override Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
+        public override async Task WalkAsync(PythonWalkerAsync walker, CancellationToken cancellationToken = default) {
             if (await walker.WalkAsync(this, cancellationToken)) {
                 foreach (var child in _children) {
                     await child.WalkAsync(walker, cancellationToken);
@@ -45,7 +47,7 @@ namespace Microsoft.Python.Parsing.Ast {
             var verbatimComments = this.GetListWhiteSpace(ast);
             if (verbatimPieces != null) {
                 // string+ / bytes+, such as "abc" "abc", which can spawn multiple lines, and 
-                // have comments in between the peices.
+                // have comments in between the pieces.
                 for (var i = 0; i < verbatimPieces.Length; i++) {
                     if (verbatimComments != null && i < verbatimComments.Length) {
                         format.ReflowComment(res, verbatimComments[i]);

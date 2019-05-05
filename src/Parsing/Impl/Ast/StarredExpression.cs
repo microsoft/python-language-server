@@ -20,6 +20,9 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class StarredExpression : Expression {
+        private const string _nodeName = "starred";
+        private const string _augmentedAssignError = "invalid syntax";
+
         public StarredExpression(Expression expr) : this(expr, 1) { }
 
         public StarredExpression(Expression expr, int starCount) {
@@ -31,7 +34,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int StarCount { get; }
 
-        public override string NodeName => "starred";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             yield return Expression;
@@ -53,7 +56,7 @@ namespace Microsoft.Python.Parsing.Ast {
         internal override string CheckAssign()
             => StarCount == 1 ? "starred assignment target must be in a list or tuple" : "invalid syntax";
 
-        internal override string CheckAugmentedAssign() => "invalid syntax";
+        internal override string CheckAugmentedAssign() => _augmentedAssignError;
 
         internal override void AppendCodeString(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             res.Append(this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? "");

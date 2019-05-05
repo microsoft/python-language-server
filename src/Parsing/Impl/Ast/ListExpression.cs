@@ -23,11 +23,12 @@ using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ListExpression : SequenceExpression {
+        private const string _nodeName = "list display";
         public ListExpression(ImmutableArray<Expression> items)
             : base(items) {
         }
 
-        public override string NodeName => "list display";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() => Items;
 

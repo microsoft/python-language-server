@@ -17,11 +17,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class CallExpression : Expression {
+        private const string _nodeName = "function call";
+
         public CallExpression(Expression target, ImmutableArray<Arg> args) {
             Target = target;
             Args = args;
@@ -70,7 +71,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal override string CheckDelete() => "can't delete function call";
 
-        public override string NodeName => "function call";
+        public override string NodeName => _nodeName;
 
         public override IEnumerable<Node> GetChildNodes() {
             if (Target != null) yield return Target;

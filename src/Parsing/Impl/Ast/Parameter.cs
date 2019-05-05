@@ -25,6 +25,7 @@ namespace Microsoft.Python.Parsing.Ast {
     /// Parameter base class
     /// </summary>
     public class Parameter : Node {
+        private const string _nodeName = "parameter name";
         internal static readonly object WhitespacePrecedingAssign = new object();
 
         public Parameter(NameExpression name, ParameterKind kind) {
@@ -32,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Kind = kind;
         }
 
-        public override string NodeName => "parameter name";
+        public override string NodeName => _nodeName;
 
         /// <summary>
         /// Parameter name
