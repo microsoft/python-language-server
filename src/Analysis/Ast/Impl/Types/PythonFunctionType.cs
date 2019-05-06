@@ -122,8 +122,8 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsStub { get; internal set; }
         public bool IsUnbound => DeclaringType == null;
 
-        public IReadOnlyList<IPythonFunctionOverload> Overloads => 
-            _overloads?.ToArray() ?? (_overload != null ? new [] {_overload} : Array.Empty<IPythonFunctionOverload>());
+        public IReadOnlyList<IPythonFunctionOverload> Overloads =>
+            _overloads?.ToArray() ?? (_overload != null ? new[] { _overload } : Array.Empty<IPythonFunctionOverload>());
         #endregion
 
         #region IHasQualifiedName
@@ -143,9 +143,11 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal void AddOverload(IPythonFunctionOverload overload) {
             if (_overload != null) {
-                _overloads = new List<IPythonFunctionOverload> { _overload };
+                _overloads = new List<IPythonFunctionOverload> { _overload, overload };
                 _overload = null;
+                return;
             }
+
             if (_overloads != null) {
                 _overloads.Add(overload);
             } else {
