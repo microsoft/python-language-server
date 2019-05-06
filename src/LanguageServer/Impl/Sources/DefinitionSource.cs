@@ -82,7 +82,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         private Reference HandleFromImport(IDocumentAnalysis analysis, SourceLocation location, FromImportStatement statement, Node expr, out ILocatedMember definingMember) {
             definingMember = null;
-            
+
             // Are in the dotted name?
             var locationIndex = location.ToIndex(analysis.Ast);
             if (statement.Root.StartIndex <= locationIndex && locationIndex <= statement.Root.EndIndex) {
@@ -164,27 +164,27 @@ namespace Microsoft.Python.LanguageServer.Sources {
             definingMember = null;
 
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
-            if (m != null && scope.Variables[name] is IVariable v) {
-                definingMember = v;
-                var definition = v.Definition;
-                if (statement is ImportStatement || statement is FromImportStatement) {
-                    // If we are on the variable definition in this module,
-                    // then goto definition should go to the parent, if any.
-                    var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
-                    var index = location.ToIndex(analysis.Ast);
-                    if (indexSpan.Start <= index && index < indexSpan.End) {
-                        if (!(v is IImportedMember im)) {
-                            return null;
-                        }
-                        definition = im.Parent.Definition;
+            if (m == null || !(scope.Variables[name] is IVariable v)) {
+                return null;
+            }
+
+            definingMember = v;
+            if (statement is ImportStatement || statement is FromImportStatement) {
+                // If we are on the variable definition in this module,
+                // then goto definition should go to the parent, if any.
+                var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
+                var index = location.ToIndex(analysis.Ast);
+                if (indexSpan.Start <= index && index < indexSpan.End) {
+                    if (!(v is IImportedMember im)) {
+                        return null;
+                    }
+                    var definition = im.Parent != null ? im.Parent.Definition : (v.Value as ILocatedMember)?.Definition;
+                    if (definition != null && CanNavigateToModule(definition.DocumentUri)) {
+                        return new Reference { range = definition.Span, uri = definition.DocumentUri };
                     }
                 }
-
-                if (CanNavigateToModule(definition.DocumentUri)) {
-                    return new Reference { range = definition.Span, uri = definition.DocumentUri };
-                }
             }
-            return null;
+            return FromMember(v);
         }
 
         private Reference FromMemberExpression(MemberExpression mex, IDocumentAnalysis analysis, out ILocatedMember definingMember) {
