@@ -175,10 +175,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
                 var index = location.ToIndex(analysis.Ast);
                 if (indexSpan.Start <= index && index < indexSpan.End) {
-                    if (!(v is IImportedMember im)) {
-                        return null;
-                    }
-                    var definition = im.Parent != null ? im.Parent.Definition : (v.Value as ILocatedMember)?.Definition;
+                    var parent = (v as IImportedMember)?.Parent;
+                    var definition = parent?.Definition ?? (v.Value as ILocatedMember)?.Definition;
                     if (definition != null && CanNavigateToModule(definition.DocumentUri)) {
                         return new Reference { range = definition.Span, uri = definition.DocumentUri };
                     }
