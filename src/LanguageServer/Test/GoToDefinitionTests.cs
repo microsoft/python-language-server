@@ -219,8 +219,7 @@ class A(object):
             var subpkgPath = TestData.GetTestSpecificUri("pkg", "subpkg", "__init__.py");
             var submodPath = TestData.GetTestSpecificUri("pkg", "submod", "__init__.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(pkgPath, string.Empty);
@@ -234,6 +233,34 @@ class A(object):
             reference.Should().NotBeNull();
             reference.uri.Should().Be(modPath);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoModuleSourceFromRelativeImport() {
+            var modAPath = TestData.GetTestSpecificUri("a.py");
+            var modBPath = TestData.GetTestSpecificUri("b.py");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            var modA = rdt.OpenDocument(modAPath, "from .b import X");
+            var modB = rdt.OpenDocument(modBPath, @"
+z = 1
+def X(): ...
+");
+            var analysis = await modA.GetAnalysisAsync(-1);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(1, 7), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("b.py");
+            reference.range.Should().Be(0, 0, 0, 0);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(1, 16), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 4, 2, 5);
+            reference.uri.AbsolutePath.Should().Contain("b.py");
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task EmptyAnalysis() {

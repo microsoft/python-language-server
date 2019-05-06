@@ -96,6 +96,12 @@ namespace Microsoft.Python.Parsing {
             return string.Empty;
         }
 
+        public static bool IsUnary(this PythonOperator self) =>
+            self == PythonOperator.Not ||
+            self == PythonOperator.Pos ||
+            self == PythonOperator.Invert ||
+            self == PythonOperator.Negate;
+
         public static bool IsComparison(this PythonOperator self) => self == PythonOperator.LessThan ||
                     self == PythonOperator.LessThanOrEqual ||
                     self == PythonOperator.GreaterThan ||
@@ -106,5 +112,22 @@ namespace Microsoft.Python.Parsing {
                     self == PythonOperator.NotIn ||
                     self == PythonOperator.IsNot ||
                     self == PythonOperator.Is;
+
+        public static PythonOperator InvertComparison(this PythonOperator self) {
+            switch (self) {
+                case PythonOperator.LessThan: return PythonOperator.GreaterThanOrEqual;
+                case PythonOperator.LessThanOrEqual: return PythonOperator.GreaterThan;
+                case PythonOperator.GreaterThan: return PythonOperator.LessThanOrEqual;
+                case PythonOperator.GreaterThanOrEqual: return PythonOperator.LessThan;
+                case PythonOperator.Equal: return PythonOperator.NotEqual;
+                case PythonOperator.NotEqual: return PythonOperator.Equal;
+                case PythonOperator.In: return PythonOperator.NotIn;
+                case PythonOperator.NotIn: return PythonOperator.In;
+                case PythonOperator.IsNot: return PythonOperator.Is;
+                case PythonOperator.Is: return PythonOperator.IsNot;
+            }
+
+            return PythonOperator.None;
+        }
     }
 }

@@ -41,7 +41,8 @@ b = 1 + 2. + 3.
 c = 1. + 2 + 3.
 d = 1. + 2. + 3 # d is 'int', should be 'float'
 e = 1 + 1L # e is a 'float', should be 'long' under v2.x (error under v3.x)
-f = 1 / 2 # f is 'int', should be 'float' under v3.x";
+f = 1 / 2 # f is 'int', should be 'float' under v3.x
+g = 1. + 2. + 3j";
 
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Float)
@@ -49,7 +50,8 @@ f = 1 / 2 # f is 'int', should be 'float' under v3.x";
                 .And.HaveVariable("c").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("e").OfType(BuiltinTypeId.Long)
-                .And.HaveVariable("f").OfType(BuiltinTypeId.Int);
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.Complex);
         }
 
         [TestMethod, Priority(0)]
@@ -59,14 +61,16 @@ a = 1. + 2. + 3. # no type info for a, b or c
 b = 1 + 2. + 3.
 c = 1. + 2 + 3.
 d = 1. + 2. + 3 # d is 'int', should be 'float'
-f = 1 / 2 # f is 'int', should be 'float' under v3.x";
+f = 1 / 2 # f is 'int', should be 'float' under v3.x
+g = 1. + 2. + 3j";
 
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("c").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Float)
-                .And.HaveVariable("f").OfType(BuiltinTypeId.Float);
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.Complex);
         }
 
         [TestMethod, Priority(0)]

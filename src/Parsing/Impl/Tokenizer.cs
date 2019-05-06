@@ -47,7 +47,6 @@ namespace Microsoft.Python.Parsing {
         private int _position, _end, _tokenEnd, _start, _tokenStartIndex, _tokenEndIndex;
         private bool _bufferResized;
         private readonly TokenizerOptions _options;
-        private readonly Action<SourceSpan, string> _commentProcessor;
 
         private const int EOF = -1;
         private const int MaxIndent = 80;
@@ -59,13 +58,8 @@ namespace Microsoft.Python.Parsing {
         // pre-calculated strings for space indentation strings so we usually don't allocate.
         private static readonly string[] SpaceIndentation, TabIndentation;
 
-        public Tokenizer(PythonLanguageVersion version, ErrorSink errorSink = null, TokenizerOptions options = TokenizerOptions.None)
-            : this(version, errorSink, options, null) {
-        }
-
-        public Tokenizer(PythonLanguageVersion version, ErrorSink errorSink, TokenizerOptions options, Action<SourceSpan, string> commentProcessor) {
+        public Tokenizer(PythonLanguageVersion version, ErrorSink errorSink = null, TokenizerOptions options = TokenizerOptions.None) {
             _errors = errorSink ?? ErrorSink.Null;
-            _commentProcessor = commentProcessor;
             _state = new State(options);
             PrintFunction = false;
             UnicodeLiterals = false;
@@ -619,22 +613,10 @@ namespace Microsoft.Python.Parsing {
             return ch;
         }
 
-        private void ProcessComment() {
-            if (_commentProcessor != null) {
-                var tokenSpan = TokenSpan;
-                if (tokenSpan.Length > 0) {
-                    var span = new SourceSpan(IndexToLocation(tokenSpan.Start), IndexToLocation(tokenSpan.End));
-                    var text = GetTokenString();
-                    _commentProcessor(span, text);
-                }
-            }
-        }
-
         private int SkipSingleLineComment() {
             // do single-line comment:
             var ch = ReadLine();
             MarkTokenEnd();
-            ProcessComment();
 
             // discard token '# ...':
             DiscardToken();
@@ -647,7 +629,6 @@ namespace Microsoft.Python.Parsing {
             // do single-line comment:
             ch = ReadLine();
             MarkTokenEnd();
-            ProcessComment();
 
             return new CommentToken(GetTokenString());
         }

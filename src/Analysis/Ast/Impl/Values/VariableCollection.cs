@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -23,100 +24,102 @@ using Microsoft.Python.Analysis.Types;
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
     internal sealed class VariableCollection : IVariableCollection {
-        public static readonly VariableCollection Empty = new VariableCollection();
-        private Dictionary<string, Variable> _variables;
-        private readonly object _lock = new object();
+        public static readonly IVariableCollection Empty = new VariableCollection();
+        private readonly object _syncObj = new object();
+        private readonly Dictionary<string, Variable> _variables = new Dictionary<string, Variable>();
 
-        private Dictionary<string, Variable> Variables {
-            get {
-                lock (_lock) {
-                    return _variables ?? (_variables = new Dictionary<string, Variable>());
-                }
+        public List<Variable>.Enumerator GetEnumerator() {
+            lock (_syncObj) {
+                return _variables.Values.ToList().GetEnumerator();
             }
         }
 
         #region ICollection
         public int Count {
             get {
-                lock (_lock) {
-                    return _variables?.Count ?? 0;
+                lock (_syncObj) {
+                    return _variables.Count;
                 }
             }
         }
 
-        public IEnumerator<IVariable> GetEnumerator() {
-            lock (_lock) {
-                return _variables != null
-                    ? _variables.Values.ToList().GetEnumerator()
-                    : Enumerable.Empty<IVariable>().GetEnumerator();
-            }
-        }
+        IEnumerator<IVariable> IEnumerable<IVariable>.GetEnumerator() => GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #endregion
 
         #region IVariableCollection
-
         public IVariable this[string name] {
             get {
-                lock (_lock) {
-                    return _variables != null 
-                        ? _variables.TryGetValue(name, out var v) ? v : null
-                        : null;
+                lock (_syncObj) {
+                    return _variables.TryGetValue(name, out var v) ? v : default;
                 }
             }
         }
 
         public bool Contains(string name) {
-            lock (_lock) {
-                return _variables != null && _variables.ContainsKey(name);
+            lock (_syncObj) {
+                return _variables.ContainsKey(name);
             }
         }
 
         public IReadOnlyList<string> Names {
             get {
-                lock (_lock) {
-                    return _variables != null ? _variables.Keys.ToArray() : Array.Empty<string>();
+                lock (_syncObj) {
+                    return _variables.Keys.ToArray();
                 }
             }
         }
 
         public bool TryGetVariable(string key, out IVariable value) {
-            value = null;
-            lock (_lock) {
-                if (_variables != null && _variables.TryGetValue(key, out var v)) {
+            lock (_syncObj) {
+                if (_variables.TryGetValue(key, out var v)) {
                     value = v;
+                    return true;
                 }
+
+                value = null;
+                return false;
             }
-            return value != null;
         }
         #endregion
 
         #region IMemberContainer
-        public IMember GetMember(string name) => TryGetVariable(name, out var v) ? v : null;
-        public IEnumerable<string> GetMemberNames() => Names;
+        public IMember GetMember(string name) {
+            lock (_syncObj) {
+                return _variables.TryGetValue(name, out var v) ? v : null;
+            }
+        }
+
+        public IEnumerable<string> GetMemberNames() {
+            lock (_syncObj) {
+                return _variables.Keys.ToArray();
+            }
+        }
+
         #endregion
 
         internal void DeclareVariable(string name, IMember value, VariableSource source, Location location = default) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            lock (_lock) {
-                if (Variables.TryGetValue(name, out var existing)) {
+            lock (_syncObj) {
+                if (_variables.TryGetValue(name, out var existing)) {
                     existing.Assign(value, location);
                 } else {
-                    Variables[name] = new Variable(name, value, source, location);
+                    _variables[name] = new Variable(name, value, source, location);
                 }
             }
         }
 
         internal void LinkVariable(string name, IVariable v, Location location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            lock (_lock) {
-                Variables[name] = new ImportedVariable(name, v, location);
+            var variable =  new Variable(name, v, location);
+            lock (_syncObj) {
+                _variables[name] = variable;
             }
         }
 
         internal void RemoveVariable(string name) {
-            lock (_lock) {
-                _variables?.Remove(name);
+            lock (_syncObj) {
+                _variables.Remove(name);
             }
         }
     }

@@ -160,6 +160,38 @@ with X():
         }
 
         [TestMethod, Priority(0)]
+        public async Task WithIOStatement() {
+            const string code = @"
+with open('a', 'r') as r:
+    pass
+with open('a', 'rb') as rb:
+    pass
+with open('a', 'w') as w:
+    pass
+with open('a', 'wb') as wb:
+    pass
+with open('a', 'rw') as rw:
+    pass
+with open('a', 'rwb') as rwb:
+    pass
+with open('a', 'x') as x:
+    pass
+with open('a', 'xb') as xb:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("r").OfType("TextIOWrapper")
+                .And.HaveVariable("rb").OfType("BufferedReader")
+                .And.HaveVariable("w").OfType("TextIOWrapper")
+                .And.HaveVariable("wb").OfType("BufferedWriter")
+                .And.HaveVariable("rw").OfType("TextIOWrapper")
+                .And.HaveVariable("rwb").OfType("BufferedRandom")
+                .And.HaveVariable("x").OfType("TextIOWrapper")
+                .And.HaveVariable("xb").OfType("BufferedWriter");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Global() {
             const string code = @"
 x = None

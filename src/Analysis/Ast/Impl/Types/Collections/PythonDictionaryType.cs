@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
@@ -30,10 +29,6 @@ namespace Microsoft.Python.Analysis.Types.Collections {
                 : EmptyDictionary<IMember, IMember>.Instance;
             return new PythonDictionary(this, contents);
         }
-
-        // Constructor call
-        public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => CreateInstance(Name, args);
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.Dict;
         public override PythonMemberType MemberType => PythonMemberType.Class;
