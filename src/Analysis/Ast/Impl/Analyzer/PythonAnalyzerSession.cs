@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly int _maxTaskRunning = Environment.ProcessorCount;
         private readonly object _syncObj = new object();
 
-        private readonly IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> _walker;
+        private IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> _walker;
         private readonly PythonAnalyzerEntry _entry;
         private readonly Action<Task> _startNextSession;
         private readonly CancellationToken _analyzerCancellationToken;
@@ -131,7 +131,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var originalRemaining = _walker.Remaining;
             var remaining = originalRemaining;
             try {
-                _log?.Log(TraceEventType.Verbose, $"Analysis version {_walker.Version} of {originalRemaining} entries has started.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis version {Version} of {originalRemaining} entries has started.");
                 remaining = await AnalyzeAffectedEntriesAsync(stopWatch);
             } finally {
                 stopWatch.Stop();
@@ -140,6 +140,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                     _state = State.Completed;
+                    _walker = null;
                 }
 
                 if (!isCanceled) {
@@ -149,9 +150,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var elapsed = stopWatch.Elapsed.TotalMilliseconds;
 
+            SendTelemetry(_telemetry, elapsed, originalRemaining, remaining, Version);
+            LogResults(_log, elapsed, originalRemaining, remaining, Version);
             ForceGCIfNeeded(originalRemaining, remaining);
-            SendTelemetry(elapsed, originalRemaining, remaining, _walker.Version);
-            LogResults(elapsed, originalRemaining, remaining, _walker.Version);
         }
 
         private static void ForceGCIfNeeded(int originalRemaining, int remaining) {
@@ -161,8 +162,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void SendTelemetry(double elapsed, int originalRemaining, int remaining, int version) {
-            if (_telemetry == null) {
+        private static void SendTelemetry(ITelemetryService telemetry, double elapsed, int originalRemaining, int remaining, int version) {
+            if (telemetry == null) {
                 return;
             }
 
@@ -191,20 +192,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
             e.Measurements["entries"] = originalRemaining;
             e.Measurements["version"] = version;
 
-            _telemetry.SendTelemetryAsync(e).DoNotWait();
+            telemetry.SendTelemetryAsync(e).DoNotWait();
         }
 
-        private void LogResults(double elapsed, int originalRemaining, int remaining, int version) {
-            if (_log == null) {
+        private static void LogResults(ILogger logger, double elapsed, int originalRemaining, int remaining, int version) {
+            if (logger == null) {
                 return;
             }
             
             if (remaining == 0) {
-                _log.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been completed in {elapsed} ms.");
+                logger.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been completed in {elapsed} ms.");
             } else if (remaining < originalRemaining) {
-                _log.Log(TraceEventType.Verbose, $"Analysis version {version} has been completed in {elapsed} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
+                logger.Log(TraceEventType.Verbose, $"Analysis version {version} has been completed in {elapsed} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
             } else {
-                _log.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been canceled after {elapsed}.");
+                logger.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been canceled after {elapsed}.");
             }
         }
 
@@ -289,7 +290,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 module = node.Value.Module;
                 node.Value.TrySetException(exception, _walker.Version);
                 node.Commit();
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
             } finally {
                 bool isCanceled;
                 lock (_syncObj) {
@@ -299,8 +300,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (!isCanceled) {
                     _progress.ReportRemaining(_walker.Remaining);
                 }
-                ace?.Signal();
+
                 Interlocked.Decrement(ref _runningTasks);
+                ace?.Signal();
             }
         }
 
@@ -328,7 +330,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             } catch (Exception exception) {
                 var module = _entry.Module;
                 _entry.TrySetException(exception, Version);
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
             } finally {
                 stopWatch.Stop();
                 Interlocked.Decrement(ref _runningTasks);

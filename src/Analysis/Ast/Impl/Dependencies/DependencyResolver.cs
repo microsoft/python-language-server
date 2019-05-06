@@ -204,7 +204,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
 
-                walker = new DependencyChainWalker(startingVertices, affectedValues, missingKeys, totalNodesCount, version);
+                walker = new DependencyChainWalker(startingVertices, affectedValues, depths, missingKeys, totalNodesCount, version);
                 return true;
             }
         }
@@ -302,7 +302,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             return true;
         }
 
-        private static int[] CalculateDepths(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices) {
+        private static ImmutableArray<int> CalculateDepths(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices) {
             var depths = new int[vertices.Count];
             for (var i = 0; i < depths.Length; i++) {
                 depths[i] = -1;
@@ -324,7 +324,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
-            return depths;
+            return ImmutableArray<int>.Create(depths);
         }
 
         private static void SetDepths(int[] depths, ImmutableArray<DependencyVertex<TKey, TValue>> vertices, ImmutableArray<int> indices, int depth) {
@@ -508,6 +508,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         private sealed class DependencyChainWalker : IDependencyChainWalker<TKey, TValue> {
             private readonly ImmutableArray<WalkingVertex<TKey, TValue>> _startingVertices;
+            private readonly ImmutableArray<int> _depths;
             private readonly object _syncObj;
             private int _remaining;
             private PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
@@ -527,11 +528,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
             public DependencyChainWalker(
                 in ImmutableArray<WalkingVertex<TKey, TValue>> startingVertices,
                 in ImmutableArray<TValue> affectedValues,
+                in ImmutableArray<int> depths,
                 in ImmutableArray<TKey> missingKeys,
                 in int totalNodesCount,
                 in int version) {
                 _syncObj = new object();
                 _startingVertices = startingVertices;
+                _depths = depths;
                 AffectedValues = affectedValues;
                 Version = version;
                 MissingKeys = missingKeys;
@@ -546,7 +549,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                         _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
 
                         foreach (var vertex in _startingVertices) {
-                            _ppc.Produce(new DependencyChainNode(this, vertex));
+                            _ppc.Produce(new DependencyChainNode(this, vertex, _depths[vertex.DependencyVertex.Index]));
                         }
                     }
 
@@ -587,7 +590,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     _ppc.Produce(null);
                 } else {
                     foreach (var toProduce in verticesToProduce) {
-                        _ppc.Produce(new DependencyChainNode(this, toProduce));
+                        _ppc.Produce(new DependencyChainNode(this, toProduce, _depths[toProduce.DependencyVertex.Index]));
                     }
                 }
             }
@@ -597,10 +600,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private readonly WalkingVertex<TKey, TValue> _vertex;
             private DependencyChainWalker _walker;
             public TValue Value => _vertex.DependencyVertex.Value;
+            public int VertexDepth { get; }
 
-            public DependencyChainNode(DependencyChainWalker walker, WalkingVertex<TKey, TValue> vertex) {
+            public DependencyChainNode(DependencyChainWalker walker, WalkingVertex<TKey, TValue> vertex, int depth) {
                 _walker = walker;
                 _vertex = vertex;
+                VertexDepth = depth;
             }
 
             public void Commit() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex, true);
