@@ -111,7 +111,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         internal void LinkVariable(string name, IVariable v, Location location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            var variable =  new Variable(name, v, location);
+            var variable =  new Variable(name, v, VariableSource.Import, location);
             lock (_syncObj) {
                 _variables[name] = variable;
             }

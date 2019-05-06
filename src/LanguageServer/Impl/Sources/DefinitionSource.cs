@@ -165,7 +165,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
             if (m != null && scope.Variables[name] is IVariable v) {
-                member = v;
+                definingMember = v;
                 var definition = v.Definition;
                 if (statement is ImportStatement || statement is FromImportStatement) {
                     // If we are on the variable definition in this module,
