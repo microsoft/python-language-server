@@ -75,9 +75,8 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override IMember CreateInstance(string typeName, IArgumentSet args)
             => new PythonCollection(this, args.Arguments.Select(a => a.Value).OfType<IMember>().ToArray());
 
-        // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => CreateInstance(Name, args);
+            => DeclaringModule.Interpreter.GetBuiltinType(TypeId)?.Call(instance, memberName, args);
 
         public override IMember Index(IPythonInstance instance, object index)
             => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
