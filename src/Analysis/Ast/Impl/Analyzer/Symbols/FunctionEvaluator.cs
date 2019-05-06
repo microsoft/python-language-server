@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly IPythonClassType _self;
         private bool _isConstructor;
 
-        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload) 
+        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload)
             : base(eval, overload.FunctionDefinition) {
 
             _overload = overload;
@@ -71,17 +71,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     }
                 }
 
-                if (!stub) {
-                    // Do process body of constructors since they may be declaring
-                    // variables that are later used to determine return type of other
-                    // methods and properties.
-                    _isConstructor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
-                    if (_isConstructor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
-                        // Return type from the annotation is sufficient for libraries
-                        // and stubs, no need to walk the body.
-                        DeclareParameters(true);
-                        FunctionDefinition.Body?.Walk(this);
-                    }
+                DeclareParameters(!stub);
+
+                // Do process body of constructors since they may be declaring
+                // variables that are later used to determine return type of other
+                // methods and properties.
+                _isConstructor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+                if (_isConstructor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                    // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
+                    FunctionDefinition.Body?.Walk(this);
                 }
             }
             Result = _function;
