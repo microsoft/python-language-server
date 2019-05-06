@@ -26,8 +26,8 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal class PythonFunctionType : PythonType, IPythonFunctionType {
-        private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
-        private readonly object _lock = new object();
+        private IPythonFunctionOverload _overload;
+        private List<IPythonFunctionOverload> _overloads;
         private readonly string _documentation;
         private bool _isAbstract;
         private bool _isSpecialized;
@@ -122,7 +122,8 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsStub { get; internal set; }
         public bool IsUnbound => DeclaringType == null;
 
-        public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
+        public IReadOnlyList<IPythonFunctionOverload> Overloads =>
+            _overloads?.ToArray() ?? (_overload != null ? new[] { _overload } : Array.Empty<IPythonFunctionOverload>());
         #endregion
 
         #region IHasQualifiedName
@@ -141,8 +142,16 @@ namespace Microsoft.Python.Analysis.Types {
         internal ImmutableArray<string> Dependencies { get; private set; } = ImmutableArray<string>.Empty;
 
         internal void AddOverload(IPythonFunctionOverload overload) {
-            lock (_lock) {
+            if (_overload != null) {
+                _overloads = new List<IPythonFunctionOverload> { _overload, overload };
+                _overload = null;
+                return;
+            }
+
+            if (_overloads != null) {
                 _overloads.Add(overload);
+            } else {
+                _overload = overload;
             }
         }
 
