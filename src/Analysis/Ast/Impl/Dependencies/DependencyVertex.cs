@@ -13,7 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
@@ -21,62 +24,64 @@ namespace Microsoft.Python.Analysis.Dependencies {
     internal sealed class DependencyVertex<TKey, TValue> {
         public TKey Key { get; }
         public TValue Value { get; }
+        public bool IsRoot { get; }
         public int Version { get; }
         public int Index { get; }
         public string DebuggerDisplay => $"{Key}:{Value}";
 
-        public bool IsSealed { get; private set; }
-        public bool HasMissingKeys { get; private set; }
+        public bool IsSealed => _state >= (int)State.Sealed;
+        public bool IsWalked => _state == (int)State.Walked;
 
-        public ImmutableArray<TKey> IncomingKeys { get; }
-        public ImmutableArray<int> Incoming { get; private set; }
-        public ImmutableArray<int> Outgoing { get; private set; }
+        public ImmutableArray<int> Incoming { get; }
 
-        public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, TValue value, ImmutableArray<TKey> incomingKeys, int version) {
-            Value = value;
-            Version = version;
-            IncomingKeys = incomingKeys;
+        private int _state;
+        private HashSet<int> _outgoing;
+        private static HashSet<int> _empty = new HashSet<int>();
 
+        public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, int version) {
             Key = oldVertex.Key;
+            Value = oldVertex.Value;
+            IsRoot = oldVertex.IsRoot;
             Index = oldVertex.Index;
             Incoming = oldVertex.Incoming;
-            Outgoing = oldVertex.Outgoing;
+
+            Version = version;
+
+            _outgoing = oldVertex.Outgoing;
+            _state = (int)State.New;
         }
 
-        public DependencyVertex(TKey key, TValue value, ImmutableArray<TKey> incomingKeys, int version, int index) {
+        public DependencyVertex(TKey key, TValue value, bool isRoot, ImmutableArray<int> incoming, int version,
+            int index) {
             Key = key;
             Value = value;
+            IsRoot = isRoot;
             Version = version;
             Index = index;
 
-            IncomingKeys = incomingKeys;
-            Incoming = ImmutableArray<int>.Empty;
-            Outgoing = ImmutableArray<int>.Empty;
-        }
-        
-        public void AddOutgoing(int index) {
-            AssertIsNotSealed();
-            Outgoing = Outgoing.Add(index);
-        }
-
-        public void RemoveOutgoing(int index) {
-            AssertIsNotSealed();
-            Outgoing = Outgoing.Remove(index);
-        }
-
-        public void SetIncoming(ImmutableArray<int> incoming) {
-            AssertIsNotSealed();
             Incoming = incoming;
+
+            _state = (int)State.New;
         }
 
-        public void SetHasMissingKeys() {
-            AssertIsNotSealed();
-            HasMissingKeys = true;
+        public bool ContainsOutgoing(int index) => _outgoing != null && _outgoing.Contains(index);
+        public HashSet<int> Outgoing => _outgoing ?? _empty;
+
+        public void Seal(HashSet<int> outgoing) {
+            Debug.Assert(_state == (int)State.New);
+            _state = _outgoing != null && _outgoing.SetEquals(outgoing) ? (int)State.Walked : (int)State.Sealed;
+            _outgoing = outgoing;
         }
 
-        public void Seal() => IsSealed = true;
+        public void MarkWalked() {
+            Debug.Assert(_state >= (int)State.Sealed);
+            Interlocked.Exchange(ref _state, (int)State.Walked);
+        }
 
-        [Conditional("DEBUG")]
-        private void AssertIsNotSealed() => Debug.Assert(!IsSealed);
+        private enum State {
+            New = 0,
+            Sealed = 1,
+            Walked = 2
+        }
     }
 }

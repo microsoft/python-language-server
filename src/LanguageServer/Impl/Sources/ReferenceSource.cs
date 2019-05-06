@@ -47,7 +47,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             if (uri != null) {
                 var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
 
-                var definition = new DefinitionSource(_services).FindDefinition(analysis, location, out var definingMember);
+                var definitionSource = new DefinitionSource(_services);
+                var definition = definitionSource.FindDefinition(analysis, location, out var definingMember);
                 if (definition == null) {
                     return Array.Empty<Reference>();
                 }
@@ -59,29 +60,44 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 // then the location is invalid and the module is null. Use current module.
                 var declaringModule = rootDefinition.DeclaringModule ?? analysis.Document;
                 if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
-                    return await FindAllReferencesAsync(name, declaringModule, rootDefinition, cancellationToken);
+                    return await FindAllReferencesAsync(name, declaringModule, rootDefinition, location, definitionSource, cancellationToken);
                 }
             }
             return Array.Empty<Reference>();
         }
 
-        private async Task<Reference[]> FindAllReferencesAsync(string name, IPythonModule declaringModule, ILocatedMember rootDefinition, CancellationToken cancellationToken) {
+        private async Task<Reference[]> FindAllReferencesAsync(string name, IPythonModule declaringModule, ILocatedMember rootDefinition, SourceLocation location, DefinitionSource definitionSource,
+            CancellationToken cancellationToken) {
             var candidateFiles = ScanClosedFiles(name, cancellationToken);
-            await AnalyzeFiles(declaringModule.Interpreter.ModuleResolution, candidateFiles, cancellationToken);
+            var reloadRootDefinition = false;
+
+            if (candidateFiles.Count > 0) {
+                reloadRootDefinition = await AnalyzeFiles(declaringModule.Interpreter.ModuleResolution, candidateFiles, cancellationToken);
+            }
+
+            if (reloadRootDefinition) {
+                var analysis = await Document.GetAnalysisAsync(declaringModule.Uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
+                var definition = definitionSource.FindDefinition(analysis, location, out var definingMember);
+                if (definition == null) {
+                    return Array.Empty<Reference>();
+                }
+
+                rootDefinition = GetRootDefinition(definingMember);
+            }
 
             return rootDefinition.References
                 .Select(r => new Reference { uri = r.DocumentUri, range = r.Span })
                 .ToArray();
         }
 
-        private IEnumerable<Uri> ScanClosedFiles(string name, CancellationToken cancellationToken) {
+        private List<Uri> ScanClosedFiles(string name, CancellationToken cancellationToken) {
             var fs = _services.GetService<IFileSystem>();
             var rdt = _services.GetService<IRunningDocumentTable>();
             var interpreter = _services.GetService<IPythonInterpreter>();
 
             var root = interpreter.ModuleResolution.Root;
             if (root == null) {
-                return Enumerable.Empty<Uri>();
+                return new List<Uri>();
             }
 
             var interpreterPaths = interpreter.ModuleResolution.InterpreterPaths.ToArray();
@@ -113,7 +129,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return files;
         }
 
-        private static async Task AnalyzeFiles(IModuleManagement moduleManagement, IEnumerable<Uri> files, CancellationToken cancellationToken) {
+        private static async Task<bool> AnalyzeFiles(IModuleManagement moduleManagement, IEnumerable<Uri> files, CancellationToken cancellationToken) {
             var analysisTasks = new List<Task>();
             foreach (var f in files) {
                 if (moduleManagement.TryAddModulePath(f.ToAbsolutePath(), false, out var fullName)) {
@@ -124,7 +140,11 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
             }
 
-            await Task.WhenAll(analysisTasks);
+            if (analysisTasks.Count > 0) {
+                await Task.WhenAll(analysisTasks);
+            }
+
+            return analysisTasks.Count > 0;
         }
         
         private ILocatedMember GetRootDefinition(ILocatedMember lm) {

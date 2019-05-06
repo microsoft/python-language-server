@@ -16,6 +16,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
@@ -33,10 +34,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly int _maxTaskRunning = Environment.ProcessorCount;
         private readonly object _syncObj = new object();
 
-        private readonly IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> _walker;
+        private IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> _walker;
         private readonly PythonAnalyzerEntry _entry;
-        private readonly CancellationTokenSource _cts;
         private readonly Action<Task> _startNextSession;
+        private readonly CancellationToken _analyzerCancellationToken;
         private readonly IServiceManager _services;
         private readonly AsyncManualResetEvent _analysisCompleteEvent;
         private readonly IDiagnosticsService _diagnosticsService;
@@ -64,8 +65,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IProgressReporter progress,
             AsyncManualResetEvent analysisCompleteEvent,
             Action<Task> startNextSession,
-            CancellationToken analyzerToken,
-            CancellationToken sessionToken,
+            CancellationToken analyzerCancellationToken,
             IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker,
             int version,
             PythonAnalyzerEntry entry) {
@@ -73,18 +73,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _services = services;
             _analysisCompleteEvent = analysisCompleteEvent;
             _startNextSession = startNextSession;
+            _analyzerCancellationToken = analyzerCancellationToken;
             Version = version;
             AffectedEntriesCount = walker?.AffectedValues.Count ?? 1;
             _walker = walker;
             _entry = entry;
             _state = State.NotStarted;
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(analyzerToken, sessionToken);
 
             _diagnosticsService = _services.GetService<IDiagnosticsService>();
-            _progress = progress;
             _analyzer = _services.GetService<IPythonAnalyzer>();
             _log = _services.GetService<ILogger>();
             _telemetry = _services.GetService<ITelemetryService>();
+            _progress = progress;
         }
 
         public void Start(bool analyzeEntry) {
@@ -99,9 +99,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (analyzeEntry && _entry != null) {
-                Task.Run(() => Analyze(_entry, Version, _cts.Token), _cts.Token).DoNotWait();
+                Task.Run(() => AnalyzeEntry(), _analyzerCancellationToken).DoNotWait();
             } else {
-                StartAsync().ContinueWith(_startNextSession).DoNotWait();
+                StartAsync().ContinueWith(_startNextSession, _analyzerCancellationToken).DoNotWait();
             }
         }
 
@@ -119,12 +119,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 if (_isCanceled && notAnalyzed < _maxTaskRunning) {
                     _state = State.Completed;
-                    _cts.Dispose();
                     return;
                 }
             }
 
-            var cancellationToken = _cts.Token;
             var stopWatch = Stopwatch.StartNew();
             foreach (var affectedEntry in _walker.AffectedValues) {
                 affectedEntry.Invalidate(Version);
@@ -133,16 +131,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var originalRemaining = _walker.Remaining;
             var remaining = originalRemaining;
             try {
-                _log?.Log(TraceEventType.Verbose, $"Analysis version {_walker.Version} of {originalRemaining} entries has started.");
-                remaining = await AnalyzeAffectedEntriesAsync(stopWatch, cancellationToken);
+                _log?.Log(TraceEventType.Verbose, $"Analysis version {Version} of {originalRemaining} entries has started.");
+                remaining = await AnalyzeAffectedEntriesAsync(stopWatch);
             } finally {
-                _cts.Dispose();
                 stopWatch.Stop();
 
                 bool isCanceled;
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                     _state = State.Completed;
+                    _walker = null;
                 }
 
                 if (!isCanceled) {
@@ -152,12 +150,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var elapsed = stopWatch.Elapsed.TotalMilliseconds;
 
-            SendTelemetry(elapsed, originalRemaining, remaining, _walker.Version);
-            LogResults(elapsed, originalRemaining, remaining, _walker.Version);
+            SendTelemetry(_telemetry, elapsed, originalRemaining, remaining, Version);
+            LogResults(_log, elapsed, originalRemaining, remaining, Version);
+            ForceGCIfNeeded(originalRemaining, remaining);
         }
 
-        private void SendTelemetry(double elapsed, int originalRemaining, int remaining, int version) {
-            if (_telemetry == null) {
+        private static void ForceGCIfNeeded(int originalRemaining, int remaining) {
+            if (originalRemaining - remaining > 1000) {
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect();
+            }
+        }
+
+        private static void SendTelemetry(ITelemetryService telemetry, double elapsed, int originalRemaining, int remaining, int version) {
+            if (telemetry == null) {
                 return;
             }
 
@@ -186,30 +192,30 @@ namespace Microsoft.Python.Analysis.Analyzer {
             e.Measurements["entries"] = originalRemaining;
             e.Measurements["version"] = version;
 
-            _telemetry.SendTelemetryAsync(e).DoNotWait();
+            telemetry.SendTelemetryAsync(e).DoNotWait();
         }
 
-        private void LogResults(double elapsed, int originalRemaining, int remaining, int version) {
-            if (_log == null) {
+        private static void LogResults(ILogger logger, double elapsed, int originalRemaining, int remaining, int version) {
+            if (logger == null) {
                 return;
             }
             
             if (remaining == 0) {
-                _log.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been completed in {elapsed} ms.");
+                logger.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been completed in {elapsed} ms.");
             } else if (remaining < originalRemaining) {
-                _log.Log(TraceEventType.Verbose, $"Analysis version {version} has been completed in {elapsed} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
+                logger.Log(TraceEventType.Verbose, $"Analysis version {version} has been completed in {elapsed} ms with {originalRemaining - remaining} entries analyzed and {remaining} entries skipped.");
             } else {
-                _log.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been canceled after {elapsed}.");
+                logger.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been canceled after {elapsed}.");
             }
         }
 
-        private async Task<int> AnalyzeAffectedEntriesAsync(Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private async Task<int> AnalyzeAffectedEntriesAsync(Stopwatch stopWatch) {
             IDependencyChainNode<PythonAnalyzerEntry> node;
             var remaining = 0;
             var ace = new AsyncCountdownEvent(0);
 
             bool isCanceled;
-            while ((node = await _walker.GetNextAsync(cancellationToken)) != null) {
+            while ((node = await _walker.GetNextAsync(_analyzerCancellationToken)) != null) {
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                 }
@@ -221,13 +227,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || _walker.Remaining == 1) {
-                    Analyze(node, null, stopWatch, cancellationToken);
+                    Analyze(node, null, stopWatch);
                 } else {
-                    StartAnalysis(node, ace, stopWatch, cancellationToken).DoNotWait();
+                    StartAnalysis(node, ace, stopWatch).DoNotWait();
                 }
             }
 
-            await ace.WaitAsync(cancellationToken);
+            await ace.WaitAsync(_analyzerCancellationToken);
 
             lock (_syncObj) {
                 isCanceled = _isCanceled;
@@ -247,15 +253,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch, CancellationToken cancellationToken)
-            => Task.Run(() => Analyze(node, ace, stopWatch, cancellationToken), cancellationToken);
+        private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
+            => Task.Run(() => Analyze(node, ace, stopWatch));
 
         /// <summary>
         /// Performs analysis of the document. Returns document global scope
         /// with declared variables and inner scopes. Does not analyze chain
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
-        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch, CancellationToken cancellationToken) {
+        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
             IPythonModule module;
             try {
                 ace?.AddOne();
@@ -271,7 +277,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return;
                 }
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(entry, module, ast, _walker.Version, cancellationToken);
+                AnalyzeEntry(entry, module, ast, _walker.Version);
                 node.Commit();
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
@@ -284,7 +290,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 module = node.Value.Module;
                 node.Value.TrySetException(exception, _walker.Version);
                 node.Commit();
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
             } finally {
                 bool isCanceled;
                 lock (_syncObj) {
@@ -294,15 +300,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (!isCanceled) {
                     _progress.ReportRemaining(_walker.Remaining);
                 }
-                ace?.Signal();
+
                 Interlocked.Decrement(ref _runningTasks);
+                ace?.Signal();
             }
         }
 
-        private void Analyze(PythonAnalyzerEntry entry, int version, CancellationToken cancellationToken) {
+        private void AnalyzeEntry() {
             var stopWatch = Stopwatch.StartNew();
             try {
-                if (!entry.IsValidVersion(version, out var module, out var ast)) {
+                if (!_entry.IsValidVersion(Version, out var module, out var ast)) {
                     if (ast == null) {
                         // Entry doesn't have ast yet. There should be at least one more session.
                         Cancel();
@@ -313,24 +320,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(entry, module, ast, version, cancellationToken);
+                AnalyzeEntry(_entry, module, ast, Version);
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
-                entry.TryCancel(oce, version);
-                var module = entry.Module;
+                _entry.TryCancel(oce, Version);
+                var module = _entry.Module;
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
             } catch (Exception exception) {
-                var module = entry.Module;
-                entry.TrySetException(exception, version);
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed.");
+                var module = _entry.Module;
+                _entry.TrySetException(exception, Version);
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
             } finally {
                 stopWatch.Stop();
                 Interlocked.Decrement(ref _runningTasks);
             }
         }
 
-        private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version, CancellationToken cancellationToken) {
+        private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version) {
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
@@ -338,10 +345,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var walker = new ModuleWalker(_services, module, ast);
             ast.Walk(walker);
 
-            cancellationToken.ThrowIfCancellationRequested();
+            _analyzerCancellationToken.ThrowIfCancellationRequested();
 
             walker.Complete();
-            cancellationToken.ThrowIfCancellationRequested();
+            _analyzerCancellationToken.ThrowIfCancellationRequested();
             var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval, walker.ExportedMemberNames);
 
             analyzable?.NotifyAnalysisComplete(analysis);
