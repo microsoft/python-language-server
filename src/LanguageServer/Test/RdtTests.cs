@@ -108,16 +108,16 @@ namespace Microsoft.Python.LanguageServer.Tests {
             const string lockCount3 = "LockCount3.py";
 
             var uri = TestData.GetDefaultModuleUri();
-            var testDataPath = TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
+            var testSourceDataPath = GetAnalysisTestDataFilesPath();
             var testCasePath = Path.GetDirectoryName(uri.LocalPath);
 
-            var lockCount1Path = Path.Combine(testCasePath, lockCount1);
-            var lockCount2Path = Path.Combine(testCasePath, lockCount2);
-            var lockCount3Path = Path.Combine(testCasePath, lockCount3);
+            var lockCount1Path = TestData.GetTestSpecificPath(lockCount1);
+            var lockCount2Path = TestData.GetTestSpecificPath(lockCount2);
+            var lockCount3Path = TestData.GetTestSpecificPath(lockCount3);
 
-            File.Copy(Path.Combine(testDataPath, lockCount1), Path.Combine(testCasePath, lockCount1Path));
-            File.Copy(Path.Combine(testDataPath, lockCount2), Path.Combine(testCasePath, lockCount2Path));
-            File.Copy(Path.Combine(testDataPath, lockCount3), Path.Combine(testCasePath, lockCount3Path));
+            File.Copy(Path.Combine(testSourceDataPath, lockCount1), lockCount1Path);
+            File.Copy(Path.Combine(testSourceDataPath, lockCount2), lockCount2Path);
+            File.Copy(Path.Combine(testSourceDataPath, lockCount3), lockCount3Path);
 
             await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri.AbsolutePath);
             var rdt = Services.GetService<IRunningDocumentTable>();
