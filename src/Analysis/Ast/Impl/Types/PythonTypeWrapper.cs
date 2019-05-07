@@ -76,7 +76,6 @@ namespace Microsoft.Python.Analysis.Types {
         #region ILocatedMember
         public Location Location => InnerType?.Location ?? default;
         public LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
-        public ILocatedMember Parent => InnerType?.Parent;
         public IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
         public void AddReference(Location location) => InnerType?.AddReference(location);
         public void RemoveReferences(IPythonModule module) => InnerType?.RemoveReferences(module);

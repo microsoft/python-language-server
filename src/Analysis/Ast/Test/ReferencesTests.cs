@@ -318,7 +318,8 @@ from MultiValues import t
 x = t
 ";
             var analysis = await GetAnalysisAsync(code);
-            var t = analysis.Should().HaveVariable("t").Which;
+            var t = analysis.Should().HaveVariable("t").Which as IImportedMember;
+            t.Should().NotBeNull();
             t.Definition.Span.Should().Be(2, 25, 2, 26);
             t.Definition.DocumentUri.AbsolutePath.Should().Contain("module.py");
             t.References.Should().HaveCount(2);

@@ -71,8 +71,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private object AnalysisLock { get; } = new object();
         private State ContentState { get; set; } = State.None;
 
-        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services)
-            : base(PythonMemberType.Module) {
+        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) : base(null) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
