@@ -58,13 +58,6 @@ namespace Microsoft.Python.Parsing {
         /// When true, Parser behaves as if parsing an f-string expression
         /// </summary>
         public bool ParseFStringExpression { get; set; } = false;
-
-        /// <summary>
-        /// An event that is raised for every comment in the source as it is parsed.
-        /// </summary>
-        public event EventHandler<CommentEventArgs> ProcessComment;
-
-        internal void RaiseProcessComment(object sender, CommentEventArgs e) => ProcessComment?.Invoke(sender, e);
     }
 
     public class CommentEventArgs : EventArgs {

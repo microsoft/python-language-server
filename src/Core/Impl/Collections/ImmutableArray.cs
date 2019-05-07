@@ -35,7 +35,13 @@ namespace Microsoft.Python.Core.Collections {
 
         private ImmutableArray(T[] items, int count) {
             _items = items;
-            _ref = new Ref();
+            _ref = new Ref {Count = count};
+            _count = count;
+        }
+
+        private ImmutableArray(T[] items, Ref countRef, int count) {
+            _items = items;
+            _ref = countRef;
             _count = count;
         }
 
@@ -83,15 +89,17 @@ namespace Microsoft.Python.Core.Collections {
         public ImmutableArray<T> Add(T item) {
             var newCount = _count + 1;
             var newItems = _items;
+            var newRef = _ref;
 
-            if (newCount > _items.Length || Interlocked.CompareExchange(ref _ref.Count, newCount, _count) != _count) {
+            if (Interlocked.CompareExchange(ref newRef.Count, newCount, _count) != _count || newCount > _items.Length) {
                 var capacity = GetCapacity(newCount);
                 newItems = new T[capacity];
+                newRef = new Ref { Count = newCount };
                 Array.Copy(_items, 0, newItems, 0, _count);
             }
 
             newItems[_count] = item;
-            return new ImmutableArray<T>(newItems, newCount);
+            return new ImmutableArray<T>(newItems, newRef, newCount);
         }
 
         [Pure]
@@ -110,15 +118,17 @@ namespace Microsoft.Python.Core.Collections {
 
             var newCount = _count + itemsCount;
             var newItems = _items;
+            var newRef = _ref;
 
-            if (newCount > _items.Length || Interlocked.CompareExchange(ref _ref.Count, newCount, _count) != _count) {
+            if (Interlocked.CompareExchange(ref newRef.Count, newCount, _count) != _count || newCount > _items.Length) {
                 var capacity = GetCapacity(newCount);
                 newItems = new T[capacity];
+                newRef = new Ref { Count = newCount };
                 Array.Copy(_items, 0, newItems, 0, _count);
             }
 
             Array.Copy(items, 0, newItems, _count, itemsCount);
-            return new ImmutableArray<T>(newItems, newCount);
+            return new ImmutableArray<T>(newItems, newRef, newCount);
         }
 
         [Pure]
@@ -301,14 +311,11 @@ namespace Microsoft.Python.Core.Collections {
             return !left.Equals(right);
         }
 
-        public Enumerator GetEnumerator()
-        => new Enumerator(this);
+        public Enumerator GetEnumerator() => new Enumerator(this);
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
-            => new Enumerator(this);
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
 
-        IEnumerator IEnumerable.GetEnumerator()
-            => new Enumerator(this);
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
         public struct Enumerator : IEnumerator<T> {
             private readonly ImmutableArray<T> _owner;

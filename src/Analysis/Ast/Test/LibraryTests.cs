@@ -87,7 +87,7 @@ with open('foo.txt', 'wb') as file:
     file
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("file").OfType("IOBase");
+            analysis.Should().HaveVariable("file").OfType("BufferedWriter");
         }
 
         [TestMethod, Priority(0)]

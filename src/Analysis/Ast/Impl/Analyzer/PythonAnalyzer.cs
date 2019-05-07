@@ -123,6 +123,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_syncObj) {
                 _analysisEntries.Remove(new AnalysisModuleKey(module));
             }
+
+            _dependencyResolver.Remove(new AnalysisModuleKey(module));
         }
 
         public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> analysisDependencies) {
@@ -138,11 +140,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (entry.Invalidate(analysisDependencies, version, out var dependencies)) {
-                AnalyzeDocument(key, entry, dependencies, default);
+                AnalyzeDocument(key, entry, dependencies);
             }
         }
 
-        public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion, CancellationToken cancellationToken) {
+        public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion) {
             var key = new AnalysisModuleKey(module);
             PythonAnalyzerEntry entry;
             int version;
@@ -160,7 +162,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
-                AnalyzeDocument(key, entry, dependencies, cancellationToken);
+                AnalyzeDocument(key, entry, dependencies);
             }
         }
 
@@ -193,11 +195,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IReadOnlyList<IPythonModule> LoadedModules 
             => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
 
-        private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies, CancellationToken cancellationToken) {
+        private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
-            var graphVersion = _dependencyResolver.ChangeValue(key, entry, dependencies);
+            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserModule, dependencies);
 
             lock (_syncObj) {
                 if (_version > graphVersion) {
@@ -210,7 +212,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             UpdateDependentEntriesDepth(entry, dependencies, graphVersion);
 
-            if (TryCreateSession(graphVersion, entry, cancellationToken, out var session)) {
+            if (TryCreateSession(graphVersion, entry, out var session)) {
                 session.Start(true);
             }
         }
@@ -243,7 +245,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private bool TryCreateSession(int graphVersion, PythonAnalyzerEntry entry, CancellationToken cancellationToken, out PythonAnalyzerSession session) {
+        private bool TryCreateSession(int graphVersion, PythonAnalyzerEntry entry, out PythonAnalyzerSession session) {
             var analyzeUserModuleOutOfOrder = false;
             lock (_syncObj) {
                 if (_currentSession != null) {
@@ -254,23 +256,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                     analyzeUserModuleOutOfOrder = !_currentSession.IsCompleted && entry.IsUserModule && _currentSession.AffectedEntriesCount >= _maxTaskRunning;
                     if (_version > graphVersion && analyzeUserModuleOutOfOrder) {
-                        session = CreateSession(null, entry, cancellationToken);
+                        session = CreateSession(null, entry);
                         return true;
                     }
                 }
             }
 
-            var snapshot = _dependencyResolver.CurrentGraphSnapshot;
-            LoadMissingDocuments(entry.Module.Interpreter, snapshot.MissingKeys);
-
-            if (!_dependencyResolver.TryCreateWalker(snapshot, out var walker)) {
+            if (!_dependencyResolver.TryCreateWalker(graphVersion, 2, out var walker)) {
                 session = null;
                 return false;
             }
 
+            LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
+
             lock (_syncObj) {
                 if (_currentSession == null) {
-                    _currentSession = session = CreateSession(walker, null, cancellationToken);
+                    _currentSession = session = CreateSession(walker, null);
                     return true;
                 }
 
@@ -280,11 +281,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
                 
                 if (_currentSession.IsCompleted) {
-                    _currentSession = session = CreateSession(walker, null, cancellationToken);
+                    _currentSession = session = CreateSession(walker, null);
                     return true;
                 }
 
-                _nextSession = session = CreateSession(walker, analyzeUserModuleOutOfOrder ? entry : null, cancellationToken);
+                _nextSession = session = CreateSession(walker, analyzeUserModuleOutOfOrder ? entry : null);
                 return analyzeUserModuleOutOfOrder;
             }
         }
@@ -303,8 +304,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             session.Start(false);
         }
 
-        private PythonAnalyzerSession CreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry, CancellationToken cancellationToken) 
-            => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, cancellationToken, walker, _version, entry);
+        private PythonAnalyzerSession CreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry) 
+            => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry);
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             if (missingKeys.Count == 0) {
@@ -336,7 +337,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                     }
 
-                    _dependencyResolver.TryAddValue(foundKey, entry, ImmutableArray<AnalysisModuleKey>.Empty);
+                    _dependencyResolver.TryAddValue(foundKey, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
                 }
             }
         }
