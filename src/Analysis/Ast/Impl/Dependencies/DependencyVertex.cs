@@ -48,17 +48,15 @@ namespace Microsoft.Python.Analysis.Dependencies {
             Version = version;
 
             _outgoing = oldVertex.Outgoing;
-            _state = (int)State.New;
+            _state = (int)State.ChangedOutgoing;
         }
 
-        public DependencyVertex(TKey key, TValue value, bool isRoot, ImmutableArray<int> incoming, int version,
-            int index) {
+        public DependencyVertex(TKey key, TValue value, bool isRoot, ImmutableArray<int> incoming, int version, int index) {
             Key = key;
             Value = value;
             IsRoot = isRoot;
             Version = version;
             Index = index;
-
             Incoming = incoming;
 
             _state = (int)State.New;
@@ -68,8 +66,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
         public HashSet<int> Outgoing => _outgoing ?? _empty;
 
         public void Seal(HashSet<int> outgoing) {
-            Debug.Assert(_state == (int)State.New);
-            _state = _outgoing != null && _outgoing.SetEquals(outgoing) ? (int)State.Walked : (int)State.Sealed;
+            Debug.Assert(_state <= (int)State.ChangedOutgoing);
+            _state = _state == (int)State.ChangedOutgoing ? (int)State.Walked : (int)State.Sealed;
             _outgoing = outgoing;
         }
 
@@ -80,8 +78,9 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         private enum State {
             New = 0,
-            Sealed = 1,
-            Walked = 2
+            ChangedOutgoing = 1,
+            Sealed = 2,
+            Walked = 3
         }
     }
 }
