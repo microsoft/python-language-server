@@ -183,9 +183,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
 
-            // Try and evaluate with specific arguments. Note that it does not
-            // make sense to evaluate stubs since they already should be annotated.
-            if (EvaluateFunctionBody(fn) && fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
+            // We could not tell the return type from the call. Here we try and evaluate with specific arguments.
+            // Note that it does not make sense evaluating stubs or compiled/scraped modules since they
+            // should be either annotated or static return type known from the analysis.
+            //
+            // Also, we do not evaluate library code with arguments for performance reasons.
+            // This will prevent cases like
+            //      def func(a, b): return a + b
+            // from working in libraries, but this is small sacrifice for significant performance
+            // increase in library analysis.
+            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst() && EvaluateFunctionBody(fn)) {
                 // Stubs are coming from another module.
                 return TryEvaluateWithArguments(fn, args);
             }
