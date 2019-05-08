@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Collections;
@@ -158,16 +159,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Re-declare parameters in the function scope since originally
             // their types might not have been known and now argument set
             // may contain concrete values.
-            if (fd != null) {
+            if (fd != null && EvaluateFunctionBody(fn)) {
                 using (OpenScope(fn.DeclaringModule, fn.FunctionDefinition, out _)) {
                     args.DeclareParametersInScope(this);
                 }
             }
 
-            // If instance is not the same as the declaring type, then call
-            // most probably comes from the derived class which means that
-            // the original 'self' and 'cls' variables are no longer valid
-            // and function has to be re-evaluated with new arguments.
+            // If instance is not the same as the declaring type, then call most probably comes
+            // from the derived class which means that the original 'self' and 'cls' variables
+            // are no longer valid and function has to be re-evaluated with new arguments.
             // Note that there is nothing to re-evaluate in stubs.
             var instanceType = instance?.GetPythonType();
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
@@ -175,16 +175,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 instanceType.Equals(fn.DeclaringType) ||
                 fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
 
-                if (fn.IsSpecialized && fn is PythonFunctionType ft && ft.Dependencies.Count > 0) {
-                    var dependencies = ImmutableArray<IPythonModule>.Empty;
-                    foreach (var moduleName in ft.Dependencies) {
-                        var dependency = Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
-                        if (dependency != null) {
-                            dependencies = dependencies.Add(dependency);
-                        }
-                    }
-                    Services.GetService<IPythonAnalyzer>().EnqueueDocumentForAnalysis(Module, dependencies);
-                }
+                LoadFunctionDependencyModules(fn);
 
                 var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
                 if (!t.IsUnknown()) {
@@ -192,9 +183,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
 
-            // Try and evaluate with specific arguments. Note that it does not
-            // make sense to evaluate stubs since they already should be annotated.
-            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst()) {
+            // We could not tell the return type from the call. Here we try and evaluate with specific arguments.
+            // Note that it does not make sense evaluating stubs or compiled/scraped modules since they
+            // should be either annotated or static return type known from the analysis.
+            //
+            // Also, we do not evaluate library code with arguments for performance reasons.
+            // This will prevent cases like
+            //      def func(a, b): return a + b
+            // from working in libraries, but this is small sacrifice for significant performance
+            // increase in library analysis.
+            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst() && EvaluateFunctionBody(fn)) {
                 // Stubs are coming from another module.
                 return TryEvaluateWithArguments(fn, args);
             }
@@ -296,6 +294,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
             return true;
+        }
+
+        private bool EvaluateFunctionBody(IPythonFunctionType fn)
+            => fn.DeclaringModule.ModuleType != ModuleType.Library;
+
+        private void LoadFunctionDependencyModules(IPythonFunctionType fn) {
+            if (fn.IsSpecialized && fn is PythonFunctionType ft && ft.Dependencies.Count > 0) {
+                var dependencies = ImmutableArray<IPythonModule>.Empty;
+                foreach (var moduleName in ft.Dependencies) {
+                    var dependency = Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                    if (dependency != null) {
+                        dependencies = dependencies.Add(dependency);
+                    }
+                }
+                Services.GetService<IPythonAnalyzer>().EnqueueDocumentForAnalysis(Module, dependencies);
+            }
         }
     }
 }
