@@ -89,5 +89,43 @@ def g(y):
             Assert.AreEqual(@"abcdef", doc.Text);
             Assert.AreEqual(0, doc.Version);
         }
+
+        [TestMethod, Priority(0)]
+        public void ReplaceAllDocumentBuffer() {
+            var doc = new DocumentBuffer();
+
+            doc.Reset(0, string.Empty);
+            Assert.AreEqual(string.Empty, doc.Text);
+
+            doc.Update(new[] {
+                DocumentChange.ReplaceAll("text")
+            });
+
+            Assert.AreEqual("text", doc.Text);
+            Assert.AreEqual(1, doc.Version);
+
+            doc.Update(new[] {
+                DocumentChange.ReplaceAll("abcdef")
+            });
+
+            Assert.AreEqual(@"abcdef", doc.Text);
+            Assert.AreEqual(2, doc.Version);
+
+            doc.Update(new[] {
+                DocumentChange.Insert("text", SourceLocation.MinValue),
+                DocumentChange.ReplaceAll("1234")
+            });
+
+            Assert.AreEqual(@"1234", doc.Text);
+            Assert.AreEqual(3, doc.Version);
+
+            doc.Update(new[] {
+                DocumentChange.ReplaceAll("1234"),
+                DocumentChange.Insert("text", SourceLocation.MinValue)
+            });
+
+            Assert.AreEqual(@"text1234", doc.Text);
+            Assert.AreEqual(4, doc.Version);
+        }
     }
 }
