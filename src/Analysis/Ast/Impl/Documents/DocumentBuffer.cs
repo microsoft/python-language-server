@@ -41,6 +41,13 @@ namespace Microsoft.Python.Analysis.Documents {
             var lineLoc = SplitLines(_sb).ToArray();
 
             foreach (var change in changes) {
+                if (change.ReplaceAllText) {
+                    _sb = new StringBuilder(change.InsertedText);
+                    lastStart = int.MaxValue;
+                    lineLoc = SplitLines(_sb).ToArray();
+                    continue;
+                }
+
                 var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
                 if (start > lastStart) {
                     throw new InvalidOperationException("changes must be in reverse order of start location");
