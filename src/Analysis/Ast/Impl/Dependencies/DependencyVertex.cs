@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             Version = version;
 
             _outgoing = oldVertex.Outgoing;
-            _state = (int)State.ChangedOutgoing;
+            _state = oldVertex.IsWalked ? (int)State.ChangedOutgoing : (int)State.New;
         }
 
         public DependencyVertex(TKey key, TValue value, bool isRoot, ImmutableArray<int> incoming, int version, int index) {
