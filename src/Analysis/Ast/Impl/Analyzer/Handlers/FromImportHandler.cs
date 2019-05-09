@@ -81,7 +81,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return;
             }
 
-            foreach (var memberName in variableModule.GetMemberNames()) {
+            // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
+            var memberNames = variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
+
+            foreach (var memberName in memberNames) {
                 var member = variableModule.GetMember(memberName);
                 if (member == null) {
                     Log?.Log(TraceEventType.Verbose, $"Undefined import: {variableModule.Name}, {memberName}");

@@ -150,11 +150,6 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
-            // TODO: Filter __all__. See: https://github.com/Microsoft/python-language-server/issues/620
-            if (Analysis.ExportedMemberNames.Count > 0) {
-                return Analysis.ExportedMemberNames;
-            }
-
             // drop imported modules and typing.
             return Analysis.GlobalScope.Variables
                 .Where(v => !(v.Value?.GetPythonType() is PythonModule)

@@ -349,7 +349,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             walker.Complete();
             _analyzerCancellationToken.ThrowIfCancellationRequested();
-            var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval, walker.ExportedMemberNames);
+            var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
 
             analyzable?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
