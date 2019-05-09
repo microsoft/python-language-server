@@ -22,21 +22,20 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval, IReadOnlyList<string> exportedMemberNames) {
+        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval, IReadOnlyList<string> starImportMemberNames) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
             Document = document;
             Version = version;
             GlobalScope = globalScope;
             ExpressionEvaluator = eval;
-            StarImportMemberNames = exportedMemberNames;
+            StarImportMemberNames = starImportMemberNames;
         }
 
         #region IDocumentAnalysis
