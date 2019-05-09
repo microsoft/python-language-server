@@ -40,7 +40,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
             : base(new ExpressionEval(services, module, ast)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
-            ExportedMemberNames = ImmutableArray<string>.Empty;
         }
 
         public override bool Walk(NameExpression node) {
@@ -209,7 +208,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IGlobalScope GlobalScope => Eval.GlobalScope;
-        public ImmutableArray<string> ExportedMemberNames { get; private set; }
+        public IReadOnlyList<string> ExportedMemberNames { get; private set; }
 
         /// <summary>
         /// Merges data from stub with the data from the module.

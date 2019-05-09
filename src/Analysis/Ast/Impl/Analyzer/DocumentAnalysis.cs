@@ -29,14 +29,14 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval, ImmutableArray<string> exportedMemberNames) {
+        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval, IReadOnlyList<string> exportedMemberNames) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
             Document = document;
             Version = version;
             GlobalScope = globalScope;
             ExpressionEvaluator = eval;
-            ExportedMemberNames = exportedMemberNames;
+            StarImportMemberNames = exportedMemberNames;
         }
 
         #region IDocumentAnalysis
@@ -68,9 +68,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IExpressionEvaluator ExpressionEvaluator { get; }
 
         /// <summary>
-        /// Members of the module explicitly specified for export
+        /// Members of the module which are transferred during a star import. null means __all__ was not defined.
         /// </summary>
-        public ImmutableArray<string> ExportedMemberNames { get; }
+        public IReadOnlyList<string> StarImportMemberNames { get; }
 
         /// <summary>
         /// Analysis diagnostics.
@@ -95,7 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IGlobalScope GlobalScope { get; }
         public PythonAst Ast => _emptyAst;
         public IExpressionEvaluator ExpressionEvaluator { get; }
-        public ImmutableArray<string> ExportedMemberNames => ImmutableArray<string>.Empty;
+        public IReadOnlyList<string> StarImportMemberNames => null;
         public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
     }
 }
