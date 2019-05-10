@@ -111,16 +111,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public void SetDepth(int version, int depth) {
-            lock (_syncObj) {
-                if (_analysisVersion > version) {
-                    return;
-                }
-
-                _depth = _depth == -1 ? depth : Math.Min(_depth, depth);
-            }
-        }
-
         public void TrySetAnalysis(IDocumentAnalysis analysis, int version) {
             lock (_syncObj) {
                 if (_previousAnalysis is EmptyAnalysis) {
