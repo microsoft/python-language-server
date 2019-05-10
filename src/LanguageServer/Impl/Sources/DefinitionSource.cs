@@ -130,7 +130,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 case IPythonClassType cls:
                     // Data members may be instances that are not tracking locations.
                     // In this case we'll try look up the respective variable instead.
-                    using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
+                    using (eval.OpenScope(cls.DeclaringModule, cls.ClassDefinition)) {
                         eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
                         if (v2 != null) {
                             member = v2;
