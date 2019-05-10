@@ -49,7 +49,7 @@
       <FilesToSign Remove="@(FilesToSign)" />
       <FilesToSign Include="@(SignFiles)">
         <Authenticode Condition="%(Extension) == '.nupkg'">NuGet</Authenticode>
-        <Authenticode Condition="%(Extension) != '.nupkg'">Microsoft</Authenticode>
+        <Authenticode Condition="%(Extension) != '.nupkg'">Microsoft400</Authenticode>
       </FilesToSign>
     </ItemGroup>
     <Error Condition="@(_Missing) != ''" Text="Following files are missing: @(_Missing,'%0A')" />
