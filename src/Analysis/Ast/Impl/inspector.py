@@ -46,15 +46,12 @@ def write_stdout(data):
     stdout.flush()
 
 
-HEADER = "Content-Length: "
-HEADER_LEN = len(HEADER)
-
 METHOD_NOT_FOUND = -32601
 INTERNAL_ERROR = -32603
 
 
 def read_request():
-    length = None
+    headers = dict()
 
     # Read headers
     while True:
@@ -62,11 +59,13 @@ def read_request():
         if not line:
             break
 
-        if line.startswith(HEADER):
-            length = int(line[HEADER_LEN:])
+        key, _, value = line.partition(":")
+        headers[key] = value
 
-    if length is None:
-        raise IOError("Content-Length is missing")
+    try:
+        length = int(headers["Content-Length"])
+    except (KeyError, ValueError):
+        raise IOError("Content-Length is missing or invalid")
 
     body = ""
     while length > 0:
