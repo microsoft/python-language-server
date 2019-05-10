@@ -52,14 +52,14 @@ namespace Microsoft.Python.LanguageServer.Services {
 
         private JsonRpc CreateJsonRpc() {
             if (!InstallPath.TryGetFile("inspector.py", out var scriptPath)) {
-                return null;
+                return null; // Throw?
             }
 
             return PythonRpc.Create(_procService, _interpreter.Configuration.InterpreterPath, scriptPath);
         }
 
-        public Task<List<string>> GetModuleMembers(string moduleName) {
-            return Rpc.InvokeAsync<List<string>>("moduleMembers", moduleName);
+        public Task<List<string>> ModuleMemberNames(string moduleName) {
+            return Rpc.InvokeAsync<List<string>>("moduleMemberNames", moduleName);
         }
 
         public void Dispose() {

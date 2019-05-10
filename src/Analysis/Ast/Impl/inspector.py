@@ -14,6 +14,9 @@
 # See the Apache Version 2.0 License for specific language governing
 # permissions and limitations under the License.
 
+# Supported Python versions: 2.7, 3.5+
+# https://devguide.python.org/#status-of-python-branches
+
 from __future__ import print_function
 
 import json
@@ -22,36 +25,86 @@ import time
 import inspect
 import importlib
 
+sys.stderr = open("C:\\Users\\jabaile\\Desktop\\log.txt", "a")
+
+if sys.version_info >= (3,):
+    stdout = sys.stdout.buffer
+else:
+    stdout = sys.stdout
+
+    if sys.platform == "win32":
+        import os, msvcrt
+
+        msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+
+
+def write_stdout(data):
+    if not isinstance(data, bytes):
+        data = data.encode("utf-8")
+
+    stdout.write(data)
+    stdout.flush()
+
+
 HEADER = "Content-Length: "
 HEADER_LEN = len(HEADER)
 
+METHOD_NOT_FOUND = -32601
+INTERNAL_ERROR = -32603
+
 
 def read_request():
-    content_length = None
+    length = None
 
     # Read headers
     while True:
-        line = sys.stdin.readline()
-        if not line.rstrip("\r\n"):
+        line = sys.stdin.readline().rstrip("\r\n")
+        if not line:
             break
 
         if line.startswith(HEADER):
-            content_length = int(line[HEADER_LEN:])
+            length = int(line[HEADER_LEN:])
 
-    # Content-Length is required
-    assert content_length
+    if length is None:
+        raise IOError("Content-Length is missing")
 
-    data = sys.stdin.read(content_length)
-    return json.loads(data)
+    body = ""
+    while length > 0:
+        chunk = sys.stdin.read(length)
+        body += chunk
+        length -= len(chunk)
+
+    request = json.loads(body)
+    return Request(request)
 
 
-def write_response(id, result):
-    # TODO: errors?
-    s = json.dumps({"jsonrpc": "2.0", "id": id, "result": result})
+def write_response(id, result=None, error=None):
+    response = {"jsonrpc": "2.0", "id": id}
+
+    if result is not None:
+        response["result"] = result
+
+    if error is not None:
+        assert result is None
+        response["error"] = error
+
+    s = json.dumps(response)
 
     data = "Content-Length: {}\r\n\r\n".format(len(s)) + s
-    sys.stdout.buffer.write(bytes(data, "utf-8"))
-    sys.stdout.buffer.flush()
+    write_stdout(data)
+
+
+class Request(object):
+    def __init__(self, request):
+        self.id = request["id"]
+        self.method = request["method"]
+        self.params = request.get("params", None)
+
+    def write_result(self, result):
+        write_response(self.id, result)
+
+    def write_error(self, code, message):
+        write_response(self.id, error={"code": code, "message": message})
 
 
 class Mux(object):
@@ -66,9 +119,20 @@ class Mux(object):
         return decorator
 
     def handle(self, request):
-        handler = self.handlers.get(request["method"], lambda request: None)
-        result = handler(*request["params"])
-        write_response(request["id"], result)
+        handler = self.handlers.get(request.method, None)
+
+        if not handler:
+            request.write_error(
+                METHOD_NOT_FOUND, "method {} not found".format(request.method)
+            )
+            return
+
+        try:
+            result = handler(*request.params)
+        except Exception as e:
+            request.write_error(result, INTERNAL_ERROR, str(e))
+        else:
+            request.write_result(result)
 
 
 mux = Mux()
@@ -85,15 +149,12 @@ def do_not_inspect(v):
     return bool(getattr(v, "__defaults__", False))
 
 
-@mux.handler("moduleMembers")
+@mux.handler("moduleMemberNames")
 def module_members(module_name):
-    try:
-        module = importlib.import_module(module_name)
-        members = inspect.getmembers(module)
-        return [name for name, _ in members]
-    except:
-        # TODO: Don't do this; return an error over RPC.
-        return None
+    module = importlib.import_module(module_name)
+    members = inspect.getmembers(module)
+    return [name for name, _ in members]
+
 
 def main():
     while True:

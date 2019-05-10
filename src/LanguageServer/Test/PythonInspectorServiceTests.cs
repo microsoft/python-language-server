@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests;
 using Microsoft.Python.LanguageServer.Services;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -35,11 +36,13 @@ namespace Microsoft.Python.LanguageServer.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-        [TestMethod, Priority(0)]
-        public async Task SysStdout() {
-            using (var s = await CreateServicesAsync(null, null, null))
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task SysMemberNames(bool is3x) {
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var result = await inspector.GetModuleMembers("sys");
+                var result = await inspector.ModuleMemberNames("sys");
                 result.Should().Contain("stdout");
             }
         }
