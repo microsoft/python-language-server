@@ -26,18 +26,18 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
-        public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule)
-            : base(PythonMemberType.Union, declaringModule) {
+        public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule) : base(declaringModule) {
             _types.UnionWith(types);
         }
 
-        private PythonUnionType(IPythonType x, IPythonType y)
-            : base(PythonMemberType.Union, x.DeclaringModule) {
+        private PythonUnionType(IPythonType x, IPythonType y) : base(x.DeclaringModule) {
             Check.Argument(nameof(x), () => !(x is IPythonUnionType));
             Check.Argument(nameof(y), () => !(y is IPythonUnionType));
             _types.Add(x);
             _types.Add(y);
         }
+
+        public override PythonMemberType MemberType => PythonMemberType.Union;
 
         #region IPythonType
 

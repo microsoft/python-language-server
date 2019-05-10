@@ -25,48 +25,102 @@ namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("Count: {Count}")]
     internal sealed class VariableCollection : IVariableCollection {
         public static readonly IVariableCollection Empty = new VariableCollection();
-        private readonly ConcurrentDictionary<string, Variable> _variables = new ConcurrentDictionary<string, Variable>();
+        private readonly object _syncObj = new object();
+        private readonly Dictionary<string, Variable> _variables = new Dictionary<string, Variable>();
+
+        public List<Variable>.Enumerator GetEnumerator() {
+            lock (_syncObj) {
+                return _variables.Values.ToList().GetEnumerator();
+            }
+        }
 
         #region ICollection
-        public int Count => _variables.Count;
-        public IEnumerator<IVariable> GetEnumerator() => _variables.Values.ToList().GetEnumerator();
+        public int Count {
+            get {
+                lock (_syncObj) {
+                    return _variables.Count;
+                }
+            }
+        }
+
+        IEnumerator<IVariable> IEnumerable<IVariable>.GetEnumerator() => GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         #endregion
 
         #region IVariableCollection
-        public IVariable this[string name] => _variables.TryGetValue(name, out var v) ? v : null;
-        public bool Contains(string name) => _variables.ContainsKey(name);
-        public IReadOnlyList<string> Names => _variables.Keys.ToArray();
+        public IVariable this[string name] {
+            get {
+                lock (_syncObj) {
+                    return _variables.TryGetValue(name, out var v) ? v : default;
+                }
+            }
+        }
+
+        public bool Contains(string name) {
+            lock (_syncObj) {
+                return _variables.ContainsKey(name);
+            }
+        }
+
+        public IReadOnlyList<string> Names {
+            get {
+                lock (_syncObj) {
+                    return _variables.Keys.ToArray();
+                }
+            }
+        }
 
         public bool TryGetVariable(string key, out IVariable value) {
-            value = null;
-            if (_variables.TryGetValue(key, out var v)) {
-                value = v;
-                return true;
+            lock (_syncObj) {
+                if (_variables.TryGetValue(key, out var v)) {
+                    value = v;
+                    return true;
+                }
+
+                value = null;
+                return false;
             }
-            return false;
         }
         #endregion
 
         #region IMemberContainer
-        public IMember GetMember(string name) => _variables.TryGetValue(name, out var v) ? v : null;
-        public IEnumerable<string> GetMemberNames() => _variables.Keys.ToArray();
+        public IMember GetMember(string name) {
+            lock (_syncObj) {
+                return _variables.TryGetValue(name, out var v) ? v : null;
+            }
+        }
+
+        public IEnumerable<string> GetMemberNames() {
+            lock (_syncObj) {
+                return _variables.Keys.ToArray();
+            }
+        }
+
         #endregion
 
         internal void DeclareVariable(string name, IMember value, VariableSource source, Location location = default) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            if (_variables.TryGetValue(name, out var existing)) {
-                existing.Assign(value, location);
-            } else {
-                _variables[name] = new Variable(name, value, source, location);
+            lock (_syncObj) {
+                if (_variables.TryGetValue(name, out var existing)) {
+                    existing.Assign(value, location);
+                } else {
+                    _variables[name] = new Variable(name, value, source, location);
+                }
             }
         }
 
         internal void LinkVariable(string name, IVariable v, Location location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
-            _variables[name] = new Variable(name, v, location);
+            var variable =  new ImportedVariable(name, v, location);
+            lock (_syncObj) {
+                _variables[name] = variable;
+            }
         }
 
-        internal void RemoveVariable(string name) => _variables.TryRemove(name, out _);
+        internal void RemoveVariable(string name) {
+            lock (_syncObj) {
+                _variables.Remove(name);
+            }
+        }
     }
 }

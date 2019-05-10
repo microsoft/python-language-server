@@ -20,9 +20,9 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class AnyType : LocatedMember, IPythonType {
-        public AnyType(IPythonModule declaringModule)
-            : base(PythonMemberType.Class, declaringModule) { }
+        public AnyType(IPythonModule declaringModule) : base(declaringModule) { }
 
+        public override PythonMemberType MemberType => PythonMemberType.Class;
         public string Name => "Any";
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public string Documentation => Name;

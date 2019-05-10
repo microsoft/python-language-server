@@ -44,9 +44,10 @@ namespace Microsoft.Python.Parsing.Ast {
         public string ToCodeString(PythonAst ast) => ToCodeString(ast, CodeFormattingOptions.Default);
 
         public string ToCodeString(PythonAst ast, CodeFormattingOptions format) {
-            var res = new StringBuilder();
-            AppendCodeString(res, ast, format);
-            return res.ToString();
+            var sb = new StringBuilder();
+            AppendCodeString(sb, ast, format);
+            var result = sb.ToString();
+            return string.IsInterned(result) ?? result;
         }
 
         public SourceLocation GetStart() => Ast.IndexToLocation(StartIndex);

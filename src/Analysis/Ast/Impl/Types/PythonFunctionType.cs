@@ -26,8 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal class PythonFunctionType : PythonType, IPythonFunctionType {
-        private readonly List<IPythonFunctionOverload> _overloads = new List<IPythonFunctionOverload>();
-        private readonly object _lock = new object();
+        private ImmutableArray<IPythonFunctionOverload> _overloads = ImmutableArray<IPythonFunctionOverload>.Empty;
         private readonly string _documentation;
         private bool _isAbstract;
         private bool _isSpecialized;
@@ -112,7 +111,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonType DeclaringType { get; }
-        public override string Documentation => _documentation ?? base.Documentation ?? _overloads.FirstOrDefault()?.Documentation;
+        public override string Documentation => _documentation ?? base.Documentation ?? (_overloads.Count > 0 ? _overloads[0].Documentation : default);
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
@@ -122,7 +121,7 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsStub { get; internal set; }
         public bool IsUnbound => DeclaringType == null;
 
-        public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads.ToArray();
+        public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads;
         #endregion
 
         #region IHasQualifiedName
@@ -140,11 +139,8 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal ImmutableArray<string> Dependencies { get; private set; } = ImmutableArray<string>.Empty;
 
-        internal void AddOverload(IPythonFunctionOverload overload) {
-            lock (_lock) {
-                _overloads.Add(overload);
-            }
-        }
+        internal void AddOverload(IPythonFunctionOverload overload) 
+            => _overloads = _overloads.Count > 0 ? _overloads.Add(overload) : ImmutableArray<IPythonFunctionOverload>.Create(overload);
 
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
 

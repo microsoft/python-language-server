@@ -37,11 +37,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (doc != null) {
                 var changes = new List<DocumentChange>();
                 foreach (var c in @params.contentChanges) {
-                    Debug.Assert(c.range.HasValue);
-                    var change = new DocumentChange {
-                        InsertedText = c.text,
-                        ReplacedSpan = c.range.Value
-                    };
+                    var change = c.range.HasValue ? DocumentChange.Replace(c.range.Value, c.text) : DocumentChange.ReplaceAll(c.text);
                     changes.Add(change);
                 }
                 doc.Update(changes);

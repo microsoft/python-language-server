@@ -71,8 +71,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private object AnalysisLock { get; } = new object();
         private State ContentState { get; set; } = State.None;
 
-        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services)
-            : base(PythonMemberType.Module) {
+        protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) : base(null) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Services = services ?? throw new ArgumentNullException(nameof(services));
             ModuleType = moduleType;
@@ -151,11 +150,6 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
-            // TODO: Filter __all__. See: https://github.com/Microsoft/python-language-server/issues/620
-            if (Analysis.ExportedMemberNames.Count > 0) {
-                return Analysis.ExportedMemberNames;
-            }
-
             // drop imported modules and typing.
             return Analysis.GlobalScope.Variables
                 .Where(v => !(v.Value?.GetPythonType() is PythonModule)
@@ -236,6 +230,8 @@ namespace Microsoft.Python.Analysis.Modules {
         protected virtual void Dispose(bool disposing) {
             _diagnosticsService?.Remove(Uri);
             _disposeToken.TryMarkDisposed();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+            analyzer.RemoveAnalysis(this);
         }
         #endregion
 
@@ -380,7 +376,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzing;
 
                 var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.EnqueueDocumentForAnalysis(this, ast, version, _disposeToken.CancellationToken);
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version);
             }
 
             lock (AnalysisLock) {

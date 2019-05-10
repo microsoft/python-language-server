@@ -25,12 +25,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal sealed class TypingType : LocatedMember, IPythonType {
         private readonly IPythonType _type;
 
-        public TypingType(IPythonModule declaringModule, IPythonType type)
-            : base(PythonMemberType.Class, declaringModule) {
+        public TypingType(IPythonModule declaringModule, IPythonType type): base(declaringModule) {
             _type = type ?? throw new ArgumentNullException(nameof(type));
             Name = $"Type[{_type.Name}]";
         }
 
+        public override PythonMemberType MemberType => PythonMemberType.Class;
         public string Name { get; }
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public string Documentation => Name;

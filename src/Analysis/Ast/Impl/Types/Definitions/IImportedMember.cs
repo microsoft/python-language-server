@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,17 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Core.Collections;
-
-namespace Microsoft.Python.Analysis.Dependencies {
-    internal interface IDependencyChainWalker<TKey, TValue> {
-        ImmutableArray<TKey> MissingKeys { get; }
-        ImmutableArray<TValue> AffectedValues { get; }
-        int Version { get; }
-        int Remaining { get; }
-
-        Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken);
+namespace Microsoft.Python.Analysis.Types {
+    /// <summary>
+    /// Imported member that has link to its parent in another module.
+    /// </summary>
+    public interface IImportedMember : ILocatedMember {
+        /// <summary>
+        /// Link to the primary definition such as when variable is imported from another file.
+        /// </summary>
+        ILocatedMember Parent { get; }
     }
 }

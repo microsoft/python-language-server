@@ -54,9 +54,9 @@ namespace Microsoft.Python.Analysis {
         IExpressionEvaluator ExpressionEvaluator { get; }
 
         /// <summary>
-        /// Members of the module explicitly specified for export
+        /// Members of the module which are transferred during a star import. null means __all__ was not defined.
         /// </summary>
-        ImmutableArray<string> ExportedMemberNames { get; }
+        IReadOnlyList<string> StarImportMemberNames { get; }
 
         /// <summary>
         /// Analysis diagnostics.

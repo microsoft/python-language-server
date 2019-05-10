@@ -92,15 +92,29 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static IMember Open(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet) {
             var mode = argSet.GetArgumentValue<IPythonConstant>("mode");
 
-            var bytes = false;
-            if (mode != null) {
-                var modeString = mode.GetString();
-                bytes = modeString != null && modeString.Contains("b");
+            var binary = false;
+            var writable = false;
+            var readWrite = false;
+
+            var modeString = mode?.GetString();
+            if (modeString != null) {
+                binary = modeString.Contains("b");
+                writable = modeString.Contains("w") || modeString.Contains("a") || modeString.Contains("x");
+                readWrite = writable && modeString.Contains("r");
             }
 
+            string returnTypeName;
             var io = declaringModule.Interpreter.ModuleResolution.GetImportedModule("io");
-            var ioBase = io?.GetMember(bytes ? "BufferedIOBase" : "TextIOWrapper")?.GetPythonType();
-            return ioBase != null ? new PythonInstance(ioBase) : null;
+            if (binary) {
+                returnTypeName = writable ?
+                    readWrite ? "BufferedRandom" : "BufferedWriter"
+                    : "BufferedReader";
+            } else {
+                returnTypeName = "TextIOWrapper";
+            }
+
+            var returnType = io?.GetMember(returnTypeName)?.GetPythonType();
+            return returnType != null ? new PythonInstance(returnType) : null;
         }
     }
 }

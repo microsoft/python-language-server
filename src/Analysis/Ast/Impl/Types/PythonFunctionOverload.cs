@@ -58,10 +58,13 @@ namespace Microsoft.Python.Analysis.Types {
             _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
-        public PythonFunctionOverload(string name, Location location)
-            : base(PythonMemberType.Function, location) {
+        public PythonFunctionOverload(string name, Location location) : base(location) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
+
+        #region ILocatedMember
+        public override PythonMemberType MemberType => PythonMemberType.Function;
+        #endregion
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
 
@@ -147,7 +150,6 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
-        public override PythonMemberType MemberType => PythonMemberType.Function;
         public IMember StaticReturnValue { get; private set; }
 
         public IMember Call(IArgumentSet args, IPythonType self, Node callLocation = null) {
@@ -201,7 +203,10 @@ namespace Microsoft.Python.Analysis.Types {
                         var name = StaticReturnValue.GetPythonType()?.Name;
                         var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
                         if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
-                            return gtp2.Constraints.FirstOrDefault();
+                            // See if the instance (self) type satisfies one of the constraints.
+                            return selfClassType.Mro.Any(b => gtp2.Constraints.Any(c => c.Equals(b)))
+                                ? selfClassType
+                                : gtp2.Constraints.FirstOrDefault();
                         }
 
                         break;

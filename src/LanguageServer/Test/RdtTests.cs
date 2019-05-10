@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -102,16 +103,31 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task OpenCloseAnalysis() {
+            const string lockCount1 = "LockCount1.py";
+            const string lockCount2 = "LockCount2.py";
+            const string lockCount3 = "LockCount3.py";
+
             var uri = TestData.GetDefaultModuleUri();
+            var testSourceDataPath = GetAnalysisTestDataFilesPath();
+            var testCasePath = Path.GetDirectoryName(uri.LocalPath);
+
+            var lockCount1Path = TestData.GetTestSpecificPath(lockCount1);
+            var lockCount2Path = TestData.GetTestSpecificPath(lockCount2);
+            var lockCount3Path = TestData.GetTestSpecificPath(lockCount3);
+
+            File.Copy(Path.Combine(testSourceDataPath, lockCount1), lockCount1Path);
+            File.Copy(Path.Combine(testSourceDataPath, lockCount2), lockCount2Path);
+            File.Copy(Path.Combine(testSourceDataPath, lockCount3), lockCount3Path);
+
             await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri.AbsolutePath);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(uri, "from LockCount1 import *");
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
 
-            var docLc1 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount1"));
-            var docLc2 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount2"));
-            var docLc3 = rdt.GetDocuments().First(d => d.Name.Contains("LockCount3"));
+            var docLc1 = rdt.GetDocument(new Uri(lockCount1Path));
+            var docLc2 = rdt.GetDocument(new Uri(lockCount2Path));
+            var docLc3 = rdt.GetDocument(new Uri(lockCount3Path));
 
             var ds = GetDiagnosticsService();
             PublishDiagnostics();

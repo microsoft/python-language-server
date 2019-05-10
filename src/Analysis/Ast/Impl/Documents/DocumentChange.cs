@@ -20,6 +20,7 @@ namespace Microsoft.Python.Analysis.Documents {
     public sealed class DocumentChange {
         public string InsertedText { get; set; }
         public SourceSpan ReplacedSpan { get; set; }
+        public bool ReplaceAllText { get; set; }
 
         public static DocumentChange Insert(string text, SourceLocation start) 
             => new DocumentChange { InsertedText = text, ReplacedSpan = new SourceSpan(start, start) };
@@ -41,5 +42,8 @@ namespace Microsoft.Python.Analysis.Documents {
             => Replace(new SourceSpan(start, end), text);
         public static DocumentChange Replace(PythonAst tree, int start, int length, string text)
             => Replace(new SourceSpan(tree.IndexToLocation(start), tree.IndexToLocation(start + length)), text);
+
+        public static DocumentChange ReplaceAll(string text)
+            => new DocumentChange { InsertedText = text, ReplaceAllText = true };
     }
 }

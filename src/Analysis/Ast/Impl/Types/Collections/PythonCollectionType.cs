@@ -75,9 +75,8 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override IMember CreateInstance(string typeName, IArgumentSet args)
             => new PythonCollection(this, args.Arguments.Select(a => a.Value).OfType<IMember>().ToArray());
 
-        // Constructor call
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => CreateInstance(Name, args);
+            => DeclaringModule.Interpreter.GetBuiltinType(TypeId)?.Call(instance, memberName, args);
 
         public override IMember Index(IPythonInstance instance, object index)
             => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
@@ -108,10 +107,18 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             var contents = many?.ExcludeDefault().Select(c => c.Contents).SelectMany().ToList() ?? new List<IMember>();
             return CreateList(interpreter, contents, false, exact: exact);
         }
+
         public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool exact = false) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
             return new PythonCollection(collectionType, contents, exact: exact);
         }
+
+        public static IPythonCollection CreateConcatenatedTuple(IPythonInterpreter interpreter, params IPythonCollection[] many) {
+            var exact = many?.All(c => c != null && c.IsExact) ?? false;
+            var contents = many?.ExcludeDefault().Select(c => c.Contents).SelectMany().ToList() ?? new List<IMember>();
+            return CreateTuple(interpreter, contents, exact: exact);
+        }
+
         public static IPythonCollection CreateSet(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
             var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
             return new PythonCollection(collectionType, contents, flatten, exact: exact);

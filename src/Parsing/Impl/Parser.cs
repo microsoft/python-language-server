@@ -102,8 +102,7 @@ namespace Microsoft.Python.Parsing {
                 (options.Verbatim ? TokenizerOptions.Verbatim : TokenizerOptions.None) |
                     TokenizerOptions.GroupingRecovery |
                     (options.StubFile ? TokenizerOptions.StubFile : 0) |
-                    (options.ParseFStringExpression ? TokenizerOptions.FStringExpression : 0),
-                (span, text) => options.RaiseProcessComment(parser, new CommentEventArgs(span, text)));
+                    (options.ParseFStringExpression ? TokenizerOptions.FStringExpression : 0));
             tokenizer.Initialize(null, reader, options.InitialSourceLocation ?? SourceLocation.MinValue);
             tokenizer.IndentationInconsistencySeverity = options.IndentationInconsistencySeverity;
 
@@ -2722,7 +2721,9 @@ namespace Microsoft.Python.Parsing {
             var ret = ParseOrTest();
             if (ret is ErrorExpression) {
                 return ret;
-            } else if (MaybeEat(TokenKind.KeywordIf)) {
+            }
+
+            if (MaybeEat(TokenKind.KeywordIf)) {
                 var start = ret.StartIndex;
                 ret = ParseConditionalTest(ret);
                 ret.SetLoc(start, GetEnd());

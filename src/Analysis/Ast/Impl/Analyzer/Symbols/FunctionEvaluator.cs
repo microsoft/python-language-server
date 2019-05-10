@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly PythonFunctionOverload _overload;
         private readonly IPythonClassType _self;
 
-        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload) 
+        public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload)
             : base(eval, overload.FunctionDefinition) {
 
             _overload = overload;
@@ -76,9 +76,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // variables that are later used to determine return type of other
                 // methods and properties.
                 var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
-                if (!stub && (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User)) {
-                    // Return type from the annotation is sufficient for libraries
-                    // and stubs, no need to walk the body.
+                if (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                    // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
                 }
             }
@@ -87,7 +86,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public override bool Walk(AssignmentStatement node) {
             var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
-
             foreach (var lhs in node.Left) {
                 switch (lhs) {
                     case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
