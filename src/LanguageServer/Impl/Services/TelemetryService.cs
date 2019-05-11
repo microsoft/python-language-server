@@ -19,9 +19,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.LanguageServer.Services {
-#pragma warning disable CS0612 // Type or member is obsolete
     public sealed class TelemetryService : ITelemetryService {
-#pragma warning restore CS0612 // Type or member is obsolete
         private readonly IClientApplication _clientApp;
         private readonly string _plsVersion;
 

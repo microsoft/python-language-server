@@ -22,7 +22,7 @@ using Microsoft.Python.Core.Services;
 using Microsoft.Python.LanguageServer.Protocol;
 using StreamJsonRpc;
 
-namespace Microsoft.Python.LanguageServer.Implementation {
+namespace Microsoft.Python.LanguageServer.Telemetry {
     internal class Telemetry {
         private const string EventPrefix = "python_language_server/";
 
