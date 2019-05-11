@@ -210,41 +210,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _currentSession?.Cancel();
             }
 
-            UpdateDependentEntriesDepth(entry, dependencies, graphVersion);
-
             if (TryCreateSession(graphVersion, entry, out var session)) {
                 session.Start(true);
             }
         }
-
-        private void UpdateDependentEntriesDepth(PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependentKeys, int graphVersion) {
-            if (dependentKeys.Count == 0) {
-                return;
-            }
-
-            var dependentEntries = new List<PythonAnalyzerEntry>();
-            lock (_syncObj) {
-                if (_version > graphVersion) {
-                    return;
-                }
-
-                foreach (var key in dependentKeys) {
-                    if (_analysisEntries.TryGetValue(key, out var value)) {
-                        dependentEntries.Add(value);
-                    }
-                }
-            }
-
-            if (dependentEntries.Count == 0) {
-                return;
-            }
-
-            var depth = entry.Depth;
-            foreach (var dependentEntry in dependentEntries) {
-                dependentEntry.SetDepth(graphVersion, depth);
-            }
-        }
-
+        
         private bool TryCreateSession(int graphVersion, PythonAnalyzerEntry entry, out PythonAnalyzerSession session) {
             var analyzeUserModuleOutOfOrder = false;
             lock (_syncObj) {

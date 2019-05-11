@@ -440,7 +440,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 foreach (var secondPassVertex in loop) {
                     var vertex = secondPassVertex.FirstPass;
                     if (vertex.Index == -1) {
-                        RemoveLoopEdges(vertex, ref counter);
+                        RemoveOutgoingLoopEdges(vertex, ref counter);
                     }
 
                     if (version != _version) {
@@ -451,13 +451,15 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
-            // Make all vertices from second pass loop have incoming edges from vertices from first pass loop and set unique loop numbers
+            // Make first vertex from second pass loop (loop is sorted at this point) have incoming edges from vertices from first pass loop and set unique loop numbers
             var outgoingVertices = new HashSet<WalkingVertex<TKey, TValue>>();
             foreach (var loop in secondPassLoops) {
                 outgoingVertices.Clear();
+                var startVertex = loop[0];
+
                 foreach (var secondPassVertex in loop) {
                     var firstPassVertex = secondPassVertex.FirstPass;
-                    firstPassVertex.AddOutgoing(loop);
+                    firstPassVertex.AddOutgoing(startVertex);
 
                     foreach (var outgoingVertex in firstPassVertex.Outgoing) {
                         if (outgoingVertex.LoopNumber != firstPassVertex.LoopNumber) {
@@ -470,6 +472,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
 
+                // Add outgoing edges to all second pass vertices to ensure that further analysis won't start until loop is fully analyzed
                 foreach (var secondPassVertex in loop) {
                     secondPassVertex.AddOutgoing(outgoingVertices);
                 }
@@ -490,7 +493,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             return true;
         }
 
-        private static void RemoveLoopEdges(WalkingVertex<TKey, TValue> vertex, ref int counter) {
+        private static void RemoveOutgoingLoopEdges(WalkingVertex<TKey, TValue> vertex, ref int counter) {
             vertex.Index = counter++;
             for (var i = vertex.Outgoing.Count - 1; i >= 0; i--) {
                 var outgoing = vertex.Outgoing[i];
@@ -499,7 +502,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
 
                 if (outgoing.Index == -1) {
-                    RemoveLoopEdges(outgoing, ref counter);
+                    RemoveOutgoingLoopEdges(outgoing, ref counter);
                 } else if (outgoing.Index < vertex.Index) {
                     vertex.RemoveOutgoingAt(i);
                 }
