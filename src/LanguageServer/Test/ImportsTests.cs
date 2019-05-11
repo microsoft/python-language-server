@@ -724,5 +724,53 @@ B().
             comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
             comps.Should().HaveLabels("bar");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task StarImportUnderscores() {
+            var module1Code = @"
+class A:
+    def foo(self):
+        pass
+    pass
+
+class _B:
+    def bar(self):
+        pass
+    pass
+";
+
+            var appCode = @"
+from module1 import *
+from module1 import _B as B
+
+A().
+_B().
+B().
+";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            comps.Should().HaveLabels("foo");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(6, 6));
+            comps.Should().NotContainLabels("bar");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(7, 5));
+            comps.Should().HaveLabels("bar");
+        }
     }
 }

@@ -23,7 +23,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
@@ -40,7 +39,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
             : base(new ExpressionEval(services, module, ast)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
-            ExportedMemberNames = ImmutableArray<string>.Empty;
         }
 
         public override bool Walk(NameExpression node) {
@@ -198,7 +196,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable)
                 && variable?.Value is IPythonCollection collection && collection.IsExact) {
-                ExportedMemberNames = collection.Contents
+                StarImportMemberNames = collection.Contents
                     .OfType<IPythonConstant>()
                     .Select(c => c.GetString())
                     .Where(s => !string.IsNullOrEmpty(s))
@@ -209,7 +207,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public IGlobalScope GlobalScope => Eval.GlobalScope;
-        public ImmutableArray<string> ExportedMemberNames { get; private set; }
+        public IReadOnlyList<string> StarImportMemberNames { get; private set; }
 
         /// <summary>
         /// Merges data from stub with the data from the module.

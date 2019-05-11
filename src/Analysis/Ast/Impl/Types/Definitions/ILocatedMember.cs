@@ -38,11 +38,6 @@ namespace Microsoft.Python.Analysis.Types {
         LocationInfo Definition { get; }
 
         /// <summary>
-        /// Link to the primary definition such as when variable is imported from another file.
-        /// </summary>
-        ILocatedMember Parent { get; }
-
-        /// <summary>
         /// List of references to the member.
         /// </summary>
         IReadOnlyList<LocationInfo> References { get; }

@@ -21,75 +21,51 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Values {
     [DebuggerDisplay("{DebuggerDisplay}")]
-    internal class Variable : LocatedMember, IVariable {
-        public Variable(string name, IMember value, VariableSource source, Location location) : base(location) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Value = value is IVariable v ? v.Value : value;
-            Source = source;
+    internal sealed class ImportedVariable : Variable, IImportedMember {
+        public ImportedVariable(string name, IVariable parent, Location location)
+            : base(name, parent.Value, VariableSource.Import, location) {
+            Parent = parent;
+            Parent?.AddReference(location);
         }
 
-        #region IVariable
-        public string Name { get; }
-        public VariableSource Source { get; }
-        public IMember Value { get; private set; }
-
-        public void Assign(IMember value, Location location) {
-            if (value is IVariable v) {
-                value = v.Value;
-            }
-            if (Value == null || Value.GetPythonType().IsUnknown() || value?.GetPythonType().IsUnknown() == false) {
-                Debug.Assert(!(value is IVariable));
-                Value = value;
-            }
-            AddReference(location);
-        }
+        #region IImportedMember
+        public ILocatedMember Parent { get; }
         #endregion
 
         #region ILocatedMember
-        public override PythonMemberType MemberType => PythonMemberType.Variable;
-
         public override LocationInfo Definition {
             get {
-                if (!Location.IsValid) {
-                    var lmv = GetImplicitlyDeclaredValue();
-                    if (lmv != null) {
-                        return lmv.Definition;
-                    }
+                if (!Location.IsValid && Parent != null) {
+                    return Parent?.Definition ?? LocationInfo.Empty;
                 }
-                return base.Definition ?? LocationInfo.Empty;
+                return base.Definition;
             }
         }
 
         public override IReadOnlyList<LocationInfo> References {
             get {
-                if (!Location.IsValid) {
-                    var lmv = GetImplicitlyDeclaredValue();
-                    if (lmv != null) {
-                        return lmv.References;
-                    }
+                if (!Location.IsValid && Parent != null) {
+                    return Parent?.References ?? Array.Empty<LocationInfo>();
                 }
-                return base.References ?? Array.Empty<LocationInfo>();
+                return base.References;
             }
         }
 
-        public override void AddReference(Location location) {
-            if (location.IsValid) {
-                if (!AddOrRemoveReference(lm => lm?.AddReference(location))) {
-                    base.AddReference(location);
-                }
+        protected override bool AddOrRemoveReference(Action<ILocatedMember> action) {
+            // Variable can be 
+            //   a) Declared locally in the module. In this case it has non-default
+            //      definition location and no parent (link).
+            //   b) Imported from another module via 'from module import X'.
+            //      In this case it has non-default definition location and non-null parent (link).
+            //   c) Imported from another module via 'from module import *'.
+            //      In this case it has default location (which means it is not explicitly declared)
+            //      and the non-null parent (link).
+            var explicitlyDeclared = Location.IsValid;
+            if (!explicitlyDeclared && Parent != null) {
+                action(Parent);
+                return true;
             }
-        }
-
-        public override void RemoveReferences(IPythonModule module) {
-            if (module == null) {
-                return;
-            }
-            if (!AddOrRemoveReference(lm => lm?.RemoveReferences(module))) {
-                base.RemoveReferences(module);
-            }
-        }
-
-        protected virtual bool AddOrRemoveReference(Action<ILocatedMember> action) {
+            // Explicitly declared. 
             // Values:
             //   a) If value is not a located member, then add reference to the variable.
             //   b) If variable name is the same as the value member name, then the variable
@@ -101,6 +77,7 @@ namespace Microsoft.Python.Analysis.Values {
                 action(lmv);
                 return true;
             }
+            action(Parent);
             return false;
         }
 

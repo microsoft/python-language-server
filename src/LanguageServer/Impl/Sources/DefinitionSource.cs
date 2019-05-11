@@ -82,7 +82,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         private Reference HandleFromImport(IDocumentAnalysis analysis, SourceLocation location, FromImportStatement statement, Node expr, out ILocatedMember definingMember) {
             definingMember = null;
-            
+
             // Are in the dotted name?
             var locationIndex = location.ToIndex(analysis.Ast);
             if (statement.Root.StartIndex <= locationIndex && locationIndex <= statement.Root.EndIndex) {
@@ -175,7 +175,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
                 var index = location.ToIndex(analysis.Ast);
                 if (indexSpan.Start <= index && index < indexSpan.End) {
-                    var definition = v.Parent != null ? v.Parent.Definition : (v.Value as ILocatedMember)?.Definition;
+                    var parent = (v as IImportedMember)?.Parent;
+                    var definition = parent?.Definition ?? (v.Value as ILocatedMember)?.Definition;
                     if (definition != null && CanNavigateToModule(definition.DocumentUri)) {
                         return new Reference { range = definition.Span, uri = definition.DocumentUri };
                     }
@@ -205,7 +206,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 case IPythonClassType cls:
                     // Data members may be instances that are not tracking locations.
                     // In this case we'll try look up the respective variable instead.
-                    using (eval.OpenScope(analysis.Document, cls.ClassDefinition)) {
+                    using (eval.OpenScope(cls)) {
                         eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
                         if (v2 != null) {
                             definingMember = v2;

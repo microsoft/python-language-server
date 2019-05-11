@@ -35,13 +35,13 @@ namespace Microsoft.Python.Analysis.Values {
             var listType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.List);
             var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
 
-            VariableCollection.DeclareVariable("__debug__", boolType, VariableSource.Builtin);
-            VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin);
-            VariableCollection.DeclareVariable("__file__", strType, VariableSource.Builtin);
-            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin);
-            VariableCollection.DeclareVariable("__package__", strType, VariableSource.Builtin);
-            VariableCollection.DeclareVariable("__path__", listType, VariableSource.Builtin);
-            VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin);
+            DeclareVariable("__debug__", boolType, VariableSource.Builtin);
+            DeclareVariable("__doc__", strType, VariableSource.Builtin);
+            DeclareVariable("__file__", strType, VariableSource.Builtin);
+            DeclareVariable("__name__", strType, VariableSource.Builtin);
+            DeclareVariable("__package__", strType, VariableSource.Builtin);
+            DeclareVariable("__path__", listType, VariableSource.Builtin);
+            DeclareVariable("__dict__", dictType, VariableSource.Builtin);
         }
     }
 }

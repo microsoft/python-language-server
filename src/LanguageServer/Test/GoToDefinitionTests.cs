@@ -13,6 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
@@ -303,6 +306,39 @@ helper.message
             reference.Should().NotBeNull();
             reference.range.Should().Be(0, 0, 0, 7);
             reference.uri.AbsolutePath.Should().Contain("__init__.py");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportedClassMember() {
+            await TestData.CreateTestSpecificFileAsync($"module{Path.DirectorySeparatorChar}bar.py", @"
+class Bar:
+    def get_name(self): ...
+");
+
+            const string code = @"
+from .module.bar import Bar
+
+class MainClass:
+    def __init__(self):
+        self.bar = Bar()
+
+    def foo(self):
+        return self.bar.get_name()
+";
+            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            var mainPath = TestData.GetTestSpecificUri("main.py");
+            var doc = rdt.OpenDocument(mainPath, code);
+
+            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(9, 27), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 8, 2, 16);
+            reference.uri.AbsolutePath.Should().Contain("bar.py");
         }
     }
 }
