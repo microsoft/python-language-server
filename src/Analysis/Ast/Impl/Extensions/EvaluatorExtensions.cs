@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -23,5 +24,10 @@ namespace Microsoft.Python.Analysis {
             => eval.LookupNameInScopes(name, out scope, out _, options);
         public static IMember LookupNameInScopes(this IExpressionEvaluator eval, string name, LookupOptions options = LookupOptions.Normal)
             => eval.LookupNameInScopes(name, out _, out _, options);
+
+        public static IDisposable OpenScope(this IExpressionEvaluator eval, IPythonClassType cls)
+            => eval.OpenScope(cls.DeclaringModule, cls.ClassDefinition);
+        public static IDisposable OpenScope(this IExpressionEvaluator eval, IPythonFunctionType ft)
+            => eval.OpenScope(ft.DeclaringModule, ft.FunctionDefinition);
     }
 }

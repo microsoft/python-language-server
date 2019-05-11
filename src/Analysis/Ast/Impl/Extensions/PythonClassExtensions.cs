@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis {
             if (m is LocatedMember lm) {
                 lm.AddReference(location);
             } else if(type is IPythonClassType cls) {
-                using (eval.OpenScope(cls.DeclaringModule, cls.ClassDefinition)) {
+                using (eval.OpenScope(cls)) {
                     eval.LookupNameInScopes(name, out _, out var v, LookupOptions.Local);
                     v?.AddReference(location);
                 }
