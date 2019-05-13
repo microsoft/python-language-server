@@ -19,13 +19,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Inspection;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {
-    internal class PythonInspectorService : IDisposable {
+    internal class PythonInspectorService : IPythonInspector, IDisposable {
         private readonly IProcessServices _procService;
         private readonly IPythonInterpreter _interpreter;
 
@@ -58,7 +59,7 @@ namespace Microsoft.Python.LanguageServer.Services {
             return PythonRpc.Create(_procService, _interpreter.Configuration.InterpreterPath, scriptPath);
         }
 
-        public Task<List<string>> ModuleMemberNames(string moduleName) {
+        public Task<IReadOnlyList<string>> GetModuleMemberNames(string moduleName) {
             return Rpc.InvokeAsync<List<string>>("moduleMemberNames", moduleName);
         }
 
