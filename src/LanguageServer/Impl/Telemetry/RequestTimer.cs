@@ -37,7 +37,7 @@ namespace Microsoft.Python.LanguageServer.Telemetry {
                 _events.TryGetValue(method, out var eventNum);
 
                 if (eventNum >= MaxEvents) {
-                    return new Timer();
+                    return Timer.Disabled;
                 }
 
                 _events[method] = eventNum + 1;
@@ -55,7 +55,9 @@ namespace Microsoft.Python.LanguageServer.Telemetry {
             private Dictionary<string, string> _extraProperties;
             private Dictionary<string, double> _extraMeasures;
 
-            public Timer() {
+            public static Timer Disabled = new Timer();
+
+            private Timer() {
                 _disabled = true;
             }
 
@@ -66,13 +68,17 @@ namespace Microsoft.Python.LanguageServer.Telemetry {
             }
 
             public void AddProperty(string name, string property) {
-                _extraProperties = _extraProperties ?? new Dictionary<string, string>();
-                _extraProperties[name] = property;
+                if (!_disabled) {
+                    _extraProperties = _extraProperties ?? new Dictionary<string, string>();
+                    _extraProperties[name] = property;
+                }
             }
 
             public void AddMeasure(string name, double measure) {
-                _extraMeasures = _extraMeasures ?? new Dictionary<string, double>();
-                _extraMeasures[name] = measure;
+                if (!_disabled) {
+                    _extraMeasures = _extraMeasures ?? new Dictionary<string, double>();
+                    _extraMeasures[name] = measure;
+                }
             }
 
             public void Dispose() {
