@@ -29,6 +29,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Extensibility;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.LanguageServer.Telemetry;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -50,6 +51,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private Server _server;
         private ILogger _logger;
         private ITelemetryService _telemetry;
+        private RequestTimer _requestTimer;
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
@@ -68,6 +70,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _idleTimeTracker = services.GetService<IIdleTimeTracker>();
             _logger = services.GetService<ILogger>();
             _telemetry = services.GetService<ITelemetryService>();
+            _requestTimer = new RequestTimer(_telemetry);
 
             var rpcTraceListener = new TelemetryRpcTraceListener(_telemetry);
             _rpc.TraceSource.Listeners.Add(rpcTraceListener);
@@ -101,8 +104,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("workspace/symbol")]
         public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
+            using (var timer = _requestTimer.Time("workspace/symbol")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                var result = await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
+                timer.AddMeasure("count", result.Length);
+                return result;
+            }
         }
 
         #endregion
@@ -199,32 +206,44 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #region Editor features
         [JsonRpcMethod("textDocument/completion")]
         public async Task<CompletionList> Completion(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.Completion(ToObject<CompletionParams>(token), GetToken(cancellationToken));
+            using (var timer = _requestTimer.Time("textDocument/completion")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                var result = await _server.Completion(ToObject<CompletionParams>(token), GetToken(cancellationToken));
+                timer.AddMeasure("count", result.items.Length);
+                return result;
+            }
         }
 
         [JsonRpcMethod("textDocument/hover")]
         public async Task<Hover> Hover(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.Hover(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            using (_requestTimer.Time("textDocument/hover")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                return await _server.Hover(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            }
         }
 
         [JsonRpcMethod("textDocument/signatureHelp")]
         public async Task<SignatureHelp> SignatureHelp(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.SignatureHelp(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            using (_requestTimer.Time("textDocument/signatureHelp")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                return await _server.SignatureHelp(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            }
         }
 
         [JsonRpcMethod("textDocument/definition")]
         public async Task<Reference[]> GotoDefinition(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.GotoDefinition(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            using (_requestTimer.Time("textDocument/definition")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                return await _server.GotoDefinition(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            }
         }
 
         [JsonRpcMethod("textDocument/references")]
         public async Task<Reference[]> FindReferences(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.FindReferences(ToObject<ReferencesParams>(token), GetToken(cancellationToken));
+            using (_requestTimer.Time("textDocument/references")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                return await _server.FindReferences(ToObject<ReferencesParams>(token), GetToken(cancellationToken));
+            }
         }
 
         //[JsonRpcMethod("textDocument/documentHighlight")]
@@ -235,9 +254,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("textDocument/documentSymbol")]
         public async Task<DocumentSymbol[]> DocumentSymbol(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            // This call is also used by VSC document outline and it needs correct information
-            return await _server.HierarchicalDocumentSymbol(ToObject<DocumentSymbolParams>(token), GetToken(cancellationToken));
+            using (_requestTimer.Time("textDocument/documentSymbol")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                // This call is also used by VSC document outline and it needs correct information
+                return await _server.HierarchicalDocumentSymbol(ToObject<DocumentSymbolParams>(token), GetToken(cancellationToken));
+            }
         }
 
         //[JsonRpcMethod("textDocument/codeAction")]
@@ -286,20 +307,28 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("textDocument/rename")]
         public async Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) {
-            await _prioritizer.DefaultPriorityAsync(cancellationToken);
-            return await _server.Rename(ToObject<RenameParams>(token), GetToken(cancellationToken));
+            using (var timer = _requestTimer.Time("textDocument/rename")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                return await _server.Rename(ToObject<RenameParams>(token), GetToken(cancellationToken));
+            }
         }
         #endregion
 
         #region Extensions
 
         [JsonRpcMethod("python/loadExtension")]
-        public Task LoadExtension(JToken token, CancellationToken cancellationToken)
-            => _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
+        public async Task LoadExtension(JToken token, CancellationToken cancellationToken) {
+            using (var timer = _requestTimer.Time("python/loadExtension")) {
+                await _server.LoadExtensionAsync(ToObject<PythonAnalysisExtensionParams>(token), _services, cancellationToken);
+            }
+        }
 
         [JsonRpcMethod("python/extensionCommand")]
-        public Task ExtensionCommand(JToken token, CancellationToken cancellationToken)
-            => _server.ExtensionCommandAsync(ToObject<ExtensionCommandParams>(token), cancellationToken);
+        public async Task ExtensionCommand(JToken token, CancellationToken cancellationToken) {
+            using (var timer = _requestTimer.Time("python/extensionCommand")) {
+                await _server.ExtensionCommandAsync(ToObject<ExtensionCommandParams>(token), cancellationToken);
+            }
+        }
         #endregion
 
         private T ToObject<T>(JToken token) => token.ToObject<T>(_jsonSerializer);
