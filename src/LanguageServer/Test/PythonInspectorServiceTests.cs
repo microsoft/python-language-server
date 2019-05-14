@@ -45,8 +45,23 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 for (var i = 0; i < 2; i++) {
                     var response = await inspector.GetModuleMemberNames("sys");
                     response.Should().NotBeNull();
-                    response.Members.Should().Contain("stdout");
+                    response.Members.Should().Contain("stdout").And.NotContain("__all__");
                     response.All.Should().BeNull();
+                }
+            }
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task MemberNamesOsPath(bool is3x) {
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
+            using (var inspector = new PythonInspectorService(s)) {
+                for (var i = 0; i < 2; i++) {
+                    var response = await inspector.GetModuleMemberNames("os.path");
+                    response.Should().NotBeNull();
+                    response.Members.Should().Contain("join").And.Contain("__all__");
+                    response.All.Should().Contain("join").And.NotContain("__all__");
                 }
             }
         }
