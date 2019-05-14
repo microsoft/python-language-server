@@ -60,7 +60,7 @@ def write_stdout(data):
         data = data.encode("utf-8")
 
     stdout.write(data)
-    # stdout.flush()
+    stdout.flush()
 
 
 METHOD_NOT_FOUND = -32601
