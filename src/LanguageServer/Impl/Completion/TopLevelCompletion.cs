@@ -35,7 +35,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 applicableSpan = new SourceSpan(context.IndexToLocation(span.Value.Start), context.IndexToLocation(span.Value.End));
             }
 
-            var scope = context.Analysis.FindScope(context.Location);
+            var scope = context.Analysis.FindScope(context.Location) ?? context.Analysis.GlobalScope;
             IEnumerable<CompletionItem> items;
             using (eval.OpenScope(scope)) {
                 // Get variables declared in the module.
@@ -45,15 +45,18 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             // Get builtins
             var builtins = context.Analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
-            var builtinItems = builtins.GetMemberNames()
-                .Select(n => {
-                    var m = builtins.GetMember(n);
-                    if ((options & CompletionListOptions.ExceptionsOnly) == CompletionListOptions.ExceptionsOnly && !IsExceptionType(m.GetPythonType())) {
-                        return null;
-                    }
-                    return context.ItemSource.CreateCompletionItem(n, m);
-                }).ExcludeDefault();
-            items = items.Concat(builtinItems);
+            if (builtins != null) {
+                var builtinItems = builtins.GetMemberNames()
+                    .Select(n => {
+                        var m = builtins.GetMember(n);
+                        if ((options & CompletionListOptions.ExceptionsOnly) == CompletionListOptions.ExceptionsOnly && !IsExceptionType(m.GetPythonType())) {
+                            return null;
+                        }
+
+                        return context.ItemSource.CreateCompletionItem(n, m);
+                    }).ExcludeDefault();
+                items = items.Concat(builtinItems);
+            }
 
             // Add possible function arguments.
             var finder = new ExpressionFinder(context.Ast, new FindExpressionOptions { Calls = true });
