@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
@@ -30,6 +31,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return ast.LocationToIndex(scope.Node.GetStart());
             }
         }
+
+        public static bool IsNestedInScope(this IScope s, IScope outer) 
+            => s.OuterScope != null && s.OuterScope.EnumerateTowardsGlobal.Any(x => x == outer);
 
         public static IScope FindScope(this IScope parent, IDocument document, SourceLocation location) {
             var children = parent.Children;
