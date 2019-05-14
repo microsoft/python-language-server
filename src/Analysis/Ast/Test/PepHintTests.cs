@@ -19,6 +19,7 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -75,6 +76,19 @@ class Response: # truncated
 
             c.Should().HaveMember<IPythonInstance>("elapsed")
                 .Which.Should().HaveSameMembersAs(timedelta);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task HintsInPython2() {
+            const string code = @"
+def func(x):
+    y = x # type: int
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveVariable("y")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
         }
     }
 }
