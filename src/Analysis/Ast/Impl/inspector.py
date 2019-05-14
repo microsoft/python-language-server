@@ -24,8 +24,9 @@ import sys
 import time
 import inspect
 import importlib
+import os.path
 
-sys.stderr = open("C:\\Users\\jabaile\\Desktop\\log.txt", "a")
+sys.stderr = open(os.path.join(os.path.expanduser("~"), "log.txt"), "a")
 
 if sys.version_info >= (3,):
     stdout = sys.stdout.buffer
@@ -53,7 +54,6 @@ INTERNAL_ERROR = -32603
 def read_request():
     headers = dict()
 
-    # Read headers
     while True:
         line = sys.stdin.readline().rstrip("\r\n")
         if not line:
@@ -152,7 +152,11 @@ def do_not_inspect(v):
 def module_members(module_name):
     module = importlib.import_module(module_name)
     members = inspect.getmembers(module)
-    return [name for name, _ in members]
+
+    return {
+        "members": [name for name, _ in members],
+        "all": getattr(module, "__all__", None),
+    }
 
 
 def main():

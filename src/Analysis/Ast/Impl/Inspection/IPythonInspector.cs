@@ -20,6 +20,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Analysis.Inspection {
     public interface IPythonInspector {
-        Task<IReadOnlyList<string>> GetModuleMemberNames(string moduleName);
+        Task<ModuleMemberNamesResponse> GetModuleMemberNames(string moduleName);
+    }
+
+    public class ModuleMemberNamesResponse {
+        public IReadOnlyList<string> Members;
+        public IReadOnlyList<string> All;
     }
 }

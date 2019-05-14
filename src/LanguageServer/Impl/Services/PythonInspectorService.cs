@@ -59,8 +59,8 @@ namespace Microsoft.Python.LanguageServer.Services {
             return PythonRpc.Create(_procService, _interpreter.Configuration.InterpreterPath, scriptPath);
         }
 
-        public Task<IReadOnlyList<string>> GetModuleMemberNames(string moduleName) {
-            return Rpc.InvokeAsync<List<string>>("moduleMemberNames", moduleName);
+        public Task<ModuleMemberNamesResponse> GetModuleMemberNames(string moduleName) {
+            return Rpc.InvokeAsync<ModuleMemberNamesResponse>("moduleMemberNames", moduleName);
         }
 
         public void Dispose() {

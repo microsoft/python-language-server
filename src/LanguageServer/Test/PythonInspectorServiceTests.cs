@@ -42,8 +42,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task SysMemberNames(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var result = await inspector.GetModuleMemberNames("sys");
-                result.Should().Contain("stdout");
+                var response = await inspector.GetModuleMemberNames("sys");
+                response.Should().NotBeNull();
+                response.Members.Should().Contain("stdout");
+                response.All.Should().BeNull();
             }
         }
     }
