@@ -42,12 +42,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task MemberNamesSys(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                for (var i = 0; i < 2; i++) {
-                    var response = await inspector.GetModuleMemberNames("sys");
-                    response.Should().NotBeNull();
-                    response.Members.Should().Contain("stdout").And.NotContain("__all__");
-                    response.All.Should().BeNull();
-                }
+                var response = await inspector.GetModuleMemberNames("sys");
+                response.Should().NotBeNull();
+                response.Members.Should().Contain("stdout").And.NotContain("__all__");
+                response.All.Should().BeNull();
             }
         }
 
@@ -57,12 +55,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task MemberNamesOsPath(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                for (var i = 0; i < 2; i++) {
-                    var response = await inspector.GetModuleMemberNames("os.path");
-                    response.Should().NotBeNull();
-                    response.Members.Should().Contain("join").And.Contain("__all__");
-                    response.All.Should().Contain("join").And.NotContain("__all__");
-                }
+                var response = await inspector.GetModuleMemberNames("os.path");
+                response.Should().NotBeNull();
+                response.Members.Should().Contain("join").And.Contain("__all__");
+                response.All.Should().Contain("join").And.NotContain("__all__");
             }
         }
 
@@ -72,9 +68,23 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task MemberNamesNotFound(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                for (var i = 0; i < 2; i++) {
+                var response = await inspector.GetModuleMemberNames("thismoduledoesnotexist");
+                response.Should().BeNull();
+            }
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task MemberNamesMultipleRequests(bool is3x) {
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
+            using (var inspector = new PythonInspectorService(s)) {
+                for (var i = 0; i < 10; i++) {
                     var response = await inspector.GetModuleMemberNames("thismoduledoesnotexist");
                     response.Should().BeNull();
+
+                    response = await inspector.GetModuleMemberNames("os.path");
+                    response.Should().NotBeNull();
                 }
             }
         }
