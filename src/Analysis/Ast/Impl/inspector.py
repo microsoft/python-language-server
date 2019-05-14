@@ -30,13 +30,29 @@ sys.stderr = open(os.path.join(os.path.expanduser("~"), "log.txt"), "a")
 
 if sys.version_info >= (3,):
     stdout = sys.stdout.buffer
+    stdin = sys.stdin.buffer
 else:
     stdout = sys.stdout
+    stdin = sys.stdin
 
     if sys.platform == "win32":
         import os, msvcrt
 
         msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+        msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+
+
+def read_line():
+    line = b""
+    while True:
+        try:
+            line += stdin.readline()
+        except:
+            raise EOFError
+        if not line:
+            raise EOFError
+        if line.endswith(b"\r\n"):
+            return line[:-2]
 
 
 def write_stdout(data):
@@ -44,7 +60,7 @@ def write_stdout(data):
         data = data.encode("utf-8")
 
     stdout.write(data)
-    stdout.flush()
+    # stdout.flush()
 
 
 METHOD_NOT_FOUND = -32601
@@ -55,21 +71,19 @@ def read_request():
     headers = dict()
 
     while True:
-        line = sys.stdin.readline().rstrip("\r\n")
-        if not line:
+        line = read_line()
+
+        if line == b"":
             break
 
-        key, _, value = line.partition(":")
+        key, _, value = line.partition(b": ")
         headers[key] = value
 
-    try:
-        length = int(headers["Content-Length"])
-    except (KeyError, ValueError):
-        raise IOError("Content-Length is missing or invalid")
+    length = int(headers[b"Content-Length"])
 
-    body = ""
+    body = b""
     while length > 0:
-        chunk = sys.stdin.read(length)
+        chunk = stdin.read(length)
         body += chunk
         length -= len(chunk)
 
@@ -77,15 +91,19 @@ def read_request():
     return Request(request)
 
 
-def write_response(id, result=None, error=None):
+def requests():
+    while True:
+        try:
+            request = read_request()
+        except EOFError:
+            return
+
+        yield request
+
+
+def write_response(id, d):
     response = {"jsonrpc": "2.0", "id": id}
-
-    if result is not None:
-        response["result"] = result
-
-    if error is not None:
-        assert result is None
-        response["error"] = error
+    response.update(d)
 
     s = json.dumps(response)
 
@@ -100,10 +118,10 @@ class Request(object):
         self.params = request.get("params", None)
 
     def write_result(self, result):
-        write_response(self.id, result)
+        write_response(self.id, {"result": result})
 
     def write_error(self, code, message):
-        write_response(self.id, error={"code": code, "message": message})
+        write_response(self.id, {"error": {"code": code, "message": message}})
 
 
 class Mux(object):
@@ -129,7 +147,7 @@ class Mux(object):
         try:
             result = handler(*request.params)
         except Exception as e:
-            request.write_error(result, INTERNAL_ERROR, str(e))
+            request.write_error(INTERNAL_ERROR, str(e))
         else:
             request.write_result(result)
 
@@ -150,7 +168,11 @@ def do_not_inspect(v):
 
 @mux.handler("moduleMemberNames")
 def module_members(module_name):
-    module = importlib.import_module(module_name)
+    try:
+        module = importlib.import_module(module_name)
+    except:
+        return None
+
     members = inspect.getmembers(module)
 
     return {
@@ -160,9 +182,11 @@ def module_members(module_name):
 
 
 def main():
-    while True:
-        request = read_request()
-        mux.handle(request)
+    try:
+        for request in requests():
+            mux.handle(request)
+    except EOFError:
+        return
 
 
 if __name__ == "__main__":

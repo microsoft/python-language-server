@@ -39,13 +39,28 @@ namespace Microsoft.Python.LanguageServer.Tests {
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
-        public async Task SysMemberNames(bool is3x) {
+        public async Task MemberNamesSys(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var response = await inspector.GetModuleMemberNames("sys");
-                response.Should().NotBeNull();
-                response.Members.Should().Contain("stdout");
-                response.All.Should().BeNull();
+                for (var i = 0; i < 2; i++) {
+                    var response = await inspector.GetModuleMemberNames("sys");
+                    response.Should().NotBeNull();
+                    response.Members.Should().Contain("stdout");
+                    response.All.Should().BeNull();
+                }
+            }
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task MemberNamesNotFound(bool is3x) {
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
+            using (var inspector = new PythonInspectorService(s)) {
+                for (var i = 0; i < 2; i++) {
+                    var response = await inspector.GetModuleMemberNames("thismoduledoesnotexist");
+                    response.Should().BeNull();
+                }
             }
         }
     }
