@@ -27,15 +27,13 @@ using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Services {
     internal class PythonInspectorService : IPythonInspector, IDisposable {
-        private readonly IProcessServices _procService;
-        private readonly IPythonInterpreter _interpreter;
+        private readonly IServiceContainer _services;
 
         private readonly object _lock = new object();
         private JsonRpc _rpc;
 
         public PythonInspectorService(IServiceContainer services) {
-            _procService = services.GetService<IProcessServices>();
-            _interpreter = services.GetService<IPythonInterpreter>();
+            _services = services;
         }
 
         private JsonRpc Rpc {
@@ -56,7 +54,10 @@ namespace Microsoft.Python.LanguageServer.Services {
                 return null; // Throw?
             }
 
-            return PythonRpc.Create(_procService, _interpreter.Configuration.InterpreterPath, scriptPath);
+            var procServices = _services.GetService<IProcessServices>();
+            var interpreter = _services.GetService<IPythonInterpreter>();
+
+            return PythonRpc.Create(procServices, interpreter.Configuration.InterpreterPath, scriptPath);
         }
 
         public Task<ModuleMemberNamesResponse> GetModuleMemberNames(string moduleName) {
@@ -70,11 +71,17 @@ namespace Microsoft.Python.LanguageServer.Services {
         private class PythonRpc : JsonRpc {
             private readonly IProcessServices _procServices;
             private IProcess _process;
+            private bool _disposed;
 
             private PythonRpc(IProcessServices procServices, IProcess process) : base(process.StandardInput.BaseStream, process.StandardOutput.BaseStream) {
                 _procServices = procServices;
                 _process = process;
+                Disconnected += PythonRpc_Disconnected;
                 StartListening();
+            }
+
+            private void PythonRpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e) {
+                Dispose();
             }
 
             public static PythonRpc Create(IProcessServices procServices, string exe, params string[] args) {
@@ -91,6 +98,14 @@ namespace Microsoft.Python.LanguageServer.Services {
             }
 
             protected override void Dispose(bool disposing) {
+                if (_disposed) {
+                    return;
+                }
+
+                _disposed = true;
+
+                Disconnected -= PythonRpc_Disconnected;
+
                 base.Dispose(disposing);
                 if (_process?.HasExited == false) {
                     _procServices.Kill(_process);
