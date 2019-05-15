@@ -183,11 +183,8 @@ def module_members(module_name):
 
 
 def main():
-    try:
-        for request in requests():
-            mux.handle(request)
-    except EOFError:
-        return
+    for request in requests():
+        mux.handle(request)
 
 
 if __name__ == "__main__":
