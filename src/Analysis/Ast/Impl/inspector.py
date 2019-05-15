@@ -26,7 +26,8 @@ import inspect
 import importlib
 import os.path
 
-sys.stderr = open(os.path.join(os.path.expanduser("~"), "log.txt"), "a")
+# Uncomment to send stderr somewhere readable.
+# sys.stderr = open(os.path.join(os.path.expanduser("~"), "log.txt"), "a")
 
 if sys.version_info >= (3,):
     stdout = sys.stdout.buffer
