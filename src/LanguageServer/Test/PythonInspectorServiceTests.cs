@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Inspection;
 using Microsoft.Python.Analysis.Tests;
 using Microsoft.Python.LanguageServer.Services;
 using Microsoft.Python.Parsing.Tests;
@@ -79,12 +80,22 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task MemberNamesMultipleRequests(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                for (var i = 0; i < 10; i++) {
-                    var response = await inspector.GetModuleMemberNames("thismoduledoesnotexist");
-                    response.Should().BeNull();
+                var tasks = new List<Task<ModuleMemberNamesResponse>>();
 
-                    response = await inspector.GetModuleMemberNames("os.path");
-                    response.Should().NotBeNull();
+                for (var i = 0; i < 10; i++) {
+                    tasks.Add(inspector.GetModuleMemberNames("thismoduledoesnotexist"));
+                    tasks.Add(inspector.GetModuleMemberNames("os.path"));
+                }
+
+                var results = await Task.WhenAll(tasks);
+
+                for (var i = 0; i < results.Length; i++) {
+                    var result = results[i];
+                    if (i % 2 == 0) {
+                        result.Should().BeNull();
+                    } else {
+                        result.Should().NotBeNull();
+                    }
                 }
             }
         }
