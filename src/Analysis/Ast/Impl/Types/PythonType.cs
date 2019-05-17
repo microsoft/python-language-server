@@ -25,8 +25,6 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonType : LocatedMember, IPythonType, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private readonly string _name;
-        private Func<string, string> _documentationProvider;
-        private string _documentation;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;
@@ -42,16 +40,7 @@ namespace Microsoft.Python.Analysis.Types {
             string documentation,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
         ) : this(name, location, typeId) {
-            _documentation = documentation;
-        }
-
-        public PythonType(
-                string name,
-                Location location,
-                Func<string, string> documentationProvider,
-                BuiltinTypeId typeId = BuiltinTypeId.Unknown
-            ) : this(name, location, typeId) {
-            _documentationProvider = documentationProvider;
+            Documentation = documentation;
         }
 
         private PythonType(string name, Location location, BuiltinTypeId typeId) : base(location) {
@@ -67,7 +56,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
 
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
-        public virtual string Documentation => _documentationProvider != null ? _documentationProvider.Invoke(Name) : _documentation;
+        public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
@@ -111,8 +100,7 @@ namespace Microsoft.Python.Analysis.Types {
             return true;
         }
 
-        internal virtual void SetDocumentationProvider(Func<string, string> provider) => _documentationProvider = provider;
-        internal virtual void SetDocumentation(string documentation) => _documentation = documentation;
+        internal virtual void SetDocumentation(string documentation) => Documentation = documentation;
 
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {

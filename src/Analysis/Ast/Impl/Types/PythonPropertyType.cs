@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonPropertyType(FunctionDefinition fd, Location location, IPythonType declaringType, bool isAbstract)
             : this(fd.Name, location, declaringType, isAbstract) {
-            FunctionDefinition = fd;
+            declaringType.DeclaringModule.AddAstNode(this, fd);
         }
 
         public PythonPropertyType(string name, Location location, IPythonType declaringType, bool isAbstract)
@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IPythonPropertyType
-        public FunctionDefinition FunctionDefinition { get; }
+        public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
         public override bool IsAbstract { get; }
         public bool IsReadOnly => true;
         public IPythonType DeclaringType { get; }

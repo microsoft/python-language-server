@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var location = new Location(this, default);
 
             // TypeVar
-            var fn = new PythonFunctionType("TypeVar", location, null, GetMemberDocumentation);
+            var fn = new PythonFunctionType("TypeVar", location, null, GetMemberDocumentation("TypeVar"));
             var o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["TypeVar"] = fn;
 
             // NewType
-            fn = new PythonFunctionType("NewType", location, null, GetMemberDocumentation);
+            fn = new PythonFunctionType("NewType", location, null, GetMemberDocumentation("NewType"));
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["NewType"] = fn;
 
             // NewType
-            fn = new PythonFunctionType("Type", location, null, GetMemberDocumentation);
+            fn = new PythonFunctionType("Type", location, null, GetMemberDocumentation("Type"));
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
 
-            fn = new PythonFunctionType("NamedTuple", location, null, GetMemberDocumentation);
+            fn = new PythonFunctionType("NamedTuple", location, null, GetMemberDocumentation("NamedTuple"));
             o = new PythonFunctionOverload(fn.Name, location);
             o.SetReturnValueProvider((interpreter, overload, args) => CreateNamedTuple(args.Values<IMember>()));
             fn.AddOverload(o);

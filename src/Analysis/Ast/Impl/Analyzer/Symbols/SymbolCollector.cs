@@ -119,8 +119,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.ReplacedByStubs.Contains(fd)) {
                 var stubOverload = GetOverloadFromStub(fd);
                 if (stubOverload != null) {
-                    if (!string.IsNullOrEmpty(fd.GetDocumentation())) {
-                        stubOverload.SetDocumentationProvider(_ => fd.GetDocumentation());
+                    var documentation = fd.GetDocumentation();
+                    if (!string.IsNullOrEmpty(documentation)) {
+                        stubOverload.SetDocumentation(documentation);
                     }
                     addOverload(stubOverload);
                     _table.ReplacedByStubs.Add(fd);
@@ -131,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
-                var overload = new PythonFunctionOverload(fd, function, _eval.GetLocationOfName(fd));
+                var overload = new PythonFunctionOverload(function, _eval.GetLocationOfName(fd));
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, overload));
             }

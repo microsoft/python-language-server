@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule> {
+    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer {
         private enum State {
             None,
             Loading,
@@ -56,13 +56,13 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
+        private readonly Dictionary<IPythonType, Node> _astMap = new Dictionary<IPythonType, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
 
         private string _documentation; // Must be null initially.
         private CancellationTokenSource _parseCts;
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
-        private PythonAst _ast;
         private bool _updated;
 
         protected ILogger Log { get; }
@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public virtual string Documentation {
             get {
-                _documentation = _documentation ?? _ast?.Documentation;
+                _documentation = _documentation ?? GetAstNode<PythonAst>(this)?.Documentation;
                 if (_documentation == null) {
                     var m = GetMember("__doc__");
                     _documentation = m.TryGetConstant<string>(out var s) ? s : string.Empty;
@@ -189,39 +189,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; internal set; }
-
-        protected virtual string LoadContent() {
-            if (ContentState < State.Loading) {
-                ContentState = State.Loading;
-                try {
-                    var code = FileSystem.ReadTextWithRetry(FilePath);
-                    ContentState = State.Loaded;
-                    return code;
-                } catch (IOException) { } catch (UnauthorizedAccessException) { }
-            }
-            return null; // Keep content as null so module can be loaded later.
-        }
-
-        private void InitializeContent(string content, int version) {
-            lock (AnalysisLock) {
-                LoadContent(content, version);
-
-                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
-                if (startParse) {
-                    Parse();
-                }
-            }
-        }
-
-        private void LoadContent(string content, int version) {
-            if (ContentState < State.Loading) {
-                try {
-                    content = content ?? LoadContent();
-                    _buffer.Reset(version, content);
-                    ContentState = State.Loaded;
-                } catch (IOException) { } catch (UnauthorizedAccessException) { }
-            }
-        }
         #endregion
 
         #region IDisposable
@@ -282,10 +249,10 @@ namespace Microsoft.Python.Analysis.Modules {
                 }
             }
             cancellationToken.ThrowIfCancellationRequested();
-            return _ast;
+            return GetAstNode<PythonAst>(this);
         }
 
-        public PythonAst GetAnyAst() => _ast;
+        public PythonAst GetAnyAst() => GetAstNode<PythonAst>(this);
 
         /// <summary>
         /// Provides collection of parsing errors, if any.
@@ -359,7 +326,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 if (version != _buffer.Version) {
                     throw new OperationCanceledException();
                 }
-                _ast = ast;
+                _astMap[this] = ast;
                 _parseErrors = sink?.Diagnostics ?? Array.Empty<DiagnosticsEntry>();
 
                 // Do not report issues with libraries or stubs
@@ -450,6 +417,19 @@ namespace Microsoft.Python.Analysis.Modules {
         protected virtual void OnAnalysisComplete() { }
         #endregion
 
+        #region IEquatable
+        public bool Equals(IPythonModule other) => Name.Equals(other?.Name) && FilePath.Equals(other?.FilePath);
+        #endregion
+
+        #region IAstNodeContainer
+        public T GetAstNode<T>(IPythonType t) where T : Node => _astMap.TryGetValue(t, out var n) ? (T)n : null;
+        public void AddAstNode(IPythonType t, Node n) {
+            Debug.Assert(!_astMap.ContainsKey(t));
+            _astMap[t] = n;
+        }
+        public void Clear() => _astMap.Clear();
+        #endregion
+
         #region Analysis
         public IDocumentAnalysis GetAnyAnalysis() => Analysis;
 
@@ -458,14 +438,42 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #endregion
 
-        private void RemoveReferencesInModule(IPythonModule module) {
-            if (module.GlobalScope?.Variables != null) {
-                foreach (var v in module.GlobalScope.Variables) {
-                    v.RemoveReferences(this);
+        #region Content management
+        protected virtual string LoadContent() {
+            if (ContentState < State.Loading) {
+                ContentState = State.Loading;
+                try {
+                    var code = FileSystem.ReadTextWithRetry(FilePath);
+                    ContentState = State.Loaded;
+                    return code;
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+            return null; // Keep content as null so module can be loaded later.
+        }
+
+        private void InitializeContent(string content, int version) {
+            lock (AnalysisLock) {
+                LoadContent(content, version);
+
+                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
+                if (startParse) {
+                    Parse();
                 }
             }
         }
 
+        private void LoadContent(string content, int version) {
+            if (ContentState < State.Loading) {
+                try {
+                    content = content ?? LoadContent();
+                    _buffer.Reset(version, content);
+                    ContentState = State.Loaded;
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+        }
+        #endregion
+
+        #region Documentation
         private string TryGetDocFromModuleInitFile() {
             if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
                 return string.Empty;
@@ -496,7 +504,7 @@ namespace Microsoft.Python.Analysis.Modules {
                         // Also, handle quadruple+ quotes.
                         line = line.Trim();
                         line = line.All(c => c == quote[0]) ? quote : line;
-                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) { 
+                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) {
                             return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
                         }
                         var sb = new StringBuilder();
@@ -513,7 +521,14 @@ namespace Microsoft.Python.Analysis.Modules {
             } catch (IOException) { } catch (UnauthorizedAccessException) { }
             return string.Empty;
         }
+        #endregion
 
-        public bool Equals(IPythonModule other) => Name.Equals(other?.Name) && FilePath.Equals(other?.FilePath);
+        private void RemoveReferencesInModule(IPythonModule module) {
+            if (module.GlobalScope?.Variables != null) {
+                foreach (var v in module.GlobalScope.Variables) {
+                    v.RemoveReferences(this);
+                }
+            }
+        }
     }
 }

@@ -53,21 +53,7 @@ namespace Microsoft.Python.Analysis.Types {
             Location location,
             IPythonType declaringType,
             string documentation
-        ) : this(name, location, declaringType, _ => documentation) {
-            Check.ArgumentNotNull(nameof(location), location.Module);
-        }
-
-        /// <summary>
-        /// Creates function type to use in special cases when function is dynamically
-        /// created, such as in specializations and custom iterators, without the actual
-        /// function definition in the AST.
-        /// </summary>
-        public PythonFunctionType(
-            string name,
-            Location location,
-            IPythonType declaringType,
-            Func<string, string> documentationProvider
-        ) : base(name, location, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+        ) : base(name, location, documentation, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
         }
 
@@ -75,10 +61,9 @@ namespace Microsoft.Python.Analysis.Types {
             FunctionDefinition fd,
             IPythonType declaringType,
             Location location
-        ) : base(fd.Name, location, fd.Documentation,
-                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+        ) : base(fd.Name, location, fd.Documentation, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
-            FunctionDefinition = fd;
+            location.Module.AddAstNode(this, fd);
             DeclaringType = declaringType;
 
             if (fd.Name == "__init__") {
@@ -88,7 +73,6 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
-
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
@@ -98,18 +82,17 @@ namespace Microsoft.Python.Analysis.Types {
             return overload?.Call(args, instance?.GetPythonType() ?? DeclaringType);
         }
 
-        internal override void SetDocumentationProvider(Func<string, string> provider) {
+        internal override void SetDocumentation(string documentation) {
             foreach (var o in Overloads) {
-                (o as PythonFunctionOverload)?.SetDocumentationProvider(provider);
+                (o as PythonFunctionOverload)?.SetDocumentation(documentation);
             }
-
-            base.SetDocumentationProvider(provider);
+            base.SetDocumentation(documentation);
         }
 
         #endregion
 
         #region IPythonFunction
-        public FunctionDefinition FunctionDefinition { get; }
+        public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
         public IPythonType DeclaringType { get; }
         public override string Documentation => _documentation ?? base.Documentation ?? (_overloads.Count > 0 ? _overloads[0].Documentation : default);
         public virtual bool IsClassMethod { get; private set; }
