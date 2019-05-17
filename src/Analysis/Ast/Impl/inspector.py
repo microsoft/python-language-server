@@ -236,9 +236,12 @@ def module_version(module_name):
         pass
 
     if not version:
-        d = find_dist(module_name)
-        if d:
-            version = d.version
+        try:
+            d = find_dist(module_name)
+            if d:
+                version = d.version
+        except:
+            pass
 
     return version
 
