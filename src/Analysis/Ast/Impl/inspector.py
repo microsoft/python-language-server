@@ -173,7 +173,14 @@ def build_dists():
     dists = dict()
 
     for d in pkg_resources.WorkingSet():
-        top_level = d.get_metadata("top_level.txt")
+        top_level = None
+
+        try:
+            top_level = d.get_metadata("top_level.txt")
+        except:
+            pass
+
+        # TODO: Figure out how to handle dists which don't ship with top_level.txt (like PyQt5)
         if not top_level:
             continue
 
