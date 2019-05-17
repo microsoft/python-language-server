@@ -180,7 +180,9 @@ def build_dists():
         module_prefixes = top_level.splitlines()
 
         for prefix in module_prefixes:
-            dists[prefix] = d
+            prefix = prefix.strip()
+            if prefix:
+                dists[prefix] = d
 
     return dists
 
@@ -233,9 +235,10 @@ def module_version(module_name):
     except:
         pass
 
-    d = find_dist(module_name)
-    if d:
-        version = d.version
+    if not version:
+        d = find_dist(module_name)
+        if d:
+            version = d.version
 
     return version
 

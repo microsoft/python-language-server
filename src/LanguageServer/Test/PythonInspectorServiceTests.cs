@@ -121,6 +121,22 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 version.Should().BeNull();
             }
         }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task UseAfterDispose(bool is3x) {
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
+            using (var inspector = new PythonInspectorService(s)) {
+                var version = await inspector.GetModuleVersion("setuptools");
+                version.Should().NotBeNullOrEmpty();
+
+                inspector.Dispose();
+
+                version = await inspector.GetModuleVersion("setuptools");
+                version.Should().NotBeNullOrEmpty();
+            }
+        }
     }
 }
 
