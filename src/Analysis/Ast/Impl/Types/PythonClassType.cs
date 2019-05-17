@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Types {
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
         ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
-            ClassDefinition = classDefinition;
+            DeclaringModule.AddAstNode(this, classDefinition);
         }
 
         #region IPythonType
@@ -153,7 +153,7 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IPythonClass
-        public ClassDefinition ClassDefinition { get; }
+        public ClassDefinition ClassDefinition => DeclaringModule.GetAstNode<ClassDefinition>(this);
         public IReadOnlyList<IPythonType> Bases => _bases;
 
         public IReadOnlyList<IPythonType> Mro {

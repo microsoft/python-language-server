@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
-        private readonly Dictionary<IPythonType, Node> _astMap = new Dictionary<IPythonType, Node>();
+        private readonly Dictionary<object, Node> _astMap = new Dictionary<object, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
 
         private string _documentation; // Must be null initially.
@@ -422,10 +422,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAstNodeContainer
-        public T GetAstNode<T>(IPythonType t) where T : Node => _astMap.TryGetValue(t, out var n) ? (T)n : null;
-        public void AddAstNode(IPythonType t, Node n) {
-            Debug.Assert(!_astMap.ContainsKey(t));
-            _astMap[t] = n;
+        public T GetAstNode<T>(object o) where T : Node => _astMap.TryGetValue(o, out var n) ? (T)n : null;
+        public void AddAstNode(object o, Node n) {
+            Debug.Assert(!_astMap.ContainsKey(o));
+            _astMap[o] = n;
         }
         public void Clear() => _astMap.Clear();
         #endregion

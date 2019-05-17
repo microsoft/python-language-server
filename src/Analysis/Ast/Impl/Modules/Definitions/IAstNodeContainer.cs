@@ -19,17 +19,17 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Modules {
     internal interface IAstNodeContainer {
         /// <summary>
-        /// Provides access to AST nodes associated with types such as
+        /// Provides access to AST nodes associated with objects such as
         /// <see cref="ClassDefinition"/> for <see cref="IPythonClassType"/>.
         /// Nodes are not available for library modules as AST is not retained
         /// in libraries in order to conserve memory.
         /// </summary>
-        T GetAstNode<T>(IPythonType t) where T : Node;
+        T GetAstNode<T>(object o) where T : Node;
 
         /// <summary>
-        /// Associated AST node with the type.
+        /// Associated AST node with the object.
         /// </summary>
-        void AddAstNode(IPythonType t, Node n);
+        void AddAstNode(object o, Node n);
 
         /// <summary>
         /// Removes all AST node associations.

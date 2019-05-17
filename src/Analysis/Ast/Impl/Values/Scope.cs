@@ -32,16 +32,15 @@ namespace Microsoft.Python.Analysis.Values {
         private List<Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
-            Node = node;
             OuterScope = outerScope;
             Module = module;
+            Module.AddAstNode(this, node);
             DeclareBuiltinVariables();
         }
 
         #region IScope
-
         public string Name => Node?.Name ?? "<global>";
-        public virtual ScopeStatement Node { get; }
+        public virtual ScopeStatement Node => Module.GetAstNode<ClassDefinition>(this);
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
 
