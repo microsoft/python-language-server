@@ -16,13 +16,12 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Delegates most of the methods to the wrapped/inner class.
     /// </summary>
-    internal class PythonTypeWrapper : IPythonType, IHasQualifiedName {
+    internal class PythonTypeWrapper : IPythonType {
         private readonly BuiltinTypeId _builtinTypeId;
         private IPythonType _innerType;
 
@@ -84,11 +83,6 @@ namespace Microsoft.Python.Analysis.Types {
         #region IMemberContainer
         public virtual IMember GetMember(string name) => InnerType.GetMember(name);
         public virtual IEnumerable<string> GetMemberNames() => InnerType.GetMemberNames();
-        #endregion
-
-        #region IHasQualifiedName
-        public virtual string FullyQualifiedName => (InnerType as IHasQualifiedName)?.FullyQualifiedName;
-        public virtual KeyValuePair<string, string> FullyQualifiedNamePair => (InnerType as IHasQualifiedName)?.FullyQualifiedNamePair ?? default;
         #endregion
 
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;

@@ -31,9 +31,9 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             => scope.GlobalScope.Module.Interpreter.LanguageVersion.Is3x();
 
         public static void AssertTypeIds(
-            IEnumerable<BuiltinTypeId> actualTypeIds, 
-            IEnumerable<BuiltinTypeId> typeIds, 
-            string name, bool languageVersionIs3X, string because, 
+            IEnumerable<BuiltinTypeId> actualTypeIds,
+            IEnumerable<BuiltinTypeId> typeIds,
+            string name, bool languageVersionIs3X, string because,
             object[] reasonArgs, string itemNameSingle = "type", string itemNamePlural = "types") {
             var expected = typeIds.Select(t => {
                 switch (t) {
@@ -163,22 +163,12 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         public static string GetQuotedName(object value) {
-            string name;
-            switch (value) {
-                case IHasQualifiedName _:
-                case IPythonModule _:
-                    name = GetName(value);
-                    return string.IsNullOrEmpty(name) ? string.Empty : $"'{name}'";
-                default:
-                    name = GetName(value);
-                    return string.IsNullOrEmpty(name) ? string.Empty : $"'{name}'";
-            }
+            var name = GetName(value);
+            return string.IsNullOrEmpty(name) ? string.Empty : $"'{name}'";
         }
 
         public static string GetName(object value) {
             switch (value) {
-                case IHasQualifiedName qualifiedName:
-                    return qualifiedName.FullyQualifiedName;
                 case IPythonModule pythonModule:
                     return pythonModule.Name;
                 case IScope scope:

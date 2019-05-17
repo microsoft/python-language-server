@@ -124,12 +124,6 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads;
         #endregion
 
-        #region IHasQualifiedName
-        public override string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public override KeyValuePair<string, string> FullyQualifiedNamePair =>
-            new KeyValuePair<string, string>((DeclaringType as IHasQualifiedName)?.FullyQualifiedName ?? DeclaringType?.Name ?? DeclaringModule?.Name, Name);
-        #endregion
-
         internal void Specialize(string[] dependencies) {
             _isSpecialized = true;
             Dependencies = dependencies != null
