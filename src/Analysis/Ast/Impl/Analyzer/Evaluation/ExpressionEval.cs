@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
@@ -37,12 +38,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly object _lock = new object();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
-        public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
+        public ExpressionEval(IServiceContainer services, IPythonModule module, GlobalScope gs)
+            : this(services, module, AstUtilities.MakeEmptyAst(module.Uri), gs) { }
+
+        public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast)
+            : this(services, module, ast, new GlobalScope(module)) { }
+
+        public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast, GlobalScope gs) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
             Module = module ?? throw new ArgumentNullException(nameof(module));
             Ast = ast ?? throw new ArgumentNullException(nameof(ast));
 
-            GlobalScope = new GlobalScope(module);
+            GlobalScope = gs;
             CurrentScope = GlobalScope;
             DefaultLocation = new Location(module);
             //Log = services.GetService<ILogger>();

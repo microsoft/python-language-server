@@ -206,7 +206,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Eval.ClearCache();
         }
 
-        public IGlobalScope GlobalScope => Eval.GlobalScope;
+        public GlobalScope GlobalScope => Eval.GlobalScope;
         public IReadOnlyList<string> StarImportMemberNames { get; private set; }
 
         /// <summary>

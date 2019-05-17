@@ -21,7 +21,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -115,33 +114,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             return value;
-        }
-
-        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins)
-            => GetTypeFromAnnotation(expr, out _, options);
-
-        public IPythonType GetTypeFromAnnotation(Expression expr, out bool isGeneric, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
-            isGeneric = false;
-            switch (expr) {
-                case null:
-                    return null;
-                case CallExpression callExpr:
-                    // x: NamedTuple(...)
-                    return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
-                case IndexExpression indexExpr:
-                    // Try generics
-                    var target = GetValueFromExpression(indexExpr.Target);
-                    var result = GetValueFromGeneric(target, indexExpr);
-                    if (result != null) {
-                        isGeneric = true;
-                        return result.GetPythonType();
-                    }
-                    break;
-            }
-
-            // Look at specialization and typing first
-            var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
-            return ann.GetValue(new TypeAnnotationConverter(this, options));
         }
 
         /// <summary>

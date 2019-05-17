@@ -349,7 +349,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             walker.Complete();
             _analyzerCancellationToken.ThrowIfCancellationRequested();
-            var analysis = new DocumentAnalysis((IDocument)module, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
+            var analysis = CreateAnalysis((IDocument)module, version, walker);
 
             analyzable?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
@@ -365,5 +365,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Started = 1,
             Completed = 2
         }
+
+        private IDocumentAnalysis CreateAnalysis(IDocument document, int version, ModuleWalker walker)
+            => document.ModuleType == ModuleType.User
+                ? (IDocumentAnalysis)new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames)
+                : new LibraryAnalysis(document, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames);
     }
 }
