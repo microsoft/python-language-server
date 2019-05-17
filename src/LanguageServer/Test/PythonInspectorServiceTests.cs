@@ -99,6 +99,28 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 }
             }
         }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task ModuleVersionSetuptools(bool is3x) {
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
+            using (var inspector = new PythonInspectorService(s)) {
+                var version = await inspector.GetModuleVersion("setuptools");
+                version.Should().NotBeNullOrEmpty();
+            }
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task ModuleVersionNotFound(bool is3x) {
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
+            using (var inspector = new PythonInspectorService(s)) {
+                var version = await inspector.GetModuleVersion("thismoduledoesnotexist");
+                version.Should().BeNull();
+            }
+        }
     }
 }
 

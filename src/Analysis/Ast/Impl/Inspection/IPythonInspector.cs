@@ -21,6 +21,8 @@ using System.Threading.Tasks;
 namespace Microsoft.Python.Analysis.Inspection {
     public interface IPythonInspector {
         Task<ModuleMemberNamesResponse> GetModuleMemberNames(string moduleName);
+
+        Task<string> GetModuleVersion(string moduleName);
     }
 
     public class ModuleMemberNamesResponse {

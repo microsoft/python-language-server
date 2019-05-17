@@ -167,8 +167,49 @@ def do_not_inspect(v):
     return bool(getattr(v, "__defaults__", False))
 
 
+def build_dists():
+    import pkg_resources
+
+    dists = dict()
+
+    for d in pkg_resources.WorkingSet():
+        top_level = d.get_metadata("top_level.txt")
+        if not top_level:
+            continue
+
+        module_prefixes = top_level.splitlines()
+
+        for prefix in module_prefixes:
+            dists[prefix] = d
+
+    return dists
+
+
+DISTS = None
+
+
+def find_dist(module_name):
+    global DISTS
+    if DISTS is None:
+        DISTS = build_dists()
+
+    while True:
+        if not module_name:
+            return None
+
+        d = DISTS.get(module_name, None)
+        if d:
+            return d
+
+        split = module_name.split(".")
+        if len(split) < 2:
+            return None
+
+        module_name = ".".join(split[:-1])
+
+
 @mux.handler("moduleMemberNames")
-def module_members(module_name):
+def module_member_names(module_name):
     try:
         module = importlib.import_module(module_name)
     except:
@@ -180,6 +221,23 @@ def module_members(module_name):
         "members": [name for name, _ in members],
         "all": getattr(module, "__all__", None),
     }
+
+
+@mux.handler("moduleVersion")
+def module_version(module_name):
+    version = None
+    try:
+        # TODO: iterate as in find_dist and import looking for __version__?
+        module = importlib.import_module(module_name)
+        version = getattr(module, "__version__", None)
+    except:
+        pass
+
+    d = find_dist(module_name)
+    if d:
+        version = d.version
+
+    return version
 
 
 def main():

@@ -64,6 +64,10 @@ namespace Microsoft.Python.LanguageServer.Services {
             return Rpc.InvokeAsync<ModuleMemberNamesResponse>("moduleMemberNames", moduleName);
         }
 
+        public Task<string> GetModuleVersion(string moduleName) {
+            return Rpc.InvokeAsync<string>("moduleVersion", moduleName);
+        }
+
         public void Dispose() {
             _rpc?.Dispose();
         }
