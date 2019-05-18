@@ -59,8 +59,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public Uri Module { get; }
-        public NewLineLocation[] NewLineLocations { get; }
-        public SourceLocation[] CommentLocations { get; }
+        public NewLineLocation[] NewLineLocations { get; private set; }
+        public SourceLocation[] CommentLocations { get; private set; }
         public override string Name => "<module>";
 
         /// <summary>
@@ -93,8 +93,13 @@ namespace Microsoft.Python.Parsing.Ast {
         public override Statement Body => _body;
         public PythonLanguageVersion LanguageVersion { get; }
 
-        public void Reduce() {
-            _attributes.Clear();
+        public void Reduce(Func<Statement, bool> filter) {
+            (Body as SuiteStatement)?.FilterStatements(filter);
+            _attributes?.Clear();
+            Variables?.Clear();
+            NewLineLocations = Array.Empty<NewLineLocation>();
+            CommentLocations = Array.Empty<SourceLocation>();
+            base.Clear();
         }
 
         internal bool TryGetAttribute(Node node, object key, out object value) {

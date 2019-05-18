@@ -277,7 +277,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return;
                 }
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(entry, module, _walker.Version);
+                AnalyzeEntry(entry, module, _walker.Version, node.IsComplete);
                 node.Commit();
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
@@ -319,7 +319,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(_entry, module, Version);
+                AnalyzeEntry(_entry, module, Version, true);
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
@@ -336,7 +336,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, int version) {
+        private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, int version, bool isFinalPass) {
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
@@ -349,7 +349,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             walker.Complete();
             _analyzerCancellationToken.ThrowIfCancellationRequested();
-            var analysis = CreateAnalysis((IDocument)module, version, walker);
+
+            var analysis = CreateAnalysis((IDocument)module, version, walker, isFinalPass);
 
             analyzable?.NotifyAnalysisComplete(analysis);
             entry.TrySetAnalysis(analysis, version);
@@ -366,8 +367,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Completed = 2
         }
 
-        private IDocumentAnalysis CreateAnalysis(IDocument document, int version, ModuleWalker walker)
-            => document.ModuleType == ModuleType.User
+        private IDocumentAnalysis CreateAnalysis(IDocument document, int version, ModuleWalker walker, bool isFinalPass)
+            => document.ModuleType == ModuleType.User || !isFinalPass
                 ? (IDocumentAnalysis)new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames)
                 : new LibraryAnalysis(document, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames);
     }

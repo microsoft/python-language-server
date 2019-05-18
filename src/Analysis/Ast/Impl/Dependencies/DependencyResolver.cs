@@ -604,6 +604,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private DependencyChainWalker _walker;
             public TValue Value => _vertex.DependencyVertex.Value;
             public int VertexDepth { get; }
+            public bool IsComplete => _vertex.SecondPass == null;
 
             public DependencyChainNode(DependencyChainWalker walker, WalkingVertex<TKey, TValue> vertex, int depth) {
                 _walker = walker;

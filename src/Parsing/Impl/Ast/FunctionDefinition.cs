@@ -52,8 +52,6 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Parameter[] Parameters { get; }
 
-        public override int ArgCount => Parameters.Length;
-
         internal void SetKeywordEndIndex(int index) => _keywordEndIndex = index;
         public override int KeywordEndIndex => _keywordEndIndex ?? (DefIndex + (IsCoroutine ? 9 : 3));
         public override int KeywordLength => KeywordEndIndex - StartIndex;

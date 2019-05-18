@@ -19,5 +19,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
         TValue Value { get; }
         void Commit();
         void Skip();
+        bool IsComplete { get; }
     }
 }

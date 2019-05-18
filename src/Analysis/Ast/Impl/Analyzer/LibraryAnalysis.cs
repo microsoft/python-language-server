@@ -37,8 +37,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             GlobalScope = globalScope;
 
             var ast = Document.GetAst();
-            (ast.Body as SuiteStatement)?.FilterStatements(x => x is ImportStatement || x is FromImportStatement);
-            ast.Reduce();
+            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
             var c = (IAstNodeContainer)Document;
             c.Clear();
             c.AddAstNode(document, ast);
