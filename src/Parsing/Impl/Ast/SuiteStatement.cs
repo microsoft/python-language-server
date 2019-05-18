@@ -33,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public IList<Statement> Statements => _statements;
         public override IEnumerable<Node> GetChildNodes() => _statements.WhereNotNull();
 
-        public void RemoveStatements(Func<Statement, bool> filter) 
+        public void FilterStatements(Func<Statement, bool> filter) 
             => _statements = _statements.Where(filter).ToArray();
 
         public override void Walk(PythonWalker walker) {

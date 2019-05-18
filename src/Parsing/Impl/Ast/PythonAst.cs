@@ -36,7 +36,6 @@ namespace Microsoft.Python.Parsing.Ast {
             LanguageVersion = langVersion;
             NewLineLocations = lineLocations;
             CommentLocations = commentLocations;
-
         }
 
         public PythonAst(IEnumerable<PythonAst> existingAst) {
@@ -62,7 +61,6 @@ namespace Microsoft.Python.Parsing.Ast {
         public Uri Module { get; }
         public NewLineLocation[] NewLineLocations { get; }
         public SourceLocation[] CommentLocations { get; }
-
         public override string Name => "<module>";
 
         /// <summary>
@@ -76,7 +74,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public bool HasVerbatim { get; internal set; }
 
-        public override IEnumerable<Node> GetChildNodes() => new[] {_body};
+        public override IEnumerable<Node> GetChildNodes() => new[] { _body };
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -93,8 +91,11 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override Statement Body => _body;
-
         public PythonLanguageVersion LanguageVersion { get; }
+
+        public void Reduce() {
+            _attributes.Clear();
+        }
 
         internal bool TryGetAttribute(Node node, object key, out object value) {
             if (_attributes.TryGetValue(node, out var nodeAttrs)) {
