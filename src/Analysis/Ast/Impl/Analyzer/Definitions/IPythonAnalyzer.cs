@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Schedules module for analysis. Module will be scheduled if version of AST is greater than the one used to get previous analysis
         /// </summary>
-        void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int version);
+        void EnqueueDocumentForAnalysis(IPythonModule module, int version);
 
         /// <summary>
         /// Schedules module for analysis for its existing AST, but with new dependencies.

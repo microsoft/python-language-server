@@ -19,6 +19,9 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonModuleExtensions {
+        internal static PythonAst GetAst(this IPythonModule module)
+            => ((IAstNodeContainer)module).GetAstNode<PythonAst>(module);
+
         internal static T GetAstNode<T>(this IPythonModule module, object o) where T : Node
             => ((IAstNodeContainer)module).GetAstNode<T>(o);
         internal static void AddAstNode(this IPythonModule module, object o, Node n)

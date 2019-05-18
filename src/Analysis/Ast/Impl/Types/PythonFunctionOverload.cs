@@ -48,7 +48,6 @@ namespace Microsoft.Python.Analysis.Types {
         // Return value can be an instance or a type info. Consider type(C()) returning
         // type info of C vs. return C() that returns an instance of C.
         private bool _fromAnnotation;
-        private string _documentation;
 
         public PythonFunctionOverload(IPythonClassMember cm, Location location)
             : this(cm.Name, location) {
@@ -65,7 +64,6 @@ namespace Microsoft.Python.Analysis.Types {
                     break;
             }
 
-            _documentation = fd?.Documentation;
             _returnDocumentation = ast != null ? fd?.ReturnAnnotation?.ToCodeString(ast) : null;
         }
 
@@ -103,13 +101,13 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         internal void SetReturnValueProvider(ReturnValueProvider provider) => _returnValueProvider = provider;
-        internal void SetDocumentation(string documentation) => _documentation = documentation;
+        internal void SetDocumentation(string documentation) => Documentation = documentation;
 
         #region IPythonFunctionOverload
         public FunctionDefinition FunctionDefinition => ClassMember.DeclaringModule.GetAstNode<FunctionDefinition>(ClassMember);
         public IPythonClassMember ClassMember { get; }
         public string Name { get; }
-        public string Documentation => _documentation ?? ClassMember.Documentation;
+        public string Documentation { get; private set; }
 
         public string GetReturnDocumentation(IPythonType self = null) {
             if (self == null) {

@@ -343,7 +343,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzing;
 
                 var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.EnqueueDocumentForAnalysis(this, ast, version);
+                analyzer.EnqueueDocumentForAnalysis(this, version);
             }
 
             lock (AnalysisLock) {
@@ -424,10 +424,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IAstNodeContainer
         public T GetAstNode<T>(object o) where T : Node => _astMap.TryGetValue(o, out var n) ? (T)n : null;
         public void AddAstNode(object o, Node n) {
-            Debug.Assert(!_astMap.ContainsKey(o));
+            Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
             _astMap[o] = n;
         }
-        public void Clear() => _astMap.Clear();
+        public void Clear() =>_astMap.Clear();
         #endregion
 
         #region Analysis

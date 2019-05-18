@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -27,7 +26,6 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal class PythonFunctionType : PythonType, IPythonFunctionType {
         private ImmutableArray<IPythonFunctionOverload> _overloads = ImmutableArray<IPythonFunctionOverload>.Empty;
-        private readonly string _documentation;
         private bool _isAbstract;
         private bool _isSpecialized;
 
@@ -61,14 +59,13 @@ namespace Microsoft.Python.Analysis.Types {
             FunctionDefinition fd,
             IPythonType declaringType,
             Location location
-        ) : base(fd.Name, location, fd.Documentation, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+        ) : base(fd.Name, location,
+            fd.Name == "__init__" ? declaringType?.Documentation : fd.Documentation, 
+            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
 
             location.Module.AddAstNode(this, fd);
             DeclaringType = declaringType;
 
-            if (fd.Name == "__init__") {
-                _documentation = declaringType?.Documentation;
-            }
             ProcessDecorators(fd);
         }
 
@@ -94,7 +91,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonFunction
         public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
         public IPythonType DeclaringType { get; }
-        public override string Documentation => _documentation ?? base.Documentation ?? (_overloads.Count > 0 ? _overloads[0].Documentation : default);
+        public override string Documentation => (_overloads.Count > 0 ? _overloads[0].Documentation : default) ?? base.Documentation;
         public virtual bool IsClassMethod { get; private set; }
         public virtual bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
