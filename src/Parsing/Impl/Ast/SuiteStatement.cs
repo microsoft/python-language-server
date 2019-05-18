@@ -14,7 +14,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,15 +24,17 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
     public sealed class SuiteStatement : Statement {
-        private readonly Statement[] _statements;
+        private Statement[] _statements;
 
         public SuiteStatement(Statement[] statements) {
             _statements = statements;
         }
 
         public IList<Statement> Statements => _statements;
-
         public override IEnumerable<Node> GetChildNodes() => _statements.WhereNotNull();
+
+        public void RemoveStatements(Func<Statement, bool> filter) 
+            => _statements = _statements.Where(filter).ToArray();
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

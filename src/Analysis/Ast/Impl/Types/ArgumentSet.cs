@@ -81,6 +81,13 @@ namespace Microsoft.Python.Analysis.Types {
             OverloadIndex = overloadIndex;
             DeclaringModule = fn.DeclaringModule;
 
+            if (callExpr == null) {
+                // Typically invoked by specialization code without call expression in the code.
+                // Caller usually does not care about arguments.
+                _evaluated = true;
+                return;
+            }
+
             var overload = fn.Overloads[overloadIndex];
             var fd = overload.FunctionDefinition;
 
@@ -101,12 +108,6 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            if (callExpr == null) {
-                // Typically invoked by specialization code without call expression in the code.
-                // Caller usually does not care about arguments.
-                _evaluated = true;
-                return;
-            }
             var callLocation = callExpr.GetLocation(module);
 
             // https://www.python.org/dev/peps/pep-3102/#id5

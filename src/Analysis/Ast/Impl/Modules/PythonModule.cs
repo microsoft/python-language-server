@@ -326,7 +326,11 @@ namespace Microsoft.Python.Analysis.Modules {
                 if (version != _buffer.Version) {
                     throw new OperationCanceledException();
                 }
+
+                // Stored nodes are no longer valid.
+                _astMap.Clear();
                 _astMap[this] = ast;
+
                 _parseErrors = sink?.Diagnostics ?? Array.Empty<DiagnosticsEntry>();
 
                 // Do not report issues with libraries or stubs

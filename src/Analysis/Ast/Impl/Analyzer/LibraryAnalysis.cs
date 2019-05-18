@@ -35,9 +35,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Document = document;
             Version = version;
             GlobalScope = globalScope;
+
+            var ast = Document.GetAst();
+            (ast.Body as SuiteStatement)?.RemoveStatements(x => !(x is ImportStatement || x is FromImportStatement));
+            var c = (IAstNodeContainer)Document;
+            c.Clear();
+            c.AddAstNode(document, ast);
+
             ExpressionEvaluator = new ExpressionEval(services, document, globalScope);
             StarImportMemberNames = starImportMemberNames;
-            ((IAstNodeContainer)Document).Clear();
         }
 
         #region IDocumentAnalysis

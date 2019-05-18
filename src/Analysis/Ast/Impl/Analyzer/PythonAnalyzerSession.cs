@@ -277,7 +277,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return;
                 }
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(entry, module, ast, _walker.Version);
+                AnalyzeEntry(entry, module, _walker.Version);
                 node.Commit();
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
@@ -314,13 +314,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         // Entry doesn't have ast yet. There should be at least one more session.
                         Cancel();
                     }
-
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     return;
                 }
 
                 var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(_entry, module, ast, Version);
+                AnalyzeEntry(_entry, module, Version);
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
@@ -337,12 +336,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version) {
+        private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, int version) {
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
 
-            var walker = new ModuleWalker(_services, module, ast);
+            var ast = module.GetAst();
+            var walker = new ModuleWalker(_services, module);
             ast.Walk(walker);
 
             _analyzerCancellationToken.ThrowIfCancellationRequested();

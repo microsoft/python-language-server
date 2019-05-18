@@ -104,7 +104,7 @@ namespace Microsoft.Python.Analysis.Types {
         internal void SetDocumentation(string documentation) => Documentation = documentation;
 
         #region IPythonFunctionOverload
-        public FunctionDefinition FunctionDefinition => ClassMember.DeclaringModule.GetAstNode<FunctionDefinition>(ClassMember);
+        public FunctionDefinition FunctionDefinition => ClassMember?.DeclaringModule?.GetAstNode<FunctionDefinition>(ClassMember);
         public IPythonClassMember ClassMember { get; }
         public string Name { get; }
         public string Documentation { get; private set; }

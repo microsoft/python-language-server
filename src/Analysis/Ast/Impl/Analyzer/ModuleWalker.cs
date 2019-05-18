@@ -36,8 +36,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private int _allReferencesCount;
         private bool _allIsUsable = true;
 
-        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
-            : base(new ExpressionEval(services, module, ast)) {
+        public ModuleWalker(IServiceContainer services, IPythonModule module)
+            : base(new ExpressionEval(services, module)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
         }
 

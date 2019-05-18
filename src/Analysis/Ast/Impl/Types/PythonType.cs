@@ -22,7 +22,7 @@ using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
-    internal class PythonType : LocatedMember, IPythonType, IEquatable<IPythonType> {
+    internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private readonly string _name;
         private Dictionary<string, IMember> _members;
@@ -149,10 +149,10 @@ namespace Microsoft.Python.Analysis.Types {
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
         protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
 
-        public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
+        //public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
 
-        public override bool Equals(object obj)
-            => obj is IPythonType pt && PythonTypeComparer.Instance.Equals(this, pt);
-        public override int GetHashCode() => 0;
+        //public override bool Equals(object obj)
+        //    => obj is IPythonType pt && PythonTypeComparer.Instance.Equals(this, pt);
+        //public override int GetHashCode() => 0;
     }
 }

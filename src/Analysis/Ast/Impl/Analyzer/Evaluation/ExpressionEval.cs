@@ -38,16 +38,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly object _lock = new object();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
-        public ExpressionEval(IServiceContainer services, IPythonModule module, GlobalScope gs)
-            : this(services, module, AstUtilities.MakeEmptyAst(module.Uri), gs) { }
+        public ExpressionEval(IServiceContainer services, IPythonModule module)
+            : this(services, module, new GlobalScope(module)) { }
 
-        public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast)
-            : this(services, module, ast, new GlobalScope(module)) { }
-
-        public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast, GlobalScope gs) {
+        public ExpressionEval(IServiceContainer services, IPythonModule module, GlobalScope gs) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
             Module = module ?? throw new ArgumentNullException(nameof(module));
-            Ast = ast ?? throw new ArgumentNullException(nameof(ast));
+            Ast = module.GetAst();
 
             GlobalScope = gs;
             CurrentScope = GlobalScope;

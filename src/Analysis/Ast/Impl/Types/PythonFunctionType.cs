@@ -62,10 +62,9 @@ namespace Microsoft.Python.Analysis.Types {
         ) : base(fd.Name, location,
             fd.Name == "__init__" ? declaringType?.Documentation : fd.Documentation, 
             declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
-
-            location.Module.AddAstNode(this, fd);
             DeclaringType = declaringType;
 
+            location.Module.AddAstNode(this, fd);
             ProcessDecorators(fd);
         }
 
