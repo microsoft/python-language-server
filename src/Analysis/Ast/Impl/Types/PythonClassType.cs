@@ -38,6 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
         private Dictionary<string, IPythonType> _genericParameters;
+        private string _documentation;
 
         // For tests
         internal PythonClassType(string name, Location location)
@@ -104,19 +105,27 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override string Documentation {
             get {
-                // Try doc from the type (class definition AST node).
-                var doc = base.Documentation;
-                // Try docs __init__.
-                if (string.IsNullOrEmpty(doc)) {
-                    var init = GetMember("__init__") as IPythonFunctionType;
-                    doc = init?.DeclaringType == this ? init.Documentation : null;
+                if (!string.IsNullOrEmpty(_documentation)) {
+                    return _documentation;
                 }
-                // Try bases.
-                if (string.IsNullOrEmpty(doc) && Bases != null) {
+                // Make sure we do not cycle through bases back here.
+                if (!Push(this)) {
+                    return null;
+                }
+                // Try doc from the type first (class definition AST node).
+                _documentation = base.Documentation;
+                if (string.IsNullOrEmpty(_documentation)) {
+                    // If not present, try docs __init__. IPythonFunctionType handles
+                    // __init__ in a special way so there is no danger of call coming
+                    // back here and causing stack overflow.
+                    _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                }
+                if (string.IsNullOrEmpty(_documentation) && Bases != null) {
+                    // If still not found, try bases. 
                     var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                    doc = Bases.Except(Enumerable.Repeat(o, 1)).FirstOrDefault(b => !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
+                    _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
                 }
-                return doc;
+                return _documentation;
             }
         }
 

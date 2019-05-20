@@ -135,7 +135,8 @@ namespace Microsoft.Python.Analysis.Modules {
                     _documentation = m.TryGetConstant<string>(out var s) ? s : string.Empty;
                     if (string.IsNullOrEmpty(_documentation)) {
                         m = GetMember($"_{Name}");
-                        _documentation = m?.GetPythonType()?.Documentation;
+                        var t = m?.GetPythonType();
+                        _documentation = t != null && !t.Equals(this) ? t.Documentation : null;
                         if (string.IsNullOrEmpty(_documentation)) {
                             _documentation = TryGetDocFromModuleInitFile();
                         }
@@ -496,7 +497,7 @@ namespace Microsoft.Python.Analysis.Modules {
                         // Also, handle quadruple+ quotes.
                         line = line.Trim();
                         line = line.All(c => c == quote[0]) ? quote : line;
-                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) { 
+                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) {
                             return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
                         }
                         var sb = new StringBuilder();

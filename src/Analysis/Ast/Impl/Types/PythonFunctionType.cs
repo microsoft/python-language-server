@@ -81,8 +81,12 @@ namespace Microsoft.Python.Analysis.Types {
             FunctionDefinition = fd;
             DeclaringType = declaringType;
 
+            // For __init__ documentation may either come from the function node of the the declaring
+            // type. Note that if there is no documentation on the class node, the class will try and
+            // get documentation from its __init__ function, delegating down to this type. So we need
+            // to set documentation statically for __init__ here or we may end up/ with stack overflows.
             if (fd.Name == "__init__") {
-                _documentation = declaringType?.Documentation;
+                _documentation = declaringType?.Documentation ?? fd.Documentation;
             }
             ProcessDecorators(fd);
         }
@@ -139,7 +143,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal ImmutableArray<string> Dependencies { get; private set; } = ImmutableArray<string>.Empty;
 
-        internal void AddOverload(IPythonFunctionOverload overload) 
+        internal void AddOverload(IPythonFunctionOverload overload)
             => _overloads = _overloads.Count > 0 ? _overloads.Add(overload) : ImmutableArray<IPythonFunctionOverload>.Create(overload);
 
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
