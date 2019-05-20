@@ -167,11 +167,15 @@ def do_not_inspect(v):
     return bool(getattr(v, "__defaults__", False))
 
 
-def build_dists():
+KNOWN_DIST_PREFIXES = {"PyQt5": ["PyQt5"], "PyQt5-sip": ["PyQt5.sip"]}
+
+
+def build_dist_prefixes():
     import pkg_resources
 
-    dists = dict()
+    prefixes = dict()
 
+    # This iterates in the order things were added; no need to reverse.
     for d in pkg_resources.WorkingSet():
         top_level = None
 
@@ -180,33 +184,36 @@ def build_dists():
         except:
             pass
 
-        # TODO: Figure out how to handle dists which don't ship with top_level.txt (like PyQt5)
-        if not top_level:
-            continue
+        module_prefixes = None
+        if top_level:
+            module_prefixes = top_level.splitlines()
+        elif d.project_name:
+            module_prefixes = KNOWN_DIST_PREFIXES.get(d.project_name, None)
 
-        module_prefixes = top_level.splitlines()
+        if not module_prefixes:
+            continue
 
         for prefix in module_prefixes:
             prefix = prefix.strip()
             if prefix:
-                dists[prefix] = d
+                prefixes[prefix] = d
 
-    return dists
+    return prefixes
 
 
-DISTS = None
+DIST_PREFIXES = None
 
 
 def find_dist(module_name):
-    global DISTS
-    if DISTS is None:
-        DISTS = build_dists()
+    global DIST_PREFIXES
+    if DIST_PREFIXES is None:
+        DIST_PREFIXES = build_dist_prefixes()
 
     while True:
         if not module_name:
             return None
 
-        d = DISTS.get(module_name, None)
+        d = DIST_PREFIXES.get(module_name, None)
         if d:
             return d
 
