@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Inspection;
@@ -43,7 +44,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task MemberNamesSys(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var response = await inspector.GetModuleMemberNames("sys");
+                var response = await inspector.GetModuleMemberNamesAsync("sys");
                 response.Should().NotBeNull();
                 response.Members.Should().Contain("stdout").And.NotContain("__all__");
                 response.All.Should().BeNull();
@@ -56,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task MemberNamesOsPath(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var response = await inspector.GetModuleMemberNames("os.path");
+                var response = await inspector.GetModuleMemberNamesAsync("os.path");
                 response.Should().NotBeNull();
                 response.Members.Should().Contain("join").And.Contain("__all__");
                 response.All.Should().Contain("join").And.NotContain("__all__");
@@ -69,7 +70,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task MemberNamesNotFound(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var response = await inspector.GetModuleMemberNames("thismoduledoesnotexist");
+                var response = await inspector.GetModuleMemberNamesAsync("thismoduledoesnotexist");
                 response.Should().BeNull();
             }
         }
@@ -83,8 +84,8 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 var tasks = new List<Task<ModuleMemberNamesResponse>>();
 
                 for (var i = 0; i < 10; i++) {
-                    tasks.Add(inspector.GetModuleMemberNames("thismoduledoesnotexist"));
-                    tasks.Add(inspector.GetModuleMemberNames("os.path"));
+                    tasks.Add(inspector.GetModuleMemberNamesAsync("thismoduledoesnotexist"));
+                    tasks.Add(inspector.GetModuleMemberNamesAsync("os.path"));
                 }
 
                 var results = await Task.WhenAll(tasks);
@@ -106,7 +107,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task ModuleVersionSetuptools(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var version = await inspector.GetModuleVersion("setuptools");
+                var version = await inspector.GetModuleVersionAsync("setuptools");
                 version.Should().NotBeNullOrEmpty();
             }
         }
@@ -117,7 +118,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task ModuleVersionNotFound(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var version = await inspector.GetModuleVersion("thismoduledoesnotexist");
+                var version = await inspector.GetModuleVersionAsync("thismoduledoesnotexist");
                 version.Should().BeNull();
             }
         }
@@ -128,13 +129,26 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public async Task UseAfterDispose(bool is3x) {
             using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
             using (var inspector = new PythonInspectorService(s)) {
-                var version = await inspector.GetModuleVersion("setuptools");
+                var version = await inspector.GetModuleVersionAsync("setuptools");
                 version.Should().NotBeNullOrEmpty();
 
                 inspector.Dispose();
 
-                version = await inspector.GetModuleVersion("setuptools");
+                version = await inspector.GetModuleVersionAsync("setuptools");
                 version.Should().NotBeNullOrEmpty();
+            }
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task Cancel(bool is3x) {
+            var token = new CancellationToken(true);
+
+            using (var s = await CreateServicesAsync(null, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X, null))
+            using (var inspector = new PythonInspectorService(s)) {
+                Func<Task> action = async () => { await inspector.GetModuleVersionAsync("setuptools", token); };
+                action.Should().Throw<OperationCanceledException>();
             }
         }
     }

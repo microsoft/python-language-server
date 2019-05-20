@@ -224,6 +224,11 @@ def find_dist(module_name):
         module_name = ".".join(split[:-1])
 
 
+@mux.handler("$/cancelRequest")
+def cancel_request(params):
+    return None
+
+
 @mux.handler("moduleMemberNames")
 def module_member_names(module_name):
     try:

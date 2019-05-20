@@ -13,16 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Python.Analysis.Inspection {
     public interface IPythonInspector {
-        Task<ModuleMemberNamesResponse> GetModuleMemberNames(string moduleName);
+        Task<ModuleMemberNamesResponse> GetModuleMemberNamesAsync(string moduleName, CancellationToken cancellationToken = default);
 
-        Task<string> GetModuleVersion(string moduleName);
+        Task<string> GetModuleVersionAsync(string moduleName, CancellationToken cancellationToken = default);
     }
 
     public class ModuleMemberNamesResponse {

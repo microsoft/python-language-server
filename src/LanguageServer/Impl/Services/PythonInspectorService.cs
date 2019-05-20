@@ -15,8 +15,8 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Inspection;
@@ -60,12 +60,12 @@ namespace Microsoft.Python.LanguageServer.Services {
             return PythonRpc.Create(procServices, interpreter.Configuration.InterpreterPath, scriptPath);
         }
 
-        public Task<ModuleMemberNamesResponse> GetModuleMemberNames(string moduleName) {
-            return Rpc.InvokeAsync<ModuleMemberNamesResponse>("moduleMemberNames", moduleName);
+        public Task<ModuleMemberNamesResponse> GetModuleMemberNamesAsync(string moduleName, CancellationToken cancellationToken = default) {
+            return Rpc.InvokeWithCancellationAsync<ModuleMemberNamesResponse>("moduleMemberNames", new[] { moduleName }, cancellationToken);
         }
 
-        public Task<string> GetModuleVersion(string moduleName) {
-            return Rpc.InvokeAsync<string>("moduleVersion", moduleName);
+        public Task<string> GetModuleVersionAsync(string moduleName, CancellationToken cancellationToken = default) {
+            return Rpc.InvokeWithCancellationAsync<string>("moduleVersion", new[] { moduleName }, cancellationToken);
         }
 
         public void Dispose() {
