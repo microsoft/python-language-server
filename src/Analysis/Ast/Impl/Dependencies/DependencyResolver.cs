@@ -68,10 +68,33 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     return _version;
                 }
 
-                Interlocked.Increment(ref _version);
+                var version = Interlocked.Increment(ref _version);
 
+                var vertex = _vertices[index];
                 _vertices[index] = default;
-                return _version;
+                if (vertex == null) {
+                    return version;
+                }
+                
+                foreach (var incomingIndex in vertex.Incoming) {
+                    var incoming = _vertices[incomingIndex];
+                    if (incoming != null && incoming.IsSealed) {
+                        _vertices[incomingIndex] = new DependencyVertex<TKey, TValue>(incoming, version, false);
+                    }
+                }
+
+                if (!vertex.IsSealed) {
+                    return version;
+                }
+                
+                foreach (var outgoingIndex in vertex.Outgoing) {
+                    var outgoing = _vertices[outgoingIndex];
+                    if (outgoing != null && !outgoing.IsNew) {
+                        _vertices[outgoingIndex] = new DependencyVertex<TKey, TValue>(outgoing, version, true);
+                    }
+                }
+
+                return version;
             }
         }
 
@@ -135,7 +158,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 } else {
                     var vertex = _vertices[keyIndex];
                     if (vertex != default && vertex.IsSealed && !vertex.ContainsOutgoing(index)) {
-                        _vertices[keyIndex] = new DependencyVertex<TKey, TValue>(vertex, version);
+                        _vertices[keyIndex] = new DependencyVertex<TKey, TValue>(vertex, version, false);
                     }
                 }
 
@@ -263,13 +286,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private bool TryCreateWalkingGraph(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, int version, out ImmutableArray<WalkingVertex<TKey, TValue>> analysisGraph) {
             var nodesByVertexIndex = new Dictionary<int, WalkingVertex<TKey, TValue>>();
 
-            foreach (var vertex in vertices) {
+            for (var index = 0; index < vertices.Count; index++) {
+                var vertex = vertices[index];
                 if (vertex == null || vertex.IsWalked) {
                     continue;
                 }
 
-                var node = new WalkingVertex<TKey, TValue>(vertices[vertex.Index]);
-                nodesByVertexIndex[vertex.Index] = node;
+                var node = new WalkingVertex<TKey, TValue>(vertices[index]);
+                nodesByVertexIndex[index] = node;
             }
 
             if (nodesByVertexIndex.Count == 0) {
@@ -288,9 +312,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 foreach (var outgoingIndex in node.DependencyVertex.Outgoing) {
                     if (!nodesByVertexIndex.TryGetValue(outgoingIndex, out var outgoingNode)) {
                         var vertex = vertices[outgoingIndex];
+                        if (vertex == null) {
+                            continue;
+                        }
+
                         outgoingNode = new WalkingVertex<TKey, TValue>(vertex);
                         nodesByVertexIndex[outgoingIndex] = outgoingNode;
-
                         queue.Enqueue(outgoingNode);
                     }
 
