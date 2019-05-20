@@ -126,7 +126,7 @@ namespace Microsoft.Python.Core.IO {
             for (var retries = 100; retries > 0; --retries) {
                 try {
                     fs.WriteAllText(filePath, text);
-                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ObjectDisposedException) {
+                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
                     failed = true;
                     Thread.Sleep(10);
                 }
