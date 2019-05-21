@@ -73,7 +73,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return new MarkupContent { kind = MarkupKind.PlainText, value = documentation };
         }
 
-        public string GetSignatureString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0) {
+        public string GetSignatureString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0, string name = null) {
             var o = ft.Overloads[overloadIndex];
 
             var parms = GetFunctionParameters(ft);
@@ -81,7 +81,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var returnDoc = o.GetReturnDocumentation(self);
             var annString = string.IsNullOrEmpty(returnDoc) ? string.Empty : $" -> {returnDoc}";
 
-            return $"{ft.Name}({parmString}){annString}";
+            return $"{name ?? ft.Name}({parmString}){annString}";
         }
 
         public MarkupContent FormatParameterDocumentation(IParameterInfo parameter) {

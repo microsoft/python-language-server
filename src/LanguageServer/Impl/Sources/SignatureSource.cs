@@ -42,18 +42,33 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             IMember value = null;
             IPythonType selfType = null;
+            string name = null;
             var call = node as CallExpression;
             if (call != null) {
                 using (analysis.ExpressionEvaluator.OpenScope(analysis.Document, scope)) {
-                    if (call.Target is MemberExpression mex) {
-                        var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
-                        selfType = v?.GetPythonType();
+                    switch (call.Target) {
+                        case MemberExpression mex:
+                            var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
+                            selfType = v?.GetPythonType();
+                            name = mex.Name;
+                            break;
+                        case NameExpression ne:
+                            name = ne.Name;
+                            break;
                     }
+
                     value = analysis.ExpressionEvaluator.GetValueFromExpression(call.Target);
                 }
             }
 
-            var ft = value?.GetPythonType<IPythonFunctionType>();
+            IPythonFunctionType ft;
+
+            if (value is IPythonClassType cls) {
+                ft = cls.GetMember<IPythonFunctionType>("__init__");
+            } else {
+                ft = value?.GetPythonType<IPythonFunctionType>();
+            }
+
             if (ft == null) {
                 return null;
             }
@@ -70,7 +85,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }).ToArray();
 
                 signatures[i] = new SignatureInformation {
-                    label = _docSource.GetSignatureString(ft, selfType, i),
+                    label = _docSource.GetSignatureString(ft, selfType, i, name),
                     documentation = _docSource.FormatDocumentation(ft.Documentation),
                     parameters = parameters
                 };
