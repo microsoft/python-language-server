@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -33,8 +32,7 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
-        private readonly object _lock = new object();
-        private readonly AsyncLocal<IPythonClassType> _processing = new AsyncLocal<IPythonClassType>();
+        private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
         private Dictionary<string, IPythonType> _genericParameters;
@@ -60,9 +58,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override IEnumerable<string> GetMemberNames() {
             var names = new HashSet<string>();
-            lock (_lock) {
-                names.UnionWith(Members.Keys);
-            }
+            names.UnionWith(Members.Keys);
             foreach (var m in Mro.Skip(1)) {
                 names.UnionWith(m.GetMemberNames());
             }
@@ -70,25 +66,23 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IMember GetMember(string name) {
-            IMember member;
             // Push/Pop should be lock protected.
-            lock (_lock) {
-                if (Members.TryGetValue(name, out member)) {
-                    return member;
-                }
-
-                // Special case names that we want to add to our own Members dict
-                var is3x = DeclaringModule.Interpreter.LanguageVersion.Is3x();
-                switch (name) {
-                    case "__mro__":
-                    case "mro":
-                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType;
-                    case "__dict__":
-                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
-                    case @"__weakref__":
-                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
-                }
+            if (Members.TryGetValue(name, out var member)) {
+                return member;
             }
+
+            // Special case names that we want to add to our own Members dict
+            var is3x = DeclaringModule.Interpreter.LanguageVersion.Is3x();
+            switch (name) {
+                case "__mro__":
+                case "mro":
+                    return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType;
+                case "__dict__":
+                    return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
+                case @"__weakref__":
+                    return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
+            }
+
             if (Push(this)) {
                 try {
                     foreach (var m in Mro.Reverse()) {
@@ -106,36 +100,33 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override string Documentation {
             get {
-                // Push/Pop should be lock protected.
-                lock (_lock) {
-                    if (!string.IsNullOrEmpty(_documentation)) {
-                        return _documentation;
-                    }
-                    // Make sure we do not cycle through bases back here.
-                    if (!Push(this)) {
-                        return null;
-                    }
-                    try {
-                        // Try doc from the type first (class definition AST node).
-                        _documentation = base.Documentation;
-                        if (string.IsNullOrEmpty(_documentation)) {
-                            // If not present, try docs __init__. IPythonFunctionType handles
-                            // __init__ in a special way so there is no danger of call coming
-                            // back here and causing stack overflow.
-                            _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
-                        }
-
-                        if (string.IsNullOrEmpty(_documentation) && Bases != null) {
-                            // If still not found, try bases. 
-                            var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                            _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
-                                ?.Documentation;
-                        }
-                    } finally {
-                        Pop();
-                    }
+                if (!string.IsNullOrEmpty(_documentation)) {
                     return _documentation;
                 }
+                // Make sure we do not cycle through bases back here.
+                if (!Push(this)) {
+                    return null;
+                }
+                try {
+                    // Try doc from the type first (class definition AST node).
+                    _documentation = base.Documentation;
+                    if (string.IsNullOrEmpty(_documentation)) {
+                        // If not present, try docs __init__. IPythonFunctionType handles
+                        // __init__ in a special way so there is no danger of call coming
+                        // back here and causing stack overflow.
+                        _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                    }
+
+                    if (string.IsNullOrEmpty(_documentation) && Bases != null) {
+                        // If still not found, try bases. 
+                        var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
+                            ?.Documentation;
+                    }
+                } finally {
+                    Pop();
+                }
+                return _documentation;
             }
         }
 
@@ -177,17 +168,15 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IReadOnlyList<IPythonType> Mro {
             get {
-                lock (_lock) {
-                    if (_mro != null) {
-                        return _mro;
-                    }
-                    if (_bases == null) {
-                        return new IPythonType[] { this };
-                    }
-                    _mro = new IPythonType[] { this };
-                    _mro = CalculateMro(this);
+                if (_mro != null) {
                     return _mro;
                 }
+                if (_bases == null) {
+                    return new IPythonType[] { this };
+                }
+                _mro = new IPythonType[] { this };
+                _mro = CalculateMro(this);
+                return _mro;
             }
         }
 
@@ -196,36 +185,34 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
-            lock (_lock) {
-                if (_bases != null) {
-                    return; // Already set
-                }
-
-                bases = bases != null ? bases.Where(b => !b.GetPythonType().IsUnknown()).ToArray() : Array.Empty<IPythonType>();
-                // For Python 3+ attach object as a base class by default except for the object class itself.
-                if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
-                    var objectType = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                    // During processing of builtins module some types may not be available yet.
-                    // Specialization will attach proper base at the end.
-                    Debug.Assert(!objectType.IsUnknown());
-                    if (!bases.Any(b => objectType.Equals(b))) {
-                        bases = bases.Concat(Enumerable.Repeat(objectType, 1));
-                    }
-                }
-
-                _bases = bases.ToList();
-                if (_bases.Count > 0) {
-                    AddMember("__base__", _bases[0], true);
-                }
-                // Invalidate MRO
-                _mro = null;
-                if (DeclaringModule is BuiltinsPythonModule) {
-                    // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
-                    return;
-                }
-
-                AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, _bases), true);
+            if (_bases != null) {
+                return; // Already set
             }
+
+            bases = bases != null ? bases.Where(b => !b.GetPythonType().IsUnknown()).ToArray() : Array.Empty<IPythonType>();
+            // For Python 3+ attach object as a base class by default except for the object class itself.
+            if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
+                var objectType = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                // During processing of builtins module some types may not be available yet.
+                // Specialization will attach proper base at the end.
+                Debug.Assert(!objectType.IsUnknown());
+                if (!bases.Any(b => objectType.Equals(b))) {
+                    bases = bases.Concat(Enumerable.Repeat(objectType, 1));
+                }
+            }
+
+            _bases = bases.ToList();
+            if (_bases.Count > 0) {
+                AddMember("__base__", _bases[0], true);
+            }
+            // Invalidate MRO
+            _mro = null;
+            if (DeclaringModule is BuiltinsPythonModule) {
+                // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
+                return;
+            }
+
+            AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, _bases), true);
         }
 
         /// <summary>
@@ -282,15 +269,17 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
+        #region Reentrancy guards
         private bool Push(IPythonClassType cls) {
-            if (_processing.Value == null) {
-                _processing.Value = cls;
+            if (_processing == null) {
+                _processing = cls;
                 return true;
             }
             return false;
         }
+        private void Pop() => _processing = null;
+        #endregion
 
-        private void Pop() => _processing.Value = null;
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
@@ -391,44 +380,41 @@ namespace Microsoft.Python.Analysis.Types {
             // parameter name to the actual supplied type.
             StoreGenericParameters(classType, genericTypeDefinitions.ToArray(), specificTypes);
 
-            // Push/Pop should be lock protected.
-            lock (_lock) {
-                // Prevent reentrancy when resolving generic class where
-                // method may be returning instance of type of the same class.
-                if (!Push(classType)) {
-                    return _processing.Value;
-                }
+            // Prevent reentrancy when resolving generic class where
+            // method may be returning instance of type of the same class.
+            if (!Push(classType)) {
+                return _processing;
+            }
 
-                try {
-                    // Create specific bases since we may have generic types there.
-                    // Match generic parameter names to base type parameter names.
-                    // Consider 'class A(Generic[T], B[T], C[E]): ...'
-                    var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().ToArray();
-                    // Start with regular types, then add specific types for all generic types.
-                    var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
+            try {
+                // Create specific bases since we may have generic types there.
+                // Match generic parameter names to base type parameter names.
+                // Consider 'class A(Generic[T], B[T], C[E]): ...'
+                var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().ToArray();
+                // Start with regular types, then add specific types for all generic types.
+                var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
 
-                    // Create specific types for generic type bases
-                    // it for generic types but not Generic[T, ...] itself.
-                    foreach (var gt in genericTypeBases) {
-                        var st = gt.Parameters
-                            .Select(p => classType.GenericParameters.TryGetValue(p.Name, out var t) ? t : null)
-                            .Where(p => !p.IsUnknown())
-                            .ToArray();
-                        if (st.Length > 0) {
-                            var type = gt.CreateSpecificType(new ArgumentSet(st));
-                            if (!type.IsUnknown()) {
-                                bases.Add(type);
-                            }
+                // Create specific types for generic type bases
+                // it for generic types but not Generic[T, ...] itself.
+                foreach (var gt in genericTypeBases) {
+                    var st = gt.Parameters
+                        .Select(p => classType.GenericParameters.TryGetValue(p.Name, out var t) ? t : null)
+                        .Where(p => !p.IsUnknown())
+                        .ToArray();
+                    if (st.Length > 0) {
+                        var type = gt.CreateSpecificType(new ArgumentSet(st));
+                        if (!type.IsUnknown()) {
+                            bases.Add(type);
                         }
                     }
-
-                    // Set specific class bases
-                    classType.SetBases(bases.Concat(newBases));
-                    // Transfer members from generic to specific type.
-                    SetClassMembers(classType, args);
-                } finally {
-                    Pop();
                 }
+
+                // Set specific class bases
+                classType.SetBases(bases.Concat(newBases));
+                // Transfer members from generic to specific type.
+                SetClassMembers(classType, args);
+            } finally {
+                Pop();
             }
             return classType;
         }
