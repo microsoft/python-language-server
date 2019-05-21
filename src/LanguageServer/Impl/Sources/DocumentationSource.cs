@@ -18,39 +18,52 @@ using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal abstract class DocumentationSource {
         public string GetSignatureString(IPythonFunctionType ft, IPythonType self, out IndexSpan[] parameterSpans, int overloadIndex = 0, string name = null) {
             var o = ft.Overloads[overloadIndex];
 
-            var parms = GetFunctionParameters(ft).ToArray();
-            var parmString = string.Join(", ", parms);
+            var parameterStrings = GetFunctionParameters(ft, out var parameterNameLengths);
             var returnDoc = o.GetReturnDocumentation(self);
             var annString = string.IsNullOrEmpty(returnDoc) ? string.Empty : $" -> {returnDoc}";
 
             // Calculate parameter spans
-            parameterSpans = new IndexSpan[parms.Length];
+            parameterSpans = new IndexSpan[parameterStrings.Length];
             name = name ?? ft.Name;
             var offset = name.Length + 1;
-            for(var i = 0; i < parms.Length; i++) {
-                parameterSpans[i]= IndexSpan.FromBounds(offset, offset + parms[i].Length);
-                offset += parms[i].Length + 2; // name,<space>
+            for (var i = 0; i < parameterStrings.Length; i++) {
+                parameterSpans[i] = IndexSpan.FromBounds(offset, offset + parameterNameLengths[i]);
+                offset += parameterStrings[i].Length + 2; // name,<space>
             }
 
-            return $"{name}({parmString}){annString}";
+            var combinedParameterString = string.Join(", ", parameterStrings);
+            return $"{name}({combinedParameterString}){annString}";
         }
 
-        private IEnumerable<string> GetFunctionParameters(IPythonFunctionType ft, int overloadIndex = 0) {
+        /// <summary>
+        /// Constructs parameter strings that include parameter name, type and default value
+        /// like 'x: int' or 'a = None'. Returns collection of parameter strings and
+        /// the respective lengths of names for rendering in bold (as current parameter).
+        /// </summary>
+        private string[] GetFunctionParameters(IPythonFunctionType ft, out int[] parameterNameLengths, int overloadIndex = 0) {
             var o = ft.Overloads[overloadIndex]; // TODO: display all?
             var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
-            return o.Parameters.Skip(skip).Select(p => {
+
+            var parameters = new string[o.Parameters.Count - skip];
+            parameterNameLengths = new int[o.Parameters.Count - skip];
+            for (var i = skip; i < o.Parameters.Count; i++) {
+                string paramString;
+                var p = o.Parameters[i];
                 if (!string.IsNullOrEmpty(p.DefaultValueString)) {
-                    return $"{p.Name}={p.DefaultValueString}";
+                    paramString = $"{p.Name}={p.DefaultValueString}";
+                } else {
+                    paramString = p.Type.IsUnknown() ? p.Name : $"{p.Name}: {p.Type.Name}";
                 }
-                return p.Type.IsUnknown() ? p.Name : $"{p.Name}: {p.Type.Name}";
-            });
+                parameters[i - skip] = paramString;
+                parameterNameLengths[i - skip] = p.Name.Length;
+            }
+            return parameters;
         }
     }
 }
