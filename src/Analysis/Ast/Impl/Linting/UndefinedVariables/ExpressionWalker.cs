@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
@@ -77,27 +78,42 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
 
             var analysis = _walker.Analysis;
-            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out _, out var v);
+            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var variableDefinitionScope, out var v);
             if (m == null) {
                 _walker.ReportUndefinedVariable(node);
             }
             v?.AddReference(new Location(analysis.Document, node.IndexSpan));
 
+            // Make sure we have definition and the document matches
+            if (v?.Definition == null || v.Definition.DocumentUri != analysis.Document.Uri) {
+                return false;
+            }
+            // Do not complain about functions and classes that appear later in the file
+            if (v.Value is IPythonFunctionType || v.Value is IPythonClassType) {
+                return false;
+            }
+
             // Take into account where variable is defined so we do detect
             // undefined x in 
             //    y = x
             //    x = 1
-            if (v?.Definition != null && v.Definition.DocumentUri == analysis.Document.Uri) {
-                // Do not complain about functions and classes that appear later in the file
-                if (!(v.Value is IPythonFunctionType || v.Value is IPythonClassType)) {
-                    var span = v.Definition.Span;
-                    var nodeLoc = node.GetLocation(analysis.Document);
-                    // Exclude same-name variables declared within the same statement
-                    // like 'e' that appears before its declaration in '[e in for e in {}]'
-                    if (span.IsAfter(nodeLoc.Span) && !IsSpanInComprehension(nodeLoc.Span)) {
-                        _walker.ReportUndefinedVariable(node);
-                    }
-                }
+            var variableDefinitionSpan = v.Definition.Span;
+            var nameUseLocation = node.GetLocation(analysis.Document);
+
+            // Make sure we are in the same scope in order to avoid
+            //    def func():
+            //      y = x
+            //
+            //    x = 1
+            var nameUseScope = analysis.ExpressionEvaluator.GlobalScope.FindScope(analysis.Document, nameUseLocation.Span.Start);
+            if (nameUseScope.IsNestedInScope(variableDefinitionScope)) {
+                return false;
+            }
+
+            // Exclude same-name variables declared within the same statement
+            // like 'e' that appears before its declaration in '[e in for e in {}]'
+            if (variableDefinitionSpan.IsAfter(nameUseLocation.Span) && !IsSpanInComprehension(nameUseLocation.Span)) {
+                _walker.ReportUndefinedVariable(node);
             }
             return false;
         }

@@ -178,6 +178,84 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod]
+        public async Task ChangeValue_Add() {
+            var resolver = new DependencyResolver<string, string>();
+            resolver.ChangeValue("A", "A:BD", true, "B", "D");
+            resolver.ChangeValue("C", "C", false);
+
+            var walker = resolver.CreateWalker();
+            walker.MissingKeys.Should().Equal("B", "D");
+            var node1 = await walker.GetNextAsync(default);
+            var node2 = await walker.GetNextAsync(default);
+            node1.Value.Should().Be("A:BD");
+            node2.Value.Should().Be("C");
+            node1.Commit();
+            node2.Commit();
+
+            walker.Remaining.Should().Be(0);
+            
+            resolver.ChangeValue("B", "B", false);
+            walker = resolver.CreateWalker();       
+            walker.MissingKeys.Should().Equal("D");
+            
+            var node = await walker.GetNextAsync(default); 
+            node.Value.Should().Be("B");             
+            node.Commit();                             
+                                                       
+            node = await walker.GetNextAsync(default); 
+            node.Value.Should().Be("A:BD");            
+            node.Commit();  
+            
+            walker.Remaining.Should().Be(0); 
+            
+            resolver.ChangeValue("D", "D:C", false);
+            walker = resolver.CreateWalker();       
+            walker.MissingKeys.Should().BeEmpty();
+            
+            node = await walker.GetNextAsync(default); 
+            node.Value.Should().Be("D:C");             
+            node.Commit();                             
+                                                       
+            node = await walker.GetNextAsync(default); 
+            node.Value.Should().Be("A:BD");            
+            node.Commit();  
+            
+            walker.Remaining.Should().Be(0);
+        }
+
+        [TestMethod]
+        public async Task ChangeValue_Remove() {
+            var resolver = new DependencyResolver<string, string>();
+            resolver.ChangeValue("A", "A:BC", true, "B", "C");
+            resolver.ChangeValue("B", "B:C", false, "C");
+            resolver.ChangeValue("C", "C", false);
+
+            var walker = resolver.CreateWalker();
+            walker.MissingKeys.Should().BeEmpty();
+            var node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("C");
+            node.Commit();
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("B:C");
+            node.Commit();
+            
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("A:BC");
+            node.Commit();
+
+            resolver.Remove("B");
+            walker = resolver.CreateWalker();
+            walker.MissingKeys.Should().Equal("B");
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("A:BC");
+            node.Commit();
+
+            walker.Remaining.Should().Be(0);
+        }
+
+        [TestMethod]
         public async Task ChangeValue_RemoveKeys() {
             var resolver = new DependencyResolver<string, string>();
             resolver.ChangeValue("A", "A:BC", true, "B", "C");
