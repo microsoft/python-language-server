@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
@@ -53,6 +54,9 @@ C().method()
             sig.activeParameter.Should().Be(0);
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("method(a: int, b) -> float");
+
+            var parameterSpans = sig.signatures[0].parameters.Select(p => p.label).OfType<int[]>().SelectMany(x => x).ToArray();
+            parameterSpans.Should().ContainInOrder(7, 13, 15, 16);
         }
 
         [TestMethod, Priority(0)]
