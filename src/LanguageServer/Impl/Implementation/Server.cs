@@ -77,10 +77,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     triggerCharacters = new[] { "." }
                 },
                 hoverProvider = true,
-                signatureHelpProvider = new SignatureHelpOptions {
-                    triggerCharacters = new[] { "(", ",", ")" },
-                    
-                },
+                signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
                 definitionProvider = true,
                 referencesProvider = true,
                 workspaceSymbolProvider = true,
