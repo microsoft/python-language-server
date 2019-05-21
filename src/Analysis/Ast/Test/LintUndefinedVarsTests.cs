@@ -611,6 +611,17 @@ _CONSTANT = 1
             d[0].SourceSpan.Should().Be(2, 7, 2, 16);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task ClassMemberDefinition() {
+            const string code = @"
+class A:
+    i: int
+    i = 0
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();
