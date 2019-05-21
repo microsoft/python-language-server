@@ -86,19 +86,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
                 ImportHandler.HandleFromImport(s);
             }
-
             foreach (var s in GetStatements<ImportStatement>(_classDef)) {
                 ImportHandler.HandleImport(s);
             }
-
             UpdateClassMembers();
 
             // Process assignments so we get class variables declared.
-            foreach (var s in GetStatements<AssignmentStatement>(_classDef)) {
-                AssignmentHandler.HandleAssignment(s);
-            }
-            foreach (var s in GetStatements<ExpressionStatement>(_classDef)) {
-                AssignmentHandler.HandleAnnotatedExpression(s.Expression as ExpressionWithAnnotation, null);
+            // Note that annotated definitions and assignments can be intermixed
+            // and must be processed in order. Consider
+            //    class A:
+            //      x: int
+            //      x = 1
+            foreach (var s in GetStatements<Statement>(_classDef)) {
+                switch (s) {
+                    case AssignmentStatement assignment:
+                        AssignmentHandler.HandleAssignment(assignment);
+                        break;
+                    case ExpressionStatement e:
+                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null);
+                        break;
+                }
             }
             UpdateClassMembers();
 
