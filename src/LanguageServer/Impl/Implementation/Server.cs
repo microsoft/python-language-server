@@ -77,7 +77,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     triggerCharacters = new[] { "." }
                 },
                 hoverProvider = true,
-                signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
+                signatureHelpProvider = new SignatureHelpOptions {
+                    triggerCharacters = new[] { "(", ",", ")" },
+                    
+                },
                 definitionProvider = true,
                 referencesProvider = true,
                 workspaceSymbolProvider = true,
@@ -156,8 +159,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 ChooseDocumentationSource(_clientCaps?.textDocument?.hover?.contentFormat)
             );
 
+            var sigInfo = _clientCaps?.textDocument?.signatureHelp?.signatureInformation;
             _signatureSource = new SignatureSource(
-                ChooseDocumentationSource(_clientCaps?.textDocument?.signatureHelp?.signatureInformation?.documentationFormat)
+                ChooseDocumentationSource(sigInfo?.documentationFormat),
+                sigInfo?.parameterInformation?.labelOffsetSupport == true
             );
 
             return GetInitializeResult();

@@ -27,9 +27,12 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class SignatureSource {
         private readonly IDocumentationSource _docSource;
+        private readonly bool _labelOffsetSupport;
 
-        public SignatureSource(IDocumentationSource docSource) {
+        public SignatureSource(IDocumentationSource docSource, bool labelOffsetSupport = true) {
             _docSource = docSource;
+            // TODO: deprecate eventually.
+            _labelOffsetSupport = labelOffsetSupport; // LSP 3.14.0+
         }
 
         public SignatureHelp GetSignature(IDocumentAnalysis analysis, SourceLocation location) {
@@ -80,7 +83,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 var o = ft.Overloads[i];
 
                 var parameters = o.Parameters.Skip(skip).Select(p => new ParameterInformation {
-                    label = p.Name,
+                    label = _labelOffsetSupport ? (p.IndexSpan.Start, p.IndexSpan.End) : (object)p.Name,
                     documentation = _docSource.FormatParameterDocumentation(p)
                 }).ToArray();
 

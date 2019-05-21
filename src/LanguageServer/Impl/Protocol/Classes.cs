@@ -278,13 +278,17 @@ namespace Microsoft.Python.LanguageServer.Protocol {
                 /// property.The order describes the preferred format of the client.
                 /// </summary>
                 public string[] documentationFormat;
-
+                
                 /// <summary>
-                /// When true, the label in the returned signature information will
-                /// only contain the function name. Otherwise, the label will contain
-                /// the full signature.
+                /// Client capabilities specific to parameter information.
                 /// </summary>
-                public bool? _shortLabel;
+                public struct ParameterInformationCapabilities {
+                    /// <summary>
+                    ///  The client supports processing label offsets instead of a simple label string
+                    /// </summary>
+                    public bool? labelOffsetSupport;
+                }
+                public ParameterInformationCapabilities? parameterInformation;
             }
             public SignatureInformationCapabilities? signatureInformation;
         }
@@ -567,10 +571,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// The document version that range applies to.
         /// </summary>
         public int? _version;
-        /// <summary>
-        /// List of fully qualified type names for the expression
-        /// </summary>
-        public string[] _typeNames;
     }
 
     [Serializable]
@@ -585,13 +585,21 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public string label;
         public MarkupContent documentation;
         public ParameterInformation[] parameters;
-
-        public string[] _returnTypes;
     }
 
     [Serializable]
     public sealed class ParameterInformation {
-        public string label;
+        /// <summary>
+        /// The label of this signature.
+        /// </summary>
+        /// <remarks>
+        /// LSP before 3.14: string label.
+        /// LSP 3.14.0+: (int, int) range.
+        /// Either a string or inclusive start and exclusive end offsets within its containing
+        /// [signature label] (#SignatureInformation.label). *Note*: A label of type string must be
+        /// a substring of its containing signature information's [label](#SignatureInformation.label).
+        /// </remarks>
+        public object label;
         public MarkupContent documentation;
     }
 
