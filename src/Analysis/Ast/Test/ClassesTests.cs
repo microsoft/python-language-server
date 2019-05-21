@@ -553,5 +553,24 @@ a = y().a()
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task DocumentationWithCycleInBases() {
+            const string code = @"
+class A(C):
+    '''class A doc'''
+
+class B(A):
+    def __init__(self):
+        '''class B doc'''
+        pass
+
+class C(B):
+    '''class C doc'''
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A").Which.Should().HaveDocumentation("class A doc");
+            analysis.Should().HaveClass("B").Which.Should().HaveDocumentation("class B doc");
+            analysis.Should().HaveClass("C").Which.Should().HaveDocumentation("class C doc");
+        }
     }
 }
