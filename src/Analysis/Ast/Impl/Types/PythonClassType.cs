@@ -71,6 +71,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override IMember GetMember(string name) {
             IMember member;
+            // Push/Pop should be lock protected.
             lock (_lock) {
                 if (Members.TryGetValue(name, out member)) {
                     return member;
@@ -105,35 +106,36 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override string Documentation {
             get {
-                if (!string.IsNullOrEmpty(_documentation)) {
+                // Push/Pop should be lock protected.
+                lock (_lock) {
+                    if (!string.IsNullOrEmpty(_documentation)) {
+                        return _documentation;
+                    }
+                    // Make sure we do not cycle through bases back here.
+                    if (!Push(this)) {
+                        return null;
+                    }
+                    try {
+                        // Try doc from the type first (class definition AST node).
+                        _documentation = base.Documentation;
+                        if (string.IsNullOrEmpty(_documentation)) {
+                            // If not present, try docs __init__. IPythonFunctionType handles
+                            // __init__ in a special way so there is no danger of call coming
+                            // back here and causing stack overflow.
+                            _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                        }
+
+                        if (string.IsNullOrEmpty(_documentation) && Bases != null) {
+                            // If still not found, try bases. 
+                            var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                            _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
+                                ?.Documentation;
+                        }
+                    } finally {
+                        Pop();
+                    }
                     return _documentation;
                 }
-                // Make sure we do not cycle through bases back here.
-                if (!Push(this)) {
-                    return null;
-                }
-
-                try {
-                    // Try doc from the type first (class definition AST node).
-                    _documentation = base.Documentation;
-                    if (string.IsNullOrEmpty(_documentation)) {
-                        // If not present, try docs __init__. IPythonFunctionType handles
-                        // __init__ in a special way so there is no danger of call coming
-                        // back here and causing stack overflow.
-                        _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
-                    }
-
-                    if (string.IsNullOrEmpty(_documentation) && Bases != null) {
-                        // If still not found, try bases. 
-                        var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
-                            ?.Documentation;
-                    }
-                } finally {
-                    Pop();
-                }
-
-                return _documentation;
             }
         }
 
@@ -389,40 +391,44 @@ namespace Microsoft.Python.Analysis.Types {
             // parameter name to the actual supplied type.
             StoreGenericParameters(classType, genericTypeDefinitions.ToArray(), specificTypes);
 
-            // Prevent reentrancy when resolving generic class where
-            // method may be returning instance of type of the same class.
-            if (!Push(classType)) {
-                return _processing.Value;
-            }
+            // Push/Pop should be lock protected.
+            lock (_lock) {
+                // Prevent reentrancy when resolving generic class where
+                // method may be returning instance of type of the same class.
+                if (!Push(classType)) {
+                    return _processing.Value;
+                }
 
-            try {
-                // Create specific bases since we may have generic types there.
-                // Match generic parameter names to base type parameter names.
-                // Consider 'class A(Generic[T], B[T], C[E]): ...'
-                var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().ToArray();
-                // Start with regular types, then add specific types for all generic types.
-                var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
+                try {
+                    // Create specific bases since we may have generic types there.
+                    // Match generic parameter names to base type parameter names.
+                    // Consider 'class A(Generic[T], B[T], C[E]): ...'
+                    var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().ToArray();
+                    // Start with regular types, then add specific types for all generic types.
+                    var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
 
-                // Create specific types for generic type bases
-                // it for generic types but not Generic[T, ...] itself.
-                foreach (var gt in genericTypeBases) {
-                    var st = gt.Parameters
-                        .Select(p => classType.GenericParameters.TryGetValue(p.Name, out var t) ? t : null)
-                        .Where(p => !p.IsUnknown())
-                        .ToArray();
-                    if (st.Length > 0) {
-                        var type = gt.CreateSpecificType(new ArgumentSet(st));
-                        if (!type.IsUnknown()) {
-                            bases.Add(type);
+                    // Create specific types for generic type bases
+                    // it for generic types but not Generic[T, ...] itself.
+                    foreach (var gt in genericTypeBases) {
+                        var st = gt.Parameters
+                            .Select(p => classType.GenericParameters.TryGetValue(p.Name, out var t) ? t : null)
+                            .Where(p => !p.IsUnknown())
+                            .ToArray();
+                        if (st.Length > 0) {
+                            var type = gt.CreateSpecificType(new ArgumentSet(st));
+                            if (!type.IsUnknown()) {
+                                bases.Add(type);
+                            }
                         }
                     }
+
+                    // Set specific class bases
+                    classType.SetBases(bases.Concat(newBases));
+                    // Transfer members from generic to specific type.
+                    SetClassMembers(classType, args);
+                } finally {
+                    Pop();
                 }
-                // Set specific class bases
-                classType.SetBases(bases.Concat(newBases));
-                // Transfer members from generic to specific type.
-                SetClassMembers(classType, args);
-            } finally {
-                Pop();
             }
             return classType;
         }
