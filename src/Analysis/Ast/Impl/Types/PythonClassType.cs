@@ -112,19 +112,27 @@ namespace Microsoft.Python.Analysis.Types {
                 if (!Push(this)) {
                     return null;
                 }
-                // Try doc from the type first (class definition AST node).
-                _documentation = base.Documentation;
-                if (string.IsNullOrEmpty(_documentation)) {
-                    // If not present, try docs __init__. IPythonFunctionType handles
-                    // __init__ in a special way so there is no danger of call coming
-                    // back here and causing stack overflow.
-                    _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+
+                try {
+                    // Try doc from the type first (class definition AST node).
+                    _documentation = base.Documentation;
+                    if (string.IsNullOrEmpty(_documentation)) {
+                        // If not present, try docs __init__. IPythonFunctionType handles
+                        // __init__ in a special way so there is no danger of call coming
+                        // back here and causing stack overflow.
+                        _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                    }
+
+                    if (string.IsNullOrEmpty(_documentation) && Bases != null) {
+                        // If still not found, try bases. 
+                        var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
+                            ?.Documentation;
+                    }
+                } finally {
+                    Pop();
                 }
-                if (string.IsNullOrEmpty(_documentation) && Bases != null) {
-                    // If still not found, try bases. 
-                    var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                    _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))?.Documentation;
-                }
+
                 return _documentation;
             }
         }
