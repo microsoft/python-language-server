@@ -122,20 +122,17 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static void WriteTextWithRetry(this IFileSystem fs, string filePath, string text) {
-            var failed = false;
             for (var retries = 100; retries > 0; --retries) {
                 try {
                     fs.WriteAllText(filePath, text);
+                    return;
                 } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
-                    failed = true;
                     Thread.Sleep(10);
                 }
             }
 
             try {
-                if (failed) {
-                    fs.DeleteFile(filePath);
-                }
+                fs.DeleteFile(filePath);
             } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
     }
