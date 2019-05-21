@@ -14,13 +14,14 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer {
     public interface IDocumentationSource {
         InsertTextFormat DocumentationFormat { get; }
         MarkupContent GetHover(string name, IMember member, IPythonType self = null);
-        string GetSignatureString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0, string name = null);
+        string GetSignatureString(IPythonFunctionType ft, IPythonType self, out IndexSpan[] parameterSpans, int overloadIndex = 0, string name = null);
         MarkupContent FormatParameterDocumentation(IParameterInfo parameter);
         MarkupContent FormatDocumentation(string documentation);
     }

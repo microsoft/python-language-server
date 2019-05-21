@@ -18,11 +18,12 @@ using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Documentation;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Sources {
-    internal sealed class MarkdownDocumentationSource : IDocumentationSource {
+    internal sealed class MarkdownDocumentationSource : DocumentationSource, IDocumentationSource {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
         public MarkupContent GetHover(string name, IMember member, IPythonType self) {
@@ -69,20 +70,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             };
         }
 
-        public MarkupContent FormatDocumentation(string documentation) {
-            return new MarkupContent { kind = MarkupKind.Markdown, value = DocstringConverter.ToMarkdown(documentation) };
-        }
-
-        public string GetSignatureString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0, string name = null) {
-            var o = ft.Overloads[overloadIndex];
-
-            var parms = GetFunctionParameters(ft);
-            var parmString = string.Join(", ", parms);
-            var returnDoc = o.GetReturnDocumentation(self);
-            var annString = string.IsNullOrEmpty(returnDoc) ? string.Empty : $" -> {returnDoc}";
-
-            return $"{name ?? ft.Name}({parmString}){annString}";
-        }
+        public MarkupContent FormatDocumentation(string documentation) 
+            => new MarkupContent { kind = MarkupKind.Markdown, value = DocstringConverter.ToMarkdown(documentation) };
 
         public MarkupContent FormatParameterDocumentation(IParameterInfo parameter) {
             if (!string.IsNullOrEmpty(parameter.Documentation)) {
@@ -100,21 +89,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private string GetFunctionHoverString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0) {
-            var sigString = GetSignatureString(ft, self, overloadIndex);
+            var sigString = GetSignatureString(ft, self, out _, overloadIndex);
             var decTypeString = ft.DeclaringType != null ? $"{ft.DeclaringType.Name}." : string.Empty;
             var funcDoc = !string.IsNullOrEmpty(ft.Documentation) ? $"\n---\n{ft.MarkdownDoc()}" : string.Empty;
             return $"```\n{decTypeString}{sigString}\n```{funcDoc}";
-        }
-
-        private IEnumerable<string> GetFunctionParameters(IPythonFunctionType ft, int overloadIndex = 0) {
-            var o = ft.Overloads[overloadIndex]; // TODO: display all?
-            var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
-            return o.Parameters.Skip(skip).Select(p => {
-                if (!string.IsNullOrEmpty(p.DefaultValueString)) {
-                    return $"{p.Name}={p.DefaultValueString}";
-                }
-                return p.Type.IsUnknown() ? p.Name : $"{p.Name}: {p.Type.Name}";
-            });
         }
     }
 }

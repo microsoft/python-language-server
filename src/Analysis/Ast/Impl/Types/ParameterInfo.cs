@@ -27,7 +27,6 @@ namespace Microsoft.Python.Analysis.Types {
                 DefaultValueString = null;
             }
             IsGeneric = isGeneric;
-            IndexSpan = p?.IndexSpan ?? default;
         }
 
         public ParameterInfo(string name, IPythonType type, ParameterKind? kind, IMember defaultValue) {
@@ -47,6 +46,5 @@ namespace Microsoft.Python.Analysis.Types {
         public IPythonType Type { get; }
         public string DefaultValueString { get; }
         public IMember DefaultValue { get; }
-        public IndexSpan IndexSpan { get; }
     }
 }

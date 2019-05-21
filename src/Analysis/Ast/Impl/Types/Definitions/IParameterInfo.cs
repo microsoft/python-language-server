@@ -62,10 +62,5 @@ namespace Microsoft.Python.Analysis.Types {
         /// Default value.
         /// </summary>
         IMember DefaultValue { get; }
-
-        /// <summary>
-        /// Position of the parameter in the source code.
-        /// </summary>
-        IndexSpan IndexSpan { get; }
     }
 }

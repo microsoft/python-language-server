@@ -82,15 +82,24 @@ namespace Microsoft.Python.LanguageServer.Sources {
             for (var i = 0; i < ft.Overloads.Count; i++) {
                 var o = ft.Overloads[i];
 
-                var parameters = o.Parameters.Skip(skip).Select(p => new ParameterInformation {
-                    label = _labelOffsetSupport ? (p.IndexSpan.Start, p.IndexSpan.End) : (object)p.Name,
-                    documentation = _docSource.FormatParameterDocumentation(p)
-                }).ToArray();
+                var signatureLabel = _docSource.GetSignatureString(ft, selfType, out var parameterSpans, i, name);
+
+                var visibleParameterCount = o.Parameters.Count - skip;
+                var parameterInfo = new ParameterInformation[visibleParameterCount];
+                for (var j = 0; j < visibleParameterCount; j++) {
+                    var p = o.Parameters[j + skip];
+                    var ps = parameterSpans[j];
+
+                    parameterInfo[j] = new ParameterInformation {
+                        label = _labelOffsetSupport ? new[] { ps.Start, ps.End } : (object)p.Name,
+                        documentation = _docSource.FormatParameterDocumentation(p)
+                    };
+                }
 
                 signatures[i] = new SignatureInformation {
-                    label = _docSource.GetSignatureString(ft, selfType, i, name),
+                    label = signatureLabel,
                     documentation = _docSource.FormatDocumentation(ft.Documentation),
-                    parameters = parameters
+                    parameters = parameterInfo
                 };
             }
 
