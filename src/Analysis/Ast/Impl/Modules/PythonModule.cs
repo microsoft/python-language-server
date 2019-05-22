@@ -339,6 +339,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 }
 
                 ContentState = State.Parsed;
+                Analysis = new EmptyAnalysis(Services, this);
             }
 
             NewAst?.Invoke(this, EventArgs.Empty);
@@ -368,7 +369,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void NotifyAnalysisBegins() {
             lock (AnalysisLock) {
-                if (_updated) {
+                if (_updated || Analysis is LibraryAnalysis) {
                     _updated = false;
                     // In all variables find those imported, then traverse imported modules
                     // and remove references to this module. If variable refers to a module,
@@ -376,6 +377,22 @@ namespace Microsoft.Python.Analysis.Modules {
 
                     if (GlobalScope == null) {
                         return;
+                    }
+
+                    if (Analysis is LibraryAnalysis) {
+                        var sw = new Stopwatch();
+                        sw.Start();
+                        ContentState = State.None;
+                        LoadContent();
+                        using (var sr = new StringReader(_buffer.Text)) {
+                            var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, ParserOptions.Default);
+                            var ast = parser.ParseFile(Uri);
+                            // Stored nodes are no longer valid.
+                            _astMap.Clear();
+                            _astMap[this] = ast;
+                        }
+                        sw.Stop();
+                        Log?.Log(TraceEventType.Verbose, $"Reloaded {Name} in {sw.ElapsedMilliseconds}ms because new analysis was requested.");
                     }
 
                     // TODO: Figure out where the nulls below are coming from.
