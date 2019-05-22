@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
@@ -36,8 +37,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-        [TestMethod, Priority(0)]
-        public async Task MethodSignature() {
+        [DataTestMethod, Priority(0)]
+        [DataRow(true)]
+        [DataRow(false)]
+        public async Task MethodSignature(bool clientSupportsParameterLabelOffsets) {
             const string code = @"
 class C:
     def method(self, a:int, b) -> float:
@@ -46,13 +49,22 @@ class C:
 C().method()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var src = new SignatureSource(new PlainTextDocumentationSource());
+            var src = new SignatureSource(new PlainTextDocumentationSource(), clientSupportsParameterLabelOffsets);
 
             var sig = src.GetSignature(analysis, new SourceLocation(6, 12));
             sig.activeSignature.Should().Be(0);
             sig.activeParameter.Should().Be(0);
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("method(a: int, b) -> float");
+
+            var labels = sig.signatures[0].parameters.Select(p => p.label);
+            if (clientSupportsParameterLabelOffsets) {
+                var parameterSpans = labels.OfType<int[]>().SelectMany(x => x);
+                parameterSpans.Should().ContainInOrder(7, 8, 15, 16);
+            } else {
+                var parameterSpans = labels.OfType<string>();
+                parameterSpans.Should().ContainInOrder("a", "b");
+            }
         }
 
         [TestMethod, Priority(0)]

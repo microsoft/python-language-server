@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -42,14 +43,14 @@ namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
             return new AndConstraint<SignatureInformationAssertions>(this);
         }
 
-        public AndConstraint<SignatureInformationAssertions> OnlyHaveParameterLabels(params string[] labels)
+        public AndConstraint<SignatureInformationAssertions> OnlyHaveParameterLabels(params int[][] labels)
             => OnlyHaveParameterLabels(labels, string.Empty);
 
-        public AndConstraint<SignatureInformationAssertions> OnlyHaveParameterLabels(IEnumerable<string> labels, string because = "", params object[] reasonArgs) {
+        public AndConstraint<SignatureInformationAssertions> OnlyHaveParameterLabels(IEnumerable<int[]> labelOffsets, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
-            var actual = Subject.parameters?.Select(i => i.label).ToArray() ?? new string[0];
-            var expected = labels.ToArray();
+            var actual = Subject.parameters?.Select(i => i.label).ToArray() ?? Array.Empty<int[]>();
+            var expected = labelOffsets.ToArray();
 
             var errorMessage = AssertionsUtilities.GetAssertCollectionOnlyContainsMessage(actual, expected, $"signature '{Subject.label}'", "parameter label", "parameter labels");
 
