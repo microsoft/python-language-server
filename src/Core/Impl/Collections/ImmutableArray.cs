@@ -254,6 +254,15 @@ namespace Microsoft.Python.Core.Collections {
         }
 
         [Pure]
+        public TResult[] SelectToArray<TResult>(Func<T, TResult> selector) {
+            var items = new TResult[_count];
+            for (var i = 0; i < _count; i++) {
+                items[i] = selector(_items[i]);
+            }
+            return items;
+        }
+
+        [Pure]
         public int IndexOf(T value) => Array.IndexOf(_items, value, 0, _count);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

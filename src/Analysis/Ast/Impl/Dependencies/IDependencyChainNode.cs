@@ -16,6 +16,7 @@
 namespace Microsoft.Python.Analysis.Dependencies {
     internal interface IDependencyChainNode<out TValue> {
         int VertexDepth { get; }
+        bool HasMissingDependencies { get; }
         TValue Value { get; }
         void Commit();
         void Skip();
