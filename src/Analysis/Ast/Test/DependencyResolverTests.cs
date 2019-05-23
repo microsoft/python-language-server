@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Tests {
         [DataRow("A:D|B:DA|C:BA|D:AE|E", "[AE]DADBC", "C")]
         [DataRow("A:C|C:B|B:A|D:AF|F:CE|E:BD", "ABCABCDEFDEF", "F")]
         [DataRow("A:BC|B:AC|C:BA|D:BC", "ACBACBD", "D")]
-        [DataRow("A|B|C|D:AB|E:BC", "[ABC][DE]", "E")]
+        [DataRow("A|B|C|D:AB|E:BC", "[ABC][DE]", "D|E")]
         [DataRow("A:CE|B:A|C:B|D:BC|E|F:C", "[CE]ABCAB[DF]", "F")]
         [DataRow("A:D|B:E|C:F|D:E|E:F|F:D", "DFEDFE[ABC]", "A")]
         // ReSharper restore StringLiteralTypo
@@ -51,11 +51,12 @@ namespace Microsoft.Python.Analysis.Tests {
         public void ChangeValue(string input, string output, string root) {
             var resolver = new DependencyResolver<string, string>();
             var splitInput = input.Split("|");
+            var splitRoots = root.Split("|");
 
             foreach (var value in splitInput) {
                 var kv = value.Split(":");
                 var dependencies = kv.Length == 1 ? ImmutableArray<string>.Empty : ImmutableArray<string>.Create(kv[1].Select(c => c.ToString()).ToList());
-                resolver.ChangeValue(kv[0], value, kv[0] == root, dependencies);
+                resolver.ChangeValue(kv[0], value, splitRoots.Contains(kv[0]), dependencies);
             }
 
             var walker = resolver.CreateWalker();
@@ -185,12 +186,10 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var walker = resolver.CreateWalker();
             walker.MissingKeys.Should().Equal("B", "D");
-            var node1 = await walker.GetNextAsync(default);
-            var node2 = await walker.GetNextAsync(default);
-            node1.Value.Should().Be("A:BD");
-            node2.Value.Should().Be("C");
-            node1.Commit();
-            node2.Commit();
+            var node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("A:BD");
+            node.HasMissingDependencies.Should().BeTrue();
+            node.Commit();
 
             walker.Remaining.Should().Be(0);
             
@@ -198,26 +197,35 @@ namespace Microsoft.Python.Analysis.Tests {
             walker = resolver.CreateWalker();       
             walker.MissingKeys.Should().Equal("D");
             
-            var node = await walker.GetNextAsync(default); 
-            node.Value.Should().Be("B");             
+            node = await walker.GetNextAsync(default); 
+            node.Value.Should().Be("B");
+            node.HasMissingDependencies.Should().BeFalse();
             node.Commit();                             
                                                        
             node = await walker.GetNextAsync(default); 
-            node.Value.Should().Be("A:BD");            
+            node.Value.Should().Be("A:BD");
+            node.HasMissingDependencies.Should().BeTrue();
             node.Commit();  
             
             walker.Remaining.Should().Be(0); 
             
-            resolver.ChangeValue("D", "D:C", false);
+            resolver.ChangeValue("D", "D:C", false, "C");
             walker = resolver.CreateWalker();       
             walker.MissingKeys.Should().BeEmpty();
-            
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("C");
+            node.HasMissingDependencies.Should().BeFalse();
+            node.Commit();
+
             node = await walker.GetNextAsync(default); 
-            node.Value.Should().Be("D:C");             
+            node.Value.Should().Be("D:C");
+            node.HasMissingDependencies.Should().BeFalse();
             node.Commit();                             
                                                        
             node = await walker.GetNextAsync(default); 
-            node.Value.Should().Be("A:BD");            
+            node.Value.Should().Be("A:BD");
+            node.HasMissingDependencies.Should().BeFalse();
             node.Commit();  
             
             walker.Remaining.Should().Be(0);
