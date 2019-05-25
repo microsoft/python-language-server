@@ -262,11 +262,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
-            IPythonModule module;
             try {
                 ace?.AddOne();
                 var entry = node.Value;
-                if (!entry.IsValidVersion(_walker.Version, out module, out var ast)) {
+
+                if (!entry.IsValidVersion(_walker.Version, out var module, out var ast)) {
                     if (ast == null) {
                         // Entry doesn't have ast yet. There should be at least one more session.
                         Cancel();
@@ -276,6 +276,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     node.Skip();
                     return;
                 }
+
                 var startTime = stopWatch.Elapsed;
                 AnalyzeEntry(entry, module, _walker.Version, node.IsComplete);
                 node.Commit();
@@ -317,7 +318,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 var startTime = stopWatch?.Elapsed ?? TimeSpan.Zero;
-                AnalyzeEntry(_entry, module, ast, Version);
+
+                AnalyzeEntry(_entry, module, Version, true);
 
                 LogCompleted(module, stopWatch, startTime);
             } catch (OperationCanceledException oce) {
@@ -333,6 +335,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, int version, bool isFinalPass) {
+            _log?.Log(TraceEventType.Verbose, $"Request to re-analyze finalized {module.Name} ignored.");
+            if (entry.PreviousAnalysis is LibraryAnalysis) {
+                return;
+            }
+
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
@@ -357,23 +364,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void LogCompleted(IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
-            if (_log != null) {
-                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
-            }
-        }
+        private void LogCompleted(IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) 
+            => _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
 
-        private void LogCanceled(IPythonModule module) {
-            if (_log != null) {
-                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
-            }
-        }
+        private void LogCanceled(IPythonModule module) 
+            => _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
 
-        private void LogException(IPythonModule module, Exception exception) {
-            if (_log != null) {
-                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
-            }
-        }
+        private void LogException(IPythonModule module, Exception exception) 
+            => _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
 
         private enum State {
             NotStarted = 0,
