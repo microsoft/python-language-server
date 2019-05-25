@@ -44,17 +44,17 @@ namespace Microsoft.Python.LanguageServer.Completion {
             expression = expression ?? (statement as ExpressionStatement)?.Expression;
         }
 
-        private static bool CanBackUp(PythonAst tree, Node node, Node statement, ScopeStatement scope, int column) {
+        private static bool CanBackUp(PythonAst ast, Node node, Node statement, ScopeStatement scope, int column) {
             if (node != null || !((statement as ExpressionStatement)?.Expression is ErrorExpression)) {
                 return false;
             }
 
             var top = 1;
             if (scope != null) {
-                var scopeStart = scope.GetStart();
+                var scopeStart = scope.GetStart(ast);
                 if (scope.Body != null) {
-                    top = scope.Body.GetEnd().Line == scopeStart.Line
-                        ? scope.Body.GetStart().Column
+                    top = scope.Body.GetEnd(ast).Line == scopeStart.Line
+                        ? scope.Body.GetStart(ast).Column
                         : scopeStart.Column;
                 } else {
                     top = scopeStart.Column;

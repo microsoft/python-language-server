@@ -101,13 +101,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return cls.CreateInstance(cls.Name, args);
         }
 
-        public IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {
+        private IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {
             switch (t.Type) {
                 case IPythonFunctionType fn:
                     return GetValueFromFunctionType(fn, t.Self, expr);
                 case IPythonPropertyType p:
                     return GetValueFromProperty(p, t.Self);
-                case IPythonIteratorType it when t.Self is IPythonCollection seq:
+                case IPythonIteratorType _ when t.Self is IPythonCollection seq:
                     return seq.GetIterator();
             }
             return UnknownType;
@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
                 instanceType.Equals(fn.DeclaringType) ||
-                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
+                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation())) {
 
                 LoadFunctionDependencyModules(fn);
 
@@ -192,14 +192,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             //      def func(a, b): return a + b
             // from working in libraries, but this is small sacrifice for significant performance
             // increase in library analysis.
-            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst() && EvaluateFunctionBody(fn)) {
+            if (fn.DeclaringModule is IDocument && EvaluateFunctionBody(fn)) {
                 // Stubs are coming from another module.
                 return TryEvaluateWithArguments(fn, args);
             }
             return UnknownType;
         }
 
-        public IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {
+        private IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {
             // Function may not have been walked yet. Do it now.
             SymbolTable.Evaluate(p.FunctionDefinition);
             return instance.Call(p.Name, ArgumentSet.Empty);

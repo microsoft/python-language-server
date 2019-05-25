@@ -68,9 +68,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             IndexSpan indexSpan;
+            var ast = Module.GetAst();
             switch (node) {
                 case MemberExpression mex:
-                    indexSpan = mex.GetNameSpan().ToIndexSpan(mex.Ast);
+                    indexSpan = mex.GetNameSpan(ast).ToIndexSpan(ast);
                     break;
                 case ClassDefinition cd:
                     indexSpan = cd.NameExpression.IndexSpan;
@@ -90,7 +91,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // turns into span at line 1 and very large column. This DOES can
             // produce false positives occasionally.
 #if DEBUG
-            var sourceSpan = indexSpan.ToSourceSpan(node.Ast);
+            var sourceSpan = indexSpan.ToSourceSpan(ast);
             Debug.Assert(sourceSpan.Start.Line > 1 || sourceSpan.Start.Column < 1000);
 #endif
             return new Location(Module, indexSpan);

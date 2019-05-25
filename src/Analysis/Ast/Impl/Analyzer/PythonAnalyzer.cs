@@ -193,6 +193,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IReadOnlyList<IPythonModule> LoadedModules 
             => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
 
+        internal bool IsFinalSession => _nextSession == null;
+
         private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies) {
             _analysisCompleteEvent.Reset();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");

@@ -49,25 +49,9 @@ namespace Microsoft.Python.Parsing.Ast {
             Justification = "breaking change")]
         public PythonVariable[] Variables { get; set; }
 
-        public PythonReference[] GetReferences(PythonAst ast) => GetVariableReferences(this, ast);
-
         // TODO: return names and aliases when they are united into one node
         public override IEnumerable<Node> GetChildNodes() => Enumerable.Empty<Node>();
 
-        public override PythonAst Ast {
-            get => base.Ast;
-            internal set {
-                foreach (var n in Names.ExcludeDefault()) {
-                    n.Ast = value;
-                }
-                foreach (var n in AsNames.ExcludeDefault()) {
-                    n.Ast = value;
-                }
-
-                Root.Ast = value;
-                base.Ast = value;
-            }
-        }
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
             }

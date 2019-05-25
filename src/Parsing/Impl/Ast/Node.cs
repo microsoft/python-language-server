@@ -23,8 +23,6 @@ namespace Microsoft.Python.Parsing.Ast {
     public abstract class Node {
 
         #region Public API
-        public virtual PythonAst Ast { get; internal set; }
-
         public int EndIndex {
             get => IndexSpan.End;
             set => IndexSpan = new IndexSpan(IndexSpan.Start, value - IndexSpan.Start);
@@ -50,11 +48,11 @@ namespace Microsoft.Python.Parsing.Ast {
             return string.IsInterned(result) ?? result;
         }
 
-        public SourceLocation GetStart() => Ast.IndexToLocation(StartIndex);
+        public SourceLocation GetStart(PythonAst ast) => ast.IndexToLocation(StartIndex);
 
-        public SourceLocation GetEnd() => Ast.IndexToLocation(EndIndex);
+        public SourceLocation GetEnd(PythonAst ast) => ast.IndexToLocation(EndIndex);
 
-        public SourceSpan GetSpan() => new SourceSpan(GetStart(), GetEnd());
+        public SourceSpan GetSpan(PythonAst ast) => new SourceSpan(GetStart(ast), GetEnd(ast));
 
         /// <summary>
         /// Returns the proceeding whitespace (newlines and comments) that

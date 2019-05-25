@@ -14,11 +14,9 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Parsing.Ast {
@@ -43,16 +41,6 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override IEnumerable<Node> GetChildNodes() => Names;
-
-        public override PythonAst Ast {
-            get => base.Ast;
-            internal set {
-                base.Ast = value;
-                foreach (var n in Names) {
-                    n.Ast = value;
-                }
-            }
-        }
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {

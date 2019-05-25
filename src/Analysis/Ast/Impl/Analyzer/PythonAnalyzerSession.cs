@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime;
@@ -27,7 +28,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class PythonAnalyzerSession {
@@ -335,8 +335,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, int version, bool isFinalPass) {
-            _log?.Log(TraceEventType.Verbose, $"Request to re-analyze finalized {module.Name} ignored.");
             if (entry.PreviousAnalysis is LibraryAnalysis) {
+                _log?.Log(TraceEventType.Verbose, $"Request to re-analyze finalized {module.Name} ignored.");
                 return;
             }
 

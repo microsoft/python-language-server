@@ -34,6 +34,8 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Removes all AST node associations.
         /// </summary>
-        void Clear();
+        void ClearAst();
+
+        void ClearContent();
     }
 }

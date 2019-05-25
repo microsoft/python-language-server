@@ -370,7 +370,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void NotifyAnalysisBegins() {
             lock (AnalysisLock) {
-                if (_updated || Analysis is LibraryAnalysis) {
+                if (_updated) {
                     _updated = false;
                     // In all variables find those imported, then traverse imported modules
                     // and remove references to this module. If variable refers to a module,
@@ -378,22 +378,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
                     if (GlobalScope == null) {
                         return;
-                    }
-
-                    if (Analysis is LibraryAnalysis) {
-                        var sw = new Stopwatch();
-                        sw.Start();
-                        ContentState = State.None;
-                        LoadContent();
-                        using (var sr = new StringReader(_buffer.Text)) {
-                            var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, ParserOptions.Default);
-                            var ast = parser.ParseFile(Uri);
-                            // Stored nodes are no longer valid.
-                            _astMap.Clear();
-                            _astMap[this] = ast;
-                        }
-                        sw.Stop();
-                        Log?.Log(TraceEventType.Verbose, $"Reloaded {Name} in {sw.ElapsedMilliseconds}ms because new analysis was requested.");
                     }
 
                     // TODO: Figure out where the nulls below are coming from.
@@ -426,6 +410,9 @@ namespace Microsoft.Python.Analysis.Modules {
                 // as declare additional variables, etc.
                 OnAnalysisComplete();
                 ContentState = State.Analyzed;
+
+                // For non-user code drop content to conserve memory
+                ClearContent();
             }
 
             // Do not report issues with libraries or stubs
@@ -449,7 +436,18 @@ namespace Microsoft.Python.Analysis.Modules {
             Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
             _astMap[o] = n;
         }
-        public void Clear() =>_astMap.Clear();
+
+        public void ClearAst() {
+            if (ModuleType != ModuleType.User) {
+                _astMap.Clear();
+            }
+        }
+
+        public void ClearContent() {
+            if (ModuleType != ModuleType.User) {
+                _buffer.Reset(_buffer.Version, string.Empty);
+            }
+        }
         #endregion
 
         #region Analysis

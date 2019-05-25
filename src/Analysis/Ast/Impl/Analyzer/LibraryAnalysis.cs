@@ -32,6 +32,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public LibraryAnalysis(IDocument document, int version, IServiceContainer services, GlobalScope globalScope, IReadOnlyList<string> starImportMemberNames) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
+
             Document = document;
             Version = version;
             GlobalScope = globalScope;
@@ -39,7 +40,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var ast = Document.GetAst();
             ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
             var c = (IAstNodeContainer)Document;
-            c.Clear();
+            c.ClearContent();
+            c.ClearAst();
             c.AddAstNode(document, ast);
 
             ExpressionEvaluator = new ExpressionEval(services, document, globalScope);
