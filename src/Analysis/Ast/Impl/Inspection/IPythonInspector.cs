@@ -14,11 +14,18 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing.Ast;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Microsoft.Python.Analysis {
-    public interface IReferenceCollection {
-        IReadOnlyList<Expression> GetReferences(IPythonType type);
+namespace Microsoft.Python.Analysis.Inspection {
+    public interface IPythonInspector {
+        Task<ModuleMemberNamesResponse> GetModuleMemberNamesAsync(string moduleName, CancellationToken cancellationToken = default);
+
+        Task<string> GetModuleVersionAsync(string moduleName, CancellationToken cancellationToken = default);
+    }
+
+    public class ModuleMemberNamesResponse {
+        public IReadOnlyList<string> Members;
+        public IReadOnlyList<string> All;
     }
 }

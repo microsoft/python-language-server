@@ -13,8 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.Parsing.Tests;
@@ -33,8 +37,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-        [TestMethod, Priority(0)]
-        public async Task MethodSignature() {
+        [DataTestMethod, Priority(0)]
+        [DataRow(true)]
+        [DataRow(false)]
+        public async Task MethodSignature(bool clientSupportsParameterLabelOffsets) {
             const string code = @"
 class C:
     def method(self, a:int, b) -> float:
@@ -43,13 +49,77 @@ class C:
 C().method()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var src = new SignatureSource(new PlainTextDocumentationSource());
+            var src = new SignatureSource(new PlainTextDocumentationSource(), clientSupportsParameterLabelOffsets);
 
             var sig = src.GetSignature(analysis, new SourceLocation(6, 12));
             sig.activeSignature.Should().Be(0);
             sig.activeParameter.Should().Be(0);
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("method(a: int, b) -> float");
+
+            var labels = sig.signatures[0].parameters.Select(p => p.label);
+            if (clientSupportsParameterLabelOffsets) {
+                var parameterSpans = labels.OfType<int[]>().SelectMany(x => x);
+                parameterSpans.Should().ContainInOrder(7, 8, 15, 16);
+            } else {
+                var parameterSpans = labels.OfType<string>();
+                parameterSpans.Should().ContainInOrder("a", "b");
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassInitializer() {
+            const string code = @"
+class C:
+    def __init__(self, a:int, b):
+        pass
+
+C()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(6, 3));
+            sig.activeSignature.Should().Be(0);
+            sig.activeParameter.Should().Be(0);
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("C(a: int, b)");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportedClassInitializer() {
+            const string module1Code = @"
+class C:
+    def __init__(self, a:int, b):
+        pass
+";
+
+            const string appCode = @"
+import module1
+
+module1.C()
+";
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(4, 11));
+            sig.activeSignature.Should().Be(0);
+            sig.activeParameter.Should().Be(0);
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("C(a: int, b)");
         }
 
         [TestMethod, Priority(0)]

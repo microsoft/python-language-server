@@ -29,6 +29,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         public int Index { get; }
         public string DebuggerDisplay => $"{Key}:{Value}";
 
+        public bool IsNew => _state == (int)State.New;
         public bool IsSealed => _state >= (int)State.Sealed;
         public bool IsWalked => _state == (int)State.Walked;
 
@@ -38,7 +39,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private HashSet<int> _outgoing;
         private static HashSet<int> _empty = new HashSet<int>();
 
-        public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, int version) {
+        public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, int version, bool isNew) {
             Key = oldVertex.Key;
             Value = oldVertex.Value;
             IsRoot = oldVertex.IsRoot;
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             Version = version;
 
             _outgoing = oldVertex.Outgoing;
-            _state = oldVertex.IsWalked ? (int)State.ChangedOutgoing : (int)State.New;
+            _state = !isNew && oldVertex.IsWalked ? (int)State.ChangedOutgoing : (int)State.New;
         }
 
         public DependencyVertex(TKey key, TValue value, bool isRoot, ImmutableArray<int> incoming, int version, int index) {

@@ -587,6 +587,41 @@ if True:
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task DifferentScopes() {
+            const string code = @"
+def func():
+    var = _CONSTANT
+
+_CONSTANT = 1
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GlobalScope() {
+            const string code = @"
+var = _CONSTANT
+_CONSTANT = 1
+";
+            var d = await LintAsync(code);
+            d.Should().HaveCount(1);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(2, 7, 2, 16);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMemberDefinition() {
+            const string code = @"
+class A:
+    i: int
+    i = 0
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();

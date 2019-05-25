@@ -112,7 +112,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal ImmutableArray<string> Dependencies { get; private set; } = ImmutableArray<string>.Empty;
 
-        internal void AddOverload(IPythonFunctionOverload overload) 
+        internal void AddOverload(IPythonFunctionOverload overload)
             => _overloads = _overloads.Count > 0 ? _overloads.Add(overload) : ImmutableArray<IPythonFunctionOverload>.Create(overload);
 
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);

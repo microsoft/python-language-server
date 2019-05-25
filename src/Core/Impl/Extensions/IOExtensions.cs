@@ -114,9 +114,7 @@ namespace Microsoft.Python.Core.IO {
             for (var retries = 100; retries > 0; --retries) {
                 try {
                     return fs.ReadAllText(file);
-                } catch (UnauthorizedAccessException) {
-                    Thread.Sleep(10);
-                } catch (IOException) {
+                } catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException || ex is ObjectDisposedException) {
                     Thread.Sleep(10);
                 }
             }
@@ -124,15 +122,19 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static void WriteTextWithRetry(this IFileSystem fs, string filePath, string text) {
-            try {
-                using (var stream = fs.OpenWithRetry(filePath, FileMode.Create, FileAccess.Write, FileShare.Read)) {
-                    if (stream != null) {
-                        var bytes = Encoding.UTF8.GetBytes(text);
-                        stream.Write(bytes, 0, bytes.Length);
-                        return;
+            for (var retries = 100; retries > 0; --retries) {
+                try {
+                    using (var stream = fs.OpenWithRetry(filePath, FileMode.Create, FileAccess.Write, FileShare.Read)) {
+                        if (stream != null) {
+                            var bytes = Encoding.UTF8.GetBytes(text);
+                            stream.Write(bytes, 0, bytes.Length);
+                            return;
+                        }
                     }
+                } catch (IOException) { } catch (UnauthorizedAccessException) {
+                    Thread.Sleep(10);
                 }
-            } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
 
             try {
                 fs.DeleteFile(filePath);

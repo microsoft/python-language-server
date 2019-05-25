@@ -27,9 +27,12 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class SignatureSource {
         private readonly IDocumentationSource _docSource;
+        private readonly bool _labelOffsetSupport;
 
-        public SignatureSource(IDocumentationSource docSource) {
+        public SignatureSource(IDocumentationSource docSource, bool labelOffsetSupport = true) {
             _docSource = docSource;
+            // TODO: deprecate eventually.
+            _labelOffsetSupport = labelOffsetSupport; // LSP 3.14.0+
         }
 
         public SignatureHelp GetSignature(IDocumentAnalysis analysis, SourceLocation location) {
@@ -42,18 +45,33 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             IMember value = null;
             IPythonType selfType = null;
+            string name = null;
             var call = node as CallExpression;
             if (call != null) {
                 using (analysis.ExpressionEvaluator.OpenScope(analysis.Document, scope)) {
-                    if (call.Target is MemberExpression mex) {
-                        var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
-                        selfType = v?.GetPythonType();
+                    switch (call.Target) {
+                        case MemberExpression mex:
+                            var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
+                            selfType = v?.GetPythonType();
+                            name = mex.Name;
+                            break;
+                        case NameExpression ne:
+                            name = ne.Name;
+                            break;
                     }
+
                     value = analysis.ExpressionEvaluator.GetValueFromExpression(call.Target);
                 }
             }
 
-            var ft = value?.GetPythonType<IPythonFunctionType>();
+            IPythonFunctionType ft;
+
+            if (value is IPythonClassType cls) {
+                ft = cls.GetMember<IPythonFunctionType>("__init__");
+            } else {
+                ft = value?.GetPythonType<IPythonFunctionType>();
+            }
+
             if (ft == null) {
                 return null;
             }
@@ -64,15 +82,24 @@ namespace Microsoft.Python.LanguageServer.Sources {
             for (var i = 0; i < ft.Overloads.Count; i++) {
                 var o = ft.Overloads[i];
 
-                var parameters = o.Parameters.Skip(skip).Select(p => new ParameterInformation {
-                    label = p.Name,
-                    documentation = _docSource.FormatParameterDocumentation(p)
-                }).ToArray();
+                var signatureLabel = _docSource.GetSignatureString(ft, selfType, out var parameterSpans, i, name);
+
+                var visibleParameterCount = o.Parameters.Count - skip;
+                var parameterInfo = new ParameterInformation[visibleParameterCount];
+                for (var j = 0; j < visibleParameterCount; j++) {
+                    var p = o.Parameters[j + skip];
+                    var ps = parameterSpans[j];
+
+                    parameterInfo[j] = new ParameterInformation {
+                        label = _labelOffsetSupport ? new[] { ps.Start, ps.End } : (object)p.Name,
+                        documentation = _docSource.FormatParameterDocumentation(p)
+                    };
+                }
 
                 signatures[i] = new SignatureInformation {
-                    label = _docSource.GetSignatureString(ft, selfType, i),
+                    label = signatureLabel,
                     documentation = _docSource.FormatDocumentation(ft.Documentation),
-                    parameters = parameters
+                    parameters = parameterInfo
                 };
             }
 

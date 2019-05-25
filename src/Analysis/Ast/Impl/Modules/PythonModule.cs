@@ -135,7 +135,8 @@ namespace Microsoft.Python.Analysis.Modules {
                     _documentation = m.TryGetConstant<string>(out var s) ? s : string.Empty;
                     if (string.IsNullOrEmpty(_documentation)) {
                         m = GetMember($"_{Name}");
-                        _documentation = m?.GetPythonType()?.Documentation;
+                        var t = m?.GetPythonType();
+                        _documentation = t != null && !t.Equals(this) ? t.Documentation : null;
                         if (string.IsNullOrEmpty(_documentation)) {
                             _documentation = TryGetDocFromModuleInitFile();
                         }

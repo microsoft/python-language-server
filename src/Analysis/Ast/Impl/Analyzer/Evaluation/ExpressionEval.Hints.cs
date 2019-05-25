@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // Type alone is not a valid syntax, so we need to simulate the annotation.
-            var typeString = content.Substring(hintStart, i - hintStart);
+            var typeString = content.Substring(hintStart, i - hintStart).Trim();
             return GetTypeFromString(typeString);
         }
 
@@ -88,7 +88,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             typeString = $"x: {typeString}";
             using (var sr = new StringReader(typeString)) {
                 var sink = new CollectingErrorSink();
-                var parser = Parser.CreateParser(sr, Module.Interpreter.LanguageVersion, new ParserOptions { ErrorSink = sink });
+                // Always use Python 3 since expression is an annotation which is 3.x
+                var parser = Parser.CreateParser(sr, PythonLanguageVersion.V36, new ParserOptions { ErrorSink = sink });
                 var ast = parser.ParseFile();
                 var exprStatement = (ast?.Body as SuiteStatement)?.Statements?.FirstOrDefault() as ExpressionStatement;
                 if (!(Statement.GetExpression(exprStatement) is ExpressionWithAnnotation annExpr) || sink.Errors.Count > 0) {
