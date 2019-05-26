@@ -34,17 +34,15 @@ namespace Microsoft.Python.Analysis.Types {
             Documentation = string.Empty;
             DefaultValue = defaultValue;
             Type = type;
-            IsParamArray = kind == ParameterKind.List;
-            IsKeywordDict = kind == ParameterKind.Dictionary;
+            Kind = kind ?? ParameterKind.Normal;
         }
 
         public string Name { get; }
         public string Documentation { get; }
-        public bool IsParamArray { get; }
-        public bool IsKeywordDict { get; }
         public bool IsGeneric { get; }
         public IPythonType Type { get; }
         public string DefaultValueString { get; }
         public IMember DefaultValue { get; }
+        public ParameterKind Kind { get; }
     }
 }

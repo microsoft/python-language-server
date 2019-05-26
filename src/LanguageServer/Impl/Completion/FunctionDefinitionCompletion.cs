@@ -56,10 +56,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         private static string MakeOverrideParameter(IParameterInfo paramInfo, string defaultValue) {
-            if (paramInfo.IsParamArray) {
+            if (paramInfo.Kind == ParameterKind.List) {
                 return $"*{paramInfo.Name}";
             }
-            if (paramInfo.IsKeywordDict) {
+            if (paramInfo.Kind == ParameterKind.Dictionary) {
                 return $"**{paramInfo.Name}";
             }
             return !string.IsNullOrEmpty(paramInfo.DefaultValueString) ? $"{paramInfo.Name}={defaultValue}" : paramInfo.Name;

@@ -45,11 +45,6 @@ namespace Microsoft.Python.Analysis.Types {
         IPythonType Type { get; }
         
         /// <summary>
-        /// Annotation expression.
-        /// </summary>
-        Expression TypeExpression { get; }
-
-        /// <summary>
         /// Parameter location in the AST.
         /// </summary>
         Node Location { get; }

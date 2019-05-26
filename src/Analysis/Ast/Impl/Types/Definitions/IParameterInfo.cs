@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -37,16 +38,6 @@ namespace Microsoft.Python.Analysis.Types {
         string Documentation { get; }
 
         /// <summary>
-        /// True if the parameter is a *args parameter.
-        /// </summary>
-        bool IsParamArray { get; }
-
-        /// <summary>
-        /// True if the parameter is a **args parameter.
-        /// </summary>
-        bool IsKeywordDict { get; }
-
-        /// <summary>
         /// Parameter type is generic and specific type will be
         /// determined at the time of the function call.
         /// </summary>
@@ -62,5 +53,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// Default value.
         /// </summary>
         IMember DefaultValue { get; }
+
+        /// <summary>
+        /// Parameter kind.
+        /// </summary>
+        ParameterKind Kind { get; }
     }
 }

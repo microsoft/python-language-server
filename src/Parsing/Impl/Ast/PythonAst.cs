@@ -97,8 +97,9 @@ namespace Microsoft.Python.Parsing.Ast {
             (Body as SuiteStatement)?.FilterStatements(filter);
             _attributes?.Clear();
             Variables?.Clear();
-            NewLineLocations = Array.Empty<NewLineLocation>();
             CommentLocations = Array.Empty<SourceLocation>();
+            // DO keep NewLineLocations as they are required
+            // to calculate node positions for navigation;
             base.Clear();
         }
 
