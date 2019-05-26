@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             Location location
         ) : base(fd.Name, location,
-            fd.Name == "__init__" ? declaringType?.Documentation : fd.Documentation, 
+            fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(), 
             declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
 

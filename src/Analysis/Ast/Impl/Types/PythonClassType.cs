@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Types {
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
         ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
-            DeclaringModule.AddAstNode(this, classDefinition);
+            location.Module.AddAstNode(this, classDefinition);
         }
 
         #region IPythonType

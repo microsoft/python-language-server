@@ -49,22 +49,10 @@ namespace Microsoft.Python.Analysis.Types {
         // type info of C vs. return C() that returns an instance of C.
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(IPythonClassMember cm, Location location)
+        public PythonFunctionOverload(IPythonClassMember cm, Location location, string returnDocumentation)
             : this(cm.Name, location) {
             ClassMember = cm;
-            var ast = (location.Module as IDocument)?.Analysis.Ast;
-
-            FunctionDefinition fd = null;
-            switch(cm) {
-                case IPythonFunctionType ft:
-                    fd = ft.FunctionDefinition;
-                    break;
-                case IPythonPropertyType prop:
-                    fd = prop.FunctionDefinition;
-                    break;
-            }
-
-            _returnDocumentation = ast != null ? fd?.ReturnAnnotation?.ToCodeString(ast) : null;
+            _returnDocumentation = returnDocumentation;
         }
 
         public PythonFunctionOverload(string name, Location location) : base(location) {

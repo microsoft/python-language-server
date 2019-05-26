@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
-                var overload = new PythonFunctionOverload(function, _eval.GetLocationOfName(fd));
+                var overload = new PythonFunctionOverload(function, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, overload));
             }
