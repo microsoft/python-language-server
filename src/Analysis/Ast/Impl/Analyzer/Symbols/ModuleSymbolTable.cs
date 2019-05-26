@@ -34,7 +34,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public IEnumerable<KeyValuePair<ScopeStatement, MemberEvaluator>> Evaluators => _evaluators.ToArray();
         public void Add(MemberEvaluator e) => _evaluators[e.Target] = e;
-        public MemberEvaluator Get(ScopeStatement target) => _evaluators.TryGetValue(target, out var w) ? w : null;
         public bool Contains(ScopeStatement node) => _evaluators.ContainsKey(node) || _processed.Contains(node);
 
         public void Build(ExpressionEval eval)

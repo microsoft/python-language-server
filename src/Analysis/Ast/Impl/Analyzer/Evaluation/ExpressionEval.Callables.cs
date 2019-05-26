@@ -77,9 +77,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var location = GetLocationOfName(expr.Function);
-            var ft = new PythonFunctionType(expr.Function, null, location);
-            var overload = new PythonFunctionOverload(ft, location, expr.Function.ReturnAnnotation?.ToCodeString(Ast));
+            var fd = expr.Function;
+            var location = GetLocationOfName(fd);
+            var ft = new PythonFunctionType(fd, null, location);
+            var overload = new PythonFunctionOverload(ft, fd, location, expr.Function.ReturnAnnotation?.ToCodeString(Ast));
             ft.AddOverload(overload);
             return ft;
         }

@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (IsDeprecated(fd)) {
                 return false;
             }
-            if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
+            if (!string.IsNullOrEmpty(fd.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, fd, out _));
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(FunctionDefinition fd) {
-            if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.NameExpression?.Name)) {
+            if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.Name)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(fd);
@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
-                var overload = new PythonFunctionOverload(function, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
+                var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, overload));
             }

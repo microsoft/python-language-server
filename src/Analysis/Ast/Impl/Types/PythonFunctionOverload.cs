@@ -49,9 +49,10 @@ namespace Microsoft.Python.Analysis.Types {
         // type info of C vs. return C() that returns an instance of C.
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(IPythonClassMember cm, Location location, string returnDocumentation)
+        public PythonFunctionOverload(IPythonClassMember cm, FunctionDefinition fd, Location location, string returnDocumentation)
             : this(cm.Name, location) {
             ClassMember = cm;
+            cm.DeclaringModule.AddAstNode(this, fd);
             _returnDocumentation = returnDocumentation;
         }
 
@@ -92,7 +93,7 @@ namespace Microsoft.Python.Analysis.Types {
         internal void SetDocumentation(string documentation) => Documentation = documentation;
 
         #region IPythonFunctionOverload
-        public FunctionDefinition FunctionDefinition => ClassMember?.DeclaringModule?.GetAstNode<FunctionDefinition>(ClassMember);
+        public FunctionDefinition FunctionDefinition => ClassMember?.DeclaringModule?.GetAstNode<FunctionDefinition>(this);
         public IPythonClassMember ClassMember { get; }
         public string Name { get; }
         public string Documentation { get; private set; }

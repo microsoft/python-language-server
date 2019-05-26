@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             FunctionDefinition = overload.FunctionDefinition;
         }
 
-        public FunctionDefinition FunctionDefinition { get; }
+        private FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
             var stub = SymbolTable.ReplacedByStubs.Contains(Target)
@@ -79,6 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
+
                     // For libraries remove declared local function variables to free up some memory.
                     if (Module.ModuleType != ModuleType.User) {
                         ((VariableCollection)Eval.CurrentScope.Variables).Clear();
