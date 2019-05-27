@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _disposeToken.TryMarkDisposed();
         }
 
-        public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default) 
+        public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
             => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
@@ -190,8 +190,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public IReadOnlyList<IPythonModule> LoadedModules 
-            => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
+        public IReadOnlyList<IPythonModule> LoadedModules {
+            get {
+                lock (_syncObj) {
+                    return _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
+                }
+            }
+        }
 
         internal bool IsFinalSession => _nextSession == null;
 

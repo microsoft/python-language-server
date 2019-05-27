@@ -431,21 +431,31 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAstNodeContainer
-        public T GetAstNode<T>(object o) where T : Node => _astMap.TryGetValue(o, out var n) ? (T)n : null;
-        public void AddAstNode(object o, Node n) {
-            Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
-            _astMap[o] = n;
-        }
-
-        public void ClearAst() {
-            if (ModuleType != ModuleType.User) {
-                _astMap.Clear();
+        public T GetAstNode<T>(object o) where T : Node {
+            lock (AnalysisLock) {
+                return _astMap.TryGetValue(o, out var n) ? (T)n : null;
             }
         }
 
+        public void AddAstNode(object o, Node n) {
+            lock (AnalysisLock) {
+                Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
+                _astMap[o] = n;
+            }
+        }
+
+        public void ClearAst() {
+            lock (AnalysisLock) {
+                if (ModuleType != ModuleType.User) {
+                    _astMap.Clear();
+                }
+            }
+        }
         public void ClearContent() {
-            if (ModuleType != ModuleType.User) {
-                _buffer.Reset(_buffer.Version, string.Empty);
+            lock (AnalysisLock) {
+                if (ModuleType != ModuleType.User) {
+                    _buffer.Reset(_buffer.Version, string.Empty);
+                }
             }
         }
         #endregion
