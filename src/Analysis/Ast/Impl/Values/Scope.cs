@@ -96,24 +96,25 @@ namespace Microsoft.Python.Analysis.Values {
                 return;
             }
 
+            var location = new Location(Module, default);
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var objType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
 
-            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin);
+            VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin, location);
 
             if (Node is FunctionDefinition) {
                 var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
                 var tupleType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Tuple);
 
-                VariableCollection.DeclareVariable("__closure__", tupleType, VariableSource.Builtin);
-                VariableCollection.DeclareVariable("__code__", objType, VariableSource.Builtin);
-                VariableCollection.DeclareVariable("__defaults__", tupleType, VariableSource.Builtin);
-                VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin);
-                VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin);
-                VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin);
-                VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__closure__", tupleType, VariableSource.Builtin, location);
+                VariableCollection.DeclareVariable("__code__", objType, VariableSource.Builtin, location);
+                VariableCollection.DeclareVariable("__defaults__", tupleType, VariableSource.Builtin, location);
+                VariableCollection.DeclareVariable("__dict__", dictType, VariableSource.Builtin, location);
+                VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin, location);
+                VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin, location);
+                VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin, location);
             } else if (Node is ClassDefinition) {
-                VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin);
+                VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin, location);
             }
         }
     }

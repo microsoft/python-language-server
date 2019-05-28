@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         #endregion
 
-        internal void DeclareVariable(string name, IMember value, VariableSource source, Location location = default) {
+        internal void DeclareVariable(string name, IMember value, VariableSource source, Location location) {
             name = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentException(nameof(name));
             lock (_syncObj) {
                 if (_variables.TryGetValue(name, out var existing)) {
