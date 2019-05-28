@@ -24,7 +24,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
-    internal class PythonFunctionType : PythonType, IPythonFunctionType {
+    internal sealed class PythonFunctionType : PythonType, IPythonFunctionType {
         private ImmutableArray<IPythonFunctionOverload> _overloads = ImmutableArray<IPythonFunctionOverload>.Empty;
         private bool _isAbstract;
         private bool _isSpecialized;
@@ -32,11 +32,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Creates function for specializations
         /// </summary>
-        public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule)
-            => new PythonFunctionType(name, new Location(declaringModule, default), true);
+        public static PythonFunctionType Specialize(string name, IPythonModule declaringModule, string documentation)
+            => new PythonFunctionType(name, new Location(declaringModule, default), documentation, true);
 
-        private PythonFunctionType(string name, Location location, bool isSpecialized = false) :
-            base(name, location, string.Empty, BuiltinTypeId.Function) {
+        private PythonFunctionType(string name, Location location, string documentation, bool isSpecialized = false) :
+            base(name, location, documentation ?? string.Empty, BuiltinTypeId.Function) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             _isSpecialized = isSpecialized;
         }
@@ -91,8 +91,8 @@ namespace Microsoft.Python.Analysis.Types {
         public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
         public IPythonType DeclaringType { get; }
         public override string Documentation => (_overloads.Count > 0 ? _overloads[0].Documentation : default) ?? base.Documentation;
-        public virtual bool IsClassMethod { get; private set; }
-        public virtual bool IsStatic { get; private set; }
+        public bool IsClassMethod { get; private set; }
+        public bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
         public override bool IsSpecialized => _isSpecialized;
 

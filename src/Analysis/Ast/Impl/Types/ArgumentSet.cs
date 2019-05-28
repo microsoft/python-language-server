@@ -252,7 +252,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // then fill the slot with the default value. If there is no default value,
                 // then it is an error.
                 foreach (var slot in slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary && s.Value == null)) {
-                    if (slot.Value == null) {
+                    if (slot.ValueExpression == null) {
                         var parameter = overload.Parameters.First(p => p.Name == slot.Name);
                         if (parameter.DefaultValue == null) {
                             // TODO: parameter is not assigned and has no default value.

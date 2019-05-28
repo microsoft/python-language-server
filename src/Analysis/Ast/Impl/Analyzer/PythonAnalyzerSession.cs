@@ -380,8 +380,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis CreateAnalysis(IDocument document, int version, ModuleWalker walker, bool isFinalPass)
-            => document.ModuleType == ModuleType.User || !isFinalPass
-                ? (IDocumentAnalysis)new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames)
-                : new LibraryAnalysis(document, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames);
+            => document.ModuleType == ModuleType.Library && isFinalPass
+                ? new LibraryAnalysis(document, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames)
+                : (IDocumentAnalysis)new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
     }
 }

@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis {
             // We DO want to replace class by function. Consider type() in builtins.
             // 'type()' in code is a function call, not a type class instantiation.
             if (!(analysis.GlobalScope.Variables[name]?.Value is PythonFunctionType f)) {
-                f = PythonFunctionType.ForSpecialization(name, analysis.Document);
+                f = PythonFunctionType.Specialize(name, analysis.Document, string.Empty);
                 f.AddOverload(new PythonFunctionOverload(name, new Location(analysis.Document)));
                 analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration);
             }
