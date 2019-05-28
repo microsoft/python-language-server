@@ -103,7 +103,7 @@ namespace Microsoft.Python.Parsing.Ast {
             base.Clear();
         }
 
-        internal bool TryGetAttribute(Node node, object key, out object value) {
+        public bool TryGetAttribute(Node node, object key, out object value) {
             if (_attributes.TryGetValue(node, out var nodeAttrs)) {
                 return nodeAttrs.TryGetValue(key, out value);
             }
@@ -111,7 +111,7 @@ namespace Microsoft.Python.Parsing.Ast {
             return false;
         }
 
-        internal void SetAttribute(Node node, object key, object value) {
+        public void SetAttribute(Node node, object key, object value) {
             if (!_attributes.TryGetValue(node, out var nodeAttrs)) {
                 nodeAttrs = _attributes[node] = new Dictionary<object, object>();
             }

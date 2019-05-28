@@ -79,9 +79,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
-
                     // For libraries remove declared local function variables to free up some memory.
-                    if (Module.ModuleType != ModuleType.User) {
+                    var optionsProvider = Eval.Services.GetService<IAnalysisOptionsProvider>();
+                    if (Module.ModuleType != ModuleType.User && optionsProvider?.Options.KeepLibraryLocalVariables != true) {
                         ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
                 }

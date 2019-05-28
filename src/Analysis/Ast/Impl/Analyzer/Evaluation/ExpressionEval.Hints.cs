@@ -26,8 +26,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// and types in a chain of scopes during analysis.
     /// </summary>
     internal sealed partial class ExpressionEval {
+        private const string _pepHintKey = "PEP Hint";
+
         public IPythonType GetTypeFromPepHint(Node node) {
+            if (Ast.TryGetAttribute(node, _pepHintKey, out var typeStringObject) && typeStringObject is string typeString) {
+                return GetTypeFromString(typeString);
+            }
+
             var location = GetLocationInfo(node);
+
             var content = (Module as IDocument)?.Content;
             if (string.IsNullOrEmpty(content) || !location.EndLine.HasValue) {
                 return null;
@@ -79,7 +86,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // Type alone is not a valid syntax, so we need to simulate the annotation.
-            var typeString = content.Substring(hintStart, i - hintStart).Trim();
+            typeString = content.Substring(hintStart, i - hintStart).Trim();
+            Ast.SetAttribute(node, _pepHintKey, typeString);
+
             return GetTypeFromString(typeString);
         }
 

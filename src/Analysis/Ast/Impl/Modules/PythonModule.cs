@@ -418,8 +418,9 @@ namespace Microsoft.Python.Analysis.Modules {
                 OnAnalysisComplete();
                 ContentState = State.Analyzed;
 
-                // For non-user code drop content to conserve memory
-                ClearContent();
+                if (ModuleType != ModuleType.User) {
+                    _buffer.Reset(_buffer.Version, string.Empty);
+                }
             }
 
             // Do not report issues with libraries or stubs
