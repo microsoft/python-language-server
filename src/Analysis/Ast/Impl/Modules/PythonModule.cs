@@ -189,7 +189,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Typically used in code navigation scenarios when user
         /// wants to see library code and not a stub.
         /// </summary>
-        public IPythonModule PrimaryModule { get; internal set; }
+        public IPythonModule PrimaryModule { get; private set; }
         #endregion
 
         #region IDisposable
@@ -370,6 +370,13 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void NotifyAnalysisBegins() {
             lock (AnalysisLock) {
+                if (Analysis is LibraryAnalysis) {
+                    var sw = Log != null ? Stopwatch.StartNew() : null;
+                    _astMap[this] = RecreateAst();
+                    sw?.Stop();
+                    Log?.Log(TraceEventType.Verbose, $"Reloaded AST of {Name} in {sw?.Elapsed.TotalMilliseconds} ms");
+                }
+
                 if (_updated) {
                     _updated = false;
                     // In all variables find those imported, then traverse imported modules
@@ -558,6 +565,17 @@ namespace Microsoft.Python.Analysis.Modules {
                 foreach (var v in module.GlobalScope.Variables) {
                     v.RemoveReferences(this);
                 }
+            }
+        }
+
+        private PythonAst RecreateAst() {
+            lock (AnalysisLock) {
+                ContentState = State.None;
+                LoadContent();
+                var parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, ParserOptions.Default);
+                var ast = parser.ParseFile(Uri);
+                ContentState = State.Parsed;
+                return ast;
             }
         }
     }
