@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
