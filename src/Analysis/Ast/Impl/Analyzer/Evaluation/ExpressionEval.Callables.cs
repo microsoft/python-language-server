@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -81,6 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var location = GetLocationOfName(fd);
             var ft = new PythonFunctionType(fd, null, location);
             var overload = new PythonFunctionOverload(ft, fd, location, expr.Function.ReturnAnnotation?.ToCodeString(Ast));
+            overload.SetParameters(CreateFunctionParameters(null, ft, fd, false));
             ft.AddOverload(overload);
             return ft;
         }
@@ -311,6 +313,71 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
                 Services.GetService<IPythonAnalyzer>().EnqueueDocumentForAnalysis(Module, dependencies);
             }
+        }
+
+        public IReadOnlyList<IParameterInfo> CreateFunctionParameters(IPythonClassType self, IPythonClassMember function, FunctionDefinition fd, bool declareVariables) {
+            // For class method no need to add extra parameters, but first parameter type should be the class.
+            // For static and unbound methods do not add or set anything.
+            // For regular bound methods add first parameter and set it to the class.
+
+            var parameters = new List<ParameterInfo>();
+            var skip = 0;
+            if (self != null && function.HasClassFirstArgument()) {
+                var p0 = fd.Parameters.FirstOrDefault();
+                if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
+                    // Actual parameter type will be determined when method is invoked.
+                    // The reason is that if method might be called on a derived class.
+                    // Declare self or cls in this scope.
+                    if (declareVariables) {
+                        DeclareVariable(p0.Name, new PythonInstance(self), VariableSource.Declaration, p0.NameExpression);
+                    }
+                    // Set parameter info.
+                    var pi = new ParameterInfo(Ast, p0, self, null, false);
+                    parameters.Add(pi);
+                    skip++;
+                }
+            }
+
+            // Declare parameters in scope
+            IMember defaultValue = null;
+            for (var i = skip; i < fd.Parameters.Length; i++) {
+                var isGeneric = false;
+                var p = fd.Parameters[i];
+                if (!string.IsNullOrEmpty(p.Name)) {
+                    IPythonType paramType = null;
+                    if (p.DefaultValue != null) {
+                        defaultValue = GetValueFromExpression(p.DefaultValue);
+                        // If parameter has default value, look for the annotation locally first
+                        // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
+                        paramType = GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
+                        // Default value of None does not mean the parameter is None, just says it can be missing.
+                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
+                        if (paramType == null && defaultValue != null) {
+                            paramType = defaultValue.GetPythonType();
+                        }
+                    }
+                    // If all else fails, look up globally.
+                    paramType = paramType ?? GetTypeFromAnnotation(p.Annotation, out isGeneric) ?? UnknownType;
+                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric);
+                    if (declareVariables) {
+                        DeclareParameter(p, pi);
+                    }
+                    parameters.Add(pi);
+                }
+            }
+            return parameters;
+        }
+
+        private void DeclareParameter(Parameter p, ParameterInfo pi) {
+            IPythonType paramType;
+            // If type is known from annotation, use it.
+            if (pi != null && !pi.Type.IsUnknown() && !pi.Type.IsGenericParameter()) {
+                // TODO: technically generics may have constraints. Should we consider them?
+                paramType = pi.Type;
+            } else {
+                paramType = pi?.DefaultValue?.GetPythonType() ?? UnknownType;
+            }
+            DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
         }
     }
 }
