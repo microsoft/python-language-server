@@ -249,11 +249,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     foreach (var name in stubType.GetMemberNames()) {
                         var stubMember = stubType.GetMember(name);
                         var member = cls.GetMember(name);
-                        // Do not pick members from base classes since otherwise we may end up
-                        // reassigning members of a different module or even of built-in types.
-                        if (member is IPythonClassMember clsm && !cls.Name.EqualsOrdinal(clsm.DeclaringType?.Name)) {
-                            continue;
-                        }
                         // Get documentation from the current type, if any, since stubs
                         // typically do not contain documentation while scraped code does.
                         member?.GetPythonType()?.TransferDocumentationAndLocation(stubMember.GetPythonType());
