@@ -363,6 +363,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         DeclareParameter(p, pi);
                     }
                     parameters.Add(pi);
+                } else if (p.IsList || p.IsDictionary) {
+                    parameters.Add(new ParameterInfo(Ast, p, null, null, false));
                 }
             }
             return parameters;

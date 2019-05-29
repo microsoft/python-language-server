@@ -77,9 +77,7 @@ f(b=1, a=2)
             argSet.Arguments[1].Name.Should().Be("b");
             argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
             argSet.Arguments[2].Name.Should().Be("c");
-            argSet.Arguments[2].ValueExpression.Should().BeNull();
-            argSet.Arguments[2].Value.Should().NotBeNull();
-            argSet.Arguments[2].Value.Should().BeAssignableTo<IMember>().Which.Should().HaveType(BuiltinTypeId.Str);
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("str");
             argSet.ListArgument.Should().BeNull();
             argSet.DictionaryArgument.Should().BeNull();
         }

@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Values {
             DeclareBuiltinVariables();
         }
 
-        public override ScopeStatement Node => Module.GetAstNode<ScopeStatement>(this);
+        public override ScopeStatement Node => Module.GetAst();
 
         private void DeclareBuiltinVariables() {
             if (Module.ModuleType != ModuleType.User) {

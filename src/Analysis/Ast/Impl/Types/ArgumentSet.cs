@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -261,6 +262,7 @@ namespace Microsoft.Python.Analysis.Types {
                         }
                         // Note that parameter default value expression is from the function definition AST
                         // while actual argument values are from the calling file AST.
+                        slot.ValueExpression = CreateExpression(parameter.Name, parameter.DefaultValueString);
                         slot.Value = parameter.DefaultValue;
                         slot.ValueIsDefault = true;
                     }
@@ -317,6 +319,20 @@ namespace Microsoft.Python.Analysis.Types {
             return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
         }
 
+        private Expression CreateExpression(string paramName, string defaultValue) {
+            if (string.IsNullOrEmpty(defaultValue)) {
+                return null;
+            }
+            using (var sr = new StringReader($"{paramName}={defaultValue}")) {
+                var parser = Parser.CreateParser(sr, Eval.Interpreter.LanguageVersion,ParserOptions.Default);
+                var ast = parser.ParseFile();
+                if (ast.Body is SuiteStatement ste && ste.Statements.Count > 0 && ste.Statements[0] is AssignmentStatement a) {
+                    return a.Right;
+                }
+                return null;
+            }
+        }
+
         private sealed class Argument : IArgument {
             /// <summary>
             /// Argument name.
@@ -349,7 +365,7 @@ namespace Microsoft.Python.Analysis.Types {
             /// <summary>
             /// Type of the argument, if annotated.
             /// </summary>
-            public IPythonType Type { get; internal set; }
+            public IPythonType Type { get; }
 
             /// <summary>
             /// AST node that defines the argument.
