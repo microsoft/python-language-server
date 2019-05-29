@@ -83,6 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
             var memberNames = variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
+            var location = new Location(Module);
 
             foreach (var memberName in memberNames) {
                 var member = variableModule.GetMember(memberName);
@@ -98,7 +99,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import);
+                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, location);
             }
         }
 

@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis {
         public static string GetDocumentation(this ScopeStatement node) {
             var docExpr = (node?.Body as SuiteStatement)?.Statements?.FirstOrDefault() as ExpressionStatement;
             var ce = docExpr?.Expression as ConstantExpression;
-            return ce?.Value as string;
+            return ce?.GetStringValue();
         }
 
         public static bool IsInsideComment(this PythonAst ast, SourceLocation location) {

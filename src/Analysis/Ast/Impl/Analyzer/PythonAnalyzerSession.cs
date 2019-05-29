@@ -336,8 +336,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void AnalyzeEntry(PythonAnalyzerEntry entry, IPythonModule module, int version, bool isFinalPass) {
             if (entry.PreviousAnalysis is LibraryAnalysis) {
-                _log?.Log(TraceEventType.Verbose, $"Request to re-analyze finalized {module.Name} ignored.");
-                return;
+                _log?.Log(TraceEventType.Verbose, $"Request to re-analyze finalized {module.Name}.");
             }
 
             // Now run the analysis.
@@ -353,10 +352,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             walker.Complete();
             _analyzerCancellationToken.ThrowIfCancellationRequested();
 
-            var analysis = CreateAnalysis((IDocument)module, version, walker, isFinalPass);
-
-            analyzable?.NotifyAnalysisComplete(analysis);
-            entry.TrySetAnalysis(analysis, version);
+            analyzable?.NotifyAnalysisComplete(version, walker, isFinalPass);
+            entry.TrySetAnalysis(module.Analysis, version);
 
             if (module.ModuleType == ModuleType.User) {
                 var linterDiagnostics = _analyzer.LintModule(module);
@@ -378,10 +375,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Started = 1,
             Completed = 2
         }
-
-        private IDocumentAnalysis CreateAnalysis(IDocument document, int version, ModuleWalker walker, bool isFinalPass)
-            => document.ModuleType == ModuleType.Library && isFinalPass
-                ? new LibraryAnalysis(document, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames)
-                : (IDocumentAnalysis)new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
     }
 }

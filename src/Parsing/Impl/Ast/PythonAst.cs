@@ -22,11 +22,11 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
-
     /// <summary>
-    /// Top-level ast for all Python code.  Holds onto the body and the line mapping information.
+    /// Top-level ast for all Python code. Holds onto the body and the line mapping information.
     /// </summary>
     public sealed class PythonAst : ScopeStatement {
+        private readonly object _lock = new object();
         private readonly Statement _body;
         private readonly Dictionary<Node, Dictionary<object, object>> _attributes = new Dictionary<Node, Dictionary<object, object>>();
 
@@ -94,67 +94,54 @@ namespace Microsoft.Python.Parsing.Ast {
         public PythonLanguageVersion LanguageVersion { get; }
 
         public void Reduce(Func<Statement, bool> filter) {
-            (Body as SuiteStatement)?.FilterStatements(filter);
-            _attributes?.Clear();
-            Variables?.Clear();
-            CommentLocations = Array.Empty<SourceLocation>();
-            // DO keep NewLineLocations as they are required
-            // to calculate node positions for navigation;
-            base.Clear();
+            lock (_lock) {
+                (Body as SuiteStatement)?.FilterStatements(filter);
+                _attributes?.Clear();
+                Variables?.Clear();
+                CommentLocations = Array.Empty<SourceLocation>();
+                // DO keep NewLineLocations as they are required
+                // to calculate node positions for navigation;
+                base.Clear();
+            }
         }
 
         public bool TryGetAttribute(Node node, object key, out object value) {
-            if (_attributes.TryGetValue(node, out var nodeAttrs)) {
-                return nodeAttrs.TryGetValue(key, out value);
+            lock (_lock) {
+                if (_attributes.TryGetValue(node, out var nodeAttrs)) {
+                    return nodeAttrs.TryGetValue(key, out value);
+                }
+
+                value = null;
+                return false;
             }
-            value = null;
-            return false;
         }
 
         public void SetAttribute(Node node, object key, object value) {
-            if (!_attributes.TryGetValue(node, out var nodeAttrs)) {
-                nodeAttrs = _attributes[node] = new Dictionary<object, object>();
-            }
-            nodeAttrs[key] = value;
-        }
-
-        /// <summary>
-        /// Copies attributes that apply to one node and makes them available for the other node.
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        public void CopyAttributes(Node from, Node to) {
-            if (_attributes.TryGetValue(from, out var fromAttrs)) {
-                var toAttrs = new Dictionary<object, object>(fromAttrs.Count);
-                foreach (var nodeAttr in fromAttrs) {
-                    toAttrs[nodeAttr.Key] = nodeAttr.Value;
+            lock (_lock) {
+                if (!_attributes.TryGetValue(node, out var nodeAttrs)) {
+                    nodeAttrs = _attributes[node] = new Dictionary<object, object>();
                 }
-                _attributes[to] = toAttrs;
+                nodeAttrs[key] = value;
             }
         }
 
         internal void SetAttributes(Dictionary<Node, Dictionary<object, object>> attributes) {
-            foreach (var nodeAttributes in attributes) {
-                var node = nodeAttributes.Key;
-                if (!_attributes.TryGetValue(node, out var existingNodeAttributes)) {
-                    existingNodeAttributes = _attributes[node] = new Dictionary<object, object>(nodeAttributes.Value.Count);
-                }
+            lock (_lock) {
+                foreach (var nodeAttributes in attributes) {
+                    var node = nodeAttributes.Key;
+                    if (!_attributes.TryGetValue(node, out var existingNodeAttributes)) {
+                        existingNodeAttributes = _attributes[node] = new Dictionary<object, object>(nodeAttributes.Value.Count);
+                    }
 
-                foreach (var nodeAttr in nodeAttributes.Value) {
-                    existingNodeAttributes[nodeAttr.Key] = nodeAttr.Value;
+                    foreach (var nodeAttr in nodeAttributes.Value) {
+                        existingNodeAttributes[nodeAttr.Key] = nodeAttr.Value;
+                    }
                 }
             }
         }
 
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
-
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
-
-        /// <summary>
-        /// Length of the span (number of characters inside the span).
-        /// </summary>
-        public int GetSpanLength(SourceSpan span) => LocationToIndex(span.End) - LocationToIndex(span.Start);
-
 
         internal int GetLineEndFromPosition(int index) {
             var loc = IndexToLocation(index);

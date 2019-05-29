@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 _class.SetBases(bases);
 
                 // Declare __class__ variable in the scope.
-                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
+                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration, Eval.DefaultLocation);
 
                 ProcessClassBody();
             }

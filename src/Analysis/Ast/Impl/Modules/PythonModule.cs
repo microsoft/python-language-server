@@ -372,7 +372,9 @@ namespace Microsoft.Python.Analysis.Modules {
             lock (AnalysisLock) {
                 if (Analysis is LibraryAnalysis) {
                     var sw = Log != null ? Stopwatch.StartNew() : null;
-                    _astMap[this] = RecreateAst();
+                    lock (AnalysisLock) {
+                        _astMap[this] = RecreateAst();
+                    }
                     sw?.Stop();
                     Log?.Log(TraceEventType.Verbose, $"Reloaded AST of {Name} in {sw?.Elapsed.TotalMilliseconds} ms");
                 }
@@ -403,14 +405,14 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
+        public void NotifyAnalysisComplete(int version, ModuleWalker walker, bool isFinalPass) {
             lock (AnalysisLock) {
-                if (analysis.Version < Analysis.Version) {
+                if (version < Analysis.Version) {
                     return;
                 }
 
-                Analysis = analysis;
-                GlobalScope = analysis.GlobalScope;
+                Analysis = CreateAnalysis(version, walker, isFinalPass);
+                GlobalScope = Analysis.GlobalScope;
 
                 // Derived classes can override OnAnalysisComplete if they want
                 // to perform additional actions on the completed analysis such
@@ -425,7 +427,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             // Do not report issues with libraries or stubs
             if (ModuleType == ModuleType.User) {
-                _diagnosticsService?.Replace(Uri, analysis.Diagnostics, DiagnosticSource.Analysis);
+                _diagnosticsService?.Replace(Uri, Analysis.Diagnostics, DiagnosticSource.Analysis);
             }
 
             NewAnalysis?.Invoke(this, EventArgs.Empty);
@@ -568,6 +570,11 @@ namespace Microsoft.Python.Analysis.Modules {
                 }
             }
         }
+
+        private IDocumentAnalysis CreateAnalysis(int version, ModuleWalker walker, bool isFinalPass)
+            => ModuleType == ModuleType.Library && isFinalPass
+                ? new LibraryAnalysis(this, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames)
+                : (IDocumentAnalysis)new DocumentAnalysis(this, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
 
         private PythonAst RecreateAst() {
             lock (AnalysisLock) {

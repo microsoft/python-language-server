@@ -233,7 +233,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // from the library source of from the scraped module.
             foreach (var v in _stubAnalysis.GlobalScope.Variables) {
                 var stubType = v.Value.GetPythonType();
-                if (stubType.IsUnknown() || !_stubAnalysis.Document.Equals(stubType?.DeclaringModule)) {
+                if (stubType.IsUnknown()) {
                     continue;
                 }
 
@@ -263,7 +263,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Re-declare variable with the data from the stub unless member is a module.
                     // Modules members that are modules should remain as they are, i.e. os.path
                     // should remain library with its own stub attached.
-                    if (!stubType.IsUnknown() && !(stubType is IPythonModule)) {
+                    if (!(stubType is IPythonModule)) {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;

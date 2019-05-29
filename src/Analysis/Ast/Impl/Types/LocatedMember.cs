@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
@@ -26,6 +27,7 @@ namespace Microsoft.Python.Analysis.Types {
         protected LocatedMember(IPythonModule module) : this(new Location(module, default)) { }
 
         protected LocatedMember(Location location) {
+            Check.InvalidOperation(() => this is IPythonModule || location.Module != null, "Declaring module can only be null for modules.");
             Location = location;
         }
 
