@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var classInfo = CreateClass(cd);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
-                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration, _eval.GetLocationOfName(cd));
+                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
@@ -108,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration, _eval.GetLocationOfName(fd));
+                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
             }
             AddOverload(fd, existing, o => existing.AddOverload(o));
         }
@@ -167,11 +167,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                var location = _eval.GetLocationOfName(fd);
-                existing = new PythonPropertyType(fd, location, declaringType, isAbstract);
+                existing = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration, location);
+                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
             }
             AddOverload(fd, existing, o => existing.AddOverload(o));
         }

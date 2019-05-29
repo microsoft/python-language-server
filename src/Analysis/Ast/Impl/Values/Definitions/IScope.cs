@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Values {
         /// <param name="value">Variable value.</param>
         /// <param name="source">Variable source.</param>
         /// <param name="location">Variable name node location.</param>
-        void DeclareVariable(string name, IMember value, VariableSource source, Location location);
+        void DeclareVariable(string name, IMember value, VariableSource source, Location location = default);
 
         /// <summary>
         /// Links variable from another module such as when it is imported.

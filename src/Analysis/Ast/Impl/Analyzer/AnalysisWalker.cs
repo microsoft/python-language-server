@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return true;
                 case CallExpression callex when callex.Target is MemberExpression mex && !string.IsNullOrEmpty(mex.Name):
                     var t = Eval.GetValueFromExpression(mex.Target)?.GetPythonType();
-                    t?.GetMember(mex.Name).AddReference(Eval.GetLocationOfName(mex));
+                    t?.GetMember(mex.Name)?.AddReference(Eval.GetLocationOfName(mex));
                     return true;
                 default:
                     return base.Walk(node);

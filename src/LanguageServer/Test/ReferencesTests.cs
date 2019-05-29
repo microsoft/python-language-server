@@ -17,6 +17,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Sources;
@@ -368,6 +369,7 @@ logging.getLogger()
 
             var rdt = Services.GetService<IRunningDocumentTable>();
             var doc = rdt.OpenDocument(uri, code);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await GetDocumentAnalysisAsync(doc);
 
             var rs = new ReferenceSource(Services);

@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis {
             if (!(analysis.GlobalScope.Variables[name]?.Value is PythonFunctionType f)) {
                 f = PythonFunctionType.Specialize(name, analysis.Document, string.Empty);
                 f.AddOverload(new PythonFunctionOverload(name, new Location(analysis.Document)));
-                analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration, new Location(analysis.Document));
+                analysis.GlobalScope.DeclareVariable(name, f, VariableSource.Declaration);
             }
             return f;
         }

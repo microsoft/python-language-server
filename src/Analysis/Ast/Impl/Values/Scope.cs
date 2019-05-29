@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IEnumerable<IScope> EnumerateFromGlobal => EnumerateTowardsGlobal.Reverse();
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, Location location)
+        public void DeclareVariable(string name, IMember value, VariableSource source, Location location = default)
             => VariableCollection.DeclareVariable(name, value, source, location);
 
         public void LinkVariable(string name, IVariable v, Location location)

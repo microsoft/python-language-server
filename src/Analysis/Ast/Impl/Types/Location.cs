@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public bool IsValid => Module != null;
+        public bool IsValid => Module != null && IndexSpan != default;
 
         public override bool Equals(object obj)
             => obj is Location other && other.Module == Module && other.IndexSpan == IndexSpan;

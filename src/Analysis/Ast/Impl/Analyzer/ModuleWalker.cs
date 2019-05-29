@@ -251,7 +251,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var member = cls.GetMember(name);
                         // Do not pick members from base classes since otherwise we may end up
                         // reassigning members of a different module or even of built-in types.
-                        if (member is IPythonClassMember clsm && !cls.Equals(clsm.DeclaringType)) {
+                        if (member is IPythonClassMember clsm && !cls.Name.EqualsOrdinal(clsm.DeclaringType?.Name)) {
                             continue;
                         }
                         // Get documentation from the current type, if any, since stubs
@@ -267,7 +267,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
-                        Eval.DeclareVariable(v.Name, v.Value, source, Module);
+                        Eval.DeclareVariable(v.Name, v.Value, source);
                     }
                 }
             }
