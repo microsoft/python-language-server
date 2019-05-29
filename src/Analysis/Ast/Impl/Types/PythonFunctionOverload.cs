@@ -51,6 +51,7 @@ namespace Microsoft.Python.Analysis.Types {
         public PythonFunctionOverload(IPythonClassMember cm, FunctionDefinition fd, Location location, string returnDocumentation)
             : this(cm.Name, location) {
             ClassMember = cm;
+            Documentation = fd.GetDocumentation();
             cm.DeclaringModule.AddAstNode(this, fd);
             _returnDocumentation = returnDocumentation;
         }
