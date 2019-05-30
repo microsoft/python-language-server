@@ -73,6 +73,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var linting = pythonSection["linting"];
             HandleLintingOnOff(_services, GetSetting(linting, "enabled", true));
+
+            var memory = analysis["memory"];
+            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+            optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", false);
+            optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
         }
 
         internal static void HandleLintingOnOff(IServiceContainer services, bool linterEnabled) {

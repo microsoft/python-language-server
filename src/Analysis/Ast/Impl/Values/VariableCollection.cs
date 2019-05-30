@@ -122,5 +122,11 @@ namespace Microsoft.Python.Analysis.Values {
                 _variables.Remove(name);
             }
         }
+
+        internal void Clear() {
+            lock (_syncObj) {
+                _variables.Clear();
+            }
+        }
     }
 }
