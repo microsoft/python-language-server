@@ -280,17 +280,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 AnalyzeEntry(entry, module, ast, _walker.Version);
                 node.Commit();
 
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+                LogCompleted(module, stopWatch, startTime);
             } catch (OperationCanceledException oce) {
                 node.Value.TryCancel(oce, _walker.Version);
                 node.Skip();
-                module = node.Value.Module;
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                LogCanceled(node.Value.Module);
             } catch (Exception exception) {
-                module = node.Value.Module;
                 node.Value.TrySetException(exception, _walker.Version);
                 node.Commit();
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
+                LogException(node.Value.Module, exception);
             } finally {
                 bool isCanceled;
                 lock (_syncObj) {
@@ -307,7 +305,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AnalyzeEntry() {
-            var stopWatch = Stopwatch.StartNew();
+            var stopWatch = _log != null ? Stopwatch.StartNew() : null;
             try {
                 if (!_entry.IsValidVersion(Version, out var module, out var ast)) {
                     if (ast == null) {
@@ -319,20 +317,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return;
                 }
 
-                var startTime = stopWatch.Elapsed;
+                var startTime = stopWatch?.Elapsed ?? TimeSpan.Zero;
                 AnalyzeEntry(_entry, module, ast, Version);
 
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+                LogCompleted(module, stopWatch, startTime);
             } catch (OperationCanceledException oce) {
                 _entry.TryCancel(oce, Version);
-                var module = _entry.Module;
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                LogCanceled(_entry.Module);
             } catch (Exception exception) {
-                var module = _entry.Module;
                 _entry.TrySetException(exception, Version);
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
+                LogException(_entry.Module, exception);
             } finally {
-                stopWatch.Stop();
+                stopWatch?.Stop();
                 Interlocked.Decrement(ref _runningTasks);
             }
         }
@@ -357,6 +353,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (module.ModuleType == ModuleType.User) {
                 var linterDiagnostics = _analyzer.LintModule(module);
                 _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+            }
+        }
+
+        private void LogCompleted(IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
+            if (_log != null) {
+                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+            }
+        }
+
+        private void LogCanceled(IPythonModule module) {
+            if (_log != null) {
+                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+            }
+        }
+
+        private void LogException(IPythonModule module, Exception exception) {
+            if (_log != null) {
+                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
             }
         }
 

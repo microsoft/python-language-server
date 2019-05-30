@@ -31,6 +31,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         public int Index { get; set; }
         public int LoopNumber { get; set; }
         public int IncomingCount { get; private set; }
+        public bool HasMissingDependencies { get; private set; }
 
         public WalkingVertex<TKey, TValue> FirstPass { get; }
         public WalkingVertex<TKey, TValue> SecondPass { get; private set; }
@@ -47,20 +48,16 @@ namespace Microsoft.Python.Analysis.Dependencies {
             _outgoing = new List<WalkingVertex<TKey, TValue>>();
         }
 
+        public void MarkHasMissingDependencies() {
+            CheckNotSealed();
+            HasMissingDependencies = true;
+        }
+
         public void AddOutgoing(WalkingVertex<TKey, TValue> outgoingVertex) {
             CheckNotSealed();
 
             _outgoing.Add(outgoingVertex);
             outgoingVertex.IncomingCount++;
-        }
-
-        public void AddOutgoing(List<WalkingVertex<TKey, TValue>> loop) {
-            CheckNotSealed();
-
-            _outgoing.AddRange(loop);
-            foreach (var outgoingVertex in loop) {
-                outgoingVertex.IncomingCount++;
-            }
         }
 
         public void AddOutgoing(HashSet<WalkingVertex<TKey, TValue>> loop) {
@@ -88,6 +85,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         }
 
         public void Seal() => _isSealed = true;
+
         public void DecrementIncoming() {
             CheckSealed();
             IncomingCount--;

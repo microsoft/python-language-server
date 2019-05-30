@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -155,11 +156,11 @@ namespace Microsoft.Python.Analysis.Tests {
             var interpreter = services.GetService<IPythonInterpreter>();
 
             var mod = interpreter.ModuleResolution.GetOrLoadModule(interpreter.ModuleResolution.BuiltinModuleName);
-            await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             Assert.IsInstanceOfType(mod, typeof(BuiltinsPythonModule));
             var modPath = interpreter.ModuleResolution.StubCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
 
             var doc = (IDocument)mod;
+            await doc.GetAnalysisAsync();
             var errors = doc.GetParseErrors().ToArray();
             foreach (var err in errors) {
                 Console.WriteLine(err);
@@ -285,12 +286,16 @@ namespace Microsoft.Python.Analysis.Tests {
                 .ToArray();
             set = set.Where(x => x.Item2 != null && x.Item2.Contains("grammar")).ToArray();
 
+            var sb = new StringBuilder();
             foreach (var r in set) {
-                interpreter.ModuleResolution.GetOrLoadModule(r.Item2);
+                var module = interpreter.ModuleResolution.GetOrLoadModule(r.Item2);
+                if (module != null) {
+                    sb.AppendLine($"import {module.Name}");
+                }
             }
-            
-            await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
-            
+
+            await GetAnalysisAsync(sb.ToString(), services);
+
             foreach (var r in set) {
                 var modName = r.Item1;
                 var mod = interpreter.ModuleResolution.GetOrLoadModule(r.Item2);

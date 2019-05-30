@@ -235,6 +235,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (!_dependencyResolver.TryCreateWalker(graphVersion, 2, out var walker)) {
+                if (entry.Module.ModuleType == ModuleType.Builtins) {
+                    session = CreateSession(null, entry);
+                    return true;
+                }
+
                 session = null;
                 return false;
             }

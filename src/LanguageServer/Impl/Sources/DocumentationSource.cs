@@ -13,8 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
+using System;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
@@ -50,8 +49,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var o = ft.Overloads[overloadIndex]; // TODO: display all?
             var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
 
-            var parameters = new string[o.Parameters.Count - skip];
-            parameterNameLengths = new int[o.Parameters.Count - skip];
+            var count = Math.Max(0, o.Parameters.Count - skip);
+            var parameters = new string[count];
+            parameterNameLengths = new int[count];
             for (var i = skip; i < o.Parameters.Count; i++) {
                 string paramString;
                 var p = o.Parameters[i];
