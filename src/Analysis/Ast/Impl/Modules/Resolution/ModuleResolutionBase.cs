@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
         }
 
-        public IPythonModule GetImportedModule(string name) 
+        public IPythonModule GetImportedModule(string name)
             => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return moduleRef.GetOrCreate(name, this);
         }
 
-        public bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullModuleName) 
+        public bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullModuleName)
             => PathResolver.TryAddModulePath(path, allowNonRooted, out fullModuleName);
 
         public ModulePath FindModule(string filePath) {
@@ -122,13 +122,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected class ModuleRef {
             private readonly object _syncObj = new object();
             private IPythonModule _module;
-            private bool _creating;
 
             public ModuleRef(IPythonModule module) {
                 _module = module;
             }
 
-            public ModuleRef() {}
+            public ModuleRef() { }
 
             public IPythonModule Value {
                 get {
@@ -139,25 +138,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             public IPythonModule GetOrCreate(string name, ModuleResolutionBase mrb) {
-                var create = false;
                 lock (_syncObj) {
                     if (_module != null) {
                         return _module;
                     }
 
-                    if (!_creating) {
-                        create = true;
-                        _creating = true;
-                    }
-                }
-
-                if (!create) {
-                    return null;
-                }
-
-                var module = mrb.CreateModule(name);
-                lock (_syncObj) {
-                    _creating = false;
+                    var module = mrb.CreateModule(name);
                     _module = module;
                     return module;
                 }

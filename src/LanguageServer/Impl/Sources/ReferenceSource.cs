@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -129,7 +130,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return files;
         }
 
-        private static async Task<bool> AnalyzeFiles(IModuleManagement moduleManagement, IEnumerable<Uri> files, CancellationToken cancellationToken) {
+        private async Task<bool> AnalyzeFiles(IModuleManagement moduleManagement, IEnumerable<Uri> files, CancellationToken cancellationToken) {
             var analysisTasks = new List<Task>();
             foreach (var f in files) {
                 if (moduleManagement.TryAddModulePath(f.ToAbsolutePath(), false, out var fullName)) {

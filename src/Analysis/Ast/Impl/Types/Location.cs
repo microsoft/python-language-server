@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public LocationInfo LocationInfo {
             get {
-                var ast = Module.GetAst();
+                var ast = Module?.GetAst();
                 if (ast != null && !string.IsNullOrEmpty(Module?.FilePath) && Module?.Uri != null) {
                     return new LocationInfo(Module.FilePath, Module.Uri, IndexSpan.ToSourceSpan(ast));
                 }

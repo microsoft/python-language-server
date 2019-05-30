@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public virtual string Documentation {
             get {
-                _documentation = _documentation ?? GetAstNode<PythonAst>(this)?.Documentation;
+                _documentation = _documentation ?? this.GetAst()?.Documentation;
                 if (_documentation == null) {
                     var m = GetMember("__doc__");
                     _documentation = m.TryGetConstant<string>(out var s) ? s : string.Empty;
@@ -250,7 +250,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 }
             }
             cancellationToken.ThrowIfCancellationRequested();
-            return GetAstNode<PythonAst>(this);
+            return this.GetAst();
         }
 
         public PythonAst GetAnyAst() => GetAstNode<PythonAst>(this);

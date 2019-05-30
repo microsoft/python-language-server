@@ -63,7 +63,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
-            if (node == null || (Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library)) {
+            node = node ?? throw new ArgumentNullException(nameof(node));
+            if (Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library) {
                 return DefaultLocation;
             }
 
