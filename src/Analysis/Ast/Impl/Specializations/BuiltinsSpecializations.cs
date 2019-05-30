@@ -123,7 +123,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             // which is incorrect more often than not.
 
             var args = argSet.Values<IMember>();
-            if (args.Count < 1) {
+            if (args.Count < 2) {
                 return null;
             }
 
