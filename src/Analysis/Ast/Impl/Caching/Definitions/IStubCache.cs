@@ -15,6 +15,7 @@
 
 namespace Microsoft.Python.Analysis.Caching {
     public interface IStubCache {
+        string StubCacheFolder { get; }
         string GetCacheFilePath(string filePath);
         string ReadCachedModule(string filePath);
         void WriteCachedModule(string filePath, string code);

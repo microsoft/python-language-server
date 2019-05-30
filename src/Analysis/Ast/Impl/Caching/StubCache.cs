@@ -27,15 +27,16 @@ namespace Microsoft.Python.Analysis.Caching {
 
         private readonly IFileSystem _fs;
         private readonly ILogger _log;
-        private readonly string _stubsRootFolder;
 
         public StubCache(IServiceContainer services, string cacheRootFolder = null) {
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
 
             cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(services);
-            _stubsRootFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
+            StubCacheFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
         }
+
+        public string StubCacheFolder { get; }
 
         public string GetCacheFilePath(string filePath) {
             var name = PathUtils.GetFileName(filePath);
@@ -44,7 +45,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 return null;
             }
             try {
-                var candidate = Path.ChangeExtension(Path.Combine(_stubsRootFolder, name), ".pyi");
+                var candidate = Path.ChangeExtension(Path.Combine(StubCacheFolder, name), ".pyi");
                 if (_fs.FileExists(candidate)) {
                     return candidate;
                 }
@@ -58,7 +59,7 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             var dirHash = CacheFolders.FileNameFromContent(dir);
-            var stubFile = Path.Combine(_stubsRootFolder, Path.Combine(dirHash, name));
+            var stubFile = Path.Combine(StubCacheFolder, Path.Combine(dirHash, name));
             return Path.ChangeExtension(stubFile, ".pyi");
         }
 

@@ -63,8 +63,8 @@ namespace Microsoft.Python.Analysis.Tests {
         protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration, IServiceManager sm = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
+            configuration.DatabasePath = configuration.DatabasePath ?? TestData.GetAstAnalysisCachePath(configuration.Version, true);
             Trace.TraceInformation("Cache Path: " + configuration.DatabasePath);
-            configuration.DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version, true);
             configuration.SearchPaths = new[] { GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
 
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Tests {
             }
 
             TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
-            var analyzer = new PythonAnalyzer(sm);
+            var analyzer = new PythonAnalyzer(sm, configuration.DatabasePath);
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");

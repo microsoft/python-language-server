@@ -19,10 +19,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
@@ -142,6 +140,13 @@ namespace Microsoft.Python.Analysis.Tests {
         public async Task BuiltinScrapeV37() => await BuiltinScrape(PythonVersions.Python37_x64 ?? PythonVersions.Python37);
 
         [TestMethod, Priority(0)]
+        public async Task BuiltinScrapeV37CustomCache() {
+            var configuration = PythonVersions.Python37_x64 ?? PythonVersions.Python37;
+            configuration.DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version, true, "Custom");
+            await BuiltinScrape(configuration);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task BuiltinScrapeV36() => await BuiltinScrape(PythonVersions.Python36_x64 ?? PythonVersions.Python36);
 
         [TestMethod, Priority(0)]
@@ -156,8 +161,17 @@ namespace Microsoft.Python.Analysis.Tests {
             var interpreter = services.GetService<IPythonInterpreter>();
 
             var mod = interpreter.ModuleResolution.GetOrLoadModule(interpreter.ModuleResolution.BuiltinModuleName);
-            Assert.IsInstanceOfType(mod, typeof(BuiltinsPythonModule));
-            var modPath = interpreter.ModuleResolution.StubCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
+            mod.Should().BeAssignableTo<BuiltinsPythonModule>();
+
+            var stubCache = interpreter.ModuleResolution.StubCache;
+            var modPath = stubCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
+
+            // Verify that we are using correct database path.
+            if (!string.IsNullOrEmpty(configuration.DatabasePath)) {
+                modPath.Should().Contain(configuration.DatabasePath);
+            } else {
+                modPath.Should().Contain(stubCache.StubCacheFolder);
+            }
 
             var doc = (IDocument)mod;
             await doc.GetAnalysisAsync();
@@ -165,17 +179,22 @@ namespace Microsoft.Python.Analysis.Tests {
             foreach (var err in errors) {
                 Console.WriteLine(err);
             }
-            Assert.AreEqual(0, errors.Count(), "Parse errors occurred");
+
+            errors.Should().BeEmpty("Parse errors occurred");
 
             var ast = await doc.GetAstAsync();
             var seen = new HashSet<string>();
             foreach (var stmt in ((SuiteStatement)ast.Body).Statements) {
-                if (stmt is ClassDefinition cd) {
-                    Assert.IsTrue(seen.Add(cd.Name), $"Repeated use of {cd.Name} at index {cd.StartIndex} in {modPath}");
-                } else if (stmt is FunctionDefinition fd) {
-                    Assert.IsTrue(seen.Add(fd.Name), $"Repeated use of {fd.Name} at index {fd.StartIndex} in {modPath}");
-                } else if (stmt is AssignmentStatement assign && assign.Left.FirstOrDefault() is NameExpression n) {
-                    Assert.IsTrue(seen.Add(n.Name), $"Repeated use of {n.Name} at index {n.StartIndex} in {modPath}");
+                switch (stmt) {
+                    case ClassDefinition cd:
+                        seen.Add(cd.Name).Should().BeTrue($"Repeated use of {cd.Name} at index {cd.StartIndex} in {modPath}");
+                        break;
+                    case FunctionDefinition fd:
+                        seen.Add(fd.Name).Should().BeTrue($"Repeated use of {fd.Name} at index {fd.StartIndex} in {modPath}");
+                        break;
+                    case AssignmentStatement assign when assign.Left.FirstOrDefault() is NameExpression n:
+                        seen.Add(n.Name).Should().BeTrue($"Repeated use of {n.Name} at index {n.StartIndex} in {modPath}");
+                        break;
                 }
             }
 
