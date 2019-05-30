@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             // Default. Not ideal on all platforms, but used as a fall back.
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var plsSubfolder = $"Microsoft{Path.DirectorySeparatorChar}Python.Language.Server";
+            var plsSubfolder = $"Microsoft{Path.DirectorySeparatorChar}Python Language Server";
             var defaultCachePath = Path.Combine(localAppData, plsSubfolder);
             
             string cachePath = null;
