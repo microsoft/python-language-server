@@ -572,5 +572,22 @@ class C(B):
             analysis.Should().HaveClass("B").Which.Should().HaveDocumentation("class B doc");
             analysis.Should().HaveClass("C").Which.Should().HaveDocumentation("class C doc");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GetAttr() {
+            const string code = @"
+class A:
+    def __init__(self):
+        self.x = 123
+
+a = A()
+b = getattr(a, 'x')
+c = getattr(a, 'y', 3.141)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType("A")
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Float);
+        }
     }
 }

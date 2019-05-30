@@ -116,5 +116,30 @@ namespace Microsoft.Python.Analysis.Specializations {
             var returnType = io?.GetMember(returnTypeName)?.GetPythonType();
             return returnType != null ? new PythonInstance(returnType) : null;
         }
+
+        public static IMember GetAttr(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet) {
+            // TODO: Try __getattr__ first; this may not be as reliable in practice
+            // given we could be assuming that __getattr__ always returns the same type,
+            // which is incorrect more often than not.
+
+            var args = argSet.Values<IMember>();
+            if (args.Count < 1) {
+                return null;
+            }
+
+            var o = args[0];
+            var name = (args[1] as IPythonConstant)?.GetString();
+
+            IMember def = null;
+            if (args.Count >= 3) {
+                def = args[2];
+            }
+
+            if (name == null) {
+                return def;
+            }
+
+            return o?.GetPythonType().GetMember(name) ?? def;
+        }
     }
 }
