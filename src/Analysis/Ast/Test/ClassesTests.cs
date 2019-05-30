@@ -585,13 +585,15 @@ b = getattr(a, 'x')
 c = getattr(a, 'y', 3.141)
 d = getattr(a)
 e = getattr()
+f = getattr(a, 3.141)
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType("A")
                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("c").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Unknown)
-                .And.HaveVariable("e").OfType(BuiltinTypeId.Unknown);
+                .And.HaveVariable("e").OfType(BuiltinTypeId.Unknown)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Unknown);
         }
     }
 }
