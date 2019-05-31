@@ -5,7 +5,7 @@ import contextlib
 from collections import defaultdict
 import string
 import sys
-import os.path
+import os
 
 
 def main():
@@ -14,9 +14,7 @@ def main():
     default_input = os.path.join(
         script_dir, "UnitTests", "TestData", "gen", "completion"
     )
-    default_output = os.path.join(
-        script_dir, "LanguageServer", "Test", "GenTests.cs"
-    )
+    default_output = os.path.join(script_dir, "LanguageServer", "Test", "GenTests.cs")
 
     parser = argparse.ArgumentParser(
         description="Generate completion and hover tests",
@@ -44,6 +42,13 @@ def main():
         type=str,
         default=default_input,
         help="location of completions directory",
+    )
+    parser.add_argument(
+        "--table",
+        nargs="?",
+        type=argparse.FileType("w"),
+        default=os.devnull,
+        help="file to write test names to",
     )
     args = parser.parse_args()
 
@@ -77,12 +82,12 @@ def main():
         for name in to_generate:
             filename = os.path.join(args.input, name + ".py")
             ignored_lines = line_skip[name]
-            create_tests(name, filename, ignored_lines)
+            create_tests(name, filename, ignored_lines, args.table)
 
         print(POSTAMBLE)
 
 
-def create_tests(name, filename, ignored_lines):
+def create_tests(name, filename, ignored_lines, table_f):
     camel_name = snake_to_camel(name)
 
     with open(filename) as fp:
@@ -115,13 +120,19 @@ def create_tests(name, filename, ignored_lines):
                 pass
 
         filt = next_line[:col].lstrip()
-        filt = select_filter(filt, ". {[(")
+        filt = rightmost_token(filt, ". {[(\t@")
 
         args = line.strip()
         func_name = "Line_{0:0{pad}}".format(i + 1, pad=width)
         func_name = camel_name + "_" + func_name
 
-        tmpl = COMPLETION_TEST if args.startswith("[") else HOVER_TEST
+        is_completion = args.startswith("[")
+
+        func_name += "_Completion" if is_completion else "_Hover"
+        tmpl = COMPLETION_TEST if is_completion else HOVER_TEST
+
+        print(func_name, file=table_f)
+
         tests.append(
             tmpl.format(
                 name=func_name,
@@ -175,6 +186,7 @@ DEFAULT_TEST_FILES = [
     "precedence",
     "recursion",
     "stdlib",
+    "stubs",
     "sys_path",
     "types",
 ]
@@ -260,14 +272,15 @@ POSTAMBLE = """
         }
 
         protected async Task DoCompletionTest(string module, int lineNum, int col, string args, string filter) {
-            var tests = string.IsNullOrWhiteSpace(args) ? new List<string>() : ParseStringList(args);
+            filter = filter.ToLowerInvariant();
+            var tests = string.IsNullOrWhiteSpace(args) ? new List<string>() : ParseStringList(args).Select(s => s.ToLowerInvariant()).ToList();
 
             var analysis = await GetGenAnalysisAsync(module);
 
             var res = _cs.GetCompletions(analysis, new SourceLocation(lineNum + 1, col + 1));
-            res.Should().NotBeNull();
-
-            var items = res.Completions?.Select(item => item.insertText).Where(t => t.Contains(filter)).ToList() ?? new List<string>();
+            var items = res?.Completions?.Select(item => item.insertText.ToLowerInvariant())
+                .Where(t => t.ToLowerInvariant().Contains(filter))
+                .ToList() ?? new List<string>();
 
             if (tests.Count == 0) {
                 items.Should().BeEmpty();
@@ -284,11 +297,11 @@ POSTAMBLE = """
             var analysis = await GetGenAnalysisAsync(module);
 
             var res = _hs.GetHover(analysis, new SourceLocation(lineNum + 1, col + 1));
-            res.Should().NotBeNull();
 
             if (tests.Count == 0) {
-                res.contents.value.Should().BeEmpty();
+                res?.contents.value.Should().BeEmpty();
             } else {
+                res.Should().NotBeNull();
                 res.contents.value.Should().ContainAll(tests);
             }
         }
@@ -335,28 +348,24 @@ CLASS_POSTAMBLE = """
     }"""
 
 COMPLETION_TEST = """
-        [TestMethod, Priority(0)] public async Task {name}_Completion() => await DoCompletionTest({module}, {line}, {col}, {args}, {filter});"""
+        [TestMethod, Priority(0)] public async Task {name}() => await DoCompletionTest({module}, {line}, {col}, {args}, {filter});"""
 
 
 HOVER_TEST = """
-        [TestMethod, Priority(0)] public async Task {name}_Hover() => await DoHoverTest({module}, {line}, {col}, {args});"""
+        [TestMethod, Priority(0)] public async Task {name}() => await DoHoverTest({module}, {line}, {col}, {args});"""
 
 
 def snake_to_camel(s):
     return string.capwords(s, "_").replace("_", "")
 
 
-def select_filter(s, cs):
-    found = False
+def rightmost_token(s, cs):
     for c in cs:
         i = s.rfind(c)
         if i != -1:
-            found = True
             s = s[i + 1 :]
 
-    if found:
-        return s
-    return ""
+    return s
 
 
 def csharp_str(s):
@@ -369,4 +378,3 @@ def csharp_str(s):
 
 if __name__ == "__main__":
     main()
-
