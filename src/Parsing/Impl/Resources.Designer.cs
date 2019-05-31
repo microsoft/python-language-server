@@ -99,9 +99,9 @@ namespace Microsoft.Python.Parsing {
         /// <summary>
         ///   Looks up a localized string similar to invalid syntax, class decorators require 2.6 or later..
         /// </summary>
-        internal static string ClassDecoratorsRequire2dot6ErrorMsg {
+        internal static string ClassDecoratorsRequireTwodotSixErrorMsg {
             get {
-                return ResourceManager.GetString("ClassDecoratorsRequire2dot6ErrorMsg", resourceCulture);
+                return ResourceManager.GetString("ClassDecoratorsRequireTwodotSixErrorMsg", resourceCulture);
             }
         }
         
@@ -151,7 +151,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to duplicate &apos;{0}&apos; args arguments.
+        ///   Looks up a localized string similar to duplicate {0} args arguments.
         /// </summary>
         internal static string DuplicateArgsArgumentErrorMsg {
             get {
@@ -196,7 +196,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to expected &apos;&apos;{0}&apos;&apos;.
+        ///   Looks up a localized string similar to expected &apos;{0}&apos;.
         /// </summary>
         internal static string ExpectedCharacterErrorMsg {
             get {
@@ -511,7 +511,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to only one &apos;{0}&apos; allowed.
+        ///   Looks up a localized string similar to only one {0} allowed.
         /// </summary>
         internal static string OnlyOneAllowedErrorMsg {
             get {
@@ -718,7 +718,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to \&quot;, variable\&quot; not allowed in 3.x - use \&quot;as variable\&quot; instead..
+        ///   Looks up a localized string similar to &quot;, variable&quot; not allowed in 3.x - use &quot;as variable&quot; instead..
         /// </summary>
         internal static string VariableIn3dotXErrorMsg {
             get {

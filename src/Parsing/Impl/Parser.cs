@@ -1805,7 +1805,7 @@ namespace Microsoft.Python.Parsing {
                     res = cls;
                 } else {
                     // Class was an error...
-                    res = ErrorStmt(Resources.ClassDecoratorsRequire2dot6ErrorMsg, decorators, cls);
+                    res = ErrorStmt(Resources.ClassDecoratorsRequireTwodotSixErrorMsg, decorators, cls);//Resources.ClassDecoratorsRequireTwodotSixErrorMsg
                 }
             } else {
                 ReportSyntaxError(_lookahead);

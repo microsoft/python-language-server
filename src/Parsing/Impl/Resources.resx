@@ -129,7 +129,7 @@
   <data name="CantUseStarredExpErrorMsg" xml:space="preserve">
     <value>can't use starred expression here</value>
   </data>
-  <data name="ClassDecoratorsRequire2dot6ErrorMsg" xml:space="preserve">
+  <data name="ClassDecoratorsRequireTwodotSixErrorMsg" xml:space="preserve">
     <value>invalid syntax, class decorators require 2.6 or later.</value>
   </data>
   <data name="ClosingParensNotMatchFStringErrorMsg" xml:space="preserve">
@@ -148,7 +148,7 @@
     <value>default value must be specified here</value>
   </data>
   <data name="DuplicateArgsArgumentErrorMsg" xml:space="preserve">
-    <value>duplicate '{0}' args arguments</value>
+    <value>duplicate {0} args arguments</value>
   </data>
   <data name="DuplicateArgumentInFunctionDefinitionErrorMsg" xml:space="preserve">
     <value>duplicate argument '{0}' in function definition</value>
@@ -163,7 +163,7 @@
     <value>f-string: empty expression not allowed</value>
   </data>
   <data name="ExpectedCharacterErrorMsg" xml:space="preserve">
-    <value>expected ''{0}''</value>
+    <value>expected '{0}'</value>
   </data>
   <data name="ExpectedExpressionAfterDelErrorMsg" xml:space="preserve">
     <value>expected expression after del</value>
@@ -268,7 +268,7 @@
     <value>f-string expression part cannot include '#'</value>
   </data>
   <data name="OnlyOneAllowedErrorMsg" xml:space="preserve">
-    <value>only one '{0}' allowed</value>
+    <value>only one {0} allowed</value>
   </data>
   <data name="ParameterAnnotationsRequire3dotXErrorMsg" xml:space="preserve">
     <value>invalid syntax, parameter annotations require 3.x</value>
@@ -337,7 +337,7 @@
     <value>file has both Unicode marker and PEP-263 file encoding.  You must use \"utf-8\" as the encoding name when a BOM is present.</value>
   </data>
   <data name="VariableIn3dotXErrorMsg" xml:space="preserve">
-    <value>\", variable\" not allowed in 3.x - use \"as variable\" instead.</value>
+    <value>", variable" not allowed in 3.x - use "as variable" instead.</value>
   </data>
   <data name="YieldInsideAsyncErrorMsg" xml:space="preserve">
     <value>'yield' inside async function</value>
