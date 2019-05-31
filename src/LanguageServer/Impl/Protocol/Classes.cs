@@ -153,6 +153,11 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// should be loaded into the Python analysis engine.
         /// </summary>
         public string[] includeFiles = Array.Empty<string>();
+
+        /// <summary>
+        /// Path to a writable folder where analyzer can cache its data.
+        /// </summary>
+        public string cacheFolderPath;
     }
 
     [Serializable]

@@ -126,6 +126,9 @@
   <data name="Done" xml:space="preserve">
     <value>done.</value>
   </data>
+  <data name="Error_InvalidCachePath" xml:space="preserve">
+    <value>Specified cache folder does not exist. Switching to default.</value>
+  </data>
   <data name="InitializingForGenericInterpreter" xml:space="preserve">
     <value>Initializing for generic interpreter</value>
   </data>
