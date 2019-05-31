@@ -34,7 +34,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             string pathVar = "",
             string libPath = null,
             string sitePackagesPath = null,
-            string typeshedPath = null,
             InterpreterArchitecture architecture = default,
             Version version = null
         ) {
@@ -46,7 +45,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             Version = version ?? new Version();
             LibraryPath = libPath ?? string.Empty;
             SitePackagesPath = sitePackagesPath ?? string.Empty;
-            TypeshedPath = typeshedPath ?? string.Empty;
         }
 
         private static string Read(IReadOnlyDictionary<string, object> d, string k)
@@ -58,7 +56,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             InterpreterPath = Read(properties, nameof(InterpreterPath));
             PathEnvironmentVariable = Read(properties, nameof(PathEnvironmentVariable));
             LibraryPath = Read(properties, nameof(LibraryPath));
-            TypeshedPath = Read(properties, nameof(TypeshedPath));
             Architecture = InterpreterArchitecture.TryParse(Read(properties, nameof(Architecture)));
             try {
                 Version = Version.Parse(Read(properties, nameof(Version)));
@@ -82,7 +79,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             properties[nameof(InterpreterPath)] = InterpreterPath;
             properties[nameof(PathEnvironmentVariable)] = PathEnvironmentVariable;
             properties[nameof(LibraryPath)] = LibraryPath;
-            properties[nameof(TypeshedPath)] = TypeshedPath;
             properties[nameof(Architecture)] = Architecture.ToString();
             if (Version != null) {
                 properties[nameof(Version)] = Version.ToString();
