@@ -192,11 +192,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public IReadOnlyList<IPythonModule> LoadedModules 
-            => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
+        public IReadOnlyList<IPythonModule> LoadedModules {
+            get {
+                lock (_syncObj) {
+                    return _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
+                }
+            }
+        }
+
+        public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
+
+        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) 
+            => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
 
         private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies) {
             _analysisCompleteEvent.Reset();
+            ActivityTracker.StartTracking();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserModule, dependencies);

@@ -137,14 +137,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 stopWatch.Stop();
 
                 bool isCanceled;
+                bool isFinal;
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                     _state = State.Completed;
+                    isFinal = _walker.MissingKeys.Count == 0 && !isCanceled && remaining == 0;
                     _walker = null;
                 }
 
                 if (!isCanceled) {
                     _progress.ReportRemaining(remaining);
+                    if(isFinal) {
+                        ActivityTracker.EndTracking();
+                        (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(ActivityTracker.ModuleCount, ActivityTracker.MillisecondsElapsed);
+                        _log?.Log(TraceEventType.Information, $"Analysis complete: {ActivityTracker.ModuleCount} modules in { ActivityTracker.MillisecondsElapsed} ms.");
+                    }
                 }
             }
 
@@ -226,6 +233,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue;
                 }
 
+                ActivityTracker.OnEnqueueModule(node.Value.Module.FilePath);
+
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || _walker.Remaining == 1) {
                     Analyze(node, null, stopWatch);
                 } else {
@@ -241,7 +250,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (_walker.MissingKeys.Count == 0 || _walker.MissingKeys.All(k => k.IsTypeshed)) {
                 Interlocked.Exchange(ref _runningTasks, 0);
-                
+
                 if (!isCanceled) {
                     _analysisCompleteEvent.Set();
                 }
@@ -279,6 +288,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var startTime = stopWatch.Elapsed;
                 AnalyzeEntry(entry, module, ast, _walker.Version);
                 node.Commit();
+                ActivityTracker.OnModuleAnalysisComplete(node.Value.Module.FilePath);
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
             } catch (OperationCanceledException oce) {
