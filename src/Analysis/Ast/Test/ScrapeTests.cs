@@ -142,8 +142,8 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         public async Task BuiltinScrapeV37CustomCache() {
             var configuration = PythonVersions.Python37_x64 ?? PythonVersions.Python37;
-            configuration.DatabasePath = TestData.GetAstAnalysisCachePath(configuration.Version, true, "Custom");
-            await BuiltinScrape(configuration);
+            var stubCacheFolderPath = TestData.GetAstAnalysisCachePath(configuration.Version, true, "Custom");
+            await BuiltinScrape(configuration, stubCacheFolderPath);
         }
 
         [TestMethod, Priority(0)]
@@ -152,12 +152,12 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         public async Task BuiltinScrapeV27() => await BuiltinScrape(PythonVersions.Python27_x64 ?? PythonVersions.Python27);
 
-        private async Task BuiltinScrape(InterpreterConfiguration configuration) {
+        private async Task BuiltinScrape(InterpreterConfiguration configuration, string stubCacheFolderPath = null) {
             configuration.AssertInstalled();
             var moduleUri = TestData.GetDefaultModuleUri();
             var moduleDirectory = Path.GetDirectoryName(moduleUri.LocalPath);
 
-            var services = await CreateServicesAsync(moduleDirectory, configuration);
+            var services = await CreateServicesAsync(moduleDirectory, configuration, stubCacheFolderPath);
             var interpreter = services.GetService<IPythonInterpreter>();
 
             var mod = interpreter.ModuleResolution.GetOrLoadModule(interpreter.ModuleResolution.BuiltinModuleName);
@@ -167,11 +167,9 @@ namespace Microsoft.Python.Analysis.Tests {
             var modPath = stubCache.GetCacheFilePath(interpreter.Configuration.InterpreterPath);
 
             // Verify that we are using correct database path.
-            if (!string.IsNullOrEmpty(configuration.DatabasePath)) {
-                modPath.Should().Contain(configuration.DatabasePath);
-            } else {
-                modPath.Should().Contain(stubCache.StubCacheFolder);
-            }
+            modPath.Should().StartWith(
+                !string.IsNullOrEmpty(stubCacheFolderPath) ? stubCacheFolderPath : stubCache.StubCacheFolder
+                );
 
             var doc = (IDocument)mod;
             await doc.GetAnalysisAsync();
