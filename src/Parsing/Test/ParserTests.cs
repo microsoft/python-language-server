@@ -128,6 +128,26 @@ namespace Microsoft.Python.Parsing.Tests {
             );
         }
 
+        [DataRow("True", ParseResult.Complete)]
+        [DataRow("if True:", ParseResult.IncompleteStatement)]
+        [DataRow("if True", ParseResult.Invalid)]
+        [DataRow("", ParseResult.Empty)]
+        [DataTestMethod, Priority(0)]
+        public void InteractiveCode(string code, ParseResult expectedResult) {
+            foreach (var version in AllVersions) {
+                var module = new Uri("file:///interactive");
+                var parser = Parser.CreateParser(new StringReader(code), version);
+                var ast = parser.ParseInteractiveCode(module, out var result);
+                result.Should().Be(expectedResult);
+                if (expectedResult == ParseResult.Complete) {
+                    ast.Should().NotBeNull();
+                    ast.Module.Should().BeEquivalentTo(module);
+                } else {
+                    ast.Should().BeNull();
+                }
+            }
+        }
+
         [TestMethod, Priority(0)]
         public void FStrings() {
             foreach (var version in V36AndUp) {
