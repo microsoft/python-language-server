@@ -546,7 +546,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
             public ImmutableArray<TKey> MissingKeys { get; }
             public ImmutableArray<TValue> AffectedValues { get; }
             public int Version { get; }
-            public ImmutableArray<WalkingVertex<TKey, TValue>> Vertices => _startingVertices;
 
             public int Remaining {
                 get {
