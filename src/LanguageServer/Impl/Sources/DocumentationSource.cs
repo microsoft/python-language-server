@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;

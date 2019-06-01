@@ -148,6 +148,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis.SpecializeFunction("cmp", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             Analysis.SpecializeFunction("dir", BuiltinsSpecializations.ListOfStrings);
             Analysis.SpecializeFunction("eval", Interpreter.GetBuiltinType(BuiltinTypeId.Object));
+            Analysis.SpecializeFunction("getattr", BuiltinsSpecializations.GetAttr);
             Analysis.SpecializeFunction("globals", BuiltinsSpecializations.DictStringToObject);
             Analysis.SpecializeFunction(@"isinstance", _boolType);
             Analysis.SpecializeFunction(@"issubclass", _boolType);

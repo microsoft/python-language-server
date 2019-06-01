@@ -146,6 +146,56 @@ namespace Microsoft.Python.Parsing {
         //file_input: (Newline | stmt)* ENDMARKER
         public PythonAst ParseFile(Uri module = null) => ParseFileWorker(module);
 
+        //[stmt_list] Newline | compound_stmt Newline
+        //stmt_list ::= simple_stmt (";" simple_stmt)* [";"]
+        //compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
+        //Returns a simple or coumpound_stmt or null if input is incomplete
+        /// <summary>
+        /// Parse one or more lines of interactive input
+        /// </summary>
+        /// <returns>null if input is not yet valid but could be with more lines</returns>
+        public PythonAst ParseInteractiveCode(Uri module, out ParseResult properties) {
+            bool parsingMultiLineCmpdStmt;
+
+            properties = ParseResult.Complete;
+
+            StartParsing();
+            Statement ret = InternalParseInteractiveInput(out parsingMultiLineCmpdStmt, out bool isEmptyStmt);
+
+            if (ErrorCode == 0) {
+                if (isEmptyStmt) {
+                    properties = ParseResult.Empty;
+                } else if (parsingMultiLineCmpdStmt) {
+                    properties = ParseResult.IncompleteStatement;
+                }
+
+                if (isEmptyStmt) {
+                    return null;
+                }
+
+                return CreateAst(module, ret);
+            } else {
+                if ((ErrorCode & ErrorCodes.IncompleteMask) != 0) {
+                    if ((ErrorCode & ErrorCodes.IncompleteToken) != 0) {
+                        properties = ParseResult.IncompleteToken;
+                        return null;
+                    }
+
+                    if ((ErrorCode & ErrorCodes.IncompleteStatement) != 0) {
+                        if (parsingMultiLineCmpdStmt) {
+                            properties = ParseResult.IncompleteStatement;
+                        } else {
+                            properties = ParseResult.IncompleteToken;
+                        }
+                        return null;
+                    }
+                }
+
+                properties = ParseResult.Invalid;
+                return null;
+            }
+        }
+
         public Expression ParseFStrSubExpr() {
             _alwaysAllowContextDependentSyntax = true;
             StartParsing();
