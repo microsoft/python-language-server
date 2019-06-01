@@ -16,6 +16,11 @@
 namespace Microsoft.Python.Analysis.Dependencies {
     internal interface IDependencyChainNode<out TValue> {
         int VertexDepth { get; }
+
+        /// <summary>
+        /// Shows if node has any direct or indirect dependencies that aren't added to the graph
+        /// </summary>
+        bool HasMissingDependencies { get; }
         TValue Value { get; }
         void Commit();
         void Skip();

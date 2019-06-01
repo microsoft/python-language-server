@@ -438,6 +438,10 @@ namespace Microsoft.Python.Analysis.Modules {
                 // as declare additional variables, etc.
                 OnAnalysisComplete();
                 ContentState = State.Analyzed;
+
+                if (ModuleType != ModuleType.User) {
+                    _buffer.Reset(_buffer.Version, string.Empty);
+                }
             }
 
             // Do not report issues with libraries or stubs

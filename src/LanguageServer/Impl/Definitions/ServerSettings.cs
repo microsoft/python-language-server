@@ -29,6 +29,22 @@ namespace Microsoft.Python.LanguageServer {
             public string[] warnings { get; private set; } = Array.Empty<string>();
             public string[] information { get; private set; } = Array.Empty<string>();
             public string[] disabled { get; private set; } = Array.Empty<string>();
+
+            public class AnalysisMemoryOptions {
+                /// <summary>
+                /// Keep in memory information on local variables declared in
+                /// functions in libraries. Provides ability to navigate to
+                /// symbols used in function bodies in packages and libraries.
+                /// </summary>
+                public bool keepLibraryLocalVariables;
+
+                /// <summary>
+                /// Keep in memory AST of library source code. May somewhat
+                /// improve performance when library code has to be re-analyzed.
+                /// </summary>
+                public bool keepLibraryAst;
+            }
+            public AnalysisMemoryOptions memory;
         }
         public readonly PythonAnalysisOptions analysis = new PythonAnalysisOptions();
 

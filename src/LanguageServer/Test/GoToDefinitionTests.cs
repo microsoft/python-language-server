@@ -332,6 +332,9 @@ class MainClass:
             var mainPath = TestData.GetTestSpecificUri("main.py");
             var doc = rdt.OpenDocument(mainPath, code);
 
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+            await analyzer.WaitForCompleteAnalysisAsync();
+
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
             var ds = new DefinitionSource(Services);
 

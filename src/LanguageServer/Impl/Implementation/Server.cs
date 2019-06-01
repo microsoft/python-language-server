@@ -215,6 +215,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return true;
             }
 
+            if(newSettings.analysis?.memory?.keepLibraryAst != oldSettings.analysis?.memory?.keepLibraryAst ||
+               newSettings.analysis?.memory?.keepLibraryLocalVariables != oldSettings.analysis?.memory?.keepLibraryLocalVariables) {
+                return true;
+            }
+
             return false;
         }
 
