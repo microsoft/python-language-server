@@ -1796,7 +1796,7 @@ namespace Microsoft.Python.Parsing {
                 res = fnc;
             } else if (next == Tokens.KeywordClassToken) {
                 if (_langVersion < PythonLanguageVersion.V26) {
-                    ReportSyntaxError("");//invalid syntax, class decorators require 2.6 or later.
+                    ReportSyntaxError(Resources.ClassDecoratorsRequireTwodotSixErrorMsg);//invalid syntax, class decorators require 2.6 or later.
                 }
                 var cls = ParseClassDef();
                 if (cls is ClassDefinition) {
@@ -1805,7 +1805,7 @@ namespace Microsoft.Python.Parsing {
                     res = cls;
                 } else {
                     // Class was an error...
-                    res = ErrorStmt(Resources.ClassDecoratorsRequireTwodotSixErrorMsg, decorators, cls);//Resources.ClassDecoratorsRequireTwodotSixErrorMsg
+                    res = ErrorStmt("", decorators, cls);
                 }
             } else {
                 ReportSyntaxError(_lookahead);
