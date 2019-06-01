@@ -98,6 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(new DiagnosticsService(_services));
 
             var analyzer = new PythonAnalyzer(_services);
+            analyzer.AnalysisComplete += OnAnalysisComplete;
             _services.AddService(analyzer);
 
             _services.AddService(new RunningDocumentTable(_services));

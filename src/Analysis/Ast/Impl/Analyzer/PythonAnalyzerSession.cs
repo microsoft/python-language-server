@@ -156,8 +156,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var elapsed = stopWatch.Elapsed.TotalMilliseconds;
-
-            SendTelemetry(_telemetry, elapsed, originalRemaining, remaining, Version);
             LogResults(_log, elapsed, originalRemaining, remaining, Version);
             ForceGCIfNeeded(originalRemaining, remaining);
         }
@@ -169,38 +167,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private static void SendTelemetry(ITelemetryService telemetry, double elapsed, int originalRemaining, int remaining, int version) {
-            if (telemetry == null) {
-                return;
-            }
-
-            if (remaining != 0 || originalRemaining < 100) {
-                return;
-            }
-
-            double privateMB;
-            double peakPagedMB;
-            double workingMB;
-
-            using (var proc = Process.GetCurrentProcess()) {
-                privateMB = proc.PrivateMemorySize64 / 1e+6;
-                peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
-                workingMB = proc.WorkingSet64 / 1e+6;
-            }
-
-            var e = new TelemetryEvent {
-                EventName = "python_language_server/analysis_complete", // TODO: Move this common prefix into Core.
-            };
-
-            e.Measurements["privateMB"] = privateMB;
-            e.Measurements["peakPagedMB"] = peakPagedMB;
-            e.Measurements["workingMB"] = workingMB;
-            e.Measurements["elapsedMs"] = elapsed;
-            e.Measurements["entries"] = originalRemaining;
-            e.Measurements["version"] = version;
-
-            telemetry.SendTelemetryAsync(e).DoNotWait();
-        }
 
         private static void LogResults(ILogger logger, double elapsed, int originalRemaining, int remaining, int version) {
             if (logger == null) {
