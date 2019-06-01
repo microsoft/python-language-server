@@ -150,7 +150,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if(isFinal) {
                         ActivityTracker.EndTracking();
                         (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(ActivityTracker.ModuleCount, ActivityTracker.MillisecondsElapsed);
-                        _log?.Log(TraceEventType.Information, $"Analysis complete: {ActivityTracker.ModuleCount} modules in { ActivityTracker.MillisecondsElapsed} ms.");
+                        _log?.Log(TraceEventType.Verbose, $"Analysis complete: {ActivityTracker.ModuleCount} modules in { ActivityTracker.MillisecondsElapsed} ms.");
                     }
                 }
             }

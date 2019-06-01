@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal static class ActivityTracker {
         private static readonly Dictionary<string, AnalysisState> _modules = new Dictionary<string, AnalysisState>();
         private static readonly object _lock = new object();
-        private static bool _complete;
+        private static bool _tracking;
         private static Stopwatch _sw;
 
         private struct AnalysisState {
@@ -63,9 +63,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public static void StartTracking() {
             lock (_lock) {
-                if (_complete) {
+                if (!_tracking) {
+                    _tracking = true;
                     _modules.Clear();
-                    _complete = false;
                     _sw = Stopwatch.StartNew();
                 }
             }
@@ -73,8 +73,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public static void EndTracking() {
             lock (_lock) {
-                _complete = true;
-                _sw?.Stop();
+                if (_tracking) {
+                    _sw?.Stop();
+                    _tracking = false;
+                }
             }
         }
 
