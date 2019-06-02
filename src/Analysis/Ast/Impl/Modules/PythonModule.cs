@@ -159,7 +159,7 @@ namespace Microsoft.Python.Analysis.Modules {
                         return true;
                     }
                     var valueType = v.Value?.GetPythonType();
-                    if (valueType is IPythonModule) {
+                    if (valueType is PythonModule) {
                         return false; // Do not re-export modules.
                     }
                     // Do not re-export types from typing
