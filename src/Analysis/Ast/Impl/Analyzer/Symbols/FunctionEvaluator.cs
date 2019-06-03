@@ -110,7 +110,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private IPythonType TryDetermineReturnValue() {
             var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-            if (annotationType.IsUnknown() || annotationType.IsTypingType("Any")) {
+            if (!annotationType.IsUnknown() && !annotationType.IsTypingType("Any")) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
                 var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
