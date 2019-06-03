@@ -137,20 +137,25 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 stopWatch.Stop();
 
                 bool isCanceled;
+                bool isFinal;
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                     _state = State.Completed;
+                    isFinal = _walker.MissingKeys.Count == 0 && !isCanceled && remaining == 0;
                     _walker = null;
                 }
 
                 if (!isCanceled) {
                     _progress.ReportRemaining(remaining);
+                    if(isFinal) {
+                        ActivityTracker.EndTracking();
+                        (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(ActivityTracker.ModuleCount, ActivityTracker.MillisecondsElapsed);
+                        _log?.Log(TraceEventType.Verbose, $"Analysis complete: {ActivityTracker.ModuleCount} modules in { ActivityTracker.MillisecondsElapsed} ms.");
+                    }
                 }
             }
 
             var elapsed = stopWatch.Elapsed.TotalMilliseconds;
-
-            SendTelemetry(_telemetry, elapsed, originalRemaining, remaining, Version);
             LogResults(_log, elapsed, originalRemaining, remaining, Version);
             ForceGCIfNeeded(originalRemaining, remaining);
         }
@@ -162,38 +167,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private static void SendTelemetry(ITelemetryService telemetry, double elapsed, int originalRemaining, int remaining, int version) {
-            if (telemetry == null) {
-                return;
-            }
-
-            if (remaining != 0 || originalRemaining < 100) {
-                return;
-            }
-
-            double privateMB;
-            double peakPagedMB;
-            double workingMB;
-
-            using (var proc = Process.GetCurrentProcess()) {
-                privateMB = proc.PrivateMemorySize64 / 1e+6;
-                peakPagedMB = proc.PeakPagedMemorySize64 / 1e+6;
-                workingMB = proc.WorkingSet64 / 1e+6;
-            }
-
-            var e = new TelemetryEvent {
-                EventName = "python_language_server/analysis_complete", // TODO: Move this common prefix into Core.
-            };
-
-            e.Measurements["privateMB"] = privateMB;
-            e.Measurements["peakPagedMB"] = peakPagedMB;
-            e.Measurements["workingMB"] = workingMB;
-            e.Measurements["elapsedMs"] = elapsed;
-            e.Measurements["entries"] = originalRemaining;
-            e.Measurements["version"] = version;
-
-            telemetry.SendTelemetryAsync(e).DoNotWait();
-        }
 
         private static void LogResults(ILogger logger, double elapsed, int originalRemaining, int remaining, int version) {
             if (logger == null) {
@@ -226,6 +199,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue;
                 }
 
+                ActivityTracker.OnEnqueueModule(node.Value.Module.FilePath);
+
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || _walker.Remaining == 1) {
                     Analyze(node, null, stopWatch);
                 } else {
@@ -241,7 +216,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (_walker.MissingKeys.Count == 0 || _walker.MissingKeys.All(k => k.IsTypeshed)) {
                 Interlocked.Exchange(ref _runningTasks, 0);
-                
+
                 if (!isCanceled) {
                     _analysisCompleteEvent.Set();
                 }
@@ -279,6 +254,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var startTime = stopWatch.Elapsed;
                 AnalyzeEntry(entry, module, ast, _walker.Version);
                 node.Commit();
+                ActivityTracker.OnModuleAnalysisComplete(node.Value.Module.FilePath);
 
                 LogCompleted(module, stopWatch, startTime);
             } catch (OperationCanceledException oce) {

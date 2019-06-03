@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,5 +65,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Returns list of currently loaded modules.
         /// </summary>
         IReadOnlyList<IPythonModule> LoadedModules { get; }
+
+        /// <summary>
+        /// Fires when analysis is complete.
+        /// </summary>
+        event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
     }
 }

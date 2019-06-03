@@ -107,6 +107,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var analyzer = new PythonAnalyzer(_services, cacheFolderPath);
             _services.AddService(analyzer);
 
+            analyzer.AnalysisComplete += OnAnalysisComplete;
+            _disposableBag.Add(() => analyzer.AnalysisComplete -= OnAnalysisComplete);
+
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
