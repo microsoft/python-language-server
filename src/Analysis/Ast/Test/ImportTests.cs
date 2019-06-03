@@ -222,5 +222,14 @@ x = f()
             analysis.Diagnostics.Should().BeEmpty();
             analysis.Should().HaveFunction("print");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task PreferTypeToAny() {
+            var analysis = await GetAnalysisAsync(@"from TypingConstants import *", PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("ONE").Which.Should().HaveType("Any");
+            analysis.Should().HaveVariable("TWO").Which.Should().HaveType(BuiltinTypeId.Str);
+            var a = analysis.Should().HaveClass("A").Which;
+            a.GetMember("x").Should().HaveType(BuiltinTypeId.Int);
+        }
     }
 }
