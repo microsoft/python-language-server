@@ -155,11 +155,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Declare parameters in scope
             IMember defaultValue = null;
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
-                var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
-                    IPythonType paramType = null;
-                    if (p.DefaultValue != null) {
+                    var paramType = Eval.GetTypeFromAnnotation(p.Annotation, out var isGeneric);
+                    if (paramType.IsUnknown() && p.DefaultValue != null) {
                         defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                         // If parameter has default value, look for the annotation locally first
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
@@ -171,7 +170,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric) ?? Eval.UnknownType;
+                    paramType = paramType ?? Eval.UnknownType;
                     var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric);
                     if (declareVariables) {
                         DeclareParameter(p, pi);

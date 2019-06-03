@@ -609,5 +609,20 @@ x = test()
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("x").OfType("Foo");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task AnnotatedParameterPriority() {
+            const string code = @"
+def func() -> int:
+    return 123
+
+def test(foo: float = func()):
+    return foo
+
+x = test()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Float);
+        }
     }
 }

@@ -1150,5 +1150,49 @@ a";
             var result = cs.GetCompletions(analysis, new SourceLocation(4, 2));
             result.Completions.Select(c => c.label).Should().NotContain("aaa");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ParameterDefaultAny() {
+            const string code = @"
+from typing import Any
+
+class Foo:
+    z: int
+    def __init__(self, name: str):
+        self.name = name
+
+def func() -> Any:
+    return Foo
+
+def test(x = func()):
+    x.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(13, 7));
+            comps.Should().HaveLabels("name", "z");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ParameterAnnotatedDefaultAny() {
+            const string code = @"
+from typing import Any
+
+class Foo:
+    z: int
+    def __init__(self, name: str):
+        self.name = name
+
+def func() -> int:
+    return 123
+
+def test(x: Foo = func()):
+    x.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(13, 7));
+            comps.Should().HaveLabels("name", "z");
+        }
     }
 }
