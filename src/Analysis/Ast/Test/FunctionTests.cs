@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -588,6 +587,27 @@ class B:
             analysis.Should().NotHaveVariable("A");
             analysis.Should().NotHaveVariable("func");
             analysis.Should().HaveVariable("B").Which.Should().NotHaveMember("b");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AnyReturnType() {
+            const string code = @"
+from typing import Any
+
+class Foo:
+    def __init__(self, name: str):
+        self.name = name
+
+def func() -> Any:
+    return Foo
+
+def test(foo: Foo = func()):
+    return foo
+
+x = test()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").OfType("Foo");
         }
     }
 }
