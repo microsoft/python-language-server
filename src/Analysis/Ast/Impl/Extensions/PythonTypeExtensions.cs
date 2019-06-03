@@ -40,8 +40,5 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsConstructor(this IPythonClassMember m)
             => m.Name.EqualsOrdinal("__init__") ||  m.Name.EqualsOrdinal("__new__");
-
-        public static bool IsTypingType(this IPythonType t) => t.DeclaringModule is TypingModule;
-        public static bool IsTypingType(this IPythonType t, string typeName) => t.IsTypingType() && t.Name.EqualsOrdinal(typeName);
     }
 }
