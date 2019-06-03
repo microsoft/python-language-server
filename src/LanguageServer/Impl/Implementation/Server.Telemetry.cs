@@ -47,7 +47,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             te.Measurements["peakPagedMB"] = peakPagedMB;
             te.Measurements["workingMB"] = workingMB;
             te.Measurements["elapsedMs"] = e.MillisecondsElapsed;
-            te.Measurements["entries"] = e.ModuleCount;
+            te.Measurements["moduleCount"] = e.ModuleCount;
 
             telemetry.SendTelemetryAsync(te).DoNotWait();
         }
