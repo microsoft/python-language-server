@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private PythonAnalyzerSession _currentSession;
         private PythonAnalyzerSession _nextSession;
 
-        public PythonAnalyzer(IServiceManager services) {
+        public PythonAnalyzer(IServiceManager services, string cacheFolderPath = null) {
             _services = services;
             _log = services.GetService<ILogger>();
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
@@ -56,6 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _startNextSession = StartNextSession;
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
+            _services.AddService(new StubCache(_services, cacheFolderPath));
         }
 
         public void Dispose() {

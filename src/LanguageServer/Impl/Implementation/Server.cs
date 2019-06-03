@@ -97,7 +97,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var analyzer = new PythonAnalyzer(_services);
+            var cacheFolderPath = @params.initializationOptions.cacheFolderPath;
+            var fs = _services.GetService<IFileSystem>();
+            if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
+                _log?.Log(TraceEventType.Warning, Resources.Error_InvalidCachePath);
+                cacheFolderPath = null;
+            }
+
+            var analyzer = new PythonAnalyzer(_services, cacheFolderPath);
             _services.AddService(analyzer);
 
             _services.AddService(new RunningDocumentTable(_services));
@@ -113,7 +120,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var configuration = new InterpreterConfiguration(null, null,
                 interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
-                moduleCachePath: @params.initializationOptions.interpreter.properties?.DatabasePath,
                 version: version
             ) {
                 // 1) Split on ';' to support older VS Code extension versions which send paths as a single entry separated by ';'. TODO: Eventually remove.
@@ -209,11 +215,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 !newSettings.analysis.warnings.SetEquals(oldSettings.analysis.warnings) ||
                 !newSettings.analysis.information.SetEquals(oldSettings.analysis.information) ||
                 !newSettings.analysis.disabled.SetEquals(oldSettings.analysis.disabled)) {
-                return true;
-            }
-
-            if(newSettings.analysis?.memory?.keepLibraryAst != oldSettings.analysis?.memory?.keepLibraryAst ||
-               newSettings.analysis?.memory?.keepLibraryLocalVariables != oldSettings.analysis?.memory?.keepLibraryLocalVariables) {
                 return true;
             }
 

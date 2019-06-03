@@ -88,9 +88,12 @@ namespace TestUtilities {
         public static string GetTestRelativePath(Uri uri) => TestRunScopeAsyncLocal.Value.GetTestRelativePath(uri);
         public static string GetDefaultModulePath() => TestRunScopeAsyncLocal.Value.GetDefaultModulePath();
         public static string GetNextModulePath() => TestRunScopeAsyncLocal.Value.GetNextModulePath();
-        public static string GetAstAnalysisCachePath(Version version, bool testSpecific = false) 
-            => testSpecific ? TestRunScopeAsyncLocal.Value.GetTestSpecificPath($"AstAnalysisCache{version}") : GetTestOutputRootPath($"AstAnalysisCache{version}");
-        
+
+        public static string GetAstAnalysisCachePath(Version version, bool testSpecific = false, string prefix = null) {
+            var cacheRoot = prefix != null ? $"{prefix}{version}" : $"AstAnalysisCache{version}";
+            return testSpecific ? TestRunScopeAsyncLocal.Value.GetTestSpecificPath(cacheRoot) : GetTestOutputRootPath(cacheRoot);
+        }
+
         public static async Task<Uri> CreateTestSpecificFileAsync(string relativePath, string content) {
             var path = GetTestSpecificPath(relativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(path));
@@ -114,7 +117,7 @@ namespace TestUtilities {
 
         private static string CalculateTestOutputRoot() {
             var path = Environment.GetEnvironmentVariable("_TESTDATA_TEMP_PATH");
-            
+
             if (string.IsNullOrEmpty(path)) {
                 path = Path.Combine(GetRootDir(), "TestResults", DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
             }
