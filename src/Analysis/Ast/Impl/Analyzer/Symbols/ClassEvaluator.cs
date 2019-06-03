@@ -150,9 +150,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Add members from this file
             var members = Eval.CurrentScope.Variables.Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Import);
             _class.AddMembers(members, false);
-            // Add members from stub
-            var stubClass = Eval.Module.Stub?.GetMember<IPythonClassType>(_class.Name);
-            _class.AddMembers(stubClass, false);
         }
 
         // Classes and functions are walked by their respective evaluators

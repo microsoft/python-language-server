@@ -13,16 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Core.Collections;
+using System;
 
-namespace Microsoft.Python.Analysis.Dependencies {
-    internal interface IDependencyChainWalker<TKey, TValue> {
-        ImmutableArray<TKey> MissingKeys { get; }
-        ImmutableArray<TValue> AffectedValues { get; }
-        int Version { get; }
-        int Remaining { get; }
-        Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken);
+namespace Microsoft.Python.Analysis.Analyzer {
+    public sealed class AnalysisCompleteEventArgs : EventArgs {
+        public int ModuleCount { get; }
+        public double MillisecondsElapsed { get; }
+
+        public AnalysisCompleteEventArgs(int moduleCount, double msElapsed) {
+            ModuleCount = moduleCount;
+            MillisecondsElapsed = msElapsed;
+        }
     }
 }

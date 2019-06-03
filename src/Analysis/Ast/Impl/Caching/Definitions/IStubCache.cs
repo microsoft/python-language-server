@@ -13,16 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Core.Collections;
-
-namespace Microsoft.Python.Analysis.Dependencies {
-    internal interface IDependencyChainWalker<TKey, TValue> {
-        ImmutableArray<TKey> MissingKeys { get; }
-        ImmutableArray<TValue> AffectedValues { get; }
-        int Version { get; }
-        int Remaining { get; }
-        Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken);
+namespace Microsoft.Python.Analysis.Caching {
+    public interface IStubCache {
+        string StubCacheFolder { get; }
+        string GetCacheFilePath(string filePath);
+        string ReadCachedModule(string filePath);
+        void WriteCachedModule(string filePath, string code);
     }
 }

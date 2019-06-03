@@ -16,48 +16,36 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 
-namespace Microsoft.Python.Analysis.Modules {
-    internal sealed class ModuleCache : IModuleCache {
-        private readonly IServiceContainer _services;
-        private readonly IPythonInterpreter _interpreter;
+namespace Microsoft.Python.Analysis.Caching {
+    internal sealed class StubCache : IStubCache {
+        private const int _stubCacheFormatVersion = 1;
+
         private readonly IFileSystem _fs;
         private readonly ILogger _log;
-        private readonly bool _skipCache;
-        private bool _loggedBadDbPath;
 
-        private string ModuleCachePath => _interpreter.Configuration.DatabasePath;
-
-        public ModuleCache(IPythonInterpreter interpreter, IServiceContainer services) {
-            _interpreter = interpreter;
-            _services = services;
+        public StubCache(IServiceContainer services, string cacheRootFolder = null) {
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
-            _skipCache = string.IsNullOrEmpty(_interpreter.Configuration.DatabasePath);
+
+            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(services);
+            StubCacheFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
         }
 
-        public string GetCacheFilePath(string filePath) {
-            if (string.IsNullOrEmpty(filePath) || !PathEqualityComparer.IsValidPath(ModuleCachePath)) {
-                if (!_loggedBadDbPath) {
-                    _loggedBadDbPath = true;
-                    _log?.Log(TraceEventType.Warning, $"Invalid module cache path: {ModuleCachePath}");
-                }
-                return null;
-            }
+        public string StubCacheFolder { get; }
 
+        public string GetCacheFilePath(string filePath) {
             var name = PathUtils.GetFileName(filePath);
             if (!PathEqualityComparer.IsValidPath(name)) {
                 _log?.Log(TraceEventType.Warning, $"Invalid cache name: {name}");
                 return null;
             }
             try {
-                var candidate = Path.ChangeExtension(Path.Combine(ModuleCachePath, name), ".pyi");
+                var candidate = Path.ChangeExtension(Path.Combine(StubCacheFolder, name), ".pyi");
                 if (_fs.FileExists(candidate)) {
                     return candidate;
                 }
@@ -65,26 +53,17 @@ namespace Microsoft.Python.Analysis.Modules {
                 return null;
             }
 
-            var hash = SHA256.Create();
             var dir = Path.GetDirectoryName(filePath) ?? string.Empty;
             if (_fs.StringComparison == StringComparison.OrdinalIgnoreCase) {
                 dir = dir.ToLowerInvariant();
             }
 
-            var dirHash = Convert.ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(dir)))
-                .Replace('/', '_').Replace('+', '-');
-
-            return Path.ChangeExtension(Path.Combine(
-                ModuleCachePath,
-                Path.Combine(dirHash, name)
-            ), ".pyi");
+            var dirHash = CacheFolders.FileNameFromContent(dir);
+            var stubFile = Path.Combine(StubCacheFolder, Path.Combine(dirHash, name));
+            return Path.ChangeExtension(stubFile, ".pyi");
         }
 
         public string ReadCachedModule(string filePath) {
-            if (_skipCache) {
-                return string.Empty;
-            }
-
             var cachePath = GetCacheFilePath(filePath);
             if (string.IsNullOrEmpty(cachePath)) {
                 return string.Empty;
@@ -117,18 +96,18 @@ namespace Microsoft.Python.Analysis.Modules {
                 exception = ex;
             }
 
-            var reason = "Unknown";
+            string reason;
             if (!cachedFileExists) {
                 reason = "Cached file does not exist";
             } else if (cachedFileOlderThanAssembly) {
                 reason = "Cached file is older than the assembly.";
             } else if (cachedFileOlderThanSource) {
                 reason = $"Cached file is older than the source {filePath}.";
-            } else if (exception != null) {
+            } else {
                 reason = $"Exception during cache file check {exception.Message}.";
             }
 
-            _log?.Log(TraceEventType.Verbose, $"Invalidate cached module {cachePath}. Reason: {reason}");
+            _log?.Log(TraceEventType.Verbose, $"Invalidated cached module {cachePath}. Reason: {reason}");
             _fs.DeleteFileWithRetries(cachePath);
             return string.Empty;
         }
@@ -136,7 +115,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void WriteCachedModule(string filePath, string code) {
             var cache = GetCacheFilePath(filePath);
             if (!string.IsNullOrEmpty(cache)) {
-                _log?.Log(TraceEventType.Verbose, "Write cached module: ", cache);
+                _log?.Log(TraceEventType.Verbose, "Writing cached module: ", cache);
                 // Don't block analysis on cache writes.
                 CacheWritingTask = Task.Run(() => _fs.WriteTextWithRetry(cache, code));
                 CacheWritingTask.DoNotWait();
