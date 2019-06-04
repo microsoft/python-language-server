@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime;
@@ -22,7 +21,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -147,7 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 if (!isCanceled) {
                     _progress.ReportRemaining(remaining);
-                    if(isFinal) {
+                    if (isFinal) {
                         ActivityTracker.EndTracking();
                         (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(ActivityTracker.ModuleCount, ActivityTracker.MillisecondsElapsed);
                         _log?.Log(TraceEventType.Verbose, $"Analysis complete: {ActivityTracker.ModuleCount} modules in { ActivityTracker.MillisecondsElapsed} ms.");
@@ -172,7 +170,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (logger == null) {
                 return;
             }
-            
+
             if (remaining == 0) {
                 logger.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been completed in {elapsed} ms.");
             } else if (remaining < originalRemaining) {
@@ -337,14 +335,23 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void LogCompleted(IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) 
-            => _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+        private void LogCompleted(IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
+            if (_log != null) {
+                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.");
+            }
+        }
 
-        private void LogCanceled(IPythonModule module) 
-            => _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+        private void LogCanceled(IPythonModule module) {
+            if (_log != null) {
+                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+            }
+        }
 
-        private void LogException(IPythonModule module, Exception exception) 
-            => _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
+        private void LogException(IPythonModule module, Exception exception) {
+            if (_log != null) {
+                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
+            }
+        }
 
         private enum State {
             NotStarted = 0,
