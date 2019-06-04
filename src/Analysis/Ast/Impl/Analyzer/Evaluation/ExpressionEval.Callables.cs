@@ -180,9 +180,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
                 if (!t.IsUnknown()) {
-                    if (t is IGenericType gt) {
-
-                    }
                     return t;
                 }
             }
