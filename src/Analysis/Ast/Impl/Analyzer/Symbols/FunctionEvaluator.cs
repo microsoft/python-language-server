@@ -160,7 +160,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
-                    var paramType = Eval.GetTypeFromAnnotation(p.Annotation, out var isGeneric);
+                    var paramType = Eval.GetTypeFromAnnotation(p.Annotation);
                     if (paramType.IsUnknown() && p.DefaultValue != null) {
                         defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                         // If parameter has default value, look for the annotation locally first
