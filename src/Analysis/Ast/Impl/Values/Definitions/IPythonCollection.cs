@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis.Values {
     /// <summary>
     /// Represents an instance of a sequence.
     /// </summary>
-    public interface IPythonCollection : IPythonInstance {
+    public interface IPythonCollection : IPythonInstance, IPythonIterable {
         /// <summary>
         /// Collection contents
         /// </summary>

@@ -113,8 +113,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
-                var instance = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
-                _overload.SetReturnValue(instance, true);
+                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                // If instance could not be created, such as when return type is List[T] and
+                // type of T is not yet known, just use the type.
+                 var instance = t.IsUnknown() ? annotationType : t;
+                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
             } else {
                 // Check if function is a generator
                 var suite = FunctionDefinition.Body as SuiteStatement;
@@ -162,7 +165,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                         // If parameter has default value, look for the annotation locally first
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
-                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
+                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, LookupOptions.Local | LookupOptions.Builtins);
                         // Default value of None does not mean the parameter is None, just says it can be missing.
                         defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
                         if (paramType == null && defaultValue != null) {
@@ -170,8 +173,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.UnknownType;
-                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric);
+                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation) ?? Eval.UnknownType;
+                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, paramType.IsGeneric());
                     if (declareVariables) {
                         DeclareParameter(p, pi);
                     }
