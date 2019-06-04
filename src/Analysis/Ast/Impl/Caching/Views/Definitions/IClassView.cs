@@ -13,9 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Caching.Definitions {
-    internal interface IVariableData {
-        string Name { get; }
-        string Type { get; }
+using System.Collections.Generic;
+
+namespace Microsoft.Python.Analysis.Caching {
+    internal interface IClassView: IMemberView {
+        IEnumerable<IClassView> Bases { get; }
+        IEnumerable<IFunctionView> Methods { get; }
+        IEnumerable<IPropertyView> Properties { get; }
+        IEnumerable<IVariableView> Fields { get; }
+        IEnumerable<IMemberView> GenericParameters { get; }
     }
 }

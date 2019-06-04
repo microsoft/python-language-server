@@ -13,15 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
+using System;
 
-namespace Microsoft.Python.Analysis.Caching {
-    /// <summary>
-    /// Represents persistent data about member. <seealso cref="IMember"/>
-    /// </summary>
-    internal interface IMemberData {
-        string Name { get; }
-        MemberType MemberType { get; }
+namespace Microsoft.Python.Analysis.Caching.Models {
+    [Serializable]
+    internal sealed class ModuleModel : MemberModel {
+        public string[] Variables { get; set; }
+        public string[] Functions { get; set; }
+        public string[] Classes { get; set; }
     }
 }

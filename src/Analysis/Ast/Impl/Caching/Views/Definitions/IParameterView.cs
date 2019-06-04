@@ -13,10 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class FunctionData: MemberData {
-        public ParameterData[] Parameters { get; set; }
-        public string ReturnType { get; set; }
-        public FunctionAttributes Attributes { get; set; }
+namespace Microsoft.Python.Analysis.Caching {
+    public enum ParameterKind {
+        Normal,
+        List,
+        Dictionary,
+        KeywordOnly
+    }
+
+    internal interface IParameterView {
+        string Name { get; }
+        string Type { get; }
+        string DefaultValue { get; }
+        ParameterKind Kind { get; }
     }
 }

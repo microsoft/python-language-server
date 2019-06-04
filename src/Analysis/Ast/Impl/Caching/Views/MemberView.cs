@@ -13,11 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class ParameterData: IParameterData {
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public string DefaultValue { get; set; }
-        public ParameterKind Kind { get; set; }
+using Microsoft.Python.Analysis.Caching.Models;
+
+namespace Microsoft.Python.Analysis.Caching.Views {
+    internal class MemberView: IMemberView {
+        private readonly MemberModel _model;
+
+        public MemberView(MemberModel model) {
+            _model = model;
+        }
+
+        public string Name => _model.Name;
+        public MemberType MemberType => _model.MemberType;
     }
 }

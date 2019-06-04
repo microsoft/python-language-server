@@ -13,11 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-
-namespace Microsoft.Python.Analysis.Caching {
-    internal interface IFunctionData: IMemberData {
-        IEnumerable<IParameterData> Parameters { get; }
-        IMemberData ReturnType { get; }
+namespace Microsoft.Python.Analysis.Caching.Models {
+    internal sealed class FunctionModel: MemberModel {
+        public ParameterModel[] Parameters { get; set; }
+        public string ReturnType { get; set; }
+        public FunctionAttributes Attributes { get; set; }
     }
 }

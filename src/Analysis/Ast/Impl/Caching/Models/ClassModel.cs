@@ -13,13 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [Serializable]
-    internal sealed class ModuleData : MemberData {
-        public string[] Variables { get; set; }
-        public string[] Functions { get; set; }
-        public string[] Classes { get; set; }
+    internal sealed class ClassModel: MemberModel {
+        public string[] Bases { get; set; }
+        public string[] Methods { get; set; }
+        public string[] Properties { get; set; }
+        public string[] Fields { get; set; }
+        public string[] GenericParameters { get; set; }
     }
 }

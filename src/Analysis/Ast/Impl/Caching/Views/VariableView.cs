@@ -13,13 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Caching.Models {
-    /// <summary>
-    /// Represents persistent data about member.
-    /// </summary>
-    internal abstract class MemberData {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public MemberType MemberType { get; set; }
+using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Types;
+
+namespace Microsoft.Python.Analysis.Caching.Views {
+    internal sealed class VariableView : IVariableView {
+        private readonly VariableModel _model;
+
+        public VariableView(VariableModel model) {
+            _model = model;
+        }
+
+        public IMember Type { get; }
+        public string Name => _model.Name;
+        public MemberType MemberType => MemberType.Variable;
     }
 }

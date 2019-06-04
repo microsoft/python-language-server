@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+
 namespace Microsoft.Python.Analysis.Caching {
-    internal interface IPropertyData: IMemberData {
-        IMemberData ReturnType { get; }
+    internal interface ITypeVarView : IMemberView {
+        IEnumerable<IMemberView> Constraints { get; }
     }
 }

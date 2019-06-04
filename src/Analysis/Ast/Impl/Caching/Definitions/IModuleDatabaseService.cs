@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <param name="uniqueId">Module unique id.</param>
         /// <param name="module">Python module.</param>
         /// <returns>Module storage state</returns>
-        ModuleStorageState TryGetModuleData(string uniqueId, out IMemberData module);
+        ModuleStorageState TryGetModuleData(string uniqueId, out IModuleView module);
 
         /// <summary>
         /// Writes module data to the database.
