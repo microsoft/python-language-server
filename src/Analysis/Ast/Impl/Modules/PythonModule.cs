@@ -153,8 +153,18 @@ namespace Microsoft.Python.Analysis.Modules {
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
             return Analysis.GlobalScope.Variables
-                .Where(v => !(v.Value?.GetPythonType() is PythonModule)
-                            && !(v.Value?.GetPythonType().DeclaringModule is TypingModule && !(this is TypingModule)))
+                .Where(v => {
+                    // Instances are always fine.
+                    if (v.Value is IPythonInstance) {
+                        return true;
+                    }
+                    var valueType = v.Value?.GetPythonType();
+                    if (valueType is PythonModule) {
+                        return false; // Do not re-export modules.
+                    }
+                    // Do not re-export types from typing
+                    return !(valueType?.DeclaringModule is TypingModule) || this is TypingModule;
+                })
                 .Select(v => v.Name);
         }
         #endregion

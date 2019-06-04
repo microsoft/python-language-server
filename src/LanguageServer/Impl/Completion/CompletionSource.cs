@@ -16,6 +16,7 @@
 using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -88,7 +89,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                             return CompletionResult.Empty;
                         }
                         return result == CompletionResult.Empty ? TopLevelCompletion.GetCompletions(statement, scope, context) : result;
-                }
+                    }
             }
         }
     }

@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private PythonAnalyzerSession _currentSession;
         private PythonAnalyzerSession _nextSession;
 
-        public PythonAnalyzer(IServiceManager services) {
+        public PythonAnalyzer(IServiceManager services, string cacheFolderPath = null) {
             _services = services;
             _log = services.GetService<ILogger>();
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
@@ -56,6 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _startNextSession = StartNextSession;
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
+            _services.AddService(new StubCache(_services, cacheFolderPath));
         }
 
         public void Dispose() {
@@ -192,11 +194,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public IReadOnlyList<IPythonModule> LoadedModules 
-            => _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
+        public IReadOnlyList<IPythonModule> LoadedModules {
+            get {
+                lock (_syncObj) {
+                    return _analysisEntries.Values.ExcludeDefault().Select(v => v.Module).ExcludeDefault().ToArray();
+                }
+            }
+        }
+
+        public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
+
+        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) 
+            => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
 
         private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies) {
             _analysisCompleteEvent.Reset();
+            ActivityTracker.StartTracking();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserModule, dependencies);

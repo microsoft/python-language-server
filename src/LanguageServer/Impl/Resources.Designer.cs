@@ -88,6 +88,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Specified cache folder does not exist. Switching to default..
+        /// </summary>
+        internal static string Error_InvalidCachePath {
+            get {
+                return ResourceManager.GetString("Error_InvalidCachePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Initializing for generic interpreter.
         /// </summary>
         internal static string InitializingForGenericInterpreter {

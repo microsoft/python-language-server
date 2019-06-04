@@ -25,26 +25,10 @@ namespace Microsoft.Python.LanguageServer {
             public int symbolsHierarchyDepthLimit = 10;
             public int symbolsHierarchyMaxSymbols = 1000;
 
-            public string[] errors { get; private set; } = Array.Empty<string>();
-            public string[] warnings { get; private set; } = Array.Empty<string>();
-            public string[] information { get; private set; } = Array.Empty<string>();
-            public string[] disabled { get; private set; } = Array.Empty<string>();
-
-            public class AnalysisMemoryOptions {
-                /// <summary>
-                /// Keep in memory information on local variables declared in
-                /// functions in libraries. Provides ability to navigate to
-                /// symbols used in function bodies in packages and libraries.
-                /// </summary>
-                public bool keepLibraryLocalVariables;
-
-                /// <summary>
-                /// Keep in memory AST of library source code. May somewhat
-                /// improve performance when library code has to be re-analyzed.
-                /// </summary>
-                public bool keepLibraryAst;
-            }
-            public AnalysisMemoryOptions memory;
+            public string[] errors { get; } = Array.Empty<string>();
+            public string[] warnings { get; } = Array.Empty<string>();
+            public string[] information { get; } = Array.Empty<string>();
+            public string[] disabled { get; } = Array.Empty<string>();
         }
         public readonly PythonAnalysisOptions analysis = new PythonAnalysisOptions();
 
