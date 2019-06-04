@@ -1152,6 +1152,28 @@ a";
         }
 
         [TestMethod, Priority(0)]
+        public async Task PrivateMembers() {
+            const string code = @"
+class A:
+    def __init__(self):
+        self.__x = 123
+
+    def func(self):
+        self.
+
+A().
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(7, 14));
+            result.Completions.Select(c => c.label).Should().Contain("__x").And.NotContain("_A__x");
+
+            result = cs.GetCompletions(analysis, new SourceLocation(9, 5));
+            result.Completions.Select(c => c.label).Should().NotContain("_A__x").And.NotContain("__x");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ParameterAnnotatedDefault() {
             const string code = @"
 from typing import Any

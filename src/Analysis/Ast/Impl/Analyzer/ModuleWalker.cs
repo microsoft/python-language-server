@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
@@ -239,6 +240,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var sourceVar = Eval.GlobalScope.Variables[v.Name];
                 var sourceType = sourceVar?.Value.GetPythonType();
+                
+                // If stub says 'Any' but we have better type, keep the current type.
+                if (!IsStubBetterType(sourceType, stubType)) {
+                    continue;;
+                }
 
                 // If types are the classes, merge members.
                 // Otherwise, replace type from one from the stub.
@@ -250,9 +256,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var stubMember = stubType.GetMember(name);
                         var member = cls.GetMember(name);
 
+                        var memberType = member?.GetPythonType();
+                        var stubMemberType = stubMember.GetPythonType();
+                        if (!IsStubBetterType(memberType, stubMemberType)) {
+                            continue; ;
+                        }
+
                         // Get documentation from the current type, if any, since stubs
                         // typically do not contain documentation while scraped code does.
-                        member?.GetPythonType()?.TransferDocumentationAndLocation(stubMember.GetPythonType());
+                        memberType?.TransferDocumentationAndLocation(stubMemberType);
                         cls.AddMember(name, stubMember, overwrite: true);
                     }
                 } else {
@@ -268,5 +280,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
         }
+
+        private static bool IsStubBetterType(IPythonType sourceType, IPythonType stubType)
+            // If stub says 'Any' but we have better type, keep the current type.
+            => sourceType.IsUnknown() || !(stubType.DeclaringModule is TypingModule) || stubType.Name != "Any";
     }
 }
