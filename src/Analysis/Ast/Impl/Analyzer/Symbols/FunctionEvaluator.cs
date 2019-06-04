@@ -51,35 +51,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                        || Module.ModuleType == ModuleType.Specialized;
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
-                // Process annotations.
-                var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-                if (!annotationType.IsUnknown()) {
-                    // Annotations are typically types while actually functions return
-                    // instances unless specifically annotated to a type such as Type[T].
-                    var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
-                    // If instance could not be create, such as when return type is List[T] and 
-                    // type of T is not yet known, just use the type.
-                    var instance = t.IsUnknown() ? annotationType : t;
-                    _overload.SetReturnValue(instance, true);
-                } else {
-                    // Check if function is a generator
-                    var suite = FunctionDefinition.Body as SuiteStatement;
-                    var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                    if (yieldExpr != null) {
-                        // Function return is an iterator
-                        var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                        var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                        _overload.SetReturnValue(returnValue, true);
-                    }
-                }
-
+                var returnType = TryDetermineReturnValue();
                 DeclareParameters(!stub);
 
                 // Do process body of constructors since they may be declaring
                 // variables that are later used to determine return type of other
                 // methods and properties.
                 var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
-                if (ctor || annotationType.IsUnknown() || Module.ModuleType == ModuleType.User) {
+                if (ctor || returnType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
                     // For libraries remove declared local function variables to free up some memory.
@@ -129,6 +108,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return false;
         }
 
+        private IPythonType TryDetermineReturnValue() {
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            if (!annotationType.IsUnknown()) {
+                // Annotations are typically types while actually functions return
+                // instances unless specifically annotated to a type such as Type[T].
+                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                // If instance could not be created, such as when return type is List[T] and
+                // type of T is not yet known, just use the type.
+                 var instance = t.IsUnknown() ? annotationType : t;
+                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
+            } else {
+                // Check if function is a generator
+                var suite = FunctionDefinition.Body as SuiteStatement;
+                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                if (yieldExpr != null) {
+                    // Function return is an iterator
+                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                    _overload.SetReturnValue(returnValue, true);
+                }
+            }
+            return annotationType;
+        }
+
         private void DeclareParameters(bool declareVariables) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
@@ -157,8 +160,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
-                    IPythonType paramType = null;
-                    if (p.DefaultValue != null) {
+                    var paramType = Eval.GetTypeFromAnnotation(p.Annotation);
+                    if (paramType.IsUnknown() && p.DefaultValue != null) {
                         defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                         // If parameter has default value, look for the annotation locally first
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...

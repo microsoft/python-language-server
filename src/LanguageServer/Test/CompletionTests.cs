@@ -1172,5 +1172,27 @@ A().
             result = cs.GetCompletions(analysis, new SourceLocation(9, 5));
             result.Completions.Select(c => c.label).Should().NotContain("_A__x").And.NotContain("__x");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ParameterAnnotatedDefault() {
+            const string code = @"
+from typing import Any
+
+class Foo:
+    z: int
+    def __init__(self, name: str):
+        self.name = name
+
+def func() -> Any:
+    return 123
+
+def test(x: Foo = func()):
+    x.
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(13, 7));
+            comps.Should().HaveLabels("name", "z");
+        }
     }
 }
