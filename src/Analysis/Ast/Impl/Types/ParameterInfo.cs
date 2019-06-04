@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -26,7 +25,7 @@ namespace Microsoft.Python.Analysis.Types {
             if (DefaultValueString == "...") {
                 DefaultValueString = null;
             }
-            IsGeneric = isGeneric;
+            IsGeneric = isGeneric || type.IsGeneric();
         }
 
         public ParameterInfo(string name, IPythonType type, ParameterKind? kind, IMember defaultValue) {
@@ -36,6 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
             Type = type;
             IsParamArray = kind == ParameterKind.List;
             IsKeywordDict = kind == ParameterKind.Dictionary;
+            IsGeneric = Type.IsGeneric();
         }
 
         public string Name { get; }
