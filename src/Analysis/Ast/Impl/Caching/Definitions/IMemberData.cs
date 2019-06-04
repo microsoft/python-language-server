@@ -13,24 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal interface IModuleDatabaseService {
-        /// <summary>
-        /// Retrieves module representation from module index database
-        /// or null if module does not exist. 
-        /// </summary>
-        /// <param name="uniqueId">Module unique id.</param>
-        /// <param name="module">Python module.</param>
-        /// <returns>Module storage state</returns>
-        ModuleStorageState TryGetModule(string uniqueId, out IPythonModule module);
-
-        /// <summary>
-        /// Writes module data to the database.
-        /// </summary>
-        /// <param name="uniqueId">Module unique id.</param>
-        /// <param name="analysis">Module analysis.</param>
-        void StoreModule(string uniqueId, IDocumentAnalysis analysis);
+    /// <summary>
+    /// Represents persistent data about member. <seealso cref="IMember"/>
+    /// </summary>
+    internal interface IMemberData {
+        string Name { get; }
+        MemberType MemberType { get; }
     }
 }
