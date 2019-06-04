@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Collections;
@@ -179,6 +180,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
                 if (!t.IsUnknown()) {
+                    if (t is IGenericType gt) {
+
+                    }
                     return t;
                 }
             }

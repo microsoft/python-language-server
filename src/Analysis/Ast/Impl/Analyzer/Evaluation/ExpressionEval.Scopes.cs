@@ -117,11 +117,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins)
-            => GetTypeFromAnnotation(expr, out _, options);
-
-        public IPythonType GetTypeFromAnnotation(Expression expr, out bool isGeneric, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
-            isGeneric = false;
+        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
             switch (expr) {
                 case null:
                     return null;
@@ -133,7 +129,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     var target = GetValueFromExpression(indexExpr.Target);
                     var result = GetValueFromGeneric(target, indexExpr);
                     if (result != null) {
-                        isGeneric = true;
                         return result.GetPythonType();
                     }
                     break;
