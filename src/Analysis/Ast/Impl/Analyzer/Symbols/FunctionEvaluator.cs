@@ -52,7 +52,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 var returnType = TryDetermineReturnValue();
-                DeclareParameters(!stub);
+
+                var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub);
+                _overload.SetParameters(parameters);
 
                 // Do process body of constructors since they may be declaring
                 // variables that are later used to determine return type of other
@@ -69,6 +71,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
             Result = _function;
+        }
+
+        private IPythonType TryDetermineReturnValue() {
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            if (!annotationType.IsUnknown()) {
+                // Annotations are typically types while actually functions return
+                // instances unless specifically annotated to a type such as Type[T].
+                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                // If instance could not be created, such as when return type is List[T] and
+                // type of T is not yet known, just use the type.
+                var instance = t.IsUnknown() ? annotationType : t;
+                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
+            } else {
+                // Check if function is a generator
+                var suite = FunctionDefinition.Body as SuiteStatement;
+                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                if (yieldExpr != null) {
+                    // Function return is an iterator
+                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                    _overload.SetReturnValue(returnValue, true);
+                }
+            }
+            return annotationType;
         }
 
         public override bool Walk(AssignmentStatement node) {
