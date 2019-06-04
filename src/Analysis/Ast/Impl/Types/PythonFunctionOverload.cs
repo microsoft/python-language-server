@@ -163,7 +163,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return gt.CreateSpecificType(typeArgs);
             }
 
-            return null;
+            return returnType;
         }
 
         private IMember CreateSpecificReturnFromClassType(IPythonClassType selfClassType, PythonClassType returnClassType, IArgumentSet args) {

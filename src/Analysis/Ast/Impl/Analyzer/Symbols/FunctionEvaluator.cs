@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // If instance could not be created, such as when return type is List[T] and
                 // type of T is not yet known, just use the type.
                  var instance = t.IsUnknown() ? annotationType : t;
-                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
+                _overload.SetReturnValue(instance, true);
             } else {
                 // Check if function is a generator
                 var suite = FunctionDefinition.Body as SuiteStatement;

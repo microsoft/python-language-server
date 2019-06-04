@@ -119,7 +119,7 @@ def f(s: s = 123):
             analysis.Should().HaveFunction("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()
-                .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.Int);
+                .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.NoneType);
         }
 
         [TestMethod, Priority(0)]
