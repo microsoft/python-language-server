@@ -642,39 +642,5 @@ x = v.get()
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
         }
-
-        [TestMethod, Priority(0)]
-        public async Task PropagateArgTypeToReturn() {
-            const string code = @"
-from typing import TypeVar
-
-T = TypeVar('T')
-cache = {}
-
-def convert(value: T) -> T:
-    return cache[value]
-
-x = convert(15)
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task PropagateArgTypeToReturnList() {
-            const string code = @"
-from typing import TypeVar, List
-
-T = TypeVar('T')
-cache = {}
-
-def convert(value: T) -> List[T]:
-    return cache[value]
-
-x = convert(15)
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("x").OfType("List[int]");
-        }
     }
 }

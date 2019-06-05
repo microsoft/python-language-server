@@ -158,6 +158,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Declare parameters in scope
             IMember defaultValue = null;
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
+                var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
                     var paramType = Eval.GetTypeFromAnnotation(p.Annotation);
@@ -165,7 +166,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                         // If parameter has default value, look for the annotation locally first
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
-                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, LookupOptions.Local | LookupOptions.Builtins);
+                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
                         // Default value of None does not mean the parameter is None, just says it can be missing.
                         defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
                         if (paramType == null && defaultValue != null) {
@@ -173,8 +174,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         }
                     }
                     // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation) ?? Eval.UnknownType;
-                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, paramType.IsGeneric());
+                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric) ?? Eval.UnknownType;
+                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric);
                     if (declareVariables) {
                         DeclareParameter(p, pi);
                     }

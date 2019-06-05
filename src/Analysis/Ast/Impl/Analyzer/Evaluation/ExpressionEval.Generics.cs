@@ -196,9 +196,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         specificTypes.Add(itemType);
                     }
                     break;
-                case IPythonInstance inst:
-                    specificTypes.Add(inst.GetPythonType());
-                    break;
                 case IMember m:
                     if (!m.IsUnknown()) {
                         specificTypes.Add(m.GetPythonType());

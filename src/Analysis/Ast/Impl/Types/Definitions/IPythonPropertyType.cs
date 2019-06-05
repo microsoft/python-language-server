@@ -34,10 +34,5 @@ namespace Microsoft.Python.Analysis.Types {
         /// True if the property is read-only.
         /// </summary>
         bool IsReadOnly { get; }
-
-        /// <summary>
-        /// Property return type.
-        /// </summary>
-        IPythonType Type { get; }
     }
 }
