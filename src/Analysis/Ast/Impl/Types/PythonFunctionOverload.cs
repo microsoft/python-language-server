@@ -147,8 +147,8 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         private IMember GetSpecificReturnType(IPythonClassType selfClassType, IArgumentSet args) {
-            var returnType = StaticReturnValue.GetPythonType();
-            switch (returnType) {
+            var returnValueType = StaticReturnValue.GetPythonType();
+            switch (returnValueType) {
                 case PythonClassType cls when cls.IsGeneric():
                     return CreateSpecificReturnFromClassType(selfClassType, cls, args); // -> A[_T1, _T2, ...]
 
@@ -163,7 +163,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return gt.CreateSpecificType(typeArgs);
             }
 
-            return returnType;
+            return StaticReturnValue;
         }
 
         private IMember CreateSpecificReturnFromClassType(IPythonClassType selfClassType, PythonClassType returnClassType, IArgumentSet args) {
