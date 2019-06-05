@@ -70,7 +70,6 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             var cachedFileExists = false;
-            var cachedFileOlderThanAssembly = false;
             var cachedFileOlderThanSource = false;
             Exception exception = null;
 
@@ -84,12 +83,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
                     cachedFileOlderThanSource = cacheTime < sourceTime;
                     if (!cachedFileOlderThanSource) {
-                        var assemblyTime = _fs.GetLastWriteTimeUtc(GetType().Assembly.Location);
-                        if (assemblyTime > cacheTime) {
-                            cachedFileOlderThanAssembly = true;
-                        } else {
-                            return _fs.ReadTextWithRetry(cachePath);
-                        }
+                        return _fs.ReadTextWithRetry(cachePath);
                     }
                 }
             } catch (Exception ex) when (!ex.IsCriticalException()) {
@@ -99,8 +93,6 @@ namespace Microsoft.Python.Analysis.Caching {
             string reason;
             if (!cachedFileExists) {
                 reason = "Cached file does not exist";
-            } else if (cachedFileOlderThanAssembly) {
-                reason = "Cached file is older than the assembly.";
             } else if (cachedFileOlderThanSource) {
                 reason = $"Cached file is older than the source {filePath}.";
             } else {
