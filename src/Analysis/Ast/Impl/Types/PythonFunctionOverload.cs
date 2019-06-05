@@ -64,9 +64,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region ILocatedMember
-
         public override PythonMemberType MemberType => PythonMemberType.Function;
-
         #endregion
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
@@ -78,12 +76,10 @@ namespace Microsoft.Python.Analysis.Types {
             if (value.IsUnknown()) {
                 return; // Don't add useless values.
             }
-
             if (StaticReturnValue.IsUnknown()) {
                 SetReturnValue(value, false);
                 return;
             }
-
             // If return value is set from annotation, it should not be changing.
             var currentType = StaticReturnValue.GetPythonType();
             var valueType = value.GetPythonType();
@@ -103,7 +99,6 @@ namespace Microsoft.Python.Analysis.Types {
             => _returnValueProvider = provider;
 
         #region IPythonFunctionOverload
-
         public FunctionDefinition FunctionDefinition { get; }
         public IPythonClassMember ClassMember { get; }
         public string Name { get; }
@@ -114,19 +109,44 @@ namespace Microsoft.Python.Analysis.Types {
                 if (string.IsNullOrEmpty(s)) {
                     s = FunctionDefinition.GetDocumentation();
                 }
-
                 return s ?? string.Empty;
             }
         }
 
         public string GetReturnDocumentation(IPythonType self = null) {
-            if (self != null) {
-                var returnType = GetSpecificReturnType(self as IPythonClassType, null);
-                if (!returnType.IsUnknown()) {
-                    return returnType.GetPythonType().Name;
-                }
+            if (self == null) {
+                return _returnDocumentation;
             }
-
+            var returnType = StaticReturnValue.GetPythonType();
+            switch (returnType) {
+                case PythonClassType cls when cls.IsGeneric(): {
+                        // -> A[_T1, _T2, ...]
+                        // Match arguments 
+                        var typeArgs = cls.GenericParameters.Keys
+                            .Select(n => cls.GenericParameters.TryGetValue(n, out var t) ? t : null)
+                            .ExcludeDefault()
+                            .ToArray();
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs));
+                        return specificReturnValue.Name;
+                    }
+                case IGenericTypeDefinition gtp1 when self is IPythonClassType cls: {
+                        // -> _T
+                        if (cls.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
+                            return specificType.Name;
+                        }
+                        // Try returning the constraint
+                        // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
+                        var name = StaticReturnValue.GetPythonType()?.Name;
+                        var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
+                        if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
+                            var t = gtp2.Constraints.FirstOrDefault();
+                            if (t != null) {
+                                return t.Name;
+                            }
+                        }
+                        break;
+                    }
+            }
             return _returnDocumentation;
         }
 
@@ -183,31 +203,33 @@ namespace Microsoft.Python.Analysis.Types {
                 typeArgs = ExpressionEval.GetTypeArgumentsFromParameters(this, args);
             }
 
-            if (typeArgs != null) {
-                var specificReturnValue = returnClassType.CreateSpecificType(new ArgumentSet(typeArgs));
-                return new PythonInstance(specificReturnValue);
-            }
+                    if (typeArgs != null) {
+                        var specificReturnValue = cls.CreateSpecificType(new ArgumentSet(typeArgs));
+                        return new PythonInstance(specificReturnValue);
+                    }
+                    break;
 
-            return null;
+                case IGenericTypeDefinition gtp1: {
+                        // -> _T
+                        if (selfClassType.GenericParameters.TryGetValue(gtp1.Name, out var specificType)) {
+                            return new PythonInstance(specificType);
+                        }
+                        // Try returning the constraint
+                        // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
+                        var name = StaticReturnValue.GetPythonType()?.Name;
+                        var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
+                        if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
+                            // See if the instance (self) type satisfies one of the constraints.
+                            return selfClassType.Mro.Any(b => gtp2.Constraints.Any(c => c.Equals(b)))
+                                ? selfClassType
+                                : gtp2.Constraints.FirstOrDefault();
+                        }
+
+                        break;
+                    }
+            }
+            return StaticReturnValue;
         }
-
-        private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IGenericTypeDefinition returnType) {
-            if (selfClassType.GenericParameters.TryGetValue(returnType.Name, out var specificType)) {
-                return new PythonInstance(specificType);
-            }
-
-            // Try returning the constraint
-            // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
-            var name = StaticReturnValue.GetPythonType()?.Name;
-            var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
-            if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
-                // See if the instance (self) type satisfies one of the constraints.
-                return selfClassType.Mro.Any(b => gtp2.Constraints.Any(c => c.Equals(b)))
-                    ? selfClassType
-                    : gtp2.Constraints.FirstOrDefault();
-            }
-
-            return null;
-        }
+        #endregion
     }
 }
