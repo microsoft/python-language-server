@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using LiteDB;
 using Microsoft.Python.Analysis.Analyzer;
@@ -46,27 +47,85 @@ namespace Microsoft.Python.Analysis.Caching {
         private void WriteModule(LiteDatabase db, string moduleId, IDocumentAnalysis analysis) {
             var variables = new List<VariableModel>();
             var functions = new List<FunctionModel>();
+            var classes = new List<ClassModel>();
+
             foreach (var v in analysis.GlobalScope.Variables) {
                 var t = v.Value.GetPythonType();
                 // If variable is declaration and has location, then it is a user-defined variable.
                 if(v.Source == VariableSource.Declaration && v.Location.IsValid) {
-                    var vm = new VariableModel {
+                    variables.Add(new VariableModel {
                         Name = v.Name,
                         Type = !t.IsUnknown() ? GetTypeQualifiedName(t) : string.Empty
-                    };
-                    variables.Add(vm);
+                    });
                 }
 
                 if(v.Source == VariableSource.Declaration && !v.Location.IsValid) {
-                    // Typically class or a function
-                    if(t is IPythonFunctionType ft) {
+                    switch (t) {
+                        // Typically class or a function
+                        case IPythonFunctionType ft: {
+                            functions.Add(new FunctionModel {
+                                Name = ft.Name,
+                            });
+                            break;
+                        }
 
+                        case IPythonClassType cls: {
+                            classes.Add(new ClassModel {
+                                Name = cls.Name,
+                            });
+                            break;
+                        }
                     }
                 }
             }
 
             var variableCollection = db.GetCollection<VariableModel>(GetVariableCollectionName(moduleId));
             variableCollection.Update(variables);
+
+            var functionCollection = db.GetCollection<FunctionModel>(GetFunctionsCollectionName(moduleId));
+            functionCollection.Update(functions);
+
+            var classesCollection = db.GetCollection<ClassModel>(GetClassesCollectionName(moduleId));
+            classesCollection.Update(classes);
+        }
+
+        private FunctionModel GetFunctionModel(IPythonFunctionType ft) {
+            return new FunctionModel {
+                Name = ft.Name,
+                Overloads = ft.Overloads.Select(GetOverloadModel).ToArray()
+                // TODO: attributes
+            };
+        }
+
+        private OverloadModel GetOverloadModel(IPythonFunctionOverload o) {
+            return new OverloadModel {
+                Parameters = o.Parameters.Select(p => new ParameterModel {
+                    Name = p.Name,
+                    Type = GetTypeQualifiedName(p.Type),
+                    Kind = GetParameterKind(p.Kind),
+                    DefaultValue = GetTypeQualifiedName(p.DefaultValue),
+                }).ToArray(),
+                ReturnType = GetTypeQualifiedName(o.StaticReturnValue)
+            };
+        }
+
+        private ClassModel GetClassModel(IPythonClassType cls) {
+            return new ClassModel {
+                Name = cls.Name,
+                Bases = cls.Bases.OfType<IPythonClassType>().Select(GetTypeQualifiedName).ToArray(),
+            };
+        }
+
+        private static ParameterKind GetParameterKind(Parsing.Ast.ParameterKind p) {
+            switch(p) {
+                case Parsing.Ast.ParameterKind.KeywordOnly:
+                    return ParameterKind.KeywordOnly;
+                case Parsing.Ast.ParameterKind.List:
+                    return ParameterKind.List;
+                case Parsing.Ast.ParameterKind.Dictionary:
+                    return ParameterKind.Dictionary;
+            }
+            return ParameterKind.Normal;
         }
 
         private string GetVariableCollectionName(string moduleId) => $"{moduleId}.variables";

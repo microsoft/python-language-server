@@ -14,8 +14,8 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class FunctionModel: MemberModel {
-        public OverloadModel[] Overloads { get; set; }
-        public FunctionAttributes Attributes { get; set; }
+    internal sealed class OverloadModel {
+        public ParameterModel[] Parameters { get; set; }
+        public string ReturnType { get; set; }
     }
 }
