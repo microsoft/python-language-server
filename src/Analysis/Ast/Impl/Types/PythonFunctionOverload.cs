@@ -142,8 +142,10 @@ namespace Microsoft.Python.Analysis.Types {
 
                 case IGenericType gt when args != null: // -> CLASS[T] on standalone function (i.e. -> List[T]).
                     var typeArgs = ExpressionEval.GetTypeArgumentsFromParameters(this, args);
-                    Debug.Assert(typeArgs != null);
-                    return gt.CreateSpecificType(typeArgs);
+                    if (typeArgs != null) {
+                        return gt.CreateSpecificType(typeArgs);
+                    }
+                    break;
             }
 
             return StaticReturnValue;
