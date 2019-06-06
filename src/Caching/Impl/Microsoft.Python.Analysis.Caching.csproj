@@ -1,0 +1,33 @@
+﻿<Project>
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Microsoft.Python.Analysis.Caching</RootNamespace>
+    <AssemblyName>Microsoft.Python.Analysis.Caching</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!--
+      1701, 1702 - "You may need to supply assembly policy"
+    -->
+    <NoWarn>1701;1702;$(NoWarn)</NoWarn>
+    <LangVersion>7.2</LangVersion>
+  </PropertyGroup>
+  <Import Project="..\..\..\build\NetStandard.settings" />
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <ItemGroup>
+    <PackageReference Include="LiteDB" Version="4.1.4" />
+    <PackageReference Include="MicroBuild.Core" Version="0.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Analysis\Ast\Impl\Microsoft.Python.Analysis.csproj" />
+    <ProjectReference Include="..\..\Analysis\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
+    <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="..\..\..\build\NetStandard.targets" />
+</Project>
