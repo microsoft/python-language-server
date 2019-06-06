@@ -16,7 +16,7 @@
 using Microsoft.Python.Analysis.Caching.Models;
 
 namespace Microsoft.Python.Analysis.Caching.Views {
-    internal class MemberView: IMemberView {
+    internal class MemberView : IMemberView {
         private readonly MemberModel _model;
 
         public MemberView(MemberModel model) {
@@ -24,6 +24,21 @@ namespace Microsoft.Python.Analysis.Caching.Views {
         }
 
         public string Name => _model.Name;
-        public MemberType MemberType => _model.MemberType;
+
+        public MemberType MemberType {
+            get {
+                switch(_model) {
+                    case VariableModel _:
+                        return MemberType.Variable;
+                    case ClassModel _:
+                        return MemberType.Class;
+                    case FunctionModel _:
+                        return MemberType.Function;
+                    case PropertyModel _:
+                        return MemberType.Property;
+                }
+                return MemberType.Unknown;
+            }
+        }
     }
 }

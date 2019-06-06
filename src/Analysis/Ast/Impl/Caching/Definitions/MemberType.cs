@@ -18,7 +18,7 @@ namespace Microsoft.Python.Analysis.Caching {
     /// Defines what type of object the member represents.
     /// </summary>
     internal enum MemberType {
-        Module,
+        Unknown,
         Class,
         Function,
         Property,

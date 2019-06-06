@@ -16,7 +16,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using LiteDB;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
@@ -39,8 +38,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             var cfs = _services.GetService<ICacheFolderService>();
             using (var db = new LiteDatabase(Path.Combine(cfs.CacheFolder, "Analysis.db"))) {
-                var modules = db.GetCollection<ModuleModel>("modules");
-                var md = 
+                WriteModule(db, moduleId, analysis);
             }
         }
 
@@ -55,7 +53,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 if(v.Source == VariableSource.Declaration && v.Location.IsValid) {
                     variables.Add(new VariableModel {
                         Name = v.Name,
-                        Type = !t.IsUnknown() ? GetTypeQualifiedName(t) : string.Empty
+                        Type = GetQualifiedName(v.Value)
                     });
                 }
 
@@ -101,18 +99,18 @@ namespace Microsoft.Python.Analysis.Caching {
             return new OverloadModel {
                 Parameters = o.Parameters.Select(p => new ParameterModel {
                     Name = p.Name,
-                    Type = GetTypeQualifiedName(p.Type),
+                    Type = GetQualifiedName(p.Type),
                     Kind = GetParameterKind(p.Kind),
-                    DefaultValue = GetTypeQualifiedName(p.DefaultValue),
+                    DefaultValue = GetQualifiedName(p.DefaultValue),
                 }).ToArray(),
-                ReturnType = GetTypeQualifiedName(o.StaticReturnValue)
+                ReturnType = GetQualifiedName(o.StaticReturnValue)
             };
         }
 
         private ClassModel GetClassModel(IPythonClassType cls) {
             return new ClassModel {
                 Name = cls.Name,
-                Bases = cls.Bases.OfType<IPythonClassType>().Select(GetTypeQualifiedName).ToArray(),
+                Bases = cls.Bases.OfType<IPythonClassType>().Select(GetQualifiedName).ToArray(),
             };
         }
 
@@ -136,9 +134,16 @@ namespace Microsoft.Python.Analysis.Caching {
         // TODO: fix per https://github.com/microsoft/python-language-server/issues/1177
         private string GetModuleUniqueId(IPythonModule module) => module.Name;
 
-        private string GetTypeQualifiedName(IPythonType t) {
+        private string GetQualifiedName(IMember m) {
+            var t = m.GetPythonType();
+            if(t.IsUnknown()) {
+                return string.Empty;
+            }
+
             var moduleId = GetModuleUniqueId(t.DeclaringModule);
-            switch (t) {
+            switch (m) {
+                case IPythonInstance _:
+                    return $"i:{GetQualifiedName(t)}";
                 case IPythonClassMember cm when cm.DeclaringType != null:
                     return $"{moduleId}.{GetClassMemberQualifiedName(cm)}";
                 default:
