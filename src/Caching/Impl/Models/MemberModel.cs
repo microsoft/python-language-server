@@ -18,8 +18,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     /// Represents persistent data about member.
     /// </summary>
     internal abstract class MemberModel {
-        public string Id { get; set; }
         public string Name { get; set; }
-        public MemberType MemberType { get; set; }
     }
 }

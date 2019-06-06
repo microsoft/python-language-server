@@ -18,8 +18,9 @@ using System;
 namespace Microsoft.Python.Analysis.Caching.Models {
     [Serializable]
     internal sealed class ModuleModel : MemberModel {
-        public string[] Variables { get; set; }
-        public string[] Functions { get; set; }
-        public string[] Classes { get; set; }
+        public VariableModel[] Variables { get; set; }
+        public FunctionModel[] Functions { get; set; }
+        public ClassModel[] Classes { get; set; }
+        public TypeVarModel[] TypeVars { get; set; }
     }
 }

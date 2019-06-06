@@ -13,10 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices.ComTypes;
 using LiteDB;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching {
@@ -39,11 +43,58 @@ namespace Microsoft.Python.Analysis.Caching {
             }
         }
 
-        private void WriteModule(IDocumentAnalysis analysis) {
-            foreach(var v in analysis.GlobalScope.Variables.Where) {
-                var t = v.Value.GetType();
-                switch(Values.t)
+        private void WriteModule(LiteDatabase db, string moduleId, IDocumentAnalysis analysis) {
+            var variables = new List<VariableModel>();
+            var functions = new List<FunctionModel>();
+            foreach (var v in analysis.GlobalScope.Variables) {
+                var t = v.Value.GetPythonType();
+                // If variable is declaration and has location, then it is a user-defined variable.
+                if(v.Source == VariableSource.Declaration && v.Location.IsValid) {
+                    var vm = new VariableModel {
+                        Name = v.Name,
+                        Type = !t.IsUnknown() ? GetTypeQualifiedName(t) : string.Empty
+                    };
+                    variables.Add(vm);
+                }
+
+                if(v.Source == VariableSource.Declaration && !v.Location.IsValid) {
+                    // Typically class or a function
+                    if(t is IPythonFunctionType ft) {
+
+                    }
+                }
             }
+
+            var variableCollection = db.GetCollection<VariableModel>(GetVariableCollectionName(moduleId));
+            variableCollection.Update(variables);
+        }
+
+        private string GetVariableCollectionName(string moduleId) => $"{moduleId}.variables";
+        private string GetClassesCollectionName(string moduleId) => $"{moduleId}.classes";
+        private string GetFunctionsCollectionName(string moduleId) => $"{moduleId}.functions";
+        private string GetTypeVarCollectionName(string moduleId) => $"{moduleId}.typeVars";
+
+        // TODO: fix per https://github.com/microsoft/python-language-server/issues/1177
+        private string GetModuleUniqueId(IPythonModule module) => module.Name;
+
+        private string GetTypeQualifiedName(IPythonType t) {
+            var moduleId = GetModuleUniqueId(t.DeclaringModule);
+            switch (t) {
+                case IPythonClassMember cm when cm.DeclaringType != null:
+                    return $"{moduleId}.{GetClassMemberQualifiedName(cm)}";
+                default:
+                    return $"{moduleId}.{t.Name}";
+            }
+        }
+
+        private static string GetClassMemberQualifiedName(IPythonClassMember cm) {
+            var s = new Stack<string>();
+            s.Push(cm.Name);
+            for (var p = cm.DeclaringType as IPythonClassMember; p != null; p = p.DeclaringType as IPythonClassMember) {
+                s.Push(p.Name);
+            }
+            return string.Join(".", s);
         }
     }
 }
+
