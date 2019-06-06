@@ -9,17 +9,13 @@ in [Filing an issue](#filing-an-issue).
 
 There are a few known issues in the current version of the language server:
 
+- Import statement handling may be too strict, leading to "unresolved import" messages and the lack of analysis.
+    - The language server considers the workspace root to be the root of user code imports. For the most part, this can be modified by adding additional folders to the `python.autoComplete.extraPaths` setting, for example, `"python.autoComplete.extraPaths": ["./src"]`, if `src` contains the user code. A `.env` file with `PYTHONPATH` set may also help.
+    - Editable installs (`pip install -e` or `setup.py develop`) are known not to work with `extraPaths` when the package is installed. (#1139, #1013, #1137, #989, others).
 - Not all `__all__` statements can be handled.
     - Some modules may have an incorrect list of exported names.
     See [#620](https://github.com/Microsoft/python-language-server/issues/620),
     [#619](https://github.com/Microsoft/python-language-server/issues/619).
-- Inspection of some builds of some compiled libraries (some modules of numpy or pandas) may fail.
-    - This will prevent the analysis from being completely accurate, but will not otherwise impact the
-    language server, as the error occurs in another process. A popup may appear in Windows or macOS
-    when the crash is detected by the operating system.
-    See [#740](https://github.com/Microsoft/python-language-server/issues/740).
-- Analyzing large Conda environments leads to spikes in CPU usage.
-    - In some cases, CPU usage is as high as 100%. See [#875](https://github.com/Microsoft/python-language-server/issues/875).
 - Persistent issues with high memory consumption for users. 
     - In some contexts, users are experiencing higher than average amounts of memory being consumed. See [#832](https://github.com/Microsoft/python-language-server/issues/832).
 
