@@ -158,7 +158,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Declare parameters in scope
             IMember defaultValue = null;
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
-                var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
                     var paramType = Eval.GetTypeFromAnnotation(p.Annotation, out var isGeneric);
