@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // If instance could not be created, such as when return type is List[T] and
                 // type of T is not yet known, just use the type.
                  var instance = t.IsUnknown() ? annotationType : t;
-                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
+                _overload.SetReturnValue(instance, true);
             } else {
                 // Check if function is a generator
                 var suite = FunctionDefinition.Body as SuiteStatement;
@@ -158,10 +158,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Declare parameters in scope
             IMember defaultValue = null;
             for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
-                var isGeneric = false;
                 var p = FunctionDefinition.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
-                    var paramType = Eval.GetTypeFromAnnotation(p.Annotation);
+                    var paramType = Eval.GetTypeFromAnnotation(p.Annotation, out var isGeneric);
                     if (paramType.IsUnknown() && p.DefaultValue != null) {
                         defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
                         // If parameter has default value, look for the annotation locally first
@@ -175,7 +174,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     }
                     // If all else fails, look up globally.
                     paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric) ?? Eval.UnknownType;
-                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric);
+                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric | paramType.IsGeneric());
                     if (declareVariables) {
                         DeclareParameter(p, pi);
                     }

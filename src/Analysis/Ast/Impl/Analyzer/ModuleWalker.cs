@@ -281,8 +281,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private static bool IsStubBetterType(IPythonType sourceType, IPythonType stubType)
+        private static bool IsStubBetterType(IPythonType sourceType, IPythonType stubType) {
             // If stub says 'Any' but we have better type, keep the current type.
-            => sourceType.IsUnknown() || !(stubType.DeclaringModule is TypingModule) || stubType.Name != "Any";
+            if (stubType.IsUnknown()) {
+                return false;
+            }
+            return sourceType.IsUnknown() || !(stubType.DeclaringModule is TypingModule) || stubType.Name != "Any";
+        }
     }
 }

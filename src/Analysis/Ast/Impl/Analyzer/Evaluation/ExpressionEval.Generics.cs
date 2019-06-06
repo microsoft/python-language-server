@@ -194,6 +194,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     var itemType = iter.GetIterator().Next.GetPythonType();
                     if (!itemType.IsUnknown()) {
                         specificTypes.Add(itemType);
+                    } else if(argumentValue is IPythonInstance inst) {
+                        specificTypes.Add(inst.GetPythonType());
                     }
                     break;
                 case IMember m:
