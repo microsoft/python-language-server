@@ -25,8 +25,10 @@ namespace Microsoft.Python.Analysis.Caching {
                 return string.Empty;
             }
 
-            var moduleId = t.DeclaringModule.GetUniqueId();
+            var moduleId = t.DeclaringModule?.GetUniqueId();
             switch (m) {
+                case IPythonModule mod:
+                    return mod.GetUniqueId();
                 case IPythonInstance _:
                     return $"i:{GetQualifiedName(t)}";
                 case IPythonClassMember cm when cm.DeclaringType != null:
