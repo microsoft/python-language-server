@@ -33,21 +33,31 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
+
         public override PythonMemberType MemberType => PythonMemberType.Property;
+
         #endregion
 
         #region IPythonPropertyType
+
         public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
         public override bool IsAbstract { get; }
         public bool IsReadOnly => true;
         public IPythonType DeclaringType { get; }
-        public string Description 
-            => Type == null ? Resources.PropertyOfUnknownType : Resources.PropertyOfType.FormatUI(Type.Name);
+
+        public string Description {
+            get {
+                var typeName = ReturnType?.GetPythonType()?.Name;
+                return typeName != null ? Resources.PropertyOfType.FormatUI(typeName) : Resources.PropertyOfUnknownType;
+            }
+        }
+
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
-            => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
+                => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
+
+        public IMember ReturnType => _getter?.Call(ArgumentSet.Empty, DeclaringType);
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;
-        private IPythonType Type => _getter?.Call(ArgumentSet.Empty, DeclaringType)?.GetPythonType();
     }
 }

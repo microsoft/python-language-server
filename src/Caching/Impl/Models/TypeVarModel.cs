@@ -14,7 +14,8 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class TypeVarModel: MemberModel {
+    internal sealed class TypeVarModel {
+        public string Name { get; set; }
         public string[] Constraints { get; set; }
     }
 }

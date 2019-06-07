@@ -13,9 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Types;
+
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class PropertyModel: MemberModel {
+    internal sealed class PropertyModel {
+        public string Name { get; set; }
         public string ReturnType { get; set; }
         public FunctionAttributes Attributes { get; set; }
+
+        public static PropertyModel FromType(IPythonPropertyType prop) {
+            return new PropertyModel {
+                Name = prop.Name,
+                ReturnType = prop.ReturnType.GetQualifiedName(),
+                // TODO: attributes.
+            };
+        }
     }
 }

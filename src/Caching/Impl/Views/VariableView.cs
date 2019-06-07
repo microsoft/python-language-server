@@ -26,6 +26,5 @@ namespace Microsoft.Python.Analysis.Caching.Views {
 
         public IMember Type { get; }
         public string Name => _model.Name;
-        public MemberType MemberType => MemberType.Variable;
     }
 }

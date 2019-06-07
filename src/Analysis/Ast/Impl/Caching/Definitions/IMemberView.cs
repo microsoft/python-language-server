@@ -21,6 +21,5 @@ namespace Microsoft.Python.Analysis.Caching {
     /// </summary>
     internal interface IMemberView {
         string Name { get; }
-        MemberType MemberType { get; }
     }
 }
