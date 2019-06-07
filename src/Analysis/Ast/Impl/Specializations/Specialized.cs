@@ -26,9 +26,9 @@ namespace Microsoft.Python.Analysis.Specializations {
             return prop;
         }
 
-        public static IPythonFunctionType Function(string name, IPythonModule declaringModule, IPythonType declaringType, string documentation, IMember returnValue) {
+        public static IPythonFunctionType Function(string name, IPythonModule declaringModule, string documentation, IMember returnValue) {
             var location = new Location(declaringModule);
-            var prop = new PythonFunctionType(name, location, declaringType, documentation);
+            var prop = PythonFunctionType.Specialize(name, declaringModule, documentation);
             var o = new PythonFunctionOverload(prop.Name, location);
             o.AddReturnValue(returnValue);
             prop.AddOverload(o);

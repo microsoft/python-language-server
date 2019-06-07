@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (IsDeprecated(fd)) {
                 return false;
             }
-            if (!string.IsNullOrEmpty(fd.NameExpression?.Name)) {
+            if (!string.IsNullOrEmpty(fd.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, fd, out _));
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(FunctionDefinition fd) {
-            if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.NameExpression?.Name)) {
+            if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.Name)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(fd);
@@ -119,8 +119,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.ReplacedByStubs.Contains(fd)) {
                 var stubOverload = GetOverloadFromStub(fd);
                 if (stubOverload != null) {
-                    if (!string.IsNullOrEmpty(fd.GetDocumentation())) {
-                        stubOverload.SetDocumentationProvider(_ => fd.GetDocumentation());
+                    var documentation = fd.GetDocumentation();
+                    if (!string.IsNullOrEmpty(documentation)) {
+                        stubOverload.SetDocumentation(documentation);
                     }
                     addOverload(stubOverload);
                     _table.ReplacedByStubs.Add(fd);
@@ -131,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!_table.Contains(fd)) {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
-                var overload = new PythonFunctionOverload(fd, function, _eval.GetLocationOfName(fd));
+                var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, overload));
             }
@@ -164,14 +165,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return false;
         }
 
-        private void AddProperty(FunctionDefinition node, IPythonType declaringType, bool isAbstract) {
-            if (!(_eval.LookupNameInScopes(node.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(node, _eval.GetLocationOfName(node), declaringType, isAbstract);
+        private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
+            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType existing)) {
+                existing = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
-                _eval.DeclareVariable(node.Name, existing, VariableSource.Declaration);
+                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
             }
-            AddOverload(node, existing, o => existing.AddOverload(o));
+            AddOverload(fd, existing, o => existing.AddOverload(o));
         }
 
         private IMember GetMemberFromStub(string name) {

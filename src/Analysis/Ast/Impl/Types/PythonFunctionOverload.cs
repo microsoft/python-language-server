@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -48,15 +47,14 @@ namespace Microsoft.Python.Analysis.Types {
 
         // Return value can be an instance or a type info. Consider type(C()) returning
         // type info of C vs. return C() that returns an instance of C.
-        private Func<string, string> _documentationProvider;
         private bool _fromAnnotation;
 
-        public PythonFunctionOverload(FunctionDefinition fd, IPythonClassMember classMember, Location location)
-            : this(fd.Name, location) {
-            FunctionDefinition = fd;
-            ClassMember = classMember;
-            var ast = (location.Module as IDocument)?.Analysis.Ast;
-            _returnDocumentation = ast != null ? fd.ReturnAnnotation?.ToCodeString(ast) : null;
+        public PythonFunctionOverload(IPythonClassMember cm, FunctionDefinition fd, Location location, string returnDocumentation)
+            : this(cm.Name, location) {
+            ClassMember = cm;
+            Documentation = fd.GetDocumentation();
+            cm.DeclaringModule.AddAstNode(this, fd);
+            _returnDocumentation = returnDocumentation;
         }
 
         public PythonFunctionOverload(string name, Location location) : base(location) {
@@ -68,9 +66,6 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         internal void SetParameters(IReadOnlyList<IParameterInfo> parameters) => Parameters = parameters;
-
-        internal void SetDocumentationProvider(Func<string, string> documentationProvider)
-            => _documentationProvider = _documentationProvider ?? documentationProvider;
 
         internal void AddReturnValue(IMember value) {
             if (value.IsUnknown()) {
@@ -97,24 +92,14 @@ namespace Microsoft.Python.Analysis.Types {
             _fromAnnotation = fromAnnotation;
         }
 
-        internal void SetReturnValueProvider(ReturnValueProvider provider)
-            => _returnValueProvider = provider;
+        internal void SetReturnValueProvider(ReturnValueProvider provider) => _returnValueProvider = provider;
+        internal void SetDocumentation(string documentation) => Documentation = documentation;
 
         #region IPythonFunctionOverload
-
-        public FunctionDefinition FunctionDefinition { get; }
+        public FunctionDefinition FunctionDefinition => ClassMember?.DeclaringModule?.GetAstNode<FunctionDefinition>(this);
         public IPythonClassMember ClassMember { get; }
         public string Name { get; }
-
-        public string Documentation {
-            get {
-                var s = _documentationProvider?.Invoke(Name);
-                if (string.IsNullOrEmpty(s)) {
-                    s = FunctionDefinition.GetDocumentation();
-                }
-                return s ?? string.Empty;
-            }
-        }
+        public string Documentation { get; private set; }
 
         public string GetReturnDocumentation(IPythonType self = null) {
             if (self != null) {

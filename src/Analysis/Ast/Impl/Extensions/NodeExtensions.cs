@@ -23,8 +23,8 @@ namespace Microsoft.Python.Analysis {
                 return LocationInfo.Empty;
             }
 
-            var start = node.GetStart();
-            var end = node.GetEnd();
+            var start = node.GetStart(module.GetAst());
+            var end = node.GetEnd(module.GetAst());
             return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 

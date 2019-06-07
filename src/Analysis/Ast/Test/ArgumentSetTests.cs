@@ -347,9 +347,14 @@ pow(1, 2)
         [TestMethod, Priority(0)]
         public async Task DefaultArgumentAnotherFile() {
             const string code = @"
-from DefaultArgument import func
+from .module2 import func
 func()
 ";
+            const string code2 = @"
+class A: ...
+def func(a = A()): ...
+";
+            await TestData.CreateTestSpecificFileAsync("module2.py", code2);
             var argSet = await GetArgSetAsync(code, "func");
             argSet.Arguments.Count.Should().Be(1);
             argSet.Evaluate();
@@ -360,7 +365,6 @@ func()
             t.Name.Should().Be("A");
             t.MemberType.Should().Be(PythonMemberType.Class);
         }
-
 
         private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);

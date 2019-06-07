@@ -45,8 +45,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             var range = new Range {
-                start = expr.GetStart(),
-                end = expr.GetEnd()
+                start = expr.GetStart(analysis.Ast),
+                end = expr.GetEnd(analysis.Ast)
             };
 
             var eval = analysis.ExpressionEvaluator;
@@ -91,7 +91,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             if (expr is MemberExpression mex) {
                 name = mex.Name;
                 range = new Range {
-                    start = mex.Target.GetEnd(),
+                    start = mex.Target.GetEnd(analysis.Ast),
                     end = range.end
                 };
 

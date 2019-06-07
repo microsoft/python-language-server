@@ -23,25 +23,27 @@ namespace Microsoft.Python.Analysis.Values {
             DeclareBuiltinVariables();
         }
 
-        public override ScopeStatement Node => Module.Analysis?.Ast;
+        public override ScopeStatement Node => Module.GetAst();
 
         private void DeclareBuiltinVariables() {
             if (Module.ModuleType != ModuleType.User) {
                 return;
             }
 
+            var location = new Location(Module, default);
+
             var boolType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var listType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.List);
             var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
 
-            DeclareVariable("__debug__", boolType, VariableSource.Builtin);
-            DeclareVariable("__doc__", strType, VariableSource.Builtin);
-            DeclareVariable("__file__", strType, VariableSource.Builtin);
-            DeclareVariable("__name__", strType, VariableSource.Builtin);
-            DeclareVariable("__package__", strType, VariableSource.Builtin);
-            DeclareVariable("__path__", listType, VariableSource.Builtin);
-            DeclareVariable("__dict__", dictType, VariableSource.Builtin);
+            DeclareVariable("__debug__", boolType, VariableSource.Builtin, location);
+            DeclareVariable("__doc__", strType, VariableSource.Builtin, location);
+            DeclareVariable("__file__", strType, VariableSource.Builtin, location);
+            DeclareVariable("__name__", strType, VariableSource.Builtin, location);
+            DeclareVariable("__package__", strType, VariableSource.Builtin, location);
+            DeclareVariable("__path__", listType, VariableSource.Builtin, location);
+            DeclareVariable("__dict__", dictType, VariableSource.Builtin, location);
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             FunctionDefinition = overload.FunctionDefinition;
         }
 
-        public FunctionDefinition FunctionDefinition { get; }
+        private FunctionDefinition FunctionDefinition { get; }
 
         public override void Evaluate() {
             var stub = SymbolTable.ReplacedByStubs.Contains(Target)
@@ -52,7 +52,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 var returnType = TryDetermineReturnValue();
-                DeclareParameters(!stub);
+
+                var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub);
+                _overload.SetParameters(parameters);
 
                 // Do process body of constructors since they may be declaring
                 // variables that are later used to determine return type of other
@@ -69,6 +71,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
             Result = _function;
+        }
+
+        private IPythonType TryDetermineReturnValue() {
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            if (!annotationType.IsUnknown()) {
+                // Annotations are typically types while actually functions return
+                // instances unless specifically annotated to a type such as Type[T].
+                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                // If instance could not be created, such as when return type is List[T] and
+                // type of T is not yet known, just use the type.
+                var instance = t.IsUnknown() ? annotationType : t;
+                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
+            } else {
+                // Check if function is a generator
+                var suite = FunctionDefinition.Body as SuiteStatement;
+                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+                if (yieldExpr != null) {
+                    // Function return is an iterator
+                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                    _overload.SetReturnValue(returnValue, true);
+                }
+            }
+            return annotationType;
         }
 
         public override bool Walk(AssignmentStatement node) {
@@ -106,94 +132,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 Eval.DeclareVariable(node.NameExpression.Name, m, VariableSource.Declaration, node.NameExpression);
             }
             return false;
-        }
-
-        private IPythonType TryDetermineReturnValue() {
-            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
-            if (!annotationType.IsUnknown()) {
-                // Annotations are typically types while actually functions return
-                // instances unless specifically annotated to a type such as Type[T].
-                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
-                // If instance could not be created, such as when return type is List[T] and
-                // type of T is not yet known, just use the type.
-                 var instance = t.IsUnknown() ? annotationType : t;
-                _overload.SetReturnValue(instance, true);
-            } else {
-                // Check if function is a generator
-                var suite = FunctionDefinition.Body as SuiteStatement;
-                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                if (yieldExpr != null) {
-                    // Function return is an iterator
-                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                    _overload.SetReturnValue(returnValue, true);
-                }
-            }
-            return annotationType;
-        }
-
-        private void DeclareParameters(bool declareVariables) {
-            // For class method no need to add extra parameters, but first parameter type should be the class.
-            // For static and unbound methods do not add or set anything.
-            // For regular bound methods add first parameter and set it to the class.
-
-            var parameters = new List<ParameterInfo>();
-            var skip = 0;
-            if (_self != null && _function.HasClassFirstArgument()) {
-                var p0 = FunctionDefinition.Parameters.FirstOrDefault();
-                if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
-                    // Actual parameter type will be determined when method is invoked.
-                    // The reason is that if method might be called on a derived class.
-                    // Declare self or cls in this scope.
-                    if (declareVariables) {
-                        Eval.DeclareVariable(p0.Name, new PythonInstance(_self), VariableSource.Declaration, p0.NameExpression);
-                    }
-                    // Set parameter info.
-                    var pi = new ParameterInfo(Ast, p0, _self, null, false);
-                    parameters.Add(pi);
-                    skip++;
-                }
-            }
-
-            // Declare parameters in scope
-            IMember defaultValue = null;
-            for (var i = skip; i < FunctionDefinition.Parameters.Length; i++) {
-                var p = FunctionDefinition.Parameters[i];
-                if (!string.IsNullOrEmpty(p.Name)) {
-                    var paramType = Eval.GetTypeFromAnnotation(p.Annotation, out var isGeneric);
-                    if (paramType.IsUnknown() && p.DefaultValue != null) {
-                        defaultValue = Eval.GetValueFromExpression(p.DefaultValue);
-                        // If parameter has default value, look for the annotation locally first
-                        // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
-                        paramType = Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
-                        // Default value of None does not mean the parameter is None, just says it can be missing.
-                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
-                        if (paramType == null && defaultValue != null) {
-                            paramType = defaultValue.GetPythonType();
-                        }
-                    }
-                    // If all else fails, look up globally.
-                    paramType = paramType ?? Eval.GetTypeFromAnnotation(p.Annotation, out isGeneric) ?? Eval.UnknownType;
-                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric | paramType.IsGeneric());
-                    if (declareVariables) {
-                        DeclareParameter(p, pi);
-                    }
-                    parameters.Add(pi);
-                }
-            }
-            _overload.SetParameters(parameters);
-        }
-
-        private void DeclareParameter(Parameter p, ParameterInfo pi) {
-            IPythonType paramType;
-            // If type is known from annotation, use it.
-            if (pi != null && !pi.Type.IsUnknown() && !pi.Type.IsGenericParameter()) {
-                // TODO: technically generics may have constraints. Should we consider them?
-                paramType = pi.Type;
-            } else {
-                paramType = pi?.DefaultValue?.GetPythonType() ?? Eval.UnknownType;
-            }
-            Eval.DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
         }
     }
 }

@@ -33,7 +33,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
         private IPythonModule _module;
         private bool _isUserModule;
-        private PythonAst _ast;
         private IDocumentAnalysis _previousAnalysis;
         private HashSet<AnalysisModuleKey> _parserDependencies;
         private HashSet<AnalysisModuleKey> _analysisDependencies;
@@ -102,7 +101,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public bool IsValidVersion(int version, out IPythonModule module, out PythonAst ast) {
             lock (_syncObj) {
                 module = _module;
-                ast = _ast;
+                ast = module.GetAst();
                 if (ast == null || module == null) {
                     return false;
                 }
@@ -210,19 +209,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public bool Invalidate(IPythonModule module, PythonAst ast, int bufferVersion, int analysisVersion, out ImmutableArray<AnalysisModuleKey> dependencies) {
+        public bool Invalidate(IPythonModule module, int bufferVersion, int analysisVersion, out ImmutableArray<AnalysisModuleKey> dependencies) {
             dependencies = ImmutableArray<AnalysisModuleKey>.Empty;
             if (_bufferVersion >= bufferVersion) {
                 return false;
             }
 
-            var dependenciesHashSet = FindDependencies(module, ast, bufferVersion);
+            var dependenciesHashSet = FindDependencies(module, bufferVersion);
             lock (_syncObj) {
                 if (_analysisVersion >= analysisVersion && _bufferVersion >= bufferVersion) {
                     return false;
                 }
 
-                _ast = ast;
                 _module = module;
                 _isUserModule = module.ModuleType == ModuleType.User;
                 _parserDependencies = dependenciesHashSet;
@@ -236,13 +234,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module, PythonAst ast, int bufferVersion) {
+        private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module,  int bufferVersion) {
             if (_bufferVersion > bufferVersion) {
                 return new HashSet<AnalysisModuleKey>();
             }
 
-            var walker = new DependencyWalker(this, module);
-            ast.Walk(walker);
+            var walker = new DependencyWalker(module);
+            module.GetAst().Walk(walker);
             var dependencies = walker.Dependencies;
             dependencies.Remove(new AnalysisModuleKey(module));
             return dependencies;
@@ -264,7 +262,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private class DependencyWalker : PythonWalker {
-            private readonly PythonAnalyzerEntry _entry;
             private readonly IPythonModule _module;
             private readonly bool _isTypeshed;
             private readonly IModuleManagement _moduleResolution;
@@ -272,8 +269,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             public HashSet<AnalysisModuleKey> Dependencies { get; }
 
-            public DependencyWalker(PythonAnalyzerEntry entry, IPythonModule module) {
-                _entry = entry;
+            public DependencyWalker(IPythonModule module) {
                 _module = module;
                 _isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
                 _moduleResolution = module.Interpreter.ModuleResolution;

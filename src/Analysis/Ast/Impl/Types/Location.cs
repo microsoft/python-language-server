@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         public LocationInfo LocationInfo {
             get {
-                var ast = Module?.Analysis.Ast;
+                var ast = Module?.GetAst();
                 if (ast != null && !string.IsNullOrEmpty(Module?.FilePath) && Module?.Uri != null) {
                     return new LocationInfo(Module.FilePath, Module.Uri, IndexSpan.ToSourceSpan(ast));
                 }
@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public bool IsValid => Module != null;
+        public bool IsValid => Module != null && IndexSpan != default;
 
         public override bool Equals(object obj)
             => obj is Location other && other.Module == Module && other.IndexSpan == IndexSpan;

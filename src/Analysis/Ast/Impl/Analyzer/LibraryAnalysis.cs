@@ -14,21 +14,37 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    internal sealed class DocumentAnalysis : IDocumentAnalysis {
-        public DocumentAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval, IReadOnlyList<string> starImportMemberNames) {
+    /// <summary>
+    /// Analysis of a library code.
+    /// </summary>
+    internal sealed class LibraryAnalysis : IDocumentAnalysis {
+        public LibraryAnalysis(IDocument document, int version, IServiceContainer services, GlobalScope globalScope, IReadOnlyList<string> starImportMemberNames) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
+
             Document = document;
             Version = version;
             GlobalScope = globalScope;
-            ExpressionEvaluator = eval;
+
+            var ast = Document.GetAst();
+            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
+            var c = (IAstNodeContainer)Document;
+            c.ClearContent();
+            c.ClearAst();
+            c.AddAstNode(document, ast);
+
+            ExpressionEvaluator = new ExpressionEval(services, document, globalScope);
             StarImportMemberNames = starImportMemberNames;
         }
 
@@ -46,7 +62,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public int Version { get; }
 
         /// <summary>
-        /// AST that was used in the analysis.
+        /// Empty AST.
         /// </summary>
         public PythonAst Ast => ExpressionEvaluator.Ast;
 
@@ -56,7 +72,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IGlobalScope GlobalScope { get; }
 
         /// <summary>
-        /// ValueExpression evaluator used in the analysis.
+        /// Expression evaluator used in the analysis.
+        /// Only supports scope operation since there is no AST
+        /// when library analysis is complete.
         /// </summary>
         public IExpressionEvaluator ExpressionEvaluator { get; }
 
@@ -68,7 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Analysis diagnostics.
         /// </summary>
-        public IEnumerable<DiagnosticsEntry> Diagnostics => ExpressionEvaluator.Diagnostics;
+        public IEnumerable<DiagnosticsEntry> Diagnostics => Enumerable.Empty<DiagnosticsEntry>();
         #endregion
     }
 }

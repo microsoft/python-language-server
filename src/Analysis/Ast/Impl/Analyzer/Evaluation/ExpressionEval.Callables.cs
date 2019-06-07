@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -77,9 +78,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var location = GetLocationOfName(expr.Function);
-            var ft = new PythonFunctionType(expr.Function, null, location);
-            var overload = new PythonFunctionOverload(expr.Function, ft, location);
+            var fd = expr.Function;
+            var location = GetLocationOfName(fd);
+            var ft = new PythonFunctionType(fd, null, location);
+            var overload = new PythonFunctionOverload(ft, fd, location, expr.Function.ReturnAnnotation?.ToCodeString(Ast));
+            overload.SetParameters(CreateFunctionParameters(null, ft, fd, false));
             ft.AddOverload(overload);
             return ft;
         }
@@ -101,13 +104,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return cls.CreateInstance(cls.Name, args);
         }
 
-        public IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {
+        private IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {
             switch (t.Type) {
                 case IPythonFunctionType fn:
                     return GetValueFromFunctionType(fn, t.Self, expr);
                 case IPythonPropertyType p:
                     return GetValueFromProperty(p, t.Self);
-                case IPythonIteratorType it when t.Self is IPythonCollection seq:
+                case IPythonIteratorType _ when t.Self is IPythonCollection seq:
                     return seq.GetIterator();
             }
             return UnknownType;
@@ -173,7 +176,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
                 instanceType.Equals(fn.DeclaringType) ||
-                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation(null))) {
+                fn.IsStub || !string.IsNullOrEmpty(fn.Overloads[args.OverloadIndex].GetReturnDocumentation())) {
 
                 LoadFunctionDependencyModules(fn);
 
@@ -192,14 +195,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             //      def func(a, b): return a + b
             // from working in libraries, but this is small sacrifice for significant performance
             // increase in library analysis.
-            if (fn.DeclaringModule is IDocument doc && fd?.Ast == doc.GetAnyAst() && EvaluateFunctionBody(fn)) {
+            if (fn.DeclaringModule is IDocument && EvaluateFunctionBody(fn)) {
                 // Stubs are coming from another module.
                 return TryEvaluateWithArguments(fn, args);
             }
             return UnknownType;
         }
 
-        public IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {
+        private IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {
             // Function may not have been walked yet. Do it now.
             SymbolTable.Evaluate(p.FunctionDefinition);
             return instance.Call(p.Name, ArgumentSet.Empty);
@@ -310,6 +313,70 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
                 Services.GetService<IPythonAnalyzer>().EnqueueDocumentForAnalysis(Module, dependencies);
             }
+        }
+
+        public IReadOnlyList<IParameterInfo> CreateFunctionParameters(IPythonClassType self, IPythonClassMember function, FunctionDefinition fd, bool declareVariables) {
+            // For class method no need to add extra parameters, but first parameter type should be the class.
+            // For static and unbound methods do not add or set anything.
+            // For regular bound methods add first parameter and set it to the class.
+
+            var parameters = new List<ParameterInfo>();
+            var skip = 0;
+            if (self != null && function.HasClassFirstArgument()) {
+                var p0 = fd.Parameters.FirstOrDefault();
+                if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
+                    // Actual parameter type will be determined when method is invoked.
+                    // The reason is that if method might be called on a derived class.
+                    // Declare self or cls in this scope.
+                    if (declareVariables) {
+                        DeclareVariable(p0.Name, new PythonInstance(self), VariableSource.Declaration, p0.NameExpression);
+                    }
+                    // Set parameter info.
+                    var pi = new ParameterInfo(Ast, p0, self, null, false);
+                    parameters.Add(pi);
+                    skip++;
+                }
+            }
+
+            // Declare parameters in scope
+            for (var i = skip; i < fd.Parameters.Length; i++) {
+                var p = fd.Parameters[i];
+                if (!string.IsNullOrEmpty(p.Name)) {
+                    var defaultValue = GetValueFromExpression(p.DefaultValue);
+                    var paramType = GetTypeFromAnnotation(p.Annotation, out var isGeneric) ?? UnknownType;
+                    if (paramType.IsUnknown()) {
+                        // If parameter has default value, look for the annotation locally first
+                        // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
+                        paramType = GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
+                        // Default value of None does not mean the parameter is None, just says it can be missing.
+                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
+                        if (paramType == null && defaultValue != null) {
+                            paramType = defaultValue.GetPythonType();
+                        }
+                    }
+                    // If all else fails, look up globally.
+                    var pi = new ParameterInfo(Ast, p, paramType, defaultValue, isGeneric | paramType.IsGeneric());
+                    if (declareVariables) {
+                        DeclareParameter(p, pi);
+                    }
+                    parameters.Add(pi);
+                } else if (p.IsList || p.IsDictionary) {
+                    parameters.Add(new ParameterInfo(Ast, p, null, null, false));
+                }
+            }
+            return parameters;
+        }
+
+        private void DeclareParameter(Parameter p, ParameterInfo pi) {
+            IPythonType paramType;
+            // If type is known from annotation, use it.
+            if (pi != null && !pi.Type.IsUnknown() && !pi.Type.IsGenericParameter()) {
+                // TODO: technically generics may have constraints. Should we consider them?
+                paramType = pi.Type;
+            } else {
+                paramType = pi?.DefaultValue?.GetPythonType() ?? UnknownType;
+            }
+            DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
         }
     }
 }

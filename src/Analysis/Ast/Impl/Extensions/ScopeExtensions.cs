@@ -21,14 +21,14 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class ScopeExtensions {
-        public static int GetBodyStartIndex(this IScope scope, PythonAst ast) {
+        public static int GetBodyStartIndex(this IScope scope) {
             switch (scope.Node) {
                 case ClassDefinition cd:
                     return cd.HeaderIndex;
                 case FunctionDefinition fd:
                     return fd.HeaderIndex;
                 default:
-                    return ast.LocationToIndex(scope.Node.GetStart());
+                    return scope.Node.StartIndex;
             }
         }
 
@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return children[i];
                 }
 
-                var start = children[i].GetBodyStartIndex(ast);
+                var start = children[i].GetBodyStartIndex();
                 if (start > index) {
                     // We've gone past index completely so our last candidate is
                     // the best one.
@@ -114,10 +114,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             switch (scope.Node) {
                 case ClassDefinition cd:
                     // Return column of "class" statement
-                    return cd.GetStart().Column;
+                    return cd.GetStart(ast).Column;
                 case FunctionDefinition fd when !fd.IsLambda:
                     // Return column of "def" statement
-                    return fd.GetStart().Column;
+                    return fd.GetStart(ast).Column;
                 default:
                     return -1;
             }

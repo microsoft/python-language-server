@@ -93,8 +93,6 @@ namespace Microsoft.Python.Parsing {
             Value = value;
         }
 
-        public object Constant => Value;
-
         public override object Value { get; }
 
         public override string Image => Value == null ? "None" : Value.ToString();
@@ -140,11 +138,7 @@ namespace Microsoft.Python.Parsing {
 
         public string Text => (string)Value;
 
-        public override string Image {
-            get {
-                return Value == null ? "None" : $"f{OpenQuotes}{Value.ToString()}{OpenQuotes}";
-            }
-        }
+        public override string Image => Value == null ? "None" : $"f{OpenQuotes}{Value.ToString()}{OpenQuotes}";
     }
 
     public sealed class VerbatimFStringToken : FStringToken {

@@ -22,7 +22,6 @@ namespace Microsoft.Python.Parsing.Ast {
     public abstract class ScopeStatement : Statement {
         // due to "exec" or call to dir, locals, eval, vars...
 
-        private ClosureInfo[] _closureVariables;                        // closed over variables, bool indicates if we accessed it in this scope.
         private List<PythonVariable> _freeVars;                         // list of variables accessed from outer scopes
         private List<string> _globalVars;                               // global variables accessed from this scope
         private List<string> _cellVars;                                 // variables accessed from nested scopes
@@ -75,12 +74,10 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// Gets the variables for this scope.
         /// </summary>
-        public ICollection<PythonVariable> ScopeVariables 
+        public ICollection<PythonVariable> ScopeVariables
             => Variables?.Values ?? Array.Empty<PythonVariable>() as ICollection<PythonVariable>;
 
         public virtual bool IsGlobal => false;
-        public virtual bool NeedsLocalContext => NeedsLocalsDictionary || ContainsNestedFreeVariables;
-        public virtual int ArgCount => 0;
 
         public PythonAst GlobalParent {
             get {
@@ -93,20 +90,23 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        internal void AddFreeVariable(PythonVariable variable, bool accessedInScope) {
-            if (_freeVars == null) {
-                _freeVars = new List<PythonVariable>();
-            }
+        protected void Clear() {
+            _references?.Clear();
+            _cellVars?.Clear();
+            _freeVars?.Clear();
+            _globalVars?.Clear();
+            _nonLocalVars?.Clear();
+        }
 
+        internal void AddFreeVariable(PythonVariable variable, bool accessedInScope) {
+            _freeVars = _freeVars ?? new List<PythonVariable>();
             if (!_freeVars.Contains(variable)) {
                 _freeVars.Add(variable);
             }
         }
 
         internal string AddReferencedGlobal(string name) {
-            if (_globalVars == null) {
-                _globalVars = new List<string>();
-            }
+            _globalVars = _globalVars ?? new List<string>();
             if (!_globalVars.Contains(name)) {
                 _globalVars.Add(name);
             }
@@ -114,17 +114,12 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         internal void AddNonLocalVariable(NameExpression name) {
-            if (_nonLocalVars == null) {
-                _nonLocalVars = new List<NameExpression>();
-            }
+            _nonLocalVars = _nonLocalVars ?? new List<NameExpression>();
             _nonLocalVars.Add(name);
         }
 
         internal void AddCellVariable(PythonVariable variable) {
-            if (_cellVars == null) {
-                _cellVars = new List<string>();
-            }
-
+            _cellVars = _cellVars ?? new List<string>();
             if (!_cellVars.Contains(variable.Name)) {
                 _cellVars.Add(variable.Name);
             }
@@ -134,17 +129,6 @@ namespace Microsoft.Python.Parsing.Ast {
         /// Variables that are bound in an outer scope - but not a global scope
         /// </summary>
         public IReadOnlyList<PythonVariable> FreeVariables => _freeVars;
-
-        /// <summary>
-        /// Variables that are bound to the global scope
-        /// </summary>
-        public IReadOnlyList<string> GlobalVariables => _globalVars;
-
-        /// <summary>
-        /// Variables that are referred to from a nested scope and need to be
-        /// promoted to cells.
-        /// </summary>
-        public IReadOnlyList<string> CellVariables => _cellVars;
 
         internal abstract bool ExposesLocalVariable(PythonVariable variable);
 
@@ -229,10 +213,6 @@ namespace Microsoft.Python.Parsing.Ast {
                         Debug.Assert(variable.Scope == this);
                     }
                 }
-            }
-
-            if (closureVariables != null) {
-                _closureVariables = closureVariables.ToArray();
             }
 
             // no longer needed

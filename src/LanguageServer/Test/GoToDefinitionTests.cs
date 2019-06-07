@@ -230,7 +230,9 @@ class A(object):
             rdt.OpenDocument(subpkgPath, string.Empty);
             var submod = rdt.OpenDocument(submodPath, "from .. import mod");
 
-            var analysis = await submod.GetAnalysisAsync(-1);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await submod.GetAnalysisAsync(Timeout.Infinite);
+
             var ds = new DefinitionSource(Services);
             var reference = ds.FindDefinition(analysis, new SourceLocation(1, 18), out _);
             reference.Should().NotBeNull();
@@ -250,7 +252,8 @@ class A(object):
 z = 1
 def X(): ...
 ");
-            var analysis = await modA.GetAnalysisAsync(-1);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await modA.GetAnalysisAsync(Timeout.Infinite);
             var ds = new DefinitionSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(1, 7), out _);

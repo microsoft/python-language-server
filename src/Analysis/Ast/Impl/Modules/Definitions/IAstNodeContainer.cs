@@ -13,26 +13,29 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IHasQualifiedName {
+namespace Microsoft.Python.Analysis.Modules {
+    internal interface IAstNodeContainer {
         /// <summary>
-        /// Gets the fully qualified, dot-separated name of the value.
-        /// This is typically used for displaying to users.
+        /// Provides access to AST nodes associated with objects such as
+        /// <see cref="ClassDefinition"/> for <see cref="IPythonClassType"/>.
+        /// Nodes are not available for library modules as AST is not retained
+        /// in libraries in order to conserve memory.
         /// </summary>
-        string FullyQualifiedName { get; }
+        T GetAstNode<T>(object o) where T : Node;
 
         /// <summary>
-        /// Gets the import and eval names of the value. The first part
-        /// should be importable, and the second is a name that can be
-        /// resolved with getattr().
-        /// These are often seen separated with a colon.
+        /// Associated AST node with the object.
         /// </summary>
-        /// <exception cref="NotSupportedException">
-        /// The value cannot be resolved (for example, a nested function).
-        /// </exception>
-        KeyValuePair<string, string> FullyQualifiedNamePair { get; }
+        void AddAstNode(object o, Node n);
+
+        /// <summary>
+        /// Removes all AST node associations.
+        /// </summary>
+        void ClearAst();
+
+        void ClearContent();
     }
 }

@@ -13,17 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Dependencies {
-    internal interface IDependencyChainNode<out TValue> {
-        int VertexDepth { get; }
+using System;
+using System.IO;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
-        /// <summary>
-        /// Shows if node has any direct or indirect dependencies that aren't added to the graph
-        /// </summary>
-        bool HasMissingDependencies { get; }
-        TValue Value { get; }
-        void Commit();
-        void Skip();
-        bool IsComplete { get; }
+namespace Microsoft.Python.Analysis.Utilities {
+    public static class AstUtilities {
+        public static PythonAst MakeEmptyAst(Uri documentUri) {
+            using (var sr = new StringReader(string.Empty)) {
+                return Parser.CreateParser(sr, PythonLanguageVersion.None).ParseFile(documentUri);
+            }
+        }
     }
 }

@@ -31,7 +31,6 @@ using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
@@ -65,9 +64,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _disposeToken.TryMarkDisposed();
         }
 
-        public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default) {
-            return _analysisCompleteEvent.WaitAsync(cancellationToken);
-        }
+        public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
+            => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
             var key = new AnalysisModuleKey(module);
@@ -146,7 +144,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion) {
+        public void EnqueueDocumentForAnalysis(IPythonModule module, int bufferVersion) {
             var key = new AnalysisModuleKey(module);
             PythonAnalyzerEntry entry;
             int version;
@@ -163,7 +161,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
+            if (entry.Invalidate(module, bufferVersion, version, out var dependencies)) {
                 AnalyzeDocument(key, entry, dependencies);
             }
         }

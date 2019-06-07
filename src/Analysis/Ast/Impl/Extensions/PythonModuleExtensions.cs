@@ -13,17 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Dependencies {
-    internal interface IDependencyChainNode<out TValue> {
-        int VertexDepth { get; }
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Ast;
 
-        /// <summary>
-        /// Shows if node has any direct or indirect dependencies that aren't added to the graph
-        /// </summary>
-        bool HasMissingDependencies { get; }
-        TValue Value { get; }
-        void Commit();
-        void Skip();
-        bool IsComplete { get; }
+namespace Microsoft.Python.Analysis {
+    public static class PythonModuleExtensions {
+        internal static PythonAst GetAst(this IPythonModule module)
+            => ((IAstNodeContainer)module).GetAstNode<PythonAst>(module);
+
+        internal static T GetAstNode<T>(this IPythonModule module, object o) where T : Node
+            => ((IAstNodeContainer)module).GetAstNode<T>(o);
+        internal static void AddAstNode(this IPythonModule module, object o, Node n)
+            => ((IAstNodeContainer)module).AddAstNode(o, n);
     }
 }

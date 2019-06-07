@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var location = new Location(this, default);
 
             // TypeVar
-            var fn = new PythonFunctionType("TypeVar", location, null, GetMemberDocumentation);
+            var fn = PythonFunctionType.Specialize("TypeVar", this, GetMemberDocumentation("TypeVar"));
             var o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["TypeVar"] = fn;
 
             // NewType
-            fn = new PythonFunctionType("NewType", location, null, GetMemberDocumentation);
+            fn = PythonFunctionType.Specialize("NewType", this, GetMemberDocumentation("NewType"));
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
@@ -65,8 +65,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             fn.AddOverload(o);
             _members["NewType"] = fn;
 
-            // NewType
-            fn = new PythonFunctionType("Type", location, null, GetMemberDocumentation);
+            // Type
+            fn = PythonFunctionType.Specialize("Type", this, GetMemberDocumentation("Type"));
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
@@ -115,7 +115,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             _members["Union"] = new GenericType("Union", CreateUnion, this);
 
-            _members["Counter"] = Specialized.Function("Counter", this, null, "Counter", 
+            _members["Counter"] = Specialized.Function("Counter", this, GetMemberDocumentation("Counter"), 
                 new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
 
             _members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
 
-            fn = new PythonFunctionType("NamedTuple", location, null, GetMemberDocumentation);
+            fn = PythonFunctionType.Specialize("NamedTuple", this, GetMemberDocumentation("NamedTuple"));
             o = new PythonFunctionOverload(fn.Name, location);
             o.SetReturnValueProvider((interpreter, overload, args) => CreateNamedTuple(args.Values<IMember>()));
             fn.AddOverload(o);

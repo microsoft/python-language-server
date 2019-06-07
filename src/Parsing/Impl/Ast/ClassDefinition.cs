@@ -85,8 +85,6 @@ namespace Microsoft.Python.Parsing.Ast {
             set => base.HasLateBoundVariableSets = value;
         }
 
-        public override bool NeedsLocalContext => true;
-
         internal override bool ExposesLocalVariable(PythonVariable variable) => true;
 
         internal override bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {

@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -81,10 +82,17 @@ namespace Microsoft.Python.Analysis.Types {
             OverloadIndex = overloadIndex;
             DeclaringModule = fn.DeclaringModule;
 
+            if (callExpr == null) {
+                // Typically invoked by specialization code without call expression in the code.
+                // Caller usually does not care about arguments.
+                _evaluated = true;
+                return;
+            }
+
             var overload = fn.Overloads[overloadIndex];
             var fd = overload.FunctionDefinition;
 
-            if (fd == null || fn.IsSpecialized) {
+            if (fn.IsSpecialized) {
                 // Typically specialized function, like TypeVar() that does not actually have AST definition.
                 // Make the arguments from the call expression. If argument does not have name, 
                 // try using name from the function definition based on the argument position.
@@ -92,21 +100,14 @@ namespace Microsoft.Python.Analysis.Types {
                 for (var i = 0; i < callExpr.Args.Count; i++) {
                     var name = callExpr.Args[i].Name;
                     if (string.IsNullOrEmpty(name)) {
-                        name = fd != null && i < fd.Parameters.Length ? fd.Parameters[i].Name : null;
+                        name = i < overload.Parameters.Count ? overload.Parameters[i].Name : $"arg{i}";
                     }
-                    name = name ?? $"arg{i}";
-                    var parameter = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
-                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, parameter));
+                    var node = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
+                    _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, node));
                 }
                 return;
             }
 
-            if (callExpr == null) {
-                // Typically invoked by specialization code without call expression in the code.
-                // Caller usually does not care about arguments.
-                _evaluated = true;
-                return;
-            }
             var callLocation = callExpr.GetLocation(module);
 
             // https://www.python.org/dev/peps/pep-3102/#id5
@@ -115,7 +116,12 @@ namespace Microsoft.Python.Analysis.Types {
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
 
-            var slots = fd.Parameters.Select(p => new Argument(p, p)).ToArray();
+            var slots = new Argument[overload.Parameters.Count];
+            for (var i = 0; i < overload.Parameters.Count; i++) {
+                var node = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
+                slots[i] = new Argument(overload.Parameters[i], node);
+            }
+
             // Locate sequence argument, if any
             var sa = slots.Where(s => s.Kind == ParameterKind.List).ToArray();
             if (sa.Length > 1) {
@@ -150,7 +156,7 @@ namespace Microsoft.Python.Analysis.Types {
                         break;
                     }
 
-                    if (formalParamIndex >= fd.Parameters.Length) {
+                    if (formalParamIndex >= overload.Parameters.Count) {
                         // We ran out of formal parameters and yet haven't seen
                         // any sequence or dictionary ones. This looks like an error.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
@@ -158,8 +164,8 @@ namespace Microsoft.Python.Analysis.Types {
                         return;
                     }
 
-                    var formalParam = fd.Parameters[formalParamIndex];
-                    if (formalParam.IsList) {
+                    var formalParam = overload.Parameters[formalParamIndex];
+                    if (formalParam.Kind == ParameterKind.List) {
                         if (string.IsNullOrEmpty(formalParam.Name)) {
                             // If the next unfilled slot is a vararg slot, and it does not have a name, then it is an error.
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
@@ -188,7 +194,7 @@ namespace Microsoft.Python.Analysis.Types {
                         break; // Sequence or dictionary parameter found. Done here.
                     }
 
-                    if (formalParam.IsDictionary) {
+                    if (formalParam.Kind == ParameterKind.Dictionary) {
                         // Next slot is a dictionary slot, but we have positional arguments still.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
                             ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning, DiagnosticSource.Analysis));
@@ -248,7 +254,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // then it is an error.
                 foreach (var slot in slots.Where(s => s.Kind != ParameterKind.List && s.Kind != ParameterKind.Dictionary && s.Value == null)) {
                     if (slot.ValueExpression == null) {
-                        var parameter = fd.Parameters.First(p => p.Name == slot.Name);
+                        var parameter = overload.Parameters.First(p => p.Name == slot.Name);
                         if (parameter.DefaultValue == null) {
                             // TODO: parameter is not assigned and has no default value.
                             _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterMissing.FormatUI(slot.Name), callLocation.Span,
@@ -256,7 +262,8 @@ namespace Microsoft.Python.Analysis.Types {
                         }
                         // Note that parameter default value expression is from the function definition AST
                         // while actual argument values are from the calling file AST.
-                        slot.ValueExpression = parameter.DefaultValue;
+                        slot.ValueExpression = CreateExpression(parameter.Name, parameter.DefaultValueString);
+                        slot.Value = parameter.DefaultValue;
                         slot.ValueIsDefault = true;
                     }
                 }
@@ -273,7 +280,6 @@ namespace Microsoft.Python.Analysis.Types {
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
                 a.Value = GetArgumentValue(a);
-                a.Type = Eval.GetValueFromExpression(a.TypeExpression) as IPythonType;
             }
 
             if (_listArgument != null) {
@@ -295,6 +301,9 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         private IMember GetArgumentValue(Argument arg) {
+            if (arg.Value is IMember m) {
+                return m;
+            }
             // Evaluates expression in the specific module context. Typically used to evaluate
             // expressions representing default values of function arguments since they are
             // are defined in the function declaring module rather than in the caller context.
@@ -308,6 +317,20 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
             return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+        }
+
+        private Expression CreateExpression(string paramName, string defaultValue) {
+            if (string.IsNullOrEmpty(defaultValue)) {
+                return null;
+            }
+            using (var sr = new StringReader($"{paramName}={defaultValue}")) {
+                var parser = Parser.CreateParser(sr, Eval.Interpreter.LanguageVersion,ParserOptions.Default);
+                var ast = parser.ParseFile();
+                if (ast.Body is SuiteStatement ste && ste.Statements.Count > 0 && ste.Statements[0] is AssignmentStatement a) {
+                    return a.Right;
+                }
+                return null;
+            }
         }
 
         private sealed class Argument : IArgument {
@@ -342,26 +365,21 @@ namespace Microsoft.Python.Analysis.Types {
             /// <summary>
             /// Type of the argument, if annotated.
             /// </summary>
-            public IPythonType Type { get; internal set; }
-
-            /// <summary>
-            /// Type annotation expression.
-            /// </summary>
-            public Expression TypeExpression { get; }
+            public IPythonType Type { get; }
 
             /// <summary>
             /// AST node that defines the argument.
             /// </summary>
             public Node Location { get; }
 
-            public Argument(Parameter p, Node location) :
-                this(p.Name, p.Kind, null, p.Annotation, location) { }
+            public Argument(IParameterInfo p, Node location) :
+                this(p.Name, p.Kind, null, p.Type, location) { }
 
-            public Argument(string name, ParameterKind kind, Expression valueValueExpression, Expression typeExpression, Node location) {
+            public Argument(string name, ParameterKind kind, Expression valueValueExpression, IPythonType type, Node location) {
                 Name = name;
                 Kind = kind;
+                Type = type;
                 ValueExpression = valueValueExpression;
-                TypeExpression = typeExpression;
                 Location = location;
             }
 

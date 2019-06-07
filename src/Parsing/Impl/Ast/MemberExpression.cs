@@ -95,6 +95,6 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// Returns the span of the name component of the expression
         /// </summary>
-        public SourceSpan GetNameSpan() => new SourceSpan(Ast.IndexToLocation(NameHeader), GetEnd());
+        public SourceSpan GetNameSpan(PythonAst ast) => new SourceSpan(ast.IndexToLocation(NameHeader), GetEnd(ast));
     }
 }

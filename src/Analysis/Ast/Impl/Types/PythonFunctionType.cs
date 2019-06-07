@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,20 +24,19 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
-    internal class PythonFunctionType : PythonType, IPythonFunctionType {
+    internal sealed class PythonFunctionType : PythonType, IPythonFunctionType {
         private ImmutableArray<IPythonFunctionOverload> _overloads = ImmutableArray<IPythonFunctionOverload>.Empty;
-        private readonly string _documentation;
         private bool _isAbstract;
         private bool _isSpecialized;
 
         /// <summary>
         /// Creates function for specializations
         /// </summary>
-        public static PythonFunctionType ForSpecialization(string name, IPythonModule declaringModule)
-            => new PythonFunctionType(name, new Location(declaringModule, default), true);
+        public static PythonFunctionType Specialize(string name, IPythonModule declaringModule, string documentation)
+            => new PythonFunctionType(name, new Location(declaringModule, default), documentation, true);
 
-        private PythonFunctionType(string name, Location location, bool isSpecialized = false) :
-            base(name, location, string.Empty, BuiltinTypeId.Function) {
+        private PythonFunctionType(string name, Location location, string documentation, bool isSpecialized = false) :
+            base(name, location, documentation ?? string.Empty, BuiltinTypeId.Function) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             _isSpecialized = isSpecialized;
         }
@@ -53,21 +51,7 @@ namespace Microsoft.Python.Analysis.Types {
             Location location,
             IPythonType declaringType,
             string documentation
-        ) : this(name, location, declaringType, _ => documentation) {
-            Check.ArgumentNotNull(nameof(location), location.Module);
-        }
-
-        /// <summary>
-        /// Creates function type to use in special cases when function is dynamically
-        /// created, such as in specializations and custom iterators, without the actual
-        /// function definition in the AST.
-        /// </summary>
-        public PythonFunctionType(
-            string name,
-            Location location,
-            IPythonType declaringType,
-            Func<string, string> documentationProvider
-        ) : base(name, location, documentationProvider, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+        ) : base(name, location, documentation, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
         }
 
@@ -75,24 +59,16 @@ namespace Microsoft.Python.Analysis.Types {
             FunctionDefinition fd,
             IPythonType declaringType,
             Location location
-        ) : base(fd.Name, location, fd.Documentation,
-                 declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
-
-            FunctionDefinition = fd;
+        ) : base(fd.Name, location,
+            fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(), 
+            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
 
-            // For __init__ documentation may either come from the function node of the the declaring
-            // type. Note that if there is no documentation on the class node, the class will try and
-            // get documentation from its __init__ function, delegating down to this type. So we need
-            // to set documentation statically for __init__ here or we may end up/ with stack overflows.
-            if (fd.Name == "__init__") {
-                _documentation = declaringType?.Documentation ?? fd.Documentation;
-            }
+            location.Module.AddAstNode(this, fd);
             ProcessDecorators(fd);
         }
 
         #region IPythonType
-
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
@@ -102,22 +78,21 @@ namespace Microsoft.Python.Analysis.Types {
             return overload?.Call(args, instance?.GetPythonType() ?? DeclaringType);
         }
 
-        internal override void SetDocumentationProvider(Func<string, string> provider) {
+        internal override void SetDocumentation(string documentation) {
             foreach (var o in Overloads) {
-                (o as PythonFunctionOverload)?.SetDocumentationProvider(provider);
+                (o as PythonFunctionOverload)?.SetDocumentation(documentation);
             }
-
-            base.SetDocumentationProvider(provider);
+            base.SetDocumentation(documentation);
         }
 
         #endregion
 
         #region IPythonFunction
-        public FunctionDefinition FunctionDefinition { get; }
+        public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
         public IPythonType DeclaringType { get; }
-        public override string Documentation => _documentation ?? base.Documentation ?? (_overloads.Count > 0 ? _overloads[0].Documentation : default);
-        public virtual bool IsClassMethod { get; private set; }
-        public virtual bool IsStatic { get; private set; }
+        public override string Documentation => (_overloads.Count > 0 ? _overloads[0].Documentation : default) ?? base.Documentation;
+        public bool IsClassMethod { get; private set; }
+        public bool IsStatic { get; private set; }
         public override bool IsAbstract => _isAbstract;
         public override bool IsSpecialized => _isSpecialized;
 
@@ -126,12 +101,6 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsUnbound => DeclaringType == null;
 
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads;
-        #endregion
-
-        #region IHasQualifiedName
-        public override string FullyQualifiedName => FullyQualifiedNamePair.CombineNames();
-        public override KeyValuePair<string, string> FullyQualifiedNamePair =>
-            new KeyValuePair<string, string>((DeclaringType as IHasQualifiedName)?.FullyQualifiedName ?? DeclaringType?.Name ?? DeclaringModule?.Name, Name);
         #endregion
 
         internal void Specialize(string[] dependencies) {

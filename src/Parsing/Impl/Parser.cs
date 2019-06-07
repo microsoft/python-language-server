@@ -247,10 +247,6 @@ namespace Microsoft.Python.Parsing {
             ast.SetAttributes(_attributes);
             PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
 
-            foreach (var n in ((Node)ast).TraverseDepthFirst(c => c.GetChildNodes())) {
-                n.Ast = ast;
-            }
-
             return ast;
         }
 
@@ -3294,8 +3290,8 @@ namespace Microsoft.Python.Parsing {
             var openQuotes = readTokens.Where(t => t.Token.Kind == TokenKind.FString)
                 .Select(t => ((FStringToken)t.Token).OpenQuotes).DefaultIfEmpty("'").First();
 
-            List<Node> fStringChildren = new List<Node>();
-            StringBuilder unparsedFStringBuilder = new StringBuilder();
+            var fStringChildren = new List<Node>();
+            var unparsedFStringBuilder = new StringBuilder();
 
             foreach (var tokenWithSpan in readTokens) {
                 if (tokenWithSpan.Token.Kind == TokenKind.FString) {

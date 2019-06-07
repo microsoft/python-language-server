@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
@@ -37,12 +38,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly object _lock = new object();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
-        public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
+        public ExpressionEval(IServiceContainer services, IPythonModule module)
+            : this(services, module, new GlobalScope(module)) { }
+
+        public ExpressionEval(IServiceContainer services, IPythonModule module, GlobalScope gs) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
             Module = module ?? throw new ArgumentNullException(nameof(module));
-            Ast = ast ?? throw new ArgumentNullException(nameof(ast));
+            Ast = module.GetAst();
 
-            GlobalScope = new GlobalScope(module);
+            GlobalScope = gs;
             CurrentScope = GlobalScope;
             DefaultLocation = new Location(module);
             //Log = services.GetService<ILogger>();
@@ -59,14 +63,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
-            if (node == null || (Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library)) {
+            node = node ?? throw new ArgumentNullException(nameof(node));
+            if (Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library) {
                 return DefaultLocation;
             }
 
             IndexSpan indexSpan;
             switch (node) {
                 case MemberExpression mex:
-                    indexSpan = mex.GetNameSpan().ToIndexSpan(mex.Ast);
+                    indexSpan = mex.GetNameSpan(Ast).ToIndexSpan(Ast);
                     break;
                 case ClassDefinition cd:
                     indexSpan = cd.NameExpression.IndexSpan;
@@ -86,7 +91,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // turns into span at line 1 and very large column. This DOES can
             // produce false positives occasionally.
 #if DEBUG
-            var sourceSpan = indexSpan.ToSourceSpan(node.Ast);
+            var sourceSpan = indexSpan.ToSourceSpan(Ast);
             Debug.Assert(sourceSpan.Start.Line > 1 || sourceSpan.Start.Column < 1000);
 #endif
             return new Location(Module, indexSpan);

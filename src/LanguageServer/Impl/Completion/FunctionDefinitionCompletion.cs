@@ -33,7 +33,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             if (function.Parent is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
-                var loc = function.GetStart();
+                var loc = function.GetStart(context.Ast);
                 var overrideable = GetOverrideable(context, location).ToArray();
                 overrideable = !string.IsNullOrEmpty(function.Name)
                         ? overrideable.Where(o => o.Name.StartsWithOrdinal(function.Name)).ToArray()
@@ -56,10 +56,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         private static string MakeOverrideParameter(IParameterInfo paramInfo, string defaultValue) {
-            if (paramInfo.IsParamArray) {
+            if (paramInfo.Kind == ParameterKind.List) {
                 return $"*{paramInfo.Name}";
             }
-            if (paramInfo.IsKeywordDict) {
+            if (paramInfo.Kind == ParameterKind.Dictionary) {
                 return $"**{paramInfo.Name}";
             }
             return !string.IsNullOrEmpty(paramInfo.DefaultValueString) ? $"{paramInfo.Name}={defaultValue}" : paramInfo.Name;

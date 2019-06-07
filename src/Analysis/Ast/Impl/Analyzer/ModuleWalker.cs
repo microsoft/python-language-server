@@ -37,8 +37,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private int _allReferencesCount;
         private bool _allIsUsable = true;
 
-        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
-            : base(new ExpressionEval(services, module, ast)) {
+        public ModuleWalker(IServiceContainer services, IPythonModule module)
+            : base(new ExpressionEval(services, module)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
         }
 
@@ -207,7 +207,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Eval.ClearCache();
         }
 
-        public IGlobalScope GlobalScope => Eval.GlobalScope;
+        public GlobalScope GlobalScope => Eval.GlobalScope;
         public IReadOnlyList<string> StarImportMemberNames { get; private set; }
 
         /// <summary>
@@ -259,7 +259,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var memberType = member?.GetPythonType();
                         var stubMemberType = stubMember.GetPythonType();
                         if (!IsStubBetterType(memberType, stubMemberType)) {
-                            continue; ;
+                            continue;
                         }
 
                         // Get documentation from the current type, if any, since stubs
@@ -271,11 +271,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Re-declare variable with the data from the stub unless member is a module.
                     // Modules members that are modules should remain as they are, i.e. os.path
                     // should remain library with its own stub attached.
-                    if (!stubType.IsUnknown() && !(stubType is IPythonModule)) {
+                    if (!(stubType is IPythonModule)) {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
-                        Eval.DeclareVariable(v.Name, v.Value, source, Module);
+                        Eval.DeclareVariable(v.Name, v.Value, source);
                     }
                 }
             }
