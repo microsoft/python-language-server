@@ -71,16 +71,16 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             Debug.Assert(_searchPaths != null, "Should have search paths");
             _searchPaths = _searchPaths ?? Array.Empty<string>();
 
-            _log?.Log(TraceEventType.Information, "Python search paths:");
+            _log?.Log(TraceEventType.Verbose, "Python search paths:");
             foreach (var s in _searchPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
+                _log?.Log(TraceEventType.Verbose, $"    {s}");
             }
 
             var configurationSearchPaths = Configuration.SearchPaths ?? Array.Empty<string>();
 
-            _log?.Log(TraceEventType.Information, "Configuration search paths:");
+            _log?.Log(TraceEventType.Verbose, "Configuration search paths:");
             foreach (var s in configurationSearchPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
+                _log?.Log(TraceEventType.Verbose, $"    {s}");
             }
             return _searchPaths;
         }
