@@ -213,12 +213,23 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             InterpreterPaths = await GetSearchPathsAsync(cancellationToken);
 
-            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(InterpreterPaths, StringExtensions.PathsStringComparer);
+            IEnumerable<string> userSearchPaths = Configuration.SearchPaths;
+            InterpreterPaths = InterpreterPaths.Except(userSearchPaths, StringExtensions.PathsStringComparer);
 
             if (Root != null) {
                 var underRoot = userSearchPaths.ToLookup(p => _fs.IsPathUnderRoot(Root, p));
                 userSearchPaths = underRoot[true];
                 InterpreterPaths = underRoot[false].Concat(InterpreterPaths);
+            }
+
+            _log?.Log(TraceEventType.Information, "Interpreter search paths:");
+            foreach (var s in InterpreterPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+
+            _log?.Log(TraceEventType.Information, "User search paths:");
+            foreach (var s in userSearchPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
             }
 
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
