@@ -13,8 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 
@@ -22,7 +20,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a Python module.
     /// </summary>
-    public interface IPythonModule : IPythonType, IPythonFile, ILocatedMember {
+    public interface IPythonModule : IPythonType, IPythonFile {
         /// <summary>
         /// Module analysis.
         /// </summary>

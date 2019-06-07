@@ -192,7 +192,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Global cope of the module.
         /// </summary>
-        public IGlobalScope GlobalScope { get; private set; }
+        public virtual IGlobalScope GlobalScope { get; private set; }
 
         /// <summary>
         /// If module is a stub points to the primary module.

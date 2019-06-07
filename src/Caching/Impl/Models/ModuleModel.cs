@@ -18,8 +18,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class ModuleModel {
-        public string Name { get; set; }
+    internal sealed class ModuleModel: MemberModel {
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
