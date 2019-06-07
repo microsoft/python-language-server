@@ -33,9 +33,12 @@ namespace Microsoft.Python.Analysis.Caching {
                     return $"i:{GetQualifiedName(t)}";
                 case IPythonClassMember cm when cm.DeclaringType != null:
                     return $"{moduleId}.{cm.GetQualifiedName()}";
-                default:
-                    return $"{moduleId}.{t.Name}";
+                case IPythonType pt:
+                    return $"{moduleId}.{pt.Name}";
+                case null:
+                    break;
             }
+            return string.Empty;
         }
 
         private static string GetQualifiedName(this IPythonClassMember cm) {

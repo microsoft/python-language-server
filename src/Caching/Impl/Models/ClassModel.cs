@@ -34,10 +34,20 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var fields = new List<VariableModel>();
             var innerClasses = new List<ClassModel>();
 
-            foreach (var name in cls.GetMemberNames()) {
+            // Skip certain members in order to avoid infinite recursion.
+            foreach (var name in cls.GetMemberNames().Except(new [] {"__base__", "__bases__", "__class__", "mro" })) {
                 var m = cls.GetMember(name);
+                
+                // Only take members from this class, skip members from bases.
+                if(m is IPythonClassMember cm && !cls.Equals(cm.DeclaringType)) {
+                    continue;
+                }
+
                 switch (m) {
                     case IPythonClassType ct:
+                        if(!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
+                            continue;
+                        }
                         innerClasses.Add(FromType(ct));
                         break;
                     case IPythonFunctionType ft:

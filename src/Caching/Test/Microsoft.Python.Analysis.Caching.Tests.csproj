@@ -35,6 +35,9 @@
     <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
     <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.Caching.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Files\" />
+  </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <Import Project="..\..\..\build\NetStandard.targets" />
 </Project>

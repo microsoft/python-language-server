@@ -14,17 +14,15 @@
 // permissions and limitations under the License.
 
 using System.IO;
-using System.Text;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
     [TestClass]
-    public class BasicTests : AnalysisTestBase {
+    public class BasicTests : AnalysisCachingTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -33,6 +31,8 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
+
+        private string BaselineFileName => Path.ChangeExtension(Path.Combine(BaselineFilesFolder, TestContext.TestName), "json");
 
         [TestMethod, Priority(0)]
         public async Task SmokeTest() {
@@ -54,13 +54,8 @@ c = C()
 ";
             var analysis = await GetAnalysisAsync(code);
             var model = ModuleModel.FromAnalysis(analysis);
-
-            var sb = new StringBuilder();
-            using (var sw = new StringWriter(sb)) {
-                var js = new JsonSerializer();
-                js.Serialize(sw, model);
-            }
-            var json = sb.ToString();
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
         }
     }
 }
