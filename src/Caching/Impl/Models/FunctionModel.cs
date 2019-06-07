@@ -37,23 +37,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Parameters = o.Parameters.Select(p => new ParameterModel {
                     Name = p.Name,
                     Type = p.Type.GetQualifiedName(),
-                    Kind = GetParameterKind(p.Kind),
+                    Kind = p.Kind,
                     DefaultValue = p.DefaultValue.GetQualifiedName(),
                 }).ToArray(),
                 ReturnType = o.StaticReturnValue.GetQualifiedName()
             };
-        }
-
-        private static ParameterKind GetParameterKind(Parsing.Ast.ParameterKind p) {
-            switch (p) {
-                case Parsing.Ast.ParameterKind.KeywordOnly:
-                    return ParameterKind.KeywordOnly;
-                case Parsing.Ast.ParameterKind.List:
-                    return ParameterKind.List;
-                case Parsing.Ast.ParameterKind.Dictionary:
-                    return ParameterKind.Dictionary;
-            }
-            return ParameterKind.Normal;
         }
     }
 }

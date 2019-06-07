@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public static string GetQualifiedName(this IMember m) {
             var t = m.GetPythonType();
             if (t.IsUnknown()) {
-                return string.Empty;
+                return null;
             }
 
             var moduleId = t.DeclaringModule?.GetUniqueId();
@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 case null:
                     break;
             }
-            return string.Empty;
+            return null;
         }
 
         private static string GetQualifiedName(this IPythonClassMember cm) {

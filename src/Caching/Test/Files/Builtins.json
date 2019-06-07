@@ -1,0 +1,2847 @@
+{
+  "Name": "builtins",
+  "Functions": [
+    {
+      "Name": "type",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "__build_class__",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "func",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "name",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "bases",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "metaclass",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 3
+            },
+            {
+              "Name": "kwds",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "__import__",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "name",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "globals",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "locals",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "fromlist",
+              "Type": "builtins.tuple",
+              "DefaultValue": "i:builtins.tuple",
+              "Kind": 0
+            },
+            {
+              "Name": "level",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "abs",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "x",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "all",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "iterable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "any",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "iterable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "ascii",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "bin",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "number",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "breakpoint",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "args",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "kws",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "callable",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "chr",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "i",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "compile",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "source",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "filename",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "mode",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "flags",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "dont_inherit",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "optimize",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "copyright",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "self",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "credits",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "self",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "delattr",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "name",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "dir",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "object",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:builtins.list"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "divmod",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "x",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "y",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:builtins.tuple"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "eval",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "source",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "globals",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "locals",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "builtins.object"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "exec",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "source",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "globals",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "locals",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "exit",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "self",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "code",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "format",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "value",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "format_spec",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "getattr",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "object",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "name",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "default",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "globals",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:builtins.dict"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "hasattr",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "name",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "hash",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "help",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "self",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "args",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "kwds",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "hex",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "number",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "id",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "input",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "prompt",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "isinstance",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "class_or_tuple",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "builtins.bool"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "issubclass",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "cls",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "class_or_tuple",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "builtins.bool"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "iter",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "callable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "sentinel",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "len",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "builtins.int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "license",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "self",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "locals",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:builtins.dict"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "max",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "iterable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "default",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 3
+            },
+            {
+              "Name": "key",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 3
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "min",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "iterable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "default",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 3
+            },
+            {
+              "Name": "key",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 3
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "next",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "iterator",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "default",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "oct",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "number",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "open",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "file",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "mode",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "buffering",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "encoding",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "errors",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "newline",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "closefd",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "opener",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "ord",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "c",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "builtins.int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "pow",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "x",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "y",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "z",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "print",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "quit",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "self",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "code",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "range",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "repr",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "round",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "number",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "ndigits",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "setattr",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "name",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "value",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "sorted",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "iterable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:builtins.list"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "sum",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "iterable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "start",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "vars",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "object",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:builtins.dict"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    },
+    {
+      "Name": "cmp",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "builtins.int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null
+    }
+  ],
+  "Variables": [],
+  "Classes": [
+    {
+      "Name": "NotImplementedType",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "__Unknown__",
+      "Bases": [],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "__NoneType__",
+      "Bases": [],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "object",
+      "Bases": [],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "int",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "bool",
+      "Bases": [
+        "builtins.int"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "float",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "complex",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "tuple",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "list",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "set",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "frozenset",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "bytes",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "bytes_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "str",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "str_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "module",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "function",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "wrapper_descriptor",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "builtin_function_or_method",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "generator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "property",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "classmethod",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "staticmethod",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "...",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "tuple_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "list_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict_keys",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict_values",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict_items",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "set_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "callable_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ArithmeticError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "AssertionError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "AttributeError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "BaseException",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "BlockingIOError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "BrokenPipeError",
+      "Bases": [
+        "builtins.ConnectionError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "BufferError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "BytesWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ChildProcessError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ConnectionAbortedError",
+      "Bases": [
+        "builtins.ConnectionError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ConnectionError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ConnectionRefusedError",
+      "Bases": [
+        "builtins.ConnectionError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ConnectionResetError",
+      "Bases": [
+        "builtins.ConnectionError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "DeprecationWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "EOFError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "Exception",
+      "Bases": [
+        "builtins.BaseException"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "FileExistsError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "FileNotFoundError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "FloatingPointError",
+      "Bases": [
+        "builtins.ArithmeticError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "FutureWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "GeneratorExit",
+      "Bases": [
+        "builtins.BaseException"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ImportError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ImportWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "IndentationError",
+      "Bases": [
+        "builtins.SyntaxError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "IndexError",
+      "Bases": [
+        "builtins.LookupError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "InterruptedError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "IsADirectoryError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "KeyError",
+      "Bases": [
+        "builtins.LookupError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "KeyboardInterrupt",
+      "Bases": [
+        "builtins.BaseException"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "LookupError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "MemoryError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ModuleNotFoundError",
+      "Bases": [
+        "builtins.ImportError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "NameError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "NotADirectoryError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "NotImplementedError",
+      "Bases": [
+        "builtins.RuntimeError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "OSError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "OverflowError",
+      "Bases": [
+        "builtins.ArithmeticError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "PendingDeprecationWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "PermissionError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ProcessLookupError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "RecursionError",
+      "Bases": [
+        "builtins.RuntimeError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ReferenceError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ResourceWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "RuntimeError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "RuntimeWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "StopAsyncIteration",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "StopIteration",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "SyntaxError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "SyntaxWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "SystemError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "SystemExit",
+      "Bases": [
+        "builtins.BaseException"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "TabError",
+      "Bases": [
+        "builtins.IndentationError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "TimeoutError",
+      "Bases": [
+        "builtins.OSError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "TypeError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "UnboundLocalError",
+      "Bases": [
+        "builtins.NameError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "UnicodeDecodeError",
+      "Bases": [
+        "builtins.UnicodeError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "UnicodeEncodeError",
+      "Bases": [
+        "builtins.UnicodeError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "UnicodeError",
+      "Bases": [
+        "builtins.ValueError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "UnicodeTranslateError",
+      "Bases": [
+        "builtins.UnicodeError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "UnicodeWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "UserWarning",
+      "Bases": [
+        "builtins.Warning"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ValueError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "Warning",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "ZeroDivisionError",
+      "Bases": [
+        "builtins.ArithmeticError"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "bytearray",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "enumerate",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "filter",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "map",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "memoryview",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "reversed",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "slice",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "super",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "zip",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "object",
+      "Bases": [],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "type",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "int",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "bool",
+      "Bases": [
+        "builtins.int"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "int",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "float",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "complex",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "tuple",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "list",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "set",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "frozenset",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "bytes",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "bytes_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "str",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "str_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "str",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "str_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "module",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "function",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "wrapper_descriptor",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "builtin_function_or_method",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "generator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "property",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "classmethod",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "staticmethod",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "...",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "tuple_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "list_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict_keys",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict_values",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "dict_items",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "set_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "callable_iterator",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "...",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "OSError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "OSError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "NotImplementedType",
+      "Bases": [
+        "builtins.object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    },
+    {
+      "Name": "OSError",
+      "Bases": [
+        "builtins.Exception"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": []
+    }
+  ]
+}

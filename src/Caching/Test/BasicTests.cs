@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -54,6 +53,14 @@ c = C()
 ";
             var analysis = await GetAnalysisAsync(code);
             var model = ModuleModel.FromAnalysis(analysis);
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Builtins() {
+            var analysis = await GetAnalysisAsync(string.Empty);
+            var model = ModuleModel.FromAnalysis(analysis.Document.Interpreter.ModuleResolution.BuiltinsModule.Analysis);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }

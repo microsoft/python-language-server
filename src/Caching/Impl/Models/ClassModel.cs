@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -28,51 +30,71 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string[] GenericParameters { get; set; }
         public ClassModel[] InnerClasses { get; set; }
 
-        public static ClassModel FromType(IPythonClassType cls) {
+        private readonly Stack<IMember> _processing = new Stack<IMember>();
+
+        public static ClassModel FromType(IPythonClassType cls) => new ClassModel(cls);
+
+        private ClassModel(IPythonClassType cls) {
             var methods = new List<FunctionModel>();
             var properties = new List<PropertyModel>();
             var fields = new List<VariableModel>();
             var innerClasses = new List<ClassModel>();
 
             // Skip certain members in order to avoid infinite recursion.
-            foreach (var name in cls.GetMemberNames().Except(new [] {"__base__", "__bases__", "__class__", "mro" })) {
+            foreach (var name in cls.GetMemberNames().Except(new[] { "__base__", "__bases__", "__class__", "mro" })) {
                 var m = cls.GetMember(name);
-                
+
                 // Only take members from this class, skip members from bases.
-                if(m is IPythonClassMember cm && !cls.Equals(cm.DeclaringType)) {
+                if (m is IPythonClassMember cm && !cls.Equals(cm.DeclaringType)) {
                     continue;
                 }
 
-                switch (m) {
-                    case IPythonClassType ct:
-                        if(!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
-                            continue;
-                        }
-                        innerClasses.Add(FromType(ct));
-                        break;
-                    case IPythonFunctionType ft:
-                        methods.Add(FunctionModel.FromType(ft));
-                        break;
-                    case IPythonPropertyType prop:
-                        properties.Add(PropertyModel.FromType(prop));
-                        break;
-                    case IPythonInstance inst:
-                        fields.Add(VariableModel.FromInstance(name, inst));
-                        break;
-                    case IPythonType t:
-                        fields.Add(VariableModel.FromType(name, t));
-                        break;
+                if (!Push(m)) {
+                    continue;
+                }
+                try {
+                    switch (m) {
+                        case IPythonClassType ct:
+                            if (!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
+                                continue;
+                            }
+                            innerClasses.Add(FromType(ct));
+                            break;
+                        case IPythonFunctionType ft:
+                            methods.Add(FunctionModel.FromType(ft));
+                            break;
+                        case IPythonPropertyType prop:
+                            properties.Add(PropertyModel.FromType(prop));
+                            break;
+                        case IPythonInstance inst:
+                            fields.Add(VariableModel.FromInstance(name, inst));
+                            break;
+                        case IPythonType t:
+                            fields.Add(VariableModel.FromType(name, t));
+                            break;
+                    }
+                } finally {
+                    Pop();
                 }
             }
 
-            return new ClassModel {
-                Name = cls.Name,
-                Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetQualifiedName()).ToArray(),
-                Methods = methods.ToArray(),
-                Properties = properties.ToArray(),
-                Fields = fields.ToArray(),
-                InnerClasses = innerClasses.ToArray()
-            };
+            Name = cls.Name;
+            Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetQualifiedName()).ToArray();
+            Methods = methods.ToArray();
+            Properties = properties.ToArray();
+            Fields = fields.ToArray();
+            InnerClasses = innerClasses.ToArray();
         }
+
+        #region Reentrancy guards
+        private bool Push(IMember t) {
+            if (_processing.Contains(t)) {
+                return false;
+            }
+            _processing.Push(t);
+            return false;
+        }
+        private void Pop() => _processing.Pop();
+        #endregion
     }
 }
