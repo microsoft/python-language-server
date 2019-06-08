@@ -147,8 +147,11 @@
   <data name="DefaultValueMustBeSpecifiedErrorMsg" xml:space="preserve">
     <value>default value must be specified here</value>
   </data>
-  <data name="DuplicateArgsArgumentErrorMsg" xml:space="preserve">
-    <value>duplicate {0} args arguments</value>
+  <data name="DuplicateArgsDoubleArgumentErrorMsg" xml:space="preserve">
+    <value>duplicate ** args arguments</value>
+  </data>
+  <data name="DuplicateArgsSingleArgumentErrorMsg" xml:space="preserve">
+    <value>duplicate * args arguments</value>
   </data>
   <data name="DuplicateArgumentInFunctionDefinitionErrorMsg" xml:space="preserve">
     <value>duplicate argument '{0}' in function definition</value>
@@ -162,8 +165,8 @@
   <data name="EmptyExpressionFStringErrorMsg" xml:space="preserve">
     <value>f-string: empty expression not allowed</value>
   </data>
-  <data name="ExpectedCharacterErrorMsg" xml:space="preserve">
-    <value>expected '{0}'</value>
+  <data name="ExpectedColonErrorMsg" xml:space="preserve">
+    <value>expected ':'</value>
   </data>
   <data name="ExpectedExpressionAfterDelErrorMsg" xml:space="preserve">
     <value>expected expression after del</value>
@@ -267,8 +270,11 @@
   <data name="NumberSignFStringExpressionErrorMsg" xml:space="preserve">
     <value>f-string expression part cannot include '#'</value>
   </data>
-  <data name="OnlyOneAllowedErrorMsg" xml:space="preserve">
-    <value>only one {0} allowed</value>
+  <data name="OnlyOneAllowedDoubleErrorMsg" xml:space="preserve">
+    <value>only one ** allowed</value>
+  </data>
+  <data name="OnlyOneAllowedSingleErrorMsg" xml:space="preserve">
+    <value>only one * allowed</value>
   </data>
   <data name="ParameterAnnotationsRequire3dotXErrorMsg" xml:space="preserve">
     <value>invalid syntax, parameter annotations require 3.x</value>

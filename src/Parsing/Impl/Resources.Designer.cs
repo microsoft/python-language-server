@@ -151,11 +151,20 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to duplicate {0} args arguments.
+        ///   Looks up a localized string similar to duplicate ** args arguments.
         /// </summary>
-        internal static string DuplicateArgsArgumentErrorMsg {
+        internal static string DuplicateArgsDoubleArgumentErrorMsg {
             get {
-                return ResourceManager.GetString("DuplicateArgsArgumentErrorMsg", resourceCulture);
+                return ResourceManager.GetString("DuplicateArgsDoubleArgumentErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to duplicate * args arguments.
+        /// </summary>
+        internal static string DuplicateArgsSingleArgumentErrorMsg {
+            get {
+                return ResourceManager.GetString("DuplicateArgsSingleArgumentErrorMsg", resourceCulture);
             }
         }
         
@@ -196,11 +205,11 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to expected &apos;{0}&apos;.
+        ///   Looks up a localized string similar to expected &apos;:&apos;.
         /// </summary>
-        internal static string ExpectedCharacterErrorMsg {
+        internal static string ExpectedColonErrorMsg {
             get {
-                return ResourceManager.GetString("ExpectedCharacterErrorMsg", resourceCulture);
+                return ResourceManager.GetString("ExpectedColonErrorMsg", resourceCulture);
             }
         }
         
@@ -511,11 +520,20 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to only one {0} allowed.
+        ///   Looks up a localized string similar to only one ** allowed.
         /// </summary>
-        internal static string OnlyOneAllowedErrorMsg {
+        internal static string OnlyOneAllowedDoubleErrorMsg {
             get {
-                return ResourceManager.GetString("OnlyOneAllowedErrorMsg", resourceCulture);
+                return ResourceManager.GetString("OnlyOneAllowedDoubleErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to only one * allowed.
+        /// </summary>
+        internal static string OnlyOneAllowedSingleErrorMsg {
+            get {
+                return ResourceManager.GetString("OnlyOneAllowedSingleErrorMsg", resourceCulture);
             }
         }
         

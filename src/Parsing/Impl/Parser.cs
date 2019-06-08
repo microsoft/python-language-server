@@ -2066,12 +2066,12 @@ namespace Microsoft.Python.Parsing {
 
                 if (p.Kind == ParameterKind.List) {
                     if (seenListArg) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsArgumentErrorMsg.FormatInvariant("*"));//duplicate * args arguments
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsSingleArgumentErrorMsg);//duplicate * args arguments
                     }
                     seenListArg = true;
                 } else if (p.Kind == ParameterKind.Dictionary) {
-                    if (seenDictArg) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsArgumentErrorMsg.FormatInvariant("**"));//duplicate ** args arguments
+                    if (seenDictArg) {  
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsDoubleArgumentErrorMsg);//duplicate ** args arguments
                     }
                     seenDictArg = true;
                 } else if (seenListArg && p.Kind != ParameterKind.KeywordOnly) {
@@ -2161,7 +2161,7 @@ namespace Microsoft.Python.Parsing {
                 expr = ParseExpression(allowNamedExpressions: false);
             } else {
                 expr = Error(string.Empty);
-                ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.Start, Resources.ExpectedCharacterErrorMsg.FormatInvariant(":"));//"expected ':'"
+                ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.Start, Resources.ExpectedColonErrorMsg);//"expected ':'"
             }
             return ParseLambdaHelperEnd(func, expr, whitespace, colonWhiteSpace, commaWhiteSpace, ateTerminator);
         }
@@ -4537,7 +4537,7 @@ namespace Microsoft.Python.Parsing {
                 } else if (arg.Name == "*") {
                     if (hasArgsTuple || hasKeywordDict) {
                         if (!_stubFile && _langVersion < PythonLanguageVersion.V35) {
-                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.OnlyOneAllowedErrorMsg.FormatInvariant("*"));//"only one * allowed"
+                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.OnlyOneAllowedSingleErrorMsg);//"only one * allowed"
                         } else if (hasKeywordDict) {
                             ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.IterableArgumentFollowsKeywordArgumentErrorMsg);//iterable argument unpacking follows keyword argument unpacking
                         }
@@ -4546,7 +4546,7 @@ namespace Microsoft.Python.Parsing {
                 } else if (arg.Name == "**") {
                     if (hasKeywordDict) {
                         if (!_stubFile && _langVersion < PythonLanguageVersion.V35) {
-                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.OnlyOneAllowedErrorMsg.FormatInvariant("**"));//only one ** allowed
+                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.OnlyOneAllowedDoubleErrorMsg);//only one ** allowed
                         }
                     }
                     hasKeywordDict = true; extraArgs++;
