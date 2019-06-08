@@ -308,11 +308,11 @@ namespace Microsoft.Python.Parsing {
         private static string GetErrorMessage(Token t, int errorCode) {
             string msg;
             if ((errorCode & ~ErrorCodes.IncompleteMask) == ErrorCodes.IndentationError) {
-                msg = "expected an indented block";
+                msg = Resources.ExpectedIndentedBlockErrorMsg;//"expected an indented block";
             } else if (t.Kind != TokenKind.EndOfFile) {
-                msg = "unexpected token '{0}'".FormatUI(t.Image);
+                msg = Resources.UnexpectedTokenErrorMsg.FormatUI(t.Image); //"unexpected token '{0}'".FormatUI(t.Image);
             } else {
-                msg = "unexpected EOF while parsing";
+                msg = Resources.UnexpectedEndOfFileWhileParsingErrorMsg;//"unexpected EOF while parsing";
             }
 
             return msg;
@@ -364,7 +364,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             var prevTokenEnd = prevTokenStart + prevTokenLength;
-            var message = "syntax error";
+            var message = Resources.SyntaxErrorMsg;//"syntax error";
             if (_lookahead.Token.Kind == TokenKind.NewLine) {
                 // Incomplete member expression, report next character unless there is none.
                 // If there is none, then point to the newline. If we are at EOF, report the dot.
@@ -502,7 +502,7 @@ namespace Microsoft.Python.Parsing {
                     return ParseWithStmt(isAsync: true);
             }
 
-            ReportSyntaxError("syntax error");
+            ReportSyntaxError(Resources.SyntaxErrorMsg);//"syntax error"
             return ParseStmt();
         }
 
@@ -589,14 +589,14 @@ namespace Microsoft.Python.Parsing {
                     return FinishSmallStmt(new EmptyStatement());
                 case TokenKind.KeywordBreak:
                     if (!_inLoop) {
-                        ReportSyntaxError("'break' outside loop");
+                        ReportSyntaxError(Resources.BreakOustideLoopErrorMsg);//"'break' outside loop"
                     }
                     return FinishSmallStmt(new BreakStatement());
                 case TokenKind.KeywordContinue:
                     if (!_inLoop) {
-                        ReportSyntaxError("'continue' not properly in loop");
+                        ReportSyntaxError(Resources.ContinueNotInLoopErrorMsg);//'continue' not properly in loop
                     } else if (_inFinally) {
-                        ReportSyntaxError("'continue' not supported inside 'finally' clause");
+                        ReportSyntaxError(Resources.ContinueNotSupportedInsideFinallyErrorMsg);//'continue' not supported inside 'finally' clause
                     }
                     return FinishSmallStmt(new ContinueStatement());
                 case TokenKind.KeywordReturn:
@@ -635,7 +635,7 @@ namespace Microsoft.Python.Parsing {
 
             DelStatement ret;
             if (PeekToken(TokenKind.NewLine) || PeekToken(TokenKind.EndOfFile)) {
-                ReportSyntaxError(curLookahead.Span.Start, curLookahead.Span.End, "expected expression after del");
+                ReportSyntaxError(curLookahead.Span.Start, curLookahead.Span.End, Resources.ExpectedExpressionAfterDelErrorMsg);//expected expression after del
                 ret = new DelStatement(ImmutableArray<Expression>.Empty);
             } else {
                 var l = ParseExprList(out var itemWhiteSpace);
@@ -664,7 +664,7 @@ namespace Microsoft.Python.Parsing {
 
         private Statement ParseReturnStmt() {
             if (!AllowReturnSyntax) {
-                ReportSyntaxError("'return' outside function");
+                ReportSyntaxError(Resources.ReturnOutsideFunctionErrorMsg);//'return' outside function
             }
             var returnToken = _lookahead;
             NextToken();
@@ -677,7 +677,7 @@ namespace Microsoft.Python.Parsing {
 
             if (expr != null && _langVersion < PythonLanguageVersion.V33) {
                 if (_isGenerator) {
-                    ReportSyntaxError(returnToken.Span.Start, expr.EndIndex, "'return' with argument inside generator");
+                    ReportSyntaxError(returnToken.Span.Start, expr.EndIndex, Resources.ReturnWithArgumentInGeneratorErrorMsg);//'return' with argument inside generator
                 } else {
                     if (_returnsWithValue == null) {
                         _returnsWithValue = new List<IndexSpan>();
@@ -709,16 +709,16 @@ namespace Microsoft.Python.Parsing {
             // This gives us better syntax error reporting for yield-statements than for yield-expressions.
             if (!AllowYieldSyntax) {
                 if (AllowAsyncAwaitSyntax) {
-                    ReportSyntaxError("'yield' inside async function");
+                    ReportSyntaxError(Resources.YieldInsideAsyncErrorMsg);//'yield' inside async function
                 } else {
-                    ReportSyntaxError("misplaced yield");
+                    ReportSyntaxError(Resources.MisplacedYieldErrorMsg);//misplaced yield
                 }
             }
 
             _isGenerator = true;
             if (_returnsWithValue != null && _langVersion < PythonLanguageVersion.V33) {
                 foreach (var span in _returnsWithValue) {
-                    ReportSyntaxError(span.Start, span.End, "'return' with argument inside generator");
+                    ReportSyntaxError(span.Start, span.End, Resources.ReturnWithArgumentInGeneratorErrorMsg);//'return' with argument inside generator
                 }
             }
 
@@ -767,7 +767,7 @@ namespace Microsoft.Python.Parsing {
             if (isYieldFrom) {
                 if (_langVersion < PythonLanguageVersion.V33) {
                     // yield from added to 3.3
-                    ReportSyntaxError("invalid syntax");
+                    ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);
                     suppressSyntaxError = true;
                 }
                 NextToken();
@@ -777,17 +777,17 @@ namespace Microsoft.Python.Parsing {
             if (l.Count == 0) {
                 if (_langVersion < PythonLanguageVersion.V25 && !suppressSyntaxError) {
                     // 2.4 doesn't allow plain yield
-                    ReportSyntaxError("invalid syntax");
+                    ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);
                 } else if (isYieldFrom && !suppressSyntaxError) {
                     // yield from requires one expression
-                    ReportSyntaxError("invalid syntax");
+                    ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);
                 }
                 // Check empty expression and convert to 'none'
                 yieldResult = new ConstantExpression(null);
             } else if (l.Count != 1) {
                 if (isYieldFrom && !suppressSyntaxError) {
                     // yield from requires one expression
-                    ReportSyntaxError(l[0].StartIndex, l[l.Count - 1].EndIndex, "invalid syntax");
+                    ReportSyntaxError(l[0].StartIndex, l[l.Count - 1].EndIndex, Resources.InvalidSyntaxErrorMsg);
                 }
                 // make a tuple
                 yieldResult = MakeTupleOrExpr(l, itemWhiteSpace, trailingComma, true);
@@ -837,7 +837,7 @@ namespace Microsoft.Python.Parsing {
                     singleLeft = right;
                 } else {
                     if (thereCanBeOnlyOne) {
-                        ReportSyntaxError(GetStart(), GetEnd(), "invalid syntax");
+                        ReportSyntaxError(GetStart(), GetEnd(), Resources.InvalidSyntaxErrorMsg);
                     }
                     if (left == null) {
                         left = new List<Expression> { singleLeft };
@@ -847,7 +847,7 @@ namespace Microsoft.Python.Parsing {
 
                 if (_langVersion >= PythonLanguageVersion.V25 && PeekToken(TokenKind.KeywordYield)) {
                     if (!AllowYieldSyntax && AllowAsyncAwaitSyntax) {
-                        ReportSyntaxError("'yield' inside async function");
+                        ReportSyntaxError(Resources.YieldInsideAsyncErrorMsg);//'yield' inside async function
                     }
                     Eat(TokenKind.KeywordYield);
                     right = ParseYieldExpression();
@@ -916,9 +916,9 @@ namespace Microsoft.Python.Parsing {
                 inex is NameExpression || inex is MemberExpression || inex is IndexExpression) {
                 // pass
             } else if (expr is TupleExpression) {
-                return ReadLineAsError(expr, "only single target (not tuple) can be annotated");
+                return ReadLineAsError(expr, Resources.SingleTargetCanBeAnnotatedErrorMsg);//only single target (not tuple) can be annotated
             } else {
-                return ReadLineAsError(expr, "illegal target for annotation");
+                return ReadLineAsError(expr, Resources.IllegalTargetAnnotationErrorMsg);//illegal target for annotation
             }
 
             Eat(TokenKind.Colon);
@@ -978,7 +978,7 @@ namespace Microsoft.Python.Parsing {
                         for (var i = 0; i < seq.Items.Count; i++) {
                             if (seq.Items[i] is StarredExpression) {
                                 if (hasStar) {
-                                    ReportSyntaxError(seq.Items[i].StartIndex, seq.Items[i].EndIndex, "two starred expressions in assignment");
+                                    ReportSyntaxError(seq.Items[i].StartIndex, seq.Items[i].EndIndex, Resources.TwoStarredExpressionErrorMsg);//two starred expressions in assignment
                                 }
                                 hasStar = true;
                             }
@@ -996,7 +996,7 @@ namespace Microsoft.Python.Parsing {
 
                     if (_langVersion >= PythonLanguageVersion.V25 && PeekToken(TokenKind.KeywordYield)) {
                         if (!AllowYieldSyntax && AllowAsyncAwaitSyntax) {
-                            ReportSyntaxError("'yield' inside async function");
+                            ReportSyntaxError(Resources.YieldInsideAsyncErrorMsg);//'yield' inside async function
                         }
                         Eat(TokenKind.KeywordYield);
                         rhs = ParseYieldExpression();
@@ -1166,7 +1166,7 @@ namespace Microsoft.Python.Parsing {
                 }
             } else {
                 if (names.Count == 0) {
-                    ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, "missing module name");
+                    ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, Resources.MissingModuleNameErrorMsg);
                 }
                 ret = new ModuleName(names);
                 if (nameWhiteSpace != null) {
@@ -1174,7 +1174,7 @@ namespace Microsoft.Python.Parsing {
                 }
             }
 
-            Debug.Assert(isStartSetCorrectly, "Start location was not set correctly");
+            Debug.Assert(isStartSetCorrectly, Resources.IncorrectStartLocationErrorMsg);//Start location was not set correctly
             ret.SetLoc(start, GetEnd());
             return ret;
         }
@@ -1239,7 +1239,7 @@ namespace Microsoft.Python.Parsing {
 
                 if (_langVersion.Is3x() && ((_functions != null && _functions.Count > 0) || _classDepth > 0)) {
                     foreach (var n in names.Where(n => n.Name == "*")) {
-                        ReportSyntaxError(n.StartIndex, n.EndIndex, "import * only allowed at module level");
+                        ReportSyntaxError(n.StartIndex, n.EndIndex, Resources.ImportOnlyAllowedAtModuleErrorMsg);//import * only allowed at module level
                     }
                 }
             }
@@ -1278,10 +1278,10 @@ namespace Microsoft.Python.Parsing {
 
         private bool ProcessFutureStatements(int start, ImmutableArray<NameExpression> names, bool fromFuture) {
             if (!_fromFutureAllowed) {
-                ReportSyntaxError(start, GetEnd(), "from __future__ imports must occur at the beginning of the file");
+                ReportSyntaxError(start, GetEnd(), Resources.FutureImportsMustOccorAtBeginningOfFileErrorMsg);//from __future__ imports must occur at the beginning of the file
             }
             if (names.Count == 1 && names[0].Name == "*") {
-                ReportSyntaxError(start, GetEnd(), "future statement does not support import *");
+                ReportSyntaxError(start, GetEnd(), Resources.FutureStatementDoesNotSupportImportErrorMsg);//future statement does not support import *
             }
             fromFuture = true;
             foreach (var name in names) {
@@ -1318,10 +1318,10 @@ namespace Microsoft.Python.Parsing {
                     var strName = name.Name;
 
                     if (strName != "braces") {
-                        ReportSyntaxError(start, GetEnd(), "future feature is not defined: " + strName);
+                        ReportSyntaxError(start, GetEnd(), Resources.FutureFeatureNotDefinedErrorMsg + strName);//future feature is not defined: 
                     } else {
                         // match CPython error message
-                        ReportSyntaxError(start, GetEnd(), "not a chance");
+                        ReportSyntaxError(start, GetEnd(), Resources.NotAChanceErrorMsg);//not a chance
                     }
                 }
             }
@@ -1442,7 +1442,7 @@ namespace Microsoft.Python.Parsing {
 
         private NonlocalStatement ParseNonlocalStmt() {
             if (_functions != null && _functions.Count == 0 && _classDepth == 0) {
-                ReportSyntaxError("nonlocal declaration not allowed at module level");
+                ReportSyntaxError(Resources.NonLocalDeclarationAtModuleErrorMsg);//nonlocal declaration not allowed at module level
             }
 
             Eat(TokenKind.KeywordNonlocal);
@@ -1507,7 +1507,7 @@ namespace Microsoft.Python.Parsing {
                     valueFieldStart = GetEnd();
                     value = ParseExpression();
                     if (_stubFile || _langVersion.Is3x()) {
-                        ReportSyntaxError(commaStart, GetEnd(), "invalid syntax, only exception value is allowed in 3.x.");
+                        ReportSyntaxError(commaStart, GetEnd(), Resources.InvalidSyntaxAllowedInVersion3XErrorMsg);//invalid syntax, only exception value is allowed in 3.x.
                     }
                     if (MaybeEat(TokenKind.Comma)) {
                         secondCommaWhiteSpace = _tokenWhiteSpace;
@@ -1522,7 +1522,7 @@ namespace Microsoft.Python.Parsing {
                     isFromForm = true;
 
                     if (!_stubFile && _langVersion.Is2x()) {
-                        ReportSyntaxError(fromStart, cause.EndIndex, "invalid syntax, from cause not allowed in 2.x.");
+                        ReportSyntaxError(fromStart, cause.EndIndex, Resources.FromCauseNotAllowedIn2XErrorMsg);//invalid syntax, from cause not allowed in 2.x.
                     }
                 }
 
@@ -1615,7 +1615,7 @@ namespace Microsoft.Python.Parsing {
                     expressions = ImmutableArray<Expression>.Create(exprList);
                 }
             } else if (needNonEmptyTestList) {
-                ReportSyntaxError(start, end, "print statement expected expression to be printed");
+                ReportSyntaxError(start, end, Resources.ExpectedExpressionToBePrintedErrorMsg);//print statement expected expression to be printed
                 expressions = expressions.Add(Error(""));
             }
 
@@ -1680,7 +1680,7 @@ namespace Microsoft.Python.Parsing {
                 if (!_stubFile && _langVersion.Is2x()) {
                     foreach (var a in args) {
                         if (a.Name != null) {
-                            ReportSyntaxError(a.StartIndex, a.EndIndex, "invalid syntax");
+                            ReportSyntaxError(a.StartIndex, a.EndIndex, Resources.InvalidSyntaxErrorMsg);
                         }
                     }
                 }
@@ -1842,7 +1842,7 @@ namespace Microsoft.Python.Parsing {
                 res = fnc;
             } else if (next == Tokens.KeywordClassToken) {
                 if (_langVersion < PythonLanguageVersion.V26) {
-                    ReportSyntaxError("invalid syntax, class decorators require 2.6 or later.");
+                    ReportSyntaxError(Resources.ClassDecoratorsRequireTwodotSixErrorMsg);//invalid syntax, class decorators require 2.6 or later.
                 }
                 var cls = ParseClassDef();
                 if (cls is ClassDefinition) {
@@ -1932,7 +1932,7 @@ namespace Microsoft.Python.Parsing {
                 var arrStart = GetStart();
                 returnAnnotation = ParseExpression();
                 if (!_stubFile && _langVersion.Is2x()) {
-                    ReportSyntaxError(arrStart, returnAnnotation.EndIndex, "invalid syntax, return annotations require 3.x");
+                    ReportSyntaxError(arrStart, returnAnnotation.EndIndex, Resources.ReturnAnnotationsRequire3dotXErrorMsg);//invalid syntax, return annotations require 3.x
                 }
             }
 
@@ -2071,17 +2071,17 @@ namespace Microsoft.Python.Parsing {
             foreach (var p in parameters) {
                 if (p.Annotation != null) {
                     if (!_stubFile && _langVersion.Is2x()) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, "invalid syntax, parameter annotations require 3.x");
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.ParameterAnnotationsRequire3dotXErrorMsg);//invalid syntax, parameter annotations require 3.x
                         continue;
                     } else if (!allowAnnotations) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, "invalid syntax");
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.InvalidSyntaxErrorMsg);//invalid syntax
                         continue;
                     }
                 }
 
                 if (p.DefaultValue == null) {
                     if (seenDefault && p.Kind == ParameterKind.Normal) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, "default value must be specified here");
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DefaultValueMustBeSpecifiedErrorMsg);//default value must be specified here
                     }
                 } else {
                     seenDefault = true;
@@ -2089,7 +2089,7 @@ namespace Microsoft.Python.Parsing {
 
                 if (p is SublistParameter sp) {
                     if (_stubFile || _langVersion.Is3x()) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, "sublist parameters are not supported in 3.x");
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.SublistParametersNotSupported3dotXErrorMsg);//sublist parameters are not supported in 3.x
                     } else {
                         ValidateSublistParameter(sp.Tuple?.Items, seenNames);
                     }
@@ -2097,40 +2097,40 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 if (p is ErrorParameter) {
-                    ReportSyntaxError(p.StartIndex, p.EndIndex, "invalid parameter");
+                    ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.InvalidParameterErrorMsg);//Invalid Parameter
                     continue;
                 }
 
                 if (string.IsNullOrEmpty(p.Name)) {
                     if (p.Kind != ParameterKind.List || !(_stubFile || _langVersion.Is3x())) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, "invalid syntax");
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                         continue;
                     }
                 } else if (!seenNames.Add(p.Name)) {
-                    ReportSyntaxError(p.StartIndex, p.EndIndex, "duplicate argument '{0}' in function definition".FormatUI(p.Name));
+                    ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgumentInFunctionErrorMsg.FormatUI(p.Name));
                 }
 
                 if (p.Kind == ParameterKind.List) {
                     if (seenListArg) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, "duplicate * args arguments");
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsSingleArgumentErrorMsg);//duplicate * args arguments
                     }
                     seenListArg = true;
                 } else if (p.Kind == ParameterKind.Dictionary) {
-                    if (seenDictArg) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, "duplicate ** args arguments");
+                    if (seenDictArg) {  
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsDoubleArgumentErrorMsg);//duplicate ** args arguments
                     }
                     seenDictArg = true;
                 } else if (seenListArg && p.Kind != ParameterKind.KeywordOnly) {
-                    ReportSyntaxError(p.StartIndex, p.EndIndex, "positional parameter after * args not allowed");
+                    ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalParameterNotAllowedErrorMsg);//positional parameter after * args not allowed
                 } else if (seenDictArg) {
-                    ReportSyntaxError(p.StartIndex, p.EndIndex, "invalid syntax");
+                    ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.InvalidSyntaxErrorMsg);//invalid syntax
                 }
             }
 
             if (parameters.Count > 0 && seenListArg) {
                 var p = parameters.Last();
                 if (p.Kind == ParameterKind.List && string.IsNullOrEmpty(p.Name)) {
-                    ReportSyntaxError(p.StartIndex, p.EndIndex, "named arguments must follow bare *");
+                    ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.NamedArgumentsMustFollowBareErrorMsg);//named arguments must follow bare *
                 }
             }
 
@@ -2155,7 +2155,7 @@ namespace Microsoft.Python.Parsing {
                 MoveNodeAttributes(p, sublist, NodeAttributes.ErrorMissingCloseGrouping);
                 AddIsAltForm(p);
             } else {
-                ReportSyntaxError(sublist.StartIndex, sublist.EndIndex, "invalid sublist parameter");
+                ReportSyntaxError(sublist.StartIndex, sublist.EndIndex, Resources.InvalidSublistParameterErrorMsg);//invalid sublist parameter
                 p = new ErrorParameter(sublist, ParameterKind.Normal);
                 p.SetLoc(sublist.StartIndex, sublist.EndIndex);
                 if (!(sublist is ParenthesisExpression) && !(sublist is TupleExpression)) {
@@ -2175,12 +2175,12 @@ namespace Microsoft.Python.Parsing {
                     ValidateSublistParameter(te.Items, seenNames);
                 } else if (e is NameExpression ne) {
                     if (string.IsNullOrEmpty(ne.Name)) {
-                        ReportSyntaxError(e.StartIndex, e.EndIndex, "invalid sublist parameter");
+                        ReportSyntaxError(e.StartIndex, e.EndIndex, Resources.InvalidSublistParameterErrorMsg);//invalid sublist parameter
                     } else if (!seenNames.Add(ne.Name)) {
-                        ReportSyntaxError(e.StartIndex, e.EndIndex, "duplicate argument '{0}' in function definition".FormatUI(ne.Name));
+                        ReportSyntaxError(e.StartIndex, e.EndIndex, Resources.DuplicateArgumentInFunctionDefinitionErrorMsg.FormatUI(ne.Name));
                     }
                 } else {
-                    ReportSyntaxError(e.StartIndex, e.EndIndex, "invalid sublist parameter");
+                    ReportSyntaxError(e.StartIndex, e.EndIndex, Resources.InvalidSublistParameterErrorMsg);//Invalid sublist parameter
                 }
             }
         }
@@ -2207,7 +2207,7 @@ namespace Microsoft.Python.Parsing {
                 expr = ParseExpression(allowNamedExpressions: false);
             } else {
                 expr = Error(string.Empty);
-                ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.Start, "expected ':'");
+                ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.Start, Resources.ExpectedColonErrorMsg);//"expected ':'"
             }
             return ParseLambdaHelperEnd(func, expr, whitespace, colonWhiteSpace, commaWhiteSpace, ateTerminator);
         }
@@ -2558,7 +2558,7 @@ namespace Microsoft.Python.Parsing {
                     handlers.Add(handler);
 
                     if (dh != null) {
-                        ReportSyntaxError(dh.StartIndex, dh.HeaderIndex, "default 'except' must be last");
+                        ReportSyntaxError(dh.StartIndex, dh.HeaderIndex, Resources.DefaultExceptMustBeLastErrorMsg);//default 'except' must be last
                     }
                     if (handler.Test == null) {
                         dh = handler;
@@ -2626,7 +2626,7 @@ namespace Microsoft.Python.Parsing {
                 if (MaybeEat(TokenKind.KeywordAs) || MaybeEatName("as")) {
                     commaWhiteSpace = _tokenWhiteSpace;
                     if (_langVersion < PythonLanguageVersion.V26 && !_stubFile) {
-                        ReportSyntaxError(lookahead.Span.Start, lookahead.Span.End, "'as' requires Python 2.6 or later");
+                        ReportSyntaxError(lookahead.Span.Start, lookahead.Span.End, Resources.AsRequiresPython2dot6OrlaterErrorMsg);//'as' requires Python 2.6 or later
                     }
                     test2 = ParseExpression();
                     altForm = true;
@@ -2634,7 +2634,7 @@ namespace Microsoft.Python.Parsing {
                     commaWhiteSpace = _tokenWhiteSpace;
                     test2 = ParseExpression();
                     if (_langVersion.Is3x() || _stubFile) {
-                        ReportSyntaxError(lookahead.Span.Start, GetEnd(), "\", variable\" not allowed in 3.x - use \"as variable\" instead.");
+                        ReportSyntaxError(lookahead.Span.Start, GetEnd(), Resources.VariableIn3dotXErrorMsg);//"\", variable\" not allowed in 3.x - use \"as variable\" instead."
                     }
                 }
             }
@@ -2697,7 +2697,7 @@ namespace Microsoft.Python.Parsing {
                 if (!MaybeEat(TokenKind.Indent)) {
                     // no indent?  report the indentation error.
                     if (cur.Token.Kind == TokenKind.Dedent) {
-                        ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, "expected an indented block", ErrorCodes.SyntaxError | ErrorCodes.IncompleteStatement);
+                        ReportSyntaxError(_lookahead.Span.Start, _lookahead.Span.End, Resources.ExpectedIndentedBlockErrorMsg, ErrorCodes.SyntaxError | ErrorCodes.IncompleteStatement);
                     } else {
                         ReportSyntaxError(cur, ErrorCodes.IndentationError);
                     }
@@ -2720,7 +2720,7 @@ namespace Microsoft.Python.Parsing {
                     l.Add(s);
 
                     if (PeekToken().Kind == TokenKind.EndOfFile) {
-                        ReportSyntaxError("unexpected end of file");
+                        ReportSyntaxError(Resources.UnexpectedEndOfFileErrorMsg);//"unexpected end of file"
                         break; // error handling
                     }
                 }
@@ -3233,7 +3233,7 @@ namespace Microsoft.Python.Parsing {
                     }
                     hasAsciiStrings = true;
                 } else {
-                    Debug.Fail("Unhandled string token");
+                    Debug.Fail(Resources.UnhandledStringTokenErrorMsg);//Unhandled string token
                     if (IsStringToken(PeekToken())) {
                         NextToken();
                     }
@@ -3412,7 +3412,7 @@ namespace Microsoft.Python.Parsing {
                             break;
                         case TokenKind.Constant:
                             // abc.1, abc"", abc 1L, abc 0j
-                            ReportSyntaxError("invalid syntax");
+                            ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);//invalid syntax
                             ret = Error(_verbatim ? _lookaheadWhiteSpace + _lookahead.Token.VerbatimImage : null, ret);
                             NextToken();
                             break;
@@ -3617,7 +3617,7 @@ namespace Microsoft.Python.Parsing {
 
             string name;
             if (!(t is NameExpression n)) {
-                ReportSyntaxError(t.StartIndex, t.EndIndex, "expected name");
+                ReportSyntaxError(t.StartIndex, t.EndIndex, Resources.ExpectedNameErrorMsg);//expected name
                 name = null;
             } else {
                 name = n.Name;
@@ -3639,7 +3639,7 @@ namespace Microsoft.Python.Parsing {
                 var name = arg.Name;
                 for (var i = 0; i < names.Count; i++) {
                     if (names[i].Name == arg.Name) {
-                        ReportSyntaxError("duplicate keyword argument");
+                        ReportSyntaxError(Resources.DuplicateKeywordArgumentErrorMsg);//duplicate keyword argument
                     }
                 }
             }
@@ -3712,7 +3712,7 @@ namespace Microsoft.Python.Parsing {
             var l = ParseOldExpressionList(out var trailingComma, out var itemWhiteSpace);
             //  the case when no expression was parsed e.g. when we have an empty expression list
             if (l.Count == 0 && !trailingComma) {
-                ReportSyntaxError("invalid syntax");
+                ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);//invalid syntax
             }
             return MakeTupleOrExpr(l, itemWhiteSpace, trailingComma, true);
         }
@@ -3771,7 +3771,7 @@ namespace Microsoft.Python.Parsing {
             if ((token == TokenKind.Multiply || token == TokenKind.Power) && Eat(token)) {
                 var whitespace = _tokenWhiteSpace;
                 if (_langVersion.Is2x() && !_stubFile) {
-                    ReportSyntaxError("invalid syntax");
+                    ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);//invalid syntax
                 }
                 var start = GetStart();
                 var expr = ParseExpr();
@@ -3844,7 +3844,7 @@ namespace Microsoft.Python.Parsing {
                 // indent if we're at an EOF.  It'a also an indentation error instead of a syntax error.
                 var indentVerbatim = _verbatim ? _tokenWhiteSpace + _token.Token.VerbatimImage : null;
                 NextToken();
-                ReportSyntaxError(GetStart(), GetEnd(), "unexpected indent", ErrorCodes.IndentationError);
+                ReportSyntaxError(GetStart(), GetEnd(), Resources.UnexpectedIndentErrorMsg, ErrorCodes.IndentationError);
                 return Error(_verbatim ? (indentVerbatim + _tokenWhiteSpace + _token.Token.VerbatimImage) : null);
             } else {
                 ReportSyntaxError(_lookahead);
@@ -3901,7 +3901,7 @@ namespace Microsoft.Python.Parsing {
                 hasRightParenthesis = true;
             } else if (PeekToken(TokenKind.KeywordYield)) {
                 if (!AllowYieldSyntax && AllowAsyncAwaitSyntax) {
-                    ReportSyntaxError("'yield' inside async function");
+                    ReportSyntaxError(Resources.YieldInsideAsyncErrorMsg);//'yield' inside async function
                 }
                 Eat(TokenKind.KeywordYield);
                 ret = new ParenthesisExpression(ParseYieldExpression());
@@ -3918,14 +3918,14 @@ namespace Microsoft.Python.Parsing {
                     } else if (PeekTokenForOrAsyncForToStartGenerator) {
                         // "(" expression "for" ...
                         if (expr is StarredExpression) {
-                            ReportSyntaxError(expr.StartIndex, expr.EndIndex, "iterable unpacking cannot be used in comprehension");
+                            ReportSyntaxError(expr.StartIndex, expr.EndIndex, Resources.IterableUnpackingErrorMsg);//iterable unpacking cannot be used in comprehension
                         }
                         ret = ParseGeneratorExpression(expr, startingWhiteSpace);
                     } else {
                         // "(" expression ")"
                         ret = new ParenthesisExpression(expr);
                         if (expr is StarredExpression) {
-                            ReportSyntaxError(expr.StartIndex, expr.EndIndex, "can't use starred expression here");
+                            ReportSyntaxError(expr.StartIndex, expr.EndIndex, Resources.CantUseStarredExpErrorMsg);//can't use starred expression here
                         }
                     }
                     hasRightParenthesis = Eat(TokenKind.RightParenthesis);
@@ -4058,7 +4058,7 @@ namespace Microsoft.Python.Parsing {
 
                         if (!reportedError) {
                             if (setMembers != null || hasSequenceUnpack || isSequenceUnpack || isDictUnpack) {
-                                ReportSyntaxError(e1.StartIndex, e2.EndIndex, "invalid syntax");
+                                ReportSyntaxError(e1.StartIndex, e2.EndIndex, Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                                 reportedError = true;
                             }
                         }
@@ -4072,7 +4072,7 @@ namespace Microsoft.Python.Parsing {
 
                         if (PeekTokenForOrAsyncFor) {
                             if (!first || (!_stubFile && _langVersion < PythonLanguageVersion.V27)) {
-                                ReportSyntaxError("invalid syntax");
+                                ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                             }
 
                             var dictComp = FinishDictComp(se, out ateTerminator);
@@ -4094,14 +4094,14 @@ namespace Microsoft.Python.Parsing {
                         }
                     } else { // set literal or dict unpack
                         if (!_stubFile && _langVersion < PythonLanguageVersion.V27 && !reportedError) {
-                            ReportSyntaxError(e1.StartIndex, e1.EndIndex, "invalid syntax, set literals require Python 2.7 or later.");
+                            ReportSyntaxError(e1.StartIndex, e1.EndIndex, Resources.SetLiteralsRequirePython2dot7ErrorMsg);//invalid syntax, set literals require Python 2.7 or later.
                             reportedError = true;
                         }
 
                         if (isDictUnpack && hasDictUnpack) {
                             // **{}, we don't have a colon and a value...
                             if (setMembers != null && !reportedError) {
-                                ReportSyntaxError(e1.StartIndex, e1.EndIndex, "invalid syntax");
+                                ReportSyntaxError(e1.StartIndex, e1.EndIndex, Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                                 reportedError = true;
                             }
 
@@ -4112,7 +4112,7 @@ namespace Microsoft.Python.Parsing {
                         } else {
                             if (dictMembers != null) {
                                 if (!reportedError) {
-                                    ReportSyntaxError(e1.StartIndex, e1.EndIndex, "invalid syntax");
+                                    ReportSyntaxError(e1.StartIndex, e1.EndIndex, Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                                     reportedError = true;
                                 }
                             } else if (setMembers == null) {
@@ -4122,7 +4122,7 @@ namespace Microsoft.Python.Parsing {
 
                             if (PeekTokenForOrAsyncFor) {
                                 if (!first) {
-                                    ReportSyntaxError("invalid syntax");
+                                    ReportSyntaxError(Resources.InvalidSyntaxErrorMsg);//invalid syntax
                                 }
                                 var setComp = FinishSetComp(e1, out ateTerminator);
                                 if (_verbatim) {
@@ -4573,32 +4573,32 @@ namespace Microsoft.Python.Parsing {
                 if (arg.Name == null) {
                     if (_stubFile || _langVersion >= PythonLanguageVersion.V35) {
                         if (hasKeywordDict) {
-                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, "positional argument follows keyword argument unpacking");
+                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.PositionalArgumentKeywardArgumentUnpackingErrorMsg);//positional argument follows keyword argument unpacking
                         } else if (keywordCount > 0) {
-                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, "positional argument follows keyword argument");
+                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.PositionalArgumentKeywardArgumentErrorMsg);//positional argument follows keyword argument
                         }
                     } else if (hasArgsTuple || hasKeywordDict || keywordCount > 0) {
-                        ReportSyntaxError(arg.StartIndex, arg.EndIndex, "non-keyword arg after keyword arg");
+                        ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.NonKeywordArgAfterKeywordArgErrorMsg);//non-keyword arg after keyword arg
                     }
                 } else if (arg.Name == "*") {
                     if (hasArgsTuple || hasKeywordDict) {
                         if (!_stubFile && _langVersion < PythonLanguageVersion.V35) {
-                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, "only one * allowed");
+                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.OnlyOneAllowedSingleErrorMsg);//"only one * allowed"
                         } else if (hasKeywordDict) {
-                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, "iterable argument unpacking follows keyword argument unpacking");
+                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.IterableArgumentFollowsKeywordArgumentErrorMsg);//iterable argument unpacking follows keyword argument unpacking
                         }
                     }
                     hasArgsTuple = true; extraArgs++;
                 } else if (arg.Name == "**") {
                     if (hasKeywordDict) {
                         if (!_stubFile && _langVersion < PythonLanguageVersion.V35) {
-                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, "only one ** allowed");
+                            ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.OnlyOneAllowedDoubleErrorMsg);//only one ** allowed
                         }
                     }
                     hasKeywordDict = true; extraArgs++;
                 } else {
                     if (hasKeywordDict && !_stubFile && _langVersion < PythonLanguageVersion.V35) {
-                        ReportSyntaxError(arg.StartIndex, arg.EndIndex, "keywords must come before ** args");
+                        ReportSyntaxError(arg.StartIndex, arg.EndIndex, Resources.KeywordsMustComeBeforeArgsErrorMsg);//keywords must come before ** args
                     }
                     keywordCount++;
                 }
@@ -4825,7 +4825,7 @@ namespace Microsoft.Python.Parsing {
 
         private void StartParsing() {
             if (_parsingStarted) {
-                throw new InvalidOperationException("Parsing already started. Use Restart to start again.");
+                throw new InvalidOperationException(Resources.ParsingAlreadyStartedErrorMsg);//Parsing already started. Use Restart to start again.
             }
 
             _parsingStarted = true;
@@ -5057,7 +5057,7 @@ namespace Microsoft.Python.Parsing {
                 if ((gotEncoding == null || gotEncoding == true) && isUtf8 && encodingName != "utf-8") {
                     // we have both a BOM & an encoding type, throw an error
                     errors.Add(
-                        "file has both Unicode marker and PEP-263 file encoding.  You must use \"utf-8\" as the encoding name when a BOM is present.",
+                        Resources.Utf8EncodingErrorMsg,//"file has both Unicode marker and PEP-263 file encoding.  You must use \"utf-8\" as the encoding name when a BOM is present."
                         GetEncodingLineNumbers(readBytes),
                         encodingIndex,
                         encodingIndex + encodingName.Length,
@@ -5071,7 +5071,7 @@ namespace Microsoft.Python.Parsing {
                     if (gotEncoding == null) {
                         // get line number information for the bytes we've read...
                         errors.Add(
-                            "encoding problem: unknown encoding (line {0})".FormatUI(lineNo),
+                            Resources.UnknownEncodingErrorMsg.FormatUI(lineNo),
                             GetEncodingLineNumbers(readBytes),
                             encodingIndex,
                             encodingIndex + encodingName.Length,
