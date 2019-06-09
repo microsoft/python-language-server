@@ -91,7 +91,7 @@ namespace Microsoft.Python.Parsing {
 
         public static Parser CreateParser(TextReader reader, PythonLanguageVersion version, ParserOptions parserOptions) {
             if (reader == null) {
-                throw new ArgumentNullException("reader");
+                throw new ArgumentNullException(nameof(reader));
             }
 
             var options = parserOptions ?? ParserOptions.Default;
@@ -120,7 +120,7 @@ namespace Microsoft.Python.Parsing {
 
         public static Parser CreateParser(Stream stream, PythonLanguageVersion version) {
             if (stream == null) {
-                throw new ArgumentNullException("stream");
+                throw new ArgumentNullException(nameof(stream));
             }
 
             return CreateParser(stream, version, null);

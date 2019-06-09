@@ -31,7 +31,7 @@ namespace Microsoft.Python.Parsing {
         public static string ParseString(char[] text, int start, int length, bool isRaw, bool isUni, 
             bool normalizeLineEndings, bool allowTrailingBackslash = false) {
             if (text == null) {
-                throw new ArgumentNullException("text");
+                throw new ArgumentNullException(nameof(text));
             }
 
             if (isRaw && !isUni && !normalizeLineEndings) {
