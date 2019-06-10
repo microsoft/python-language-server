@@ -23,12 +23,12 @@ namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class DocstringAssertions {
         public static AndConstraint<StringAssertions> ConvertToPlaintext(this StringAssertions a, string plaintext, string because = "", params object[] reasonArgs) {
-            DocstringConverter.ToPlaintext(a.Subject?.NormalizeLineEndings()).Should().Be(plaintext?.NormalizeLineEndings().TrimEnd(), because, reasonArgs);
+            DocstringConverter.ToPlaintext(a.Subject.NormalizeLineEndings()).Should().Be(plaintext.NormalizeLineEndings().TrimEnd(), because, reasonArgs);
             return new AndConstraint<StringAssertions>(a);
         }
 
         public static AndConstraint<StringAssertions> ConvertToMarkdown(this StringAssertions a, string markdown, string because = "", params object[] reasonArgs) {
-            DocstringConverter.ToMarkdown(a.Subject?.NormalizeLineEndings()).Should().Be(markdown?.NormalizeLineEndings().TrimEnd(), because, reasonArgs);
+            DocstringConverter.ToMarkdown(a.Subject.NormalizeLineEndings()).Should().Be(markdown.NormalizeLineEndings().TrimEnd(), because, reasonArgs);
             return new AndConstraint<StringAssertions>(a);
         }
     }
