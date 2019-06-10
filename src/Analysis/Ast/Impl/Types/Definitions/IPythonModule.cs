@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 
@@ -20,7 +21,23 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a Python module.
     /// </summary>
-    public interface IPythonModule : IPythonType, IPythonFile {
+    public interface IPythonModule : IPythonType {
+        /// <summary>
+        /// Unique identifier of the module. Derives from module type,
+        /// library type, version (if available) and the installation path.
+        /// </summary>
+        string UniqueId { get; }
+
+        /// <summary>
+        /// File path to the module.
+        /// </summary>
+        string FilePath { get; }
+
+        /// <summary>
+        /// Module URI.
+        /// </summary>
+        Uri Uri { get; }
+
         /// <summary>
         /// Module analysis.
         /// </summary>

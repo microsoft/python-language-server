@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Caching {
             if(v != null) {
                 return new Variable(name, Construct(v.Value), VariableSource.Declaration, new Location(this));
             }
-            var v = _model.Variables.FirstOrDefault(c => c.Name == name);
+            v = _model.Variables.FirstOrDefault(c => c.Name == name);
             if (v != null) {
                 return new Variable(name, Construct(v.Value), VariableSource.Declaration, new Location(this));
             }
@@ -71,22 +71,23 @@ namespace Microsoft.Python.Analysis.Caching {
             return components.Length > 0 ? components.Skip(1).ToArray() : Array.Empty<string>();
         }
 
-        private sealed class GlobalScope : IGlobalScope {
+        private sealed class GlobalScopeImpl : IGlobalScope {
             private readonly ModuleModel _model;
             private readonly VariableCollection _variables = new VariableCollection();
-            public GlobalScope(ModuleModel model, IPythonModule module) {
+
+            public GlobalScopeImpl(ModuleModel model, IPythonModule module) {
                 _model = model;
                 Module = module;
 
-                foreach (var v in model.Variables) {
-                    _variables.DeclareVariable(v.Name, Construct(v.Value), VariableSource.Declaration, new Location(module));
-                }
-                foreach (var c in model.Classes) {
-                    _variables.DeclareVariable(c.Name, Construct(c), VariableSource.Declaration, new Location(module));
-                }
-                foreach (var f in model.Functions) {
-                    _variables.DeclareVariable(f.Name, Construct(f), VariableSource.Declaration, new Location(module));
-                }
+                //foreach (var v in model.Variables) {
+                //    _variables.DeclareVariable(v.Name, Construct(v.Value), VariableSource.Declaration, new Location(module));
+                //}
+                //foreach (var c in model.Classes) {
+                //    _variables.DeclareVariable(c.Name, Construct(c), VariableSource.Declaration, new Location(module));
+                //}
+                //foreach (var f in model.Functions) {
+                //    _variables.DeclareVariable(f.Name, Construct(f), VariableSource.Declaration, new Location(module));
+                //}
                 // TODO: classes and functions
                 // TODO: default variables
             }

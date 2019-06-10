@@ -26,6 +26,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public static FunctionModel FromType(IPythonFunctionType ft) {
             return new FunctionModel {
                 Name = ft.Name,
+                Documentation = ft.Documentation,
                 Overloads = ft.Overloads.Select(FromOverload).ToArray()
                 // TODO: attributes, inner functions and inner classes.
             };

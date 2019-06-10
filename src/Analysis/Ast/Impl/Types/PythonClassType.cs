@@ -76,7 +76,7 @@ namespace Microsoft.Python.Analysis.Types {
             switch (name) {
                 case "__mro__":
                 case "mro":
-                    return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType;
+                    return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, Mro) : UnknownType;
                 case "__dict__":
                     return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
                 case @"__weakref__":
@@ -132,18 +132,19 @@ namespace Microsoft.Python.Analysis.Types {
 
         // Constructor call
         public override IMember CreateInstance(string typeName, IArgumentSet args) {
+            var builtins = DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule;
             // Specializations
             switch (typeName) {
                 case "list":
-                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, args);
+                    return PythonCollectionType.CreateList(builtins, args);
                 case "dict": {
                         // self, then contents
                         var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
-                        return new PythonDictionary(DeclaringModule.Interpreter, contents);
+                        return new PythonDictionary(builtins, contents);
                     }
                 case "tuple": {
                         var contents = args.Values<IMember>();
-                        return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, contents);
+                        return PythonCollectionType.CreateTuple(builtins, contents);
                     }
             }
             return new PythonInstance(this);
@@ -212,7 +213,7 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, _bases), true);
+            AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, _bases), true);
         }
 
         /// <summary>

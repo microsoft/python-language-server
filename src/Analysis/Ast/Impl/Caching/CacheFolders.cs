@@ -36,10 +36,11 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public string GetFileNameFromContent(string content) {
             // File name depends on the content so we can distinguish between different versions.
-            var hash = SHA256.Create();
-            return Convert
-                .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
-                .Replace('/', '_').Replace('+', '-');
+            using (var hash = SHA256.Create()) {
+                return Convert
+                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
+                    .Replace('/', '_').Replace('+', '-');
+            }
         }
 
         private static string GetCacheFolder(IServiceContainer services) {

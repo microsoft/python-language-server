@@ -19,5 +19,7 @@ namespace Microsoft.Python.Analysis.Modules {
     internal sealed class SentinelModule : PythonModule {
         public SentinelModule(string name, IServiceContainer services)
             : base(name, ModuleType.Unresolved, services) { }
+
+        public override string UniqueId => "unresolved";
     }
 }

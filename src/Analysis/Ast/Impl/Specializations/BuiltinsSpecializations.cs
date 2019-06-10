@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Specializations {
         }
 
         public static IMember List(IPythonInterpreter interpreter, IPythonFunctionOverload overload, IArgumentSet argSet)
-            => PythonCollectionType.CreateList(interpreter, argSet);
+            => PythonCollectionType.CreateList(interpreter.ModuleResolution.BuiltinsModule, argSet);
 
         public static IMember ListOfStrings(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet) {
             var type = new TypingListType("List", module.Interpreter.GetBuiltinType(BuiltinTypeId.Str), module.Interpreter, false);
@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static IMember Range(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet) {
             var args = argSet.Values<IMember>();
             if (args.Count > 0) {
-                var type = new PythonCollectionType(null, BuiltinTypeId.List, module.Interpreter, false);
+                var type = new PythonCollectionType(null, BuiltinTypeId.List, module.Interpreter.ModuleResolution.BuiltinsModule, false);
                 return new PythonCollection(type, new[] { args[0] });
             }
             return null;

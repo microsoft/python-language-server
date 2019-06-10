@@ -31,10 +31,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="name">Type name (Dict, Mapping, ...)</param>
         /// <param name="keyType">Type of dictionary keys.</param>
         /// <param name="valueType">Type of dictionary values.</param>
-        /// <param name="interpreter">Python interpreter</param>
+        /// <param name="interpreter">Python interpreter.</param>
         /// <param name="isMutable">Tells if collection is mutable (Dict) or not (Mapping)</param>
         public TypingDictionaryType(string name, IPythonType keyType, IPythonType valueType, IPythonInterpreter interpreter, bool isMutable)
-            : base(interpreter, isMutable) {
+            : base(interpreter.ModuleResolution.GetSpecializedModule("typing"), isMutable) {
             KeyType = keyType;
             ValueType = valueType;
             Name = $"{name}[{keyType.Name}, {valueType.Name}]";

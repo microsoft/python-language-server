@@ -54,6 +54,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             return new ModuleModel {
                 Name = analysis.Document.GetQualifiedName(),
+                Documentation = analysis.Document.Documentation,
                 Functions = functions.ToArray(),
                 Variables = variables.ToArray(),
                 Classes = classes.ToArray()

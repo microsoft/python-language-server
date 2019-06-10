@@ -26,37 +26,37 @@ namespace Microsoft.Python.Analysis.Values.Collections {
     /// </summary>
     internal class PythonDictionary : PythonCollection, IPythonDictionary {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
-        private readonly IPythonInterpreter _interpreter;
+        private readonly IPythonModule _declaringModule;
 
         public PythonDictionary(PythonDictionaryType dictType, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
             base(dictType, contents.Keys.ToArray(), exact: exact) {
             foreach (var kvp in contents) {
                 _contents[kvp.Key] = kvp.Value;
             }
-            _interpreter = dictType.DeclaringModule.Interpreter;
+            _declaringModule = dictType.DeclaringModule;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, IMember contents, bool exact = false) :
-            base(new PythonDictionaryType(interpreter), Array.Empty<IMember>(), exact: exact) {
+        public PythonDictionary(IPythonModule declaringModule, IMember contents, bool exact = false) :
+            base(new PythonDictionaryType(declaringModule), Array.Empty<IMember>(), exact: exact) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {
                     _contents[key] = dict[key];
                 }
                 Contents = _contents.Keys.ToArray();
             }
-            _interpreter = interpreter;
+            _declaringModule = declaringModule;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
-            this(new PythonDictionaryType(interpreter), contents, exact: exact) {
-            _interpreter = interpreter;
+        public PythonDictionary(IPythonModule declaringModule, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
+            this(new PythonDictionaryType(declaringModule), contents, exact: exact) {
+            _declaringModule = declaringModule;
         }
 
         public IEnumerable<IMember> Keys => _contents.Keys.ToArray();
         public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
         public IReadOnlyList<IPythonCollection> Items
-            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, new[] { kvp.Key, kvp.Value })).ToArray();
+            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             // Specializations
             switch (memberName) {
                 case @"get":
-                    return args.Arguments.Count > 1 ? Index(args.Arguments[1].Value) : _interpreter.UnknownType;
+                    return args.Arguments.Count > 1 ? Index(args.Arguments[1].Value) : _declaringModule.Interpreter.UnknownType;
                 case @"items":
                     return CreateList(Items);
                 case @"keys":
@@ -84,15 +84,15 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 case @"iteritems":
                     return CreateList(Items).GetIterator();
                 case @"pop":
-                    return Values.FirstOrDefault() ?? _interpreter.UnknownType;
+                    return Values.FirstOrDefault() ?? _declaringModule.Interpreter.UnknownType;
                 case @"popitem":
-                    return Items.Count > 0 ? Items[0] as IMember : _interpreter.UnknownType;
+                    return Items.Count > 0 ? Items[0] as IMember : _declaringModule.Interpreter.UnknownType;
             }
             return base.Call(memberName, args);
         }
 
         private IPythonCollection CreateList(IReadOnlyList<IMember> items)
-            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, items, false);
+            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, items, false);
 
         private sealed class KeyComparer : IEqualityComparer<IMember> {
             public bool Equals(IMember x, IMember y) {

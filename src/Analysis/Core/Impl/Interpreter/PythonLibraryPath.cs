@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,34 +34,42 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             @"(?<path>[^|]+)\|(?<stdlib>stdlib)?\|(?<prefix>[^|]+)?"
         );
 
-        public PythonLibraryPath(string path, bool isStandardLibrary, string modulePrefix) {
+        public PythonLibraryPath(string path, LibraryType libraryType, string modulePrefix) {
             Path = path;
-            IsStandardLibrary = isStandardLibrary;
+            LibraryType = libraryType;
             _modulePrefix = modulePrefix;
         }
 
         public string Path { get; }
-
-        public bool IsStandardLibrary { get; }
+        public LibraryType LibraryType { get; }
 
         public string ModulePrefix => _modulePrefix ?? string.Empty;
 
         public override string ToString() 
-            => "{0}|{1}|{2}".FormatInvariant(Path, IsStandardLibrary ? "stdlib" : "", _modulePrefix ?? "");
+            => "{0}|{1}|{2}".FormatInvariant(Path, LibraryType == LibraryType.Standard ? "stdlib" : "", _modulePrefix ?? string.Empty);
 
-        public static PythonLibraryPath Parse(string s) {
+        public static PythonLibraryPath FromLibraryPath(string s, IFileSystem fs, string standardLibraryPath) {
             if (string.IsNullOrEmpty(s)) {
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(s));
             }
             
             var m = ParseRegex.Match(s);
             if (!m.Success || !m.Groups["path"].Success) {
                 throw new FormatException();
             }
-            
+
+            var libraryType = LibraryType.Other;
+            var sitePackagesPath = GetSitePackagesPath(standardLibraryPath);
+            var path = m.Groups["path"].Value;
+            if (m.Groups["stdlib"].Success) {
+                libraryType = LibraryType.Standard;
+            } else if(fs.IsPathUnderRoot(sitePackagesPath, path)) {
+                libraryType = LibraryType.SitePackages;
+            }
+
             return new PythonLibraryPath(
                 m.Groups["path"].Value,
-                m.Groups["stdlib"].Success,
+                libraryType,
                 m.Groups["prefix"].Success ? m.Groups["prefix"].Value : null
             );
         }
@@ -71,25 +78,24 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// Gets the default set of search paths based on the path to the root
         /// of the standard library.
         /// </summary>
-        /// <param name="library">Root of the standard library.</param>
+        /// <param name="standardLibraryPath">Root of the standard library.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
-        /// <remarks>New in 2.2, moved in 3.3</remarks>
-        public static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
+        public static List<PythonLibraryPath> GetDefaultSearchPaths(string standardLibraryPath) {
             var result = new List<PythonLibraryPath>();
-            if (!Directory.Exists(library)) {
+            if (!Directory.Exists(standardLibraryPath)) {
                 return result;
             }
 
-            result.Add(new PythonLibraryPath(library, true, null));
+            result.Add(new PythonLibraryPath(standardLibraryPath, LibraryType.Standard, null));
 
-            var sitePackages = IOPath.Combine(library, "site-packages");
+            var sitePackages = GetSitePackagesPath(standardLibraryPath);
             if (!Directory.Exists(sitePackages)) {
                 return result;
             }
 
-            result.Add(new PythonLibraryPath(sitePackages, false, null));
+            result.Add(new PythonLibraryPath(sitePackages, LibraryType.SitePackages, null));
             result.AddRange(ModulePath.ExpandPathFiles(sitePackages)
-                .Select(p => new PythonLibraryPath(p, false, null))
+                .Select(p => new PythonLibraryPath(p, LibraryType.SitePackages, null))
             );
 
             return result;
@@ -101,7 +107,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         public static async Task<IList<PythonLibraryPath>> GetSearchPathsAsync(InterpreterConfiguration config, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             for (int retries = 5; retries > 0; --retries) {
                 try {
-                    return await GetSearchPathsFromInterpreterAsync(config.InterpreterPath, fs, ps, cancellationToken);
+                    return await GetSearchPathsFromInterpreterAsync(config, fs, ps, cancellationToken);
                 } catch (InvalidOperationException) {
                     // Failed to get paths
                     break;
@@ -111,23 +117,34 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 }
             }
 
-            var ospy = PathUtils.FindFile(config.LibraryPath, "os.py");
-            if (!string.IsNullOrEmpty(ospy)) {
-                return GetDefaultSearchPaths(IOPath.GetDirectoryName(ospy));
+            var standardLibraryPath = GetStandardLibraryPath(config);
+            if (!string.IsNullOrEmpty(standardLibraryPath)) {
+                return GetDefaultSearchPaths(standardLibraryPath);
             }
 
             return Array.Empty<PythonLibraryPath>();
         }
 
+        public static string GetStandardLibraryPath(InterpreterConfiguration config) {
+            var ospy = PathUtils.FindFile(config.LibraryPath, "os.py");
+            return !string.IsNullOrEmpty(ospy) ? IOPath.GetDirectoryName(ospy) : string.Empty;
+        }
+
+        public static string GetSitePackagesPath(InterpreterConfiguration config)
+            => GetSitePackagesPath(GetStandardLibraryPath(config));
+
+        public static string GetSitePackagesPath(string standardLibraryPath) 
+            => !string.IsNullOrEmpty(standardLibraryPath) ? IOPath.Combine(standardLibraryPath, "site-packages") : string.Empty;
+
         /// <summary>
         /// Gets the set of search paths by running the interpreter.
         /// </summary>
-        /// <param name="interpreter">Path to the interpreter.</param>
+        /// <param name="config">Interpreter configuration.</param>
         /// <param name="fs">File system services.</param>
         /// <param name="ps">Process services.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
-        public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
+        public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(InterpreterConfiguration config, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             // sys.path will include the working directory, so we make an empty
             // path that we can filter out later
             var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
@@ -139,7 +156,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             File.Copy(srcGetSearchPaths, getSearchPaths);
 
             var startInfo = new ProcessStartInfo(
-                interpreter,
+                config.InterpreterPath,
                 new[] { "-S", "-E", getSearchPaths }.AsQuotedArguments()
             ) {
                 WorkingDirectory = tempWorkingDir,
@@ -152,12 +169,13 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
 
             try {
                 var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
+                var standardLibraryPath = GetSitePackagesPath(config);
                 return output.Split(new [] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Select(s => {
                     if (s.PathStartsWith(tempWorkingDir)) {
                         return null;
                     }
                     try {
-                        return Parse(s);
+                        return FromLibraryPath(s, fs, standardLibraryPath);
                     } catch (ArgumentException) {
                         Debug.Fail("Invalid search path: " + (s ?? "<null>"));
                         return null;

@@ -19,8 +19,8 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     internal class PythonDictionaryType : PythonCollectionType {
-        public PythonDictionaryType(IPythonInterpreter interpreter, bool isMutable = true)
-            : base(null, BuiltinTypeId.Dict, interpreter, isMutable) {
+        public PythonDictionaryType(IPythonModule declaringModule, bool isMutable = true)
+            : base(null, BuiltinTypeId.Dict, declaringModule, isMutable) {
         }
 
         public override IMember CreateInstance(string typeName, IArgumentSet args) {

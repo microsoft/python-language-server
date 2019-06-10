@@ -25,10 +25,10 @@ namespace Microsoft.Python.Analysis.Caching {
                 return null;
             }
 
-            var moduleId = t.DeclaringModule?.GetUniqueId();
+            var moduleId = t.DeclaringModule.UniqueId;
             switch (m) {
                 case IPythonModule mod:
-                    return mod.GetUniqueId();
+                    return mod.UniqueId;
                 case IPythonInstance _:
                     return $"i:{GetQualifiedName(t)}";
                 case IPythonClassMember cm when cm.DeclaringType != null:
@@ -49,8 +49,5 @@ namespace Microsoft.Python.Analysis.Caching {
             }
             return string.Join(".", s);
         }
-
-        // TODO: fix per https://github.com/microsoft/python-language-server/issues/1177
-        private static string GetUniqueId(this IPythonModule module) => module.Name;
     }
 }

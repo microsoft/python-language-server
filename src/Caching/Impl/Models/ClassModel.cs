@@ -13,16 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class ClassModel {
-        public string Name { get; set; }
+    internal sealed class ClassModel: MemberModel {
         public string[] Bases { get; set; }
         public FunctionModel[] Methods { get; set; }
         public PropertyModel[] Properties { get; set; }
@@ -79,6 +76,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
 
             Name = cls.Name;
+            Documentation = cls.Documentation;
             Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetQualifiedName()).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();

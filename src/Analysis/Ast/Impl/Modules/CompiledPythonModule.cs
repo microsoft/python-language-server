@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Modules {
             try {
                 using (var process = new Process()) {
                     process.StartInfo = startInfo;
-                    process.ErrorDataReceived += new DataReceivedEventHandler((s, e) => { });
+                    process.ErrorDataReceived += (s, e) => { };
 
                     process.Start();
                     process.BeginErrorReadLine();

@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonCollection values = null;
             switch (me.Name) {
                 case "append":
-                    values = PythonCollectionType.CreateList(Module.Interpreter, new List<IMember> { v }, exact: true);
+                    values = PythonCollectionType.CreateList(Module, new List<IMember> { v }, exact: true);
                     break;
                 case "extend":
                     values = v as IPythonCollection;
@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var all = scope.Variables[AllVariableName]?.Value as IPythonCollection;
-            var list = PythonCollectionType.CreateConcatenatedList(Module.Interpreter, all, values);
+            var list = PythonCollectionType.CreateConcatenatedList(Module, all, values);
             var source = list.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
 
             Eval.DeclareVariable(AllVariableName, list, source, location);

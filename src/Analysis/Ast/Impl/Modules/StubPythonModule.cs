@@ -29,6 +29,8 @@ namespace Microsoft.Python.Analysis.Modules {
             IsTypeshed = isTypeshed;
         }
 
+        public override string UniqueId => PrimaryModule.UniqueId;
+
         protected override string LoadContent() {
             // Exceptions are handled in the base
             return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;

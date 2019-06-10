@@ -64,5 +64,14 @@ c = C()
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Sys() {
+            var analysis = await GetAnalysisAsync("import sys");
+            var sys = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("sys");
+            var model = ModuleModel.FromAnalysis(sys.Analysis);
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+        }
     }
 }

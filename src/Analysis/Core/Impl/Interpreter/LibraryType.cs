@@ -13,18 +13,26 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonFile {
+namespace Microsoft.Python.Analysis.Core.Interpreter {
+    public enum LibraryType {
         /// <summary>
-        /// File path to the module.
+        /// Module is not a library.
         /// </summary>
-        string FilePath { get; }
+        None,
 
         /// <summary>
-        /// Module URI.
+        /// Library is part of the standard Python installation.
         /// </summary>
-        Uri Uri { get; }
+        Standard,
+
+        /// <summary>
+        /// Library is installed in site-packages.
+        /// </summary>
+        SitePackages,
+
+        /// <summary>
+        /// Other type of library.
+        /// </summary>
+        Other
     }
 }

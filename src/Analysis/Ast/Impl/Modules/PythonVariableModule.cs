@@ -16,8 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -31,6 +29,7 @@ namespace Microsoft.Python.Analysis.Modules {
     internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
 
+        public string UniqueId => $"{nameof(PythonVariableModule)}.{Name}"; // TODO: re-work.
         public string Name { get; }
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
