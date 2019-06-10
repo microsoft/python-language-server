@@ -31,6 +31,10 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         /// <param name="docstring">The docstring to convert, likely from the AST.</param>
         /// <returns>The converted docstring, with Environment.NewLine line endings.</returns>
         public static string ToPlaintext(string docstring) {
+            if (string.IsNullOrWhiteSpace(docstring)) {
+                return string.Empty;
+            }
+
             var lines = SplitDocstring(docstring);
             var output = new List<string>();
 
@@ -51,7 +55,13 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         /// </summary>
         /// <param name="docstring">The docstring to convert, likely from the AST.</param>
         /// <returns>The converted docstring, with Environment.NewLine line endings.</returns>
-        public static string ToMarkdown(string docstring) => new DocstringConverter(docstring).Convert();
+        public static string ToMarkdown(string docstring) {
+            if (string.IsNullOrWhiteSpace(docstring)) {
+                return string.Empty;
+            }
+
+            return new DocstringConverter(docstring).Convert();
+        }
 
         private readonly StringBuilder _builder;
         private bool _skipAppendEmptyLine = true;
@@ -77,7 +87,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private string CurrentLineWithinBlock => CurrentLine.Substring(_blockIndent);
 
         private DocstringConverter(string input) {
-            _builder = new StringBuilder(input?.Length ?? 0);
+            _builder = new StringBuilder(input.Length);
             _state = ParseText;
             _lines = SplitDocstring(input);
         }

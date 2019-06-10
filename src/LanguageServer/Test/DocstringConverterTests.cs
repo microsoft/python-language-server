@@ -500,5 +500,23 @@ This is a list:
 ";
             docstring.Should().ConvertToMarkdown(markdown);
         }
+
+        [DataRow(null)]
+        [DataRow("")]
+        [DataRow("  ")]
+        [DataRow(" \n ")]
+        [DataTestMethod, Priority(0)]
+        public void PlaintextNullEmpty(string docstring) {
+            docstring.Should().ConvertToPlaintext(string.Empty);
+        }
+
+        [DataRow(null)]
+        [DataRow("")]
+        [DataRow("  ")]
+        [DataRow(" \n ")]
+        [DataTestMethod, Priority(0)]
+        public void MarkdownNullEmpty(string docstring) {
+            docstring.Should().ConvertToMarkdown(string.Empty);
+        }
     }
 }
