@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -29,7 +30,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var functions = new List<FunctionModel>();
             var classes = new List<ClassModel>();
 
-            foreach (var v in analysis.GlobalScope.Variables) {
+            foreach (var v in analysis.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
                 var t = v.Value.GetPythonType();
                 // If variable is declaration and has location, then it is a user-defined variable.
                 if (v.Source == VariableSource.Declaration && v.Location.IsValid) {
@@ -39,12 +40,12 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 if (v.Source == VariableSource.Declaration && !v.Location.IsValid) {
                     switch (t) {
                         // Typically class or a function
-                        case IPythonFunctionType ft: {
+                        case IPythonFunctionType ft when ft.DeclaringModule.Equals(analysis.Document): {
                             functions.Add(FunctionModel.FromType(ft));
                             break;
                         }
 
-                        case IPythonClassType cls: {
+                        case IPythonClassType cls when cls.DeclaringModule.Equals(analysis.Document): {
                             classes.Add(ClassModel.FromType(cls));
                             break;
                         }

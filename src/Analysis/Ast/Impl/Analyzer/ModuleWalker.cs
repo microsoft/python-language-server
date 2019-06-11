@@ -245,6 +245,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (!IsStubBetterType(sourceType, stubType)) {
                     continue;;
                 }
+                if (sourceType == null || !sourceType.DeclaringModule.Equals(_stubAnalysis.Document)) {
+                    // Only handle members declared in this module.
+                    continue;
+                }
 
                 // If types are the classes, merge members.
                 // Otherwise, replace type from one from the stub.

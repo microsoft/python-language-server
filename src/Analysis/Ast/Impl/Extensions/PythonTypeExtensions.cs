@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -22,7 +23,7 @@ namespace Microsoft.Python.Analysis {
         public static bool IsUnknown(this IPythonType value) =>
             value == null || (value.TypeId == BuiltinTypeId.Unknown && value.MemberType == PythonMemberType.Unknown && value.Name.Equals("Unknown"));
 
-        public static bool IsGenericParameter(this IPythonType value) 
+        public static bool IsGenericParameter(this IPythonType value)
             => value is IGenericTypeDefinition;
 
         public static bool IsGeneric(this IPythonType value)
@@ -34,11 +35,16 @@ namespace Microsoft.Python.Analysis {
                 if (!string.IsNullOrEmpty(documentation)) {
                     dst.SetDocumentation(documentation);
                 }
+
+                var srcModule = src.Location.Module;
+                var dstModule = dst.Location.Module;
+                Debug.Assert(srcModule.Equals(dstModule) ||
+                             (dstModule.ModuleType == Modules.ModuleType.Stub && dstModule.PrimaryModule.Equals(srcModule)));
                 dst.Location = src.Location;
             }
         }
 
         public static bool IsConstructor(this IPythonClassMember m)
-            => m.Name.EqualsOrdinal("__init__") ||  m.Name.EqualsOrdinal("__new__");
+            => m.Name.EqualsOrdinal("__init__") || m.Name.EqualsOrdinal("__new__");
     }
 }
