@@ -43,6 +43,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
             Expression e;
 
             var lastToken = tokens.FirstOrDefault();
+            if(lastToken.Value == null) {
+                return CompletionResult.Empty;
+            }
+
             var nextLast = tokens.ElementAtOrDefault(1).Value?.Kind ?? TokenKind.EndOfFile;
             switch (lastToken.Value.Kind) {
                 case TokenKind.Dot:
