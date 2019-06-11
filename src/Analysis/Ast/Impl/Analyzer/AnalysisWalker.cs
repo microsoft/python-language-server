@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         protected ModuleSymbolTable SymbolTable => Eval.SymbolTable;
 
         protected AnalysisWalker(ExpressionEval eval) {
-            Eval = eval;
+            Eval = eval ?? throw new ArgumentNullException(nameof(eval));
             ImportHandler = new ImportHandler(this);
             AssignmentHandler = new AssignmentHandler(this);
             LoopHandler = new LoopHandler(this);

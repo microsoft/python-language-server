@@ -39,8 +39,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private SymbolCollector(ModuleSymbolTable table, ExpressionEval eval) {
-            _table = table;
-            _eval = eval;
+            _table = table ?? throw new ArgumentNullException(nameof(table));
+            _eval = eval ?? throw new ArgumentNullException(nameof(eval));
         }
 
         private void Walk() => _eval.Ast.Walk(this);
