@@ -42,6 +42,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             expression = expression ?? (statement as ExpressionStatement)?.Expression;
+            scope = scope ?? ast;
         }
 
         private static bool CanBackUp(PythonAst ast, Node node, Node statement, ScopeStatement scope, int column) {

@@ -16,7 +16,7 @@
 using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
-using Microsoft.Python.Core;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -30,6 +30,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         public CompletionResult GetCompletions(IDocumentAnalysis analysis, SourceLocation location) {
+            if(analysis.Document.ModuleType != ModuleType.User) {
+                return CompletionResult.Empty;
+            }
+
             var context = new CompletionContext(analysis, location, _itemSource);
 
             ExpressionLocator.FindExpression(analysis.Ast, location,
