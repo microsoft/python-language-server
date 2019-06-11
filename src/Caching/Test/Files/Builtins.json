@@ -1305,7 +1305,44 @@
       "Documentation": ""
     }
   ],
-  "Variables": [],
+  "Variables": [
+    {
+      "Name": "__builtin_module_names__",
+      "Value": null
+    },
+    {
+      "Name": "Ellipsis",
+      "Value": "i:..."
+    },
+    {
+      "Name": "EnvironmentError",
+      "Value": "i:OSError"
+    },
+    {
+      "Name": "IOError",
+      "Value": "i:OSError"
+    },
+    {
+      "Name": "NotImplemented",
+      "Value": "i:NotImplementedType"
+    },
+    {
+      "Name": "WindowsError",
+      "Value": "i:OSError"
+    },
+    {
+      "Name": "__doc__",
+      "Value": null
+    },
+    {
+      "Name": "__name__",
+      "Value": null
+    },
+    {
+      "Name": "__package__",
+      "Value": null
+    }
+  ],
   "Classes": [
     {
       "Bases": [
@@ -2978,66 +3015,6 @@
       "InnerClasses": [],
       "Name": "callable_iterator",
       "Documentation": null
-    },
-    {
-      "Bases": [
-        "object"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "...",
-      "Documentation": null
-    },
-    {
-      "Bases": [
-        "Exception"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "OSError",
-      "Documentation": "Base class for I/O related errors."
-    },
-    {
-      "Bases": [
-        "Exception"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "OSError",
-      "Documentation": "Base class for I/O related errors."
-    },
-    {
-      "Bases": [
-        "object"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "NotImplementedType",
-      "Documentation": null
-    },
-    {
-      "Bases": [
-        "Exception"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "OSError",
-      "Documentation": "Base class for I/O related errors."
     }
   ],
   "Name": "builtins",

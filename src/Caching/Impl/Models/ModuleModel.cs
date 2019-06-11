@@ -32,17 +32,15 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             foreach (var v in analysis.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
                 var t = v.Value.GetPythonType();
-                // If variable is declaration and has location, then it is a user-defined variable.
-                if (v.Location.IsValid) {
-                    variables.Add(VariableModel.FromVariable(v));
-                    continue;
-                }
-                switch (t) {
+                switch (v.Value) {
                     case IPythonFunctionType ft when ft.DeclaringModule.Equals(analysis.Document):
                         functions.Add(FunctionModel.FromType(ft));
                         break;
                     case IPythonClassType cls when cls.DeclaringModule.Equals(analysis.Document):
                         classes.Add(ClassModel.FromType(cls));
+                        break;
+                    default:
+                        variables.Add(VariableModel.FromVariable(v));
                         break;
                 }
             }

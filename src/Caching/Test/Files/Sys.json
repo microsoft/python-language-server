@@ -695,7 +695,184 @@
       "Documentation": "settrace(function)\n\nSet the global debug tracing function.  It will be called on each\nfunction call.  See the debugger chapter in the library manual."
     }
   ],
-  "Variables": [],
+  "Variables": [
+    {
+      "Name": "__doc__",
+      "Value": "i:str"
+    },
+    {
+      "Name": "__name__",
+      "Value": "i:str"
+    },
+    {
+      "Name": "__package__",
+      "Value": "i:str"
+    },
+    {
+      "Name": "__stderr__",
+      "Value": "i:_io.TextIOWrapper"
+    },
+    {
+      "Name": "__stdin__",
+      "Value": "i:_io.TextIOWrapper"
+    },
+    {
+      "Name": "__stdout__",
+      "Value": "i:_io.TextIOWrapper"
+    },
+    {
+      "Name": "_framework",
+      "Value": "i:str"
+    },
+    {
+      "Name": "_git",
+      "Value": "i:tuple"
+    },
+    {
+      "Name": "_home",
+      "Value": "i:NoneType"
+    },
+    {
+      "Name": "_xoptions",
+      "Value": "i:dict"
+    },
+    {
+      "Name": "api_version",
+      "Value": "i:int"
+    },
+    {
+      "Name": "argv",
+      "Value": "i:list"
+    },
+    {
+      "Name": "base_exec_prefix",
+      "Value": "i:str"
+    },
+    {
+      "Name": "base_prefix",
+      "Value": "i:str"
+    },
+    {
+      "Name": "builtin_module_names",
+      "Value": "i:tuple"
+    },
+    {
+      "Name": "byteorder",
+      "Value": "i:str"
+    },
+    {
+      "Name": "copyright",
+      "Value": "i:str"
+    },
+    {
+      "Name": "dllhandle",
+      "Value": "i:int"
+    },
+    {
+      "Name": "dont_write_bytecode",
+      "Value": "i:bool"
+    },
+    {
+      "Name": "exec_prefix",
+      "Value": "i:str"
+    },
+    {
+      "Name": "executable",
+      "Value": "i:str"
+    },
+    {
+      "Name": "float_repr_style",
+      "Value": "i:str"
+    },
+    {
+      "Name": "hexversion",
+      "Value": "i:int"
+    },
+    {
+      "Name": "implementation",
+      "Value": null
+    },
+    {
+      "Name": "maxsize",
+      "Value": "i:int"
+    },
+    {
+      "Name": "maxunicode",
+      "Value": "i:int"
+    },
+    {
+      "Name": "meta_path",
+      "Value": "i:list"
+    },
+    {
+      "Name": "modules",
+      "Value": "i:dict"
+    },
+    {
+      "Name": "path",
+      "Value": "i:list"
+    },
+    {
+      "Name": "path_hooks",
+      "Value": "i:list"
+    },
+    {
+      "Name": "path_importer_cache",
+      "Value": "i:dict"
+    },
+    {
+      "Name": "platform",
+      "Value": "i:str"
+    },
+    {
+      "Name": "prefix",
+      "Value": "i:str"
+    },
+    {
+      "Name": "stderr",
+      "Value": "i:_io.TextIOWrapper"
+    },
+    {
+      "Name": "stdin",
+      "Value": "i:_io.TextIOWrapper"
+    },
+    {
+      "Name": "stdout",
+      "Value": "i:_io.TextIOWrapper"
+    },
+    {
+      "Name": "version",
+      "Value": "i:str"
+    },
+    {
+      "Name": "warnoptions",
+      "Value": "i:list"
+    },
+    {
+      "Name": "winver",
+      "Value": "i:str"
+    },
+    {
+      "Name": "float_info",
+      "Value": "i:sys.__float_info"
+    },
+    {
+      "Name": "hash_info",
+      "Value": "i:sys.__hash_info"
+    },
+    {
+      "Name": "int_info",
+      "Value": "i:sys.__int_info"
+    },
+    {
+      "Name": "thread_info",
+      "Value": "i:sys.__thread_info"
+    },
+    {
+      "Name": "version_info",
+      "Value": "i:sys.__version_info"
+    }
+  ],
   "Classes": [
     {
       "Bases": [
@@ -709,71 +886,6 @@
       "InnerClasses": [],
       "Name": "flags",
       "Documentation": "sys.flags\n\nFlags provided through command line arguments or environment vars."
-    },
-    {
-      "Bases": [
-        "tuple",
-        "object"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "__float_info",
-      "Documentation": "sys.float_info\n\nA structseq holding information about the float type. It contains low level\ninformation about the precision and internal representation. Please study\nyour system's :file:`float.h` for more information."
-    },
-    {
-      "Bases": [
-        "tuple",
-        "object"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "__hash_info",
-      "Documentation": "hash_info\n\nA struct sequence providing parameters used for computing\nhashes. The attributes are read only."
-    },
-    {
-      "Bases": [
-        "tuple",
-        "object"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "__int_info",
-      "Documentation": "sys.int_info\n\nA struct sequence that holds information about Python's\ninternal representation of integers.  The attributes are read only."
-    },
-    {
-      "Bases": [
-        "tuple",
-        "object"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "__thread_info",
-      "Documentation": "sys.thread_info\n\nA struct sequence holding information about the thread implementation."
-    },
-    {
-      "Bases": [
-        "tuple",
-        "object"
-      ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Name": "__version_info",
-      "Documentation": "sys.version_info\n\nVersion information as a named tuple."
     },
     {
       "Bases": [
