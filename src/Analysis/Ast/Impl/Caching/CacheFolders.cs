@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
                     if (!string.IsNullOrWhiteSpace(xdgCacheHomePath)
                         && CheckPathRooted(xdgCacheVarName, xdgCacheHomePath, logger)) {
-                        cachePath = Path.Combine(xdgCacheVarName, plsSubfolder);
+                        cachePath = Path.Combine(xdgCacheHomePath, plsSubfolder);
                     } else if (!string.IsNullOrWhiteSpace(homeFolderPath)
                                && CheckVariableSet(homeVarName, homeFolderPath, logger)
                                && CheckPathRooted(homeVarName, homeFolderPath, logger)) {
