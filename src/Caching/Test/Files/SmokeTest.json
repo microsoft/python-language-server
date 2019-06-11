@@ -1,23 +1,23 @@
 {
-  "Name": "module",
   "Functions": [
     {
-      "Name": "func",
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:builtins.float"
+          "ReturnType": "i:float"
         }
       ],
       "Attributes": 0,
       "Classes": null,
-      "Functions": null
+      "Functions": null,
+      "Name": "func",
+      "Documentation": null
     }
   ],
   "Variables": [
     {
       "Name": "x",
-      "Value": "i:builtins.str"
+      "Value": "i:str"
     },
     {
       "Name": "c",
@@ -26,63 +26,18 @@
   ],
   "Classes": [
     {
-      "Name": "C",
       "Bases": [
-        "builtins.object"
+        "object"
       ],
-      "Methods": [
-        {
-          "Name": "__init__",
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "module.C",
-                  "DefaultValue": "",
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": ""
-            }
-          ],
-          "Attributes": 0,
-          "Classes": null,
-          "Functions": null
-        },
-        {
-          "Name": "method",
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "module.C",
-                  "DefaultValue": "",
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": "i:builtins.float"
-            }
-          ],
-          "Attributes": 0,
-          "Classes": null,
-          "Functions": null
-        }
-      ],
+      "Methods": [],
       "Properties": [],
-      "Fields": [
-        {
-          "Name": "x",
-          "Value": "i:builtins.int"
-        },
-        {
-          "Name": "y",
-          "Value": "i:builtins.int"
-        }
-      ],
+      "Fields": [],
       "GenericParameters": null,
-      "InnerClasses": []
+      "InnerClasses": [],
+      "Name": "C",
+      "Documentation": null
     }
-  ]
+  ],
+  "Name": "module",
+  "Documentation": ""
 }

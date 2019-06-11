@@ -23,12 +23,6 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     public interface IPythonModule : IPythonType {
         /// <summary>
-        /// Unique identifier of the module. Derives from module type,
-        /// library type, version (if available) and the installation path.
-        /// </summary>
-        string UniqueId { get; }
-
-        /// <summary>
         /// File path to the module.
         /// </summary>
         string FilePath { get; }

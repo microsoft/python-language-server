@@ -19,7 +19,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class ModuleModel: MemberModel {
+    internal sealed class ModuleModel : MemberModel {
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
@@ -33,23 +33,17 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             foreach (var v in analysis.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
                 var t = v.Value.GetPythonType();
                 // If variable is declaration and has location, then it is a user-defined variable.
-                if (v.Source == VariableSource.Declaration && v.Location.IsValid) {
+                if (v.Location.IsValid) {
                     variables.Add(VariableModel.FromVariable(v));
+                    continue;
                 }
-
-                if (v.Source == VariableSource.Declaration && !v.Location.IsValid) {
-                    switch (t) {
-                        // Typically class or a function
-                        case IPythonFunctionType ft when ft.DeclaringModule.Equals(analysis.Document): {
-                            functions.Add(FunctionModel.FromType(ft));
-                            break;
-                        }
-
-                        case IPythonClassType cls when cls.DeclaringModule.Equals(analysis.Document): {
-                            classes.Add(ClassModel.FromType(cls));
-                            break;
-                        }
-                    }
+                switch (t) {
+                    case IPythonFunctionType ft when ft.DeclaringModule.Equals(analysis.Document):
+                        functions.Add(FunctionModel.FromType(ft));
+                        break;
+                    case IPythonClassType cls when cls.DeclaringModule.Equals(analysis.Document):
+                        classes.Add(ClassModel.FromType(cls));
+                        break;
                 }
             }
 

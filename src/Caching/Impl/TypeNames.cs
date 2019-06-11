@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -21,22 +22,17 @@ namespace Microsoft.Python.Analysis.Caching {
     internal static class TypeNames {
         public static string GetQualifiedName(this IMember m) {
             var t = m.GetPythonType();
-            if (t.IsUnknown()) {
-                return null;
-            }
-
-            var moduleId = t.DeclaringModule.UniqueId;
-            switch (m) {
-                case IPythonModule mod:
-                    return mod.UniqueId;
-                case IPythonInstance _:
-                    return $"i:{GetQualifiedName(t)}";
-                case IPythonClassMember cm when cm.DeclaringType != null:
-                    return $"{moduleId}.{cm.GetQualifiedName()}";
-                case IPythonType pt:
-                    return $"{moduleId}.{pt.Name}";
-                case null:
-                    break;
+            if (!t.IsUnknown()) {
+                switch (m) {
+                    case IPythonInstance _:
+                        return $"i:{GetQualifiedName(t)}";
+                    case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
+                        return pt.Name;
+                    case IPythonType pt:
+                        return pt.QualifiedName;
+                    case null:
+                        break;
+                }
             }
             return null;
         }

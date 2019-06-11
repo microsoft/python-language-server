@@ -56,6 +56,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
 
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
+        public virtual string QualifiedName => $"{DeclaringModule.QualifiedName}.{(TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : Name)}";
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;

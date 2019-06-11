@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Modules {
             IsTypeshed = isTypeshed;
         }
 
-        public override string UniqueId => PrimaryModule.UniqueId;
+        public override string QualifiedName => PrimaryModule.QualifiedName;
 
         protected override string LoadContent() {
             // Exceptions are handled in the base

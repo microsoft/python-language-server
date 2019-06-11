@@ -42,11 +42,11 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
 
         public string Name {
-            get {
-                lock (_lock) {
-                    return CodeFormatter.FormatSequence("Union", '[', _types.ToArray());
-                }
-            }
+            get { lock (_lock) { return CodeFormatter.FormatSequence("Union", '[', _types.ToArray()); } }
+        }
+
+        public string QualifiedName {
+            get { lock (_lock) { return CodeFormatter.FormatSequence("Union", '[', _types.Select(t => t.QualifiedName).ToArray()); } }
         }
 
         public override IPythonModule DeclaringModule {

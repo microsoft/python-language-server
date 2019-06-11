@@ -29,8 +29,8 @@ namespace Microsoft.Python.Analysis.Modules {
     internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
 
-        public string UniqueId => $"{nameof(PythonVariableModule)}.{Name}"; // TODO: re-work.
         public string Name { get; }
+        public string QualifiedName => $"{nameof(PythonVariableModule)}.{Name}"; // TODO: re-work.
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
 
