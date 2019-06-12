@@ -589,7 +589,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private PythonAst RecreateAst() {
             lock (AnalysisLock) {
                 ContentState = State.None;
-                LoadContent();
+                LoadContent(null, _buffer.Version);
                 var parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, ParserOptions.Default);
                 var ast = parser.ParseFile(Uri);
                 ContentState = State.Parsed;
