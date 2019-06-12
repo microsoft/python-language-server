@@ -13,10 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [DebuggerDisplay("v:{Name} = {Value}")]
     internal sealed class VariableModel: MemberModel {
         public string Value { get; set; }
 

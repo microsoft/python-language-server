@@ -14,11 +14,13 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [DebuggerDisplay("c:{Name}")]
     internal sealed class ClassModel: MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }
@@ -50,6 +52,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 if (!Push(m)) {
                     continue;
                 }
+
                 try {
                     switch (m) {
                         case IPythonClassType ct:

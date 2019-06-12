@@ -13,10 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [DebuggerDisplay("f:{Name}")]
     internal sealed class FunctionModel: MemberModel {
         public string Documentation { get; set; }
         public OverloadModel[] Overloads { get; set; }

@@ -13,7 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
+
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [DebuggerDisplay("t:{Name}")]
     internal sealed class TypeVarModel {
         public string Name { get; set; }
         public string[] Constraints { get; set; }

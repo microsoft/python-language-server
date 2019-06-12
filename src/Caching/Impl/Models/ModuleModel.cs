@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -27,21 +28,24 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         // TODO: TypeVars, ...
 
         public static ModuleModel FromAnalysis(IDocumentAnalysis analysis) {
-            var variables = new List<VariableModel>();
-            var functions = new List<FunctionModel>();
-            var classes = new List<ClassModel>();
+            var variables = new Dictionary<string, VariableModel>();
+            var functions = new Dictionary<string, FunctionModel>();
+            var classes = new Dictionary<string, ClassModel>();
 
             foreach (var v in analysis.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
                 var t = v.Value.GetPythonType();
                 switch (v.Value) {
                     case IPythonFunctionType ft when ft.DeclaringModule.Equals(analysis.Document):
-                        functions.Add(FunctionModel.FromType(ft));
+                        Debug.Assert(!functions.ContainsKey(ft.Name));
+                        functions[ft.Name] = FunctionModel.FromType(ft);
                         break;
                     case IPythonClassType cls when cls.DeclaringModule.Equals(analysis.Document):
-                        classes.Add(ClassModel.FromType(cls));
+                        Debug.Assert(!classes.ContainsKey(cls.Name));
+                        classes[cls.Name] = ClassModel.FromType(cls);
                         break;
                     default:
-                        variables.Add(VariableModel.FromVariable(v));
+                        Debug.Assert(!variables.ContainsKey(v.Name));
+                        variables[v.Name] = VariableModel.FromVariable(v);
                         break;
                 }
             }
@@ -49,9 +53,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return new ModuleModel {
                 Name = analysis.Document.GetQualifiedName(),
                 Documentation = analysis.Document.Documentation,
-                Functions = functions.ToArray(),
-                Variables = variables.ToArray(),
-                Classes = classes.ToArray()
+                Functions = functions.Values.ToArray(),
+                Variables = variables.Values.ToArray(),
+                Classes = classes.Values.ToArray()
             };
         }
     }

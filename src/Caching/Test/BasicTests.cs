@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -61,9 +62,19 @@ c = C()
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var model = ModuleModel.FromAnalysis(analysis.Document.Interpreter.ModuleResolution.BuiltinsModule.Analysis);
+            
+            // Verify model contains unique members. Conversion will throw on duplicates.
+            var members = model.Variables
+                .Concat<MemberModel>(model.Classes)
+                .Concat(model.Functions)
+                .ToDictionary(k => k.Name, v => v);
+
             var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
+            //Baseline.CompareToFile(BaselineFileName, json);
+
+            var module = new PythonDbModule(model, Services);
         }
+
 
         [TestMethod, Priority(0)]
         public async Task Sys() {
