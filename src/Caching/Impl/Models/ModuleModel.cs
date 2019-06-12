@@ -32,21 +32,32 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var functions = new Dictionary<string, FunctionModel>();
             var classes = new Dictionary<string, ClassModel>();
 
+            // Go directly through variables rather than GetMemberNames/GetMember since
+            // module may have non-exported variables and types that it may be returning
+            // from functions and methods or otherwise using in declarations.
             foreach (var v in analysis.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
                 var t = v.Value.GetPythonType();
+                // Create type model before variable since variable needs it.
+                string typeName = null;
                 switch (v.Value) {
                     case IPythonFunctionType ft when ft.DeclaringModule.Equals(analysis.Document):
-                        Debug.Assert(!functions.ContainsKey(ft.Name));
-                        functions[ft.Name] = FunctionModel.FromType(ft);
+                        if (!functions.ContainsKey(ft.Name)) {
+                            typeName = ft.Name;
+                            functions[ft.Name] = FunctionModel.FromType(ft);
+                        }
+
                         break;
                     case IPythonClassType cls when cls.DeclaringModule.Equals(analysis.Document):
-                        Debug.Assert(!classes.ContainsKey(cls.Name));
-                        classes[cls.Name] = ClassModel.FromType(cls);
+                        if (!classes.ContainsKey(cls.Name)) {
+                            typeName = cls.Name;
+                            classes[cls.Name] = ClassModel.FromType(cls);
+                        }
                         break;
-                    default:
-                        Debug.Assert(!variables.ContainsKey(v.Name));
-                        variables[v.Name] = VariableModel.FromVariable(v);
-                        break;
+                }
+
+                // Do not re-declare classes and functions as variables in the model.
+                if (typeName == null && !variables.ContainsKey(v.Name)) {
+                    variables[v.Name] = VariableModel.FromVariable(v);
                 }
             }
 

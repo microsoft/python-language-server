@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Caching {
                         }
                     }
                 }
-
+                // TODO: re-declare __doc__, __name__, etc.
                 // No longer need model data, free up some memory.
                 _members.Clear();
             }
