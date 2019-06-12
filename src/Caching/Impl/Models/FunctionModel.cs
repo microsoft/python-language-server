@@ -18,6 +18,7 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class FunctionModel: MemberModel {
+        public string Documentation { get; set; }
         public OverloadModel[] Overloads { get; set; }
         public FunctionAttributes Attributes { get; set; }
         public string[] Classes { get; set; }

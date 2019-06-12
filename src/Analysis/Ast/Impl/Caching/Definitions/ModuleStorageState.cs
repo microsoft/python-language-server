@@ -17,7 +17,7 @@ namespace Microsoft.Python.Analysis.Caching {
     /// <summary>
     /// Describes module data stored in a database.
     /// </summary>
-    internal enum ModuleStorageState {
+    public enum ModuleStorageState {
         /// <summary>
         /// Module does not exist in the database.
         /// </summary>
@@ -32,6 +32,11 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>
         /// Modules exist and the analysis is complete.
         /// </summary>
-        Complete
+        Complete,
+
+        /// <summary>
+        /// Storage is corrupted or incompatible.
+        /// </summary>
+        Corrupted
     }
 }

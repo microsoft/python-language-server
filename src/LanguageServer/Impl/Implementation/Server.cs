@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
@@ -143,7 +144,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             };
 
             _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken);
-            _services.AddService(_interpreter);
+            _services
+                .AddService(_interpreter)
+                .AddService(new ModuleDatabase(_services));
 
             var fileSystem = _services.GetService<IFileSystem>();
             _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, _rootDir,

@@ -17,6 +17,7 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class PropertyModel: MemberModel {
+        public string Documentation { get; set; }
         public string ReturnType { get; set; }
         public FunctionAttributes Attributes { get; set; }
 

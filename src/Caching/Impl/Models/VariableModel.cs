@@ -17,8 +17,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class VariableModel {
-        public string Name { get; set; }
+    internal sealed class VariableModel: MemberModel {
         public string Value { get; set; }
 
         public static VariableModel FromVariable(IVariable v) => new VariableModel {

@@ -14,6 +14,14 @@
   <Import Project="..\..\..\build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
+    <Compile Remove="Readers\**" />
+    <Compile Remove="Writers\**" />
+    <EmbeddedResource Remove="Readers\**" />
+    <EmbeddedResource Remove="Writers\**" />
+    <None Remove="Readers\**" />
+    <None Remove="Writers\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="LiteDB" Version="4.1.4" />
     <PackageReference Include="MicroBuild.Core" Version="0.3.0">
       <PrivateAssets>all</PrivateAssets>

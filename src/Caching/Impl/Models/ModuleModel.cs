@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class ModuleModel : MemberModel {
+        public string Documentation { get; set; }
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }

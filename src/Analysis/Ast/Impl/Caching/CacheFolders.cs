@@ -19,16 +19,12 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class CacheFolderService: ICacheFolderService {
-        private readonly IServiceContainer _services;
-
         public CacheFolderService(IServiceContainer services, string cacheRootFolder) {
-            _services = services;
             CacheFolder = cacheRootFolder ?? GetCacheFolder(services);
         }
 

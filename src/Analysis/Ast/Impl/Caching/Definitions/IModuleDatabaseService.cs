@@ -21,16 +21,15 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Retrieves module representation from module index database
         /// or null if module does not exist. 
         /// </summary>
-        /// <param name="uniqueId">Module unique id.</param>
+        /// <param name="qualifiedName">Module fully qualified name.</param>
         /// <param name="module">Python module.</param>
         /// <returns>Module storage state</returns>
-        ModuleStorageState TryGetModuleData(string uniqueId, out IPythonModule module);
+        ModuleStorageState TryGetModuleData(string qualifiedName, out IPythonModule module);
 
         /// <summary>
         /// Writes module data to the database.
         /// </summary>
-        /// <param name="uniqueId">Module unique id.</param>
         /// <param name="analysis">Module analysis.</param>
-        void StoreModuleData(string uniqueId, IDocumentAnalysis analysis);
+        void StoreModuleAnalysis(IDocumentAnalysis analysis);
     }
 }
