@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 return false;
             }
             _processing.Push(t);
-            return false;
+            return true;
         }
         private void Pop() => _processing.Pop();
         #endregion

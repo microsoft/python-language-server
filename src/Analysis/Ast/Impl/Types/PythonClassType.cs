@@ -197,7 +197,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // During processing of builtins module some types may not be available yet.
                 // Specialization will attach proper base at the end.
                 Debug.Assert(!objectType.IsUnknown());
-                if (!bases.Any(b => objectType.Equals(b))) {
+                if (!bases.Any(b => b.Name == "object" && b.DeclaringModule.Name == @"builtins")) {
                     bases = bases.Concat(Enumerable.Repeat(objectType, 1));
                 }
             }

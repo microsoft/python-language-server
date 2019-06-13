@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal abstract class FactoryBase<TModel, TMember> : IDisposable
@@ -38,7 +39,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             _data = models.ToDictionary(k => k.Name, v => new ModelData { Model = v });
         }
 
-        public TMember Construct(TModel cm, IPythonType declaringType, bool cached = true) {
+        public TMember TryCreate(string name, IPythonType declaringType = null) 
+            => _data.TryGetValue(name, out var data) ? Construct(data.Model, declaringType) : default;
+
+        public TMember Construct(TModel cm, IPythonType declaringType = null, bool cached = true) {
             if (!cached) {
                 return CreateMember(cm, declaringType);
             }

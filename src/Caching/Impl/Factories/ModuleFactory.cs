@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         public IPythonModule Module { get; }
         public ClassFactory ClassFactory { get; }
         public FunctionFactory FunctionFactory { get; }
-        public PropertyFactory PropertyFactory  { get; }
+        public PropertyFactory PropertyFactory { get; }
         public VariableFactory VariableFactory { get; }
         public Location DefaultLocation { get; }
 
@@ -84,36 +84,20 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 return null;
             }
 
-            if (_classes.TryGetValue(typeNameParts[0], out var cd)) {
-                if (cd.Member != null) {
-                    return cd.Member;
-                }
-                Debug.Assert(typeNameParts.Count == 1);
-                return ConstructClass(cd.Model);
-            }
-
-            if (_functions.TryGetValue(typeNameParts[0], out var fd)) {
-                if (fd.Member != null) {
-                    return fd.Member;
-                }
-                Debug.Assert(typeNameParts.Count == 1);
-                return ConstructFunction(fd.Model, null);
-            }
-
-            if (_variables.TryGetValue(typeNameParts[0], out var vd)) {
-                if (vd.Member != null) {
-                    return vd.Member;
-                }
-                Debug.Assert(typeNameParts.Count == 1);
-                return ConstructVariable(vd.Model);
-            }
-
-            return null;
+            // TODO: nested classes, etc (traverse parts and recurse).
+            return ClassFactory.TryCreate(typeNameParts[0])
+                        ?? (FunctionFactory.TryCreate(typeNameParts[0])
+                            ?? (IMember)VariableFactory.TryCreate(typeNameParts[0]));
         }
 
         private bool SplitQualifiedName(string qualifiedName, out string moduleName, out List<string> typeNameParts, out bool isInstance) {
             moduleName = null;
             typeNameParts = new List<string>();
+            isInstance = false;
+
+            if (string.IsNullOrEmpty(qualifiedName)) {
+                return false;
+            }
 
             isInstance = qualifiedName.StartsWith("i:");
             qualifiedName = isInstance ? qualifiedName.Substring(2) : qualifiedName;

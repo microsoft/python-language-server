@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal sealed class ClassFactory : FactoryBase<ClassModel, IPythonClassType> {
@@ -26,8 +27,8 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
         protected override IPythonClassType CreateMember(ClassModel cm, IPythonType declaringType) {
 
-            var cls = new PythonClassType(cm.Name, new Location(ModuleFactory.Module));
-            cls.SetBases(cm.Bases.Select(b => Construct(b, null)));
+            var cls = new PythonClassType(cm.Name == "ellipsis" ? "..." : cm.Name, new Location(ModuleFactory.Module));
+            cls.SetBases(cm.Bases.Select(b => TryCreate(b)).ExcludeDefault());
 
             foreach (var f in cm.Methods) {
                 cls.AddMember(f.Name, ModuleFactory.FunctionFactory.Construct(f, cls), false);
