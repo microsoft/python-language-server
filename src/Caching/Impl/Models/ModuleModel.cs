@@ -35,7 +35,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             // Go directly through variables rather than GetMemberNames/GetMember since
             // module may have non-exported variables and types that it may be returning
             // from functions and methods or otherwise using in declarations.
-            foreach (var v in analysis.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
+            foreach (var v in analysis.GlobalScope.Variables
+                .Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Builtin)) {
                 var t = v.Value.GetPythonType();
                 // Create type model before variable since variable needs it.
                 string typeName = null;

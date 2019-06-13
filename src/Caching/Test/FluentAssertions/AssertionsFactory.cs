@@ -14,19 +14,24 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 
-namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
+namespace Microsoft.Python.Analysis.Caching.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class AssertionsFactory {
         public static DocumentAnalysisAssertions Should(this IDocumentAnalysis analysis) => new DocumentAnalysisAssertions(analysis);
-        public static VariableAssertions Should(this IVariable v) => new VariableAssertions(v);
+        public static MemberAssertions Should(this IMember member) => new MemberAssertions(member);
+        public static PythonFunctionAssertions Should(this IPythonFunctionType f) => new PythonFunctionAssertions(f);
+        public static PythonFunctionOverloadAssertions Should(this IPythonFunctionOverload f) => new PythonFunctionOverloadAssertions(f);
+        public static ParameterAssertions Should(this IParameterInfo p) => new ParameterAssertions(p);
 
         public static RangeAssertions Should(this Range? range) => new RangeAssertions(range);
 
         public static SourceSpanAssertions Should(this SourceSpan span) => new SourceSpanAssertions(span);
         public static SourceSpanAssertions Should(this SourceSpan? span) => new SourceSpanAssertions(span.Value);
+        public static VariableAssertions Should(this IVariable v) => new VariableAssertions(v);
     }
 }

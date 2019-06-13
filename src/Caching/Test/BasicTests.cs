@@ -14,9 +14,9 @@
 // permissions and limitations under the License.
 
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -61,11 +61,18 @@ c = C()
         [TestMethod, Priority(0)]
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
-            var model = ModuleModel.FromAnalysis(analysis.Document.Interpreter.ModuleResolution.BuiltinsModule.Analysis);
+            var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
+            var model = ModuleModel.FromAnalysis(builtins.Analysis);
+            
+            // Compare data to the baseline.
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
+            
+            // Read persistent data back
+            var dbModule = new PythonDbModule(model, Services);
 
-            var module = new PythonDbModule(model, Services);
+            // Compare to the original members, should be identical.
+            dbModule.Should().HaveSameMembersAs(builtins);
         }
 
 

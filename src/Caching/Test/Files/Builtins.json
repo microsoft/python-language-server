@@ -1474,6 +1474,18 @@
     {
       "Value": null,
       "Name": "__package__"
+    },
+    {
+      "Value": "bool",
+      "Name": "True"
+    },
+    {
+      "Value": "bool",
+      "Name": "False"
+    },
+    {
+      "Value": "__NoneType__",
+      "Name": "None"
     }
   ],
   "Classes": [

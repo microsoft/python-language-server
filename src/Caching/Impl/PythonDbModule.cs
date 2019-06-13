@@ -19,6 +19,7 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using GlobalScope = Microsoft.Python.Analysis.Caching.GlobalScope;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class PythonDbModule : SpecializedModule {
