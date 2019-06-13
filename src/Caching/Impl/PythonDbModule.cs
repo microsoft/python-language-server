@@ -23,7 +23,6 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class PythonDbModule : SpecializedModule {
         private readonly GlobalScope _globalScope;
-        private readonly IPythonInterpreter _interpreter;
 
         public PythonDbModule(ModuleModel model, IServiceContainer services)
             : base(model.Name, string.Empty, services) {

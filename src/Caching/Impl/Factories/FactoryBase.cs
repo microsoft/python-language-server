@@ -42,13 +42,18 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             => _data.TryGetValue(name, out var data) ? Construct(data.Model, declaringType) : default;
 
         public TMember Construct(TModel cm, IPythonType declaringType = null, bool cached = true) {
+            TMember m;
+
             if (!cached) {
-                return CreateMember(cm, declaringType);
+                m = CreateMember(cm, declaringType);
+                CreateMemberParts(cm, m);
+                return m;
             }
 
             var data = _data[cm.Name];
             if (data.Member == null) {
                 data.Member = CreateMember(data.Model, declaringType);
+                CreateMemberParts(cm, data.Member);
             }
             return data.Member;
         }

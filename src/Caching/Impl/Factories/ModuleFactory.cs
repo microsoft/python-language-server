@@ -99,6 +99,12 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 return false;
             }
 
+            if (qualifiedName == "..." || qualifiedName == "ellipsis") {
+                moduleName = @"builtins";
+                typeNameParts.Add("...");
+                return true;
+            }
+
             isInstance = qualifiedName.StartsWith("i:");
             qualifiedName = isInstance ? qualifiedName.Substring(2) : qualifiedName;
             var components = qualifiedName.Split('.');

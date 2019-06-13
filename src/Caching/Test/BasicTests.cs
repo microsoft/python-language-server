@@ -63,7 +63,7 @@ c = C()
             var analysis = await GetAnalysisAsync(string.Empty);
             var model = ModuleModel.FromAnalysis(analysis.Document.Interpreter.ModuleResolution.BuiltinsModule.Analysis);
             var json = ToJson(model);
-            //Baseline.CompareToFile(BaselineFileName, json);
+            Baseline.CompareToFile(BaselineFileName, json);
 
             var module = new PythonDbModule(model, Services);
         }
