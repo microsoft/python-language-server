@@ -79,7 +79,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
-            Name = cls.Name;
+            Name = cls.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : cls.Name;
             Documentation = cls.Documentation;
             Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetQualifiedName()).ToArray();
             Methods = methods.ToArray();
