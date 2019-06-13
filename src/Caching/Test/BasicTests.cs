@@ -62,13 +62,6 @@ c = C()
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var model = ModuleModel.FromAnalysis(analysis.Document.Interpreter.ModuleResolution.BuiltinsModule.Analysis);
-            
-            // Verify model contains unique members. Conversion will throw on duplicates.
-            var members = model.Variables
-                .Concat<MemberModel>(model.Classes)
-                .Concat(model.Functions)
-                .ToDictionary(k => k.Name, v => v);
-
             var json = ToJson(model);
             //Baseline.CompareToFile(BaselineFileName, json);
 
