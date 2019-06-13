@@ -55,16 +55,16 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
                 try {
                     switch (m) {
-                        case IPythonClassType ct:
+                        case IPythonClassType ct when ct.Name == name:
                             if (!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
                                 continue;
                             }
                             innerClasses.Add(FromType(ct));
                             break;
-                        case IPythonFunctionType ft:
+                        case IPythonFunctionType ft when ft.Name == name:
                             methods.Add(FunctionModel.FromType(ft));
                             break;
-                        case IPythonPropertyType prop:
+                        case IPythonPropertyType prop when prop.Name == name:
                             properties.Add(PropertyModel.FromType(prop));
                             break;
                         case IPythonInstance inst:

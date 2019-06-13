@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal abstract class FactoryBase<TModel, TMember> : IDisposable
@@ -57,5 +56,6 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         public virtual void Dispose() => _data.Clear();
 
         protected abstract TMember CreateMember(TModel model, IPythonType declaringType);
+        protected virtual void CreateMemberParts(TModel model, TMember member) { }
     }
 }

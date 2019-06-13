@@ -18,29 +18,33 @@ using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
-    internal sealed class ClassFactory : FactoryBase<ClassModel, IPythonClassType> {
+    internal sealed class ClassFactory : FactoryBase<ClassModel, PythonClassType> {
         public ClassFactory(IEnumerable<ClassModel> classes, ModuleFactory mf)
             : base(classes, mf) {
         }
 
-        protected override IPythonClassType CreateMember(ClassModel cm, IPythonType declaringType) {
+        protected override PythonClassType CreateMember(ClassModel cm, IPythonType declaringType) 
+            => new PythonClassType(cm.Name == "ellipsis" ? "..." : cm.Name, new Location(ModuleFactory.Module));
 
-            var cls = new PythonClassType(cm.Name == "ellipsis" ? "..." : cm.Name, new Location(ModuleFactory.Module));
-            cls.SetBases(cm.Bases.Select(b => TryCreate(b)).ExcludeDefault());
+        protected override void CreateMemberParts(ClassModel cm, PythonClassType cls) {
+            // In Python 3 exclude object since type creation will add it automatically.
+            var is3x = ModuleFactory.Module.Interpreter.LanguageVersion.Is3x();
+            var bases = cm.Bases.Select(b => is3x && b == "object" ? null : TryCreate(b)).ExcludeDefault().ToArray();
+            cls.SetBases(bases);
 
             foreach (var f in cm.Methods) {
-                cls.AddMember(f.Name, ModuleFactory.FunctionFactory.Construct(f, cls), false);
+                cls.AddMember(f.Name, ModuleFactory.FunctionFactory.Construct(f, cls, false), false);
             }
             foreach (var p in cm.Properties) {
                 cls.AddMember(p.Name, ModuleFactory.PropertyFactory.Construct(p, cls), false);
             }
             foreach (var c in cm.InnerClasses) {
-                cls.AddMember(c.Name, Construct(c, cls), false);
+                cls.AddMember(c.Name, Construct(c, cls, false), false);
             }
             // TODO: fields. Bypass variable cache!
-            return cls;
         }
     }
 }
