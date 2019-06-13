@@ -13,12 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Extensions {
+namespace Microsoft.Python.Analysis {
     public static class PythonFunctionExtensions {
         public static bool IsUnbound(this IPythonFunctionType f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Function;
@@ -34,5 +35,15 @@ namespace Microsoft.Python.Analysis.Extensions {
             IScope gs = f.DeclaringModule.GlobalScope;
             return gs?.TraverseBreadthFirst(s => s.Children).FirstOrDefault(s => s.Node == f.FunctionDefinition);
         }
+
+        public static string GetQualifiedName(this IPythonClassMember cm) {
+            var s = new Stack<string>();
+            s.Push(cm.Name);
+            for (var p = cm.DeclaringType as IPythonClassMember; p != null; p = p.DeclaringType as IPythonClassMember) {
+                s.Push(p.Name);
+            }
+            return string.Join(".", s);
+        }
+
     }
 }

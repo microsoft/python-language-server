@@ -33,13 +33,11 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
-
         public override PythonMemberType MemberType => PythonMemberType.Property;
-
+        public override string QualifiedName => this.GetQualifiedName();
         #endregion
 
         #region IPythonPropertyType
-
         public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
         public override bool IsAbstract { get; }
         public bool IsReadOnly => true;

@@ -1,0 +1,54 @@
+{
+  "Documentation": "Requests HTTP Library\r\n~~~~~~~~~~~~~~~~~~~~~\r\n\r\nRequests is an HTTP library, written in Python, for human beings. Basic GET\r\nusage:\r\n\r\n   >>> import requests\r\n   >>> r = requests.get('https://www.python.org')\r\n   >>> r.status_code\r\n   200\r\n   >>> 'Python is a programming language' in r.content\r\n   True\r\n\r\n... or POST:\r\n\r\n   >>> payload = dict(key1='value1', key2='value2')\r\n   >>> r = requests.post('https://httpbin.org/post', data=payload)\r\n   >>> print(r.text)\r\n   {\r\n     ...\r\n     \"form\": {\r\n       \"key2\": \"value2\",\r\n       \"key1\": \"value1\"\r\n     },\r\n     ...\r\n   }\r\n\r\nThe other HTTP methods are supported - see `requests.api`. Full documentation\r\nis at <http://python-requests.org>.\r\n\r\n:copyright: (c) 2017 by Kenneth Reitz.\r\n:license: Apache 2.0, see LICENSE for more details.\r\n",
+  "Functions": [
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "urllib3_version",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "chardet_version",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Name": "check_compatibility"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "cryptography_version",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Name": "_check_cryptography"
+    }
+  ],
+  "Variables": [],
+  "Classes": [],
+  "Name": "requests"
+}

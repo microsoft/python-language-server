@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Modules {
             var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(Interpreter.Configuration);
             if (FileSystem.IsPathUnderRoot(sitePackagesPath, FilePath)) {
                 // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
-                // Example: 'lxml' and 'lxml-4.2.5.dist-info'.
+                // Example: 'requests' and 'requests-2.21.0.dist-info'.
                 var moduleFolder = Path.GetDirectoryName(Path.GetDirectoryName(FilePath));
                 var folders = FileSystem
                     .GetFileSystemEntries(moduleFolder, "*-*.dist-info", SearchOption.TopDirectoryOnly)

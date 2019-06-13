@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -35,15 +34,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
             }
             return null;
-        }
-
-        private static string GetQualifiedName(this IPythonClassMember cm) {
-            var s = new Stack<string>();
-            s.Push(cm.Name);
-            for (var p = cm.DeclaringType as IPythonClassMember; p != null; p = p.DeclaringType as IPythonClassMember) {
-                s.Push(p.Name);
-            }
-            return string.Join(".", s);
         }
     }
 }

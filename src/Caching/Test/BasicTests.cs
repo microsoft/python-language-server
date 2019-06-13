@@ -17,6 +17,9 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -70,7 +73,6 @@ c = C()
             
             // Read persistent data back
             var dbModule = new PythonDbModule(model, Services);
-
             // Compare to the original members, should be identical.
             dbModule.Should().HaveSameMembersAs(builtins);
         }
@@ -83,6 +85,28 @@ c = C()
             var model = ModuleModel.FromAnalysis(sys.Analysis);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Requests() {
+            const string code = @"
+import requests
+x = requests.get('microsoft.com')
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var v = analysis.GlobalScope.Variables["requests"];
+            v.Should().NotBeNull();
+            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
+                Assert.Inconclusive("'requests' package is not installed.");
+            }
+
+            var rq = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("requests");
+            var model = ModuleModel.FromAnalysis(rq.Analysis);
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+
+             for var dbModule = new PythonDbModule(model, Services);
+            dbModule.Should().HaveSameMembersAs(rq);
         }
     }
 }
