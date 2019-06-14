@@ -139,6 +139,9 @@ x = requests.get('microsoft.com')
         [DataRow("mod(2.2.1).z", "mod(2.2.1)", "mod", "z", false)]
         [DataRow("i:mod(2.2.1).z", "mod(2.2.1)", "mod", "z", true)]
         [DataRow("i:mod.x", "mod", "mod", "x", true)]
+        [DataRow("types(3.7)", "types(3.7)", "types", null, false)]
+        [DataRow("typing.Union[str, tuple]", "typing", "typing", "Union[str, tuple]", false)]
+        [DataRow("typing.Union[typing.Any, mod.y]", "typing", "typing", "Union[typing.Any, mod.y]", false)]
         public void QualifiedNames(string qualifiedName, string moduleQualifiedName, string moduleName, string typeName, bool isInstance) {
             TypeNames.DeconstructQualifiedName(qualifiedName, out var actualModuleQualifiedName, out var actualModuleName, out var actualTypeName, out var actualIsInstance);
             actualModuleQualifiedName.Should().Be(moduleQualifiedName);

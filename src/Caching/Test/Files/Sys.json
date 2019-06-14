@@ -71,7 +71,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:builtins(3:7).dict"
+          "ReturnType": "i:dict"
         }
       ],
       "Attributes": 0,
@@ -117,7 +117,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:types(3:7).FrameType"
+          "ReturnType": "i:types(3.7).FrameType"
         }
       ],
       "Attributes": 0,
@@ -215,7 +215,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:builtins(3:7).tuple"
+          "ReturnType": "i:tuple"
         }
       ],
       "Attributes": 0,
@@ -230,7 +230,7 @@
           "Parameters": [
             {
               "Name": "type_",
-              "Type": "typing.Type[builtins(3:7).BaseException]",
+              "Type": "typing.Type[BaseException]",
               "DefaultValue": null,
               "Kind": 0
             },
@@ -242,7 +242,7 @@
             },
             {
               "Name": "traceback",
-              "Type": "types(3:7).TracebackType",
+              "Type": "types(3.7).TracebackType",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -482,7 +482,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:sys(3:7)._WinVersion"
+          "ReturnType": "i:sys(3.7)._WinVersion"
         }
       ],
       "Attributes": 0,
@@ -706,7 +706,7 @@
       "Name": "_mod_builtins"
     },
     {
-      "Value": "types(3:7)",
+      "Value": "types(3.7)",
       "Name": "_mod_types"
     },
     {
@@ -722,15 +722,15 @@
       "Name": "__package__"
     },
     {
-      "Value": "i:_io(3:7).TextIOWrapper",
+      "Value": "i:_io(3.7).TextIOWrapper",
       "Name": "__stderr__"
     },
     {
-      "Value": "i:_io(3:7).TextIOWrapper",
+      "Value": "i:_io(3.7).TextIOWrapper",
       "Name": "__stdin__"
     },
     {
-      "Value": "i:_io(3:7).TextIOWrapper",
+      "Value": "i:_io(3.7).TextIOWrapper",
       "Name": "__stdout__"
     },
     {
@@ -842,15 +842,15 @@
       "Name": "prefix"
     },
     {
-      "Value": "i:_io(3:7).TextIOWrapper",
+      "Value": "i:_io(3.7).TextIOWrapper",
       "Name": "stderr"
     },
     {
-      "Value": "i:_io(3:7).TextIOWrapper",
+      "Value": "i:_io(3.7).TextIOWrapper",
       "Name": "stdin"
     },
     {
-      "Value": "i:_io(3:7).TextIOWrapper",
+      "Value": "i:_io(3.7).TextIOWrapper",
       "Name": "stdout"
     },
     {
@@ -866,23 +866,23 @@
       "Name": "winver"
     },
     {
-      "Value": "i:sys(3:7).__float_info",
+      "Value": "i:sys(3.7).__float_info",
       "Name": "float_info"
     },
     {
-      "Value": "i:sys(3:7).__hash_info",
+      "Value": "i:sys(3.7).__hash_info",
       "Name": "hash_info"
     },
     {
-      "Value": "i:sys(3:7).__int_info",
+      "Value": "i:sys(3.7).__int_info",
       "Name": "int_info"
     },
     {
-      "Value": "i:sys(3:7).__thread_info",
+      "Value": "i:sys(3.7).__thread_info",
       "Name": "thread_info"
     },
     {
-      "Value": "i:sys(3:7).__version_info",
+      "Value": "i:sys(3.7).__version_info",
       "Name": "version_info"
     }
   ],
@@ -984,7 +984,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).list"
+              "ReturnType": "i:list"
             }
           ],
           "Attributes": 0,
@@ -1134,7 +1134,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).tuple"
+              "ReturnType": "i:tuple"
             }
           ],
           "Attributes": 0,
@@ -1396,7 +1396,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -1422,7 +1422,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -1740,7 +1740,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1766,7 +1766,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1792,7 +1792,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1818,7 +1818,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1829,7 +1829,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).list"
+              "ReturnType": "i:list"
             }
           ],
           "Attributes": 0,
@@ -1844,7 +1844,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1870,7 +1870,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1902,7 +1902,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1928,7 +1928,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1954,7 +1954,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1980,7 +1980,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1991,7 +1991,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).tuple"
+              "ReturnType": "i:tuple"
             }
           ],
           "Attributes": 0,
@@ -2006,7 +2006,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2032,7 +2032,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2052,7 +2052,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2084,7 +2084,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2104,7 +2104,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2124,7 +2124,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2150,7 +2150,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2170,7 +2170,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2196,7 +2196,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2222,7 +2222,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2248,12 +2248,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -2268,7 +2268,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2285,7 +2285,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -2300,7 +2300,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2320,7 +2320,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2346,7 +2346,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2378,7 +2378,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2404,7 +2404,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2424,7 +2424,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2450,7 +2450,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2482,7 +2482,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__float_info",
+                  "Type": "sys(3.7).__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2605,7 +2605,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2631,7 +2631,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2657,7 +2657,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2683,7 +2683,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2694,7 +2694,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).list"
+              "ReturnType": "i:list"
             }
           ],
           "Attributes": 0,
@@ -2709,7 +2709,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2735,7 +2735,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2767,7 +2767,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2793,7 +2793,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2819,7 +2819,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2845,7 +2845,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2856,7 +2856,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).tuple"
+              "ReturnType": "i:tuple"
             }
           ],
           "Attributes": 0,
@@ -2871,7 +2871,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2897,7 +2897,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2917,7 +2917,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2949,7 +2949,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2969,7 +2969,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2989,7 +2989,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3015,7 +3015,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3035,7 +3035,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3061,7 +3061,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3087,7 +3087,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3113,12 +3113,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -3133,7 +3133,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3150,7 +3150,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -3165,7 +3165,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3185,7 +3185,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3211,7 +3211,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3243,7 +3243,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3269,7 +3269,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3289,7 +3289,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3315,7 +3315,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3347,7 +3347,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__hash_info",
+                  "Type": "sys(3.7).__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3462,7 +3462,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3488,7 +3488,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3514,7 +3514,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3540,7 +3540,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3551,7 +3551,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).list"
+              "ReturnType": "i:list"
             }
           ],
           "Attributes": 0,
@@ -3566,7 +3566,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3592,7 +3592,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3624,7 +3624,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3650,7 +3650,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3676,7 +3676,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3702,7 +3702,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3713,7 +3713,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).tuple"
+              "ReturnType": "i:tuple"
             }
           ],
           "Attributes": 0,
@@ -3728,7 +3728,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3754,7 +3754,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3774,7 +3774,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3806,7 +3806,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3826,7 +3826,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3846,7 +3846,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3872,7 +3872,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3892,7 +3892,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3918,7 +3918,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3944,7 +3944,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3970,12 +3970,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -3990,7 +3990,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4007,7 +4007,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -4022,7 +4022,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4042,7 +4042,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4068,7 +4068,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4100,7 +4100,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4126,7 +4126,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4146,7 +4146,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4172,7 +4172,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4204,7 +4204,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__int_info",
+                  "Type": "sys(3.7).__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4291,7 +4291,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4317,7 +4317,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4343,7 +4343,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4369,7 +4369,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4380,7 +4380,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).list"
+              "ReturnType": "i:list"
             }
           ],
           "Attributes": 0,
@@ -4395,7 +4395,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4421,7 +4421,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4453,7 +4453,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4479,7 +4479,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4505,7 +4505,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4531,7 +4531,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4542,7 +4542,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).tuple"
+              "ReturnType": "i:tuple"
             }
           ],
           "Attributes": 0,
@@ -4557,7 +4557,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4583,7 +4583,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4603,7 +4603,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4635,7 +4635,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4655,7 +4655,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4675,7 +4675,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4701,7 +4701,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4721,7 +4721,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4747,7 +4747,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4773,7 +4773,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4799,12 +4799,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -4819,7 +4819,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4836,7 +4836,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -4851,7 +4851,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4871,7 +4871,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4897,7 +4897,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4929,7 +4929,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4955,7 +4955,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4975,7 +4975,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5001,7 +5001,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5033,7 +5033,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__thread_info",
+                  "Type": "sys(3.7).__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5124,7 +5124,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5150,7 +5150,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5176,7 +5176,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5202,7 +5202,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5213,7 +5213,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).list"
+              "ReturnType": "i:list"
             }
           ],
           "Attributes": 0,
@@ -5228,7 +5228,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5254,7 +5254,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5286,7 +5286,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5312,7 +5312,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5338,7 +5338,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5364,7 +5364,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5375,7 +5375,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:builtins(3:7).tuple"
+              "ReturnType": "i:tuple"
             }
           ],
           "Attributes": 0,
@@ -5390,7 +5390,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5416,7 +5416,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5436,7 +5436,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5468,7 +5468,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5488,7 +5488,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5508,7 +5508,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5534,7 +5534,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5554,7 +5554,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5580,7 +5580,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5606,7 +5606,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5632,12 +5632,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -5652,7 +5652,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5669,7 +5669,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:Union[str, tuple]"
+              "ReturnType": "i:typing.Union[str, tuple]"
             }
           ],
           "Attributes": 0,
@@ -5684,7 +5684,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5704,7 +5704,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5730,7 +5730,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5762,7 +5762,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5788,7 +5788,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5808,7 +5808,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5834,7 +5834,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5866,7 +5866,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3:7).__version_info",
+                  "Type": "sys(3.7).__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5952,5 +5952,5 @@
       "Name": "__version_info"
     }
   ],
-  "Name": "sys(3:7)"
+  "Name": "sys(3.7)"
 }

@@ -59,27 +59,34 @@ namespace Microsoft.Python.Analysis.Caching {
 
             // First chunk is qualified module name except dots in braces.
             // Builtin types don't have module prefix.
-            typeName = GetModuleNames(qualifiedName, out moduleQualifiedName, out moduleName)
-                ? qualifiedName.Substring(moduleQualifiedName.Length + 1)
-                : qualifiedName;
+            GetModuleNames(qualifiedName, out moduleQualifiedName, out moduleName);
+
+            typeName = string.IsNullOrEmpty(moduleQualifiedName) 
+                ? qualifiedName 
+                : qualifiedName.Substring(moduleQualifiedName.Length).TrimStart('.');
 
             moduleQualifiedName = moduleQualifiedName ?? @"builtins";
             moduleName = moduleName ?? @"builtins";
+            typeName = string.IsNullOrEmpty(typeName) ? null : typeName;
+
             return true;
         }
 
-        private static bool GetModuleNames(string s, out string moduleQualifiedName, out string moduleName) {
-            moduleQualifiedName = null;
-            moduleName = null;
-
-            var firstDot = -1;
+        private static void GetModuleNames(string qualifiedTypeName, out string moduleQualifiedName, out string moduleName) {
+            var openBraceIndex = -1;
+            var typeSeparatorDotIndex = -1;
             var skip = false;
 
-            for (var i = 0; i < s.Length; i++) {
-                var ch = s[i];
+            // types(3.7)
+            // mod.x
+            // mod(2.2.1).z
+            // typing.Union[typing.Any, mod.y]
+            for (var i = 0; i < qualifiedTypeName.Length; i++) {
+                var ch = qualifiedTypeName[i];
 
                 if (ch == '(') {
                     skip = true;
+                    openBraceIndex = i;
                     continue;
                 }
 
@@ -88,18 +95,31 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (!skip && ch == '.') {
-                    firstDot = i;
+                    typeSeparatorDotIndex = i;
                     break;
                 }
             }
 
-            if (firstDot < 0) {
-                return false;
+            if(typeSeparatorDotIndex > 0) {
+                // mod.x or mod(2.2.1).x
+                moduleQualifiedName = qualifiedTypeName.Substring(0, typeSeparatorDotIndex);
+            } else {
+                // str or types(3.7)
+                moduleQualifiedName = openBraceIndex > 0 ? qualifiedTypeName : null;
             }
 
-            moduleQualifiedName = s.Substring(0, firstDot);
-            moduleName = ModuleQualifiedName.GetModuleName(moduleQualifiedName);
-            return true;
+            moduleName = null;
+            if (!string.IsNullOrEmpty(moduleQualifiedName)) {
+                if (openBraceIndex > 0) {
+                    // types(3.7)
+                    moduleName = qualifiedTypeName.Substring(0, openBraceIndex);
+                } else if(typeSeparatorDotIndex > 0) {
+                    // mod.x
+                    moduleName = qualifiedTypeName.Substring(0, typeSeparatorDotIndex);
+                }
+            }
+
+            Debug.Assert(string.IsNullOrEmpty(moduleQualifiedName) == string.IsNullOrEmpty(moduleName));
         }
     }
 }
