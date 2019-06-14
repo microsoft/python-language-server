@@ -31,11 +31,11 @@
       "Name": "__dict__"
     },
     {
-      "Value": "requests-2:21:0",
+      "Value": "requests(2.21.0)",
       "Name": "requests"
     },
     {
-      "Value": "i:requests.models(3.7).Response",
+      "Value": null,
       "Name": "x"
     }
   ],

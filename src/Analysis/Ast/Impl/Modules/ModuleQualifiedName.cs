@@ -26,18 +26,23 @@ namespace Microsoft.Python.Analysis.Modules {
         public static string CalculateQualifiedName(IPythonModule module, IFileSystem fs) {
             var config = module.Interpreter.Configuration;
             var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(config);
+
             if (fs.IsPathUnderRoot(sitePackagesPath, module.FilePath)) {
                 // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
                 // Example: 'requests' and 'requests-2.21.0.dist-info'.
                 var moduleFolder = Path.GetDirectoryName(Path.GetDirectoryName(module.FilePath));
+                
                 // TODO: for egg (https://github.com/microsoft/python-language-server/issues/196), consider *.egg-info
                 var folders = fs
                     .GetFileSystemEntries(moduleFolder, "*-*.dist-info", SearchOption.TopDirectoryOnly)
                     .Select(Path.GetFileName)
                     .Where(n => n.StartsWith(module.Name, StringComparison.OrdinalIgnoreCase)) // Module name can be capitalized differently.
                     .ToArray();
+
                 if (folders.Length == 1) {
-                    return Path.GetFileNameWithoutExtension(folders[0]).Replace('.', ':');
+                    var fileName = Path.GetFileNameWithoutExtension(folders[0]);
+                    var dash = fileName.IndexOf('-');
+                    return $"{fileName.Substring(0, dash)}({fileName.Substring(dash + 1)})";
                 }
             }
 
@@ -50,6 +55,12 @@ namespace Microsoft.Python.Analysis.Modules {
             // If all else fails, hash the entire content.
             return $"{module.Name}.{HashModuleContent(Path.GetDirectoryName(module.FilePath), fs)}";
         }
+
+        public static string GetModuleName(string moduleQualifiedName) {
+            var index = moduleQualifiedName.IndexOf('(');
+            return index >= 0 ? moduleQualifiedName.Substring(0, index) : moduleQualifiedName;
+        }
+
 
         private static string HashModuleContent(string moduleFolder, IFileSystem fs) {
             // Hash file sizes 

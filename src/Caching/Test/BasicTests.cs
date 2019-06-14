@@ -15,6 +15,7 @@
 
 using System.IO;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Modules;
@@ -126,6 +127,24 @@ x = requests.get('microsoft.com')
 
             var dbModule = new PythonDbModule(model, Services);
             dbModule.Should().HaveSameMembersAs(rq);
+        }
+
+        [DataTestMethod, Priority(0)]
+        [DataRow("", null, null, null, false)]
+        [DataRow("str", "builtins", "builtins", "str", false)]
+        [DataRow("i:str", "builtins", "builtins", "str", true)]
+        [DataRow("i:...", "builtins", "builtins", "ellipsis", true)]
+        [DataRow("ellipsis", "builtins", "builtins", "ellipsis", false)]
+        [DataRow("i:builtins(3.7).str", "builtins(3.7)", "builtins", "str", true)]
+        [DataRow("mod(2.2.1).z", "mod(2.2.1)", "mod", "z", false)]
+        [DataRow("i:mod(2.2.1).z", "mod(2.2.1)", "mod", "z", true)]
+        [DataRow("i:mod.x", "mod", "mod", "x", true)]
+        public void QualifiedNames(string qualifiedName, string moduleQualifiedName, string moduleName, string typeName, bool isInstance) {
+            TypeNames.DeconstructQualifiedName(qualifiedName, out var actualModuleQualifiedName, out var actualModuleName, out var actualTypeName, out var actualIsInstance);
+            actualModuleQualifiedName.Should().Be(moduleQualifiedName);
+            actualModuleName.Should().Be(moduleName);
+            actualTypeName.Should().Be(typeName);
+            actualIsInstance.Should().Be(isInstance);
         }
     }
 }
