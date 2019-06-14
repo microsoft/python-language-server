@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Modules {
         protected SpecializedModule(string name, string modulePath, IServiceContainer services)
             : base(name, modulePath, ModuleType.Specialized, null, services) { }
 
-        public override string UniqueId => Name;
+        public override string QualifiedName => Name;
         protected override string LoadContent() {
             // Exceptions are handled in the base
             return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;

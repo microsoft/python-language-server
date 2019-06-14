@@ -1,0 +1,44 @@
+{
+  "Documentation": "",
+  "Functions": [],
+  "Variables": [
+    {
+      "Value": "bool",
+      "Name": "__debug__"
+    },
+    {
+      "Value": "str",
+      "Name": "__doc__"
+    },
+    {
+      "Value": "str",
+      "Name": "__file__"
+    },
+    {
+      "Value": "str",
+      "Name": "__name__"
+    },
+    {
+      "Value": "str",
+      "Name": "__package__"
+    },
+    {
+      "Value": "list",
+      "Name": "__path__"
+    },
+    {
+      "Value": "dict",
+      "Name": "__dict__"
+    },
+    {
+      "Value": "requests-2:21:0",
+      "Name": "requests"
+    },
+    {
+      "Value": "i:requests.models(3.7).Response",
+      "Name": "x"
+    }
+  ],
+  "Classes": [],
+  "Name": "module"
+}

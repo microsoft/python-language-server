@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,7 +61,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
         private bool _updated;
-        private string _uniqueId;
+        private string _qualifiedName;
 
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
@@ -114,7 +115,15 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IPythonType
         public string Name { get; }
-        public virtual string QualifiedName => Name;
+
+        public virtual string QualifiedName {
+            get {
+                if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User || ModuleType == ModuleType.Stub) {
+                    return Name;
+                }
+                return string.IsNullOrEmpty(_qualifiedName) ? (_qualifiedName = ModuleQualifiedName.CalculateQualifiedName(this, FileSystem)) : _qualifiedName;
+            }
+        }
 
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
@@ -196,19 +205,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
-
-        /// <summary>
-        /// Unique identifier of the module. Derives from module type,
-        /// library type, version (if available) and the installation path.
-        /// </summary>
-        public virtual string UniqueId {
-            get {
-                if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User || ModuleType == ModuleType.Stub) {
-                    return string.Empty;
-                }
-                return string.IsNullOrEmpty(_uniqueId) ? (_uniqueId = CalculateUniqueId()) : _uniqueId;
-            }
-        }
 
         #endregion
 

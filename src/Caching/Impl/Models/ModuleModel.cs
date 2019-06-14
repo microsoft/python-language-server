@@ -32,9 +32,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var functions = new Dictionary<string, FunctionModel>();
             var classes = new Dictionary<string, ClassModel>();
 
-            // Go directly through variables which names are listed in GetMemberNames.
+            // Go directly through variables which names are listed in GetMemberNames
+            // as well as variables that are declarations.
             var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
-            foreach (var v in analysis.GlobalScope.Variables.Where(v => exportedNames.Contains(v.Name))) {
+            foreach (var v in analysis.GlobalScope.Variables
+                .Where(v => exportedNames.Contains(v.Name) || v.Source == VariableSource.Declaration || v.Source == VariableSource.Builtin)) {
                 // Create type model before variable since variable needs it.
                 string typeName = null;
                 switch (v.Value) {
@@ -60,7 +62,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
 
             return new ModuleModel {
-                Name = analysis.Document.GetQualifiedName(),
+                Name = analysis.Document.QualifiedName,
                 Documentation = analysis.Document.Documentation,
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),

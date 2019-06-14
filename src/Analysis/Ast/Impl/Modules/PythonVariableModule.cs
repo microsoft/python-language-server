@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -28,9 +29,18 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
+        private readonly IFileSystem _fs;
+        private string _qualifiedName;
 
         public string Name { get; }
-        public string QualifiedName => $"{nameof(PythonVariableModule)}.{Name}"; // TODO: re-work.
+        public string QualifiedName {
+            get {
+                if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User || ModuleType == ModuleType.Stub) {
+                    return Name;
+                }
+                return string.IsNullOrEmpty(_qualifiedName) ? (_qualifiedName = ModuleQualifiedName.CalculateQualifiedName(this, _fs)) : _qualifiedName;
+            }
+        }
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
 
@@ -48,16 +58,18 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(null) {
-            Name = name;
-            Interpreter = interpreter;
-            SetDeclaringModule(this);
-        }
+        public PythonVariableModule(string name, IServiceContainer services)
+            : this(name, null, services) { }
 
-        public PythonVariableModule(IPythonModule module): base(module) {
-            Name = module.Name;
-            Interpreter = module.Interpreter;
+        public PythonVariableModule(IPythonModule module, IServiceContainer services)
+            : this(module.Name, module, services) { }
+
+        private PythonVariableModule(string name, IPythonModule module, IServiceContainer services) : base(module) {
             Module = module;
+            Name = module?.Name ?? name;
+            Interpreter = module?.Interpreter ?? services.GetService<IPythonInterpreter>();
+            _fs = services.GetService<IFileSystem>();
+            SetDeclaringModule(this);
         }
 
         public void AddChildModule(string memberName, PythonVariableModule module) => _children[memberName] = module;

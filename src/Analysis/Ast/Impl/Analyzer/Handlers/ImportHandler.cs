@@ -174,7 +174,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return variableModule;
             }
 
-            variableModule = new PythonVariableModule(fullName, Interpreter);
+            variableModule = new PythonVariableModule(fullName, Eval.Services);
             _variableModules[fullName] = variableModule;
             parentModule?.AddChildModule(memberName, variableModule);
             return variableModule;
@@ -186,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return variableModule;
             }
 
-            variableModule = new PythonVariableModule(module);
+            variableModule = new PythonVariableModule(module, Eval.Services);
             _variableModules[moduleFullName] = variableModule;
             parentModule?.AddChildModule(memberName, variableModule);
             return variableModule;

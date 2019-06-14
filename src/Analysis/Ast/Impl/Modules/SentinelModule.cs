@@ -20,6 +20,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public SentinelModule(string name, IServiceContainer services)
             : base(name, ModuleType.Unresolved, services) { }
 
-        public override string UniqueId => "unresolved";
+        public override string QualifiedName => Name;
     }
 }

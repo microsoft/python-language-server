@@ -1,6 +1,8 @@
 {
+  "Documentation": "",
   "Functions": [
     {
+      "Documentation": null,
       "Overloads": [
         {
           "Parameters": [],
@@ -10,34 +12,118 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
-      "Name": "func",
-      "Documentation": null
+      "Name": "func"
     }
   ],
   "Variables": [
     {
-      "Name": "x",
-      "Value": "i:str"
+      "Value": "bool",
+      "Name": "__debug__"
     },
     {
-      "Name": "c",
-      "Value": "i:module.C"
+      "Value": "str",
+      "Name": "__doc__"
+    },
+    {
+      "Value": "str",
+      "Name": "__file__"
+    },
+    {
+      "Value": "str",
+      "Name": "__name__"
+    },
+    {
+      "Value": "str",
+      "Name": "__package__"
+    },
+    {
+      "Value": "list",
+      "Name": "__path__"
+    },
+    {
+      "Value": "dict",
+      "Name": "__dict__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "x"
+    },
+    {
+      "Value": "i:module.C",
+      "Name": "c"
     }
   ],
   "Classes": [
     {
+      "Documentation": null,
       "Bases": [
         "object"
       ],
-      "Methods": [],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "module.C",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Name": "__init__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "module.C",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:float"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Name": "method"
+        }
+      ],
       "Properties": [],
-      "Fields": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Name": "x"
+        },
+        {
+          "Value": "i:int",
+          "Name": "y"
+        },
+        {
+          "Value": "dict",
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Name": "__weakref__"
+        }
+      ],
       "GenericParameters": null,
       "InnerClasses": [],
-      "Name": "C",
-      "Documentation": null
+      "Name": "C"
     }
   ],
-  "Name": "module",
-  "Documentation": ""
+  "Name": "module"
 }
