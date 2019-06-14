@@ -48,7 +48,180 @@
       "Name": "_check_cryptography"
     }
   ],
-  "Variables": [],
+  "Variables": [
+    {
+      "Value": "PythonVariableModule.urllib3",
+      "Name": "urllib3"
+    },
+    {
+      "Value": "PythonVariableModule.chardet",
+      "Name": "chardet"
+    },
+    {
+      "Value": "PythonVariableModule.warnings",
+      "Name": "warnings"
+    },
+    {
+      "Value": "requests.exceptions.RequestsDependencyWarning",
+      "Name": "RequestsDependencyWarning"
+    },
+    {
+      "Value": "PythonVariableModule.urllib3.contrib.pyopenssl",
+      "Name": "pyopenssl"
+    },
+    {
+      "Value": "urllib3.exceptions.DependencyWarning",
+      "Name": "DependencyWarning"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__title__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__description__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__url__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__version__"
+    },
+    {
+      "Value": "i:int",
+      "Name": "__build__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__author__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__author_email__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__license__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__copyright__"
+    },
+    {
+      "Value": "i:str",
+      "Name": "__cake__"
+    },
+    {
+      "Value": "PythonVariableModule.requests.utils",
+      "Name": "utils"
+    },
+    {
+      "Value": "PythonVariableModule.requests.packages",
+      "Name": "packages"
+    },
+    {
+      "Value": null,
+      "Name": "Request"
+    },
+    {
+      "Value": null,
+      "Name": "Response"
+    },
+    {
+      "Value": null,
+      "Name": "PreparedRequest"
+    },
+    {
+      "Value": "request",
+      "Name": "request"
+    },
+    {
+      "Value": "get",
+      "Name": "get"
+    },
+    {
+      "Value": "head",
+      "Name": "head"
+    },
+    {
+      "Value": "post",
+      "Name": "post"
+    },
+    {
+      "Value": "patch",
+      "Name": "patch"
+    },
+    {
+      "Value": "put",
+      "Name": "put"
+    },
+    {
+      "Value": "delete",
+      "Name": "delete"
+    },
+    {
+      "Value": "options",
+      "Name": "options"
+    },
+    {
+      "Value": null,
+      "Name": "session"
+    },
+    {
+      "Value": null,
+      "Name": "Session"
+    },
+    {
+      "Value": null,
+      "Name": "codes"
+    },
+    {
+      "Value": "requests.exceptions.RequestException",
+      "Name": "RequestException"
+    },
+    {
+      "Value": "requests.exceptions.Timeout",
+      "Name": "Timeout"
+    },
+    {
+      "Value": "requests.exceptions.URLRequired",
+      "Name": "URLRequired"
+    },
+    {
+      "Value": "requests.exceptions.TooManyRedirects",
+      "Name": "TooManyRedirects"
+    },
+    {
+      "Value": "requests.exceptions.HTTPError",
+      "Name": "HTTPError"
+    },
+    {
+      "Value": "requests.exceptions.ConnectionError",
+      "Name": "ConnectionError"
+    },
+    {
+      "Value": "requests.exceptions.FileModeWarning",
+      "Name": "FileModeWarning"
+    },
+    {
+      "Value": "requests.exceptions.ConnectTimeout",
+      "Name": "ConnectTimeout"
+    },
+    {
+      "Value": "requests.exceptions.ReadTimeout",
+      "Name": "ReadTimeout"
+    },
+    {
+      "Value": "PythonVariableModule.logging",
+      "Name": "logging"
+    },
+    {
+      "Value": null,
+      "Name": "NullHandler"
+    }
+  ],
   "Classes": [],
   "Name": "requests"
 }

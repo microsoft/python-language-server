@@ -32,12 +32,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var functions = new Dictionary<string, FunctionModel>();
             var classes = new Dictionary<string, ClassModel>();
 
-            // Go directly through variables rather than GetMemberNames/GetMember since
-            // module may have non-exported variables and types that it may be returning
-            // from functions and methods or otherwise using in declarations.
-            foreach (var v in analysis.GlobalScope.Variables
-                .Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Builtin)) {
-                var t = v.Value.GetPythonType();
+            // Go directly through variables which names are listed in GetMemberNames.
+            var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
+            foreach (var v in analysis.GlobalScope.Variables.Where(v => exportedNames.Contains(v.Name))) {
                 // Create type model before variable since variable needs it.
                 string typeName = null;
                 switch (v.Value) {
