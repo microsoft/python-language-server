@@ -19,6 +19,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -103,9 +104,17 @@ namespace Microsoft.Python.Analysis.Modules {
         public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default)
             => Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, waitTime, cancellationToken);
 
-        private IDocumentAnalysis CreateAnalysis(int version, ModuleWalker walker, bool isFinalPass)
-            => ModuleType == ModuleType.Library && isFinalPass
+        private IDocumentAnalysis CreateAnalysis(int version, ModuleWalker walker, bool isFinalPass) {
+            var analysis = ModuleType == ModuleType.Library && isFinalPass
                 ? new LibraryAnalysis(this, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames)
                 : (IDocumentAnalysis)new DocumentAnalysis(this, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
+
+            if (analysis.Document.Name == "sys" && analysis.Document.ModuleType == ModuleType.CompiledBuiltin) {
+                var dbs = Services.GetService<IModuleDatabaseService>();
+                dbs.StoreModuleAnalysis(analysis);
+            }
+
+            return analysis;
+        }
     }
 }

@@ -28,6 +28,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public static FunctionModel FromType(IPythonFunctionType ft) {
             return new FunctionModel {
+                Id = ft.Name.GetHashCode(),
                 Name = ft.Name,
                 Documentation = ft.Documentation,
                 Overloads = ft.Overloads.Select(FromOverload).ToArray()

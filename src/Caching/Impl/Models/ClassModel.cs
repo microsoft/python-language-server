@@ -34,6 +34,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public static ClassModel FromType(IPythonClassType cls) => new ClassModel(cls);
 
+        public ClassModel() { }
+
         private ClassModel(IPythonClassType cls) {
             var methods = new List<FunctionModel>();
             var properties = new List<PropertyModel>();
@@ -80,6 +82,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
 
             Name = cls.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : cls.Name;
+            Id = Name.GetHashCode();
             Documentation = cls.Documentation;
             Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetQualifiedName()).ToArray();
             Methods = methods.ToArray();

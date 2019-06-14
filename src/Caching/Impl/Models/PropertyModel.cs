@@ -23,6 +23,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public static PropertyModel FromType(IPythonPropertyType prop) {
             return new PropertyModel {
+                Id = prop.Name.GetHashCode(),
                 Name = prop.Name,
                 Documentation = prop.Documentation,
                 ReturnType = prop.ReturnType.GetQualifiedName(),

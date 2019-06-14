@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly GlobalScope _globalScope;
 
         public PythonDbModule(ModuleModel model, IServiceContainer services)
-            : base(model.Name, string.Empty, services) {
+            : base(ModuleQualifiedName.GetModuleName(model.Name), string.Empty, services) {
 
             _globalScope = new GlobalScope(model, this, services);
             Documentation = model.Documentation;

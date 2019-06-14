@@ -146,6 +146,15 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                         return _module;
                     }
 
+                    if (name == "sys") {
+                        var dbs = mrb._services.GetService<IModuleDatabaseService>();
+                        dbs.TryGetModuleData("sys(3.7.2)", out var m);
+                        if (m != null) {
+                            _module = m;
+                            return m;
+                        }
+                    }
+
                     var module = mrb.CreateModule(name);
                     _module = module;
                     return module;

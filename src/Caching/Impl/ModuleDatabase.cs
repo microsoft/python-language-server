@@ -20,6 +20,7 @@ using LiteDB;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Caching {
@@ -69,6 +70,9 @@ namespace Microsoft.Python.Analysis.Caching {
             lock (_lock) {
                 var model = ModuleModel.FromAnalysis(analysis);
                 try {
+                    if(!Directory.Exists(_databaseFolder)) {
+                        Directory.CreateDirectory(_databaseFolder);
+                    }
                     using (var db = new LiteDatabase(Path.Combine(_databaseFolder, $"{model.Name}.db"))) {
                         var modules = db.GetCollection<ModuleModel>("modules");
                         modules.Upsert(model);

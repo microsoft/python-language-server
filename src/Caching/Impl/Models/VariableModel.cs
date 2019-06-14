@@ -23,16 +23,19 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string Value { get; set; }
 
         public static VariableModel FromVariable(IVariable v) => new VariableModel {
+            Id = v.Name.GetHashCode(),
             Name = v.Name,
             Value = v.Value.GetQualifiedName()
         };
 
         public static VariableModel FromInstance(string name, IPythonInstance inst) => new VariableModel {
+            Id = name.GetHashCode(),
             Name = name,
             Value = inst.GetQualifiedName()
         };
 
         public static VariableModel FromType(string name, IPythonType t) => new VariableModel {
+            Id = name.GetHashCode(),
             Name = name,
             Value = t.GetQualifiedName()
         };

@@ -15,6 +15,7 @@
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal abstract class MemberModel {
+        public int Id { get; set; }
         public string Name { get; set; }
     }
 }

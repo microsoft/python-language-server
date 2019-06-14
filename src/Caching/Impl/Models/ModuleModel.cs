@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -62,6 +61,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
 
             return new ModuleModel {
+                Id = analysis.Document.QualifiedName.GetHashCode(),
                 Name = analysis.Document.QualifiedName,
                 Documentation = analysis.Document.Documentation,
                 Functions = functions.Values.ToArray(),
