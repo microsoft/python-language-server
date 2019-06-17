@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -52,42 +53,27 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
         public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();
 
-        public IMember ConstructMember(string qualifiedName) {
-            if (!TypeNames.DeconstructQualifiedName(qualifiedName, out var moduleQualifiedName, out var moduleName, out var typeName, out var isInstance)) {
+        public IMember ConstructMember(string rawQualifiedName) {
+            if (!TypeNames.DeconstructQualifiedName(rawQualifiedName, out _, out var nameParts, out var isInstance)) {
                 return null;
             }
 
-            // TODO: better resolve circular references?
-            if (!_processing.Push(qualifiedName)) {
+            // TODO: better resolve circular references.
+            if (!_processing.Push(rawQualifiedName) || nameParts.Count < 2) {
                 return null;
             }
 
             try {
-                if (string.IsNullOrEmpty(typeName)) {
-                    return moduleName == Module.Name ? Module : Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
-                }
-
-                // Construct complex types from parts, such as Union[typing.Any, a.b.c]
-                var typeArgs = new List<IPythonType>();
-                var openBracket = typeName.IndexOf('[');
-                if (openBracket > 0) {
-                    var closeBracket = typeName.LastIndexOf(']');
-                    if (closeBracket > 0) {
-                        var argumentString = typeName.Substring(openBracket + 1, closeBracket - openBracket - 1);
-                        var arguments = argumentString.Split(',').Select(s => s.Trim()).ToArray();
-                        // TODO: better handle generics.
-                        foreach (var a in arguments) {
-                            var t = ConstructType(a);
-                            t = t ?? new GenericTypeParameter(a, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
-                            typeArgs.Add(t);
-                        }
-                        typeName = typeName.Substring(0, openBracket);
-                    }
+                // See if member is a module first.
+                var moduleName = TypeNames.GetNameWithoutVersion(nameParts[0]);
+                var module = moduleName == Module.Name ? Module : Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                if (module == null) {
+                    return null;
                 }
 
                 var member = moduleName == Module.Name
-                    ? GetMemberFromThisModule(typeName)
-                    : GetMemberFromModule(moduleQualifiedName, moduleName, typeName, typeArgs);
+                        ? GetMemberFromThisModule(nameParts, 1)
+                        : GetMemberFromModule(module, nameParts, 1);
 
                 return isInstance && member != null ? new PythonInstance(member.GetPythonType()) : member;
             } finally {
@@ -95,41 +81,70 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
         }
 
-        private IMember GetMemberFromModule(string moduleQualifiedName, string moduleName, string typeName, IReadOnlyList<IPythonType> typeArgs) {
-            var typeNameParts = typeName.Split('.');
+        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> nameParts, int index) {
+            if (index >= nameParts.Count) {
+                return null;
+            }
 
-            // TODO: Try resolving from database first.
-            var module = Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+            var member = module?.GetMember(nameParts[index++]);
+            for (; index < nameParts.Count; index++) {
+                var memberName = nameParts[index];
+                var typeArgs = GetTypeArguments(memberName, out var typeName);
 
-            var member = module?.GetMember(typeNameParts[0]);
-            foreach (var p in typeNameParts.Skip(1)) {
                 var mc = member as IMemberContainer;
 
                 Debug.Assert(mc != null);
-                member = mc?.GetMember(p);
+                member = mc?.GetMember(memberName);
 
                 if (member == null) {
                     Debug.Assert(member != null);
                     break;
                 }
+
+                member = typeArgs.Any() && member is IGenericType gt
+                    ? gt.CreateSpecificType(typeArgs)
+                    : member;
             }
-            return typeArgs.Any() && member is IGenericType gt
-                ? gt.CreateSpecificType(typeArgs)
-                : member;
+
+            return member;
         }
 
-        private IMember GetMemberFromThisModule(string typeName) {
-            var typeNameParts = typeName.Split('.');
-            if (typeNameParts.Length == 0) {
+        private IMember GetMemberFromThisModule(IReadOnlyList<string> nameParts, int index) {
+            if (index >= nameParts.Count) {
                 return null;
             }
 
             // TODO: nested classes, etc (traverse parts and recurse).
-            return ClassFactory.TryCreate(typeNameParts[0])
-                        ?? (FunctionFactory.TryCreate(typeNameParts[0])
-                            ?? (IMember)VariableFactory.TryCreate(typeNameParts[0]));
+            var name = nameParts[index];
+            return ClassFactory.TryCreate(name)
+                        ?? (FunctionFactory.TryCreate(name)
+                            ?? (IMember)VariableFactory.TryCreate(name));
         }
 
-
+        private IReadOnlyList<IPythonType> GetTypeArguments(string memberName, out string typeName) {
+            typeName = null;
+            // TODO: better handle generics.
+            // https://github.com/microsoft/python-language-server/issues/1215
+            // Determine generic type arguments, if any, so we can construct
+            // complex types from parts, such as Union[typing.Any, a.b.c].
+            var typeArgs = new List<IPythonType>();
+            var openBracket = memberName.IndexOf('[');
+            if (openBracket > 0) {
+                var closeBracket = memberName.LastIndexOf(']');
+                if (closeBracket > 0) {
+                    var argumentString = memberName.Substring(openBracket + 1, closeBracket - openBracket - 1);
+                    var arguments = argumentString.Split(',').Select(s => s.Trim()).ToArray();
+                    foreach (var a in arguments) {
+                        var t = ConstructType(a);
+                        // TODO: better handle generics type definitions from TypeVar.
+                        // https://github.com/microsoft/python-language-server/issues/1214
+                        t = t ?? new GenericTypeParameter(a, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
+                        typeArgs.Add(t);
+                    }
+                    typeName = memberName.Substring(0, openBracket);
+                }
+            }
+            return typeArgs;
+        }
     }
 }

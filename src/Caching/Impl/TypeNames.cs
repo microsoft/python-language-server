@@ -13,7 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Diagnostics;
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -37,56 +37,62 @@ namespace Microsoft.Python.Analysis.Caching {
             return null;
         }
 
-        public static bool DeconstructQualifiedName(string qualifiedName, out string moduleQualifiedName, out string moduleName, out string typeName, out bool isInstance) {
-            moduleQualifiedName = null;
-            moduleName = null;
-            typeName = null;
+        /// <summary>
+        /// Splits qualified type name in form of i:A(3.6).B.C into parts. as well as determines if
+        /// qualified name designates instance (prefixed with 'i:').
+        /// </summary>
+        /// <param name="rawQualifiedName">Raw qualified name to split. May include instance prefix.</param>
+        /// <param name="typeQualifiedName">Qualified name without optional instance prefix, such as A(3.6).B(3.6).C</param>
+        /// <param name="nameParts">Name parts such as 'A(3.6)', 'B(3.6)', 'C'.</param>
+        /// <param name="isInstance">If true, the qualified name describes instance of a type.</param>
+        public static bool DeconstructQualifiedName(string rawQualifiedName, out string typeQualifiedName, out IReadOnlyList<string> nameParts, out bool isInstance) {
+            typeQualifiedName = null;
+            nameParts = null;
             isInstance = false;
 
-            if (string.IsNullOrEmpty(qualifiedName)) {
+            if (string.IsNullOrEmpty(rawQualifiedName)) {
                 return false;
             }
 
-            isInstance = qualifiedName.StartsWith("i:");
-            qualifiedName = isInstance ? qualifiedName.Substring(2) : qualifiedName;
+            isInstance = rawQualifiedName.StartsWith("i:");
+            typeQualifiedName = isInstance ? rawQualifiedName.Substring(2) : rawQualifiedName;
 
-            if (qualifiedName == "..." || qualifiedName == "ellipsis") {
-                moduleName = @"builtins";
-                moduleQualifiedName = moduleName;
-                typeName = "ellipsis";
+            if (typeQualifiedName == "..." || typeQualifiedName == "ellipsis") {
+                nameParts = new[] { @"builtins", "ellipsis" };
                 return true;
             }
 
             // First chunk is qualified module name except dots in braces.
             // Builtin types don't have module prefix.
-            GetModuleNames(qualifiedName, out moduleQualifiedName, out moduleName);
-
-            typeName = string.IsNullOrEmpty(moduleQualifiedName) 
-                ? qualifiedName 
-                : qualifiedName.Substring(moduleQualifiedName.Length).TrimStart('.');
-
-            moduleQualifiedName = moduleQualifiedName ?? @"builtins";
-            moduleName = moduleName ?? @"builtins";
-            typeName = string.IsNullOrEmpty(typeName) ? null : typeName;
-
-            return true;
+            nameParts = GetParts(typeQualifiedName);
+            return nameParts.Count > 0;
         }
 
-        private static void GetModuleNames(string qualifiedTypeName, out string moduleQualifiedName, out string moduleName) {
-            var openBraceIndex = -1;
-            var typeSeparatorDotIndex = -1;
-            var skip = false;
+        public static string GetNameWithoutVersion(string qualifiedName) {
+            var index = qualifiedName.IndexOf('(');
+            return index > 0 ? qualifiedName.Substring(0, index) : qualifiedName;
+        }
 
-            // types(3.7)
-            // mod.x
-            // mod(2.2.1).z
-            // typing.Union[typing.Any, mod.y]
+        private static IReadOnlyList<string> GetParts(string qualifiedTypeName) {
+            var parts = new List<string>();
             for (var i = 0; i < qualifiedTypeName.Length; i++) {
-                var ch = qualifiedTypeName[i];
+                var part = GetSubPart(qualifiedTypeName, ref i);
+                if (string.IsNullOrEmpty(part)) {
+                    break;
+                }
+                parts.Add(part);
+            }
+            return parts;
+        }
+
+        private static string GetSubPart(string s, ref int i) {
+            var skip = false;
+            var start = i;
+            for (; i < s.Length; i++) {
+                var ch = s[i];
 
                 if (ch == '(') {
                     skip = true;
-                    openBraceIndex = i;
                     continue;
                 }
 
@@ -95,31 +101,12 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (!skip && ch == '.') {
-                    typeSeparatorDotIndex = i;
+                    i++;
                     break;
                 }
             }
 
-            if(typeSeparatorDotIndex > 0) {
-                // mod.x or mod(2.2.1).x
-                moduleQualifiedName = qualifiedTypeName.Substring(0, typeSeparatorDotIndex);
-            } else {
-                // str or types(3.7)
-                moduleQualifiedName = openBraceIndex > 0 ? qualifiedTypeName : null;
-            }
-
-            moduleName = null;
-            if (!string.IsNullOrEmpty(moduleQualifiedName)) {
-                if (openBraceIndex > 0) {
-                    // types(3.7)
-                    moduleName = qualifiedTypeName.Substring(0, openBraceIndex);
-                } else if(typeSeparatorDotIndex > 0) {
-                    // mod.x
-                    moduleName = qualifiedTypeName.Substring(0, typeSeparatorDotIndex);
-                }
-            }
-
-            Debug.Assert(string.IsNullOrEmpty(moduleQualifiedName) == string.IsNullOrEmpty(moduleName));
+            return s.Substring(start, i - start);
         }
     }
 }

@@ -180,11 +180,11 @@ x = requests.get('microsoft.com')
         [DataRow("types(3.7)", "types(3.7)", "types", null, false)]
         [DataRow("typing.Union[str, tuple]", "typing", "typing", "Union[str, tuple]", false)]
         [DataRow("typing.Union[typing.Any, mod.y]", "typing", "typing", "Union[typing.Any, mod.y]", false)]
-        public void QualifiedNames(string qualifiedName, string moduleQualifiedName, string moduleName, string typeName, bool isInstance) {
-            TypeNames.DeconstructQualifiedName(qualifiedName, out var actualModuleQualifiedName, out var actualModuleName, out var actualTypeName, out var actualIsInstance);
-            actualModuleQualifiedName.Should().Be(moduleQualifiedName);
-            actualModuleName.Should().Be(moduleName);
-            actualTypeName.Should().Be(typeName);
+        public void QualifiedNames(string rawQualifiedName, string qualifiedName, string moduleName, string typeName, bool isInstance) {
+            TypeNames.DeconstructQualifiedName(rawQualifiedName, out var actualQualifiedName, out var nameParts, out var actualIsInstance);
+            qualifiedName.Should().Be(qualifiedName);
+            nameParts[0].Should().Be(moduleName);
+            nameParts[1].Should().Be(typeName);
             actualIsInstance.Should().Be(isInstance);
         }
     }
