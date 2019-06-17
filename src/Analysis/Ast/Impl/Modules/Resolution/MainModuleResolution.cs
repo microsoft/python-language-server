@@ -214,7 +214,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             InterpreterPaths = await GetSearchPathsAsync(cancellationToken);
 
             IEnumerable<string> userSearchPaths = Configuration.SearchPaths;
-            InterpreterPaths = InterpreterPaths.Except(userSearchPaths, StringExtensions.PathsStringComparer);
+            InterpreterPaths = InterpreterPaths.Except(userSearchPaths, StringExtensions.PathsStringComparer).Where(p => p.PathEquals(Root));
 
             if (Root != null) {
                 var underRoot = userSearchPaths.ToLookup(p => _fs.IsPathUnderRoot(Root, p));
