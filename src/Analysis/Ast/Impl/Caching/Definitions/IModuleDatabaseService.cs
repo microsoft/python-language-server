@@ -21,10 +21,12 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Retrieves module representation from module index database
         /// or null if module does not exist. 
         /// </summary>
-        /// <param name="qualifiedName">Module fully qualified name.</param>
+        /// <param name="moduleName">Module name. If the name is not qualified
+        /// the module will ge resolved against active Python version.</param>
+        /// <param name="filePath">Module file path.</param>
         /// <param name="module">Python module.</param>
         /// <returns>Module storage state</returns>
-        ModuleStorageState TryGetModuleData(string qualifiedName, out IPythonModule module);
+        ModuleStorageState TryGetModuleData(string moduleName, string filePath, out IPythonModule module);
 
         /// <summary>
         /// Writes module data to the database.

@@ -76,6 +76,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Log = services.GetService<ILogger>();
             Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
+            GlobalScope = Analysis.GlobalScope;
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
             SetDeclaringModule(this);
@@ -117,10 +118,11 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public virtual string QualifiedName {
             get {
-                if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User || ModuleType == ModuleType.Stub) {
+                if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User) {
                     return Name;
                 }
-                return string.IsNullOrEmpty(_qualifiedName) ? (_qualifiedName = ModuleQualifiedName.CalculateQualifiedName(this, FileSystem)) : _qualifiedName;
+                return string.IsNullOrEmpty(_qualifiedName) 
+                    ? _qualifiedName = this.CalculateQualifiedName(FileSystem) : _qualifiedName;
             }
         }
 
@@ -156,10 +158,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
+        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
-            return Analysis.GlobalScope.Variables
+            return GlobalScope.Variables
                 .Where(v => {
                     // Instances are always fine.
                     if (v.Value is IPythonInstance) {
@@ -181,7 +183,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IPythonModule
-        public virtual string FilePath { get; }
+        public virtual string FilePath { get; protected set; }
         public virtual Uri Uri { get; }
         public IDocumentAnalysis Analysis { get; private set; }
 
@@ -196,7 +198,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Global cope of the module.
         /// </summary>
-        public virtual IGlobalScope GlobalScope { get; private set; }
+        public virtual IGlobalScope GlobalScope { get; protected set; }
 
         /// <summary>
         /// If module is a stub points to the primary module.

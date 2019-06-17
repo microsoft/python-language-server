@@ -38,7 +38,9 @@ namespace Microsoft.Python.Analysis.Modules {
                 if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User || ModuleType == ModuleType.Stub) {
                     return Name;
                 }
-                return string.IsNullOrEmpty(_qualifiedName) ? (_qualifiedName = ModuleQualifiedName.CalculateQualifiedName(this, _fs)) : _qualifiedName;
+                return string.IsNullOrEmpty(_qualifiedName)
+                    ? _qualifiedName = this.CalculateQualifiedName(_fs)
+                    : _qualifiedName;
             }
         }
         public IPythonModule Module { get; }

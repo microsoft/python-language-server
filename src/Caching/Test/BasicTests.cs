@@ -51,10 +51,46 @@ class C:
     def method(self):
         return func()
 
+    @property
+    def prop(self) -> int:
+        return x
+
 def func():
     return 2.0
 
 c = C()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var model = ModuleModel.FromAnalysis(analysis);
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedClasses() {
+            const string code = @"
+x = 'str'
+
+class A:
+    def methodA(self):
+        return True
+
+class B:
+    x: int
+
+    class C:
+        def __init__(self):
+            self.y = 1
+        def methodC(self):
+            return False
+        
+    def methodB1(self):
+        return C()
+
+    def methodB2(self):
+        return C().y
+
+c = B().methodB1()
 ";
             var analysis = await GetAnalysisAsync(code);
             var model = ModuleModel.FromAnalysis(analysis);
@@ -71,7 +107,7 @@ c = C()
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
             
-            var dbModule = new PythonDbModule(model, Services);
+            var dbModule = new PythonDbModule(model, null, Services);
             dbModule.Should().HaveSameMembersAs(builtins);
         }
 
@@ -84,9 +120,10 @@ c = C()
 
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
-            
-            var dbModule = new PythonDbModule(model, Services);
-            dbModule.Should().HaveSameMembersAs(sys);
+
+            using (var dbModule = new PythonDbModule(model, sys.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(sys);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -125,8 +162,9 @@ x = requests.get('microsoft.com')
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
 
-            var dbModule = new PythonDbModule(model, Services);
-            dbModule.Should().HaveSameMembersAs(rq);
+            using (var dbModule = new PythonDbModule(model, rq.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(rq);
+            }
         }
 
         [DataTestMethod, Priority(0)]

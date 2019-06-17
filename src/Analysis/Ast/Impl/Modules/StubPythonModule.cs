@@ -29,8 +29,6 @@ namespace Microsoft.Python.Analysis.Modules {
             IsTypeshed = isTypeshed;
         }
 
-        public override string QualifiedName => PrimaryModule.QualifiedName;
-
         protected override string LoadContent() {
             // Exceptions are handled in the base
             return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;

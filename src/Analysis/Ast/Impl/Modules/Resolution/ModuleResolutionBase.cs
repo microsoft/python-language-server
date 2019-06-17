@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IStubCache StubCache { get; protected set; }
 
-        public IPythonModule GetImportedModule(string name) 
+        public IPythonModule GetImportedModule(string name)
             => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
@@ -144,15 +144,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 lock (_syncObj) {
                     if (_module != null) {
                         return _module;
-                    }
-
-                    if (name == "sys") {
-                        var dbs = mrb._services.GetService<IModuleDatabaseService>();
-                        dbs.TryGetModuleData("sys(3.7.2)", out var m);
-                        if (m != null) {
-                            _module = m;
-                            return m;
-                        }
                     }
 
                     var module = mrb.CreateModule(name);

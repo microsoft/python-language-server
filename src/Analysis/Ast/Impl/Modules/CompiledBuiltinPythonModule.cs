@@ -26,8 +26,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public CompiledBuiltinPythonModule(string moduleName, IPythonModule stub, IServiceContainer services)
             : base(moduleName, ModuleType.CompiledBuiltin, MakeFakeFilePath(moduleName, services), stub, services) { }
 
-        public override string QualifiedName => $"{Name}({Interpreter.Configuration.Version})";
-
         protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sm) ? null : new [] { "-W", "ignore", "-B", "-E", sm, "-u8", Name };
 

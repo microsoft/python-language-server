@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
@@ -30,11 +31,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string[] GenericParameters { get; set; }
         public ClassModel[] InnerClasses { get; set; }
 
-        private readonly Stack<IMember> _processing = new Stack<IMember>();
+        private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
 
         public static ClassModel FromType(IPythonClassType cls) => new ClassModel(cls);
 
-        public ClassModel() { }
+        public ClassModel() { } // For de-serializer from JSON
 
         private ClassModel(IPythonClassType cls) {
             var methods = new List<FunctionModel>();
@@ -51,7 +52,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     continue;
                 }
 
-                if (!Push(m)) {
+                if (!_processing.Push(m)) {
                     continue;
                 }
 
@@ -77,7 +78,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             break;
                     }
                 } finally {
-                    Pop();
+                    _processing.Pop();
                 }
             }
 
@@ -90,16 +91,5 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Fields = fields.ToArray();
             InnerClasses = innerClasses.ToArray();
         }
-
-        #region Reentrancy guards
-        private bool Push(IMember t) {
-            if (_processing.Contains(t)) {
-                return false;
-            }
-            _processing.Push(t);
-            return true;
-        }
-        private void Pop() => _processing.Pop();
-        #endregion
     }
 }

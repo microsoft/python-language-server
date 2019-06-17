@@ -19,11 +19,15 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Specializations.Typing;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal sealed class ModuleFactory : IDisposable {
+        private static readonly ReentrancyGuard<string> _processing = new ReentrancyGuard<string>();
+
         public IPythonModule Module { get; }
         public ClassFactory ClassFactory { get; }
         public FunctionFactory FunctionFactory { get; }
@@ -53,29 +57,42 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 return null;
             }
 
-            if(string.IsNullOrEmpty(typeName)) {
-                // TODO: resolve from database first?
-                return Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+            // TODO: better resolve circular references?
+            if (!_processing.Push(qualifiedName)) {
+                return null;
             }
 
-            // Construct complex types from parts, such as Union[typing.Any, a.b.c]
-            var typeArgs = Array.Empty<IPythonType>();
-            var openBracket = typeName.IndexOf('[');
-            if (openBracket > 0) {
-                var closeBracket = typeName.LastIndexOf(']');
-                if (closeBracket > 0) {
-                    var argumentString = typeName.Substring(openBracket + 1, closeBracket - openBracket - 1);
-                    var arguments = argumentString.Split(',').Select(s => s.Trim());
-                    typeArgs = arguments.Select(ConstructType).ToArray();
-                    typeName = typeName.Substring(0, openBracket);
+            try {
+                if (string.IsNullOrEmpty(typeName)) {
+                    return moduleName == Module.Name ? Module : Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
                 }
+
+                // Construct complex types from parts, such as Union[typing.Any, a.b.c]
+                var typeArgs = new List<IPythonType>();
+                var openBracket = typeName.IndexOf('[');
+                if (openBracket > 0) {
+                    var closeBracket = typeName.LastIndexOf(']');
+                    if (closeBracket > 0) {
+                        var argumentString = typeName.Substring(openBracket + 1, closeBracket - openBracket - 1);
+                        var arguments = argumentString.Split(',').Select(s => s.Trim()).ToArray();
+                        // TODO: better handle generics.
+                        foreach (var a in arguments) {
+                            var t = ConstructType(a);
+                            t = t ?? new GenericTypeParameter(a, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
+                            typeArgs.Add(t);
+                        }
+                        typeName = typeName.Substring(0, openBracket);
+                    }
+                }
+
+                var member = moduleName == Module.Name
+                    ? GetMemberFromThisModule(typeName)
+                    : GetMemberFromModule(moduleQualifiedName, moduleName, typeName, typeArgs);
+
+                return isInstance && member != null ? new PythonInstance(member.GetPythonType()) : member;
+            } finally {
+                _processing.Pop();
             }
-
-            var member = moduleName == Module.Name
-                ? GetMemberFromThisModule(typeName)
-                : GetMemberFromModule(moduleQualifiedName, moduleName, typeName, typeArgs);
-
-            return isInstance && member != null ? new PythonInstance(member.GetPythonType()) : member;
         }
 
         private IMember GetMemberFromModule(string moduleQualifiedName, string moduleName, string typeName, IReadOnlyList<IPythonType> typeArgs) {

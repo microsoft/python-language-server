@@ -109,9 +109,9 @@ namespace Microsoft.Python.Analysis.Modules {
                 ? new LibraryAnalysis(this, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames)
                 : (IDocumentAnalysis)new DocumentAnalysis(this, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
 
-            if (analysis.Document.Name == "sys" && analysis.Document.ModuleType == ModuleType.CompiledBuiltin) {
+            if (analysis.Document.ModuleType != ModuleType.Stub) {
                 var dbs = Services.GetService<IModuleDatabaseService>();
-                dbs.StoreModuleAnalysis(analysis);
+                dbs?.StoreModuleAnalysis(analysis);
             }
 
             return analysis;

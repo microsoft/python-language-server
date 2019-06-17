@@ -23,20 +23,23 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     internal static class ModuleQualifiedName {
-        public static string CalculateQualifiedName(IPythonModule module, IFileSystem fs) {
-            var config = module.Interpreter.Configuration;
+        public static string CalculateQualifiedName(this IPythonModule module, IFileSystem fs)
+            => CalculateQualifiedName(module.Name, module.FilePath, module.Interpreter, fs);
+
+        public static string CalculateQualifiedName(string moduleName, string filePath, IPythonInterpreter interpreter, IFileSystem fs) {
+            var config = interpreter.Configuration;
             var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(config);
 
-            if (fs.IsPathUnderRoot(sitePackagesPath, module.FilePath)) {
+            if (!string.IsNullOrEmpty(filePath) && fs.IsPathUnderRoot(sitePackagesPath, filePath)) {
                 // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
                 // Example: 'requests' and 'requests-2.21.0.dist-info'.
-                var moduleFolder = Path.GetDirectoryName(Path.GetDirectoryName(module.FilePath));
-                
+                var moduleFolder = Path.GetDirectoryName(Path.GetDirectoryName(filePath));
+
                 // TODO: for egg (https://github.com/microsoft/python-language-server/issues/196), consider *.egg-info
                 var folders = fs
                     .GetFileSystemEntries(moduleFolder, "*-*.dist-info", SearchOption.TopDirectoryOnly)
                     .Select(Path.GetFileName)
-                    .Where(n => n.StartsWith(module.Name, StringComparison.OrdinalIgnoreCase)) // Module name can be capitalized differently.
+                    .Where(n => n.StartsWith(moduleName, StringComparison.OrdinalIgnoreCase)) // Module name can be capitalized differently.
                     .ToArray();
 
                 if (folders.Length == 1) {
@@ -47,13 +50,13 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             var standardLibraryPath = PythonLibraryPath.GetStandardLibraryPath(config);
-            if (fs.IsPathUnderRoot(standardLibraryPath, module.FilePath)) {
+            if (string.IsNullOrEmpty(filePath) || fs.IsPathUnderRoot(standardLibraryPath, filePath)) {
                 // If module is a standard library, unique id is its name + interpreter version.
-                return $"{module.Name}({config.Version})";
+                return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
             }
 
-            // If all else fails, hash the entire content.
-            return $"{module.Name}.{HashModuleContent(Path.GetDirectoryName(module.FilePath), fs)}";
+            // If all else fails, hash module data.
+            return $"{moduleName}.{HashModuleContent(Path.GetDirectoryName(filePath), fs)}";
         }
 
         public static string GetModuleName(string moduleQualifiedName) {
