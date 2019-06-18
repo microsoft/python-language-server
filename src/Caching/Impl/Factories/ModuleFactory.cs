@@ -75,7 +75,12 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                         ? GetMemberFromThisModule(nameParts, 1)
                         : GetMemberFromModule(module, nameParts, 1);
 
-                return isInstance && member != null ? new PythonInstance(member.GetPythonType()) : member;
+                if (!isInstance) {
+                    return member;
+                }
+
+                var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
+                return new PythonInstance(t);
             } finally {
                 _processing.Pop();
             }

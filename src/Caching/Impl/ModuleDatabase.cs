@@ -16,7 +16,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
@@ -103,6 +102,7 @@ namespace Microsoft.Python.Analysis.Caching {
                     using (var db = new LiteDatabase(Path.Combine(_databaseFolder, $"{model.UniqueId}.db"))) {
                         var modules = db.GetCollection<ModuleModel>("modules");
                         modules.Upsert(model);
+                        return;
                     }
                 } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
                     ex = ex1;

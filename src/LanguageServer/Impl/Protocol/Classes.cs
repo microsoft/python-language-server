@@ -158,6 +158,11 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// Path to a writable folder where analyzer can cache its data.
         /// </summary>
         public string cacheFolderPath;
+
+        /// <summary>
+        /// Turns off analysis caching.
+        /// </summary>
+        public bool? enableAnalysCache;
     }
 
     [Serializable]
