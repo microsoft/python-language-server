@@ -1,4 +1,5 @@
 {
+  "UniqueId": "module",
   "Documentation": "",
   "Functions": [
     {
@@ -12,44 +13,54 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 24395611,
       "Name": "func"
     }
   ],
   "Variables": [
     {
       "Value": "bool",
+      "Id": -529376420,
       "Name": "__debug__"
     },
     {
       "Value": "str",
+      "Id": -1636005055,
       "Name": "__doc__"
     },
     {
       "Value": "str",
+      "Id": 875442003,
       "Name": "__file__"
     },
     {
       "Value": "str",
+      "Id": 1097116834,
       "Name": "__name__"
     },
     {
       "Value": "str",
+      "Id": 75395663,
       "Name": "__package__"
     },
     {
       "Value": "list",
+      "Id": 1154586556,
       "Name": "__path__"
     },
     {
       "Value": "dict",
+      "Id": 817929997,
       "Name": "__dict__"
     },
     {
       "Value": "i:str",
+      "Id": 833,
       "Name": "x"
     },
     {
       "Value": "i:module.C",
+      "Id": 812,
       "Name": "c"
     }
   ],
@@ -78,6 +89,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 965872103,
           "Name": "__init__"
         },
         {
@@ -98,32 +110,47 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -2139806792,
           "Name": "method"
         }
       ],
-      "Properties": [],
+      "Properties": [
+        {
+          "Documentation": "",
+          "ReturnType": "i:int",
+          "Attributes": 0,
+          "Id": 24690682,
+          "Name": "prop"
+        }
+      ],
       "Fields": [
         {
           "Value": "i:int",
+          "Id": 833,
           "Name": "x"
         },
         {
           "Value": "i:int",
+          "Id": 834,
           "Name": "y"
         },
         {
           "Value": "dict",
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
+      "Id": 780,
       "Name": "C"
     }
   ],
+  "Id": -2131035837,
   "Name": "module"
 }

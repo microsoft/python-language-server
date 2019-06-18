@@ -21,6 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -89,7 +90,7 @@ namespace Microsoft.Python.Analysis.Caching {
             => Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken));
 
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) { 
-            var model = ModuleModel.FromAnalysis(analysis, _fs);
+            var model = ModuleModel.FromAnalysis(analysis, _services);
             Exception ex = null;
             for (var retries = 50; retries > 0; --retries) {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -127,7 +128,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// </summary>
         private string FindDatabaseFile(string moduleName, string filePath) {
             var interpreter = _services.GetService<IPythonInterpreter>();
-            var uniqueId = ModuleUniqueId.GetUniqieId(moduleName, filePath, interpreter, _fs);
+            var uniqueId = ModuleUniqueId.GetUniqieId(moduleName, filePath, ModuleType.Specialized, _services);
             if (string.IsNullOrEmpty(uniqueId)) {
                 return null;
             }

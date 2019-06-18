@@ -1,4 +1,5 @@
 {
+  "UniqueId": "sys(3.7)",
   "Documentation": "This module provides access to some objects used or maintained by the\ninterpreter and to functions that interact strongly with the interpreter.\n\nDynamic objects:\n\nargv -- command line arguments; argv[0] is the script pathname if known\npath -- module search path; path[0] is the script directory, else ''\nmodules -- dictionary of loaded modules\n\ndisplayhook -- called to show results in an interactive session\nexcepthook -- called to handle any uncaught exception other than SystemExit\n  To customize printing in an interactive session or to install a custom\n  top-level exception handler, assign other functions to replace these.\n\nstdin -- standard input file object; used by input()\nstdout -- standard output file object; used by print()\nstderr -- standard error object; used for error messages\n  By assigning other file objects (or objects that behave like files)\n  to these, it is possible to redirect all of the interpreter's I/O.\n\nlast_type -- type of last uncaught exception\nlast_value -- value of last uncaught exception\nlast_traceback -- traceback of last uncaught exception\n  These three are only available in an interactive session after a\n  traceback has been printed.\n\nStatic objects:\n\nbuiltin_module_names -- tuple of module names built into this interpreter\ncopyright -- copyright notice pertaining to this interpreter\nexec_prefix -- prefix used to find the machine-specific Python library\nexecutable -- absolute path of the executable binary of the Python interpreter\nfloat_info -- a struct sequence with information about the float implementation.\nfloat_repr_style -- string indicating the style of repr() output for floats\nhash_info -- a struct sequence with information about the hash algorithm.\nhexversion -- version information encoded as a single integer\nimplementation -- Python implementation information.\nint_info -- a struct sequence with information about the int implementation.\nmaxsize -- the largest supported length of containers.\nmaxunicode -- the value of the largest Unicode code point\nplatform -- platform identifier\nprefix -- prefix used to find the Python library\nthread_info -- a struct sequence with information about the thread implementation.\nversion -- the version of this interpreter as a string\nversion_info -- version information as a named tuple\ndllhandle -- [Windows only] integer handle of the Python DLL\nwinver -- [Windows only] version number of the Python DLL\n_enablelegacywindowsfsencoding -- [Windows only] \n__stdin__ -- the original stdin; don't touch!\n__stdout__ -- the original stdout; don't touch!\n__stderr__ -- the original stderr; don't touch!\n__displayhook__ -- the original displayhook; don't touch!\n__excepthook__ -- the original excepthook; don't touch!\n\nFunctions:\n\ndisplayhook() -- print an object to the screen, and save it in builtins._\nexcepthook() -- print an exception and its traceback to sys.stderr\nexc_info() -- return thread-safe information about the current exception\nexit() -- exit the interpreter by raising SystemExit\ngetdlopenflags() -- returns flags to be used for dlopen() calls\ngetprofile() -- get the global profiling function\ngetrefcount() -- return the reference count for an object (plus one :-)\ngetrecursionlimit() -- return the max recursion depth for the interpreter\ngetsizeof() -- return the size of an object in bytes\ngettrace() -- get the global debug tracing function\nsetcheckinterval() -- control how often the interpreter checks for events\nsetdlopenflags() -- set the flags to be used for dlopen() calls\nsetprofile() -- set the global profiling function\nsetrecursionlimit() -- set the max recursion depth for the interpreter\nsettrace() -- set the global debug tracing function\n",
   "Functions": [
     {
@@ -12,6 +13,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1623088213,
       "Name": "__breakpointhook__"
     },
     {
@@ -25,6 +27,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 629764782,
       "Name": "__displayhook__"
     },
     {
@@ -38,6 +41,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1425218131,
       "Name": "__excepthook__"
     },
     {
@@ -51,6 +55,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1727507378,
       "Name": "__interactivehook__"
     },
     {
@@ -64,6 +69,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1527505257,
       "Name": "_clear_type_cache"
     },
     {
@@ -77,6 +83,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 813545300,
       "Name": "_current_frames"
     },
     {
@@ -90,6 +97,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1370295892,
       "Name": "_debugmallocstats"
     },
     {
@@ -103,6 +111,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1047770159,
       "Name": "_enablelegacywindowsfsencoding"
     },
     {
@@ -117,12 +126,13 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:types(3.7).FrameType"
+          "ReturnType": "i:types.FrameType"
         }
       ],
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1848744703,
       "Name": "_getframe"
     },
     {
@@ -149,6 +159,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1414470549,
       "Name": "breakpointhook"
     },
     {
@@ -175,6 +186,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1158985352,
       "Name": "call_tracing"
     },
     {
@@ -188,6 +200,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1252442422,
       "Name": "callstats"
     },
     {
@@ -208,6 +221,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 388872302,
       "Name": "displayhook"
     },
     {
@@ -221,6 +235,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -935045484,
       "Name": "exc_info"
     },
     {
@@ -242,7 +257,7 @@
             },
             {
               "Name": "traceback",
-              "Type": "types(3.7).TracebackType",
+              "Type": "types.TracebackType",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -253,6 +268,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 305517843,
       "Name": "excepthook"
     },
     {
@@ -273,6 +289,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 24368565,
       "Name": "exit"
     },
     {
@@ -286,6 +303,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -932626587,
       "Name": "get_asyncgen_hooks"
     },
     {
@@ -299,6 +317,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1605124845,
       "Name": "get_coroutine_origin_tracking_depth"
     },
     {
@@ -312,6 +331,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1829443124,
       "Name": "get_coroutine_wrapper"
     },
     {
@@ -325,6 +345,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1953654962,
       "Name": "getallocatedblocks"
     },
     {
@@ -338,6 +359,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 2065023054,
       "Name": "getcheckinterval"
     },
     {
@@ -351,6 +373,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1935348949,
       "Name": "getdefaultencoding"
     },
     {
@@ -364,6 +387,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 346962379,
       "Name": "getfilesystemencodeerrors"
     },
     {
@@ -377,6 +401,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -946006243,
       "Name": "getfilesystemencoding"
     },
     {
@@ -390,6 +415,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 682573034,
       "Name": "getprofile"
     },
     {
@@ -403,6 +429,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 949225272,
       "Name": "getrecursionlimit"
     },
     {
@@ -423,6 +450,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -37310149,
       "Name": "getrefcount"
     },
     {
@@ -449,6 +477,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1485394487,
       "Name": "getsizeof"
     },
     {
@@ -462,6 +491,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1633191528,
       "Name": "getswitchinterval"
     },
     {
@@ -475,6 +505,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -920747834,
       "Name": "gettrace"
     },
     {
@@ -482,12 +513,13 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:sys(3.7)._WinVersion"
+          "ReturnType": "i:sys._WinVersion"
         }
       ],
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1280212332,
       "Name": "getwindowsversion"
     },
     {
@@ -508,6 +540,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 2048952809,
       "Name": "intern"
     },
     {
@@ -521,6 +554,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1710543065,
       "Name": "is_finalizing"
     },
     {
@@ -553,6 +587,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -12592935,
       "Name": "set_asyncgen_hooks"
     },
     {
@@ -573,6 +608,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 836059129,
       "Name": "set_coroutine_origin_tracking_depth"
     },
     {
@@ -593,6 +629,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 706767832,
       "Name": "set_coroutine_wrapper"
     },
     {
@@ -613,6 +650,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 233580226,
       "Name": "setcheckinterval"
     },
     {
@@ -633,6 +671,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1675589026,
       "Name": "setprofile"
     },
     {
@@ -653,6 +692,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 9072452,
       "Name": "setrecursionlimit"
     },
     {
@@ -673,6 +713,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 1721622948,
       "Name": "setswitchinterval"
     },
     {
@@ -693,196 +734,244 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -1481860294,
       "Name": "settrace"
     }
   ],
   "Variables": [
     {
-      "Value": "_io.gUdbe7JPo__mmtlB2OEXEoJfodVUlyVJH8hq4p8uxB0=",
+      "Value": "_io",
+      "Id": 668243680,
       "Name": "_mod__io"
     },
     {
       "Value": "builtins",
+      "Id": -1070584715,
       "Name": "_mod_builtins"
     },
     {
-      "Value": "types(3.7)",
+      "Value": "types",
+      "Id": -2043043116,
       "Name": "_mod_types"
     },
     {
       "Value": "i:str",
+      "Id": -1636005055,
       "Name": "__doc__"
     },
     {
       "Value": "i:str",
+      "Id": 1097116834,
       "Name": "__name__"
     },
     {
       "Value": "i:str",
+      "Id": 75395663,
       "Name": "__package__"
     },
     {
-      "Value": "i:_io(3.7).TextIOWrapper",
+      "Value": "i:_io.TextIOWrapper",
+      "Id": 1612032761,
       "Name": "__stderr__"
     },
     {
-      "Value": "i:_io(3.7).TextIOWrapper",
+      "Value": "i:_io.TextIOWrapper",
+      "Id": 329210449,
       "Name": "__stdin__"
     },
     {
-      "Value": "i:_io(3.7).TextIOWrapper",
+      "Value": "i:_io.TextIOWrapper",
+      "Id": 1621359266,
       "Name": "__stdout__"
     },
     {
       "Value": "i:str",
+      "Id": 677051350,
       "Name": "_framework"
     },
     {
       "Value": "i:tuple",
+      "Id": 24173482,
       "Name": "_git"
     },
     {
       "Value": "i:NoneType",
+      "Id": 749413383,
       "Name": "_home"
     },
     {
       "Value": "i:dict",
+      "Id": 1595009614,
       "Name": "_xoptions"
     },
     {
       "Value": "i:int",
+      "Id": 1834311484,
       "Name": "api_version"
     },
     {
       "Value": "i:list",
+      "Id": 24243575,
       "Name": "argv"
     },
     {
       "Value": "i:str",
+      "Id": 1664944041,
       "Name": "base_exec_prefix"
     },
     {
       "Value": "i:str",
+      "Id": 1039099721,
       "Name": "base_prefix"
     },
     {
       "Value": "i:tuple",
+      "Id": 1963179240,
       "Name": "builtin_module_names"
     },
     {
       "Value": "i:str",
+      "Id": 2033693967,
       "Name": "byteorder"
     },
     {
       "Value": "i:str",
+      "Id": 1298046352,
       "Name": "copyright"
     },
     {
       "Value": "i:int",
+      "Id": -1200168491,
       "Name": "dllhandle"
     },
     {
       "Value": "i:bool",
+      "Id": 1675585612,
       "Name": "dont_write_bytecode"
     },
     {
       "Value": "i:str",
+      "Id": 62274953,
       "Name": "exec_prefix"
     },
     {
       "Value": "i:str",
+      "Id": -2135911519,
       "Name": "executable"
     },
     {
       "Value": "i:str",
+      "Id": 92603457,
       "Name": "float_repr_style"
     },
     {
       "Value": "i:int",
+      "Id": -471599948,
       "Name": "hexversion"
     },
     {
       "Value": null,
+      "Id": 1997289353,
       "Name": "implementation"
     },
     {
       "Value": "i:int",
+      "Id": -2020000914,
       "Name": "maxsize"
     },
     {
       "Value": "i:int",
+      "Id": 842058832,
       "Name": "maxunicode"
     },
     {
       "Value": "i:list",
+      "Id": -1294259224,
       "Name": "meta_path"
     },
     {
       "Value": "i:dict",
+      "Id": -1637601392,
       "Name": "modules"
     },
     {
       "Value": "i:list",
+      "Id": 24674492,
       "Name": "path"
     },
     {
       "Value": "i:list",
+      "Id": -1506404755,
       "Name": "path_hooks"
     },
     {
       "Value": "i:dict",
+      "Id": 376899064,
       "Name": "path_importer_cache"
     },
     {
       "Value": "i:str",
+      "Id": -1042062966,
       "Name": "platform"
     },
     {
       "Value": "i:str",
+      "Id": -2042362519,
       "Name": "prefix"
     },
     {
-      "Value": "i:_io(3.7).TextIOWrapper",
+      "Value": "i:_io.TextIOWrapper",
+      "Id": -1954658503,
       "Name": "stderr"
     },
     {
-      "Value": "i:_io(3.7).TextIOWrapper",
+      "Value": "i:_io.TextIOWrapper",
+      "Id": 768230609,
       "Name": "stdin"
     },
     {
-      "Value": "i:_io(3.7).TextIOWrapper",
+      "Value": "i:_io.TextIOWrapper",
+      "Id": -1954648798,
       "Name": "stdout"
     },
     {
       "Value": "i:str",
+      "Id": 1781540065,
       "Name": "version"
     },
     {
       "Value": "i:list",
+      "Id": -707130143,
       "Name": "warnoptions"
     },
     {
       "Value": "i:str",
+      "Id": -1849986786,
       "Name": "winver"
     },
     {
-      "Value": "i:sys(3.7).__float_info",
+      "Value": "i:sys.__float_info",
+      "Id": 602612744,
       "Name": "float_info"
     },
     {
-      "Value": "i:sys(3.7).__hash_info",
+      "Value": "i:sys.__hash_info",
+      "Id": 84475656,
       "Name": "hash_info"
     },
     {
-      "Value": "i:sys(3.7).__int_info",
+      "Value": "i:sys.__int_info",
+      "Id": 1942821909,
       "Name": "int_info"
     },
     {
-      "Value": "i:sys(3.7).__thread_info",
+      "Value": "i:sys.__thread_info",
+      "Id": 604643660,
       "Name": "thread_info"
     },
     {
-      "Value": "i:sys(3.7).__version_info",
+      "Value": "i:sys.__version_info",
+      "Id": 1738857804,
       "Name": "version_info"
     }
   ],
@@ -918,6 +1007,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1639102358,
           "Name": "__add__"
         },
         {
@@ -944,6 +1034,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1841774666,
           "Name": "__contains__"
         },
         {
@@ -970,6 +1061,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 2095540485,
           "Name": "__delattr__"
         },
         {
@@ -990,6 +1082,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1636169386,
           "Name": "__dir__"
         },
         {
@@ -1016,6 +1109,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748372547,
           "Name": "__eq__"
         },
         {
@@ -1042,6 +1136,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 695475534,
           "Name": "__format__"
         },
         {
@@ -1068,6 +1163,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748420597,
           "Name": "__ge__"
         },
         {
@@ -1094,6 +1190,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1329277859,
           "Name": "__getattribute__"
         },
         {
@@ -1120,6 +1217,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -293179214,
           "Name": "__getitem__"
         },
         {
@@ -1140,6 +1238,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -488627138,
           "Name": "__getnewargs__"
         },
         {
@@ -1166,6 +1265,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748435012,
           "Name": "__gt__"
         },
         {
@@ -1186,6 +1286,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 925523557,
           "Name": "__hash__"
         },
         {
@@ -1218,6 +1319,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 965872103,
           "Name": "__init__"
         },
         {
@@ -1238,6 +1340,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1040523408,
           "Name": "__init_subclass__"
         },
         {
@@ -1258,6 +1361,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 971292143,
           "Name": "__iter__"
         },
         {
@@ -1284,6 +1388,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748569552,
           "Name": "__le__"
         },
         {
@@ -1304,6 +1409,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1628904226,
           "Name": "__len__"
         },
         {
@@ -1330,6 +1436,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748583967,
           "Name": "__lt__"
         },
         {
@@ -1356,6 +1463,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1627505971,
           "Name": "__mul__"
         },
         {
@@ -1382,6 +1490,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748629134,
           "Name": "__ne__"
         },
         {
@@ -1402,6 +1511,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -544113923,
           "Name": "__reduce__"
         },
         {
@@ -1428,6 +1538,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -491007883,
           "Name": "__reduce_ex__"
         },
         {
@@ -1448,6 +1559,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1215429388,
           "Name": "__repr__"
         },
         {
@@ -1474,6 +1586,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1222960745,
           "Name": "__rmul__"
         },
         {
@@ -1506,6 +1619,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -736377828,
           "Name": "__setattr__"
         },
         {
@@ -1526,6 +1640,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1069167279,
           "Name": "__sizeof__"
         },
         {
@@ -1546,6 +1661,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1621988870,
           "Name": "__str__"
         },
         {
@@ -1572,6 +1688,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1374911630,
           "Name": "__subclasshook__"
         },
         {
@@ -1598,6 +1715,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 753321816,
           "Name": "count"
         },
         {
@@ -1636,6 +1754,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 758816539,
           "Name": "index"
         }
       ],
@@ -1643,87 +1762,108 @@
       "Fields": [
         {
           "Value": "i:int",
+          "Id": 2130352401,
           "Name": "bytes_warning"
         },
         {
           "Value": "i:int",
+          "Id": 753929372,
           "Name": "debug"
         },
         {
           "Value": "i:bool",
+          "Id": -1816482652,
           "Name": "dev_mode"
         },
         {
           "Value": "i:int",
+          "Id": 1675585612,
           "Name": "dont_write_bytecode"
         },
         {
           "Value": "i:int",
+          "Id": 557578535,
           "Name": "hash_randomization"
         },
         {
           "Value": "i:int",
+          "Id": -175101059,
           "Name": "ignore_environment"
         },
         {
           "Value": "i:int",
+          "Id": -907580899,
           "Name": "inspect"
         },
         {
           "Value": "i:int",
+          "Id": 518040171,
           "Name": "interactive"
         },
         {
           "Value": "i:int",
+          "Id": 1954000432,
           "Name": "isolated"
         },
         {
           "Value": "i:int",
+          "Id": 1247591617,
           "Name": "n_fields"
         },
         {
           "Value": "i:int",
+          "Id": -1428290577,
           "Name": "n_sequence_fields"
         },
         {
           "Value": "i:int",
+          "Id": 1605593504,
           "Name": "n_unnamed_fields"
         },
         {
           "Value": "i:int",
+          "Id": -754777330,
           "Name": "no_site"
         },
         {
           "Value": "i:int",
+          "Id": 113341396,
           "Name": "no_user_site"
         },
         {
           "Value": "i:int",
+          "Id": 1299139572,
           "Name": "optimize"
         },
         {
           "Value": "i:int",
+          "Id": 766418045,
           "Name": "quiet"
         },
         {
           "Value": "i:int",
+          "Id": 1084304250,
           "Name": "utf8_mode"
         },
         {
           "Value": "i:int",
+          "Id": 1781039499,
           "Name": "verbose"
         },
         {
           "Value": "dict",
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
+      "Id": 755983568,
       "Name": "flags"
     },
     {
@@ -1740,7 +1880,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1757,6 +1897,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1639102358,
           "Name": "__add__"
         },
         {
@@ -1766,7 +1907,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1783,6 +1924,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1841774666,
           "Name": "__contains__"
         },
         {
@@ -1792,7 +1934,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1809,6 +1951,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 2095540485,
           "Name": "__delattr__"
         },
         {
@@ -1818,7 +1961,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1835,6 +1978,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1636169386,
           "Name": "__dir__"
         },
         {
@@ -1844,7 +1988,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1861,6 +2005,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748372547,
           "Name": "__eq__"
         },
         {
@@ -1870,7 +2015,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1893,6 +2038,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 695475534,
           "Name": "__format__"
         },
         {
@@ -1902,7 +2048,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1919,6 +2065,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748420597,
           "Name": "__ge__"
         },
         {
@@ -1928,7 +2075,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1945,6 +2092,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1329277859,
           "Name": "__getattribute__"
         },
         {
@@ -1954,7 +2102,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1971,6 +2119,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -293179214,
           "Name": "__getitem__"
         },
         {
@@ -1980,7 +2129,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -1997,6 +2146,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -488627138,
           "Name": "__getnewargs__"
         },
         {
@@ -2006,7 +2156,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2023,6 +2173,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748435012,
           "Name": "__gt__"
         },
         {
@@ -2032,7 +2183,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2043,6 +2194,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 925523557,
           "Name": "__hash__"
         },
         {
@@ -2052,7 +2204,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2075,6 +2227,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 965872103,
           "Name": "__init__"
         },
         {
@@ -2084,7 +2237,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2095,6 +2248,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1040523408,
           "Name": "__init_subclass__"
         },
         {
@@ -2104,7 +2258,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2115,6 +2269,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 971292143,
           "Name": "__iter__"
         },
         {
@@ -2124,7 +2279,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2141,6 +2296,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748569552,
           "Name": "__le__"
         },
         {
@@ -2150,7 +2306,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2161,6 +2317,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1628904226,
           "Name": "__len__"
         },
         {
@@ -2170,7 +2327,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2187,6 +2344,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748583967,
           "Name": "__lt__"
         },
         {
@@ -2196,7 +2354,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2213,6 +2371,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1627505971,
           "Name": "__mul__"
         },
         {
@@ -2222,7 +2381,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2239,6 +2398,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748629134,
           "Name": "__ne__"
         },
         {
@@ -2248,7 +2408,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2259,6 +2419,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -544113923,
           "Name": "__reduce__"
         },
         {
@@ -2268,7 +2429,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2291,6 +2452,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -491007883,
           "Name": "__reduce_ex__"
         },
         {
@@ -2300,7 +2462,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2311,6 +2473,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1215429388,
           "Name": "__repr__"
         },
         {
@@ -2320,7 +2483,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2337,6 +2500,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1222960745,
           "Name": "__rmul__"
         },
         {
@@ -2346,7 +2510,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2369,6 +2533,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -736377828,
           "Name": "__setattr__"
         },
         {
@@ -2378,7 +2543,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2395,6 +2560,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1069167279,
           "Name": "__sizeof__"
         },
         {
@@ -2404,7 +2570,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2415,6 +2581,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1621988870,
           "Name": "__str__"
         },
         {
@@ -2424,7 +2591,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2441,6 +2608,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1374911630,
           "Name": "__subclasshook__"
         },
         {
@@ -2450,7 +2618,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2473,6 +2641,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 753321816,
           "Name": "count"
         },
         {
@@ -2482,7 +2651,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__float_info",
+                  "Type": "sys.__float_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2517,6 +2686,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 758816539,
           "Name": "index"
         }
       ],
@@ -2524,71 +2694,88 @@
       "Fields": [
         {
           "Value": "i:int",
+          "Id": 784651,
           "Name": "dig"
         },
         {
           "Value": "i:float",
+          "Id": -105571469,
           "Name": "epsilon"
         },
         {
           "Value": "i:int",
+          "Id": 1518794292,
           "Name": "mant_dig"
         },
         {
           "Value": "i:float",
+          "Id": 793069,
           "Name": "max"
         },
         {
           "Value": "i:int",
+          "Id": 992667279,
           "Name": "max_10_exp"
         },
         {
           "Value": "i:int",
+          "Id": -2020600629,
           "Name": "max_exp"
         },
         {
           "Value": "i:float",
+          "Id": 793307,
           "Name": "min"
         },
         {
           "Value": "i:int",
+          "Id": -830300703,
           "Name": "min_10_exp"
         },
         {
           "Value": "i:int",
+          "Id": -1800802631,
           "Name": "min_exp"
         },
         {
           "Value": "i:int",
+          "Id": 1247591617,
           "Name": "n_fields"
         },
         {
           "Value": "i:int",
+          "Id": -1428290577,
           "Name": "n_sequence_fields"
         },
         {
           "Value": "i:int",
+          "Id": 1605593504,
           "Name": "n_unnamed_fields"
         },
         {
           "Value": "i:int",
+          "Id": 766741069,
           "Name": "radix"
         },
         {
           "Value": "i:int",
+          "Id": -1987390596,
           "Name": "rounds"
         },
         {
           "Value": "dict",
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
+      "Id": 1290755624,
       "Name": "__float_info"
     },
     {
@@ -2605,7 +2792,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2622,6 +2809,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1639102358,
           "Name": "__add__"
         },
         {
@@ -2631,7 +2819,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2648,6 +2836,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1841774666,
           "Name": "__contains__"
         },
         {
@@ -2657,7 +2846,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2674,6 +2863,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 2095540485,
           "Name": "__delattr__"
         },
         {
@@ -2683,7 +2873,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2700,6 +2890,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1636169386,
           "Name": "__dir__"
         },
         {
@@ -2709,7 +2900,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2726,6 +2917,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748372547,
           "Name": "__eq__"
         },
         {
@@ -2735,7 +2927,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2758,6 +2950,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 695475534,
           "Name": "__format__"
         },
         {
@@ -2767,7 +2960,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2784,6 +2977,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748420597,
           "Name": "__ge__"
         },
         {
@@ -2793,7 +2987,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2810,6 +3004,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1329277859,
           "Name": "__getattribute__"
         },
         {
@@ -2819,7 +3014,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2836,6 +3031,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -293179214,
           "Name": "__getitem__"
         },
         {
@@ -2845,7 +3041,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2862,6 +3058,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -488627138,
           "Name": "__getnewargs__"
         },
         {
@@ -2871,7 +3068,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2888,6 +3085,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748435012,
           "Name": "__gt__"
         },
         {
@@ -2897,7 +3095,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2908,6 +3106,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 925523557,
           "Name": "__hash__"
         },
         {
@@ -2917,7 +3116,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2940,6 +3139,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 965872103,
           "Name": "__init__"
         },
         {
@@ -2949,7 +3149,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2960,6 +3160,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1040523408,
           "Name": "__init_subclass__"
         },
         {
@@ -2969,7 +3170,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2980,6 +3181,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 971292143,
           "Name": "__iter__"
         },
         {
@@ -2989,7 +3191,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3006,6 +3208,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748569552,
           "Name": "__le__"
         },
         {
@@ -3015,7 +3218,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3026,6 +3229,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1628904226,
           "Name": "__len__"
         },
         {
@@ -3035,7 +3239,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3052,6 +3256,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748583967,
           "Name": "__lt__"
         },
         {
@@ -3061,7 +3266,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3078,6 +3283,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1627505971,
           "Name": "__mul__"
         },
         {
@@ -3087,7 +3293,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3104,6 +3310,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748629134,
           "Name": "__ne__"
         },
         {
@@ -3113,7 +3320,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3124,6 +3331,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -544113923,
           "Name": "__reduce__"
         },
         {
@@ -3133,7 +3341,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3156,6 +3364,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -491007883,
           "Name": "__reduce_ex__"
         },
         {
@@ -3165,7 +3374,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3176,6 +3385,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1215429388,
           "Name": "__repr__"
         },
         {
@@ -3185,7 +3395,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3202,6 +3412,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1222960745,
           "Name": "__rmul__"
         },
         {
@@ -3211,7 +3422,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3234,6 +3445,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -736377828,
           "Name": "__setattr__"
         },
         {
@@ -3243,7 +3455,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3260,6 +3472,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1069167279,
           "Name": "__sizeof__"
         },
         {
@@ -3269,7 +3482,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3280,6 +3493,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1621988870,
           "Name": "__str__"
         },
         {
@@ -3289,7 +3503,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3306,6 +3520,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1374911630,
           "Name": "__subclasshook__"
         },
         {
@@ -3315,7 +3530,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3338,6 +3553,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 753321816,
           "Name": "count"
         },
         {
@@ -3347,7 +3563,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__hash_info",
+                  "Type": "sys.__hash_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3382,6 +3598,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 758816539,
           "Name": "index"
         }
       ],
@@ -3389,63 +3606,78 @@
       "Fields": [
         {
           "Value": "i:str",
+          "Id": 646712,
           "Name": "algorithm"
         },
         {
           "Value": "i:int",
+          "Id": 1883651780,
           "Name": "cutoff"
         },
         {
           "Value": "i:int",
+          "Id": 84262752,
           "Name": "hash_bits"
         },
         {
           "Value": "i:int",
+          "Id": 24476897,
           "Name": "imag"
         },
         {
           "Value": "i:int",
+          "Id": 789610,
           "Name": "inf"
         },
         {
           "Value": "i:int",
+          "Id": -1637600896,
           "Name": "modulus"
         },
         {
           "Value": "i:int",
+          "Id": 1247591617,
           "Name": "n_fields"
         },
         {
           "Value": "i:int",
+          "Id": -1428290577,
           "Name": "n_sequence_fields"
         },
         {
           "Value": "i:int",
+          "Id": 1605593504,
           "Name": "n_unnamed_fields"
         },
         {
           "Value": "i:int",
+          "Id": 794020,
           "Name": "nan"
         },
         {
           "Value": "i:int",
+          "Id": 403740637,
           "Name": "seed_bits"
         },
         {
           "Value": "i:int",
+          "Id": 771597327,
           "Name": "width"
         },
         {
           "Value": "dict",
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
+      "Id": -1417346840,
       "Name": "__hash_info"
     },
     {
@@ -3462,7 +3694,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3479,6 +3711,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1639102358,
           "Name": "__add__"
         },
         {
@@ -3488,7 +3721,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3505,6 +3738,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1841774666,
           "Name": "__contains__"
         },
         {
@@ -3514,7 +3748,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3531,6 +3765,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 2095540485,
           "Name": "__delattr__"
         },
         {
@@ -3540,7 +3775,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3557,6 +3792,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1636169386,
           "Name": "__dir__"
         },
         {
@@ -3566,7 +3802,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3583,6 +3819,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748372547,
           "Name": "__eq__"
         },
         {
@@ -3592,7 +3829,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3615,6 +3852,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 695475534,
           "Name": "__format__"
         },
         {
@@ -3624,7 +3862,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3641,6 +3879,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748420597,
           "Name": "__ge__"
         },
         {
@@ -3650,7 +3889,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3667,6 +3906,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1329277859,
           "Name": "__getattribute__"
         },
         {
@@ -3676,7 +3916,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3693,6 +3933,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -293179214,
           "Name": "__getitem__"
         },
         {
@@ -3702,7 +3943,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3719,6 +3960,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -488627138,
           "Name": "__getnewargs__"
         },
         {
@@ -3728,7 +3970,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3745,6 +3987,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748435012,
           "Name": "__gt__"
         },
         {
@@ -3754,7 +3997,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3765,6 +4008,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 925523557,
           "Name": "__hash__"
         },
         {
@@ -3774,7 +4018,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3797,6 +4041,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 965872103,
           "Name": "__init__"
         },
         {
@@ -3806,7 +4051,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3817,6 +4062,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1040523408,
           "Name": "__init_subclass__"
         },
         {
@@ -3826,7 +4072,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3837,6 +4083,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 971292143,
           "Name": "__iter__"
         },
         {
@@ -3846,7 +4093,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3863,6 +4110,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748569552,
           "Name": "__le__"
         },
         {
@@ -3872,7 +4120,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3883,6 +4131,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1628904226,
           "Name": "__len__"
         },
         {
@@ -3892,7 +4141,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3909,6 +4158,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748583967,
           "Name": "__lt__"
         },
         {
@@ -3918,7 +4168,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3935,6 +4185,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1627505971,
           "Name": "__mul__"
         },
         {
@@ -3944,7 +4195,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3961,6 +4212,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748629134,
           "Name": "__ne__"
         },
         {
@@ -3970,7 +4222,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3981,6 +4233,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -544113923,
           "Name": "__reduce__"
         },
         {
@@ -3990,7 +4243,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4013,6 +4266,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -491007883,
           "Name": "__reduce_ex__"
         },
         {
@@ -4022,7 +4276,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4033,6 +4287,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1215429388,
           "Name": "__repr__"
         },
         {
@@ -4042,7 +4297,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4059,6 +4314,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1222960745,
           "Name": "__rmul__"
         },
         {
@@ -4068,7 +4324,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4091,6 +4347,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -736377828,
           "Name": "__setattr__"
         },
         {
@@ -4100,7 +4357,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4117,6 +4374,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1069167279,
           "Name": "__sizeof__"
         },
         {
@@ -4126,7 +4384,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4137,6 +4395,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1621988870,
           "Name": "__str__"
         },
         {
@@ -4146,7 +4405,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4163,6 +4422,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1374911630,
           "Name": "__subclasshook__"
         },
         {
@@ -4172,7 +4432,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4195,6 +4455,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 753321816,
           "Name": "count"
         },
         {
@@ -4204,7 +4465,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__int_info",
+                  "Type": "sys.__int_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4239,6 +4500,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 758816539,
           "Name": "index"
         }
       ],
@@ -4246,35 +4508,43 @@
       "Fields": [
         {
           "Value": "i:int",
+          "Id": 1945378665,
           "Name": "bits_per_digit"
         },
         {
           "Value": "i:int",
+          "Id": 1247591617,
           "Name": "n_fields"
         },
         {
           "Value": "i:int",
+          "Id": -1428290577,
           "Name": "n_sequence_fields"
         },
         {
           "Value": "i:int",
+          "Id": 1605593504,
           "Name": "n_unnamed_fields"
         },
         {
           "Value": "i:int",
+          "Id": -1534275235,
           "Name": "sizeof_digit"
         },
         {
           "Value": "dict",
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
+      "Id": 785997365,
       "Name": "__int_info"
     },
     {
@@ -4291,7 +4561,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4308,6 +4578,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1639102358,
           "Name": "__add__"
         },
         {
@@ -4317,7 +4588,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4334,6 +4605,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1841774666,
           "Name": "__contains__"
         },
         {
@@ -4343,7 +4615,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4360,6 +4632,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 2095540485,
           "Name": "__delattr__"
         },
         {
@@ -4369,7 +4642,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4386,6 +4659,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1636169386,
           "Name": "__dir__"
         },
         {
@@ -4395,7 +4669,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4412,6 +4686,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748372547,
           "Name": "__eq__"
         },
         {
@@ -4421,7 +4696,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4444,6 +4719,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 695475534,
           "Name": "__format__"
         },
         {
@@ -4453,7 +4729,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4470,6 +4746,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748420597,
           "Name": "__ge__"
         },
         {
@@ -4479,7 +4756,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4496,6 +4773,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1329277859,
           "Name": "__getattribute__"
         },
         {
@@ -4505,7 +4783,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4522,6 +4800,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -293179214,
           "Name": "__getitem__"
         },
         {
@@ -4531,7 +4810,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4548,6 +4827,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -488627138,
           "Name": "__getnewargs__"
         },
         {
@@ -4557,7 +4837,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4574,6 +4854,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748435012,
           "Name": "__gt__"
         },
         {
@@ -4583,7 +4864,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4594,6 +4875,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 925523557,
           "Name": "__hash__"
         },
         {
@@ -4603,7 +4885,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4626,6 +4908,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 965872103,
           "Name": "__init__"
         },
         {
@@ -4635,7 +4918,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4646,6 +4929,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1040523408,
           "Name": "__init_subclass__"
         },
         {
@@ -4655,7 +4939,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4666,6 +4950,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 971292143,
           "Name": "__iter__"
         },
         {
@@ -4675,7 +4960,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4692,6 +4977,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748569552,
           "Name": "__le__"
         },
         {
@@ -4701,7 +4987,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4712,6 +4998,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1628904226,
           "Name": "__len__"
         },
         {
@@ -4721,7 +5008,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4738,6 +5025,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748583967,
           "Name": "__lt__"
         },
         {
@@ -4747,7 +5035,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4764,6 +5052,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1627505971,
           "Name": "__mul__"
         },
         {
@@ -4773,7 +5062,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4790,6 +5079,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748629134,
           "Name": "__ne__"
         },
         {
@@ -4799,7 +5089,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4810,6 +5100,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -544113923,
           "Name": "__reduce__"
         },
         {
@@ -4819,7 +5110,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4842,6 +5133,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -491007883,
           "Name": "__reduce_ex__"
         },
         {
@@ -4851,7 +5143,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4862,6 +5154,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1215429388,
           "Name": "__repr__"
         },
         {
@@ -4871,7 +5164,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4888,6 +5181,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1222960745,
           "Name": "__rmul__"
         },
         {
@@ -4897,7 +5191,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4920,6 +5214,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -736377828,
           "Name": "__setattr__"
         },
         {
@@ -4929,7 +5224,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4946,6 +5241,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1069167279,
           "Name": "__sizeof__"
         },
         {
@@ -4955,7 +5251,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4966,6 +5262,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1621988870,
           "Name": "__str__"
         },
         {
@@ -4975,7 +5272,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4992,6 +5289,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1374911630,
           "Name": "__subclasshook__"
         },
         {
@@ -5001,7 +5299,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5024,6 +5322,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 753321816,
           "Name": "count"
         },
         {
@@ -5033,7 +5332,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__thread_info",
+                  "Type": "sys.__thread_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5068,6 +5367,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 758816539,
           "Name": "index"
         }
       ],
@@ -5075,39 +5375,48 @@
       "Fields": [
         {
           "Value": "i:NoneType",
+          "Id": 24568258,
           "Name": "lock"
         },
         {
           "Value": "i:int",
+          "Id": 1247591617,
           "Name": "n_fields"
         },
         {
           "Value": "i:int",
+          "Id": -1428290577,
           "Name": "n_sequence_fields"
         },
         {
           "Value": "i:int",
+          "Id": 1605593504,
           "Name": "n_unnamed_fields"
         },
         {
           "Value": "i:str",
+          "Id": 24614690,
           "Name": "name"
         },
         {
           "Value": "i:NoneType",
+          "Id": 1781540065,
           "Name": "version"
         },
         {
           "Value": "dict",
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
+      "Id": 462236460,
       "Name": "__thread_info"
     },
     {
@@ -5124,7 +5433,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5141,6 +5450,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1639102358,
           "Name": "__add__"
         },
         {
@@ -5150,7 +5460,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5167,6 +5477,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1841774666,
           "Name": "__contains__"
         },
         {
@@ -5176,7 +5487,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5193,6 +5504,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 2095540485,
           "Name": "__delattr__"
         },
         {
@@ -5202,7 +5514,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5219,6 +5531,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1636169386,
           "Name": "__dir__"
         },
         {
@@ -5228,7 +5541,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5245,6 +5558,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748372547,
           "Name": "__eq__"
         },
         {
@@ -5254,7 +5568,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5277,6 +5591,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 695475534,
           "Name": "__format__"
         },
         {
@@ -5286,7 +5601,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5303,6 +5618,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748420597,
           "Name": "__ge__"
         },
         {
@@ -5312,7 +5628,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5329,6 +5645,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1329277859,
           "Name": "__getattribute__"
         },
         {
@@ -5338,7 +5655,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5355,6 +5672,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -293179214,
           "Name": "__getitem__"
         },
         {
@@ -5364,7 +5682,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5381,6 +5699,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -488627138,
           "Name": "__getnewargs__"
         },
         {
@@ -5390,7 +5709,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5407,6 +5726,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748435012,
           "Name": "__gt__"
         },
         {
@@ -5416,7 +5736,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5427,6 +5747,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 925523557,
           "Name": "__hash__"
         },
         {
@@ -5436,7 +5757,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5459,6 +5780,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 965872103,
           "Name": "__init__"
         },
         {
@@ -5468,7 +5790,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5479,6 +5801,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1040523408,
           "Name": "__init_subclass__"
         },
         {
@@ -5488,7 +5811,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5499,6 +5822,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 971292143,
           "Name": "__iter__"
         },
         {
@@ -5508,7 +5832,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5525,6 +5849,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748569552,
           "Name": "__le__"
         },
         {
@@ -5534,7 +5859,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5545,6 +5870,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1628904226,
           "Name": "__len__"
         },
         {
@@ -5554,7 +5880,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5571,6 +5897,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748583967,
           "Name": "__lt__"
         },
         {
@@ -5580,7 +5907,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5597,6 +5924,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1627505971,
           "Name": "__mul__"
         },
         {
@@ -5606,7 +5934,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5623,6 +5951,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1748629134,
           "Name": "__ne__"
         },
         {
@@ -5632,7 +5961,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5643,6 +5972,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -544113923,
           "Name": "__reduce__"
         },
         {
@@ -5652,7 +5982,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5675,6 +6005,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -491007883,
           "Name": "__reduce_ex__"
         },
         {
@@ -5684,7 +6015,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5695,6 +6026,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1215429388,
           "Name": "__repr__"
         },
         {
@@ -5704,7 +6036,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5721,6 +6053,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1222960745,
           "Name": "__rmul__"
         },
         {
@@ -5730,7 +6063,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5753,6 +6086,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -736377828,
           "Name": "__setattr__"
         },
         {
@@ -5762,7 +6096,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5779,6 +6113,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 1069167279,
           "Name": "__sizeof__"
         },
         {
@@ -5788,7 +6123,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -5799,6 +6134,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1621988870,
           "Name": "__str__"
         },
         {
@@ -5808,7 +6144,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5825,6 +6161,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": -1374911630,
           "Name": "__subclasshook__"
         },
         {
@@ -5834,7 +6171,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5857,6 +6194,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 753321816,
           "Name": "count"
         },
         {
@@ -5866,7 +6204,7 @@
               "Parameters": [
                 {
                   "Name": "cls",
-                  "Type": "sys(3.7).__version_info",
+                  "Type": "sys.__version_info",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -5901,6 +6239,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
+          "Id": 758816539,
           "Name": "index"
         }
       ],
@@ -5908,49 +6247,61 @@
       "Fields": [
         {
           "Value": "i:int",
+          "Id": 762129410,
           "Name": "major"
         },
         {
           "Value": "i:int",
+          "Id": 762361101,
           "Name": "micro"
         },
         {
           "Value": "i:int",
+          "Id": 762371582,
           "Name": "minor"
         },
         {
           "Value": "i:int",
+          "Id": 1247591617,
           "Name": "n_fields"
         },
         {
           "Value": "i:int",
+          "Id": -1428290577,
           "Name": "n_sequence_fields"
         },
         {
           "Value": "i:int",
+          "Id": 1605593504,
           "Name": "n_unnamed_fields"
         },
         {
           "Value": "i:str",
+          "Id": -112134796,
           "Name": "releaselevel"
         },
         {
           "Value": "i:int",
+          "Id": -1968090933,
           "Name": "serial"
         },
         {
           "Value": "dict",
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
+      "Id": 1619201900,
       "Name": "__version_info"
     }
   ],
-  "Name": "sys(3.7)"
+  "Id": -1012399873,
+  "Name": "sys"
 }

@@ -18,18 +18,40 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class ModuleUniqueId {
-        public static string GetUniqieId(this IPythonModule module, IFileSystem fs)
-            => GetUniqieId(module.Name, module.FilePath, module.Interpreter, fs);
+        public static string GetUniqieId(this IPythonModule module, IServiceContainer services)
+            => GetUniqieId(module.Name, module.FilePath, module.ModuleType, services);
 
-        public static string GetUniqieId(string moduleName, string filePath, IPythonInterpreter interpreter, IFileSystem fs) {
+        public static string GetUniqieId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services) {
+            var interpreter = services.GetService<IPythonInterpreter>();
+            var stubCache = services.GetService<IStubCache>();
+            var fs = services.GetService<IFileSystem>();
+
             var config = interpreter.Configuration;
-            var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(config);
+            var standardLibraryPath = PythonLibraryPath.GetStandardLibraryPath(config);
 
+            if (moduleType == ModuleType.User) {
+                // Only for tests.
+                return $"{moduleName}";
+            }
+
+            if (moduleType == ModuleType.Builtins || 
+                moduleType == ModuleType.CompiledBuiltin ||
+                moduleType == ModuleType.Compiled ||
+                string.IsNullOrEmpty(filePath) || 
+                fs.IsPathUnderRoot(stubCache.StubCacheFolder, filePath) ||
+                fs.IsPathUnderRoot(standardLibraryPath, filePath)) {
+                // If module is a standard library, unique id is its name + interpreter version.
+                return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
+            }
+
+            var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(config);
             if (!string.IsNullOrEmpty(filePath) && fs.IsPathUnderRoot(sitePackagesPath, filePath)) {
                 // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
                 // Example: 'requests' and 'requests-2.21.0.dist-info'.
@@ -47,12 +69,6 @@ namespace Microsoft.Python.Analysis.Caching {
                     var dash = fileName.IndexOf('-');
                     return $"{fileName.Substring(0, dash)}({fileName.Substring(dash + 1)})";
                 }
-            }
-
-            var standardLibraryPath = PythonLibraryPath.GetStandardLibraryPath(config);
-            if (string.IsNullOrEmpty(filePath) || fs.IsPathUnderRoot(standardLibraryPath, filePath)) {
-                // If module is a standard library, unique id is its name + interpreter version.
-                return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
             }
 
             // If all else fails, hash module data.

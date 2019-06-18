@@ -42,7 +42,5 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
                 return Path.GetFullPath(Path.Combine(outDirectory, "..", "..", "..", "src", "Caching", "Test", "Files"));
             }
         }
-
-        protected IFileSystem FileSystem => Services.GetService<IFileSystem>();
     }
 }

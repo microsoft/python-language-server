@@ -16,6 +16,7 @@
 using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     [DebuggerDisplay("v:{Name} = {Value}")]
@@ -23,19 +24,19 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string Value { get; set; }
 
         public static VariableModel FromVariable(IVariable v) => new VariableModel {
-            Id = v.Name.GetHashCode(),
+            Id = v.Name.GetStableHash(),
             Name = v.Name,
             Value = v.Value.GetQualifiedName()
         };
 
         public static VariableModel FromInstance(string name, IPythonInstance inst) => new VariableModel {
-            Id = name.GetHashCode(),
+            Id = name.GetStableHash(),
             Name = name,
             Value = inst.GetQualifiedName()
         };
 
         public static VariableModel FromType(string name, IPythonType t) => new VariableModel {
-            Id = name.GetHashCode(),
+            Id = name.GetStableHash(),
             Name = name,
             Value = t.GetQualifiedName()
         };

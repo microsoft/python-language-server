@@ -16,6 +16,7 @@
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     [DebuggerDisplay("f:{Name}")]
@@ -28,7 +29,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public static FunctionModel FromType(IPythonFunctionType ft) {
             return new FunctionModel {
-                Id = ft.Name.GetHashCode(),
+                Id = ft.Name.GetStableHash(),
                 Name = ft.Name,
                 Documentation = ft.Documentation,
                 Overloads = ft.Overloads.Select(FromOverload).ToArray()

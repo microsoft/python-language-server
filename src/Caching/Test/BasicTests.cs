@@ -62,7 +62,7 @@ def func():
 c = C()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, FileSystem);
+            var model = ModuleModel.FromAnalysis(analysis, Services);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -94,7 +94,7 @@ class B:
 c = B().methodB1()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, FileSystem);
+            var model = ModuleModel.FromAnalysis(analysis, Services);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -103,7 +103,7 @@ c = B().methodB1()
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
-            var model = ModuleModel.FromAnalysis(builtins.Analysis, FileSystem);
+            var model = ModuleModel.FromAnalysis(builtins.Analysis, Services);
             
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
@@ -117,7 +117,7 @@ c = B().methodB1()
         public async Task Sys() {
             var analysis = await GetAnalysisAsync("import sys");
             var sys = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("sys");
-            var model = ModuleModel.FromAnalysis(sys.Analysis, FileSystem);
+            var model = ModuleModel.FromAnalysis(sys.Analysis, Services);
 
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
@@ -140,7 +140,7 @@ x = requests.get('microsoft.com')
                 Assert.Inconclusive("'requests' package is not installed.");
             }
 
-            var model = ModuleModel.FromAnalysis(analysis, FileSystem);
+            var model = ModuleModel.FromAnalysis(analysis, Services);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -159,7 +159,7 @@ x = requests.get('microsoft.com')
             }
 
             var rq = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("requests");
-            var model = ModuleModel.FromAnalysis(rq.Analysis, FileSystem);
+            var model = ModuleModel.FromAnalysis(rq.Analysis, Services);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
 

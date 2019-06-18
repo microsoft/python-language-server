@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class PropertyModel: MemberModel {
@@ -23,7 +24,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public static PropertyModel FromType(IPythonPropertyType prop) {
             return new PropertyModel {
-                Id = prop.Name.GetHashCode(),
+                Id = prop.Name.GetStableHash(),
                 Name = prop.Name,
                 Documentation = prop.Documentation,
                 ReturnType = prop.ReturnType.GetQualifiedName(),

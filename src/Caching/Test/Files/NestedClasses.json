@@ -1,50 +1,51 @@
 {
+  "UniqueId": "module",
   "Documentation": "",
   "Functions": [],
   "Variables": [
     {
       "Value": "bool",
-      "Id": -284397016,
+      "Id": -529376420,
       "Name": "__debug__"
     },
     {
       "Value": "str",
-      "Id": 1716814261,
+      "Id": -1636005055,
       "Name": "__doc__"
     },
     {
       "Value": "str",
-      "Id": -1651825028,
+      "Id": 875442003,
       "Name": "__file__"
     },
     {
       "Value": "str",
-      "Id": 359927558,
+      "Id": 1097116834,
       "Name": "__name__"
     },
     {
       "Value": "str",
-      "Id": 1376117645,
+      "Id": 75395663,
       "Name": "__package__"
     },
     {
       "Value": "list",
-      "Id": -1181510515,
+      "Id": 1154586556,
       "Name": "__path__"
     },
     {
       "Value": "dict",
-      "Id": -2101168703,
+      "Id": 817929997,
       "Name": "__dict__"
     },
     {
       "Value": "i:str",
-      "Id": 1524797253,
+      "Id": 833,
       "Name": "x"
     },
     {
       "Value": "i:module.C",
-      "Id": -466436537,
+      "Id": 812,
       "Name": "c"
     }
   ],
@@ -73,7 +74,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
-          "Id": 1064115010,
+          "Id": -1909501047,
           "Name": "methodA"
         }
       ],
@@ -81,18 +82,18 @@
       "Fields": [
         {
           "Value": "dict",
-          "Id": -2101168703,
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
-          "Id": -184559367,
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
-      "Id": 1589709533,
+      "Id": 778,
       "Name": "A"
     },
     {
@@ -119,7 +120,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
-          "Id": -31822871,
+          "Id": 935009767,
           "Name": "methodB1"
         },
         {
@@ -140,7 +141,7 @@
           "Attributes": 0,
           "Classes": null,
           "Functions": null,
-          "Id": 485037146,
+          "Id": 935009768,
           "Name": "methodB2"
         }
       ],
@@ -148,17 +149,17 @@
       "Fields": [
         {
           "Value": "i:int",
-          "Id": 1524797253,
+          "Id": 833,
           "Name": "x"
         },
         {
           "Value": "dict",
-          "Id": -2101168703,
+          "Id": 817929997,
           "Name": "__dict__"
         },
         {
           "Value": "object",
-          "Id": -184559367,
+          "Id": 1225024228,
           "Name": "__weakref__"
         }
       ],
@@ -188,7 +189,7 @@
               "Attributes": 0,
               "Classes": null,
               "Functions": null,
-              "Id": 506751156,
+              "Id": 965872103,
               "Name": "__init__"
             },
             {
@@ -209,7 +210,7 @@
               "Attributes": 0,
               "Classes": null,
               "Functions": null,
-              "Id": 1910290968,
+              "Id": -1909501045,
               "Name": "methodC"
             }
           ],
@@ -217,30 +218,30 @@
           "Fields": [
             {
               "Value": "i:int",
-              "Id": 466874038,
+              "Id": 834,
               "Name": "y"
             },
             {
               "Value": "dict",
-              "Id": -2101168703,
+              "Id": 817929997,
               "Name": "__dict__"
             },
             {
               "Value": "object",
-              "Id": -184559367,
+              "Id": 1225024228,
               "Name": "__weakref__"
             }
           ],
           "GenericParameters": null,
           "InnerClasses": [],
-          "Id": 339060664,
+          "Id": 780,
           "Name": "C"
         }
       ],
-      "Id": 431513585,
+      "Id": 779,
       "Name": "B"
     }
   ],
-  "Id": 1345059090,
+  "Id": -2131035837,
   "Name": "module"
 }
