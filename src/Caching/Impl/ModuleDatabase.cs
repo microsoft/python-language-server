@@ -16,10 +16,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -29,7 +30,6 @@ namespace Microsoft.Python.Analysis.Caching {
     public sealed class ModuleDatabase : IModuleDatabaseService {
         private const int _databaseFormatVersion = 1;
 
-        private readonly object _lock = new object();
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
@@ -52,98 +52,103 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <param name="filePath">Module file path.</param>
         /// <param name="module">Python module.</param>
         /// <returns>Module storage state</returns>
-        public ModuleStorageState TryGetModuleData(string moduleName, string filePath, out IPythonModule module) {
+        public ModuleStorageState TryCreateModule(string moduleName, string filePath, out IPythonModule module) {
             module = null;
-            lock (_lock) {
-                // We don't cache results here. Module resolution service decides when to call in here
-                // and it is responsible of overall management of the loaded Python modules.
-                for (var retries = 50; retries > 0; --retries) {
-                    try {
-                        // TODO: make combined db rather than per module?
-                        var dbPath = FindDatabaseFile(moduleName, filePath, out var qualifiedName);
-                        if (string.IsNullOrEmpty(dbPath)) {
+            // We don't cache results here. Module resolution service decides when to call in here
+            // and it is responsible of overall management of the loaded Python modules.
+            for (var retries = 50; retries > 0; --retries) {
+                try {
+                    // TODO: make combined db rather than per module?
+                    var dbPath = FindDatabaseFile(moduleName, filePath);
+                    if (string.IsNullOrEmpty(dbPath)) {
+                        return ModuleStorageState.DoesNotExist;
+                    }
+
+                    using (var db = new LiteDatabase(dbPath)) {
+                        if (!db.CollectionExists("modules")) {
+                            return ModuleStorageState.Corrupted;
+                        }
+
+                        var modules = db.GetCollection<ModuleModel>("modules");
+                        var model = modules.Find(m => m.Name == moduleName).FirstOrDefault();
+                        if (model == null) {
                             return ModuleStorageState.DoesNotExist;
                         }
 
-                        using (var db = new LiteDatabase(dbPath)) {
-                            if (!db.CollectionExists("modules")) {
-                                return ModuleStorageState.Corrupted;
-                            }
-
-                            var modules = db.GetCollection<ModuleModel>("modules");
-                            var model = modules.Find(m => m.Name == qualifiedName).FirstOrDefault();
-                            if (model == null) {
-                                return ModuleStorageState.DoesNotExist;
-                            }
-
-                            module = new PythonDbModule(model, filePath, _services);
-                            return ModuleStorageState.Complete;
-                        }
-                    } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
-                        Thread.Sleep(10);
+                        module = new PythonDbModule(model, filePath, _services);
+                        return ModuleStorageState.Complete;
                     }
+                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+                    Thread.Sleep(10);
                 }
-
-                return ModuleStorageState.DoesNotExist;
             }
+            return ModuleStorageState.DoesNotExist;
         }
 
-        public void StoreModuleAnalysis(IDocumentAnalysis analysis) {
-            lock (_lock) {
-                var model = ModuleModel.FromAnalysis(analysis);
-                Exception ex = null;
-                for (var retries = 50; retries > 0; --retries) {
-                    try {
-                        if (!_fs.DirectoryExists(_databaseFolder)) {
-                            _fs.CreateDirectory(_databaseFolder);
-                        }
+        public Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default)
+            => Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken));
 
-                        using (var db = new LiteDatabase(Path.Combine(_databaseFolder, $"{model.Name}.db"))) {
-                            var modules = db.GetCollection<ModuleModel>("modules");
-                            modules.Upsert(model);
-                        }
-                    } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
-                        ex = ex1;
-                        Thread.Sleep(10);
-                    } catch (Exception ex2) {
-                        ex = ex2;
-                        break;
+        private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) { 
+            var model = ModuleModel.FromAnalysis(analysis, _fs);
+            Exception ex = null;
+            for (var retries = 50; retries > 0; --retries) {
+                cancellationToken.ThrowIfCancellationRequested();
+                try {
+                    if (!_fs.DirectoryExists(_databaseFolder)) {
+                        _fs.CreateDirectory(_databaseFolder);
                     }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    using (var db = new LiteDatabase(Path.Combine(_databaseFolder, $"{model.UniqueId}.db"))) {
+                        var modules = db.GetCollection<ModuleModel>("modules");
+                        modules.Upsert(model);
+                    }
+                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
+                    ex = ex1;
+                    Thread.Sleep(10);
+                } catch (Exception ex2) {
+                    ex = ex2;
+                    break;
                 }
+            }
 
-                if (ex != null) {
-                    _log?.Log(System.Diagnostics.TraceEventType.Warning, $"Unable to write analysis of {model.Name} to database. Exception {ex.Message}");
-                    if (ex.IsCriticalException()) {
-                        throw ex;
-                    }
+            if (ex != null) {
+                _log?.Log(System.Diagnostics.TraceEventType.Warning, $"Unable to write analysis of {model.Name} to database. Exception {ex.Message}");
+                if (ex.IsCriticalException()) {
+                    throw ex;
                 }
             }
         }
 
-        private string FindDatabaseFile(string moduleName, string filePath, out string qualifiedName) {
+        /// <summary>
+        /// Locates database file based on module information. Module is identified
+        /// by name, version, current Python interpreter version and/or hash of the
+        /// module content (typically file sizes).
+        /// </summary>
+        private string FindDatabaseFile(string moduleName, string filePath) {
             var interpreter = _services.GetService<IPythonInterpreter>();
-            qualifiedName = ModuleQualifiedName.CalculateQualifiedName(moduleName, filePath, interpreter, _fs);
-            if(string.IsNullOrEmpty(qualifiedName)) {
+            var uniqueId = ModuleUniqueId.GetUniqieId(moduleName, filePath, interpreter, _fs);
+            if (string.IsNullOrEmpty(uniqueId)) {
                 return null;
             }
 
             // Try module name as is.
-            var dbPath = Path.Combine(_databaseFolder, $"{qualifiedName}.db");
-            if(_fs.FileExists(dbPath)) {
+            var dbPath = Path.Combine(_databaseFolder, $"{uniqueId}.db");
+            if (_fs.FileExists(dbPath)) {
                 return dbPath;
             }
-            
+
             // TODO: resolving to a different version can be an option
             // Try with the major.minor Python version.
             var pythonVersion = interpreter.Configuration.Version;
 
-            dbPath = Path.Combine(_databaseFolder, $"{qualifiedName}({pythonVersion.Major}.{pythonVersion.Minor}).db");
+            dbPath = Path.Combine(_databaseFolder, $"{uniqueId}({pythonVersion.Major}.{pythonVersion.Minor}).db");
             if (_fs.FileExists(dbPath)) {
                 return dbPath;
             }
 
             // Try with just the major Python version.
-            dbPath = Path.Combine(_databaseFolder, $"{qualifiedName}({pythonVersion.Major}).db");
+            dbPath = Path.Combine(_databaseFolder, $"{uniqueId}({pythonVersion.Major}).db");
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
     }

@@ -101,7 +101,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             var dbs = _services.GetService<IModuleDatabaseService>();
-            if (dbs != null && dbs.TryGetModuleData(name, moduleImport.ModulePath, out var m) != ModuleStorageState.DoesNotExist && m != null) {
+            if (dbs != null && dbs.TryCreateModule(name, moduleImport.ModulePath, out var m) != ModuleStorageState.DoesNotExist && m != null) {
                 return m;
             }
 

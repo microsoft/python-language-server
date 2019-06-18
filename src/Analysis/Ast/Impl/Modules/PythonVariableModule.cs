@@ -29,20 +29,10 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
-        private readonly IFileSystem _fs;
-        private string _qualifiedName;
-
+ 
         public string Name { get; }
-        public string QualifiedName {
-            get {
-                if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User || ModuleType == ModuleType.Stub) {
-                    return Name;
-                }
-                return string.IsNullOrEmpty(_qualifiedName)
-                    ? _qualifiedName = this.CalculateQualifiedName(_fs)
-                    : _qualifiedName;
-            }
-        }
+        public string QualifiedName => Name;
+
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
 
@@ -70,7 +60,6 @@ namespace Microsoft.Python.Analysis.Modules {
             Module = module;
             Name = module?.Name ?? name;
             Interpreter = module?.Interpreter ?? services.GetService<IPythonInterpreter>();
-            _fs = services.GetService<IFileSystem>();
             SetDeclaringModule(this);
         }
 

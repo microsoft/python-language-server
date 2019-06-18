@@ -42,8 +42,8 @@ namespace Microsoft.Python.Analysis.Caching {
         /// qualified name designates instance (prefixed with 'i:').
         /// </summary>
         /// <param name="rawQualifiedName">Raw qualified name to split. May include instance prefix.</param>
-        /// <param name="typeQualifiedName">Qualified name without optional instance prefix, such as A(3.6).B(3.6).C</param>
-        /// <param name="nameParts">Name parts such as 'A(3.6)', 'B(3.6)', 'C'.</param>
+        /// <param name="typeQualifiedName">Qualified name without optional instance prefix, such as A.B.C</param>
+        /// <param name="nameParts">Name parts such as 'A', 'B', 'C' from A.B.C.</param>
         /// <param name="isInstance">If true, the qualified name describes instance of a type.</param>
         public static bool DeconstructQualifiedName(string rawQualifiedName, out string typeQualifiedName, out IReadOnlyList<string> nameParts, out bool isInstance) {
             typeQualifiedName = null;
@@ -61,16 +61,15 @@ namespace Microsoft.Python.Analysis.Caching {
                 nameParts = new[] { @"builtins", "ellipsis" };
                 return true;
             }
+            if (rawQualifiedName.IndexOf('.') < 0) {
+                nameParts = new[] { @"builtins", typeQualifiedName };
+                return true;
+            }
 
             // First chunk is qualified module name except dots in braces.
             // Builtin types don't have module prefix.
             nameParts = GetParts(typeQualifiedName);
             return nameParts.Count > 0;
-        }
-
-        public static string GetNameWithoutVersion(string qualifiedName) {
-            var index = qualifiedName.IndexOf('(');
-            return index > 0 ? qualifiedName.Substring(0, index) : qualifiedName;
         }
 
         private static IReadOnlyList<string> GetParts(string qualifiedTypeName) {
@@ -86,22 +85,23 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         private static string GetSubPart(string s, ref int i) {
-            var skip = false;
+            var braceCounter = new Stack<char>();
             var start = i;
             for (; i < s.Length; i++) {
                 var ch = s[i];
 
-                if (ch == '(') {
-                    skip = true;
+                if (ch == '[') {
+                    braceCounter.Push(ch);
                     continue;
                 }
 
-                if (ch == ')') {
-                    skip = false;
+                if (ch == ']') {
+                    if (braceCounter.Count > 0) {
+                        braceCounter.Pop();
+                    }
                 }
 
-                if (!skip && ch == '.') {
-                    i++;
+                if (braceCounter.Count == 0 && ch == '.') {
                     break;
                 }
             }

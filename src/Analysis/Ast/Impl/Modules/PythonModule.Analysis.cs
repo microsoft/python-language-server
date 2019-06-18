@@ -111,7 +111,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             if (analysis.Document.ModuleType != ModuleType.Stub) {
                 var dbs = Services.GetService<IModuleDatabaseService>();
-                dbs?.StoreModuleAnalysis(analysis);
+                dbs?.StoreModuleAnalysisAsync(analysis).DoNotWait();
             }
 
             return analysis;

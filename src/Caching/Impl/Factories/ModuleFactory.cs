@@ -65,7 +65,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
             try {
                 // See if member is a module first.
-                var moduleName = TypeNames.GetNameWithoutVersion(nameParts[0]);
+                var moduleName = nameParts[0];
                 var module = moduleName == Module.Name ? Module : Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
                 if (module == null) {
                     return null;

@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -61,7 +62,7 @@ def func():
 c = C()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis);
+            var model = ModuleModel.FromAnalysis(analysis, FileSystem);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -93,7 +94,7 @@ class B:
 c = B().methodB1()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis);
+            var model = ModuleModel.FromAnalysis(analysis, FileSystem);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -102,7 +103,7 @@ c = B().methodB1()
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
-            var model = ModuleModel.FromAnalysis(builtins.Analysis);
+            var model = ModuleModel.FromAnalysis(builtins.Analysis, FileSystem);
             
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
@@ -116,7 +117,7 @@ c = B().methodB1()
         public async Task Sys() {
             var analysis = await GetAnalysisAsync("import sys");
             var sys = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("sys");
-            var model = ModuleModel.FromAnalysis(sys.Analysis);
+            var model = ModuleModel.FromAnalysis(sys.Analysis, FileSystem);
 
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
@@ -139,7 +140,7 @@ x = requests.get('microsoft.com')
                 Assert.Inconclusive("'requests' package is not installed.");
             }
 
-            var model = ModuleModel.FromAnalysis(analysis);
+            var model = ModuleModel.FromAnalysis(analysis, FileSystem);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -158,7 +159,7 @@ x = requests.get('microsoft.com')
             }
 
             var rq = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("requests");
-            var model = ModuleModel.FromAnalysis(rq.Analysis);
+            var model = ModuleModel.FromAnalysis(rq.Analysis, FileSystem);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
 
@@ -173,18 +174,20 @@ x = requests.get('microsoft.com')
         [DataRow("i:str", "builtins", "builtins", "str", true)]
         [DataRow("i:...", "builtins", "builtins", "ellipsis", true)]
         [DataRow("ellipsis", "builtins", "builtins", "ellipsis", false)]
-        [DataRow("i:builtins(3.7).str", "builtins(3.7)", "builtins", "str", true)]
-        [DataRow("mod(2.2.1).z", "mod(2.2.1)", "mod", "z", false)]
-        [DataRow("i:mod(2.2.1).z", "mod(2.2.1)", "mod", "z", true)]
+        [DataRow("i:builtins.str", "builtins", "builtins", "str", true)]
         [DataRow("i:mod.x", "mod", "mod", "x", true)]
-        [DataRow("types(3.7)", "types(3.7)", "types", null, false)]
         [DataRow("typing.Union[str, tuple]", "typing", "typing", "Union[str, tuple]", false)]
         [DataRow("typing.Union[typing.Any, mod.y]", "typing", "typing", "Union[typing.Any, mod.y]", false)]
+        [DataRow("typing.Union[typing.Union[str, int], mod.y]", "typing", "typing", "Union[typing.Union[str, int], mod.y]", false)]
         public void QualifiedNames(string rawQualifiedName, string qualifiedName, string moduleName, string typeName, bool isInstance) {
             TypeNames.DeconstructQualifiedName(rawQualifiedName, out var actualQualifiedName, out var nameParts, out var actualIsInstance);
             qualifiedName.Should().Be(qualifiedName);
-            nameParts[0].Should().Be(moduleName);
-            nameParts[1].Should().Be(typeName);
+            if (string.IsNullOrEmpty(qualifiedName)) {
+                nameParts.Should().BeNull();
+            } else {
+                nameParts[0].Should().Be(moduleName);
+                nameParts[1].Should().Be(typeName);
+            }
             actualIsInstance.Should().Be(isInstance);
         }
     }

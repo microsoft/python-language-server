@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual string QualifiedName
             => DeclaringModule.ModuleType == ModuleType.Builtins
                        ? TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : Name
-                       : $"{DeclaringModule.QualifiedName}.{Name}";
+                       : $"{DeclaringModule.Name}.{Name}";
 
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;

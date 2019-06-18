@@ -21,12 +21,12 @@ using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.IO;
 
-namespace Microsoft.Python.Analysis.Modules {
-    internal static class ModuleQualifiedName {
-        public static string CalculateQualifiedName(this IPythonModule module, IFileSystem fs)
-            => CalculateQualifiedName(module.Name, module.FilePath, module.Interpreter, fs);
+namespace Microsoft.Python.Analysis.Caching {
+    internal static class ModuleUniqueId {
+        public static string GetUniqieId(this IPythonModule module, IFileSystem fs)
+            => GetUniqieId(module.Name, module.FilePath, module.Interpreter, fs);
 
-        public static string CalculateQualifiedName(string moduleName, string filePath, IPythonInterpreter interpreter, IFileSystem fs) {
+        public static string GetUniqieId(string moduleName, string filePath, IPythonInterpreter interpreter, IFileSystem fs) {
             var config = interpreter.Configuration;
             var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(config);
 
@@ -58,12 +58,6 @@ namespace Microsoft.Python.Analysis.Modules {
             // If all else fails, hash module data.
             return $"{moduleName}.{HashModuleContent(Path.GetDirectoryName(filePath), fs)}";
         }
-
-        public static string GetModuleName(string moduleQualifiedName) {
-            var index = moduleQualifiedName.IndexOf('(');
-            return index >= 0 ? moduleQualifiedName.Substring(0, index) : moduleQualifiedName;
-        }
-
 
         private static string HashModuleContent(string moduleFolder, IFileSystem fs) {
             // Hash file sizes 

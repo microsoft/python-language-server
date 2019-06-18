@@ -17,6 +17,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Microsoft.Python.Analysis.Tests;
+using Microsoft.Python.Core.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using TestUtilities;
@@ -42,5 +43,6 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             }
         }
 
+        protected IFileSystem FileSystem => Services.GetService<IFileSystem>();
     }
 }

@@ -21,7 +21,7 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class PythonDbModule : SpecializedModule {
         public PythonDbModule(ModuleModel model, string filePath, IServiceContainer services)
-            : base(ModuleQualifiedName.GetModuleName(model.Name), string.Empty, services) {
+            : base(model.Name, string.Empty, services) {
             FilePath = filePath;
             GlobalScope = new GlobalScope(model, this, services);
             Documentation = model.Documentation;

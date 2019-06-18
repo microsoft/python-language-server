@@ -115,16 +115,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IPythonType
         public string Name { get; }
-
-        public virtual string QualifiedName {
-            get {
-                if (string.IsNullOrEmpty(FilePath) || ModuleType == ModuleType.User) {
-                    return Name;
-                }
-                return string.IsNullOrEmpty(_qualifiedName) 
-                    ? _qualifiedName = this.CalculateQualifiedName(FileSystem) : _qualifiedName;
-            }
-        }
+        public string QualifiedName => Name;
 
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;

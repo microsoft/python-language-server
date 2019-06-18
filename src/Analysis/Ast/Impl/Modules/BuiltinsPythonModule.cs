@@ -36,8 +36,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
             : base(moduleName, ModuleType.Builtins, filePath, null, services) { } // TODO: builtins stub
 
-        public override string QualifiedName => $"{Name}({Interpreter.Configuration.Version})";
-
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 
         public IMember GetAnyMember(string name) => base.GetMember(name);

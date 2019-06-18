@@ -13,25 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal interface IModuleDatabaseService {
         /// <summary>
-        /// Retrieves module representation from module index database
-        /// or null if module does not exist. 
+        /// Creates module representation from module persistent state.
         /// </summary>
         /// <param name="moduleName">Module name. If the name is not qualified
         /// the module will ge resolved against active Python version.</param>
         /// <param name="filePath">Module file path.</param>
         /// <param name="module">Python module.</param>
         /// <returns>Module storage state</returns>
-        ModuleStorageState TryGetModuleData(string moduleName, string filePath, out IPythonModule module);
+        ModuleStorageState TryCreateModule(string moduleName, string filePath, out IPythonModule module);
 
         /// <summary>
         /// Writes module data to the database.
         /// </summary>
-        /// <param name="analysis">Module analysis.</param>
-        void StoreModuleAnalysis(IDocumentAnalysis analysis);
+        Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default);
     }
 }

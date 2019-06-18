@@ -17,16 +17,18 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class ModuleModel : MemberModel {
+        public string UniqueId { get; set; }
         public string Documentation { get; set; }
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
         // TODO: TypeVars, ...
 
-        public static ModuleModel FromAnalysis(IDocumentAnalysis analysis) {
+        public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IFileSystem fs) {
             var variables = new Dictionary<string, VariableModel>();
             var functions = new Dictionary<string, FunctionModel>();
             var classes = new Dictionary<string, ClassModel>();
@@ -60,9 +62,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
+            var uniqueId = analysis.Document.GetUniqieId(fs);
             return new ModuleModel {
-                Id = analysis.Document.QualifiedName.GetHashCode(),
-                Name = analysis.Document.QualifiedName,
+                Id = uniqueId.GetHashCode(),
+                UniqueId = uniqueId,
+                Name = analysis.Document.Name,
                 Documentation = analysis.Document.Documentation,
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),
