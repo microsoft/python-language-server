@@ -143,72 +143,72 @@
       "Name": "packages"
     },
     {
-      "Value": null,
+      "Value": "requests.models.Request",
       "Id": -104689032,
       "Name": "Request"
     },
     {
-      "Value": null,
+      "Value": "requests.models.Response",
       "Id": 1102541176,
       "Name": "Response"
     },
     {
-      "Value": null,
+      "Value": "requests.models.PreparedRequest",
       "Id": 1337118331,
       "Name": "PreparedRequest"
     },
     {
-      "Value": null,
+      "Value": "request",
       "Id": -1769342312,
       "Name": "request"
     },
     {
-      "Value": null,
+      "Value": "get",
       "Id": 787423,
       "Name": "get"
     },
     {
-      "Value": null,
+      "Value": "head",
       "Id": 24439415,
       "Name": "head"
     },
     {
-      "Value": null,
+      "Value": "post",
       "Id": 24687927,
       "Name": "post"
     },
     {
-      "Value": null,
+      "Value": "patch",
       "Id": 764909201,
       "Name": "patch"
     },
     {
-      "Value": null,
+      "Value": "put",
       "Id": 796568,
       "Name": "put"
     },
     {
-      "Value": null,
+      "Value": "delete",
       "Id": 1897257090,
       "Name": "delete"
     },
     {
-      "Value": null,
+      "Value": "options",
       "Id": 180457127,
       "Name": "options"
     },
     {
-      "Value": null,
+      "Value": "session",
       "Id": -880047457,
       "Name": "session"
     },
     {
-      "Value": null,
+      "Value": "requests.sessions.Session",
       "Id": 784605823,
       "Name": "Session"
     },
     {
-      "Value": null,
+      "Value": "i:requests.structures.LookupDict",
       "Id": 753305199,
       "Name": "codes"
     },

@@ -94,10 +94,9 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             var member = module?.GetMember(nameParts[index++]);
             for (; index < nameParts.Count; index++) {
                 var memberName = nameParts[index];
-                var typeArgs = GetTypeArguments(memberName, out var typeName);
+                var typeArgs = GetTypeArguments(memberName, out _);
 
                 var mc = member as IMemberContainer;
-
                 Debug.Assert(mc != null);
                 member = mc?.GetMember(memberName);
 
