@@ -13,15 +13,6 @@ There are a few known issues in the current version of the language server:
     - Some modules may have an incorrect list of exported names.
     See [#620](https://github.com/Microsoft/python-language-server/issues/620),
     [#619](https://github.com/Microsoft/python-language-server/issues/619).
-- Inspection of some builds of some compiled libraries (some modules of numpy or pandas) may fail.
-    - This will prevent the analysis from being completely accurate, but will not otherwise impact the
-    language server, as the error occurs in another process. A popup may appear in Windows or macOS
-    when the crash is detected by the operating system.
-    See [#740](https://github.com/Microsoft/python-language-server/issues/740).
-- Analyzing large Conda environments leads to spikes in CPU usage.
-    - In some cases, CPU usage is as high as 100%. See [#875](https://github.com/Microsoft/python-language-server/issues/875).
-- Persistent issues with high memory consumption for users. 
-    - In some contexts, users are experiencing higher than average amounts of memory being consumed. See [#832](https://github.com/Microsoft/python-language-server/issues/832).
 
 
 ## Requirements
@@ -41,6 +32,47 @@ but may require outside libraries such as OpenSSL 1.0 or `libicu` on Linux.
 
 
 ## Common questions and issues
+
+### Unresolved import warnings
+
+If you're getting a warning about an unresolved import, first ensure that the
+package is installed into your environment if it is a library (`pip`, `pipenv`, etc).
+If the warning is about importing _your own_ code (and not a library), continue reading.
+
+The language server treats the workspace root (i.e. folder you have opened) as
+the main root of user module imports. This means that if your imports are not relative
+to this path, the language server will not be able to find them. This is common
+for users who have a `src` directory which contains their code, a directory for
+an installable package, etc.
+
+These extra roots must be specified to the language server. The easiest way to
+do this (with the VS Code Python extension) is to create a workspace configuration
+which sets `python.autoComplete.extraPaths`. For example, if a project uses a
+`src` directory, then create a file `.vscode/settings.json` in the workspace
+with the contents:
+
+
+```json
+{
+    "python.autoComplete.extraPaths": ["./src"]
+}
+```
+
+This list can be extended to other paths within the workspace (or even with
+code outside the workspace in more complicated setups). Relative paths will
+be taken as relative to the workspace root.
+
+This list may also be configured using the `PYTHONPATH` environment variable,
+either set directly, or via a `.env` file in the workspace root (if using the
+Python extension):
+
+```
+PYTHONPATH=./src
+```
+
+For more examples, see issues:
+[#1085](https://github.com/microsoft/python-language-server/issues/1085#issuecomment-492919382),
+[#1169](https://github.com/microsoft/python-language-server/issues/1169#issuecomment-499998928)
 
 ### "Server initialization failed"
 

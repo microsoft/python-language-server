@@ -60,7 +60,6 @@ namespace Microsoft.Python.Analysis.Modules {
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
         private Task _parsingTask;
         private bool _updated;
-        private string _qualifiedName;
 
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
@@ -239,13 +238,5 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IEquatable
         public bool Equals(IPythonModule other) => Name.Equals(other?.Name) && FilePath.Equals(other?.FilePath);
         #endregion
-
-        private void RemoveReferencesInModule(IPythonModule module) {
-            if (module.GlobalScope?.Variables != null) {
-                foreach (var v in module.GlobalScope.Variables) {
-                    v.RemoveReferences(this);
-                }
-            }
-        }
     }
 }

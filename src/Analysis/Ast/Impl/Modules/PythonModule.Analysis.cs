@@ -116,5 +116,13 @@ namespace Microsoft.Python.Analysis.Modules {
 
             return analysis;
         }
+
+        private void RemoveReferencesInModule(IPythonModule module) {
+            if (module.GlobalScope?.Variables != null) {
+                foreach (var v in module.GlobalScope.Variables) {
+                    v.RemoveReferences(this);
+                }
+            }
+        }
     }
 }

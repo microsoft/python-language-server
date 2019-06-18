@@ -71,16 +71,16 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             Debug.Assert(_searchPaths != null, "Should have search paths");
             _searchPaths = _searchPaths ?? Array.Empty<string>();
 
-            _log?.Log(TraceEventType.Information, "Python search paths:");
+            _log?.Log(TraceEventType.Verbose, "Python search paths:");
             foreach (var s in _searchPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
+                _log?.Log(TraceEventType.Verbose, $"    {s}");
             }
 
             var configurationSearchPaths = Configuration.SearchPaths ?? Array.Empty<string>();
 
-            _log?.Log(TraceEventType.Information, "Configuration search paths:");
+            _log?.Log(TraceEventType.Verbose, "Configuration search paths:");
             foreach (var s in configurationSearchPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
+                _log?.Log(TraceEventType.Verbose, $"    {s}");
             }
             return _searchPaths;
         }
@@ -218,12 +218,23 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             InterpreterPaths = await GetSearchPathsAsync(cancellationToken);
 
-            var userSearchPaths = _interpreter.Configuration.SearchPaths.Except(InterpreterPaths, StringExtensions.PathsStringComparer);
+            IEnumerable<string> userSearchPaths = Configuration.SearchPaths;
+            InterpreterPaths = InterpreterPaths.Except(userSearchPaths, StringExtensions.PathsStringComparer).Where(p => !p.PathEquals(Root));
 
             if (Root != null) {
                 var underRoot = userSearchPaths.ToLookup(p => _fs.IsPathUnderRoot(Root, p));
                 userSearchPaths = underRoot[true];
                 InterpreterPaths = underRoot[false].Concat(InterpreterPaths);
+            }
+
+            _log?.Log(TraceEventType.Information, "Interpreter search paths:");
+            foreach (var s in InterpreterPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+
+            _log?.Log(TraceEventType.Information, "User search paths:");
+            foreach (var s in userSearchPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
             }
 
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));

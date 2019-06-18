@@ -295,6 +295,10 @@ namespace Microsoft.Python.Core {
         }
 
         public static string NormalizeLineEndings(this string s, string lineEnding = null) {
+            if (s == null) {
+                return null;
+            }
+
             lineEnding = lineEnding ?? Environment.NewLine;
             return string.Join(lineEnding, s.SplitLines());
         }

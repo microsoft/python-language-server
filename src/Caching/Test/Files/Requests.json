@@ -1,4 +1,5 @@
 {
+  "UniqueId": "requests(3.7)",
   "Documentation": "Requests HTTP Library\r\n~~~~~~~~~~~~~~~~~~~~~\r\n\r\nRequests is an HTTP library, written in Python, for human beings. Basic GET\r\nusage:\r\n\r\n   >>> import requests\r\n   >>> r = requests.get('https://www.python.org')\r\n   >>> r.status_code\r\n   200\r\n   >>> 'Python is a programming language' in r.content\r\n   True\r\n\r\n... or POST:\r\n\r\n   >>> payload = dict(key1='value1', key2='value2')\r\n   >>> r = requests.post('https://httpbin.org/post', data=payload)\r\n   >>> print(r.text)\r\n   {\r\n     ...\r\n     \"form\": {\r\n       \"key2\": \"value2\",\r\n       \"key1\": \"value1\"\r\n     },\r\n     ...\r\n   }\r\n\r\nThe other HTTP methods are supported - see `requests.api`. Full documentation\r\nis at <http://python-requests.org>.\r\n\r\n:copyright: (c) 2017 by Kenneth Reitz.\r\n:license: Apache 2.0, see LICENSE for more details.\r\n",
   "Functions": [
     {
@@ -25,6 +26,7 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": 435179778,
       "Name": "check_compatibility"
     },
     {
@@ -45,183 +47,228 @@
       "Attributes": 0,
       "Classes": null,
       "Functions": null,
+      "Id": -399540245,
       "Name": "_check_cryptography"
     }
   ],
   "Variables": [
     {
-      "Value": "PythonVariableModule.urllib3",
+      "Value": "urllib3",
+      "Id": 1260465222,
       "Name": "urllib3"
     },
     {
-      "Value": "PythonVariableModule.chardet",
+      "Value": "chardet",
+      "Id": -2125975290,
       "Name": "chardet"
     },
     {
-      "Value": "PythonVariableModule.warnings",
+      "Value": "warnings",
+      "Id": 1876311406,
       "Name": "warnings"
     },
     {
-      "Value": "requests.exceptions.RequestsDependencyWarning",
+      "Value": null,
+      "Id": -802098666,
       "Name": "RequestsDependencyWarning"
     },
     {
-      "Value": "PythonVariableModule.urllib3.contrib.pyopenssl",
+      "Value": "urllib3.contrib.pyopenssl",
+      "Id": -1632802014,
       "Name": "pyopenssl"
     },
     {
-      "Value": "urllib3.exceptions.DependencyWarning",
+      "Value": null,
+      "Id": -891041158,
       "Name": "DependencyWarning"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": 916650529,
       "Name": "__title__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": -1883656187,
       "Name": "__description__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": -1620207176,
       "Name": "__url__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": 1161199201,
       "Name": "__version__"
     },
     {
-      "Value": "i:int",
+      "Value": null,
+      "Id": -1840123721,
       "Name": "__build__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": 1654469090,
       "Name": "__author__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": -94198849,
       "Name": "__author_email__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": -386551926,
       "Name": "__license__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": 1739624272,
       "Name": "__copyright__"
     },
     {
-      "Value": "i:str",
+      "Value": null,
+      "Id": 782136591,
       "Name": "__cake__"
     },
     {
-      "Value": "PythonVariableModule.requests.utils",
+      "Value": "requests.utils",
+      "Id": 770082554,
       "Name": "utils"
     },
     {
-      "Value": "PythonVariableModule.requests.packages",
+      "Value": "requests.packages",
+      "Id": 2129088004,
       "Name": "packages"
     },
     {
       "Value": null,
+      "Id": -104689032,
       "Name": "Request"
     },
     {
       "Value": null,
+      "Id": 1102541176,
       "Name": "Response"
     },
     {
       "Value": null,
+      "Id": 1337118331,
       "Name": "PreparedRequest"
     },
     {
-      "Value": "request",
+      "Value": null,
+      "Id": -1769342312,
       "Name": "request"
     },
     {
-      "Value": "get",
+      "Value": null,
+      "Id": 787423,
       "Name": "get"
     },
     {
-      "Value": "head",
+      "Value": null,
+      "Id": 24439415,
       "Name": "head"
     },
     {
-      "Value": "post",
+      "Value": null,
+      "Id": 24687927,
       "Name": "post"
     },
     {
-      "Value": "patch",
+      "Value": null,
+      "Id": 764909201,
       "Name": "patch"
     },
     {
-      "Value": "put",
+      "Value": null,
+      "Id": 796568,
       "Name": "put"
     },
     {
-      "Value": "delete",
+      "Value": null,
+      "Id": 1897257090,
       "Name": "delete"
     },
     {
-      "Value": "options",
+      "Value": null,
+      "Id": 180457127,
       "Name": "options"
     },
     {
       "Value": null,
+      "Id": -880047457,
       "Name": "session"
     },
     {
       "Value": null,
+      "Id": 784605823,
       "Name": "Session"
     },
     {
       "Value": null,
+      "Id": 753305199,
       "Name": "codes"
     },
     {
-      "Value": "requests.exceptions.RequestException",
+      "Value": null,
+      "Id": 355509431,
       "Name": "RequestException"
     },
     {
-      "Value": "requests.exceptions.Timeout",
+      "Value": null,
+      "Id": 1780673866,
       "Name": "Timeout"
     },
     {
-      "Value": "requests.exceptions.URLRequired",
+      "Value": null,
+      "Id": 1361573271,
       "Name": "URLRequired"
     },
     {
-      "Value": "requests.exceptions.TooManyRedirects",
+      "Value": null,
+      "Id": 511002043,
       "Name": "TooManyRedirects"
     },
     {
-      "Value": "requests.exceptions.HTTPError",
+      "Value": null,
+      "Id": -1546903511,
       "Name": "HTTPError"
     },
     {
-      "Value": "requests.exceptions.ConnectionError",
+      "Value": null,
+      "Id": 853386419,
       "Name": "ConnectionError"
     },
     {
-      "Value": "requests.exceptions.FileModeWarning",
+      "Value": null,
+      "Id": 1675678790,
       "Name": "FileModeWarning"
     },
     {
-      "Value": "requests.exceptions.ConnectTimeout",
+      "Value": null,
+      "Id": -1047738098,
       "Name": "ConnectTimeout"
     },
     {
-      "Value": "requests.exceptions.ReadTimeout",
+      "Value": null,
+      "Id": -1711523244,
       "Name": "ReadTimeout"
     },
     {
-      "Value": "PythonVariableModule.logging",
+      "Value": "logging",
+      "Id": 1772213096,
       "Name": "logging"
     },
     {
       "Value": null,
+      "Id": -1600735444,
       "Name": "NullHandler"
     }
   ],
   "Classes": [],
+  "Id": -790460774,
   "Name": "requests"
 }
