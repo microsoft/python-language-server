@@ -19,7 +19,6 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>

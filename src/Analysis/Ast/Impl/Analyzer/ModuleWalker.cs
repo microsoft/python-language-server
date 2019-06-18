@@ -245,7 +245,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (!IsStubBetterType(sourceType, stubType)) {
                     continue;;
                 }
-                if (sourceType == null || !sourceType.DeclaringModule.Equals(_stubAnalysis.Document)) {
+                if (sourceType == null || !sourceType.DeclaringModule.Equals(_stubAnalysis.Document.PrimaryModule)) {
                     // Only handle members declared in this module.
                     continue;
                 }
@@ -262,6 +262,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                         var memberType = member?.GetPythonType();
                         var stubMemberType = stubMember.GetPythonType();
+
+                        if (!Module.Equals(memberType?.DeclaringModule) || !_stubAnalysis.Document.Equals(stubMemberType.DeclaringModule)) {
+                            continue; // Leave items that come from another module alone.
+                        }
                         if (!IsStubBetterType(memberType, stubMemberType)) {
                             continue;
                         }
@@ -275,7 +279,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Re-declare variable with the data from the stub unless member is a module.
                     // Modules members that are modules should remain as they are, i.e. os.path
                     // should remain library with its own stub attached.
-                    if (!(stubType is IPythonModule)) {
+                    if (!(stubType is IPythonModule) && stubType.DeclaringModule.Equals(_stubAnalysis.Document)) {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;

@@ -38,8 +38,6 @@ namespace Microsoft.Python.Analysis {
 
                 var srcModule = src.Location.Module;
                 var dstModule = dst.Location.Module;
-                Debug.Assert(srcModule.Equals(dstModule) ||
-                             (dstModule.ModuleType == Modules.ModuleType.Stub && dstModule.PrimaryModule.Equals(srcModule)));
                 dst.Location = src.Location;
             }
         }

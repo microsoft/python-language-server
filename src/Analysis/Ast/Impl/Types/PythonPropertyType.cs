@@ -18,7 +18,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    class PythonPropertyType : PythonType, IPythonPropertyType {
+    internal sealed class PythonPropertyType : PythonType, IPythonPropertyType {
         private IPythonFunctionOverload _getter;
 
         public PythonPropertyType(FunctionDefinition fd, Location location, IPythonType declaringType, bool isAbstract)
