@@ -32,7 +32,6 @@ namespace Microsoft.Python.Analysis.Caching {
         public StubCache(IServiceContainer services) {
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
-            _cfs = services.GetService<ICacheFolderService>();
 
             _cfs = services.GetService<ICacheFolderService>();
             StubCacheFolder = Path.Combine(_cfs.CacheFolder, $"stubs.v{_stubCacheFormatVersion}");

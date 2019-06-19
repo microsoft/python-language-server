@@ -144,7 +144,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             };
 
             if (@params.initializationOptions.enableAnalysCache != false) {
-                //_services.AddService(new ModuleDatabase(_services));
+                _services.AddService(new ModuleDatabase(_services));
             }
 
             _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken);

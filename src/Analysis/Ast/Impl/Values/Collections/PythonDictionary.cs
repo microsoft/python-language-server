@@ -26,14 +26,14 @@ namespace Microsoft.Python.Analysis.Values.Collections {
     /// </summary>
     internal class PythonDictionary : PythonCollection, IPythonDictionary {
         private readonly Dictionary<IMember, IMember> _contents = new Dictionary<IMember, IMember>(new KeyComparer());
-        private readonly IPythonModule _declaringModule;
+        private readonly IPythonInterpreter _interpreter;
 
         public PythonDictionary(PythonDictionaryType dictType, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
             base(dictType, contents.Keys.ToArray(), exact: exact) {
             foreach (var kvp in contents) {
                 _contents[kvp.Key] = kvp.Value;
             }
-            _declaringModule = dictType.DeclaringModule;
+            _interpreter = dictType.DeclaringModule.Interpreter;
         }
 
         public PythonDictionary(IPythonModule declaringModule, IMember contents, bool exact = false) :
@@ -44,12 +44,12 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 }
                 Contents = _contents.Keys.ToArray();
             }
-            _declaringModule = declaringModule;
+            _interpreter = declaringModule.Interpreter;
         }
 
         public PythonDictionary(IPythonModule declaringModule, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
             this(new PythonDictionaryType(declaringModule), contents, exact: exact) {
-            _declaringModule = declaringModule;
+            _interpreter = declaringModule.Interpreter;
         }
 
         public IEnumerable<IMember> Keys => _contents.Keys.ToArray();
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             // Specializations
             switch (memberName) {
                 case @"get":
-                    return args.Arguments.Count > 1 ? Index(args.Arguments[1].Value) : _declaringModule.Interpreter.UnknownType;
+                    return args.Arguments.Count > 1 ? Index(args.Arguments[1].Value) : _interpreter.UnknownType;
                 case @"items":
                     return CreateList(Items);
                 case @"keys":
@@ -84,9 +84,9 @@ namespace Microsoft.Python.Analysis.Values.Collections {
                 case @"iteritems":
                     return CreateList(Items).GetIterator();
                 case @"pop":
-                    return Values.FirstOrDefault() ?? _declaringModule.Interpreter.UnknownType;
+                    return Values.FirstOrDefault() ?? _interpreter.UnknownType;
                 case @"popitem":
-                    return Items.Count > 0 ? Items[0] as IMember : _declaringModule.Interpreter.UnknownType;
+                    return Items.Count > 0 ? Items[0] as IMember : _interpreter.UnknownType;
             }
             return base.Call(memberName, args);
         }
