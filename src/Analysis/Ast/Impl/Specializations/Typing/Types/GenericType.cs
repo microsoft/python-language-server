@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         #region IPythonType
         public string Name { get; }
-        public string QualifiedName => $"{DeclaringModule.Name}:{Name}";
+        public string QualifiedName => this.GetQualifiedName();
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
         public BuiltinTypeId TypeId { get; } = BuiltinTypeId.Unknown;
