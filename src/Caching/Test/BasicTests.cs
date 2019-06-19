@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -104,10 +105,10 @@ c = B().methodB1()
             var analysis = await GetAnalysisAsync(string.Empty);
             var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
             var model = ModuleModel.FromAnalysis(builtins.Analysis, Services);
-            
+
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
-            
+
             var dbModule = new PythonDbModule(model, null, Services);
             dbModule.Should().HaveSameMembersAs(builtins);
         }
@@ -128,24 +129,6 @@ c = B().methodB1()
         }
 
         [TestMethod, Priority(0)]
-        public async Task VersionedModule() {
-            const string code = @"
-import requests
-x = requests.get('microsoft.com')
-";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var v = analysis.GlobalScope.Variables["requests"];
-            v.Should().NotBeNull();
-            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
-                Assert.Inconclusive("'requests' package is not installed.");
-            }
-
-            var model = ModuleModel.FromAnalysis(analysis, Services);
-            var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
-        }
-
-        [TestMethod, Priority(0)]
         public async Task Requests() {
             const string code = @"
 import requests
@@ -160,6 +143,13 @@ x = requests.get('microsoft.com')
 
             var rq = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("requests");
             var model = ModuleModel.FromAnalysis(rq.Analysis, Services);
+
+            var u = model.UniqueId;
+            u.Should().Contain("(").And.EndWith(")");
+            var open = u.IndexOf('(');
+            // Verify this looks like a version.
+            new Version(u.Substring(open + 1, u.IndexOf(')') - open - 1));
+
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
 
@@ -169,24 +159,23 @@ x = requests.get('microsoft.com')
         }
 
         [DataTestMethod, Priority(0)]
-        [DataRow("", null, null, null, false)]
-        [DataRow("str", "builtins", "builtins", "str", false)]
-        [DataRow("i:str", "builtins", "builtins", "str", true)]
-        [DataRow("i:...", "builtins", "builtins", "ellipsis", true)]
-        [DataRow("ellipsis", "builtins", "builtins", "ellipsis", false)]
-        [DataRow("i:builtins.str", "builtins", "builtins", "str", true)]
-        [DataRow("i:mod.x", "mod", "mod", "x", true)]
-        [DataRow("typing.Union[str, tuple]", "typing", "typing", "Union[str, tuple]", false)]
-        [DataRow("typing.Union[typing.Any, mod.y]", "typing", "typing", "Union[typing.Any, mod.y]", false)]
-        [DataRow("typing.Union[typing.Union[str, int], mod.y]", "typing", "typing", "Union[typing.Union[str, int], mod.y]", false)]
-        public void QualifiedNames(string rawQualifiedName, string qualifiedName, string moduleName, string typeName, bool isInstance) {
-            TypeNames.DeconstructQualifiedName(rawQualifiedName, out var actualQualifiedName, out var nameParts, out var actualIsInstance);
-            qualifiedName.Should().Be(qualifiedName);
+        [DataRow("", null, null, false)]
+        [DataRow("str", "builtins", "str", false)]
+        [DataRow("i:str", "builtins", "str", true)]
+        [DataRow("i:...", "builtins", "ellipsis", true)]
+        [DataRow("ellipsis", "builtins", "ellipsis", false)]
+        [DataRow("i:builtins:str", "builtins", "str", true)]
+        [DataRow("i:mod:x", "mod", "x", true)]
+        [DataRow("typing:Union[str, tuple]", "typing", "Union[str, tuple]", false)]
+        [DataRow("typing:Union[typing:Any, mod:y]", "typing", "Union[typing:Any, mod:y]", false)]
+        [DataRow("typing:Union[typing:Union[str, int], mod:y]", "typing", "Union[typing:Union[str, int], mod:y]", false)]
+        public void QualifiedNames(string qualifiedName, string moduleName, string typeName, bool isInstance) {
+            TypeNames.DeconstructQualifiedName(qualifiedName, out var actualModuleName, out var actualMemberNames, out var actualIsInstance);
+            actualModuleName.Should().Be(moduleName);
             if (string.IsNullOrEmpty(qualifiedName)) {
-                nameParts.Should().BeNull();
+                actualMemberNames.Should().BeNull();
             } else {
-                nameParts[0].Should().Be(moduleName);
-                nameParts[1].Should().Be(typeName);
+                actualMemberNames[0].Should().Be(typeName);
             }
             actualIsInstance.Should().Be(isInstance);
         }

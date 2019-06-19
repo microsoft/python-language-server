@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         public TypingType(IPythonModule declaringModule, IPythonType type): base(declaringModule) {
             _type = type ?? throw new ArgumentNullException(nameof(type));
             Name = $"Type[{_type.Name}]";
-            QualifiedName = $"{DeclaringModule.QualifiedName}.Type[{_type.QualifiedName}]";
+            QualifiedName = $"{DeclaringModule.Name}:Type[{_type.QualifiedName}]";
         }
 
         public override PythonMemberType MemberType => PythonMemberType.Class;

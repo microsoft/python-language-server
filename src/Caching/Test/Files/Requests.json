@@ -1,5 +1,5 @@
 {
-  "UniqueId": "requests(3.7)",
+  "UniqueId": "requests(2.21.0)",
   "Documentation": "Requests HTTP Library\r\n~~~~~~~~~~~~~~~~~~~~~\r\n\r\nRequests is an HTTP library, written in Python, for human beings. Basic GET\r\nusage:\r\n\r\n   >>> import requests\r\n   >>> r = requests.get('https://www.python.org')\r\n   >>> r.status_code\r\n   200\r\n   >>> 'Python is a programming language' in r.content\r\n   True\r\n\r\n... or POST:\r\n\r\n   >>> payload = dict(key1='value1', key2='value2')\r\n   >>> r = requests.post('https://httpbin.org/post', data=payload)\r\n   >>> print(r.text)\r\n   {\r\n     ...\r\n     \"form\": {\r\n       \"key2\": \"value2\",\r\n       \"key1\": \"value1\"\r\n     },\r\n     ...\r\n   }\r\n\r\nThe other HTTP methods are supported - see `requests.api`. Full documentation\r\nis at <http://python-requests.org>.\r\n\r\n:copyright: (c) 2017 by Kenneth Reitz.\r\n:license: Apache 2.0, see LICENSE for more details.\r\n",
   "Functions": [
     {
@@ -68,7 +68,7 @@
       "Name": "warnings"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:RequestsDependencyWarning",
       "Id": -802098666,
       "Name": "RequestsDependencyWarning"
     },
@@ -78,12 +78,12 @@
       "Name": "pyopenssl"
     },
     {
-      "Value": null,
+      "Value": "urllib3.exceptions:DependencyWarning",
       "Id": -891041158,
       "Name": "DependencyWarning"
     },
     {
-      "Value": null,
+      "Value": "i:typing:Any",
       "Id": 916650529,
       "Name": "__title__"
     },
@@ -98,12 +98,12 @@
       "Name": "__url__"
     },
     {
-      "Value": null,
+      "Value": "i:typing:Any",
       "Id": 1161199201,
       "Name": "__version__"
     },
     {
-      "Value": null,
+      "Value": "i:typing:Any",
       "Id": -1840123721,
       "Name": "__build__"
     },
@@ -118,12 +118,12 @@
       "Name": "__author_email__"
     },
     {
-      "Value": null,
+      "Value": "i:typing:Any",
       "Id": -386551926,
       "Name": "__license__"
     },
     {
-      "Value": null,
+      "Value": "i:typing:Any",
       "Id": 1739624272,
       "Name": "__copyright__"
     },
@@ -143,117 +143,117 @@
       "Name": "packages"
     },
     {
-      "Value": "requests.models.Request",
+      "Value": "requests.models:Request",
       "Id": -104689032,
       "Name": "Request"
     },
     {
-      "Value": "requests.models.Response",
+      "Value": "requests.models:Response",
       "Id": 1102541176,
       "Name": "Response"
     },
     {
-      "Value": "requests.models.PreparedRequest",
+      "Value": "requests.models:PreparedRequest",
       "Id": 1337118331,
       "Name": "PreparedRequest"
     },
     {
-      "Value": "request",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:request",
       "Id": -1769342312,
       "Name": "request"
     },
     {
-      "Value": "get",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:get",
       "Id": 787423,
       "Name": "get"
     },
     {
-      "Value": "head",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:head",
       "Id": 24439415,
       "Name": "head"
     },
     {
-      "Value": "post",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:post",
       "Id": 24687927,
       "Name": "post"
     },
     {
-      "Value": "patch",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:patch",
       "Id": 764909201,
       "Name": "patch"
     },
     {
-      "Value": "put",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:put",
       "Id": 796568,
       "Name": "put"
     },
     {
-      "Value": "delete",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:delete",
       "Id": 1897257090,
       "Name": "delete"
     },
     {
-      "Value": "options",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:options",
       "Id": 180457127,
       "Name": "options"
     },
     {
-      "Value": "session",
+      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:session",
       "Id": -880047457,
       "Name": "session"
     },
     {
-      "Value": "requests.sessions.Session",
+      "Value": "requests.sessions:Session",
       "Id": 784605823,
       "Name": "Session"
     },
     {
-      "Value": "i:requests.structures.LookupDict",
+      "Value": "i:typing:Any",
       "Id": 753305199,
       "Name": "codes"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:RequestException",
       "Id": 355509431,
       "Name": "RequestException"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:Timeout",
       "Id": 1780673866,
       "Name": "Timeout"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:URLRequired",
       "Id": 1361573271,
       "Name": "URLRequired"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:TooManyRedirects",
       "Id": 511002043,
       "Name": "TooManyRedirects"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:HTTPError",
       "Id": -1546903511,
       "Name": "HTTPError"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:ConnectionError",
       "Id": 853386419,
       "Name": "ConnectionError"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:FileModeWarning",
       "Id": 1675678790,
       "Name": "FileModeWarning"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:ConnectTimeout",
       "Id": -1047738098,
       "Name": "ConnectTimeout"
     },
     {
-      "Value": null,
+      "Value": "requests.exceptions:ReadTimeout",
       "Id": -1711523244,
       "Name": "ReadTimeout"
     },
@@ -263,12 +263,17 @@
       "Name": "logging"
     },
     {
-      "Value": null,
+      "Value": "logging:NullHandler",
       "Id": -1600735444,
       "Name": "NullHandler"
+    },
+    {
+      "Value": "typing:Any",
+      "Id": 751189,
+      "Name": "Any"
     }
   ],
   "Classes": [],
-  "Id": -790460774,
+  "Id": -203071489,
   "Name": "requests"
 }

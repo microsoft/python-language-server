@@ -41,35 +41,40 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Splits qualified type name in form of i:A(3.6).B.C into parts. as well as determines if
         /// qualified name designates instance (prefixed with 'i:').
         /// </summary>
-        /// <param name="rawQualifiedName">Raw qualified name to split. May include instance prefix.</param>
-        /// <param name="typeQualifiedName">Qualified name without optional instance prefix, such as A.B.C</param>
-        /// <param name="nameParts">Name parts such as 'A', 'B', 'C' from A.B.C.</param>
+        /// <param name="qualifiedName">Qualified name to split. May include instance prefix.</param>
+        /// <param name="moduleName">Module name.</param>
+        /// <param name="memberNames">Module member names such as 'A', 'B', 'C' from module:A.B.C.</param>
         /// <param name="isInstance">If true, the qualified name describes instance of a type.</param>
-        public static bool DeconstructQualifiedName(string rawQualifiedName, out string typeQualifiedName, out IReadOnlyList<string> nameParts, out bool isInstance) {
-            typeQualifiedName = null;
-            nameParts = null;
+        public static bool DeconstructQualifiedName(string qualifiedName, out string moduleName, out IReadOnlyList<string> memberNames, out bool isInstance) {
+            moduleName = null;
+            memberNames = null;
             isInstance = false;
 
-            if (string.IsNullOrEmpty(rawQualifiedName)) {
+            if (string.IsNullOrEmpty(qualifiedName)) {
                 return false;
             }
 
-            isInstance = rawQualifiedName.StartsWith("i:");
-            typeQualifiedName = isInstance ? rawQualifiedName.Substring(2) : rawQualifiedName;
+            isInstance = qualifiedName.StartsWith("i:");
+            qualifiedName = isInstance ? qualifiedName.Substring(2) : qualifiedName;
 
-            if (typeQualifiedName == "..." || typeQualifiedName == "ellipsis") {
-                nameParts = new[] { @"builtins", "ellipsis" };
-                return true;
-            }
-            if (rawQualifiedName.IndexOf('.') < 0) {
-                nameParts = new[] { @"builtins", typeQualifiedName };
+            if (qualifiedName == "..." || qualifiedName == "ellipsis") {
+                moduleName = @"builtins";
+                memberNames = new[] { "ellipsis" };
                 return true;
             }
 
+            var moduleSeparatorIndex = qualifiedName.IndexOf(':');
+            if (moduleSeparatorIndex < 0) {
+                moduleName = @"builtins";
+                memberNames = new[] { qualifiedName };
+                return true;
+            }
+
+            moduleName = qualifiedName.Substring(0, moduleSeparatorIndex);
             // First chunk is qualified module name except dots in braces.
             // Builtin types don't have module prefix.
-            nameParts = GetParts(typeQualifiedName);
-            return nameParts.Count > 0;
+            memberNames = GetParts(qualifiedName.Substring(moduleSeparatorIndex+1));
+            return !string.IsNullOrEmpty(moduleName);
         }
 
         private static IReadOnlyList<string> GetParts(string qualifiedTypeName) {

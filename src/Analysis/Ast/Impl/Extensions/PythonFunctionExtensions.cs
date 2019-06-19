@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis {
             for (var p = cm.DeclaringType as IPythonClassMember; p != null; p = p.DeclaringType as IPythonClassMember) {
                 s.Push(p.Name);
             }
-            return string.Join(".", s);
+            return $"{cm.DeclaringModule}:{string.Join(".", s)}";
         }
 
     }

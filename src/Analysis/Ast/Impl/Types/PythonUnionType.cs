@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public string QualifiedName {
-            get { lock (_lock) { return CodeFormatter.FormatSequence("typing.Union", '[', _types.Select(t => t.QualifiedName).ToArray()); } }
+            get { lock (_lock) { return CodeFormatter.FormatSequence("typing:Union", '[', _types.Select(t => t.QualifiedName).ToArray()); } }
         }
 
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;

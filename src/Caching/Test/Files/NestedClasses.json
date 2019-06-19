@@ -44,7 +44,7 @@
       "Name": "x"
     },
     {
-      "Value": "i:module.C",
+      "Value": "i:module:C",
       "Id": 812,
       "Name": "c"
     }
@@ -63,7 +63,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module.A",
+                  "Type": "module:A",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -109,12 +109,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module.B",
+                  "Type": "module:B",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:module.C"
+              "ReturnType": "i:module:C"
             }
           ],
           "Attributes": 0,
@@ -130,7 +130,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module.B",
+                  "Type": "module:B",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -178,7 +178,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "module.C",
+                      "Type": "module:C",
                       "DefaultValue": null,
                       "Kind": 0
                     }
@@ -199,7 +199,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "module.C",
+                      "Type": "module:C",
                       "DefaultValue": null,
                       "Kind": 0
                     }

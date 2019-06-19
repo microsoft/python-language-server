@@ -33,25 +33,15 @@ namespace Microsoft.Python.Analysis.Caching {
             var stubCache = services.GetService<IStubCache>();
             var fs = services.GetService<IFileSystem>();
 
-            var config = interpreter.Configuration;
-            var standardLibraryPath = PythonLibraryPath.GetStandardLibraryPath(config);
-
             if (moduleType == ModuleType.User) {
                 // Only for tests.
                 return $"{moduleName}";
             }
 
-            if (moduleType == ModuleType.Builtins || 
-                moduleType == ModuleType.CompiledBuiltin ||
-                moduleType == ModuleType.Compiled ||
-                string.IsNullOrEmpty(filePath) || 
-                fs.IsPathUnderRoot(stubCache.StubCacheFolder, filePath) ||
-                fs.IsPathUnderRoot(standardLibraryPath, filePath)) {
-                // If module is a standard library, unique id is its name + interpreter version.
-                return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
-            }
-
+            var config = interpreter.Configuration;
+            var standardLibraryPath = PythonLibraryPath.GetStandardLibraryPath(config);
             var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(config);
+
             if (!string.IsNullOrEmpty(filePath) && fs.IsPathUnderRoot(sitePackagesPath, filePath)) {
                 // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
                 // Example: 'requests' and 'requests-2.21.0.dist-info'.
@@ -69,6 +59,12 @@ namespace Microsoft.Python.Analysis.Caching {
                     var dash = fileName.IndexOf('-');
                     return $"{fileName.Substring(0, dash)}({fileName.Substring(dash + 1)})";
                 }
+            }
+
+            if (moduleType == ModuleType.Builtins || moduleType == ModuleType.CompiledBuiltin ||
+                string.IsNullOrEmpty(filePath) || fs.IsPathUnderRoot(standardLibraryPath, filePath)) {
+                // If module is a standard library, unique id is its name + interpreter version.
+                return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
             }
 
             // If all else fails, hash module data.
