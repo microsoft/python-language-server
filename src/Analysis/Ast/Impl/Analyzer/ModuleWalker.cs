@@ -228,6 +228,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
+            var builtins = Module.Interpreter.ModuleResolution.BuiltinsModule;
+
             // Note that scrape can pick up more functions than the stub contains
             // Or the stub can have definitions that scraping had missed. Therefore
             // merge is the combination of the two with the documentation coming
@@ -259,8 +261,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         var memberType = member?.GetPythonType();
                         var stubMemberType = stubMember.GetPythonType();
 
-                        if (!Module.Equals(memberType?.DeclaringModule) || !_stubAnalysis.Document.Equals(stubMemberType.DeclaringModule)) {
-                            continue; // Leave items that come from another module alone.
+                        if (builtins.Equals(memberType?.DeclaringModule) || builtins.Equals(stubMemberType.DeclaringModule)) {
+                            continue; // Leave builtins alone.
                         }
                         if (!IsStubBetterType(memberType, stubMemberType)) {
                             continue;
@@ -275,7 +277,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Re-declare variable with the data from the stub unless member is a module.
                     // Modules members that are modules should remain as they are, i.e. os.path
                     // should remain library with its own stub attached.
-                    if (!(stubType is IPythonModule) && stubType.DeclaringModule.Equals(_stubAnalysis.Document)) {
+                    if (!(stubType is IPythonModule) && !builtins.Equals(stubType.DeclaringModule)) {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;

@@ -36,8 +36,6 @@ namespace Microsoft.Python.Analysis {
                     dst.SetDocumentation(documentation);
                 }
 
-                var srcModule = src.Location.Module;
-                var dstModule = dst.Location.Module;
                 dst.Location = src.Location;
             }
         }

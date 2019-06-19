@@ -49,17 +49,16 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
 
-        public PythonVariableModule(string name, IServiceContainer services)
-            : this(name, null, services) { }
-
-        public PythonVariableModule(IPythonModule module, IServiceContainer services)
-            : this(module.Name, module, services) { }
-
-        private PythonVariableModule(string name, IPythonModule module, IServiceContainer services) : base(module) {
-            Module = module;
-            Name = module?.Name ?? name;
-            Interpreter = module?.Interpreter ?? services.GetService<IPythonInterpreter>();
+        public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 
+            Name = name;
+            Interpreter = interpreter;
             SetDeclaringModule(this);
+        }
+
+        public PythonVariableModule(IPythonModule module): base(module) { 
+            Name = module.Name;
+            Interpreter = module.Interpreter;
+            Module = module;
         }
 
         public void AddChildModule(string memberName, PythonVariableModule module) => _children[memberName] = module;
