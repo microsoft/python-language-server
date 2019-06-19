@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public static VariableModel FromType(string name, IPythonType t) => new VariableModel {
             Id = name.GetStableHash(),
             Name = name,
-            Value = t.GetQualifiedName()
+            Value = t.QualifiedName
         };
     }
 }

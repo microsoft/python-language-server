@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Caching {
             if (!t.IsUnknown()) {
                 switch (m) {
                     case IPythonInstance _:
-                        return $"i:{GetQualifiedName(t)}";
+                        return $"i:{t.QualifiedName}";
                     case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
                         return pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.Name;
                     case IPythonType pt:

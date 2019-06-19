@@ -53,27 +53,26 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
         public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();
 
-        public IMember ConstructMember(string rawQualifiedName) {
-            if (!TypeNames.DeconstructQualifiedName(rawQualifiedName, out _, out var nameParts, out var isInstance)) {
+        public IMember ConstructMember(string qualifiedName) {
+            if (!TypeNames.DeconstructQualifiedName(qualifiedName, out var moduleName, out var memberNames, out var isInstance)) {
                 return null;
             }
 
             // TODO: better resolve circular references.
-            if (!_processing.Push(rawQualifiedName) || nameParts.Count < 2) {
+            if (!_processing.Push(qualifiedName) || memberNames.Count < 2) {
                 return null;
             }
 
             try {
                 // See if member is a module first.
-                var moduleName = nameParts[0];
                 var module = moduleName == Module.Name ? Module : Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
                 if (module == null) {
                     return null;
                 }
 
                 var member = moduleName == Module.Name
-                        ? GetMemberFromThisModule(nameParts, 1)
-                        : GetMemberFromModule(module, nameParts, 1);
+                        ? GetMemberFromThisModule(memberNames)
+                        : GetMemberFromModule(module, memberNames);
 
                 if (!isInstance) {
                     return member;
@@ -86,14 +85,13 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
         }
 
-        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> nameParts, int index) {
-            if (index >= nameParts.Count) {
+        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames) {
+            if (memberNames.Count == 0) {
                 return null;
             }
 
-            var member = module?.GetMember(nameParts[index++]);
-            for (; index < nameParts.Count; index++) {
-                var memberName = nameParts[index];
+            IMember member = module;
+            foreach (var memberName in memberNames) {
                 var typeArgs = GetTypeArguments(memberName, out _);
 
                 var mc = member as IMemberContainer;
@@ -113,13 +111,13 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             return member;
         }
 
-        private IMember GetMemberFromThisModule(IReadOnlyList<string> nameParts, int index) {
-            if (index >= nameParts.Count) {
+        private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
+            if (memberNames.Count == 0) {
                 return null;
             }
 
             // TODO: nested classes, etc (traverse parts and recurse).
-            var name = nameParts[index];
+            var name = memberNames[0];
             return ClassFactory.TryCreate(name)
                         ?? (FunctionFactory.TryCreate(name)
                             ?? (IMember)VariableFactory.TryCreate(name));

@@ -83,52 +83,52 @@
       "Name": "DependencyWarning"
     },
     {
-      "Value": "i:typing:Any",
+      "Value": "i:str",
       "Id": 916650529,
       "Name": "__title__"
     },
     {
-      "Value": null,
+      "Value": "i:str",
       "Id": -1883656187,
       "Name": "__description__"
     },
     {
-      "Value": null,
+      "Value": "i:str",
       "Id": -1620207176,
       "Name": "__url__"
     },
     {
-      "Value": "i:typing:Any",
+      "Value": "i:str",
       "Id": 1161199201,
       "Name": "__version__"
     },
     {
-      "Value": "i:typing:Any",
+      "Value": "i:int",
       "Id": -1840123721,
       "Name": "__build__"
     },
     {
-      "Value": null,
+      "Value": "i:str",
       "Id": 1654469090,
       "Name": "__author__"
     },
     {
-      "Value": null,
+      "Value": "i:str",
       "Id": -94198849,
       "Name": "__author_email__"
     },
     {
-      "Value": "i:typing:Any",
+      "Value": "i:str",
       "Id": -386551926,
       "Name": "__license__"
     },
     {
-      "Value": "i:typing:Any",
+      "Value": "i:str",
       "Id": 1739624272,
       "Name": "__copyright__"
     },
     {
-      "Value": null,
+      "Value": "i:str",
       "Id": 782136591,
       "Name": "__cake__"
     },
@@ -158,47 +158,47 @@
       "Name": "PreparedRequest"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:request",
+      "Value": "requests.api:request",
       "Id": -1769342312,
       "Name": "request"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:get",
+      "Value": "requests.api:get",
       "Id": 787423,
       "Name": "get"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:head",
+      "Value": "requests.api:head",
       "Id": 24439415,
       "Name": "head"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:post",
+      "Value": "requests.api:post",
       "Id": 24687927,
       "Name": "post"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:patch",
+      "Value": "requests.api:patch",
       "Id": 764909201,
       "Name": "patch"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:put",
+      "Value": "requests.api:put",
       "Id": 796568,
       "Name": "put"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:delete",
+      "Value": "requests.api:delete",
       "Id": 1897257090,
       "Name": "delete"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:options",
+      "Value": "requests.api:options",
       "Id": 180457127,
       "Name": "options"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:session",
+      "Value": "requests.sessions:session",
       "Id": -880047457,
       "Name": "session"
     },

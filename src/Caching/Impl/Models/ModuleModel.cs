@@ -40,15 +40,18 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .Where(v => exportedNames.Contains(v.Name) || v.Source == VariableSource.Declaration || v.Source == VariableSource.Builtin)) {
                 // Create type model before variable since variable needs it.
                 string typeName = null;
+
                 switch (v.Value) {
-                    case IPythonFunctionType ft when ft.DeclaringModule.Equals(analysis.Document):
+                    case IPythonFunctionType ft 
+                        when ft.DeclaringModule.Equals(analysis.Document) || ft.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!functions.ContainsKey(ft.Name)) {
                             typeName = ft.Name;
                             functions[ft.Name] = FunctionModel.FromType(ft);
                         }
 
                         break;
-                    case IPythonClassType cls when cls.DeclaringModule.Equals(analysis.Document):
+                    case IPythonClassType cls 
+                        when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!classes.ContainsKey(cls.Name)) {
                             typeName = cls.Name;
                             classes[cls.Name] = ClassModel.FromType(cls);

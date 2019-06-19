@@ -751,6 +751,76 @@
       "Functions": null,
       "Id": -1481860294,
       "Name": "settrace"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 503242166,
+      "Name": "getdlopenflags"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "n",
+              "Type": "int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1268494038,
+      "Name": "setdlopenflags"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "on_flag",
+              "Type": "bool",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1891924589,
+      "Name": "settscdump"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1618095583,
+      "Name": "gettotalrefcount"
     }
   ],
   "Variables": [
@@ -990,31 +1060,6 @@
       "Name": "version_info"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:getdlopenflags",
-      "Id": 503242166,
-      "Name": "getdlopenflags"
-    },
-    {
-      "Value": "sys:_WinVersion",
-      "Id": -506845532,
-      "Name": "_WinVersion"
-    },
-    {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:setdlopenflags",
-      "Id": -1268494038,
-      "Name": "setdlopenflags"
-    },
-    {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:settscdump",
-      "Id": 1891924589,
-      "Name": "settscdump"
-    },
-    {
-      "Value": "Microsoft.Python.Analysis.Modules.StubPythonModule:gettotalrefcount",
-      "Id": -1618095583,
-      "Name": "gettotalrefcount"
-    },
-    {
       "Value": "typing:List",
       "Id": 23609685,
       "Name": "List"
@@ -1050,7 +1095,7 @@
       "Name": "Union"
     },
     {
-      "Value": "Microsoft.Python.Analysis.Specializations.Typing.TypingModule:TypeVar",
+      "Value": "typing:TypeVar",
       "Id": -2053481098,
       "Name": "TypeVar"
     },
@@ -6709,6 +6754,85 @@
       "InnerClasses": [],
       "Id": -949236003,
       "Name": "_version_info"
+    },
+    {
+      "Documentation": "Built-in immutable sequence.\n\nIf no argument is given, the constructor returns an empty tuple.\nIf iterable is specified the tuple is initialized from iterable's items.\n\nIf the argument is a tuple, the return value is the same object.",
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 762129410,
+          "Name": "major"
+        },
+        {
+          "Value": "i:int",
+          "Id": 762371582,
+          "Name": "minor"
+        },
+        {
+          "Value": "i:int",
+          "Id": 752565431,
+          "Name": "build"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1042062966,
+          "Name": "platform"
+        },
+        {
+          "Value": "i:str",
+          "Id": -2093362438,
+          "Name": "service_pack"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1573389776,
+          "Name": "service_pack_minor"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1573631948,
+          "Name": "service_pack_major"
+        },
+        {
+          "Value": "i:int",
+          "Id": 642126643,
+          "Name": "suite_mast"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1438724575,
+          "Name": "product_type"
+        },
+        {
+          "Value": "i:tuple",
+          "Id": -1420100829,
+          "Name": "platform_version"
+        },
+        {
+          "Value": "tuple_iterator",
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -506845532,
+      "Name": "_WinVersion"
     }
   ],
   "Id": -1012399873,

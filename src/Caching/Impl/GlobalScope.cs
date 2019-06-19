@@ -26,13 +26,10 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class GlobalScope : IGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
-        private readonly IPythonInterpreter _interpreter;
 
         public GlobalScope(ModuleModel model, IPythonModule module, IServiceContainer services) {
             Module = module;
             Name = model.Name;
-
-            _interpreter = services.GetService<IPythonInterpreter>();
 
             using (var mf = new ModuleFactory(model, module)) {
                 // TODO: store real location in models

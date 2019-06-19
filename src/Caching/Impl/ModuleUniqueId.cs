@@ -30,7 +30,6 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public static string GetUniqieId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services) {
             var interpreter = services.GetService<IPythonInterpreter>();
-            var stubCache = services.GetService<IStubCache>();
             var fs = services.GetService<IFileSystem>();
 
             if (moduleType == ModuleType.User) {
