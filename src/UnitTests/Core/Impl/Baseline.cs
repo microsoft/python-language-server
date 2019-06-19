@@ -117,7 +117,7 @@ namespace TestUtilities {
   Expected:{baseLine.Trim()}
   Actual:{actualLine.Trim()}
   BaselineFile:{Path.GetFileName(baselineFile)}
-  Difference at {index}{Environment.NewLine}"
+  Difference at column {index}{Environment.NewLine}"
             );
         }
     }
