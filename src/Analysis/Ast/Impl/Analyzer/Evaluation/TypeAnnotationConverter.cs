@@ -58,7 +58,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // until specific type is instantiated.
                 return cls;
             }
-            
             // TODO: report unhandled generic?
             return null;
         }
