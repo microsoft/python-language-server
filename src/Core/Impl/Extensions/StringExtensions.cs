@@ -302,5 +302,15 @@ namespace Microsoft.Python.Core {
             lineEnding = lineEnding ?? Environment.NewLine;
             return string.Join(lineEnding, s.SplitLines());
         }
+
+        public static int GetStableHash(this string s) {
+            unchecked {
+                var hash = 23;
+                foreach (var c in s) {
+                    hash = hash * 31 + c;
+                }
+                return hash;
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
 
@@ -56,6 +57,12 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
 
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
+
+        public virtual string QualifiedName
+            => DeclaringModule.ModuleType == ModuleType.Builtins
+                       ? TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : Name
+                       : $"{DeclaringModule.Name}:{Name}";
+
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;

@@ -59,6 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public ModuleSymbolTable SymbolTable { get; } = new ModuleSymbolTable();
         public IPythonType UnknownType => Interpreter.UnknownType;
         public Location DefaultLocation { get; }
+        public IPythonModule BuiltinsModule => Interpreter.ModuleResolution.BuiltinsModule;
 
         public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
 

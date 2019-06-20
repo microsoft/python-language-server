@@ -1,0 +1,6840 @@
+{
+  "UniqueId": "sys(3.7)",
+  "Documentation": "This module provides access to some objects used or maintained by the\ninterpreter and to functions that interact strongly with the interpreter.\n\nDynamic objects:\n\nargv -- command line arguments; argv[0] is the script pathname if known\npath -- module search path; path[0] is the script directory, else ''\nmodules -- dictionary of loaded modules\n\ndisplayhook -- called to show results in an interactive session\nexcepthook -- called to handle any uncaught exception other than SystemExit\n  To customize printing in an interactive session or to install a custom\n  top-level exception handler, assign other functions to replace these.\n\nstdin -- standard input file object; used by input()\nstdout -- standard output file object; used by print()\nstderr -- standard error object; used for error messages\n  By assigning other file objects (or objects that behave like files)\n  to these, it is possible to redirect all of the interpreter's I/O.\n\nlast_type -- type of last uncaught exception\nlast_value -- value of last uncaught exception\nlast_traceback -- traceback of last uncaught exception\n  These three are only available in an interactive session after a\n  traceback has been printed.\n\nStatic objects:\n\nbuiltin_module_names -- tuple of module names built into this interpreter\ncopyright -- copyright notice pertaining to this interpreter\nexec_prefix -- prefix used to find the machine-specific Python library\nexecutable -- absolute path of the executable binary of the Python interpreter\nfloat_info -- a struct sequence with information about the float implementation.\nfloat_repr_style -- string indicating the style of repr() output for floats\nhash_info -- a struct sequence with information about the hash algorithm.\nhexversion -- version information encoded as a single integer\nimplementation -- Python implementation information.\nint_info -- a struct sequence with information about the int implementation.\nmaxsize -- the largest supported length of containers.\nmaxunicode -- the value of the largest Unicode code point\nplatform -- platform identifier\nprefix -- prefix used to find the Python library\nthread_info -- a struct sequence with information about the thread implementation.\nversion -- the version of this interpreter as a string\nversion_info -- version information as a named tuple\ndllhandle -- [Windows only] integer handle of the Python DLL\nwinver -- [Windows only] version number of the Python DLL\n_enablelegacywindowsfsencoding -- [Windows only] \n__stdin__ -- the original stdin; don't touch!\n__stdout__ -- the original stdout; don't touch!\n__stderr__ -- the original stderr; don't touch!\n__displayhook__ -- the original displayhook; don't touch!\n__excepthook__ -- the original excepthook; don't touch!\n\nFunctions:\n\ndisplayhook() -- print an object to the screen, and save it in builtins._\nexcepthook() -- print an exception and its traceback to sys.stderr\nexc_info() -- return thread-safe information about the current exception\nexit() -- exit the interpreter by raising SystemExit\ngetdlopenflags() -- returns flags to be used for dlopen() calls\ngetprofile() -- get the global profiling function\ngetrefcount() -- return the reference count for an object (plus one :-)\ngetrecursionlimit() -- return the max recursion depth for the interpreter\ngetsizeof() -- return the size of an object in bytes\ngettrace() -- get the global debug tracing function\nsetcheckinterval() -- control how often the interpreter checks for events\nsetdlopenflags() -- set the flags to be used for dlopen() calls\nsetprofile() -- set the global profiling function\nsetrecursionlimit() -- set the max recursion depth for the interpreter\nsettrace() -- set the global debug tracing function\n",
+  "Functions": [
+    {
+      "Documentation": "breakpointhook(*args, **kws)\n\nThis hook function is called by built-in breakpoint().\n",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1623088213,
+      "Name": "__breakpointhook__"
+    },
+    {
+      "Documentation": "displayhook(object) -> None\n\nPrint an object to sys.stdout and also save it in builtins._\n",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 629764782,
+      "Name": "__displayhook__"
+    },
+    {
+      "Documentation": "excepthook(exctype, value, traceback) -> None\n\nHandle an exception by displaying it with a traceback on sys.stderr.\n",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1425218131,
+      "Name": "__excepthook__"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1727507378,
+      "Name": "__interactivehook__"
+    },
+    {
+      "Documentation": "_clear_type_cache() -> None\nClear the internal type lookup cache.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1527505257,
+      "Name": "_clear_type_cache"
+    },
+    {
+      "Documentation": "_current_frames() -> dictionary\n\nReturn a dictionary mapping each current thread T's thread id to T's\ncurrent stack frame.\n\nThis function should be used for specialized purposes only.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:dict"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 813545300,
+      "Name": "_current_frames"
+    },
+    {
+      "Documentation": "_debugmallocstats()\n\nPrint summary info to stderr about the state of\npymalloc's structures.\n\nIn Py_DEBUG mode, also perform some expensive internal consistency\nchecks.\n",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1370295892,
+      "Name": "_debugmallocstats"
+    },
+    {
+      "Documentation": "_enablelegacywindowsfsencoding()\n\nChanges the default filesystem encoding to mbcs:replace for consistency\nwith earlier versions of Python. See PEP 529 for more information.\n\nThis is equivalent to defining the PYTHONLEGACYWINDOWSFSENCODING \nenvironment variable before launching Python.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1047770159,
+      "Name": "_enablelegacywindowsfsencoding"
+    },
+    {
+      "Documentation": "_getframe([depth]) -> frameobject\n\nReturn a frame object from the call stack.  If optional integer depth is\ngiven, return the frame object that many calls below the top of the stack.\nIf that is deeper than the call stack, ValueError is raised.  The default\nfor depth is zero, returning the frame at the top of the call stack.\n\nThis function should be used for internal and specialized\npurposes only.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:types:FrameType"
+        },
+        {
+          "Parameters": [
+            {
+              "Name": "depth",
+              "Type": "int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:types:FrameType"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1848744703,
+      "Name": "_getframe"
+    },
+    {
+      "Documentation": "breakpointhook(*args, **kws)\n\nThis hook function is called by built-in breakpoint().\n",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "args",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "kws",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1414470549,
+      "Name": "breakpointhook"
+    },
+    {
+      "Documentation": "call_tracing(func, args) -> object\n\nCall func(*args), while tracing is enabled.  The tracing state is\nsaved, and restored afterwards.  This is intended to be called from\na debugger from a checkpoint, to recursively debug some other code.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fn",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "args",
+              "Type": "typing:Any",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:typing:_T"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1158985352,
+      "Name": "call_tracing"
+    },
+    {
+      "Documentation": "callstats() -> tuple of integers\n\nReturn a tuple of function call statistics, if CALL_PROFILE was defined\nwhen Python was built.  Otherwise, return None.\n\nWhen enabled, this function returns detailed, implementation-specific\ndetails about the number of function calls executed. The return value is\na 11-tuple where the entries in the tuple are counts of:\n0. all function calls\n1. calls to PyFunction_Type objects\n2. PyFunction calls that do not create an argument tuple\n3. PyFunction calls that do not create an argument tuple\n   and bypass PyEval_EvalCodeEx()\n4. PyMethod calls\n5. PyMethod calls on bound methods\n6. PyType calls\n7. PyCFunction calls\n8. generator calls\n9. All other calls\n10. Number of stack pops performed by call_function()",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1252442422,
+      "Name": "callstats"
+    },
+    {
+      "Documentation": "displayhook(object) -> None\n\nPrint an object to sys.stdout and also save it in builtins._\n",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "value",
+              "Type": "int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 388872302,
+      "Name": "displayhook"
+    },
+    {
+      "Documentation": "exc_info() -> (type, value, traceback)\n\nReturn information about the most recent exception caught by an except\nclause in the current stack frame or in an older stack frame.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:tuple"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -935045484,
+      "Name": "exc_info"
+    },
+    {
+      "Documentation": "excepthook(exctype, value, traceback) -> None\n\nHandle an exception by displaying it with a traceback on sys.stderr.\n",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "type_",
+              "Type": "typing:Type[BaseException]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "value",
+              "Type": "BaseException",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "traceback",
+              "Type": "types:TracebackType",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 305517843,
+      "Name": "excepthook"
+    },
+    {
+      "Documentation": "exit([status])\n\nExit the interpreter by raising SystemExit(status).\nIf the status is omitted or None, it defaults to zero (i.e., success).\nIf the status is an integer, it will be used as the system exit status.\nIf it is another kind of object, it will be printed and the system\nexit status will be one (i.e., failure).",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "arg",
+              "Type": "object",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24368565,
+      "Name": "exit"
+    },
+    {
+      "Documentation": "get_asyncgen_hooks()\n\nReturn a namedtuple of installed asynchronous generators hooks (firstiter, finalizer).",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -932626587,
+      "Name": "get_asyncgen_hooks"
+    },
+    {
+      "Documentation": "Check status of origin tracking for coroutine objects in this thread.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1605124845,
+      "Name": "get_coroutine_origin_tracking_depth"
+    },
+    {
+      "Documentation": "get_coroutine_wrapper()\n\nReturn the wrapper for coroutine objects set by sys.set_coroutine_wrapper.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1829443124,
+      "Name": "get_coroutine_wrapper"
+    },
+    {
+      "Documentation": "getallocatedblocks() -> integer\n\nReturn the number of memory blocks currently allocated, regardless of their\nsize.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1953654962,
+      "Name": "getallocatedblocks"
+    },
+    {
+      "Documentation": "getcheckinterval() -> current check interval; see setcheckinterval().",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 2065023054,
+      "Name": "getcheckinterval"
+    },
+    {
+      "Documentation": "getdefaultencoding() -> string\n\nReturn the current default string encoding used by the Unicode \nimplementation.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1935348949,
+      "Name": "getdefaultencoding"
+    },
+    {
+      "Documentation": "getfilesystemencodeerrors() -> string\n\nReturn the error mode used to convert Unicode filenames in\noperating system filenames.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 346962379,
+      "Name": "getfilesystemencodeerrors"
+    },
+    {
+      "Documentation": "getfilesystemencoding() -> string\n\nReturn the encoding used to convert Unicode filenames in\noperating system filenames.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -946006243,
+      "Name": "getfilesystemencoding"
+    },
+    {
+      "Documentation": "getprofile()\n\nReturn the profiling function set with sys.setprofile.\nSee the profiler chapter in the library manual.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 682573034,
+      "Name": "getprofile"
+    },
+    {
+      "Documentation": "getrecursionlimit()\n\nReturn the current value of the recursion limit, the maximum depth\nof the Python interpreter stack.  This limit prevents infinite\nrecursion from causing an overflow of the C stack and crashing Python.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 949225272,
+      "Name": "getrecursionlimit"
+    },
+    {
+      "Documentation": "getrefcount(object) -> integer\n\nReturn the reference count of object.  The count returned is generally\none higher than you might expect, because it includes the (temporary)\nreference as an argument to getrefcount().",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "arg",
+              "Type": "typing:Any",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -37310149,
+      "Name": "getrefcount"
+    },
+    {
+      "Documentation": "getsizeof(object, default) -> int\n\nReturn the size of object in bytes.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": "object",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        },
+        {
+          "Parameters": [
+            {
+              "Name": "obj",
+              "Type": "object",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "default",
+              "Type": "int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1485394487,
+      "Name": "getsizeof"
+    },
+    {
+      "Documentation": "getswitchinterval() -> current thread switch interval; see setswitchinterval().",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:float"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1633191528,
+      "Name": "getswitchinterval"
+    },
+    {
+      "Documentation": "gettrace()\n\nReturn the global debug tracing function set with sys.settrace.\nSee the debugger chapter in the library manual.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -920747834,
+      "Name": "gettrace"
+    },
+    {
+      "Documentation": "getwindowsversion()\n\nReturn information about the running version of Windows as a named tuple.\nThe members are named: major, minor, build, platform, service_pack,\nservice_pack_major, service_pack_minor, suite_mask, and product_type. For\nbackward compatibility, only the first 5 items are available by indexing.\nAll elements are numbers, except service_pack and platform_type which are\nstrings, and platform_version which is a 3-tuple. Platform is always 2.\nProduct_type may be 1 for a workstation, 2 for a domain controller, 3 for a\nserver. Platform_version is a 3-tuple containing a version number that is\nintended for identifying the OS rather than feature detection.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:sys:_WinVersion"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1280212332,
+      "Name": "getwindowsversion"
+    },
+    {
+      "Documentation": "intern(string) -> string\n\n``Intern'' the given string.  This enters the string in the (global)\ntable of interned strings whose purpose is to speed up dictionary lookups.\nReturn the string itself or the previously interned string object with the\nsame value.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "string",
+              "Type": "str",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 2048952809,
+      "Name": "intern"
+    },
+    {
+      "Documentation": "is_finalizing()\nReturn True if Python is exiting.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:bool"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1710543065,
+      "Name": "is_finalizing"
+    },
+    {
+      "Documentation": "set_asyncgen_hooks(*, firstiter=None, finalizer=None)\n\nSet a finalizer for async generators objects.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "firstiter",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 3
+            },
+            {
+              "Name": "finalizer",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 3
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -12592935,
+      "Name": "set_asyncgen_hooks"
+    },
+    {
+      "Documentation": "Enable or disable origin tracking for coroutine objects in this thread.\n\nCoroutine objects will track 'depth' frames of traceback information about\nwhere they came from, available in their cr_origin attribute. Set depth of 0\nto disable.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "depth",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 836059129,
+      "Name": "set_coroutine_origin_tracking_depth"
+    },
+    {
+      "Documentation": "set_coroutine_wrapper(wrapper)\n\nSet a wrapper for coroutine objects.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "wrapper",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 706767832,
+      "Name": "set_coroutine_wrapper"
+    },
+    {
+      "Documentation": "setcheckinterval(n)\n\nTell the Python interpreter to check for asynchronous events every\nn instructions.  This also affects how often thread switches occur.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "interval",
+              "Type": "int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 233580226,
+      "Name": "setcheckinterval"
+    },
+    {
+      "Documentation": "setprofile(function)\n\nSet the profiling function.  It will be called on each function call\nand return.  See the profiler chapter in the library manual.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "profilefunc",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1675589026,
+      "Name": "setprofile"
+    },
+    {
+      "Documentation": "setrecursionlimit(n)\n\nSet the maximum depth of the Python interpreter stack to n.  This\nlimit prevents infinite recursion from causing an overflow of the C\nstack and crashing Python.  The highest possible limit is platform-\ndependent.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "limit",
+              "Type": "int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 9072452,
+      "Name": "setrecursionlimit"
+    },
+    {
+      "Documentation": "setswitchinterval(n)\n\nSet the ideal thread switching delay inside the Python interpreter\nThe actual frequency of switching threads can be lower if the\ninterpreter executes long sequences of uninterruptible code\n(this is implementation-specific and workload-dependent).\n\nThe parameter must represent the desired switching delay in seconds\nA typical value is 0.005 (5 milliseconds).",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "interval",
+              "Type": "float",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1721622948,
+      "Name": "setswitchinterval"
+    },
+    {
+      "Documentation": "settrace(function)\n\nSet the global debug tracing function.  It will be called on each\nfunction call.  See the debugger chapter in the library manual.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "tracefunc",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1481860294,
+      "Name": "settrace"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 503242166,
+      "Name": "getdlopenflags"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "n",
+              "Type": "int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1268494038,
+      "Name": "setdlopenflags"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "on_flag",
+              "Type": "bool",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1891924589,
+      "Name": "settscdump"
+    },
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1618095583,
+      "Name": "gettotalrefcount"
+    }
+  ],
+  "Variables": [
+    {
+      "Value": "_io",
+      "Id": 668243680,
+      "Name": "_mod__io"
+    },
+    {
+      "Value": "builtins",
+      "Id": -1070584715,
+      "Name": "_mod_builtins"
+    },
+    {
+      "Value": "types",
+      "Id": -2043043116,
+      "Name": "_mod_types"
+    },
+    {
+      "Value": "i:str",
+      "Id": -1636005055,
+      "Name": "__doc__"
+    },
+    {
+      "Value": "i:str",
+      "Id": 1097116834,
+      "Name": "__name__"
+    },
+    {
+      "Value": "i:str",
+      "Id": 75395663,
+      "Name": "__package__"
+    },
+    {
+      "Value": "i:_io:TextIOWrapper",
+      "Id": 1612032761,
+      "Name": "__stderr__"
+    },
+    {
+      "Value": "i:_io:TextIOWrapper",
+      "Id": 329210449,
+      "Name": "__stdin__"
+    },
+    {
+      "Value": "i:_io:TextIOWrapper",
+      "Id": 1621359266,
+      "Name": "__stdout__"
+    },
+    {
+      "Value": "i:str",
+      "Id": 677051350,
+      "Name": "_framework"
+    },
+    {
+      "Value": "i:tuple",
+      "Id": 24173482,
+      "Name": "_git"
+    },
+    {
+      "Value": "i:NoneType",
+      "Id": 749413383,
+      "Name": "_home"
+    },
+    {
+      "Value": "i:dict",
+      "Id": 1595009614,
+      "Name": "_xoptions"
+    },
+    {
+      "Value": "i:int",
+      "Id": 1834311484,
+      "Name": "api_version"
+    },
+    {
+      "Value": "i:list",
+      "Id": 24243575,
+      "Name": "argv"
+    },
+    {
+      "Value": "i:str",
+      "Id": 1664944041,
+      "Name": "base_exec_prefix"
+    },
+    {
+      "Value": "i:str",
+      "Id": 1039099721,
+      "Name": "base_prefix"
+    },
+    {
+      "Value": "i:list",
+      "Id": 1963179240,
+      "Name": "builtin_module_names"
+    },
+    {
+      "Value": "i:str",
+      "Id": 2033693967,
+      "Name": "byteorder"
+    },
+    {
+      "Value": "i:str",
+      "Id": 1298046352,
+      "Name": "copyright"
+    },
+    {
+      "Value": "i:int",
+      "Id": -1200168491,
+      "Name": "dllhandle"
+    },
+    {
+      "Value": "i:bool",
+      "Id": 1675585612,
+      "Name": "dont_write_bytecode"
+    },
+    {
+      "Value": "i:str",
+      "Id": 62274953,
+      "Name": "exec_prefix"
+    },
+    {
+      "Value": "i:str",
+      "Id": -2135911519,
+      "Name": "executable"
+    },
+    {
+      "Value": "i:str",
+      "Id": 92603457,
+      "Name": "float_repr_style"
+    },
+    {
+      "Value": "i:int",
+      "Id": -471599948,
+      "Name": "hexversion"
+    },
+    {
+      "Value": "i:_implementation",
+      "Id": 1997289353,
+      "Name": "implementation"
+    },
+    {
+      "Value": "i:int",
+      "Id": -2020000914,
+      "Name": "maxsize"
+    },
+    {
+      "Value": "i:int",
+      "Id": 842058832,
+      "Name": "maxunicode"
+    },
+    {
+      "Value": "i:list",
+      "Id": -1294259224,
+      "Name": "meta_path"
+    },
+    {
+      "Value": "i:dict",
+      "Id": -1637601392,
+      "Name": "modules"
+    },
+    {
+      "Value": "i:list",
+      "Id": 24674492,
+      "Name": "path"
+    },
+    {
+      "Value": "i:list",
+      "Id": -1506404755,
+      "Name": "path_hooks"
+    },
+    {
+      "Value": "i:dict",
+      "Id": 376899064,
+      "Name": "path_importer_cache"
+    },
+    {
+      "Value": "i:str",
+      "Id": -1042062966,
+      "Name": "platform"
+    },
+    {
+      "Value": "i:str",
+      "Id": -2042362519,
+      "Name": "prefix"
+    },
+    {
+      "Value": "i:_io:TextIOWrapper",
+      "Id": -1954658503,
+      "Name": "stderr"
+    },
+    {
+      "Value": "i:_io:TextIOWrapper",
+      "Id": 768230609,
+      "Name": "stdin"
+    },
+    {
+      "Value": "i:_io:TextIOWrapper",
+      "Id": -1954648798,
+      "Name": "stdout"
+    },
+    {
+      "Value": "i:str",
+      "Id": 1781540065,
+      "Name": "version"
+    },
+    {
+      "Value": "i:list",
+      "Id": -707130143,
+      "Name": "warnoptions"
+    },
+    {
+      "Value": "i:str",
+      "Id": -1849986786,
+      "Name": "winver"
+    },
+    {
+      "Value": "i:sys:__float_info",
+      "Id": 602612744,
+      "Name": "float_info"
+    },
+    {
+      "Value": "i:sys:__hash_info",
+      "Id": 84475656,
+      "Name": "hash_info"
+    },
+    {
+      "Value": "i:sys:__int_info",
+      "Id": 1942821909,
+      "Name": "int_info"
+    },
+    {
+      "Value": "i:sys:__thread_info",
+      "Id": 604643660,
+      "Name": "thread_info"
+    },
+    {
+      "Value": "i:sys:__version_info",
+      "Id": 1738857804,
+      "Name": "version_info"
+    },
+    {
+      "Value": "typing:List",
+      "Id": 23609685,
+      "Name": "List"
+    },
+    {
+      "Value": "typing:Sequence",
+      "Id": -1502554888,
+      "Name": "Sequence"
+    },
+    {
+      "Value": "typing:Any",
+      "Id": 751189,
+      "Name": "Any"
+    },
+    {
+      "Value": "typing:Dict",
+      "Id": 23370861,
+      "Name": "Dict"
+    },
+    {
+      "Value": "typing:Tuple",
+      "Id": 739642865,
+      "Name": "Tuple"
+    },
+    {
+      "Value": "typing:Optional",
+      "Id": 1363847319,
+      "Name": "Optional"
+    },
+    {
+      "Value": "typing:Union",
+      "Id": 740351224,
+      "Name": "Union"
+    },
+    {
+      "Value": "typing:TypeVar",
+      "Id": -2053481098,
+      "Name": "TypeVar"
+    },
+    {
+      "Value": "typing:Type",
+      "Id": 23863281,
+      "Name": "Type"
+    },
+    {
+      "Value": "types:FrameType",
+      "Id": -1970702352,
+      "Name": "FrameType"
+    },
+    {
+      "Value": "_importlib_modulespec:ModuleType",
+      "Id": -1551859907,
+      "Name": "ModuleType"
+    },
+    {
+      "Value": "types:TracebackType",
+      "Id": -612342225,
+      "Name": "TracebackType"
+    },
+    {
+      "Value": "importlib.abc:MetaPathFinder",
+      "Id": -1792761721,
+      "Name": "MetaPathFinder"
+    },
+    {
+      "Value": "typing:_T",
+      "Id": 25132,
+      "Name": "_T"
+    },
+    {
+      "Value": "i:types:TracebackType",
+      "Id": 2060329242,
+      "Name": "last_traceback"
+    },
+    {
+      "Value": "i:tuple",
+      "Id": -1174870545,
+      "Name": "subversion"
+    }
+  ],
+  "Classes": [
+    {
+      "Documentation": "sys.flags\n\nFlags provided through command line arguments or environment vars.",
+      "Bases": [
+        "tuple",
+        "object"
+      ],
+      "Methods": [
+        {
+          "Documentation": "Return self+value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1639102358,
+          "Name": "__add__"
+        },
+        {
+          "Documentation": "Return key in self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1841774666,
+          "Name": "__contains__"
+        },
+        {
+          "Documentation": "Implement delattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2095540485,
+          "Name": "__delattr__"
+        },
+        {
+          "Documentation": "Default dir() implementation.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1636169386,
+          "Name": "__dir__"
+        },
+        {
+          "Documentation": "Return self==value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748372547,
+          "Name": "__eq__"
+        },
+        {
+          "Documentation": "Default object formatter.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "format_spec",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 695475534,
+          "Name": "__format__"
+        },
+        {
+          "Documentation": "Return self>=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748420597,
+          "Name": "__ge__"
+        },
+        {
+          "Documentation": "Return getattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1329277859,
+          "Name": "__getattribute__"
+        },
+        {
+          "Documentation": "Return self[key].",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -293179214,
+          "Name": "__getitem__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:tuple"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -488627138,
+          "Name": "__getnewargs__"
+        },
+        {
+          "Documentation": "Return self>value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748435012,
+          "Name": "__gt__"
+        },
+        {
+          "Documentation": "Return hash(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 925523557,
+          "Name": "__hash__"
+        },
+        {
+          "Documentation": "sys.flags\n\nFlags provided through command line arguments or environment vars.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__"
+        },
+        {
+          "Documentation": "This method is called when a class is subclassed.\n\nThe default implementation does nothing. It may be\noverridden to extend subclasses.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1040523408,
+          "Name": "__init_subclass__"
+        },
+        {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Documentation": "Return self<=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748569552,
+          "Name": "__le__"
+        },
+        {
+          "Documentation": "Return len(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1628904226,
+          "Name": "__len__"
+        },
+        {
+          "Documentation": "Return self<value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748583967,
+          "Name": "__lt__"
+        },
+        {
+          "Documentation": "Return self*value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1627505971,
+          "Name": "__mul__"
+        },
+        {
+          "Documentation": "Return self!=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748629134,
+          "Name": "__ne__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -544113923,
+          "Name": "__reduce__"
+        },
+        {
+          "Documentation": "Helper for pickle.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "protocol",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -491007883,
+          "Name": "__reduce_ex__"
+        },
+        {
+          "Documentation": "Return repr(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1215429388,
+          "Name": "__repr__"
+        },
+        {
+          "Documentation": "Return value*self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1222960745,
+          "Name": "__rmul__"
+        },
+        {
+          "Documentation": "Implement setattr(self, name, value).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -736377828,
+          "Name": "__setattr__"
+        },
+        {
+          "Documentation": "Size of object in memory, in bytes.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1069167279,
+          "Name": "__sizeof__"
+        },
+        {
+          "Documentation": "Return str(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1621988870,
+          "Name": "__str__"
+        },
+        {
+          "Documentation": "Abstract classes can override this to customize issubclass().\n\nThis is invoked early on by abc.ABCMeta.__subclasscheck__().\nIt should return True, False or NotImplemented.  If it returns\nNotImplemented, the normal algorithm is used.  Otherwise, it\noverrides the normal algorithm (and the outcome is cached).\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "subclass",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1374911630,
+          "Name": "__subclasshook__"
+        },
+        {
+          "Documentation": "Return number of occurrences of value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753321816,
+          "Name": "count"
+        },
+        {
+          "Documentation": "Return first index of value.\n\nRaises ValueError if the value is not present.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "start",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stop",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 758816539,
+          "Name": "index"
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 2130352401,
+          "Name": "bytes_warning"
+        },
+        {
+          "Value": "i:int",
+          "Id": 753929372,
+          "Name": "debug"
+        },
+        {
+          "Value": "i:bool",
+          "Id": -1816482652,
+          "Name": "dev_mode"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1675585612,
+          "Name": "dont_write_bytecode"
+        },
+        {
+          "Value": "i:int",
+          "Id": 557578535,
+          "Name": "hash_randomization"
+        },
+        {
+          "Value": "i:int",
+          "Id": -175101059,
+          "Name": "ignore_environment"
+        },
+        {
+          "Value": "i:int",
+          "Id": -907580899,
+          "Name": "inspect"
+        },
+        {
+          "Value": "i:int",
+          "Id": 518040171,
+          "Name": "interactive"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1954000432,
+          "Name": "isolated"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1247591617,
+          "Name": "n_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1428290577,
+          "Name": "n_sequence_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1605593504,
+          "Name": "n_unnamed_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -754777330,
+          "Name": "no_site"
+        },
+        {
+          "Value": "i:int",
+          "Id": 113341396,
+          "Name": "no_user_site"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1299139572,
+          "Name": "optimize"
+        },
+        {
+          "Value": "i:int",
+          "Id": 766418045,
+          "Name": "quiet"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1084304250,
+          "Name": "utf8_mode"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1781039499,
+          "Name": "verbose"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 755983568,
+      "Name": "flags"
+    },
+    {
+      "Documentation": "sys.float_info\n\nA structseq holding information about the float type. It contains low level\ninformation about the precision and internal representation. Please study\nyour system's :file:`float.h` for more information.",
+      "Bases": [
+        "tuple",
+        "object"
+      ],
+      "Methods": [
+        {
+          "Documentation": "Return self+value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1639102358,
+          "Name": "__add__"
+        },
+        {
+          "Documentation": "Return key in self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1841774666,
+          "Name": "__contains__"
+        },
+        {
+          "Documentation": "Implement delattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2095540485,
+          "Name": "__delattr__"
+        },
+        {
+          "Documentation": "Default dir() implementation.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1636169386,
+          "Name": "__dir__"
+        },
+        {
+          "Documentation": "Return self==value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748372547,
+          "Name": "__eq__"
+        },
+        {
+          "Documentation": "Default object formatter.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "format_spec",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 695475534,
+          "Name": "__format__"
+        },
+        {
+          "Documentation": "Return self>=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748420597,
+          "Name": "__ge__"
+        },
+        {
+          "Documentation": "Return getattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1329277859,
+          "Name": "__getattribute__"
+        },
+        {
+          "Documentation": "Return self[key].",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -293179214,
+          "Name": "__getitem__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:tuple"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -488627138,
+          "Name": "__getnewargs__"
+        },
+        {
+          "Documentation": "Return self>value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748435012,
+          "Name": "__gt__"
+        },
+        {
+          "Documentation": "Return hash(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 925523557,
+          "Name": "__hash__"
+        },
+        {
+          "Documentation": "sys.float_info\n\nA structseq holding information about the float type. It contains low level\ninformation about the precision and internal representation. Please study\nyour system's :file:`float.h` for more information.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__"
+        },
+        {
+          "Documentation": "This method is called when a class is subclassed.\n\nThe default implementation does nothing. It may be\noverridden to extend subclasses.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1040523408,
+          "Name": "__init_subclass__"
+        },
+        {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Documentation": "Return self<=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748569552,
+          "Name": "__le__"
+        },
+        {
+          "Documentation": "Return len(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1628904226,
+          "Name": "__len__"
+        },
+        {
+          "Documentation": "Return self<value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748583967,
+          "Name": "__lt__"
+        },
+        {
+          "Documentation": "Return self*value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1627505971,
+          "Name": "__mul__"
+        },
+        {
+          "Documentation": "Return self!=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748629134,
+          "Name": "__ne__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -544113923,
+          "Name": "__reduce__"
+        },
+        {
+          "Documentation": "Helper for pickle.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "protocol",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -491007883,
+          "Name": "__reduce_ex__"
+        },
+        {
+          "Documentation": "Return repr(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1215429388,
+          "Name": "__repr__"
+        },
+        {
+          "Documentation": "Return value*self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1222960745,
+          "Name": "__rmul__"
+        },
+        {
+          "Documentation": "Implement setattr(self, name, value).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -736377828,
+          "Name": "__setattr__"
+        },
+        {
+          "Documentation": "Size of object in memory, in bytes.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1069167279,
+          "Name": "__sizeof__"
+        },
+        {
+          "Documentation": "Return str(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1621988870,
+          "Name": "__str__"
+        },
+        {
+          "Documentation": "Abstract classes can override this to customize issubclass().\n\nThis is invoked early on by abc.ABCMeta.__subclasscheck__().\nIt should return True, False or NotImplemented.  If it returns\nNotImplemented, the normal algorithm is used.  Otherwise, it\noverrides the normal algorithm (and the outcome is cached).\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "subclass",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1374911630,
+          "Name": "__subclasshook__"
+        },
+        {
+          "Documentation": "Return number of occurrences of value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753321816,
+          "Name": "count"
+        },
+        {
+          "Documentation": "Return first index of value.\n\nRaises ValueError if the value is not present.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__float_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "start",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stop",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 758816539,
+          "Name": "index"
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 784651,
+          "Name": "dig"
+        },
+        {
+          "Value": "i:float",
+          "Id": -105571469,
+          "Name": "epsilon"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1518794292,
+          "Name": "mant_dig"
+        },
+        {
+          "Value": "i:float",
+          "Id": 793069,
+          "Name": "max"
+        },
+        {
+          "Value": "i:int",
+          "Id": 992667279,
+          "Name": "max_10_exp"
+        },
+        {
+          "Value": "i:int",
+          "Id": -2020600629,
+          "Name": "max_exp"
+        },
+        {
+          "Value": "i:float",
+          "Id": 793307,
+          "Name": "min"
+        },
+        {
+          "Value": "i:int",
+          "Id": -830300703,
+          "Name": "min_10_exp"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1800802631,
+          "Name": "min_exp"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1247591617,
+          "Name": "n_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1428290577,
+          "Name": "n_sequence_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1605593504,
+          "Name": "n_unnamed_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 766741069,
+          "Name": "radix"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1987390596,
+          "Name": "rounds"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1290755624,
+      "Name": "__float_info"
+    },
+    {
+      "Documentation": "hash_info\n\nA struct sequence providing parameters used for computing\nhashes. The attributes are read only.",
+      "Bases": [
+        "tuple",
+        "object"
+      ],
+      "Methods": [
+        {
+          "Documentation": "Return self+value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1639102358,
+          "Name": "__add__"
+        },
+        {
+          "Documentation": "Return key in self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1841774666,
+          "Name": "__contains__"
+        },
+        {
+          "Documentation": "Implement delattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2095540485,
+          "Name": "__delattr__"
+        },
+        {
+          "Documentation": "Default dir() implementation.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1636169386,
+          "Name": "__dir__"
+        },
+        {
+          "Documentation": "Return self==value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748372547,
+          "Name": "__eq__"
+        },
+        {
+          "Documentation": "Default object formatter.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "format_spec",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 695475534,
+          "Name": "__format__"
+        },
+        {
+          "Documentation": "Return self>=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748420597,
+          "Name": "__ge__"
+        },
+        {
+          "Documentation": "Return getattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1329277859,
+          "Name": "__getattribute__"
+        },
+        {
+          "Documentation": "Return self[key].",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -293179214,
+          "Name": "__getitem__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:tuple"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -488627138,
+          "Name": "__getnewargs__"
+        },
+        {
+          "Documentation": "Return self>value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748435012,
+          "Name": "__gt__"
+        },
+        {
+          "Documentation": "Return hash(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 925523557,
+          "Name": "__hash__"
+        },
+        {
+          "Documentation": "hash_info\n\nA struct sequence providing parameters used for computing\nhashes. The attributes are read only.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__"
+        },
+        {
+          "Documentation": "This method is called when a class is subclassed.\n\nThe default implementation does nothing. It may be\noverridden to extend subclasses.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1040523408,
+          "Name": "__init_subclass__"
+        },
+        {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Documentation": "Return self<=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748569552,
+          "Name": "__le__"
+        },
+        {
+          "Documentation": "Return len(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1628904226,
+          "Name": "__len__"
+        },
+        {
+          "Documentation": "Return self<value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748583967,
+          "Name": "__lt__"
+        },
+        {
+          "Documentation": "Return self*value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1627505971,
+          "Name": "__mul__"
+        },
+        {
+          "Documentation": "Return self!=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748629134,
+          "Name": "__ne__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -544113923,
+          "Name": "__reduce__"
+        },
+        {
+          "Documentation": "Helper for pickle.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "protocol",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -491007883,
+          "Name": "__reduce_ex__"
+        },
+        {
+          "Documentation": "Return repr(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1215429388,
+          "Name": "__repr__"
+        },
+        {
+          "Documentation": "Return value*self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1222960745,
+          "Name": "__rmul__"
+        },
+        {
+          "Documentation": "Implement setattr(self, name, value).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -736377828,
+          "Name": "__setattr__"
+        },
+        {
+          "Documentation": "Size of object in memory, in bytes.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1069167279,
+          "Name": "__sizeof__"
+        },
+        {
+          "Documentation": "Return str(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1621988870,
+          "Name": "__str__"
+        },
+        {
+          "Documentation": "Abstract classes can override this to customize issubclass().\n\nThis is invoked early on by abc.ABCMeta.__subclasscheck__().\nIt should return True, False or NotImplemented.  If it returns\nNotImplemented, the normal algorithm is used.  Otherwise, it\noverrides the normal algorithm (and the outcome is cached).\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "subclass",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1374911630,
+          "Name": "__subclasshook__"
+        },
+        {
+          "Documentation": "Return number of occurrences of value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753321816,
+          "Name": "count"
+        },
+        {
+          "Documentation": "Return first index of value.\n\nRaises ValueError if the value is not present.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__hash_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "start",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stop",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 758816539,
+          "Name": "index"
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:str",
+          "Id": 646712,
+          "Name": "algorithm"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1883651780,
+          "Name": "cutoff"
+        },
+        {
+          "Value": "i:int",
+          "Id": 84262752,
+          "Name": "hash_bits"
+        },
+        {
+          "Value": "i:int",
+          "Id": 24476897,
+          "Name": "imag"
+        },
+        {
+          "Value": "i:int",
+          "Id": 789610,
+          "Name": "inf"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1637600896,
+          "Name": "modulus"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1247591617,
+          "Name": "n_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1428290577,
+          "Name": "n_sequence_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1605593504,
+          "Name": "n_unnamed_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 794020,
+          "Name": "nan"
+        },
+        {
+          "Value": "i:int",
+          "Id": 403740637,
+          "Name": "seed_bits"
+        },
+        {
+          "Value": "i:int",
+          "Id": 771597327,
+          "Name": "width"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -1417346840,
+      "Name": "__hash_info"
+    },
+    {
+      "Documentation": "sys.int_info\n\nA struct sequence that holds information about Python's\ninternal representation of integers.  The attributes are read only.",
+      "Bases": [
+        "tuple",
+        "object"
+      ],
+      "Methods": [
+        {
+          "Documentation": "Return self+value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1639102358,
+          "Name": "__add__"
+        },
+        {
+          "Documentation": "Return key in self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1841774666,
+          "Name": "__contains__"
+        },
+        {
+          "Documentation": "Implement delattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2095540485,
+          "Name": "__delattr__"
+        },
+        {
+          "Documentation": "Default dir() implementation.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1636169386,
+          "Name": "__dir__"
+        },
+        {
+          "Documentation": "Return self==value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748372547,
+          "Name": "__eq__"
+        },
+        {
+          "Documentation": "Default object formatter.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "format_spec",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 695475534,
+          "Name": "__format__"
+        },
+        {
+          "Documentation": "Return self>=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748420597,
+          "Name": "__ge__"
+        },
+        {
+          "Documentation": "Return getattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1329277859,
+          "Name": "__getattribute__"
+        },
+        {
+          "Documentation": "Return self[key].",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -293179214,
+          "Name": "__getitem__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:tuple"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -488627138,
+          "Name": "__getnewargs__"
+        },
+        {
+          "Documentation": "Return self>value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748435012,
+          "Name": "__gt__"
+        },
+        {
+          "Documentation": "Return hash(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 925523557,
+          "Name": "__hash__"
+        },
+        {
+          "Documentation": "sys.int_info\n\nA struct sequence that holds information about Python's\ninternal representation of integers.  The attributes are read only.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__"
+        },
+        {
+          "Documentation": "This method is called when a class is subclassed.\n\nThe default implementation does nothing. It may be\noverridden to extend subclasses.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1040523408,
+          "Name": "__init_subclass__"
+        },
+        {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Documentation": "Return self<=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748569552,
+          "Name": "__le__"
+        },
+        {
+          "Documentation": "Return len(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1628904226,
+          "Name": "__len__"
+        },
+        {
+          "Documentation": "Return self<value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748583967,
+          "Name": "__lt__"
+        },
+        {
+          "Documentation": "Return self*value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1627505971,
+          "Name": "__mul__"
+        },
+        {
+          "Documentation": "Return self!=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748629134,
+          "Name": "__ne__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -544113923,
+          "Name": "__reduce__"
+        },
+        {
+          "Documentation": "Helper for pickle.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "protocol",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -491007883,
+          "Name": "__reduce_ex__"
+        },
+        {
+          "Documentation": "Return repr(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1215429388,
+          "Name": "__repr__"
+        },
+        {
+          "Documentation": "Return value*self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1222960745,
+          "Name": "__rmul__"
+        },
+        {
+          "Documentation": "Implement setattr(self, name, value).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -736377828,
+          "Name": "__setattr__"
+        },
+        {
+          "Documentation": "Size of object in memory, in bytes.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1069167279,
+          "Name": "__sizeof__"
+        },
+        {
+          "Documentation": "Return str(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1621988870,
+          "Name": "__str__"
+        },
+        {
+          "Documentation": "Abstract classes can override this to customize issubclass().\n\nThis is invoked early on by abc.ABCMeta.__subclasscheck__().\nIt should return True, False or NotImplemented.  If it returns\nNotImplemented, the normal algorithm is used.  Otherwise, it\noverrides the normal algorithm (and the outcome is cached).\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "subclass",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1374911630,
+          "Name": "__subclasshook__"
+        },
+        {
+          "Documentation": "Return number of occurrences of value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753321816,
+          "Name": "count"
+        },
+        {
+          "Documentation": "Return first index of value.\n\nRaises ValueError if the value is not present.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__int_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "start",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stop",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 758816539,
+          "Name": "index"
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 1945378665,
+          "Name": "bits_per_digit"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1247591617,
+          "Name": "n_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1428290577,
+          "Name": "n_sequence_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1605593504,
+          "Name": "n_unnamed_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1534275235,
+          "Name": "sizeof_digit"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 785997365,
+      "Name": "__int_info"
+    },
+    {
+      "Documentation": "sys.thread_info\n\nA struct sequence holding information about the thread implementation.",
+      "Bases": [
+        "tuple",
+        "object"
+      ],
+      "Methods": [
+        {
+          "Documentation": "Return self+value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1639102358,
+          "Name": "__add__"
+        },
+        {
+          "Documentation": "Return key in self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1841774666,
+          "Name": "__contains__"
+        },
+        {
+          "Documentation": "Implement delattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2095540485,
+          "Name": "__delattr__"
+        },
+        {
+          "Documentation": "Default dir() implementation.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1636169386,
+          "Name": "__dir__"
+        },
+        {
+          "Documentation": "Return self==value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748372547,
+          "Name": "__eq__"
+        },
+        {
+          "Documentation": "Default object formatter.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "format_spec",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 695475534,
+          "Name": "__format__"
+        },
+        {
+          "Documentation": "Return self>=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748420597,
+          "Name": "__ge__"
+        },
+        {
+          "Documentation": "Return getattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1329277859,
+          "Name": "__getattribute__"
+        },
+        {
+          "Documentation": "Return self[key].",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -293179214,
+          "Name": "__getitem__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:tuple"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -488627138,
+          "Name": "__getnewargs__"
+        },
+        {
+          "Documentation": "Return self>value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748435012,
+          "Name": "__gt__"
+        },
+        {
+          "Documentation": "Return hash(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 925523557,
+          "Name": "__hash__"
+        },
+        {
+          "Documentation": "sys.thread_info\n\nA struct sequence holding information about the thread implementation.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__"
+        },
+        {
+          "Documentation": "This method is called when a class is subclassed.\n\nThe default implementation does nothing. It may be\noverridden to extend subclasses.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1040523408,
+          "Name": "__init_subclass__"
+        },
+        {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Documentation": "Return self<=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748569552,
+          "Name": "__le__"
+        },
+        {
+          "Documentation": "Return len(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1628904226,
+          "Name": "__len__"
+        },
+        {
+          "Documentation": "Return self<value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748583967,
+          "Name": "__lt__"
+        },
+        {
+          "Documentation": "Return self*value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1627505971,
+          "Name": "__mul__"
+        },
+        {
+          "Documentation": "Return self!=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748629134,
+          "Name": "__ne__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -544113923,
+          "Name": "__reduce__"
+        },
+        {
+          "Documentation": "Helper for pickle.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "protocol",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -491007883,
+          "Name": "__reduce_ex__"
+        },
+        {
+          "Documentation": "Return repr(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1215429388,
+          "Name": "__repr__"
+        },
+        {
+          "Documentation": "Return value*self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1222960745,
+          "Name": "__rmul__"
+        },
+        {
+          "Documentation": "Implement setattr(self, name, value).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -736377828,
+          "Name": "__setattr__"
+        },
+        {
+          "Documentation": "Size of object in memory, in bytes.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1069167279,
+          "Name": "__sizeof__"
+        },
+        {
+          "Documentation": "Return str(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1621988870,
+          "Name": "__str__"
+        },
+        {
+          "Documentation": "Abstract classes can override this to customize issubclass().\n\nThis is invoked early on by abc.ABCMeta.__subclasscheck__().\nIt should return True, False or NotImplemented.  If it returns\nNotImplemented, the normal algorithm is used.  Otherwise, it\noverrides the normal algorithm (and the outcome is cached).\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "subclass",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1374911630,
+          "Name": "__subclasshook__"
+        },
+        {
+          "Documentation": "Return number of occurrences of value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753321816,
+          "Name": "count"
+        },
+        {
+          "Documentation": "Return first index of value.\n\nRaises ValueError if the value is not present.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__thread_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "start",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stop",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 758816539,
+          "Name": "index"
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:NoneType",
+          "Id": 24568258,
+          "Name": "lock"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1247591617,
+          "Name": "n_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1428290577,
+          "Name": "n_sequence_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1605593504,
+          "Name": "n_unnamed_fields"
+        },
+        {
+          "Value": "i:str",
+          "Id": 24614690,
+          "Name": "name"
+        },
+        {
+          "Value": "i:NoneType",
+          "Id": 1781540065,
+          "Name": "version"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 462236460,
+      "Name": "__thread_info"
+    },
+    {
+      "Documentation": "sys.version_info\n\nVersion information as a named tuple.",
+      "Bases": [
+        "tuple",
+        "object"
+      ],
+      "Methods": [
+        {
+          "Documentation": "Return self+value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1639102358,
+          "Name": "__add__"
+        },
+        {
+          "Documentation": "Return key in self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1841774666,
+          "Name": "__contains__"
+        },
+        {
+          "Documentation": "Implement delattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2095540485,
+          "Name": "__delattr__"
+        },
+        {
+          "Documentation": "Default dir() implementation.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1636169386,
+          "Name": "__dir__"
+        },
+        {
+          "Documentation": "Return self==value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748372547,
+          "Name": "__eq__"
+        },
+        {
+          "Documentation": "Default object formatter.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "format_spec",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 695475534,
+          "Name": "__format__"
+        },
+        {
+          "Documentation": "Return self>=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748420597,
+          "Name": "__ge__"
+        },
+        {
+          "Documentation": "Return getattr(self, name).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1329277859,
+          "Name": "__getattribute__"
+        },
+        {
+          "Documentation": "Return self[key].",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -293179214,
+          "Name": "__getitem__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:tuple"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -488627138,
+          "Name": "__getnewargs__"
+        },
+        {
+          "Documentation": "Return self>value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748435012,
+          "Name": "__gt__"
+        },
+        {
+          "Documentation": "Return hash(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 925523557,
+          "Name": "__hash__"
+        },
+        {
+          "Documentation": "sys.version_info\n\nVersion information as a named tuple.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__"
+        },
+        {
+          "Documentation": "This method is called when a class is subclassed.\n\nThe default implementation does nothing. It may be\noverridden to extend subclasses.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1040523408,
+          "Name": "__init_subclass__"
+        },
+        {
+          "Documentation": "Return self<=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748569552,
+          "Name": "__le__"
+        },
+        {
+          "Documentation": "Return len(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1628904226,
+          "Name": "__len__"
+        },
+        {
+          "Documentation": "Return self<value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748583967,
+          "Name": "__lt__"
+        },
+        {
+          "Documentation": "Return self*value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1627505971,
+          "Name": "__mul__"
+        },
+        {
+          "Documentation": "Return self!=value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1748629134,
+          "Name": "__ne__"
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -544113923,
+          "Name": "__reduce__"
+        },
+        {
+          "Documentation": "Helper for pickle.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "protocol",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Union[str, tuple]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -491007883,
+          "Name": "__reduce_ex__"
+        },
+        {
+          "Documentation": "Return repr(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1215429388,
+          "Name": "__repr__"
+        },
+        {
+          "Documentation": "Return value*self.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1222960745,
+          "Name": "__rmul__"
+        },
+        {
+          "Documentation": "Implement setattr(self, name, value).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:NoneType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -736377828,
+          "Name": "__setattr__"
+        },
+        {
+          "Documentation": "Size of object in memory, in bytes.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1069167279,
+          "Name": "__sizeof__"
+        },
+        {
+          "Documentation": "Return str(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1621988870,
+          "Name": "__str__"
+        },
+        {
+          "Documentation": "Abstract classes can override this to customize issubclass().\n\nThis is invoked early on by abc.ABCMeta.__subclasscheck__().\nIt should return True, False or NotImplemented.  If it returns\nNotImplemented, the normal algorithm is used.  Otherwise, it\noverrides the normal algorithm (and the outcome is cached).\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "subclass",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1374911630,
+          "Name": "__subclasshook__"
+        },
+        {
+          "Documentation": "Return number of occurrences of value.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753321816,
+          "Name": "count"
+        },
+        {
+          "Documentation": "Return first index of value.\n\nRaises ValueError if the value is not present.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "cls",
+                  "Type": "sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "self",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "start",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stop",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 758816539,
+          "Name": "index"
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "tuple_iterator",
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Value": "i:int",
+          "Id": 762129410,
+          "Name": "major"
+        },
+        {
+          "Value": "i:int",
+          "Id": 762361101,
+          "Name": "micro"
+        },
+        {
+          "Value": "i:int",
+          "Id": 762371582,
+          "Name": "minor"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1247591617,
+          "Name": "n_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1428290577,
+          "Name": "n_sequence_fields"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1605593504,
+          "Name": "n_unnamed_fields"
+        },
+        {
+          "Value": "i:str",
+          "Id": -112134796,
+          "Name": "releaselevel"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1968090933,
+          "Name": "serial"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1619201900,
+      "Name": "__version_info"
+    },
+    {
+      "Documentation": "sys.flags\n\nFlags provided through command line arguments or environment vars.",
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 753929372,
+          "Name": "debug"
+        },
+        {
+          "Value": "i:int",
+          "Id": 514096161,
+          "Name": "division_warning"
+        },
+        {
+          "Value": "i:int",
+          "Id": -907580899,
+          "Name": "inspect"
+        },
+        {
+          "Value": "i:int",
+          "Id": 518040171,
+          "Name": "interactive"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1299139572,
+          "Name": "optimize"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1675585612,
+          "Name": "dont_write_bytecode"
+        },
+        {
+          "Value": "i:int",
+          "Id": 113341396,
+          "Name": "no_user_site"
+        },
+        {
+          "Value": "i:int",
+          "Id": -754777330,
+          "Name": "no_site"
+        },
+        {
+          "Value": "i:int",
+          "Id": -175101059,
+          "Name": "ignore_environment"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1781039499,
+          "Name": "verbose"
+        },
+        {
+          "Value": "i:int",
+          "Id": 2130352401,
+          "Name": "bytes_warning"
+        },
+        {
+          "Value": "i:int",
+          "Id": 766418045,
+          "Name": "quiet"
+        },
+        {
+          "Value": "i:int",
+          "Id": 557578535,
+          "Name": "hash_randomization"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1755030623,
+      "Name": "_flags"
+    },
+    {
+      "Documentation": "sys.float_info\n\nA structseq holding information about the float type. It contains low level\ninformation about the precision and internal representation. Please study\nyour system's :file:`float.h` for more information.",
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:float",
+          "Id": -105571469,
+          "Name": "epsilon"
+        },
+        {
+          "Value": "i:int",
+          "Id": 784651,
+          "Name": "dig"
+        },
+        {
+          "Value": "i:int",
+          "Id": 1518794292,
+          "Name": "mant_dig"
+        },
+        {
+          "Value": "i:float",
+          "Id": 793069,
+          "Name": "max"
+        },
+        {
+          "Value": "i:int",
+          "Id": -2020600629,
+          "Name": "max_exp"
+        },
+        {
+          "Value": "i:int",
+          "Id": 992667279,
+          "Name": "max_10_exp"
+        },
+        {
+          "Value": "i:float",
+          "Id": 793307,
+          "Name": "min"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1800802631,
+          "Name": "min_exp"
+        },
+        {
+          "Value": "i:int",
+          "Id": -830300703,
+          "Name": "min_10_exp"
+        },
+        {
+          "Value": "i:int",
+          "Id": 766741069,
+          "Name": "radix"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1987390596,
+          "Name": "rounds"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -1254930983,
+      "Name": "_float_info"
+    },
+    {
+      "Documentation": "hash_info\n\nA struct sequence providing parameters used for computing\nhashes. The attributes are read only.",
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 771597327,
+          "Name": "width"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1637600896,
+          "Name": "modulus"
+        },
+        {
+          "Value": "i:int",
+          "Id": 789610,
+          "Name": "inf"
+        },
+        {
+          "Value": "i:int",
+          "Id": 794020,
+          "Name": "nan"
+        },
+        {
+          "Value": "i:int",
+          "Id": 24476897,
+          "Name": "imag"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 440196887,
+      "Name": "_hash_info"
+    },
+    {
+      "Documentation": "sys.int_info\n\nA struct sequence that holds information about Python's\ninternal representation of integers.  The attributes are read only.",
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 1945378665,
+          "Name": "bits_per_digit"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1534275235,
+          "Name": "sizeof_digit"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 430276134,
+      "Name": "_int_info"
+    },
+    {
+      "Documentation": "sys.version_info\n\nVersion information as a named tuple.",
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 762129410,
+          "Name": "major"
+        },
+        {
+          "Value": "i:int",
+          "Id": 762371582,
+          "Name": "minor"
+        },
+        {
+          "Value": "i:int",
+          "Id": 762361101,
+          "Name": "micro"
+        },
+        {
+          "Value": "i:str",
+          "Id": -112134796,
+          "Name": "releaselevel"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1968090933,
+          "Name": "serial"
+        },
+        {
+          "Value": "tuple_iterator",
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -949236003,
+      "Name": "_version_info"
+    },
+    {
+      "Documentation": "Built-in immutable sequence.\n\nIf no argument is given, the constructor returns an empty tuple.\nIf iterable is specified the tuple is initialized from iterable's items.\n\nIf the argument is a tuple, the return value is the same object.",
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 762129410,
+          "Name": "major"
+        },
+        {
+          "Value": "i:int",
+          "Id": 762371582,
+          "Name": "minor"
+        },
+        {
+          "Value": "i:int",
+          "Id": 752565431,
+          "Name": "build"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1042062966,
+          "Name": "platform"
+        },
+        {
+          "Value": "i:str",
+          "Id": -2093362438,
+          "Name": "service_pack"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1573389776,
+          "Name": "service_pack_minor"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1573631948,
+          "Name": "service_pack_major"
+        },
+        {
+          "Value": "i:int",
+          "Id": 642126643,
+          "Name": "suite_mast"
+        },
+        {
+          "Value": "i:int",
+          "Id": -1438724575,
+          "Name": "product_type"
+        },
+        {
+          "Value": "i:tuple",
+          "Id": -1420100829,
+          "Name": "platform_version"
+        },
+        {
+          "Value": "tuple_iterator",
+          "Id": 971292143,
+          "Name": "__iter__"
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__"
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__"
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -506845532,
+      "Name": "_WinVersion"
+    }
+  ],
+  "Id": -1012399873,
+  "Name": "sys"
+}

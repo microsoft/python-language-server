@@ -13,15 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-
-namespace Microsoft.Python.Analysis {
-    internal static class QualifiedNameExtensions {
-        public static string CombineNames(this KeyValuePair<string, string> qualifiedNamePair, string sep = ".") {
-            if (string.IsNullOrEmpty(qualifiedNamePair.Key)) {
-                return qualifiedNamePair.Value;
-            }
-            return qualifiedNamePair.Key + sep + qualifiedNamePair.Value;
-        }
+namespace Microsoft.Python.Analysis.Caching.Models {
+    internal abstract class MemberModel {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

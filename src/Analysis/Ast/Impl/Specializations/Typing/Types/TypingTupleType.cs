@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="itemTypes">Tuple item types.</param>
         /// <param name="interpreter">Python interpreter.</param>
         public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
-            : base(null, BuiltinTypeId.Tuple, interpreter, false) {
+            : base(null, BuiltinTypeId.Tuple, interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
             ItemTypes = itemTypes;
             Name = CodeFormatter.FormatSequence("Tuple", '[', itemTypes);
         }

@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
@@ -141,6 +142,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     .ToList(),
                 TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
             };
+
+            if (@params.initializationOptions.enableAnalysCache != false) {
+                _services.AddService(new ModuleDatabase(_services));
+            }
 
             _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken);
             _services.AddService(_interpreter);

@@ -16,8 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -30,8 +28,10 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
-
+ 
         public string Name { get; }
+        public string QualifiedName => Name;
+
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
 
@@ -49,13 +49,13 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(null) {
+        public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 
             Name = name;
             Interpreter = interpreter;
             SetDeclaringModule(this);
         }
 
-        public PythonVariableModule(IPythonModule module): base(module) {
+        public PythonVariableModule(IPythonModule module): base(module) { 
             Name = module.Name;
             Interpreter = module.Interpreter;
             Module = module;

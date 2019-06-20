@@ -72,6 +72,8 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
+        public override string QualifiedName => this.GetQualifiedName();
+
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             // Now we can go and find overload with matching arguments.
             var overload = Overloads[args.OverloadIndex];

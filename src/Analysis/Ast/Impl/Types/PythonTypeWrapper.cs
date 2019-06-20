@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -57,6 +56,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
         public virtual string Name => InnerType.Name;
+        public virtual string QualifiedName => InnerType.QualifiedName;
         public IPythonModule DeclaringModule { get; }
         public virtual string Documentation => InnerType.Documentation;
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;

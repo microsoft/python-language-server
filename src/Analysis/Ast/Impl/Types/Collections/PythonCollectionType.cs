@@ -32,17 +32,17 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         /// </summary>
         /// <param name="typeName">Iterable type name. If null, name of the type id will be used.</param>
         /// <param name="collectionTypeId">Collection type id, such as <see cref="BuiltinTypeId.List"/>.</param>
-        /// <param name="interpreter">Python interpreter.</param>
+        /// <param name="declaringModule">Declaring module.</param>
         /// <param name="isMutable">Indicates if collection is mutable (like list) or immutable (like tuple).</param>
         public PythonCollectionType(
             string typeName,
             BuiltinTypeId collectionTypeId,
-            IPythonInterpreter interpreter,
+            IPythonModule declaringModule,
             bool isMutable
-        ) : base(collectionTypeId, interpreter.ModuleResolution.BuiltinsModule) {
+            ) : base(collectionTypeId, declaringModule) {
             _typeName = typeName;
             TypeId = collectionTypeId;
-            IteratorType = new PythonIteratorType(collectionTypeId.GetIteratorTypeId(), interpreter);
+            IteratorType = new PythonIteratorType(collectionTypeId.GetIteratorTypeId(), declaringModule);
             IsMutable = isMutable;
         }
 
@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         #endregion
 
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, IArgumentSet args) {
+        public static IPythonCollection CreateList(IPythonModule declaringModule, IArgumentSet args) {
             var exact = true;
             IReadOnlyList<IMember> contents;
             if (args.Arguments.Count > 1) {
@@ -94,33 +94,33 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             } else {
                 contents = args.ListArgument?.Values;
             }
-            return CreateList(interpreter, contents ?? Array.Empty<IMember>(), exact: exact);
+            return CreateList(declaringModule, contents ?? Array.Empty<IMember>(), exact: exact);
         }
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
+        public static IPythonCollection CreateList(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
+            var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, declaringModule, true);
             return new PythonCollection(collectionType, contents, flatten, exact: exact);
         }
 
-        public static IPythonCollection CreateConcatenatedList(IPythonInterpreter interpreter, params IPythonCollection[] many) {
+        public static IPythonCollection CreateConcatenatedList(IPythonModule declaringModule, params IPythonCollection[] many) {
             var exact = many?.All(c => c != null && c.IsExact) ?? false;
             var contents = many?.ExcludeDefault().Select(c => c.Contents).SelectMany().ToList() ?? new List<IMember>();
-            return CreateList(interpreter, contents, false, exact: exact);
+            return CreateList(declaringModule, contents, false, exact: exact);
         }
 
-        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
+        public static IPythonCollection CreateTuple(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool exact = false) {
+            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, declaringModule, false);
             return new PythonCollection(collectionType, contents, exact: exact);
         }
 
-        public static IPythonCollection CreateConcatenatedTuple(IPythonInterpreter interpreter, params IPythonCollection[] many) {
+        public static IPythonCollection CreateConcatenatedTuple(IPythonModule declaringModule, params IPythonCollection[] many) {
             var exact = many?.All(c => c != null && c.IsExact) ?? false;
             var contents = many?.ExcludeDefault().Select(c => c.Contents).SelectMany().ToList() ?? new List<IMember>();
-            return CreateTuple(interpreter, contents, exact: exact);
+            return CreateTuple(declaringModule, contents, exact: exact);
         }
 
-        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
+        public static IPythonCollection CreateSet(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
+            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, declaringModule, true);
             return new PythonCollection(collectionType, contents, flatten, exact: exact);
         }
 

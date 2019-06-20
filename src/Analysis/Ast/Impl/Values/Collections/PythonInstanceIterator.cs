@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         private readonly IPythonFunctionType __next__;
 
         public PythonInstanceIterator(IMember instance, IPythonInterpreter interpreter)
-            : base(new PythonIteratorType(BuiltinTypeId.SetIterator, interpreter)) {
+            : base(new PythonIteratorType(BuiltinTypeId.SetIterator, interpreter.ModuleResolution.BuiltinsModule)) {
             __next__ = instance.GetPythonType().GetMember(@"__next__") as IPythonFunctionType;
         }
 

@@ -83,7 +83,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IStubCache StubCache { get; protected set; }
 
-        public IPythonModule GetImportedModule(string name) 
+        public IPythonModule GetImportedModule(string name)
             => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {

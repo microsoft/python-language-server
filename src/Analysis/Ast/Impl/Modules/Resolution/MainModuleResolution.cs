@@ -99,7 +99,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     return module;
                 }
             }
-            
+
+            var dbs = _services.GetService<IModuleDatabaseService>();
+            if (dbs != null && dbs.TryCreateModule(name, moduleImport.ModulePath, out var m) != ModuleStorageState.DoesNotExist && m != null) {
+                return m;
+            }
+
             // If there is a stub, make sure it is loaded and attached
             // First check stub next to the module.
             if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
@@ -200,7 +205,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 .ExcludeDefault()) {
                 GetRdt()?.UnlockDocument(uri);
             }
-            
+
             // Preserve builtins, they don't need to be reloaded since interpreter does not change.
             var builtins = Modules[BuiltinModuleName];
             Modules.Clear();
@@ -237,7 +242,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ReloadModulePaths(addedRoots);
         }
 
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) 
+        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
             => PathResolver.SetUserSearchPaths(searchPaths);
 
         // For tests
