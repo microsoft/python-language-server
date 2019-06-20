@@ -353,7 +353,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             /// <summary>
             /// Expression that represents value of the argument in the
-            /// call expression. <see cref="Parsing.Ast.CallExpression"/>.
+            /// call expression. <see cref="CallExpression"/>.
             /// </summary>
             public Expression ValueExpression { get; set; }
 

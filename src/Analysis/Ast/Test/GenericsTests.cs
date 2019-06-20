@@ -644,7 +644,7 @@ x = v.get()
         }
 
         [TestMethod, Priority(0)]
-        public async Task GenericTypeNoArguments() {
+        public async Task TypeVarNoArguments() {
             const string code = @"
 from typing import TypeVar
 
@@ -653,8 +653,9 @@ T = TypeVar()
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
-            var diagnosticMsg = analysis.Diagnostics.ElementAt(0);
-            diagnosticMsg.ErrorCode.Should().Equals(Diagnostics.ErrorCodes.TypeVarNoArguments);
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarNoArguments);
+            diagnostic.Message.Should().BeEquivalentTo(Resources.TypeVarNoArguments);
         }
     }
 }
