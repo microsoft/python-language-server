@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var constraints = args.Skip(1).Select((a, idx) => {
+            var constraints = args.Skip(1).Select(a => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
