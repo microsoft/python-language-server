@@ -250,11 +250,20 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The first argument to TypeVar must be a string..
+        /// </summary>
+        internal static string TypeVarFirstArgumentNotString {
+            get {
+                return ResourceManager.GetString("TypeVarFirstArgumentNotString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to TypeVar must have at least one argument..
         /// </summary>
-        internal static string TypeVarNoArguments {
+        internal static string TypeVarMissingFirstArgument {
             get {
-                return ResourceManager.GetString("TypeVarNoArguments", resourceCulture);
+                return ResourceManager.GetString("TypeVarMissingFirstArgument", resourceCulture);
             }
         }
         

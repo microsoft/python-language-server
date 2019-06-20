@@ -25,7 +25,7 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
-        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
+        private GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
             : base(name, new Location(declaringModule), documentation) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
         }
@@ -38,16 +38,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
             var args = argSet.Values<IMember>();
             var eval = argSet.Eval;
+            var callExpression = argSet.CallExpression; 
+            var callLocation = callExpression?.GetLocation(eval?.Module);
 
             if (args.Count == 0) {
-                var sourceLocation = argSet.CallExpression.GetLocation(eval.Module);
-
                 eval?.ReportDiagnostics(
-                    eval.Module.Uri,
-                    new DiagnosticsEntry(Resources.TypeVarNoArguments,
-                    sourceLocation.Span, 
-                    Diagnostics.ErrorCodes.TypeVarNoArguments,
-                    Severity.Warning, DiagnosticSource.Analysis)
+                    eval.Module?.Uri,
+                    new DiagnosticsEntry(Resources.TypeVarMissingFirstArgument,
+                    callLocation?.Span ?? default,
+                    Diagnostics.ErrorCodes.TypeVarLint,
+                    Severity.Error, DiagnosticSource.Analysis)
                 );
 
                 return declaringModule.Interpreter.UnknownType;
@@ -55,17 +55,26 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             var name = (args[0] as IPythonConstant)?.GetString();
             if (string.IsNullOrEmpty(name)) {
-                // TODO: report that type name is not a string.
+                var firstArgLocation = callExpression?.Args[0]?.GetLocation(eval?.Module);
+                eval?.ReportDiagnostics(
+                    eval.Module?.Uri,
+                    new DiagnosticsEntry(Resources.TypeVarFirstArgumentNotString,
+                    firstArgLocation?.Span ?? default,
+                    Diagnostics.ErrorCodes.TypeVarLint,
+                    Severity.Warning, DiagnosticSource.Analysis)
+                );
+
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var constraints = args.Skip(1).Select(a => {
+            var constraints = args.Skip(1).Select((a, idx) => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray();
+
             if (constraints.Any(c => c.IsUnknown())) {
-                // TODO: report that some constraints could not be resolved.
+                // TODO: report that some constraints could not be resolved. 
             }
 
             var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.IsUnknown() ? "?" : c.Name));
