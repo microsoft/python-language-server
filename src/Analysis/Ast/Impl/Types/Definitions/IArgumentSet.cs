@@ -141,5 +141,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// Evaluator associated with the set.
         /// </summary>
         IExpressionEvaluator Eval { get; }
+        
+        /// <summary>
+        /// Expression in how argument set was called
+        /// </summary>
+        CallExpression CallExpression { get; }
     }
 }

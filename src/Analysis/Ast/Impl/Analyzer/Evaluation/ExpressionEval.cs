@@ -108,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
             // Do not add if module is library, etc. Only handle user code.
-            if (Module.ModuleType == ModuleType.User) {
+            if (Module.ModuleType == ModuleType.User || Module.ModuleType == ModuleType.Specialized) {
                 lock (_lock) {
                     _diagnostics.Add(entry);
                 }

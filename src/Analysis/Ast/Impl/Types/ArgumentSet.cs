@@ -49,6 +49,7 @@ namespace Microsoft.Python.Analysis.Types {
         public int OverloadIndex { get; }
         public IExpressionEvaluator Eval { get; }
 
+        public CallExpression CallExpression { get; }
 
         private ArgumentSet() { }
 
@@ -81,6 +82,7 @@ namespace Microsoft.Python.Analysis.Types {
             Eval = eval;
             OverloadIndex = overloadIndex;
             DeclaringModule = fn.DeclaringModule;
+            CallExpression = callExpr;
 
             if (callExpr == null) {
                 // Typically invoked by specialization code without call expression in the code.
@@ -351,7 +353,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             /// <summary>
             /// Expression that represents value of the argument in the
-            /// call expression. <see cref="CallExpression"/>.
+            /// call expression. <see cref="Parsing.Ast.CallExpression"/>.
             /// </summary>
             public Expression ValueExpression { get; set; }
 

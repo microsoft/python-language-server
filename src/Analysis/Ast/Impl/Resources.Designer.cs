@@ -250,6 +250,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to TypeVar must have at least one argument..
+        /// </summary>
+        internal static string TypeVarNoArguments {
+            get {
+                return ResourceManager.GetString("TypeVarNoArguments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to determine analysis cache path. Using default &apos;{0}&apos;..
         /// </summary>
         internal static string UnableToDetermineCachePath {

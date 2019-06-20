@@ -16,10 +16,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
@@ -33,11 +35,21 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override PythonMemberType MemberType => PythonMemberType.Generic;
         public override bool IsSpecialized => true;
 
-
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
             var args = argSet.Values<IMember>();
+            var eval = argSet.Eval;
+
             if (args.Count == 0) {
-                // TODO: report that at least one argument is required.
+                var sourceLocation = argSet.CallExpression.GetLocation(eval.Module);
+
+                eval?.ReportDiagnostics(
+                    eval.Module.Uri,
+                    new DiagnosticsEntry(Resources.TypeVarNoArguments,
+                    sourceLocation.Span, 
+                    Diagnostics.ErrorCodes.TypeVarNoArguments,
+                    Severity.Warning, DiagnosticSource.Analysis)
+                );
+
                 return declaringModule.Interpreter.UnknownType;
             }
 

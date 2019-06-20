@@ -642,5 +642,19 @@ x = v.get()
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericTypeNoArguments() {
+            const string code = @"
+from typing import TypeVar
+
+T = TypeVar()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnosticMsg = analysis.Diagnostics.ElementAt(0);
+            diagnosticMsg.ErrorCode.Should().Equals(Diagnostics.ErrorCodes.TypeVarNoArguments);
+        }
     }
 }
