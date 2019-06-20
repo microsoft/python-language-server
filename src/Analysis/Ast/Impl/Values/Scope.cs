@@ -126,9 +126,9 @@ namespace Microsoft.Python.Analysis.Values {
         }
         public IPythonModule Module { get; }
         public string Name => string.Empty;
-        public ScopeStatement Node => null;
+        public ScopeStatement Node => Module.Analysis.Ast;
         public IScope OuterScope => null;
-        public IGlobalScope GlobalScope { get; protected set; }
+        public IGlobalScope GlobalScope { get; }
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
