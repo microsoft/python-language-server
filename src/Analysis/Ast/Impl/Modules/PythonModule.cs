@@ -235,7 +235,14 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Returns module content (code).
         /// </summary>
-        public string Content => _buffer.Text;
+        public string Content {
+            get {
+                lock (AnalysisLock) {
+                    return _buffer.Text;
+                }
+            }
+        }
+
         #endregion
 
         #region Parsing
