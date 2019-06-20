@@ -27,6 +27,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return cd.HeaderIndex;
                 case FunctionDefinition fd:
                     return fd.HeaderIndex;
+                case null:
+                    return 0;
                 default:
                     return scope.Node.StartIndex;
             }
