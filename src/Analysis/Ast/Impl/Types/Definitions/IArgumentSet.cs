@@ -143,7 +143,7 @@ namespace Microsoft.Python.Analysis.Types {
         IExpressionEvaluator Eval { get; }
         
         /// <summary>
-        /// Expression in how argument set was called
+        /// Call expression that invoked function or method with this argument set
         /// </summary>
         CallExpression CallExpression { get; }
     }
