@@ -52,25 +52,72 @@ class Map(Generic[T, str, int, T1]):
             diagnostic.Message.Should().Be(Resources.GenericArgumentsNotAllTypeParameters);
         }
 
-        [TestMethod, Priority(0)]
-        public async Task GenericArgumentsDuplicate() {
-            var code = @"
-from typing import Generic, TypeVar
-
+        [DataRow(GenericSetup + @"
 _X = TypeVar('_X', str, int)
 _T = _X
 
 class Map(Generic[_T, _X]):
     def hello():
         pass
-";
+")]
+        [DataRow(GenericSetup + @"
+_X = TypeVar('_X', str, int)
+_T = _X
 
+class Map(Generic[_T, T, T1, _X]):
+    def hello():
+        pass
+")]
+        [DataRow(GenericSetup + @"
+_X = TypeVar('_X', str, int)
+_T = _X
+
+class Map(Generic[_T,_T, T]):
+    def hello():
+        pass
+")]
+        [DataRow(GenericSetup + @"
+class Map(Generic[T,T]):
+    def hello():
+        pass
+")]
+        [DataTestMethod, Priority(0)]
+        public async Task GenericArgumentsDuplicate(string code) {
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
             diagnostic.Message.Should().Be(Resources.GenericArgumentsNotAllUnique);
+        }
+
+ [DataRow(GenericSetup + @"
+_X = TypeVar('_X', str, int)
+
+class Map(Generic[_X, T]):
+    def hello():
+        pass
+")]
+        [DataRow(GenericSetup + @"
+class Map(Generic[T1, T]):
+    def hello():
+        pass
+")]
+        [DataRow(GenericSetup + @"
+class Map(Generic[T]):
+    def hello():
+        pass
+")]
+        [DataRow(GenericSetup + @"
+_X = TypeVar('_X', str, int)
+class Map(Generic[T,T1, _X]):
+    def hello():
+        pass
+")]
+        [DataTestMethod, Priority(0)]
+        public async Task GenericArgumentsNoDiagnosticOnValid(string code) {
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(0);
         }
     }
 }
