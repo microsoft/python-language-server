@@ -195,4 +195,7 @@
   <data name="TypeVarFirstArgumentNotString" xml:space="preserve">
     <value>The first argument to TypeVar must be a string.</value>
   </data>
+  <data name="TypeVarSingleConstraint" xml:space="preserve">
+    <value>A single constraint to TypeVar is not allowed.</value>
+  </data>
 </root>

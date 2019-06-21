@@ -268,6 +268,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A single constraint to TypeVar is not allowed..
+        /// </summary>
+        internal static string TypeVarSingleConstraint {
+            get {
+                return ResourceManager.GetString("TypeVarSingleConstraint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to determine analysis cache path. Using default &apos;{0}&apos;..
         /// </summary>
         internal static string UnableToDetermineCachePath {

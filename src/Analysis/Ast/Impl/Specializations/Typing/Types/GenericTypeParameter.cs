@@ -67,6 +67,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return false;
             }
 
+            if (args.Skip(1).Count() == 1) {
+                var secondArgLocation = callExpression?.Args[1]?.GetLocation(eval?.Module);
+                eval?.ReportDiagnostics(
+                    eval.Module?.Uri,
+                    new DiagnosticsEntry(Resources.TypeVarSingleConstraint,
+                    secondArgLocation?.Span ?? default,
+                    Diagnostics.ErrorCodes.TypeVarArguments,
+                    Severity.Warning, DiagnosticSource.Analysis)
+                );
+                return false;
+            }
+
             return true;
         }
 

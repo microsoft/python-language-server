@@ -49,7 +49,7 @@ T = TypeVar(1f)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarLint);
+            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarArguments);
             diagnostic.Message.Should().BeEquivalentTo(Resources.TypeVarFirstArgumentNotString);
 
         }
@@ -82,8 +82,33 @@ T = TypeVar()
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarLint);
+            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarArguments);
             diagnostic.Message.Should().BeEquivalentTo(Resources.TypeVarMissingFirstArgument);
+        }
+
+        [DataRow(Utils.TYPEVAR_IMPORT + @"
+T = TypeVar('T', 'test_constraint')
+")]
+        [DataRow(Utils.TYPEVAR_IMPORT + @"
+T = TypeVar('T', int)
+")]
+        [DataRow(Utils.TYPEVAR_IMPORT + @"
+T = TypeVar('T', complex)
+")]
+        [DataRow(Utils.TYPEVAR_IMPORT + @"
+T = TypeVar('T', str)
+")]
+        [DataRow(Utils.TYPEVAR_IMPORT + @"
+T = TypeVar('T', 5)
+")]
+        [DataTestMethod, Priority(0)]
+        public async Task TypeVarOneConstraint(string code) {
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarArguments);
+            diagnostic.Message.Should().BeEquivalentTo(Resources.TypeVarSingleConstraint);
         }
     }
 }
