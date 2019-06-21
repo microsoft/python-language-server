@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Analysis.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -13,10 +8,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
     [TestClass]
     public class LintTypeVarTests : AnalysisTestBase {
-
-        internal static class Utils {
-            public const string TYPEVAR_IMPORT = "from typing import TypeVar";
-        }
+        public const string TypeVarImport = "from typing import TypeVar";
 
         public TestContext TestContext { get; set; }
 
@@ -27,11 +19,11 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar(1, 2, 3)")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar(2.0, 3)")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 class C:
     int: t
     __init__(t):
@@ -40,7 +32,7 @@ class C:
 test = C(5)
 T = TypeVar(C, 3)
 ")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar(1f)
 ")]
         [DataTestMethod, Priority(0)]
@@ -49,19 +41,19 @@ T = TypeVar(1f)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarArguments);
-            diagnostic.Message.Should().BeEquivalentTo(Resources.TypeVarFirstArgumentNotString);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypeVarArguments);
+            diagnostic.Message.Should().Be(Resources.TypeVarFirstArgumentNotString);
 
         }
 
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T', int, str)")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 F = TypeVar('F',double, complex)")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T')
 ")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T', float, int)
 ")]
         [DataTestMethod, Priority(0)]
@@ -82,23 +74,23 @@ T = TypeVar()
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarArguments);
-            diagnostic.Message.Should().BeEquivalentTo(Resources.TypeVarMissingFirstArgument);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypeVarArguments);
+            diagnostic.Message.Should().Be(Resources.TypeVarMissingFirstArgument);
         }
 
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T', 'test_constraint')
 ")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T', int)
 ")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T', complex)
 ")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T', str)
 ")]
-        [DataRow(Utils.TYPEVAR_IMPORT + @"
+        [DataRow(TypeVarImport + @"
 T = TypeVar('T', 5)
 ")]
         [DataTestMethod, Priority(0)]
@@ -107,8 +99,8 @@ T = TypeVar('T', 5)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().BeEquivalentTo(Diagnostics.ErrorCodes.TypeVarArguments);
-            diagnostic.Message.Should().BeEquivalentTo(Resources.TypeVarSingleConstraint);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypeVarArguments);
+            diagnostic.Message.Should().Be(Resources.TypeVarSingleConstraint);
         }
     }
 }
