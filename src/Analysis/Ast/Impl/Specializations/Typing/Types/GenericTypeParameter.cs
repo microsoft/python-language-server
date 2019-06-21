@@ -39,10 +39,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var args = argSet.Values<IMember>();
             var eval = argSet.Eval;
             var callExpression = argSet.CallExpression;
-            var callLocation = callExpression?.GetLocation(eval?.Module);
+            var callLocation = callExpression?.GetLocation(eval.Module);
 
             if (args.Count == 0) {
-                eval?.ReportDiagnostics(
+                eval.ReportDiagnostics(
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.TypeVarMissingFirstArgument,
                     callLocation?.Span ?? default,
@@ -55,8 +55,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             var name = (args[0] as IPythonConstant)?.GetString();
             if (string.IsNullOrEmpty(name)) {
-                var firstArgLocation = callExpression?.Args[0]?.GetLocation(eval?.Module);
-                eval?.ReportDiagnostics(
+                var firstArgLocation = callExpression?.Args[0]?.GetLocation(eval.Module);
+                eval.ReportDiagnostics(
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.TypeVarFirstArgumentNotString,
                     firstArgLocation?.Span ?? default,
@@ -67,14 +67,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return false;
             }
 
-            if (args.Skip(1).Count() == 1) {
-                var secondArgLocation = callExpression?.Args[1]?.GetLocation(eval?.Module);
-                eval?.ReportDiagnostics(
+            if (args.Count - 1 == 1) {
+                var secondArgLocation = callExpression?.Args[1]?.GetLocation(eval.Module);
+                eval.ReportDiagnostics(
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.TypeVarSingleConstraint,
                     secondArgLocation?.Span ?? default,
                     Diagnostics.ErrorCodes.TypeVarArguments,
-                    Severity.Warning, DiagnosticSource.Analysis)
+                    Severity.Error, DiagnosticSource.Analysis)
                 );
                 return false;
             }
