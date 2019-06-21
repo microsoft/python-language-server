@@ -62,7 +62,7 @@ F = TypeVar('F',double, complex)")]
 T = TypeVar('T')
 ")]
         [DataRow(Utils.TYPEVAR_IMPORT + @"
-T = TypeVar('T', float)
+T = TypeVar('T', float, int)
 ")]
         [DataTestMethod, Priority(0)]
         public async Task TypeVarNoDiagnosticOnValidUse(string code) {
