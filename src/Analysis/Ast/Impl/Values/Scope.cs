@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region IScope
         public string Name => Node?.Name ?? "<global>";
-        public virtual ScopeStatement Node => Module.GetAstNode<ScopeStatement>(this);
+        public virtual ScopeStatement Node => Module.GetAstNode<ScopeStatement>(this) ?? Module.GetAst();
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
 
