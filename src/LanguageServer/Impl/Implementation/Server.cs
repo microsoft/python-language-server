@@ -209,6 +209,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             Settings = newSettings;
 
             _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
+            _completionSource.Options = Settings.completion;
 
             if (oldSettings == null) {
                 return true;
