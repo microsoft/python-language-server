@@ -44,7 +44,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
                 var type = value.GetPythonType();
                 if(type is IPythonClassType cls) {
-                    return GetClassItems(cls, e, value is IPythonInstance, context);
+                    return GetClassItems(cls, e, context);
                 }
 
                 var items = new List<CompletionItem>();
@@ -60,7 +60,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             return Enumerable.Empty<CompletionItem>();
         }
 
-        private static IEnumerable<CompletionItem> GetClassItems(IPythonClassType cls, Expression e, bool isInstance, CompletionContext context) {
+        private static IEnumerable<CompletionItem> GetClassItems(IPythonClassType cls, Expression e, CompletionContext context) {
             var eval = context.Analysis.ExpressionEvaluator;
             // See if we are completing on self. Note that we may be inside inner function
             // that does not necessarily have 'self' argument so we are looking beyond local
