@@ -189,13 +189,15 @@
   <data name="UnableToDetermineCachePathException" xml:space="preserve">
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
   </data>
+<<<<<<< HEAD
   <data name="ReturnInInit" xml:space="preserve">
     <value>Explicit return in __init__ </value>
-  </data>
+=======
   <data name="GenericArgumentsNotAllTypeParameters" xml:space="preserve">
     <value>Arguments to Generic must all be type parameters.</value>
   </data>
   <data name="GenericArgumentsNotAllUnique" xml:space="preserve">
     <value>Arguments to Generic must all be unique.</value>
+>>>>>>> Adding diagnostic message for improperly using Generic
   </data>
 </root>

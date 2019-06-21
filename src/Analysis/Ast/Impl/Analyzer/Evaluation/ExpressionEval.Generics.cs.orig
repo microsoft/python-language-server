@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
@@ -113,8 +114,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // For other types just use supplied arguments
+<<<<<<< HEAD
+            if (indices.Count > 0) {
+                return gt.CreateSpecificType(new ArgumentSet(indices, expr, this));
+=======
             if (args.Count > 0) {
-                return gt.CreateSpecificType(new ArgumentSet(args, expr, this));
+                return gt.CreateSpecificType(new ArgumentSet(args));
+>>>>>>> Adding diagnostic message for improperly using Generic
             }
 
             return UnknownType;
