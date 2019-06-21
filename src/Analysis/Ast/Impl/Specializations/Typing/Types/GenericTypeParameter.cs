@@ -35,10 +35,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override PythonMemberType MemberType => PythonMemberType.Generic;
         public override bool IsSpecialized => true;
 
-        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
+        private static bool TypeVarArgumentsValid(IArgumentSet argSet) {
             var args = argSet.Values<IMember>();
             var eval = argSet.Eval;
-            var callExpression = argSet.CallExpression; 
+            var callExpression = argSet.CallExpression;
             var callLocation = callExpression?.GetLocation(eval?.Module);
 
             if (args.Count == 0) {
@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                     Severity.Error, DiagnosticSource.Analysis)
                 );
 
-                return declaringModule.Interpreter.UnknownType;
+                return false;
             }
 
             var name = (args[0] as IPythonConstant)?.GetString();
@@ -64,9 +64,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                     Severity.Warning, DiagnosticSource.Analysis)
                 );
 
-                return declaringModule.Interpreter.UnknownType;
+                return false;
             }
 
+            return true;
+        }
+
+        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
+            if (!TypeVarArgumentsValid(argSet))
+                return declaringModule.Interpreter.UnknownType;
+
+            var args = argSet.Values<IMember>();
+            var name = (args[0] as IPythonConstant)?.GetString();
             var constraints = args.Skip(1).Select(a => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
