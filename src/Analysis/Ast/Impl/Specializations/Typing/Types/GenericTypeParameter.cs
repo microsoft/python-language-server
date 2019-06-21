@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             if (args.Count == 0) {
                 eval.ReportDiagnostics(
-                    eval.Module?.Uri,
+                    eval.Module.Uri,
                     new DiagnosticsEntry(Resources.TypeVarMissingFirstArgument,
                     callLocation?.Span ?? default,
                     Diagnostics.ErrorCodes.TypeVarArguments,
@@ -57,9 +57,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             if (string.IsNullOrEmpty(name)) {
                 var firstArgLocation = callExpression?.Args[0]?.GetLocation(eval.Module);
                 eval.ReportDiagnostics(
-                    eval.Module?.Uri,
+                    eval.Module.Uri,
                     new DiagnosticsEntry(Resources.TypeVarFirstArgumentNotString,
-                    firstArgLocation?.Span ?? default,
+                    firstArgLocation?.Span ?? default, 
                     Diagnostics.ErrorCodes.TypeVarArguments,
                     Severity.Warning, DiagnosticSource.Analysis)
                 );
@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             if (args.Count == 2) {
                 var secondArgLocation = callExpression?.Args[1]?.GetLocation(eval.Module);
                 eval.ReportDiagnostics(
-                    eval.Module?.Uri,
+                    eval.Module.Uri,
                     new DiagnosticsEntry(Resources.TypeVarSingleConstraint,
                     secondArgLocation?.Span ?? default,
                     Diagnostics.ErrorCodes.TypeVarArguments,
