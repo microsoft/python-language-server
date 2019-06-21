@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.TypeVarMissingFirstArgument,
                     callLocation?.Span ?? default,
-                    Diagnostics.ErrorCodes.TypeVarLint,
+                    Diagnostics.ErrorCodes.TypeVarArguments,
                     Severity.Error, DiagnosticSource.Analysis)
                 );
 
@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.TypeVarFirstArgumentNotString,
                     firstArgLocation?.Span ?? default,
-                    Diagnostics.ErrorCodes.TypeVarLint,
+                    Diagnostics.ErrorCodes.TypeVarArguments,
                     Severity.Warning, DiagnosticSource.Analysis)
                 );
 
