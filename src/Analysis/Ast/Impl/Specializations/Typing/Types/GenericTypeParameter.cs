@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             }
 
             // Python gives runtime error when TypeVar has two args
-            // e.g T = TypeVar('T', int)
+            // e.g. T = TypeVar('T', int)
             if (args.Count == 2) {
                 var secondArgLocation = callExpression?.Args[1]?.GetLocation(eval.Module);
                 eval.ReportDiagnostics(
