@@ -42,14 +42,26 @@ class Map(Generic[T, str, int, T1]):
     def hello():
         pass
 ")]
+        [DataRow(GenericSetup + @"
+class Map(Generic[str, int]):
+    def hello():
+        pass
+")]
+        [DataRow(GenericSetup + @"
+class Map(Generic[str]):
+    def hello():
+        pass
+")]
+
+
         [DataTestMethod, Priority(0)]
-        public async Task GenericArgumentsNotAllTypeParameters(string code) {
+        public async Task GenericNotAllTypeParameters(string code) {
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
-            diagnostic.Message.Should().Be(Resources.GenericArgumentsNotAllTypeParameters);
+            diagnostic.Message.Should().Be(Resources.GenericNotAllTypeParameters);
         }
 
         [DataRow(GenericSetup + @"
@@ -82,16 +94,16 @@ class Map(Generic[T,T]):
         pass
 ")]
         [DataTestMethod, Priority(0)]
-        public async Task GenericArgumentsDuplicate(string code) {
+        public async Task GenericDuplicateArguments(string code) {
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
-            diagnostic.Message.Should().Be(Resources.GenericArgumentsNotAllUnique);
+            diagnostic.Message.Should().Be(Resources.GenericNotAllUnique);
         }
 
- [DataRow(GenericSetup + @"
+        [DataRow(GenericSetup + @"
 _X = TypeVar('_X', str, int)
 
 class Map(Generic[_X, T]):
