@@ -45,9 +45,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 eval.ReportDiagnostics(
                     eval.Module.Uri,
                     new DiagnosticsEntry(Resources.TypeVarMissingFirstArgument,
-                    callLocation?.Span ?? default,
-                    Diagnostics.ErrorCodes.TypeVarArguments,
-                    Severity.Error, DiagnosticSource.Analysis)
+                        callLocation?.Span ?? default,
+                        Diagnostics.ErrorCodes.TypeVarArguments,
+                        Severity.Error, DiagnosticSource.Analysis)
                 );
 
                 return false;
@@ -59,9 +59,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 eval.ReportDiagnostics(
                     eval.Module.Uri,
                     new DiagnosticsEntry(Resources.TypeVarFirstArgumentNotString,
-                    firstArgLocation?.Span ?? default, 
-                    Diagnostics.ErrorCodes.TypeVarArguments,
-                    Severity.Warning, DiagnosticSource.Analysis)
+                        firstArgLocation?.Span ?? default,
+                        Diagnostics.ErrorCodes.TypeVarArguments,
+                        Severity.Warning, DiagnosticSource.Analysis)
                 );
 
                 return false;
@@ -70,13 +70,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             // Python gives runtime error when TypeVar has two args
             // e.g. T = TypeVar('T', int)
             if (args.Count == 2) {
-                var secondArgLocation = callExpression?.Args[1]?.GetLocation(eval.Module);
                 eval.ReportDiagnostics(
                     eval.Module.Uri,
                     new DiagnosticsEntry(Resources.TypeVarSingleConstraint,
-                    secondArgLocation?.Span ?? default,
-                    Diagnostics.ErrorCodes.TypeVarArguments,
-                    Severity.Error, DiagnosticSource.Analysis)
+                        callLocation?.Span ?? default,
+                        Diagnostics.ErrorCodes.TypeVarArguments,
+                        Severity.Error, DiagnosticSource.Analysis)
                 );
                 return false;
             }
