@@ -225,27 +225,18 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
         /// </summary>
-        internal static string GenericNotAllTypeParameters {
+        internal static string GenericArgumentsNotAllTypeParameters {
             get {
-                return ResourceManager.GetString("GenericNotAllTypeParameters", resourceCulture);
+                return ResourceManager.GetString("GenericArgumentsNotAllTypeParameters", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Arguments to Generic must all be unique..
         /// </summary>
-        internal static string GenericNotAllUnique {
+        internal static string GenericArgumentsNotAllUnique {
             get {
-                return ResourceManager.GetString("GenericNotAllUnique", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Not enough arguments for Generic..
-        /// </summary>
-        internal static string GenericTooFewArguments {
-            get {
-                return ResourceManager.GetString("GenericTooFewArguments", resourceCulture);
+                return ResourceManager.GetString("GenericArgumentsNotAllUnique", resourceCulture);
             }
         }
         

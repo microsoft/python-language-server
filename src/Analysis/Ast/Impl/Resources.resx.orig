@@ -193,20 +193,20 @@
   <data name="ReturnInInit" xml:space="preserve">
     <value>Explicit return in __init__ </value>
   </data>
-  <data name="GenericArgumentsNotAllTypeParameters" xml:space="preserve">
-=======
   <data name="GenericNotAllTypeParameters" xml:space="preserve">
->>>>>>> Adding error message on no arguments to Generic
+=======
+  <data name="GenericArgumentsNotAllTypeParameters" xml:space="preserve">
+>>>>>>> Revert "Adding error message on no arguments to Generic"
     <value>Arguments to Generic must all be type parameters.</value>
   </data>
-  <data name="GenericNotAllUnique" xml:space="preserve">
+  <data name="GenericArgumentsNotAllUnique" xml:space="preserve">
     <value>Arguments to Generic must all be unique.</value>
   </data>
 <<<<<<< HEAD
-</root>
-=======
   <data name="GenericTooFewArguments" xml:space="preserve">
     <value>Not enough arguments for Generic.</value>
   </data>
 </root>
->>>>>>> Adding error message on no arguments to Generic
+=======
+</root>
+>>>>>>> Revert "Adding error message on no arguments to Generic"

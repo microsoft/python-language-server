@@ -1,7 +1,11 @@
-﻿using FluentAssertions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
@@ -24,25 +28,6 @@ T1 = TypeVar('T1', int, str)
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [DataRow(GenericSetup + @"
-class Map(Generic[]):
-    def hello():
-        pass
-")]
-        [DataRow(GenericSetup + @"
-G = Generic[]
-")]
-        [DataTestMethod, Priority(0)]
-        public async Task GenericTooFewArguments(string code) {
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(1);
-
-            var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
-            diagnostic.Message.Should().Be(Resources.GenericTooFewArguments);
-        }
-
-
-        [DataRow(GenericSetup + @"
 class Map(Generic[T, str]):
     def hello():
         pass
@@ -58,13 +43,13 @@ class Map(Generic[T, str, int, T1]):
         pass
 ")]
         [DataTestMethod, Priority(0)]
-        public async Task GenericNotALlTypParameters(string code) {
+        public async Task GenericArgumentsNotAllTypeParameters(string code) {
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
-            diagnostic.Message.Should().Be(Resources.GenericNotAllTypeParameters);
+            diagnostic.Message.Should().Be(Resources.GenericArgumentsNotAllTypeParameters);
         }
 
         [DataRow(GenericSetup + @"
@@ -97,13 +82,13 @@ class Map(Generic[T,T]):
         pass
 ")]
         [DataTestMethod, Priority(0)]
-        public async Task GenericDuplicateArguments(string code) {
+        public async Task GenericArgumentsDuplicate(string code) {
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
-            diagnostic.Message.Should().Be(Resources.GenericNotAllUnique);
+            diagnostic.Message.Should().Be(Resources.GenericArgumentsNotAllUnique);
         }
 
  [DataRow(GenericSetup + @"

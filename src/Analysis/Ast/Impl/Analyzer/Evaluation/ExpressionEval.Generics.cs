@@ -64,24 +64,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// <summary>
         /// Returns whether the arguments to Generic are valid
         /// </summary>
-        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeDefinition> genericTypeArgs, IReadOnlyList<IMember> indices, Expression expr) {
-            // Cannot have Generic[]
-            if (genericTypeArgs.Count == 0) {
-                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                    Resources.GenericTooFewArguments,
-                    GetLocation(expr).Span,
-                    ErrorCodes.GenericArguments,
-                    Severity.Error,
-                    DiagnosticSource.Analysis));
-
+        private bool GenericClassParameterValid(IGenericTypeDefinition[] genericTypeArgs, IReadOnlyList<IMember> indices, Expression expr) {
+            if (genericTypeArgs.Length == 0) {
                 return false;
             }
 
             // All arguments to Generic must be type parameters
             // e.g. Generic[T, str] throws a runtime error
-            if (genericTypeArgs.Count != indices.Count) {
+            if (genericTypeArgs.Length != indices.Count) {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                    Resources.GenericNotAllTypeParameters,
+                    Resources.GenericArgumentsNotAllTypeParameters,
                     GetLocation(expr).Span,
                     ErrorCodes.GenericArguments,
                     Severity.Error,
@@ -90,9 +82,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             // All arguments to Generic must be distinct
-            if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Count) {
+            if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Length) {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                   Resources.GenericNotAllUnique,
+                   Resources.GenericArgumentsNotAllUnique,
                    GetLocation(expr).Span,
                    ErrorCodes.GenericArguments,
                    Severity.Error,
