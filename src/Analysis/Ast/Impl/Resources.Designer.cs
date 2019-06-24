@@ -275,5 +275,14 @@ namespace Microsoft.Python.Analysis {
                 return ResourceManager.GetString("UndefinedVariable", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported operand type(s) for &apos;{0}&apos;: &apos;{1}&apos; and &apos;{2}&apos;.
+        /// </summary>
+        internal static string UnsupporedOperandType {
+            get {
+                return ResourceManager.GetString("UnsupporedOperandType", resourceCulture);
+            }
+        }
     }
 }
