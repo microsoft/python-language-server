@@ -167,7 +167,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             if (typeArgs != null) {
-                var specificReturnValue = returnClassType.CreateSpecificType(new ArgumentSet(typeArgs));
+                var specificReturnValue = returnClassType.CreateSpecificType(new ArgumentSet(typeArgs, args.Expression, args.Eval));
                 return new PythonInstance(specificReturnValue);
             }
 

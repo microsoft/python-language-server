@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
@@ -38,7 +39,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly DictArg _dictArgument;
         private bool _evaluated;
 
-        public static IArgumentSet Empty = new ArgumentSet();
+        public static IArgumentSet EmptyNoContext = new ArgumentSet();
 
         /// <summary>Module that declares the function</summary>
         public IPythonModule DeclaringModule { get; }
@@ -49,19 +50,38 @@ namespace Microsoft.Python.Analysis.Types {
         public int OverloadIndex { get; }
         public IExpressionEvaluator Eval { get; }
 
+        public Expression Expression { get; }
 
         private ArgumentSet() { }
 
-        public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
-            _arguments = typeArgs.Select(t => new Argument(t)).ToList();
+        /// <summary>
+        /// Creates an empty argument set with some context in how the argument set was used.
+        /// </summary>
+        /// <param name="expr">Expression associated with argument set.</param>
+        /// <param name="eval">Evaluator for the expression involving the argument set.</param>
+        /// <returns></returns>
+        public static ArgumentSet Empty(Expression expr, IExpressionEvaluator eval) {
+            return new ArgumentSet(new List<IMember>(), expr, eval);
+        }
+        
+        /// <summary>
+        /// Creates a set of arguments for a constructor call, an indexing call, etc.
+        ///
+        /// In these cases a corresponding function is unknown, but it is still convenient to have the context
+        /// of the expression which the arguments are needed for and the evaluator that is analyzing
+        /// that expression.
+        /// 
+        /// </summary>
+        /// <param name="args">Arguments for the call.</param>
+        /// <param name="expr">Expression for the call.</param>
+        /// <param name="eval">Evaluator of the current analysis.</param>
+        public ArgumentSet(IReadOnlyList<IMember> args, Expression expr, IExpressionEvaluator eval) {
+            _arguments = args.Select(t => new Argument(t)).ToList();
+            Expression = expr;
+            Eval = eval;
+
             _evaluated = true;
         }
-
-        public ArgumentSet(IReadOnlyList<IMember> memberArgs) {
-            _arguments = memberArgs.Select(t => new Argument(t)).ToList();
-            _evaluated = true;
-        }
-
         public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
             this(fn, overloadIndex, instance, callExpr, eval.Module, eval) { }
 

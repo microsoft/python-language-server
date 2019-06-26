@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             __next__ = instance.GetPythonType().GetMember(@"__next__") as IPythonFunctionType;
         }
 
-        public IMember Next => __next__?.Call(null, @"__next__", ArgumentSet.Empty) ?? UnknownType;
+        public IMember Next => __next__?.Call(null, @"__next__", ArgumentSet.EmptyNoContext) ?? UnknownType;
 
         public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations

@@ -33,6 +33,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         }
 
         public override IMember Index(object index) 
-            => _collectionType.Index(this, index).GetPythonType().CreateInstance(null, ArgumentSet.Empty);
+            => _collectionType.Index(this, index).GetPythonType().CreateInstance(null, ArgumentSet.EmptyNoContext);
     }
 }
