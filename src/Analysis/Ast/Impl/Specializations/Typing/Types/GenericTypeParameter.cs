@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             }).ToArray();
 
             if (constraints.Any(c => c.IsUnknown())) {
-                // TODO: report that some constraints could not be resolved. 
+                // TODO: report that some constraints could not be resolved.
             }
 
             var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.IsUnknown() ? "?" : c.Name));
