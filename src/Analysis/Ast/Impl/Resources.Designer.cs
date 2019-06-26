@@ -277,7 +277,7 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unsupported operand type(s) for &apos;{0}&apos;: &apos;{1}&apos; and &apos;{2}&apos;.
+        ///   Looks up a localized string similar to Unsupported operand types for &apos;{0}&apos;: &apos;{1}&apos; and &apos;{2}&apos;.
         /// </summary>
         internal static string UnsupporedOperandType {
             get {

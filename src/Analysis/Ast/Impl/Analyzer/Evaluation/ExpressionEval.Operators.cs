@@ -25,16 +25,6 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-
-        private void ReportOperatorDiagnostics(Expression expr, IPythonType leftType, IPythonType rightType, PythonOperator op) {
-            ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                Resources.UnsupporedOperandType.FormatInvariant(op.ToCodeString(), leftType.Name, rightType.Name),
-                GetLocation(expr).Span,
-                ErrorCodes.UnsupportedOperandType,
-                Severity.Error,
-                DiagnosticSource.Analysis));
-        }
-
         private IMember GetValueFromUnaryOp(UnaryExpression expr) {
             switch (expr.Op) {
                 case PythonOperator.Not:
@@ -450,5 +440,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             return (null, null);
         }
+        private void ReportOperatorDiagnostics(Expression expr, IPythonType leftType, IPythonType rightType, PythonOperator op) {
+            ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
+                Resources.UnsupporedOperandType.FormatInvariant(op.ToCodeString(), leftType.Name, rightType.Name),
+                GetLocation(expr).Span,
+                ErrorCodes.UnsupportedOperandType,
+                Severity.Error,
+                DiagnosticSource.Analysis));
+        }
+
     }
 }
