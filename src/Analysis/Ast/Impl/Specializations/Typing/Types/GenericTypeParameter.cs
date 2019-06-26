@@ -25,7 +25,7 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
-        private GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
+        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
             : base(name, new Location(declaringModule), documentation) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
         }
