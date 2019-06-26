@@ -101,6 +101,7 @@ namespace Microsoft.Python.Analysis.Types {
             Eval = eval;
             OverloadIndex = overloadIndex;
             DeclaringModule = fn.DeclaringModule;
+            Expression = callExpr;
 
             if (callExpr == null) {
                 // Typically invoked by specialization code without call expression in the code.
