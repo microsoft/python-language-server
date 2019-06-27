@@ -250,6 +250,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Explicit return in __init__ .
+        /// </summary>
+        internal static string ReturnInInit {
+            get {
+                return ResourceManager.GetString("ReturnInInit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to determine analysis cache path. Using default &apos;{0}&apos;..
         /// </summary>
         internal static string UnableToDetermineCachePath {
