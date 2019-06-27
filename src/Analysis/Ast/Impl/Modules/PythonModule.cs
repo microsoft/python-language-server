@@ -125,7 +125,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public IMember CreateInstance(string typeName, IArgumentSet args) => this;
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
-        public IMember Index(IPythonInstance instance, object index) => Interpreter.UnknownType;
+        public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
 
         public virtual string Documentation {
             get {

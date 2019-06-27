@@ -17,6 +17,7 @@ using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingTuple : PythonCollection {
@@ -32,7 +33,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
             return new TypingIterator(iteratorType, this);
         }
 
-        public override IMember Index(object index) 
-            => _collectionType.Index(this, index).GetPythonType().CreateInstance(null, ArgumentSet.WithoutContext);
+        public override IMember Index(IArgumentSet args) 
+            => _collectionType.Index(this, args).GetPythonType().CreateInstance(null, ArgumentSet.Empty(args.Expression, args.Eval));
     }
 }

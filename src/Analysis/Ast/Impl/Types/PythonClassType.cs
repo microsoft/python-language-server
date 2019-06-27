@@ -149,11 +149,11 @@ namespace Microsoft.Python.Analysis.Types {
             return new PythonInstance(this);
         }
 
-        public override IMember Index(IPythonInstance instance, object index) {
-            var defaultReturn = base.Index(instance, index);
+        public override IMember Index(IPythonInstance instance, IArgumentSet args) {
+            var defaultReturn = base.Index(instance, args);
             var fromBases = Bases
                 .MaybeEnumerate()
-                .Select(b => b.Index(instance, index))
+                .Select(b => b.Index(instance, args))
                 .Except(new[] { defaultReturn, UnknownType })
                 .FirstOrDefault();
 

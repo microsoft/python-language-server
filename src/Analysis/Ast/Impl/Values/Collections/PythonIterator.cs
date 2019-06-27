@@ -14,6 +14,8 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
+using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Values.Collections {
     /// <summary>
@@ -33,7 +35,12 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             Collection = collection;
         }
 
-        public virtual IMember Next => Collection.Index(_index++) ?? UnknownType;
+        public virtual IMember Next => Collection.Index(GetArgument(_index++)) ?? UnknownType;
+
+        private IArgumentSet GetArgument(int index) {
+            var newArg = new PythonConstant(index, Type.DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Int));
+            return new ArgumentSet(new List<IMember>() { newArg }, null, null);
+        }
 
         public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations
