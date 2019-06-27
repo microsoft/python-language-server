@@ -48,6 +48,6 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;
-        private IPythonType Type => _getter?.Call(ArgumentSet.EmptyNoContext, DeclaringType)?.GetPythonType();
+        private IPythonType Type => _getter?.Call(ArgumentSet.WithoutContext, DeclaringType)?.GetPythonType();
     }
 }

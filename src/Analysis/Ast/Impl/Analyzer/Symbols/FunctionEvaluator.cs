@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
-                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.EmptyNoContext);
+                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.WithoutContext);
                 // If instance could not be created, such as when return type is List[T] and
                 // type of T is not yet known, just use the type.
                 var instance = t.IsUnknown() ? annotationType : t;

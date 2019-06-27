@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly DictArg _dictArgument;
         private bool _evaluated;
 
-        public static IArgumentSet EmptyNoContext = new ArgumentSet();
+        public static IArgumentSet WithoutContext = new ArgumentSet();
 
         /// <summary>Module that declares the function</summary>
         public IPythonModule DeclaringModule { get; }
@@ -65,9 +65,9 @@ namespace Microsoft.Python.Analysis.Types {
         }
         
         /// <summary>
-        /// Creates a set of arguments for a constructor call, an indexing call, etc.
+        /// Creates a set of arguments for a call
         ///
-        /// In these cases a corresponding function is unknown, but it is still convenient to have the context
+        /// Use in the cases a corresponding function is unknown, but it is still convenient to have the context
         /// of the expression which the arguments are needed for and the evaluator that is analyzing
         /// that expression.
         /// 
