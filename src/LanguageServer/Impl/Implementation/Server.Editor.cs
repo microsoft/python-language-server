@@ -44,10 +44,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 await InvokeExtensionsAsync(async (ext, token)
                     => {
-                        if (ext is ICompletionExtension2) {
-                            await (ext as ICompletionExtension2).HandleCompletionAsync(analysis, @params.position, res, cancellationToken);
-                        } else if (ext is ICompletionExtension) {
-                            await (ext as ICompletionExtension).HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken);
+                        switch (ext) {
+                            case ICompletionExtension2 e:
+                                await e.HandleCompletionAsync(analysis, @params.position, res, cancellationToken);
+                                break;
+                            case ICompletionExtension e:
+                                await e.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken);
+                                break;
+                            default:
+                                // ext is not a completion extension, ignore it.
+                                break;
                         }
                     }, cancellationToken);
             }
