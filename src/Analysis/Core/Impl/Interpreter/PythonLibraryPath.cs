@@ -287,16 +287,12 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
 
         public static bool operator !=(PythonLibraryPath left, PythonLibraryPath right) => !left.Equals(right);
 
-        private class PathDepthComparer : IComparer, IComparer<PythonLibraryPath> {
+        private class PathDepthComparer : Comparer<PythonLibraryPath> {
             public static readonly PathDepthComparer Instance = new PathDepthComparer();
 
             private PathDepthComparer() { }
 
-            public int Compare(object x, object y) {
-                return Compare((PythonLibraryPath)x, (PythonLibraryPath)y);
-            }
-
-            public int Compare(PythonLibraryPath x, PythonLibraryPath y) {
+            public override int Compare(PythonLibraryPath x, PythonLibraryPath y) {
                 var xSeps = x.Path.Count(c => c == IOPath.DirectorySeparatorChar);
                 var ySeps = y.Path.Count(c => c == IOPath.DirectorySeparatorChar);
 
