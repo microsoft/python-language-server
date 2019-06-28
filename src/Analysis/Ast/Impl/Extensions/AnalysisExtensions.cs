@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Types;
@@ -39,10 +40,13 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// Provides ability to dynamically calculate function return type.
         /// </summary>
-        public static void SpecializeFunction(this IDocumentAnalysis analysis, string name, ReturnValueProvider returnTypeCallback, string[] dependencies = null) {
+        internal static void SpecializeFunction(this IDocumentAnalysis analysis, string name, ReturnValueProvider returnTypeCallback, IReadOnlyList<ParameterInfo> parameters = null, string[] dependencies = null) {
             var f = analysis.GetOrCreateFunction(name);
             if (f != null) {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
+                    if(parameters != null) {
+                        o.SetParameters(parameters);
+                    }
                     o.SetReturnValueProvider(returnTypeCallback);
                 }
                 f.Specialize(dependencies);

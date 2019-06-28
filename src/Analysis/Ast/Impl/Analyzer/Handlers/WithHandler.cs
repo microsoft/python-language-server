@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     // If fetching context from __enter__ failed, annotation in the stub may be using
                     // type from typing that we haven't specialized yet or there may be an issue in
                     // the stub itself, such as type or incorrect type. Try using context manager then.
-                    context = context ?? contextManager;
+                    context = context.IsUnknown() ? contextManager: context;
                 }
 
                 if (item.Variable is NameExpression nex && !string.IsNullOrEmpty(nex.Name)) {

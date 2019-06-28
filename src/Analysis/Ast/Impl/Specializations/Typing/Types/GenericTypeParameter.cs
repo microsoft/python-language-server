@@ -35,31 +35,48 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
 
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
-            var args = argSet.Values<IMember>();
+            var args = argSet.Arguments;
+            var constraintArgs = argSet.ListArgument?.Values;
+
             if (args.Count == 0) {
                 // TODO: report that at least one argument is required.
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var name = (args[0] as IPythonConstant)?.GetString();
+            var name = (args[0].Value as IPythonConstant)?.GetString();
             if (string.IsNullOrEmpty(name)) {
                 // TODO: report that type name is not a string.
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var constraints = args.Skip(1).Select(a => {
+            var constraints = constraintArgs?.Select(a => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
-            }).ToArray();
+            }).ToArray() ?? Array.Empty<IPythonType>();
+
             if (constraints.Any(c => c.IsUnknown())) {
                 // TODO: report that some constraints could not be resolved.
             }
 
-            var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.IsUnknown() ? "?" : c.Name));
-            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
-
+            var documentation = GetDocumentation(args, constraints);
             return new GenericTypeParameter(name, declaringModule, constraints, documentation, location);
+        }
+
+        private static string GetDocumentation(IReadOnlyList<IArgument> args, IReadOnlyList<IPythonType> constraints) {
+            var name = (args[0].Value as IPythonConstant).GetString();
+            var keyWordArgs = new List<string>();
+
+            foreach (var arg in args.Skip(1)) {
+                if (arg.ValueIsDefault)
+                    continue;
+
+                keyWordArgs.Add($"{arg.Name}={(arg.Value as IPythonConstant)?.Value}");
+            }
+
+            var docArgs = constraints.Select(c => c.IsUnknown() ? "?" : c.Name).Concat(keyWordArgs).Prepend($"'{name}'");
+            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
+            return documentation;
         }
     }
 }

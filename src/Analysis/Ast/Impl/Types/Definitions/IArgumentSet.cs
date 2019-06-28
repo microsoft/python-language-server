@@ -43,11 +43,16 @@ namespace Microsoft.Python.Analysis.Types {
         /// Argument annotation type, if any.
         /// </summary>
         IPythonType Type { get; }
-        
+
         /// <summary>
         /// Parameter location in the AST.
         /// </summary>
         Node Location { get; }
+
+        /// <summary>
+        /// Returns true if this is a default argument.
+        /// </summary>
+        bool ValueIsDefault { get; }
     }
 
     /// <summary>
@@ -58,7 +63,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Argument name.
         /// </summary>
         string Name { get; }
-        
+
         /// <summary>
         /// ValueExpression that evaluates to the value of the argument.
         /// Function call parameter.

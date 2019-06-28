@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     internal sealed class TypingModule : SpecializedModule {
@@ -49,6 +50,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             // TypeVar
             var fn = PythonFunctionType.Specialize("TypeVar", this, GetMemberDocumentation("TypeVar"));
             var o = new PythonFunctionOverload(fn.Name, location);
+            o.SetParameters(new List<ParameterInfo> {
+                    new ParameterInfo("name", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
+                    new ParameterInfo("*constraints", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.List, null),
+                    new ParameterInfo("bound", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
+                    new ParameterInfo("covariant", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.KeywordOnly, new PythonConstant(false, Interpreter.GetBuiltinType(BuiltinTypeId.Bool))),
+                    new ParameterInfo("contravariant", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.KeywordOnly, new PythonConstant(false, Interpreter.GetBuiltinType(BuiltinTypeId.Bool)))
+            });
+
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, args)
