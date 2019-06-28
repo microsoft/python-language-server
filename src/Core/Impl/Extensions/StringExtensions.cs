@@ -204,6 +204,9 @@ namespace Microsoft.Python.Core {
         public static bool PathEquals(this string s, string other)
             => string.Equals(s, other, PathsStringComparison);
 
+        public static int PathCompare(this string s, string other)
+            => string.Compare(s, other, PathsStringComparison);
+
         public static bool EqualsOrdinal(this string s, int index, string other, int otherIndex, int length, bool ignoreCase = false)
             => string.Compare(s, index, other, otherIndex, length, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0;
         public static bool ContainsOrdinal(this string s, string value, bool ignoreCase = false)
