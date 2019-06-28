@@ -35,7 +35,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload)
             : base(eval, overload.FunctionDefinition) {
-
             _overload = overload;
             _function = overload.ClassMember ?? throw new NullReferenceException(nameof(overload.ClassMember));
             _self = _function.DeclaringType as PythonClassType;
@@ -78,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
-                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.WithoutContext);
                 // If instance could not be created, such as when return type is List[T] and
                 // type of T is not yet known, just use the type.
                 var instance = t.IsUnknown() ? annotationType : t;

@@ -138,8 +138,13 @@ namespace Microsoft.Python.Analysis.Types {
         int OverloadIndex { get; }
 
         /// <summary>
-        /// Evaluator associated with the set.
+        /// Evaluator associated with the argument set.
         /// </summary>
         IExpressionEvaluator Eval { get; }
+
+        /// <summary>
+        /// Expression associated with the argument set
+        /// </summary>
+        Expression Expression { get; }
     }
 }

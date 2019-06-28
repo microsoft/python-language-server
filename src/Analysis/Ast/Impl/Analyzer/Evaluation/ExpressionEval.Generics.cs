@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // For other types just use supplied arguments
             if (indices.Count > 0) {
-                return gt.CreateSpecificType(new ArgumentSet(indices));
+                return gt.CreateSpecificType(new ArgumentSet(indices, expr, this));
             }
             // TODO: report too few type arguments for the generic expression.
             return UnknownType;
@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var argSet = initOverload != null
                     ? new ArgumentSet(initFunc, 0, null, callExpr, this)
-                    : new ArgumentSet(constructorArguments);
+                    : new ArgumentSet(constructorArguments, callExpr, this);
 
             argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet);
