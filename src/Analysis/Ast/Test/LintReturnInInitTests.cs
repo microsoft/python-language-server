@@ -105,7 +105,7 @@ class A:
 a = A(1)
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -118,7 +118,7 @@ class A:
 a = A(1)
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
     }
 }
