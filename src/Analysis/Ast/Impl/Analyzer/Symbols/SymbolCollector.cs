@@ -13,14 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// <summary>
@@ -104,11 +105,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
-            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType existing)) {
+            var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local) as PythonFunctionType;
+            if (existing is null) {
                 existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
                 _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+            } else {
+                var span = fd.GetLocation(_eval.Module).Span;
+                var defLine = span.Start.Line;               
+
+                _eval.ReportDiagnostics(
+                    _eval.Module.Uri,
+                    new DiagnosticsEntry(
+                        Resources.FunctionRedefined.FormatInvariant(defLine),
+                        span,
+                        ErrorCodes.FunctionRedefined,
+                        Parsing.Severity.Error,
+                        DiagnosticSource.Analysis));
             }
             AddOverload(fd, existing, o => existing.AddOverload(o));
         }

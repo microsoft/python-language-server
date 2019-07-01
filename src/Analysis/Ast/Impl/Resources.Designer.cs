@@ -223,6 +223,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Function already defined at line &apos;{0}&apos;..
+        /// </summary>
+        internal static string FunctionRedefined {
+            get {
+                return ResourceManager.GetString("FunctionRedefined", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Interpreter does not exist; analysis will not be available..
         /// </summary>
         internal static string InterpreterNotFound {
