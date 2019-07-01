@@ -112,18 +112,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Function type is tracking locations for references and renaming.
                 _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
             } else {
-                var span = fd.GetLocation(_eval.Module).Span;
-                var defLine = span.Start.Line;               
-
-                _eval.ReportDiagnostics(
-                    _eval.Module.Uri,
-                    new DiagnosticsEntry(
-                        Resources.FunctionRedefined.FormatInvariant(defLine),
-                        span,
-                        ErrorCodes.FunctionRedefined,
-                        Parsing.Severity.Error,
-                        DiagnosticSource.Analysis));
+                ReportRedefinedFunction(fd, existing);
             }
+
             AddOverload(fd, existing, o => existing.AddOverload(o));
         }
 
@@ -214,6 +205,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
 
             return member;
+        }
+
+        private void ReportRedefinedFunction(FunctionDefinition redefined, PythonFunctionType existing) {
+            var existingLoc = _eval.GetLocationInfo(existing.FunctionDefinition);
+            var existingLine = existingLoc.Span.Start.Line;
+
+            _eval.ReportDiagnostics(
+                _eval.Module.Uri,
+                new DiagnosticsEntry(
+                    Resources.FunctionRedefined.FormatInvariant(existingLine),
+                    // only highlight the redefined name
+                    _eval.GetLocationInfo(redefined.NameExpression).Span,
+                    ErrorCodes.FunctionRedefined,
+                    Parsing.Severity.Error,
+                    DiagnosticSource.Analysis));
         }
 
         private static bool IsDeprecated(ClassDefinition cd)

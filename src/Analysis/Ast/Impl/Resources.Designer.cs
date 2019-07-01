@@ -223,7 +223,7 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Function already defined at line &apos;{0}&apos;..
+        ///   Looks up a localized string similar to Function already defined at line {0}..
         /// </summary>
         internal static string FunctionRedefined {
             get {
