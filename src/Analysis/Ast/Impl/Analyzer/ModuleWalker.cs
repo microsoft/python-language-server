@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IPythonCollection values = null;
             switch (me.Name) {
                 case "append":
-                    values = PythonCollectionType.CreateList(Module.Interpreter, new ArgumentSet(new List<IMember> { v }, node, Eval));
+                    values = PythonCollectionType.CreateList(Module.Interpreter, new List<IMember> { v }, exact: true);
                     break;
                 case "extend":
                     values = v as IPythonCollection;
