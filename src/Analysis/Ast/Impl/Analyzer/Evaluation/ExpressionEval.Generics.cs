@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                     Resources.GenericNotAllTypeParameters,
                     GetLocation(expr).Span,
-                    ErrorCodes.GenericArguments,
+                    ErrorCodes.TypingGenericArguments,
                     Severity.Error,
                     DiagnosticSource.Analysis));
                 return false;
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                    Resources.GenericNotAllUnique,
                    GetLocation(expr).Span,
-                   ErrorCodes.GenericArguments,
+                   ErrorCodes.TypingGenericArguments,
                    Severity.Error,
                    DiagnosticSource.Analysis));
                 return false;

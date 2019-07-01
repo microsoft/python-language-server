@@ -27,8 +27,9 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string VariableNotDefinedNonLocal = "variable-not-defined-nonlocal";
 <<<<<<< HEAD
         public const string ReturnInInit = "return-in-init";
-=======
         public const string GenericArguments = "generic-arguments";
->>>>>>> Adding diagnostic message for improperly using Generic
+=======
+        public const string TypingGenericArguments = "typing-generic-arguments";
+>>>>>>> Prefixing error code with typing
     }
 }

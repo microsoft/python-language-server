@@ -60,7 +60,7 @@ class Map(Generic[str]):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingGenericArguments);
             diagnostic.Message.Should().Be(Resources.GenericNotAllTypeParameters);
         }
 
@@ -99,7 +99,7 @@ class Map(Generic[T,T]):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.GenericArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingGenericArguments);
             diagnostic.Message.Should().Be(Resources.GenericNotAllUnique);
         }
 

@@ -26,6 +26,6 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string VariableNotDefinedGlobally= "variable-not-defined-globally";
         public const string VariableNotDefinedNonLocal = "variable-not-defined-nonlocal";
         public const string ReturnInInit = "return-in-init";
-        public const string GenericArguments = "generic-arguments";
+        public const string TypingGenericArguments = "typing-generic-arguments";
     }
 }
