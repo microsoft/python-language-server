@@ -50,6 +50,7 @@ r = Rectangle(10, 10)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(7, 9, 7, 25);
             diagnostic.Severity.Should().Be(Severity.Warning);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.ReturnInInit);
             diagnostic.Message.Should().Be(Resources.ReturnInInit);
@@ -68,6 +69,7 @@ r = Rectangle(10, 10)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(4, 9, 4, 17);
             diagnostic.Severity.Should().Be(Severity.Warning);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.ReturnInInit);
             diagnostic.Message.Should().Be(Resources.ReturnInInit);
@@ -88,6 +90,7 @@ a = A(1)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(6, 13, 6, 22);
             diagnostic.Severity.Should().Be(Severity.Warning);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.ReturnInInit);
             diagnostic.Message.Should().Be(Resources.ReturnInInit);
