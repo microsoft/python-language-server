@@ -41,7 +41,7 @@ T = TypeVar(1f)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypeVarArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingTypeVarArguments);
             diagnostic.Message.Should().Be(Resources.TypeVarFirstArgumentNotString);
 
         }
@@ -74,7 +74,7 @@ T = TypeVar()
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypeVarArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingTypeVarArguments);
             diagnostic.Message.Should().Be(Resources.TypeVarMissingFirstArgument);
         }
 
@@ -99,7 +99,7 @@ T = TypeVar('T', 5)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypeVarArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingTypeVarArguments);
             diagnostic.Message.Should().Be(Resources.TypeVarSingleConstraint);
         }
     }
