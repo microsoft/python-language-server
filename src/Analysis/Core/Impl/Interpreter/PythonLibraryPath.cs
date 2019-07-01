@@ -226,17 +226,18 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             // 2) If a path isn't rooted, then root it relative to the workspace root. If there is no root, just continue.
             // 3) Trim off any ending separators for consistency.
             // 4) Remove any empty paths, FS root paths (bad idea), or paths equal to the root.
-            fromUser = fromUser
+            // 5) Deduplicate, preserving the order specified by the user.
+            var fromUserList = fromUser
                 .Select(PathUtils.NormalizePath)
                 .Select(p => root == null || IOPath.IsPathRooted(p) ? p : IOPath.GetFullPath(IOPath.Combine(root, p))) // TODO: Replace with GetFullPath(p, root) when .NET Standard 2.1 is out.
                 .Select(PathUtils.TrimEndSeparator)
-                .Where(p => !string.IsNullOrWhiteSpace(p) && p != "/" && !p.PathEquals(root));
-
-            // Deduplicate, and keep in a set to quickly check interpreter paths against.
-            var fromUserSet = new HashSet<string>(fromUser, PathEqualityComparer.Instance);
+                .Where(p => !string.IsNullOrWhiteSpace(p) && p != "/" && !p.PathEquals(root))
+                .Distinct(PathEqualityComparer.Instance)
+                .ToList();
 
             // Remove any interpreter paths specified in the user config so they can be reclassified.
-            fromInterpreter = fromInterpreter.Where(p => !fromUserSet.Contains(p.Path));
+            // The user list is usually small; List.Contains should not be too slow.
+            fromInterpreter = fromInterpreter.Where(p => !fromUserList.Contains(p.Path, PathEqualityComparer.Instance));
 
             var stdlibLookup = fromInterpreter.ToLookup(p => p.Type == PythonLibraryPathType.StdLib);
 
@@ -245,9 +246,9 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             var interpreterPaths = new List<PythonLibraryPath>(stdlib);
             fromInterpreter = stdlibLookup[false];
 
-            var userPaths = new SortedSet<PythonLibraryPath>(PathDepthComparer.Instance);
+            var userPaths = new List<PythonLibraryPath>();
 
-            var allPaths = fromUserSet.Select(p => new PythonLibraryPath(p))
+            var allPaths = fromUserList.Select(p => new PythonLibraryPath(p))
                 .Concat(fromInterpreter.Where(p => !p.Path.PathEquals(root)));
 
             foreach (var p in allPaths) {
@@ -281,29 +282,10 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
         }
 
-        public bool Equals(PythonLibraryPath other) => Path == other.Path && Type == other.Type && ModulePrefix == other.ModulePrefix;
+        public bool Equals(PythonLibraryPath other) => Path.PathEquals(other.Path) && Type == other.Type && ModulePrefix == other.ModulePrefix;
 
         public static bool operator ==(PythonLibraryPath left, PythonLibraryPath right) => left.Equals(right);
 
         public static bool operator !=(PythonLibraryPath left, PythonLibraryPath right) => !left.Equals(right);
-
-        private class PathDepthComparer : Comparer<PythonLibraryPath> {
-            public static readonly PathDepthComparer Instance = new PathDepthComparer();
-
-            private PathDepthComparer() { }
-
-            public override int Compare(PythonLibraryPath x, PythonLibraryPath y) {
-                var xSeps = x.Path.Count(c => c == IOPath.DirectorySeparatorChar);
-                var ySeps = y.Path.Count(c => c == IOPath.DirectorySeparatorChar);
-
-                var sepComp = xSeps.CompareTo(ySeps);
-                if (sepComp != 0) {
-                    // Deepest first.
-                    return -sepComp;
-                }
-
-                return x.Path.PathCompare(y.Path);
-            }
-        }
     }
 }

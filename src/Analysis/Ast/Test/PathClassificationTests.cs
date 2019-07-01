@@ -19,6 +19,7 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
+using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -54,7 +55,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, Array.Empty<string>());
 
-            interpreterPaths.Should().BeEquivalentTo(new[] {
+            interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
                 new PythonLibraryPath(venv, PythonLibraryPathType.StdLib),
                 new PythonLibraryPath(venvSitePackages, PythonLibraryPathType.Site),
@@ -86,13 +87,13 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
 
-            interpreterPaths.Should().BeEquivalentTo(new[] {
+            interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
                 new PythonLibraryPath(venv, PythonLibraryPathType.StdLib),
                 new PythonLibraryPath(venvSitePackages, PythonLibraryPathType.Site),
             });
 
-            userPaths.Should().BeEquivalentTo(new[] {
+            userPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(src, PythonLibraryPathType.Unspecified),
             });
         }
@@ -112,7 +113,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             interpreterPaths.Should().BeEmpty();
 
-            userPaths.Should().BeEquivalentTo(new[] {
+            userPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(src, PythonLibraryPathType.Unspecified),
             });
         }
@@ -130,18 +131,58 @@ namespace Microsoft.Python.Analysis.Tests {
             var fromUser = new[] {
                 "./src",
                 "./src/something",
-                "./src/foo",
                 "./src/foo/bar",
+                "./src/foo",
             };
 
             var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
 
             interpreterPaths.Should().BeEmpty();
 
-            userPaths.Should().BeEquivalentTo(new[] {
+            userPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new PythonLibraryPath(src, PythonLibraryPathType.Unspecified),
+                new PythonLibraryPath(srcSomething, PythonLibraryPathType.Unspecified),
                 new PythonLibraryPath(srcFooBar, PythonLibraryPathType.Unspecified),
                 new PythonLibraryPath(srcFoo, PythonLibraryPathType.Unspecified),
-                new PythonLibraryPath(srcSomething, PythonLibraryPathType.Unspecified),
+            });
+        }
+
+        [TestMethod]
+        public void InsideStdLib() {
+            var appPath = TestData.GetTestSpecificPath("app.py");
+            var root = Path.GetDirectoryName(appPath);
+
+            var venv = Path.Combine(root, "venv");
+            var venvLib = Path.Combine(venv, "Lib");
+            var venvSitePackages = Path.Combine(venvLib, "site-packages");
+            var inside = Path.Combine(venvSitePackages, "inside");
+            var what = Path.Combine(venvSitePackages, "what");
+
+            var src = Path.Combine(root, "src");
+
+            var fromInterpreter = new[] {
+                new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(venv, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(venvSitePackages, PythonLibraryPathType.Site),
+                new PythonLibraryPath(inside, PythonLibraryPathType.Pth),
+            };
+
+            var fromUser = new[] {
+                "./src",
+                "./venv/Lib/site-packages/what",
+            };
+
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
+
+            interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(venv, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(what, PythonLibraryPathType.Unspecified),
+                new PythonLibraryPath(venvSitePackages, PythonLibraryPathType.Site),
+                new PythonLibraryPath(inside, PythonLibraryPathType.Pth),
+            });
+
+            userPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(src, PythonLibraryPathType.Unspecified),
             });
         }
