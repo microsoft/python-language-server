@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
@@ -29,6 +30,7 @@ a = 5 + 'str'
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(2, 5, 2, 14);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.UnsupportedOperandType);
             diagnostic.Message.Should().Be(Resources.UnsupporedOperandType.FormatInvariant("+", "int", "str"));
         }
@@ -52,6 +54,11 @@ z = {leftType}(x) {op} {rightType}(y)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+
+
+            string line = $"z = {leftType}(x) {op} {rightType}(y)";
+            // source span is 1 indexed
+            diagnostic.SourceSpan.Should().Be(5, line.IndexOf(leftType) + 1, 5, line.IndexOf("(y)") + 4);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.UnsupportedOperandType);
             diagnostic.Message.Should().Be(Resources.UnsupporedOperandType.FormatInvariant(op, leftType, rightType));
         }
@@ -72,7 +79,7 @@ z = {leftType}(x) {op} {rightType}(y)
 ";
 
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
     }
 
