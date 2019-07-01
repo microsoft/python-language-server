@@ -119,8 +119,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override bool Walk(ReturnStatement node) {
             var value = Eval.GetValueFromExpression(node.Expression);
             if (value != null) {
-                // although technically legal, __init__ should not have a return value
-                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class) {
+                // although technically legal, __init__ in a constructor should not have a not-none return value
+                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class 
+                    && !value.IsOfType(BuiltinTypeId.NoneType)) { 
+
                     Eval.ReportDiagnostics(Module.Uri, new Diagnostics.DiagnosticsEntry(
                             Resources.ReturnInInit,
                             node.GetLocation(Module).Span,

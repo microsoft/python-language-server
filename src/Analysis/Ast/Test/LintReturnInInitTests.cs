@@ -72,5 +72,53 @@ r = Rectangle(10, 10)
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.ReturnInInit);
             diagnostic.Message.Should().Be(Resources.ReturnInInit);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnInInitConditional() {
+            const string code = @"
+class A:
+    def __init__(self, x):
+        self.x = x
+        if x > 0:
+            return 10
+
+a = A(1)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.Severity.Should().Be(Severity.Warning);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.ReturnInInit);
+            diagnostic.Message.Should().Be(Resources.ReturnInInit);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReturnNoneInInit() {
+            const string code = @"
+class A:
+    def __init__(self, x):
+        self.x = x
+        self.x += 1
+        return None
+
+a = A(1)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task EmptyReturnInInit() {
+            const string code = @"
+class A:
+    def __init__(self, x):
+        self.x = x
+        return 
+a = A(1)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(0);
+        }
     }
 }
