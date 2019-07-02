@@ -223,6 +223,24 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
+        /// </summary>
+        internal static string GenericNotAllTypeParameters {
+            get {
+                return ResourceManager.GetString("GenericNotAllTypeParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Arguments to Generic must all be unique..
+        /// </summary>
+        internal static string GenericNotAllUnique {
+            get {
+                return ResourceManager.GetString("GenericNotAllUnique", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Interpreter does not exist; analysis will not be available..
         /// </summary>
         internal static string InterpreterNotFound {
