@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task IncompatibleTypesBasic() {
+        public async Task IncompatibleTypesBinaryOpBasic() {
             var code = $@"
 a = 5 + 'str'
 ";
@@ -42,7 +42,7 @@ a = 5 + 'str'
         [DataRow("str", "float", "-")]
         [DataRow("str", "float", "*")]
         [DataTestMethod, Priority(0)]
-        public async Task IncompatibleTypes(string leftType, string rightType, string op) {
+        public async Task IncompatibleTypesBinaryOp(string leftType, string rightType, string op) {
  var code = $@"
 x = 1
 y = 2
@@ -70,7 +70,7 @@ z = {leftType}(x) {op} {rightType}(y)
         [DataRow("complex", "float", "-")]
         [DataRow("str", "int", "*")]
         [DataTestMethod, Priority(0)]
-        public async Task CompatibleTypes(string leftType, string rightType, string op) {
+        public async Task CompatibleTypesBinaryOp(string leftType, string rightType, string op) {
             var code = $@"
 x = 1
 y = 2
