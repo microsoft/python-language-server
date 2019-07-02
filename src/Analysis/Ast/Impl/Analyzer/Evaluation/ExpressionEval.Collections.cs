@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
                 var index = GetValueFromExpression(expr.Index);
                 if (index != null) {
-                    return type.Index(instance, new ArgumentSet(new List<IMember>(){index}, expr, this));
+                    return type.Index(instance, new ArgumentSet(new []{index}, expr, this));
                 }
             }
 
