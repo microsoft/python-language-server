@@ -51,6 +51,17 @@ _T = _X
             analysis.Diagnostics.Should().HaveCount(0);
         }
 
+        [DataRow("x = 'str' + 5 #    noqa")]
+        [DataRow("x = float(1) * 'str'  #           noqa")]
+        [DataTestMethod, Priority(0)]
+        public async Task IgnoreNoQAWithSpace(string code) {
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(0);
+        }
+
+
+
+
         [DataRow("x = y #noqa")]
         [DataRow("x = z + 2  #noqa")]
         [DataTestMethod, Priority(0)]
@@ -82,7 +93,7 @@ t = h()
         [TestMethod, Priority(0)]
         public async Task IgnoreMissingImport() {
             string code = @"
-from django.contrib.auth.models import User         #noqa
+from fake_module import User         #noqa
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(0);

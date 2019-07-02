@@ -60,8 +60,14 @@ namespace Microsoft.Python.Analysis.Diagnostics {
             }
 
             string line = pythonModule.GetLine(SourceSpan.Start.Line);
-            if (line.Contains("#noqa")) {
-                return false;
+
+            // find if #noqa is in the string
+            int commentPos = line.IndexOf("#");
+            if (commentPos >= 0) {
+                var comment = line.Substring(commentPos + 1);
+                if (comment.Contains("noqa")) {
+                    return false;
+                }
             }
 
             return true;
