@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -108,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
             // Do not add if module is library, etc. Only handle user code.
-            if (Module.ModuleType == ModuleType.User) {
+            if (entry.ShouldReport(Module)) {
                 lock (_lock) {
                     _diagnostics.Add(entry);
                 }

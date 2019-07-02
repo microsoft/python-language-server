@@ -243,6 +243,25 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
+        /// <summary>
+        /// Returns the string line corresponding to the given location
+        /// </summary>
+        /// <param name="ast">The Ast</param>
+        /// <param name="location">The start location</param>
+        public string GetLine(int line) {
+            StringBuilder sb = new StringBuilder();
+            SourceLocation source = new SourceLocation(line, 1);
+            string content = Content;
+            var index = this.GetAst().LocationToIndex(source);
+
+            if (!content.IsNullOrEmpty()) {
+                for (; index < content.Length && content[index] != '\n' && content[index] != '\r'; index++) {
+                    sb.Append(content[index]);
+                }
+            }
+            return sb.ToString();
+        }
+
         #endregion
 
         #region Parsing
@@ -376,7 +395,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private class CollectingErrorSink : ErrorSink {
             private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
-
             public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity)
                 => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity, DiagnosticSource.Parser));
