@@ -246,8 +246,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Returns the string line corresponding to the given location
         /// </summary>
-        /// <param name="ast">The Ast</param>
-        /// <param name="location">The start location</param>
+        /// <param name="line">The line number</param>
         public string GetLine(int line) {
             StringBuilder sb = new StringBuilder();
             SourceLocation source = new SourceLocation(line, 1);
@@ -395,6 +394,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private class CollectingErrorSink : ErrorSink {
             private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+
             public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
             public override void Add(string message, SourceSpan span, int errorCode, Severity severity)
                 => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity, DiagnosticSource.Parser));
