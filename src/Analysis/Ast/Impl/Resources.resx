@@ -190,6 +190,6 @@
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
   </data>
   <data name="NewTypeFirstArgNotString" xml:space="preserve">
-    <value>The first argument to NewType must be a string but is of type '{0}'.</value>
+    <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
   </data>
 </root>

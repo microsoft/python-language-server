@@ -232,7 +232,7 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The first argument to NewType must be a string but is of type &apos;{0}&apos;..
+        ///   Looks up a localized string similar to The first argument to NewType must be a string, but it is of type &apos;{0}&apos;..
         /// </summary>
         internal static string NewTypeFirstArgNotString {
             get {

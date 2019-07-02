@@ -233,8 +233,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType), 
-                        expression.GetLocation(eval.Module).Span, 
-                        Diagnostics.ErrorCodes.NewTypeArguments,
+                        expression?.GetLocation(eval.Module)?.Span ?? default, 
+                        Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Error, DiagnosticSource.Analysis)
                 );
             }

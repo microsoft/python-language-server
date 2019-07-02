@@ -46,7 +46,7 @@ T = NewType(5, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.NewTypeArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("int"));
         }
 
@@ -65,7 +65,7 @@ T = NewType({nameType}(10), {type})
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.NewTypeArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant(nameType));
         }
 
@@ -86,7 +86,7 @@ T = NewType(h, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.NewTypeArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("X"));
         }
 
@@ -108,18 +108,18 @@ T = NewType(h, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.NewTypeArguments);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("X[int]"));
         }
 
-        [DataRow("'test'", "float")]
-        [DataRow("'testing'", "int")]
+        [DataRow("test", "float")]
+        [DataRow("testing", "int")]
         [DataTestMethod, Priority(0)]
         public async Task NoDiagnosticOnStringFirstArg(string name, string type) {
             string code = $@"
 from typing import NewType
 
-T = NewType({name}, {type})
+T = NewType('{name}', {type})
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(0);
