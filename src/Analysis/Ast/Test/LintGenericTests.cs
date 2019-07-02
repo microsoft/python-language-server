@@ -1,10 +1,9 @@
-﻿using FluentAssertions;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Threading.Tasks;
 using TestUtilities;
 
 
