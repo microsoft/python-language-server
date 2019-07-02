@@ -402,7 +402,7 @@ namespace Microsoft.Python.Analysis.Types {
                         .Where(p => !p.IsUnknown())
                         .ToArray();
                     if (st.Length > 0) {
-                        var type = gt.CreateSpecificType(new ArgumentSet(st));
+                        var type = gt.CreateSpecificType(new ArgumentSet(st, args.Expression, args.Eval));
                         if (!type.IsUnknown()) {
                             bases.Add(type);
                         }

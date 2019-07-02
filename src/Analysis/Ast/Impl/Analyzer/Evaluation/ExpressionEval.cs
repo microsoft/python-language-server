@@ -271,7 +271,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonClassType _:
                     return value;
                 case IPythonPropertyType prop:
-                    return prop.Call(instance, prop.Name, ArgumentSet.Empty);
+                    return prop.Call(instance, prop.Name, ArgumentSet.Empty(expr, this));
                 case IPythonType p:
                     return new PythonBoundType(p, instance);
                 case null:

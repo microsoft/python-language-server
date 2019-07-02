@@ -16,12 +16,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
@@ -59,40 +62,58 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         /// <summary>
-        /// Given generic type and list of indices in the expression like
+        /// Returns whether the arguments to Generic are valid
+        /// </summary>
+        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeDefinition> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
+            // All arguments to Generic must be type parameters
+            // e.g. Generic[T, str] throws a runtime error
+            if (genericTypeArgs.Count != args.Count) {
+                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
+                    Resources.GenericNotAllTypeParameters,
+                    GetLocation(expr).Span,
+                    ErrorCodes.TypingGenericArguments,
+                    Severity.Error,
+                    DiagnosticSource.Analysis));
+                return false;
+            }
+
+            // All arguments to Generic must be distinct
+            if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Count) {
+                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
+                   Resources.GenericNotAllUnique,
+                   GetLocation(expr).Span,
+                   ErrorCodes.TypingGenericArguments,
+                   Severity.Error,
+                   DiagnosticSource.Analysis));
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Given generic type and list of arguments in the expression like
         /// Generic[T1, T2, ...] or List[str] creates generic class base
         /// (if the former) on specific type (if the latter).
         /// </summary>
-        private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> indices, Expression expr) {
-            // See which ones are generic parameters as defined by TypeVar() 
-            // and which are specific types. Normally there should not be a mix.
-            var genericTypeArgs = indices.OfType<IGenericTypeDefinition>().ToArray();
-            var specificTypes = indices.Where(i => !(i is IGenericTypeDefinition)).OfType<IPythonType>().ToArray();
-
-            if (genericTypeArgs.Length > 0 && genericTypeArgs.Length != indices.Count) {
-                // TODO: report that some type arguments are not declared with TypeVar.
-            }
-            if (specificTypes.Length > 0 && specificTypes.Length != indices.Count) {
-                // TODO: report that arguments are not specific types or are not declared.
-            }
+        private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr) {
+            var genericTypeArgs = args.OfType<IGenericTypeDefinition>().ToArray();
 
             if (gt.Name.EqualsOrdinal("Generic")) {
-                // Generic[T1, T2, ...] expression. Create generic base for the class.
-                if (genericTypeArgs.Length > 0) {
-                    return new GenericClassParameter(genericTypeArgs, Module);
-                } else {
-                    // TODO: report too few type arguments for Generic[].
+                if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
                     return UnknownType;
                 }
+
+                // Generic[T1, T2, ...] expression. Create generic base for the class.
+                return new GenericClassParameter(genericTypeArgs, Module);
             }
 
             // For other types just use supplied arguments
-            if (indices.Count > 0) {
-                return gt.CreateSpecificType(new ArgumentSet(indices));
+            if (args.Count > 0) {
+                return gt.CreateSpecificType(new ArgumentSet(args, expr, this));
             }
-            // TODO: report too few type arguments for the generic expression.
-            return UnknownType;
 
+            return UnknownType;
         }
 
         private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
@@ -132,7 +153,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var argSet = initOverload != null
                     ? new ArgumentSet(initFunc, 0, null, callExpr, this)
-                    : new ArgumentSet(constructorArguments);
+                    : new ArgumentSet(constructorArguments, callExpr, this);
 
             argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet);
@@ -194,7 +215,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     var itemType = iter.GetIterator().Next.GetPythonType();
                     if (!itemType.IsUnknown()) {
                         specificTypes.Add(itemType);
-                    } else if(argumentValue is IPythonInstance inst) {
+                    } else if (argumentValue is IPythonInstance inst) {
                         specificTypes.Add(inst.GetPythonType());
                     }
                     break;

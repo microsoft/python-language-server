@@ -132,16 +132,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             _members["Any"] = new AnyType(this);
 
-            // AnyStr
-            var str = Interpreter.GetBuiltinType(BuiltinTypeId.Str);
-            var bytes = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
-            var unicode = Interpreter.GetBuiltinType(BuiltinTypeId.Unicode);
-            var anyStrName = new PythonConstant("AnyStr", str);
-
-            var anyStrArgs = Interpreter.LanguageVersion.Is3x()
-                ? new IMember[] { anyStrName, str, bytes }
-                : new IMember[] { anyStrName, str, unicode };
-            _members["AnyStr"] = GenericTypeParameter.FromTypeVar(new ArgumentSet(anyStrArgs), this);
+            _members["AnyStr"] = CreateAnyStr();
 
             _members["Optional"] = new GenericType("Optional", CreateOptional, this);
             _members["Type"] = new GenericType("Type", CreateType, this);
@@ -308,6 +299,21 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             }
             // TODO: report wrong number of arguments
             return Interpreter.UnknownType;
+        }
+
+        private IPythonType CreateAnyStr() {
+            var str = Interpreter.GetBuiltinType(BuiltinTypeId.Str);
+            var bytes = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
+            var unicode = Interpreter.GetBuiltinType(BuiltinTypeId.Unicode);
+            var name = "AnyStr";
+
+            var constraints = Interpreter.LanguageVersion.Is3x()
+                ? new IPythonType[] { str, bytes }
+                : new IPythonType[] { str, unicode };
+            var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.Name));
+            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
+
+            return new GenericTypeParameter(name, this, constraints, documentation, default);
         }
 
         private IPythonType CreateGenericClassParameter(IReadOnlyList<IPythonType> typeArgs) {
