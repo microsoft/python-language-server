@@ -133,11 +133,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // 6) Remove duplicates.
                 SearchPaths = @params.initializationOptions.searchPaths
                     .Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany()
-                    .Select(PathUtils.NormalizePath)
-                    .Select(p => _rootDir == null || Path.IsPathRooted(p) ? p : Path.GetFullPath(p, _rootDir))
-                    .Select(PathUtils.TrimEndSeparator)
-                    .Where(p => !string.IsNullOrWhiteSpace(p) && p != "/" && !p.PathEquals(_rootDir))
-                    .Distinct(PathEqualityComparer.Instance)
                     .ToList(),
                 TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
             };

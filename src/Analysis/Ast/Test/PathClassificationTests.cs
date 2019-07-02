@@ -23,7 +23,6 @@ using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
-
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
     public class PathClassificationTests {

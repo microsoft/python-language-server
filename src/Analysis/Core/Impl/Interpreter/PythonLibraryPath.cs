@@ -282,10 +282,18 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
         }
 
-        public bool Equals(PythonLibraryPath other) => Path.PathEquals(other.Path) && Type == other.Type && ModulePrefix == other.ModulePrefix;
+        public bool Equals(PythonLibraryPath other) {
+            if (other is null) {
+                return false;
+            }
 
-        public static bool operator ==(PythonLibraryPath left, PythonLibraryPath right) => left.Equals(right);
+            return Path.PathEquals(other.Path)
+                && Type == other.Type
+                && ModulePrefix == other.ModulePrefix;
+        }
 
-        public static bool operator !=(PythonLibraryPath left, PythonLibraryPath right) => !left.Equals(right);
+        public static bool operator ==(PythonLibraryPath left, PythonLibraryPath right) => left?.Equals(right) ?? right is null;
+
+        public static bool operator !=(PythonLibraryPath left, PythonLibraryPath right) => !(left?.Equals(right) ?? right is null);
     }
 }
