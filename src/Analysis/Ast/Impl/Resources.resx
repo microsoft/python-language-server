@@ -189,6 +189,9 @@
   <data name="UnableToDetermineCachePathException" xml:space="preserve">
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
   </data>
+  <data name="NewTypeFirstArgNotString" xml:space="preserve">
+    <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
+  </data>
   <data name="UnsupporedOperandType" xml:space="preserve">
     <value>Unsupported operand types for '{0}': '{1}' and '{2}'</value>
   </data>
