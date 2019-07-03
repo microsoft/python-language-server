@@ -40,12 +40,12 @@ namespace Microsoft.Python.Analysis.Tests {
 from typing import NewType
 
 T = NewType(5, int)
-
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 20);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("int"));
         }
@@ -86,6 +86,7 @@ T = NewType(h, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(10, 5, 10, 20);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("X"));
         }
@@ -108,6 +109,7 @@ T = NewType(h, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(11, 5, 11, 20);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("X[int]"));
         }
