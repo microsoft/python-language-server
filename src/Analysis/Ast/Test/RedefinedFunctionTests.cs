@@ -87,6 +87,85 @@ def bar():
             analysis.Diagnostics.Should().HaveCount(0);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task NestedFunctionValid() {
+            const string code = @"
+def foo():
+    def foo():
+        return 123
+    return foo()
+
+foo()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefineFunctionInNestedFunction() {
+            const string code = @"
+def foo():
+    def foo():
+        return 123
+
+    def foo():
+        return 213
+    
+    return foo()
+
+foo()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(6, 9, 6, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(3));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SameFunctionInNestedClassDifferentScope() {
+            const string code = @"
+class tmp:
+    def foo(self):
+        return 123
+    
+    class tmp1:
+        def foo(self):
+            return 213
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefineFunctionInNestedClass() {
+            const string code = @"
+class tmp:
+    def foo(self):
+        return 123
+    
+    class tmp1:
+        def foo(self):
+            return 213
+
+        def foo(self):
+            return 4784
+
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(10, 13, 10, 16);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(7));
+        }
+
+
+
+
         [Ignore]
         [TestMethod, Priority(0)]
         public async Task ValidConditionalNoErrors() {
