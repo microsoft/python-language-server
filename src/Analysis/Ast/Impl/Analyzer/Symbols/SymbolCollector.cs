@@ -138,6 +138,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
                 var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
+
+                CheckValidOverload(fd, overload);
+
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, overload));
             }
@@ -220,6 +223,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     ErrorCodes.FunctionRedefined,
                     Parsing.Severity.Error,
                     DiagnosticSource.Analysis));
+        }
+
+        private void CheckValidOverload(FunctionDefinition fd, IPythonFunctionOverload overload) {
+            if (overload.ClassMember.DeclaringType is PythonClassType) {
+                if (fd.Parameters.Length > 0) {
+                    var param = fd.Parameters[0];
+                    if (!param.Name.Equals("self")) {
+                        _eval.ReportDiagnostics(
+                            _eval.Module.Uri,
+                            new DiagnosticsEntry(
+                                Resources.NoSelfArgument,
+                                // only highlight the redefined name
+                                _eval.GetLocationInfo(fd.NameExpression).Span,
+                                ErrorCodes.NoSelfArgument, 
+                                Parsing.Severity.Error, 
+                                DiagnosticSource.Analysis));
+                    }
+                } else {
+                    // TODO report no-method-argument
+                }
+            }
         }
 
         private static bool IsDeprecated(ClassDefinition cd)

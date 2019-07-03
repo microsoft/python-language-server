@@ -26,5 +26,6 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string VariableNotDefinedGlobally= "variable-not-defined-globally";
         public const string VariableNotDefinedNonLocal = "variable-not-defined-nonlocal";
         public const string FunctionRedefined = "function-redefined";
+        public const string NoSelfArgument = "no-self-argument";
     }
 }

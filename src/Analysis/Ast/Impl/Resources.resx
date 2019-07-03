@@ -192,4 +192,7 @@
   <data name="FunctionRedefined" xml:space="preserve">
     <value>Function already defined at line {0}.</value>
   </data>
+  <data name="NoSelfArgument" xml:space="preserve">
+    <value>Method should have 'self' as first argument.</value>
+  </data>
 </root>
