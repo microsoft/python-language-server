@@ -70,26 +70,6 @@ _T = _X
             d.Should().HaveCount(0);
         }
 
-        [DataRow(@"
-def hello(a, b, c):
-    pass
-
-h = hello(1, 2)
-")]
-        [DataRow(@"
-class Hello:
-    def tmp(self, a):
-        pass
-
-h = Hello()
-t = h()
-")]
-        [DataTestMethod, Priority(0)]
-        public async Task IgnoreMissingParameter(string code) {
-            var d = await LintAsync(code);
-            d.Should().HaveCount(0);
-        }
-
         [TestMethod, Priority(0)]
         public async Task IgnoreMissingImport() {
             string code = @"

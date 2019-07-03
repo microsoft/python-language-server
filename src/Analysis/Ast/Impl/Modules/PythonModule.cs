@@ -241,26 +241,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     return _buffer.Text;
                 }
             }
-        }
-
-        /// <summary>
-        /// Returns the string line corresponding to the given location
-        /// </summary>
-        /// <param name="line">The line number</param>
-        public string GetLine(int line) {
-            StringBuilder sb = new StringBuilder();
-            SourceLocation source = new SourceLocation(line, 1);
-            string content = Content;
-            var index = this.GetAst().LocationToIndex(source);
-
-            if (!content.IsNullOrEmpty()) {
-                for (; index < content.Length && content[index] != '\n' && content[index] != '\r'; index++) {
-                    sb.Append(content[index]);
-                }
-            }
-            return sb.ToString();
-        }
-
+        } 
         #endregion
 
         #region Parsing

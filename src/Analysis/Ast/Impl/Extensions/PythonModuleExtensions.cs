@@ -15,6 +15,8 @@
 
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
@@ -26,5 +28,23 @@ namespace Microsoft.Python.Analysis {
             => ((IAstNodeContainer)module).GetAstNode<T>(o);
         internal static void AddAstNode(this IPythonModule module, object o, Node n)
             => ((IAstNodeContainer)module).AddAstNode(o, n);
+
+        /// <summary>
+        /// Returns the string line corresponding to the given location
+        /// </summary>
+        /// <param name="line">The line number</param>
+        internal static string GetLine(this PythonModule module, int line) {
+            SourceLocation source = new SourceLocation(line, 1);
+            string content = module.Content;
+            var start = GetAst(module).LocationToIndex(source);
+            var length = 0;
+
+            if (!content.IsNullOrEmpty()) {
+                while(start + length < content.Length && content[start + length] != '\n' && content[start + length] != '\r') {
+                    length++;
+                }
+            }
+            return content.Substring(start, length);
+        }
     }
 }
