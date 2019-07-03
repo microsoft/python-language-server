@@ -37,14 +37,14 @@ namespace Microsoft.Python.Analysis {
             SourceLocation source = new SourceLocation(line, 1);
             string content = module.Content;
             var start = GetAst(module).LocationToIndex(source);
-            var length = 0;
+            var end = start;
 
-            if (!content.IsNullOrEmpty()) {
-                while(start + length < content.Length && content[start + length] != '\n' && content[start + length] != '\r') {
-                    length++;
-                }
+            if (string.IsNullOrEmpty(content)) {
+                return content;
             }
-            return content.Substring(start, length);
+
+            for (; end < content.Length && content[end] != '\n' && content[end] != '\r'; end++);
+            return content.Substring(start, end - start);
         }
     }
 }
