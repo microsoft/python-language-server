@@ -13,13 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
@@ -122,6 +124,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             if (leftIsSupported && rightIsSupported) {
                 if (TryGetValueFromBuiltinBinaryOp(op, leftTypeId, rightTypeId, Interpreter.LanguageVersion.Is3x(), out var member)) {
+                    if (member.IsUnknown()) {
+                        ReportOperatorDiagnostics(expr, leftType, rightType, op);
+                    }
                     return member;
                 }
             }
@@ -435,5 +440,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             return (null, null);
         }
+        private void ReportOperatorDiagnostics(Expression expr, IPythonType leftType, IPythonType rightType, PythonOperator op) {
+            ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
+                Resources.UnsupporedOperandType.FormatInvariant(op.ToCodeString(), leftType.Name, rightType.Name),
+                GetLocation(expr).Span,
+                ErrorCodes.UnsupportedOperandType,
+                Severity.Error,
+                DiagnosticSource.Analysis));
+        }
+
     }
 }
