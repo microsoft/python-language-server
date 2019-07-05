@@ -16,11 +16,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
@@ -89,6 +91,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public IMember GetValueFromClassCtor(IPythonClassType cls, CallExpression expr) {
             SymbolTable.Evaluate(cls.ClassDefinition);
+
+            // Cannot create instance of an abstract class
+            if (cls.IsAbstract) {
+                ReportDiagnostics(
+                    Module.Uri,
+                    new DiagnosticsEntry(
+                        Resources.AbstractClassInstantiated.FormatInvariant(cls.GetName()),
+                        expr.GetLocation(Module).Span,
+                        ErrorCodes.AbstractClassInstantiated,
+                        Parsing.Severity.Error,
+                        DiagnosticSource.Analysis
+                    ));
+            }
+
             // Determine argument types
             var args = ArgumentSet.Empty(expr, this);
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
