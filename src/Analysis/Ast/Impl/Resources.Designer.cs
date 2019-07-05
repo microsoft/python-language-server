@@ -61,6 +61,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Abstract class &apos;{0}&apos; with abstract methods instantiated..
+        /// </summary>
+        internal static string AbstractClassInstantiated {
+            get {
+                return ResourceManager.GetString("AbstractClassInstantiated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Parameter {0} already specified..
         /// </summary>
         internal static string Analysis_ParameterAlreadySpecified {
