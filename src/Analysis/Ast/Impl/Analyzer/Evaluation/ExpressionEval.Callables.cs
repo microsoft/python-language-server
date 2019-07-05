@@ -102,8 +102,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         ErrorCodes.AbstractClassInstantiated,
                         Parsing.Severity.Error,
                         DiagnosticSource.Analysis
-                return UnknownType;
                     ));
+                return UnknownType;
             }
 
             // Determine argument types
