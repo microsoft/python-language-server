@@ -32,6 +32,7 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
+        private bool _isAbstract;
         private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -55,6 +56,8 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
+
+        public override bool IsAbstract => _isAbstract;
 
         public override IEnumerable<string> GetMemberNames() {
             var names = new HashSet<string>();
@@ -183,6 +186,10 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyDictionary<string, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
         #endregion
+
+        internal void SetAbstract(bool isAbstract) {
+            _isAbstract = isAbstract;
+        }
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
             if (_bases != null) {

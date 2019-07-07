@@ -325,6 +325,9 @@ class cls(object):
     
     @abstractclassmethod
     def e(cls): pass
+
+    @abstractmethod
+    def f(self): pass
 ";
 
             var analysis = await GetAnalysisAsync(code);
@@ -351,6 +354,11 @@ class cls(object):
             e.IsAbstract.Should().BeTrue();
             e.IsStatic.Should().BeFalse();
             e.IsClassMethod.Should().BeTrue();
+
+            var f = cls.Should().HaveMethod("f").Which;
+            f.IsAbstract.Should().BeTrue();
+            f.IsStatic.Should().BeFalse();
+            f.IsClassMethod.Should().BeFalse();
         }
 
         [TestMethod, Priority(0)]
