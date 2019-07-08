@@ -21,7 +21,7 @@ Python is a requirement for the language server to run. In VS Code, an interpret
 _must_ be selected in order for the language server to properly initialize. If your
 language server fails to start, be sure that you have selected an interpreter.
 
-The language server can only run on platforms where the .NET Core can run. This rougly means:
+The language server can only run on platforms where the .NET Core can run. This roughly means:
 
 - Windows, 32/64 bit
 - macOS, 64 bit
