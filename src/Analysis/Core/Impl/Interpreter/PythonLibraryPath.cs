@@ -222,7 +222,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             // - All paths in fromInterpreter were normalised and end separator trimmed.
 
             // Clean up user configured paths.
-            // 1) Noramlize paths.
+            // 1) Normalize paths.
             // 2) If a path isn't rooted, then root it relative to the workspace root. If there is no root, just continue.
             // 3) Trim off any ending separators for consistency.
             // 4) Remove any empty paths, FS root paths (bad idea), or paths equal to the root.
