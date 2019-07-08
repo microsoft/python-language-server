@@ -164,8 +164,10 @@ class tmp:
         }
 
 
-
-
+        /// <summary>
+        /// Finish when can handle conditional functions declarations (if ever)
+        /// </summary>
+        /// <returns></returns>
         [Ignore]
         [TestMethod, Priority(0)]
         public async Task ValidConditionalNoErrors() {

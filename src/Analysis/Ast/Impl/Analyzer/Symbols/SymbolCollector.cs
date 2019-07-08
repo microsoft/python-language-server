@@ -105,14 +105,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
-            var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local) as PythonFunctionType;
-            if (existing is null) {
+            if (_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType existing) {
+                ReportRedefinedFunction(fd, existing);
+            } else {
                 existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
                 _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
-            } else {
-                ReportRedefinedFunction(fd, existing);
             }
 
             AddOverload(fd, existing, o => existing.AddOverload(o));
