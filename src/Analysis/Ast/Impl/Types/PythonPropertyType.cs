@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonPropertyType
         public FunctionDefinition FunctionDefinition => DeclaringModule.GetAstNode<FunctionDefinition>(this);
-        public override bool IsAbstract { get; }
+        public override bool IsAbstract { get; set; }
         public bool IsReadOnly => true;
         public IPythonType DeclaringType { get; }
         public string Description 

@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private void SpecializeMembers() {
             // ABC
-            var cls = PythonClassType.Specialize("abc", this, GetMemberDocumentation("abc"), isAbstract: true);
+            var cls = PythonClassType.Specialize("ABC", this, GetMemberDocumentation("ABC"), isAbstract: true);
             _members["ABC"] = cls;
         }
 

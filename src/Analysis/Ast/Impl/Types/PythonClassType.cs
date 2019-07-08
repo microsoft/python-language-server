@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Types {
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
-        public override bool IsAbstract => _isAbstract;
+        public override bool IsAbstract { get; set; }
 
         public override IEnumerable<string> GetMemberNames() {
             var names = new HashSet<string>();
@@ -201,7 +201,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyDictionary<string, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
 
-        public bool IsDerivedFromAbstractClass => _isDerivedFromAbstractClass;
+        public bool IsDerivedFromAbstractClass { get; set; }
 
         #endregion
 
@@ -532,14 +532,6 @@ namespace Microsoft.Python.Analysis.Types {
                         }
                 }
             }
-        }
-
-        /// <summary>
-        /// Decides if this class is an abstract class or not
-        /// </summary>
-        public void DecideAbstract() {
-            _isDerivedFromAbstractClass = Bases.OfType<PythonClassType>().Any(b => b.IsAbstract || b.IsDerivedFromAbstractClass);
-            _isAbstract = _isDerivedFromAbstractClass && this.GetMembers<PythonFunctionType>().Any(f => f.IsAbstract);
         }
     }
 }

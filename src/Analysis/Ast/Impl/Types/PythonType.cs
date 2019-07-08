@@ -59,7 +59,10 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
-        public virtual bool IsAbstract => false;
+        public virtual bool IsAbstract {
+            get => false;
+            set => IsAbstract = value;
+        }
         public virtual bool IsSpecialized => false;
 
         /// <summary>
