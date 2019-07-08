@@ -218,6 +218,45 @@ class C(B):
             cls.IsAbstract.Should().BeTrue();
             cls.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
             cls.Should().HaveFunction("not_impl").Which.IsAbstract.Should().BeTrue();
+            cls.Should().HaveFunction("new_method").Which.IsAbstract.Should().BeFalse();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassDerivedFromAbstractAddMoreAbstractMethods() {
+            const string code = @"
+from abc import ABC, abstractmethod
+
+class A(ABC):
+    @abstractmethod
+    def method(self):
+        return 1
+
+class B(A):
+    def method(self):
+        return 3
+
+class C(B):
+    @abstractmethod
+    def new_method(self):
+        return 4
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveClass("A").Which.Should().HaveFunction("method").Which
+                .IsAbstract.Should().BeTrue();
+
+            var gParent = analysis.Should().HaveClass("B").Which;
+            gParent.IsAbstract.Should().BeTrue();
+            gParent.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
+
+            var parent = analysis.Should().HaveClass("C").Which;
+            parent.IsAbstract.Should().BeTrue();
+            parent.Should().HaveFunction("method").Which.IsAbstract.Should().BeFalse();
+
+            var cls = analysis.Should().HaveClass("C").Which;
+            cls.IsAbstract.Should().BeTrue();
+            cls.Should().HaveFunction("method").Which.IsAbstract.Should().BeFalse();
+            cls.Should().HaveFunction("new_method").Which.IsAbstract.Should().BeTrue();
         }
 
         [TestMethod, Priority(0)]

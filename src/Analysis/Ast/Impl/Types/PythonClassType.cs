@@ -33,6 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
         private bool _isAbstract;
+        private bool _isDerivedFromAbstract;
         private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -185,11 +186,10 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IReadOnlyDictionary<string, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
-        #endregion
 
-        internal void SetAbstract(bool isAbstract) {
-            _isAbstract = isAbstract;
-        }
+        public bool IsDerivedFromAbstract => _isDerivedFromAbstract;
+
+        #endregion
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
             if (_bases != null) {
@@ -518,6 +518,14 @@ namespace Microsoft.Python.Analysis.Types {
                         }
                 }
             }
+        }
+
+        /// <summary>
+        /// Decides if this class is an abstract class or not
+        /// </summary>
+        public void DecideAbstract() {
+            _isDerivedFromAbstract = Bases.OfType<PythonClassType>().Any(b => b.IsAbstract || b.IsDerivedFromAbstract);
+            _isAbstract = _isDerivedFromAbstract && this.GetMembers<PythonFunctionType>().Any(f => f.IsAbstract);
         }
     }
 }

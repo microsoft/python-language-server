@@ -60,8 +60,5 @@ namespace Microsoft.Python.Analysis {
             var unmangledName = cls.UnmangleMemberName(memberName);
             return unmangledName.StartsWithOrdinal("__") && memberName.EqualsOrdinal($"_{cls.Name}{unmangledName}");
         }
-
-        public static IReadOnlyList<T> GetMembers<T>(this IPythonClassType cls)
-            => cls.GetMemberNames().Select(cls.GetMember).OfType<T>().ToList();
     }
 }

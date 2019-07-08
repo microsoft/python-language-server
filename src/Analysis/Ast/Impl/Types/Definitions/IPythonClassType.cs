@@ -37,6 +37,11 @@ namespace Microsoft.Python.Analysis.Types {
         IReadOnlyList<IPythonType> Bases { get; }
 
         /// <summary>
+        /// If the class contains an abstract class on its inheritance chain
+        /// </summary>
+        bool IsDerivedFromAbstract { get; }
+
+        /// <summary>
         /// If class is created off generic template, name/type
         /// pairs of the generic parameter name / actual supplied type.
         /// </summary>
