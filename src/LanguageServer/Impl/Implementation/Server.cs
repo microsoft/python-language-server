@@ -125,12 +125,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
                 version: version
             ) {
-                // 1) Split on ';' to support older VS Code extension versions which send paths as a single entry separated by ';'. TODO: Eventually remove.
-                // 2) Normalize paths.
-                // 3) If a path isn't rooted, then root it relative to the workspace root. If _rootDir is null, then accept the path as-is.
-                // 4) Trim off any ending separator for a consistent style.
-                // 5) Filter out any entries which are the same as the workspace root; they are redundant. Also ignore "/" to work around the extension (for now).
-                // 6) Remove duplicates.
+                // Split on ';' to support older VS Code extension versions which send paths as a single entry separated by ';'. TODO: Eventually remove.
+                // Note that the actual classification of these paths as user/library is done later in MainModuleResolution.ReloadAsync.
                 SearchPaths = @params.initializationOptions.searchPaths
                     .Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany()
                     .ToList(),
