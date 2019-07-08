@@ -3,7 +3,7 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing {
+namespace Microsoft.Python.Analysis.Specializations.Abc {
     internal sealed class AbcModule : SpecializedModule {
         private readonly Dictionary<string, IMember> _members = new Dictionary<string, IMember>();
 
