@@ -68,6 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // Specialize typing
             TypingModule.Create(sm);
+            AbcModule.Create(sm);
             return pi;
         }
 

@@ -40,17 +40,31 @@ namespace Microsoft.Python.Analysis.Types {
         private Dictionary<string, IPythonType> _genericParameters;
         private string _documentation;
 
+        /// <summary>
+        /// Creates function for specializations
+        /// </summary>
+        public static PythonClassType Specialize(string name, IPythonModule declaringModule, string documentation, bool isAbstract = false) {
+            return new PythonClassType(name, new Location(declaringModule, default), documentation, isAbstract: isAbstract);
+        }
+
+
         // For tests
         internal PythonClassType(string name, Location location)
             : base(name, location, string.Empty, BuiltinTypeId.Type) {
             Check.ArgumentNotNull(nameof(location), location.Module);
         }
 
+        private PythonClassType(string name, Location location, string documentation, BuiltinTypeId buildinTypeId = BuiltinTypeId.Type, bool isAbstract = false) 
+            : base(name, location, documentation, buildinTypeId) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
+            _isAbstract = isAbstract;
+        }
+
         public PythonClassType(
-            ClassDefinition classDefinition,
-            Location location,
-            BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+                   ClassDefinition classDefinition,
+                   Location location,
+                   BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
+               ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             location.Module.AddAstNode(this, classDefinition);
         }
@@ -93,7 +107,7 @@ namespace Microsoft.Python.Analysis.Types {
                         if (m == this) {
                             return member;
                         }
-                        member = member ?? m.GetMember(name);
+                        member = m.GetMember(name) ?? member;
                     }
                 } finally {
                     Pop();

@@ -16,6 +16,7 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -85,7 +86,7 @@ class C(ABC, B):
             var analysis = await GetAnalysisAsync(code);
 
             var cls = analysis.Should().HaveClass("C").Which;
-            cls.IsAbstract.Should().BeFalse();
+            cls.IsAbstract.Should().BeTrue();
         }
 
         [TestMethod, Priority(0)]
@@ -170,11 +171,11 @@ class B(A):
             var analysis = await GetAnalysisAsync(code);
 
             var clsBase = analysis.Should().HaveClass("A").Which;
-            var absFunc = clsBase.Should().HaveFunction("method").Which;
+            var absFunc = clsBase.Should().HaveMethod("method").Which;
             absFunc.IsAbstract.Should().BeTrue();
 
             var cls = analysis.Should().HaveClass("B").Which;
-            var clsFunc = cls.Should().HaveFunction("method").Which;
+            var clsFunc = cls.Should().HaveMethod("method").Which;
             clsFunc.IsAbstract.Should().BeFalse();
 
             clsBase.IsAbstract.Should().BeTrue();
@@ -202,23 +203,59 @@ class C(B):
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveClass("A").Which.Should().HaveFunction("method").Which
+            analysis.Should().HaveClass("A").Which.Should().HaveMethod("method").Which
                 .IsAbstract.Should().BeTrue();
 
             var gParent = analysis.Should().HaveClass("B").Which;
             gParent.IsAbstract.Should().BeTrue();
-            gParent.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
+            gParent.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
 
             var parent = analysis.Should().HaveClass("C").Which;
             parent.IsAbstract.Should().BeTrue();
-            parent.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
-            parent.Should().HaveFunction("not_impl").Which.IsAbstract.Should().BeTrue();
+            parent.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
+            parent.Should().HaveMethod("not_impl").Which.IsAbstract.Should().BeTrue();
 
             var cls = analysis.Should().HaveClass("C").Which;
             cls.IsAbstract.Should().BeTrue();
-            cls.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
-            cls.Should().HaveFunction("not_impl").Which.IsAbstract.Should().BeTrue();
-            cls.Should().HaveFunction("new_method").Which.IsAbstract.Should().BeFalse();
+            cls.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
+            cls.Should().HaveMethod("not_impl").Which.IsAbstract.Should().BeTrue();
+            cls.Should().HaveMethod("new_method").Which.IsAbstract.Should().BeFalse();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassDerivedFromAbstract() {
+            const string code = @"
+from abc import ABC, abstractmethod
+
+class A(ABC):
+    @abstractmethod
+    def method(self):
+        return 1
+
+class B(A):
+    def method(self):
+        return 3
+
+class C(B):
+    def new_method(self):
+        return 4
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            var gParent = analysis.Should().HaveClass("A").Which;
+            gParent.IsAbstract.Should().BeTrue();
+            gParent.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
+
+            var parent = analysis.Should().HaveClass("B").Which;
+            parent.IsAbstract.Should().BeFalse();
+            parent.Should().HaveMethod("method").Which.IsAbstract.Should().BeFalse();
+
+            var cls = analysis.Should().HaveClass("C").Which;
+            cls.IsAbstract.Should().BeFalse();
+
+            var tmp = cls.GetMembers<PythonFunctionType>();
+            cls.Should().HaveMethod("method").Which.IsAbstract.Should().BeFalse();
+            cls.Should().HaveMethod("new_method").Which.IsAbstract.Should().BeFalse();
         }
 
         [TestMethod, Priority(0)]
@@ -242,21 +279,20 @@ class C(B):
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveClass("A").Which.Should().HaveFunction("method").Which
-                .IsAbstract.Should().BeTrue();
-
-            var gParent = analysis.Should().HaveClass("B").Which;
+            var gParent = analysis.Should().HaveClass("A").Which;
             gParent.IsAbstract.Should().BeTrue();
-            gParent.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
+            gParent.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
 
-            var parent = analysis.Should().HaveClass("C").Which;
-            parent.IsAbstract.Should().BeTrue();
-            parent.Should().HaveFunction("method").Which.IsAbstract.Should().BeFalse();
+            var parent = analysis.Should().HaveClass("B").Which;
+            parent.IsAbstract.Should().BeFalse();
+            parent.Should().HaveMethod("method").Which.IsAbstract.Should().BeFalse();
 
             var cls = analysis.Should().HaveClass("C").Which;
             cls.IsAbstract.Should().BeTrue();
-            cls.Should().HaveFunction("method").Which.IsAbstract.Should().BeFalse();
-            cls.Should().HaveFunction("new_method").Which.IsAbstract.Should().BeTrue();
+
+            var tmp = cls.GetMembers<PythonFunctionType>();
+            cls.Should().HaveMethod("method").Which.IsAbstract.Should().BeFalse();
+            cls.Should().HaveMethod("new_method").Which.IsAbstract.Should().BeTrue();
         }
 
         [TestMethod, Priority(0)]
@@ -279,20 +315,18 @@ class C(B):
 ";
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveClass("A").Which.Should().HaveFunction("method").Which
-                .IsAbstract.Should().BeTrue();
-
-            var gParent = analysis.Should().HaveClass("B").Which;
+            var gParent = analysis.Should().HaveClass("A").Which;
             gParent.IsAbstract.Should().BeTrue();
-            gParent.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
+            gParent.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
 
-            var parent = analysis.Should().HaveClass("C").Which;
+            var parent = analysis.Should().HaveClass("B").Which;
             parent.IsAbstract.Should().BeTrue();
-            parent.Should().HaveFunction("method").Which.IsAbstract.Should().BeTrue();
+            parent.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
+            parent.Should().HaveMethod("not_impl").Which.IsAbstract.Should().BeFalse();
 
             var cls = analysis.Should().HaveClass("C").Which;
-            cls.IsAbstract.Should().BeTrue();
-            cls.Should().HaveFunction("method").Which.IsAbstract.Should().BeFalse();
+            cls.IsAbstract.Should().BeFalse();
+            cls.Should().HaveMethod("method").Which.IsAbstract.Should().BeFalse();
         }
     }
 }
