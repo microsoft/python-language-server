@@ -155,7 +155,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // A class is derived from an abstract class if one of its bases is abstract or one of its bases is also derived from an abstract class
             var derivedFromAbstract = _class.Bases.OfType<PythonClassType>().Any(b => b.IsAbstract || b.IsDerivedFromAbstractClass);
             // A class is abstract if it is derived from an abstract class and has at least one abstract function
-            var isAbstract = _class.IsDerivedFromAbstractClass && _class.GetMembers<PythonFunctionType>().Any(f => f.IsAbstract);
+            var isAbstract = derivedFromAbstract && _class.GetMembers<PythonFunctionType>().Any(f => f.IsAbstract);
 
             _class.IsDerivedFromAbstractClass = derivedFromAbstract;
             _class.IsAbstract = isAbstract;

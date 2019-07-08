@@ -253,7 +253,6 @@ class C(B):
             var cls = analysis.Should().HaveClass("C").Which;
             cls.IsAbstract.Should().BeFalse();
 
-            var tmp = cls.GetMembers<PythonFunctionType>();
             cls.Should().HaveMethod("method").Which.IsAbstract.Should().BeFalse();
             cls.Should().HaveMethod("new_method").Which.IsAbstract.Should().BeFalse();
         }

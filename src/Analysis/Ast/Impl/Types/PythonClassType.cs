@@ -32,8 +32,6 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
-        private bool _isAbstract;
-        private bool _isDerivedFromAbstractClass;
         private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -57,7 +55,7 @@ namespace Microsoft.Python.Analysis.Types {
         private PythonClassType(string name, Location location, string documentation, BuiltinTypeId buildinTypeId = BuiltinTypeId.Type, bool isAbstract = false)
             : base(name, location, documentation, buildinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
-            _isAbstract = isAbstract;
+            IsAbstract = isAbstract;
         }
 
         public PythonClassType(
