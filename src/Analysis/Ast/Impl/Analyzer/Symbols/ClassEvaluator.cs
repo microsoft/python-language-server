@@ -68,7 +68,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 ProcessClassBody();
 
-                // TODO do abstract check here 
                 _class.DecideAbstract();
             }
         }
@@ -119,8 +118,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Process remaining methods.
             SymbolTable.EvaluateScope(_classDef);
             UpdateClassMembers();
-
-            _class.DecideAbstract();
         }
 
         private void EvaluateConstructors(ClassDefinition cd) {

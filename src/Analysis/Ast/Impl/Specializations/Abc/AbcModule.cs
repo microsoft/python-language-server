@@ -43,7 +43,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["ABC"] = cls;
         }
 
-        private string GetMemberDocumentation(string name)
-        => base.GetMember(name)?.GetPythonType()?.Documentation;
+        private string GetMemberDocumentation(string name) => base.GetMember(name)?.GetPythonType()?.Documentation;
     }
 }

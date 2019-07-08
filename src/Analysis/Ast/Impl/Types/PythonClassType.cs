@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
         private bool _isAbstract;
-        private bool _isDerivedFromAbstract;
+        private bool _isDerivedFromAbstractClass;
         private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -54,17 +54,17 @@ namespace Microsoft.Python.Analysis.Types {
             Check.ArgumentNotNull(nameof(location), location.Module);
         }
 
-        private PythonClassType(string name, Location location, string documentation, BuiltinTypeId buildinTypeId = BuiltinTypeId.Type, bool isAbstract = false) 
+        private PythonClassType(string name, Location location, string documentation, BuiltinTypeId buildinTypeId = BuiltinTypeId.Type, bool isAbstract = false)
             : base(name, location, documentation, buildinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             _isAbstract = isAbstract;
         }
 
         public PythonClassType(
-                   ClassDefinition classDefinition,
-                   Location location,
-                   BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-               ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+            ClassDefinition classDefinition,
+            Location location,
+            BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
+        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             location.Module.AddAstNode(this, classDefinition);
         }
@@ -201,7 +201,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyDictionary<string, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
 
-        public bool IsDerivedFromAbstract => _isDerivedFromAbstract;
+        public bool IsDerivedFromAbstractClass => _isDerivedFromAbstractClass;
 
         #endregion
 
@@ -538,8 +538,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// Decides if this class is an abstract class or not
         /// </summary>
         public void DecideAbstract() {
-            _isDerivedFromAbstract = Bases.OfType<PythonClassType>().Any(b => b.IsAbstract || b.IsDerivedFromAbstract);
-            _isAbstract = _isDerivedFromAbstract && this.GetMembers<PythonFunctionType>().Any(f => f.IsAbstract);
+            _isDerivedFromAbstractClass = Bases.OfType<PythonClassType>().Any(b => b.IsAbstract || b.IsDerivedFromAbstractClass);
+            _isAbstract = _isDerivedFromAbstractClass && this.GetMembers<PythonFunctionType>().Any(f => f.IsAbstract);
         }
     }
 }

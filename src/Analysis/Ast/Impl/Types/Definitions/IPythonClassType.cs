@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// If the class contains an abstract class on its inheritance chain
         /// </summary>
-        bool IsDerivedFromAbstract { get; }
+        bool IsDerivedFromAbstractClass { get; }
 
         /// <summary>
         /// If class is created off generic template, name/type
