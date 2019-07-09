@@ -43,6 +43,7 @@ namespace Microsoft.Python.LanguageServer {
             _onChanged = onChanged;
 
             var reduced = ReduceToCommonRoots(paths);
+            
             foreach (var p in reduced) {
                 try {
                     if (!Directory.Exists(p)) {
@@ -53,20 +54,26 @@ namespace Microsoft.Python.LanguageServer {
                     continue;
                 }
 
+                _log.Log(TraceEventType.Verbose, $"Watching {p}");
+
                 try {
                     var fsw = new System.IO.FileSystemWatcher(p) {
                         IncludeSubdirectories = true,
                         EnableRaisingEvents = true,
-                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
                     };
 
+                    fsw.Changed += OnChanged;
                     fsw.Created += OnChanged;
                     fsw.Deleted += OnChanged;
+                    fsw.Renamed += OnChanged;
 
                     _disposableBag
                         .Add(() => _throttleTimer?.Dispose())
+                        .Add(() => fsw.Changed -= OnChanged)
                         .Add(() => fsw.Created -= OnChanged)
                         .Add(() => fsw.Deleted -= OnChanged)
+                        .Add(() => fsw.Renamed -= OnChanged)
                         .Add(() => fsw.EnableRaisingEvents = false)
                         .Add(fsw);
                 } catch (ArgumentException ex) {
