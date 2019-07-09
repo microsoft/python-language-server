@@ -14,13 +14,10 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
@@ -37,10 +34,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
     }
 
     public sealed class PythonLibraryPath : IEquatable<PythonLibraryPath> {
-        private static readonly Regex ParseRegex = new Regex(
-            @"(?<path>[^|]+)\|(?<type>[^|]+)\|(?<prefix>[^|]+)?"
-        );
-
         public PythonLibraryPath(string path, PythonLibraryPathType type = PythonLibraryPathType.Unspecified, string modulePrefix = null) {
             Path = PathUtils.TrimEndSeparator(PathUtils.NormalizePath(path));
             Type = type;
@@ -81,14 +74,18 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 throw new ArgumentNullException("source");
             }
 
-            var m = ParseRegex.Match(s);
-            if (!m.Success || !m.Groups["path"].Success || !m.Groups["type"].Success) {
+            var parts = s.Split(new[] { '|' }, 3);
+            if (parts.Length < 3) {
                 throw new FormatException();
             }
 
+            var path = parts[0];
+            var ty = parts[1];
+            var prefix = parts[2];
+
             PythonLibraryPathType type = PythonLibraryPathType.Unspecified;
 
-            switch (m.Groups["type"].Value) {
+            switch (ty) {
                 case "stdlib":
                     type = PythonLibraryPathType.StdLib;
                     break;
@@ -100,11 +97,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                     break;
             }
 
-            return new PythonLibraryPath(
-                m.Groups["path"].Value,
-                type,
-                m.Groups["prefix"].Success ? m.Groups["prefix"].Value : null
-            );
+            return new PythonLibraryPath(path, type, prefix);
         }
 
         /// <summary>
