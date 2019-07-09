@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                     Eval.ReportDiagnostics(Module.Uri, new Diagnostics.DiagnosticsEntry(
                             Resources.ReturnInInit,
-                            node.GetLocation(Module).Span,
+                            node.GetLocation(Eval).Span,
                             ErrorCodes.ReturnInInit,
                             Severity.Warning,
                             DiagnosticSource.Analysis));

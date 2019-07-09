@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
-        private readonly object _analysisLock = new object();
+        private readonly object _syncObj = new object();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly Dictionary<object, Node> _astMap = new Dictionary<object, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
@@ -237,7 +237,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         public string Content {
             get {
-                lock (AnalysisLock) {
+                lock (_syncObj) {
                     return _buffer.Text;
                 }
             }
@@ -252,7 +252,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
             Task t = null;
             while (true) {
-                lock (_analysisLock) {
+                lock (_syncObj) {
                     if (t == _parsingTask) {
                         break;
                     }
@@ -276,7 +276,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public IEnumerable<DiagnosticsEntry> GetParseErrors() => _parseErrors.ToArray();
 
         public void Update(IEnumerable<DocumentChange> changes) {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 _parseCts?.Cancel();
                 _parseCts = new CancellationTokenSource();
 
@@ -293,7 +293,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public void Reset(string content) {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 if (content != Content) {
                     ContentState = State.None;
                     InitializeContent(content, _buffer.Version + 1);
@@ -321,7 +321,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
 
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 version = _buffer.Version;
                 var options = new ParserOptions {
                     StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison)
@@ -337,7 +337,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (version != _buffer.Version) {
                     throw new OperationCanceledException();
@@ -367,7 +367,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 analyzer.EnqueueDocumentForAnalysis(this, ast, version);
             }
 
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 _parsingTask = null;
             }
         }
@@ -384,7 +384,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IAnalyzable
 
         public void NotifyAnalysisBegins() {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 if (_updated) {
                     _updated = false;
                     // In all variables find those imported, then traverse imported modules
@@ -412,7 +412,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 if (analysis.Version < Analysis.Version) {
                     return;
                 }
@@ -448,20 +448,20 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IAstNodeContainer
         public Node GetAstNode(object o) {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 return _astMap.TryGetValue(o, out var n) ? n : null;
             }
         }
 
         public void AddAstNode(object o, Node n) {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
                 _astMap[o] = n;
             }
         }
 
         public void ClearContent() {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 if (ModuleType != ModuleType.User) {
                     _buffer.Reset(_buffer.Version, string.Empty);
                     _astMap.Clear();
@@ -492,7 +492,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void InitializeContent(string content, int version) {
-            lock (_analysisLock) {
+            lock (_syncObj) {
                 LoadContent(content, version);
 
                 var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
