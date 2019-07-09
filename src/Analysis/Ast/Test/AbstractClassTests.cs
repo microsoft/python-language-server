@@ -327,5 +327,22 @@ class C(B):
             cls.IsAbstract.Should().BeFalse();
             cls.Should().HaveMethod("method").Which.IsAbstract.Should().BeFalse();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassInheritsABCImportReference() {
+            const string code = @"
+import abc
+
+class A(abc.ABC):
+    @abc.abstractmethod
+    def method(self):
+        return 1
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            var gParent = analysis.Should().HaveClass("A").Which;
+            gParent.Should().HaveMethod("method").Which.IsAbstract.Should().BeTrue();
+            gParent.IsAbstract.Should().BeTrue();
+        }
     }
 }

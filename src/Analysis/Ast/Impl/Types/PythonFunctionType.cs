@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             Location location
         ) : base(fd.Name, location,
-            fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(), 
+            fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(),
             declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
 
@@ -118,34 +118,45 @@ namespace Microsoft.Python.Analysis.Types {
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
 
         private void ProcessDecorators(FunctionDefinition fd) {
-            foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
-                // TODO: warn about incompatible combinations.
-                switch (dec.Name) {
-                    case @"staticmethod":
-                        IsStatic = true;
+            // TODO: warn about incompatible combinations.
+            foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate()) {
+                switch (dec) {
+                    case NameExpression n:
+                        ProcessDecorator(n.Name);
                         break;
-                    case @"classmethod":
-                        IsClassMethod = true;
-                        break;
-                    case @"abstractmethod":
-                        _isAbstract = true;
-                        break;
-                    case @"abstractstaticmethod":
-                        IsStatic = true;
-                        _isAbstract = true;
-                        break;
-                    case @"abstractclassmethod":
-                        IsClassMethod = true;
-                        _isAbstract = true;
-                        break;
-                    case @"overload":
-                        IsOverload = true;
-                        break;
-                    case @"property":
-                    case @"abstractproperty":
-                        Debug.Assert(false, "Found property attribute while processing function. Properties should be handled in the respective class.");
+                    case MemberExpression m:
+                        ProcessDecorator(m.Name);
                         break;
                 }
+            }
+        }
+
+        private void ProcessDecorator(string decorator) {
+            switch (decorator) {
+                case @"staticmethod":
+                    IsStatic = true;
+                    break;
+                case @"classmethod":
+                    IsClassMethod = true;
+                    break;
+                case @"abstractmethod":
+                    _isAbstract = true;
+                    break;
+                case @"abstractstaticmethod":
+                    IsStatic = true;
+                    _isAbstract = true;
+                    break;
+                case @"abstractclassmethod":
+                    IsClassMethod = true;
+                    _isAbstract = true;
+                    break;
+                case @"overload":
+                    IsOverload = true;
+                    break;
+                case @"property":
+                case @"abstractproperty":
+                    Debug.Assert(false, "Found property attribute while processing function. Properties should be handled in the respective class.");
+                    break;
             }
         }
 
