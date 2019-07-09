@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Modules.Resolution;
+using Microsoft.Python.Analysis.Specializations.Abc;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
