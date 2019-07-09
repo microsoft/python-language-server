@@ -138,23 +138,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
         }
 
-        private IPythonType TryAddBase(List<IPythonType> bases, Arg arg) {
+        private void TryAddBase(List<IPythonType> bases, Arg arg) {
             // We cheat slightly and treat base classes as annotations.
             var b = Eval.GetTypeFromAnnotation(arg.Expression);
             if (b != null) {
                 var t = b.GetPythonType();
                 bases.Add(t);
                 t.AddReference(Eval.GetLocationOfName(arg.Expression));
-                return t;
             } else {
                 ReportInvalidBase(arg.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
-                return null;
             }
         }
-
-
-
-
 
         private void EvaluateConstructors(ClassDefinition cd) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
