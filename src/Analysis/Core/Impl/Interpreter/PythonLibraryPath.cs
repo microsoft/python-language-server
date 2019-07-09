@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
 
     public sealed class PythonLibraryPath : IEquatable<PythonLibraryPath> {
         public PythonLibraryPath(string path, PythonLibraryPathType type = PythonLibraryPathType.Unspecified, string modulePrefix = null) {
-            Path = PathUtils.TrimEndSeparator(PathUtils.NormalizePath(path));
+            Path = PathUtils.NormalizePathAndTrim(path);
             Type = type;
             ModulePrefix = modulePrefix ?? string.Empty;
         }
@@ -210,9 +210,10 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             IEnumerable<PythonLibraryPath> fromInterpreter,
             IEnumerable<string> fromUser
         ) {
-            // PRECONDITIONS:
-            // - root has already been normalized and had its end separator trimmed.
-            // - All paths in fromInterpreter were normalised and end separator trimmed.
+#if DEBUG
+            Debug.Assert(root == null || root.PathEquals(PathUtils.NormalizePathAndTrim(root)));
+            Debug.Assert(!fromInterpreter.Any(p => !p.Path.PathEquals(PathUtils.NormalizePathAndTrim(p.Path))));
+#endif
 
             // Clean up user configured paths.
             // 1) Normalize paths.

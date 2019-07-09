@@ -115,8 +115,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : @params.rootPath;
             if (_rootDir != null) {
-                _rootDir = PathUtils.NormalizePath(_rootDir);
-                _rootDir = PathUtils.TrimEndSeparator(_rootDir);
+                _rootDir = PathUtils.NormalizePathAndTrim(_rootDir);
             }
 
             Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);

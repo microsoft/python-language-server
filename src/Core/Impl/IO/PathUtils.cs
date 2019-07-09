@@ -493,5 +493,7 @@ namespace Microsoft.Python.Core.IO {
             );
             return isDir ? EnsureEndSeparator(newPath) : newPath;
         }
+
+        public static string NormalizePathAndTrim(string path) => TrimEndSeparator(NormalizePath(path));
     }
 }
