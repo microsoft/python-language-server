@@ -13,10 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -48,6 +51,11 @@ h = C()
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.AbstractClassInstantiated);
+            diagnostic.Message.Should().Be(Resources.AbstractClassInstantiated.FormatInvariant("C"));
+            diagnostic.SourceSpan.Should().Be(9, 5, 9, 8);
+
             analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Unknown);
         }
 
@@ -69,6 +77,12 @@ h = C()
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.AbstractClassInstantiated);
+            diagnostic.Message.Should().Be(Resources.AbstractClassInstantiated.FormatInvariant("C"));
+            diagnostic.SourceSpan.Should().Be(13, 5, 13, 8);
+
 
             analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Unknown);
         }
