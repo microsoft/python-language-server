@@ -87,7 +87,7 @@ h = C()
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(0);
 
-            analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Object);
+            analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Type);
         }
 
         [TestMethod, Priority(0)]
@@ -102,7 +102,7 @@ h = C()
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(0);
 
-            analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Object);
+            analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Type);
         }
     }
 }
