@@ -147,6 +147,35 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod]
+        public void NestedUserOrdering() {
+            var appPath = TestData.GetTestSpecificPath("app.py");
+            var root = Path.GetDirectoryName(appPath);
+
+            var src = Path.Combine(root, "src");
+            var srcSomething = Path.Combine(src, "something");
+            var srcFoo = Path.Combine(src, "foo");
+            var srcFooBar = Path.Combine(srcFoo, "bar");
+
+            var fromUser = new[] {
+                "./src/foo",
+                "./src/foo/bar",
+                "./src",
+                "./src/something",
+            };
+
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
+
+            interpreterPaths.Should().BeEmpty();
+
+            userPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new PythonLibraryPath(srcFoo, PythonLibraryPathType.Unspecified),
+                new PythonLibraryPath(srcFooBar, PythonLibraryPathType.Unspecified),
+                new PythonLibraryPath(src, PythonLibraryPathType.Unspecified),
+                new PythonLibraryPath(srcSomething, PythonLibraryPathType.Unspecified),
+            });
+        }
+
+        [TestMethod]
         public void InsideStdLib() {
             var appPath = TestData.GetTestSpecificPath("app.py");
             var root = Path.GetDirectoryName(appPath);
