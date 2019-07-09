@@ -28,5 +28,6 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string UnsupportedOperandType = "unsupported-operand-type";
         public const string ReturnInInit = "return-in-init";
         public const string TypingGenericArguments = "typing-generic-arguments";
+        public const string DuplicateArgumentName = "duplicate-argument-name";
     }
 }

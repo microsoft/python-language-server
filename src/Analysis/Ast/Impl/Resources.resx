@@ -201,4 +201,7 @@
   <data name="GenericNotAllUnique" xml:space="preserve">
     <value>Arguments to Generic must all be unique.</value>
   </data>
+  <data name="DuplicateArgumentName" xml:space="preserve">
+    <value>Duplicate argument name '{0}' in function definition.</value>
+  </data>
 </root>
