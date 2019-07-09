@@ -55,7 +55,11 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
+<<<<<<< HEAD
         private readonly object _syncObj = new object();
+=======
+        private readonly object _analysisLock = new object();
+>>>>>>> Multiple analysis fixes.
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly Dictionary<object, Node> _astMap = new Dictionary<object, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
@@ -252,7 +256,11 @@ namespace Microsoft.Python.Analysis.Modules {
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
             Task t = null;
             while (true) {
+<<<<<<< HEAD
                 lock (_syncObj) {
+=======
+                lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                     if (t == _parsingTask) {
                         break;
                     }
@@ -276,7 +284,11 @@ namespace Microsoft.Python.Analysis.Modules {
         public IEnumerable<DiagnosticsEntry> GetParseErrors() => _parseErrors.ToArray();
 
         public void Update(IEnumerable<DocumentChange> changes) {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 _parseCts?.Cancel();
                 _parseCts = new CancellationTokenSource();
 
@@ -293,7 +305,11 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public void Reset(string content) {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 if (content != Content) {
                     ContentState = State.None;
                     InitializeContent(content, _buffer.Version + 1);
@@ -321,7 +337,11 @@ namespace Microsoft.Python.Analysis.Modules {
 
             //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
 
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 version = _buffer.Version;
                 var options = new ParserOptions {
                     StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison)
@@ -337,7 +357,11 @@ namespace Microsoft.Python.Analysis.Modules {
 
             //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 cancellationToken.ThrowIfCancellationRequested();
                 if (version != _buffer.Version) {
                     throw new OperationCanceledException();
@@ -367,7 +391,11 @@ namespace Microsoft.Python.Analysis.Modules {
                 analyzer.EnqueueDocumentForAnalysis(this, ast, version);
             }
 
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 _parsingTask = null;
             }
         }
@@ -384,7 +412,11 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IAnalyzable
 
         public void NotifyAnalysisBegins() {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 if (_updated) {
                     _updated = false;
                     // In all variables find those imported, then traverse imported modules
@@ -412,7 +444,11 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 if (analysis.Version < Analysis.Version) {
                     return;
                 }
@@ -448,20 +484,32 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IAstNodeContainer
         public Node GetAstNode(object o) {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 return _astMap.TryGetValue(o, out var n) ? n : null;
             }
         }
 
         public void AddAstNode(object o, Node n) {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
                 _astMap[o] = n;
             }
         }
 
         public void ClearContent() {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 if (ModuleType != ModuleType.User) {
                     _buffer.Reset(_buffer.Version, string.Empty);
                     _astMap.Clear();
@@ -492,7 +540,11 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void InitializeContent(string content, int version) {
+<<<<<<< HEAD
             lock (_syncObj) {
+=======
+            lock (_analysisLock) {
+>>>>>>> Multiple analysis fixes.
                 LoadContent(content, version);
 
                 var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
