@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         #endregion
 
         private void SpecializeMembers() {
-            var location = new Location(this, default);
+            var location = new Location(this);
 
             // TypeVar
             var fn = PythonFunctionType.Specialize("TypeVar", this, GetMemberDocumentation("TypeVar"));

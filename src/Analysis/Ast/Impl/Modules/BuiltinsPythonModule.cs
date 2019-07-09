@@ -121,7 +121,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             _hiddenNames.Add("__builtin_module_names__");
 
-            var location = new Location(this, default);
+            var location = new Location(this);
             if (_boolType != null) {
                 Analysis.GlobalScope.DeclareVariable("True", _boolType, VariableSource.Builtin, location);
                 Analysis.GlobalScope.DeclareVariable("False", _boolType, VariableSource.Builtin, location);

@@ -18,12 +18,19 @@ namespace Microsoft.Python.Analysis.Dependencies {
         int VertexDepth { get; }
 
         /// <summary>
-        /// Shows if node has any direct or indirect dependencies that aren't added to the graph
+        /// Returns true if node has any direct or indirect dependencies that aren't added to the graph, otherwise false
         /// </summary>
         bool HasMissingDependencies { get; }
+        /// <summary>
+        /// Returns true if node has only direct and indirect dependencies that have been walked at least once, otherwise false
+        /// </summary>
+        bool HasOnlyWalkedDependencies { get; }
+        /// <summary>
+        /// Returns true if node version matches version of the walked graph
+        /// </summary>
+        bool IsValidVersion { get; }
         TValue Value { get; }
-        void Commit();
-        void Skip();
-        bool IsComplete { get; }
+        void MarkWalked();
+        void MoveNext();
     }
 }

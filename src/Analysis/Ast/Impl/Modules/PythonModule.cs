@@ -55,6 +55,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
+        private readonly object _analysisLock = new object();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly Dictionary<object, Node> _astMap = new Dictionary<object, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
@@ -68,7 +69,6 @@ namespace Microsoft.Python.Analysis.Modules {
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
-        private object AnalysisLock { get; } = new object();
         private State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) : base(null) {
@@ -252,7 +252,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
             Task t = null;
             while (true) {
-                lock (AnalysisLock) {
+                lock (_analysisLock) {
                     if (t == _parsingTask) {
                         break;
                     }
@@ -270,15 +270,13 @@ namespace Microsoft.Python.Analysis.Modules {
             return this.GetAst();
         }
 
-        public PythonAst GetAnyAst() => GetAstNode<PythonAst>(this);
-
         /// <summary>
         /// Provides collection of parsing errors, if any.
         /// </summary>
         public IEnumerable<DiagnosticsEntry> GetParseErrors() => _parseErrors.ToArray();
 
         public void Update(IEnumerable<DocumentChange> changes) {
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 _parseCts?.Cancel();
                 _parseCts = new CancellationTokenSource();
 
@@ -295,7 +293,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         public void Reset(string content) {
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 if (content != Content) {
                     ContentState = State.None;
                     InitializeContent(content, _buffer.Version + 1);
@@ -323,7 +321,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
 
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 version = _buffer.Version;
                 var options = new ParserOptions {
                     StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison)
@@ -339,7 +337,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
 
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (version != _buffer.Version) {
                     throw new OperationCanceledException();
@@ -366,10 +364,10 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzing;
 
                 var analyzer = Services.GetService<IPythonAnalyzer>();
-                analyzer.EnqueueDocumentForAnalysis(this, version);
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version);
             }
 
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 _parsingTask = null;
             }
         }
@@ -386,16 +384,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IAnalyzable
 
         public void NotifyAnalysisBegins() {
-            lock (AnalysisLock) {
-                if (Analysis is LibraryAnalysis) {
-                    var sw = Log != null ? Stopwatch.StartNew() : null;
-                    lock (AnalysisLock) {
-                        _astMap[this] = RecreateAst();
-                    }
-                    sw?.Stop();
-                    Log?.Log(TraceEventType.Verbose, $"Reloaded AST of {Name} in {sw?.Elapsed.TotalMilliseconds} ms");
-                }
-
+            lock (_analysisLock) {
                 if (_updated) {
                     _updated = false;
                     // In all variables find those imported, then traverse imported modules
@@ -422,14 +411,14 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        public void NotifyAnalysisComplete(int version, ModuleWalker walker, bool isFinalPass) {
-            lock (AnalysisLock) {
-                if (version < Analysis.Version) {
+        public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
+            lock (_analysisLock) {
+                if (analysis.Version < Analysis.Version) {
                     return;
                 }
 
-                Analysis = CreateAnalysis(version, walker, isFinalPass);
-                GlobalScope = Analysis.GlobalScope;
+                Analysis = analysis;
+                GlobalScope = analysis.GlobalScope;
 
                 // Derived classes can override OnAnalysisComplete if they want
                 // to perform additional actions on the completed analysis such
@@ -444,7 +433,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             // Do not report issues with libraries or stubs
             if (ModuleType == ModuleType.User) {
-                _diagnosticsService?.Replace(Uri, Analysis.Diagnostics, DiagnosticSource.Analysis);
+                _diagnosticsService?.Replace(Uri, analysis.Diagnostics, DiagnosticSource.Analysis);
             }
 
             NewAnalysis?.Invoke(this, EventArgs.Empty);
@@ -458,30 +447,24 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAstNodeContainer
-        public T GetAstNode<T>(object o) where T : Node {
-            lock (AnalysisLock) {
-                return _astMap.TryGetValue(o, out var n) ? (T)n : null;
+        public Node GetAstNode(object o) {
+            lock (_analysisLock) {
+                return _astMap.TryGetValue(o, out var n) ? n : null;
             }
         }
 
         public void AddAstNode(object o, Node n) {
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
                 _astMap[o] = n;
             }
         }
 
-        public void ClearAst() {
-            lock (AnalysisLock) {
-                if (ModuleType != ModuleType.User) {
-                    _astMap.Clear();
-                }
-            }
-        }
         public void ClearContent() {
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 if (ModuleType != ModuleType.User) {
                     _buffer.Reset(_buffer.Version, string.Empty);
+                    _astMap.Clear();
                 }
             }
         }
@@ -509,7 +492,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void InitializeContent(string content, int version) {
-            lock (AnalysisLock) {
+            lock (_analysisLock) {
                 LoadContent(content, version);
 
                 var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
@@ -585,22 +568,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 foreach (var v in module.GlobalScope.Variables) {
                     v.RemoveReferences(this);
                 }
-            }
-        }
-
-        private IDocumentAnalysis CreateAnalysis(int version, ModuleWalker walker, bool isFinalPass)
-            => ModuleType == ModuleType.Library && isFinalPass
-                ? new LibraryAnalysis(this, version, walker.Eval.Services, walker.GlobalScope, walker.StarImportMemberNames)
-                : (IDocumentAnalysis)new DocumentAnalysis(this, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
-
-        private PythonAst RecreateAst() {
-            lock (AnalysisLock) {
-                ContentState = State.None;
-                LoadContent(null, _buffer.Version);
-                var parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, ParserOptions.Default);
-                var ast = parser.ParseFile(Uri);
-                ContentState = State.Parsed;
-                return ast;
             }
         }
     }

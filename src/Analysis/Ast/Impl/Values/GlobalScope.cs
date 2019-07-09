@@ -19,18 +19,21 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
     internal sealed class GlobalScope: Scope, IGlobalScope {
-        public GlobalScope(IPythonModule module): base(null, null, module) {
+        private readonly PythonAst _ast;
+
+        public GlobalScope(IPythonModule module, PythonAst ast): base(null, null, module) {
+            _ast = ast;
             DeclareBuiltinVariables();
         }
 
-        public override ScopeStatement Node => Module.GetAst();
+        public override ScopeStatement Node => _ast;
 
         private void DeclareBuiltinVariables() {
             if (Module.ModuleType != ModuleType.User) {
                 return;
             }
 
-            var location = new Location(Module, default);
+            var location = new Location(Module);
 
             var boolType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
