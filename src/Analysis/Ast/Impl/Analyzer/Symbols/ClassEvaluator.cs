@@ -115,7 +115,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
                 var expr = a.Expression;
 
-                // A base can either be the name of a class declared in the current module or a class declared in some other module
                 switch (expr) {
                     // class declared in the current module
                     case NameExpression nameExpression:
@@ -140,6 +139,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private IPythonType TryAddBase(List<IPythonType> bases, Arg arg) {
+            // We cheat slightly and treat base classes as annotations.
             var b = Eval.GetTypeFromAnnotation(arg.Expression);
             if (b != null) {
                 var t = b.GetPythonType();
