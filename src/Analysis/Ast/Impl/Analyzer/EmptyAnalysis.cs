@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Document = document ?? throw new ArgumentNullException(nameof(document));
             GlobalScope = new EmptyGlobalScope(document);
             Ast = AstUtilities.MakeEmptyAst(document.Uri);
-            ExpressionEvaluator = new ExpressionEval(services, document);
+            ExpressionEvaluator = new ExpressionEval(services, document, Ast);
         }
 
         public IDocument Document { get; }

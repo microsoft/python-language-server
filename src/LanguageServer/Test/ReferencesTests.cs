@@ -61,49 +61,79 @@ x = 2
         }
 
         [TestMethod, Priority(0)]
-        public async Task TwoOpenFiles() {
+        public async Task FindAllReferences_MultipleOpenFiles() {
             const string code1 = @"
 x = 1
 
 def func(x):
     return x
 
+class cls:
+    f = 3
+
+c = cls()
 y = func(x)
 x = 2
 ";
 
-            var code2 = $@"
-from module1 import x
-y = x
-";
-            var uri1 = await TestData.CreateTestSpecificFileAsync("module1.py", code1);
-            var uri2 = await TestData.CreateTestSpecificFileAsync("module2.py", code2);
+            var code2 = @"
+from module1 import x, c
+y = x,
+f = c.f";
 
-            await CreateServicesAsync(PythonVersions.LatestAvailable3X, uri1.AbsolutePath);
+            var code3 = @"
+from package import module2 as m
+from package.module2 import x
+a = m.x
+b = m.y
+c = x";
+
+            var uri1 = await TestData.CreateTestSpecificFileAsync("module1.py", code1);
+            var uri2 = await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "module2.py"), code2);
+            var uri3 = await TestData.CreateTestSpecificFileAsync("module3.py", code3);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
 
             var rdt = Services.GetService<IRunningDocumentTable>();
-            rdt.OpenDocument(uri1, code1);
-            rdt.OpenDocument(uri2, code2);
+            var doc1 = rdt.OpenDocument(uri1, code1);
+            var doc2 = rdt.OpenDocument(uri2, code2);
+            var doc3 = rdt.OpenDocument(uri3, code3);
 
-            var doc1 = rdt.GetDocument(uri1);
-            var analysis = await GetDocumentAnalysisAsync(doc1);
+            await doc1.GetAnalysisAsync();
+            await doc2.GetAnalysisAsync();
+            await doc3.GetAnalysisAsync();
 
             var rs = new ReferenceSource(Services);
-            var refs = await rs.FindAllReferencesAsync(analysis.Document.Uri, new SourceLocation(7, 10), ReferenceSearchOptions.All);
+            var refs = await rs.FindAllReferencesAsync(uri1, new SourceLocation(11, 10), ReferenceSearchOptions.All);
 
-            refs.Should().HaveCount(5);
+            refs.Should().HaveCount(8);
 
             refs[0].range.Should().Be(1, 0, 1, 1);
             refs[0].uri.Should().Be(uri1);
-            refs[1].range.Should().Be(6, 9, 6, 10);
+            refs[1].range.Should().Be(10, 9, 10, 10);
             refs[1].uri.Should().Be(uri1);
-            refs[2].range.Should().Be(7, 0, 7, 1);
+            refs[2].range.Should().Be(11, 0, 11, 1);
             refs[2].uri.Should().Be(uri1);
 
-            refs[3].range.Should().Be(1, 20, 1, 21);
-            refs[3].uri.Should().Be(uri2);
-            refs[4].range.Should().Be(2, 4, 2, 5);
-            refs[4].uri.Should().Be(uri2);
+            refs[3].range.Should().Be(2, 28, 2, 29);
+            refs[3].uri.Should().Be(uri3);
+            refs[4].range.Should().Be(3, 6, 3, 7);
+            refs[4].uri.Should().Be(uri3);
+            refs[5].range.Should().Be(5, 4, 5, 5);
+            refs[5].uri.Should().Be(uri3);
+
+            refs[6].range.Should().Be(1, 20, 1, 21);
+            refs[6].uri.Should().Be(uri2);
+            refs[7].range.Should().Be(2, 4, 2, 5);
+            refs[7].uri.Should().Be(uri2);
+
+            refs = await rs.FindAllReferencesAsync(uri1, new SourceLocation(8, 5), ReferenceSearchOptions.All);
+            refs.Should().HaveCount(2);
+
+            refs[0].range.Should().Be(7, 4, 7, 5);
+            refs[0].uri.Should().Be(uri1);
+            refs[1].range.Should().Be(3, 6, 3, 7);
+            refs[1].uri.Should().Be(uri2);
         }
 
         [TestMethod, Priority(0)]

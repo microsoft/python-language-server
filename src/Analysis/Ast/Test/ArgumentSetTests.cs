@@ -370,14 +370,14 @@ def func(a = A()): ...
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveFunction(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f, 0, null, call, analysis.Document, analysis.ExpressionEvaluator);
+            return new ArgumentSet(f, 0, null, call, analysis.ExpressionEvaluator);
         }
 
         private async Task<ArgumentSet> GetUnboundArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveVariable(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f.Value.GetPythonType<IPythonFunctionType>(), 0, null, call, analysis.Document, analysis.ExpressionEvaluator);
+            return new ArgumentSet(f.Value.GetPythonType<IPythonFunctionType>(), 0, null, call, analysis.ExpressionEvaluator);
         }
 
         private async Task<ArgumentSet> GetClassArgSetAsync(string code, string className = "A", string funcName = "f") {
@@ -385,7 +385,7 @@ def func(a = A()): ...
             var cls = analysis.Should().HaveClass(className).Which;
             var f = cls.Should().HaveMethod(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f, 0, new PythonInstance(cls), call, analysis.Document, analysis.ExpressionEvaluator);
+            return new ArgumentSet(f, 0, new PythonInstance(cls), call, analysis.ExpressionEvaluator);
         }
 
         private CallExpression GetCall(PythonAst ast) {

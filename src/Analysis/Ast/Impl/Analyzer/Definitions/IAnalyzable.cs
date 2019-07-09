@@ -26,6 +26,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Notifies document that its analysis is now complete.
         /// </summary>
-        void NotifyAnalysisComplete(int version, ModuleWalker walker, bool isFinalPass);
+        /// <param name="analysis">Document analysis</param>
+        void NotifyAnalysisComplete(IDocumentAnalysis analysis);
     }
 }

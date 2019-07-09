@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         #endregion
 
         private void SpecializeMembers() {
-            var location = new Location(this, default);
+            var location = new Location(this);
 
             // TypeVar
             var fn = PythonFunctionType.Specialize("TypeVar", this, GetMemberDocumentation("TypeVar"));
@@ -233,7 +233,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType), 
-                        expression?.GetLocation(eval.Module)?.Span ?? default, 
+                        expression?.GetLocation(eval)?.Span ?? default, 
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Error, DiagnosticSource.Analysis)
                 );
