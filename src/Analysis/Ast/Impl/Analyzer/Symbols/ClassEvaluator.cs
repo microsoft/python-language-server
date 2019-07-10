@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -110,7 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             UpdateClassMembers();
         }
 
-        private List<IPythonType> ProcessBases(Scope outerScope) {
+        private IEnumerable<IPythonType> ProcessBases(Scope outerScope) {
             var bases = new List<IPythonType>();
             foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
                 var expr = a.Expression;
