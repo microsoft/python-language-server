@@ -13,10 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Tests;
@@ -181,6 +184,105 @@ else:
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsOtherModules() {
+            var module1Code = @"
+def hello():
+    pass
+
+def hello2():
+    pass
+";
+
+            var appCode = @"
+from module1 import *
+
+def hello():
+    pass
+";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsOtherModulesNamedImport() {
+            var module1Code = @"
+def hello():
+    pass
+
+def hello2():
+    pass
+";
+
+            var appCode = @"
+from module1 import hello
+
+def hello():
+    pass
+";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsOtherModulesRenamedImport() {
+            var module1Code = @"
+def hello():
+    pass
+
+def hello2():
+    pass
+";
+
+            var appCode = @"
+from module1 import hello2 as hello
+
+def hello():
+    pass
+";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+            analysis.Diagnostics.Should().BeEmpty();
         }
     }
 }
