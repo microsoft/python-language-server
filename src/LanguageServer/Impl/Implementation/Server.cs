@@ -115,8 +115,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : @params.rootPath;
             if (_rootDir != null) {
-                _rootDir = PathUtils.NormalizePath(_rootDir);
-                _rootDir = PathUtils.TrimEndSeparator(_rootDir);
+                _rootDir = PathUtils.NormalizePathAndTrim(_rootDir);
             }
 
             Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);
@@ -125,19 +124,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
                 version: version
             ) {
-                // 1) Split on ';' to support older VS Code extension versions which send paths as a single entry separated by ';'. TODO: Eventually remove.
-                // 2) Normalize paths.
-                // 3) If a path isn't rooted, then root it relative to the workspace root. If _rootDir is null, then accept the path as-is.
-                // 4) Trim off any ending separator for a consistent style.
-                // 5) Filter out any entries which are the same as the workspace root; they are redundant. Also ignore "/" to work around the extension (for now).
-                // 6) Remove duplicates.
+                // Split on ';' to support older VS Code extension versions which send paths as a single entry separated by ';'. TODO: Eventually remove.
+                // Note that the actual classification of these paths as user/library is done later in MainModuleResolution.ReloadAsync.
                 SearchPaths = @params.initializationOptions.searchPaths
                     .Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany()
-                    .Select(PathUtils.NormalizePath)
-                    .Select(p => _rootDir == null || Path.IsPathRooted(p) ? p : Path.GetFullPath(p, _rootDir))
-                    .Select(PathUtils.TrimEndSeparator)
-                    .Where(p => !string.IsNullOrWhiteSpace(p) && p != "/" && !p.PathEquals(_rootDir))
-                    .Distinct(PathEqualityComparer.Instance)
                     .ToList(),
                 TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
             };
