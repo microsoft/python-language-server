@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Too many function arguments, expected {0}..
+        ///   Looks up a localized string similar to Too many function arguments..
         /// </summary>
         internal static string Analysis_TooManyFunctionArguments {
             get {
