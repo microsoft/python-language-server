@@ -184,6 +184,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case NamedExpression namedExpr:
                     m = GetValueFromExpression(namedExpr.Value);
                     break;
+                // indexing with nothing, e.g Generic[]
+                case ErrorExpression error:
+                    m = null;
+                    break;
                 default:
                     m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
                     break;
