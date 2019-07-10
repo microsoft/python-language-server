@@ -231,19 +231,16 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
 
             // Remove any interpreter paths specified in the user config so they can be reclassified.
             // The user list is usually small; List.Contains should not be too slow.
-            fromInterpreter = fromInterpreter.Where(p => !fromUserList.Contains(p.Path, PathEqualityComparer.Instance));
-
-            var stdlibLookup = fromInterpreter.ToLookup(p => p.Type == PythonLibraryPathType.StdLib);
+            fromInterpreter.Where(p => !fromUserList.Contains(p.Path, PathEqualityComparer.Instance))
+                .Split(p => p.Type == PythonLibraryPathType.StdLib, out var stdlib, out var withoutStdlib);
 
             // Pull out stdlib paths, and make them always be interpreter paths.
-            var stdlib = stdlibLookup[true].ToList();
             var interpreterPaths = new List<PythonLibraryPath>(stdlib);
-            fromInterpreter = stdlibLookup[false];
 
             var userPaths = new List<PythonLibraryPath>();
 
             var allPaths = fromUserList.Select(p => new PythonLibraryPath(p))
-                .Concat(fromInterpreter.Where(p => !p.Path.PathEquals(root)));
+                .Concat(withoutStdlib.Where(p => !p.Path.PathEquals(root)));
 
             foreach (var p in allPaths) {
                 // If path is within a stdlib path, then treat it as interpreter.

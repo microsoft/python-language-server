@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 var ps = _services.GetService<IProcessServices>();
                 var paths = await PythonLibraryPath.GetSearchPathsAsync(Configuration, fs, ps, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                return paths.MaybeEnumerate().ToArray();
+                return paths.ToArray();
             } catch (InvalidOperationException ex) {
                 _log?.Log(TraceEventType.Warning, "Exception getting search paths", ex);
                 _ui?.ShowMessageAsync(Resources.ExceptionGettingSearchPaths, TraceEventType.Error);
