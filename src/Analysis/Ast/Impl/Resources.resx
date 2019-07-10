@@ -148,7 +148,7 @@
     <value>Positional arguments are not allowed after keyword argument.</value>
   </data>
   <data name="Analysis_TooManyFunctionArguments" xml:space="preserve">
-    <value>Too many function arguments.</value>
+    <value>Too many function arguments, expected {0}.</value>
   </data>
   <data name="Analysis_TooManyPositionalArgumentBeforeStar" xml:space="preserve">
     <value>Too many positional arguments before '*' argument.</value>

@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis {
             var f = analysis.GetOrCreateFunction(name);
             if (f != null) {
                 foreach (var o in f.Overloads.OfType<PythonFunctionOverload>()) {
-                    if(parameters != null) {
+                    if (parameters != null) {
                         o.SetParameters(parameters);
                     }
                     o.SetReturnValueProvider(returnTypeCallback);
