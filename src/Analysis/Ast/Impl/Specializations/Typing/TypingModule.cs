@@ -232,13 +232,15 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
-                    new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType), 
-                        expression?.GetLocation(eval)?.Span ?? default, 
+                    new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType),
+                        expression?.GetLocation(eval)?.Span ?? default,
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Error, DiagnosticSource.Analysis)
                 );
+            } else {
+                ReportWrongNumArgs(args, "NewType", 2);
             }
-            // TODO: report wrong number of arguments
+
             return Interpreter.UnknownType;
         }
 
@@ -348,5 +350,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             => _members[typeName] is GenericType gt
                 ? new GenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId, typeArgs)
                 : Interpreter.UnknownType;
+
+        private void ReportWrongNumArgs(IArgumentSet args, string funcName, int expected) {
+            var eval = args.Eval;
+            eval?.ReportDiagnostics(
+                eval.Module?.Uri,
+                new DiagnosticsEntry(
+                    Resources.WrongNumberArguments.FormatInvariant(funcName, expected, args.Arguments.Count),
+                    args.Expression?.GetLocation(eval)?.Span ?? default,
+                    Diagnostics.ErrorCodes.WrongNumberArguments,
+                    Severity.Error,
+                    DiagnosticSource.Analysis
+            ));
+        }
     }
 }

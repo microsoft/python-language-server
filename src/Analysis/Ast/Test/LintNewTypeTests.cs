@@ -16,6 +16,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Tests;
@@ -125,6 +126,34 @@ T = NewType('{name}', {type})
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(0);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NewTypeWrongNumArgs() {
+            string code = $@"
+from typing import NewType
+
+X = NewType(5)
+Y = NewType()
+Z = NewType('str', int, float)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(3);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongNumberArguments);
+            diagnostic.Message.Should().Be(Resources.WrongNumberArguments.FormatInvariant("NewType", 2, 1));
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 15);
+
+            diagnostic = analysis.Diagnostics.ElementAt(1);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongNumberArguments);
+            diagnostic.Message.Should().Be(Resources.WrongNumberArguments.FormatInvariant("NewType", 2, 0));
+            diagnostic.SourceSpan.Should().Be(5, 5, 5, 14);
+
+            diagnostic = analysis.Diagnostics.ElementAt(2);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongNumberArguments);
+            diagnostic.Message.Should().Be(Resources.WrongNumberArguments.FormatInvariant("NewType", 2, 3));
+            diagnostic.SourceSpan.Should().Be(6, 5, 6, 31);
         }
     }
 }

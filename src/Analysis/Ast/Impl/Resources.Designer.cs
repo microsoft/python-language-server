@@ -320,5 +320,14 @@ namespace Microsoft.Python.Analysis {
                 return ResourceManager.GetString("UnsupporedOperandType", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Function &apos;{0}&apos; expected {1} argument(s) but received {2}..
+        /// </summary>
+        internal static string WrongNumberArguments {
+            get {
+                return ResourceManager.GetString("WrongNumberArguments", resourceCulture);
+            }
+        }
     }
 }
