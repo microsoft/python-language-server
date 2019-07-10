@@ -136,6 +136,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         break;
                 }
             }
+            return bases;
         }
 
         private void TryAddBase(List<IPythonType> bases, Arg arg) {
