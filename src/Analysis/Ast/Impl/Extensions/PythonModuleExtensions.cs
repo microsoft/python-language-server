@@ -20,10 +20,16 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis {
     public static class PythonModuleExtensions {
         internal static PythonAst GetAst(this IPythonModule module)
-            => ((IAstNodeContainer)module).GetAstNode<PythonAst>(module);
+            => (PythonAst)((IAstNodeContainer)module).GetAstNode(module);
+
+        internal static void SetAst(this IPythonModule module, PythonAst ast) {
+            var contained = (IAstNodeContainer)module;
+            contained.ClearContent();
+            contained.AddAstNode(module, ast);
+        }
 
         internal static T GetAstNode<T>(this IPythonModule module, object o) where T : Node
-            => ((IAstNodeContainer)module).GetAstNode<T>(o);
+            => (T)((IAstNodeContainer)module).GetAstNode(o);
         internal static void AddAstNode(this IPythonModule module, object o, Node n)
             => ((IAstNodeContainer)module).AddAstNode(o, n);
     }

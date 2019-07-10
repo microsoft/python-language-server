@@ -103,7 +103,6 @@ namespace Microsoft.Python.Analysis.Documents {
 
             if (justOpened) {
                 Opened?.Invoke(this, new DocumentEventArgs(document));
-                _services.GetService<IPythonAnalyzer>().InvalidateAnalysis(document);
             }
 
             return document;
@@ -248,8 +247,8 @@ namespace Microsoft.Python.Analysis.Documents {
 
         private bool TryOpenDocument(DocumentEntry entry, string content) {
             if (!entry.Document.IsOpen) {
-                entry.Document.Reset(content);
                 entry.Document.IsOpen = true;
+                entry.Document.Reset(content);
                 entry.LockCount++;
                 return true;
             }

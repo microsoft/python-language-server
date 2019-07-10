@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
             if (init != null) {
                 using (OpenScope(cls.DeclaringModule, cls.ClassDefinition, out _)) {
-                    var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, Module, this);
+                    var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, this);
                     if (a.Errors.Count > 0) {
                         // AddDiagnostics(Module.Uri, a.Errors);
                     }

@@ -119,8 +119,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
-        private async Task<IReadOnlyList<HierarchicalSymbol>> IndexAsync(IDocument doc,
-            CancellationToken indexCt) {
+        private async Task<IReadOnlyList<HierarchicalSymbol>> IndexAsync(IDocument doc, CancellationToken indexCt) {
             var ast = await doc.GetAstAsync(indexCt);
             indexCt.ThrowIfCancellationRequested();
             var walker = new SymbolIndexWalker(ast);
