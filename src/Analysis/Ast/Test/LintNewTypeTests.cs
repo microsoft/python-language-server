@@ -141,18 +141,18 @@ Z = NewType('str', int, float)
             analysis.Diagnostics.Should().HaveCount(3);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongNumberArguments);
-            diagnostic.Message.Should().Be(Resources.WrongNumberArguments.FormatInvariant("NewType", 2, 1));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongArgumentCount);
+            diagnostic.Message.Should().Be(Resources.WrongArgumentCount.FormatInvariant("NewType", 2, 1));
             diagnostic.SourceSpan.Should().Be(4, 5, 4, 15);
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongNumberArguments);
-            diagnostic.Message.Should().Be(Resources.WrongNumberArguments.FormatInvariant("NewType", 2, 0));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongArgumentCount);
+            diagnostic.Message.Should().Be(Resources.WrongArgumentCount.FormatInvariant("NewType", 2, 0));
             diagnostic.SourceSpan.Should().Be(5, 5, 5, 14);
 
             diagnostic = analysis.Diagnostics.ElementAt(2);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongNumberArguments);
-            diagnostic.Message.Should().Be(Resources.WrongNumberArguments.FormatInvariant("NewType", 2, 3));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongArgumentCount);
+            diagnostic.Message.Should().Be(Resources.WrongArgumentCount.FormatInvariant("NewType", 2, 3));
             diagnostic.SourceSpan.Should().Be(6, 5, 6, 31);
         }
     }

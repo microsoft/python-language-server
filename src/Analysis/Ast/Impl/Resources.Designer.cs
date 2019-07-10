@@ -324,9 +324,9 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         ///   Looks up a localized string similar to Function &apos;{0}&apos; expected {1} argument(s) but got {2}..
         /// </summary>
-        internal static string WrongNumberArguments {
+        internal static string WrongArgumentCount {
             get {
-                return ResourceManager.GetString("WrongNumberArguments", resourceCulture);
+                return ResourceManager.GetString("WrongArgumentCount", resourceCulture);
             }
         }
     }

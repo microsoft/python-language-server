@@ -356,9 +356,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             eval?.ReportDiagnostics(
                 eval.Module?.Uri,
                 new DiagnosticsEntry(
-                    Resources.WrongNumberArguments.FormatInvariant(funcName, expected, args.Arguments.Count),
+                    Resources.WrongArgumentCount.FormatInvariant(funcName, expected, args.Arguments.Count),
                     args.Expression?.GetLocation(eval)?.Span ?? default,
-                    Diagnostics.ErrorCodes.WrongNumberArguments,
+                    Diagnostics.ErrorCodes.WrongArgumentCount,
                     Severity.Error,
                     DiagnosticSource.Analysis
             ));
