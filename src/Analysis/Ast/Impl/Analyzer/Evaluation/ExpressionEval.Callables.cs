@@ -377,7 +377,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private void ValidateParameters(FunctionDefinition fd) {
             var duplicates = fd.Parameters.Where(p => !string.IsNullOrEmpty(p.Name)).GroupBy(p => p.Name).Where(g => g.Count() > 1).Select(y => y.Key);
 
-            foreach(var paramName in duplicates) {
+            foreach (var paramName in duplicates) {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                     Resources.DuplicateArgumentName.FormatInvariant(paramName),
                     GetLocation(fd.NameExpression).Span,
