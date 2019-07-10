@@ -133,6 +133,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Comparing against a callable, did you omit the parenthesis?.
+        /// </summary>
+        internal static string ComparisonWithCallable {
+            get {
+                return ResourceManager.GetString("ComparisonWithCallable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Environment variable &apos;{0}&apos; is not set, using the default cache location instead..
         /// </summary>
         internal static string EnvVariableNotSet {

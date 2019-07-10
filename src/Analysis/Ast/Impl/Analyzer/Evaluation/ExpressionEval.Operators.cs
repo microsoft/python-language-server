@@ -119,6 +119,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Interpreter.GetBuiltinType(leftTypeId);
             }
 
+            if ((left is PythonFunctionType || right is PythonFunctionType) && op.IsComparison()) {
+                ReportDiagnostics(
+                    Module.Uri,
+                    new DiagnosticsEntry(
+                        Resources.ComparisonWithCallable,
+                        GetLocation(expr).Span,
+                        ErrorCodes.ComparisonWithCallable,
+                        Severity.Warning,
+                        DiagnosticSource.Analysis
+                ));
+            }
+
             var leftIsSupported = IsSupportedBinopBuiltin(leftTypeId);
             var rightIsSupported = IsSupportedBinopBuiltin(rightTypeId);
 

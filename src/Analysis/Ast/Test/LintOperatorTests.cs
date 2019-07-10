@@ -1,11 +1,14 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
@@ -43,7 +46,7 @@ a = 5 + 'str'
         [DataRow("str", "float", "*")]
         [DataTestMethod, Priority(0)]
         public async Task IncompatibleTypesBinaryOp(string leftType, string rightType, string op) {
- var code = $@"
+            var code = $@"
 x = 1
 y = 2
 
@@ -81,6 +84,59 @@ z = {leftType}(x) {op} {rightType}(y)
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Diagnostics.Should().BeEmpty();
         }
-    }
 
+        [DataRow("x = hello < test")]
+        [DataRow("x = hello > test")]
+        [DataRow("x = hello == test")]
+        [DataRow("x = hello < 5")]
+        [DataRow("x = hello > 5")]
+        [DataRow("x = hello == 5")]
+        [DataRow("x = 5 < hello")]
+        [DataRow("x = 5 > hello")]
+        [DataRow("x = 5 == hello")]
+        [DataTestMethod, Priority(0)]
+        public async Task ComparisonsWithFuncObjs(string decl) {
+            const string setup = @"
+def hello():
+    return 1
+
+def test():
+    return 2
+";
+            string code = setup + decl;
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.Severity.Should().Be(Severity.Warning);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.ComparisonWithCallable);
+            diagnostic.Message.Should().Be(Resources.ComparisonWithCallable);
+            diagnostic.SourceSpan.Should().Be(7, 5, 7, decl.Length + 1);
+        }
+
+        [DataRow("x = hello() < test()")]
+        [DataRow("x = hello() > test()")]
+        [DataRow("x = hello() == test()")]
+        [DataRow("x = hello() < 5")]
+        [DataRow("x = hello() > 5")]
+        [DataRow("x = hello() == 5")]
+        [DataRow("x = 5 < hello()")]
+        [DataRow("x = 5 > hello()")]
+        [DataRow("x = 5 == hello()")]
+        [DataTestMethod, Priority(0)]
+        public async Task ComparisonsWithCalledFuncs(string decl) {
+            const string setup = @"
+def hello():
+    return 1
+
+def test():
+    return 2
+";
+            string code = setup + decl;
+
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Diagnostics.Should().HaveCount(0);
+        }
+    }
 }

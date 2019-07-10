@@ -204,4 +204,7 @@
   <data name="GenericNotAllUnique" xml:space="preserve">
     <value>Arguments to Generic must all be unique.</value>
   </data>
+  <data name="ComparisonWithCallable" xml:space="preserve">
+    <value>Comparing against a callable, did you omit the parenthesis?</value>
+  </data>
 </root>
