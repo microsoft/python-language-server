@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 _class = classInfo;
 
-                List<IPythonType> bases = ProcessBases(outerScope);
+                var bases = ProcessBases(outerScope);
 
                 _class.SetBases(bases);
                 // Declare __class__ variable in the scope.
@@ -111,7 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private List<IPythonType> ProcessBases(Scope outerScope) {
-            List<IPythonType> bases = new List<IPythonType>();
+            var bases = new List<IPythonType>();
             foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
                 var expr = a.Expression;
 
