@@ -17,7 +17,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    public struct Location {
+    public readonly struct Location {
         public Location(IPythonModule module) : this(module, default) { }
 
         public Location(IPythonModule module, IndexSpan indexSpan) {

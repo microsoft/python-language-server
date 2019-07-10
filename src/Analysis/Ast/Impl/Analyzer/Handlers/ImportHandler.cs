@@ -56,19 +56,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // import_module('fob.oar.baz')
             var importNames = ImmutableArray<string>.Empty;
             var variableModule = default(PythonVariableModule);
+            var importedNamesCount = 0;
             foreach (var nameExpression in moduleImportExpression.Names) {
                 importNames = importNames.Add(nameExpression.Name);
                 var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, forceAbsolute);
                 if (!HandleImportSearchResult(imports, variableModule, asNameExpression, moduleImportExpression, out variableModule)) {
-                    return;
+                    break;
                 }
+
+                importedNamesCount++;
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (!string.IsNullOrEmpty(asNameExpression?.Name)) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name) && importedNamesCount == moduleImportExpression.Names.Count) {
                 Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
-            } else if (importNames.Count > 0 && !string.IsNullOrEmpty(importNames[0]) && _variableModules.TryGetValue(importNames[0], out variableModule)) {
+            } else if (importedNamesCount > 0 && !string.IsNullOrEmpty(importNames[0]) && _variableModules.TryGetValue(importNames[0], out variableModule)) {
                 var firstName = moduleImportExpression.Names[0];
                 Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
             }
@@ -87,7 +90,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 case RelativeImportBeyondTopLevel importBeyondTopLevel:
                     var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
                     Eval.ReportDiagnostics(Eval.Module.Uri, 
-                        new DiagnosticsEntry(message, location.GetLocation(Eval.Module).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
+                        new DiagnosticsEntry(message, location.GetLocation(Eval).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
                     variableModule = default;
                     return false;
                 case ImportNotFound importNotFound:

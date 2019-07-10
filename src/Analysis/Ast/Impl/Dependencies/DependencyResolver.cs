@@ -31,10 +31,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         public int Version => _version;
         
-        public int ChangeValue(TKey key, TValue value, bool isRoot, params TKey[] incomingKeys)
+        public int ChangeValue(in TKey key, in TValue value, in bool isRoot, params TKey[] incomingKeys)
             => ChangeValue(key, value, isRoot, ImmutableArray<TKey>.Create(incomingKeys));
 
-        public int ChangeValue(TKey key, TValue value, bool isRoot, ImmutableArray<TKey> incomingKeys) {
+        public int ChangeValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys) {
             lock (_syncObj) {
                 if (!_keys.TryGetValue(key, out var index)) {
                     index = _keys.Count;
@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        public int TryAddValue(TKey key, TValue value, bool isRoot, ImmutableArray<TKey> incomingKeys) {
+        public int TryAddValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys) {
             lock (_syncObj) {
                 if (!_keys.TryGetValue(key, out var index)) {
                     index = _keys.Count;
@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        public int Remove(TKey key) {
+        public int Remove(in TKey key) {
             lock (_syncObj) {
                 if (!_keys.TryGetValue(key, out var index)) {
                     return _version;
@@ -71,14 +71,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 var version = Interlocked.Increment(ref _version);
 
                 var vertex = _vertices[index];
-                _vertices[index] = default;
-                if (vertex == null) {
+                if (vertex == default) {
                     return version;
                 }
-                
+
+                _vertices[index] = default;
                 foreach (var incomingIndex in vertex.Incoming) {
                     var incoming = _vertices[incomingIndex];
-                    if (incoming != null && incoming.IsSealed) {
+                    if (incoming != default && incoming.IsSealed) {
                         _vertices[incomingIndex] = new DependencyVertex<TKey, TValue>(incoming, version, false);
                     }
                 }
@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 
                 foreach (var outgoingIndex in vertex.Outgoing) {
                     var outgoing = _vertices[outgoingIndex];
-                    if (outgoing != null && !outgoing.IsNew) {
+                    if (outgoing != default && !outgoing.IsNew) {
                         _vertices[outgoingIndex] = new DependencyVertex<TKey, TValue>(outgoing, version, true);
                     }
                 }
@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         public int RemoveKeys(params TKey[] keys) => RemoveKeys(ImmutableArray<TKey>.Create(keys));
 
-        public int RemoveKeys(ImmutableArray<TKey> keys) {
+        public int RemoveKeys(in ImmutableArray<TKey> keys) {
             lock (_syncObj) {
                 foreach (var key in keys) {
                     if (_keys.TryGetValue(key, out var index)) {
@@ -138,7 +138,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        private void Update(TKey key, TValue value, bool isRoot, ImmutableArray<TKey> incomingKeys, int index) {
+        private void Update(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys, in int index) {
             var version = Interlocked.Increment(ref _version);
 
             var incoming = EnsureKeys(index, incomingKeys, version);
@@ -147,7 +147,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             _keys[key] = index;
         }
 
-        private ImmutableArray<int> EnsureKeys(int index, ImmutableArray<TKey> keys, int version) {
+        private ImmutableArray<int> EnsureKeys(in int index, in ImmutableArray<TKey> keys, in int version) {
             var incoming = ImmutableArray<int>.Empty;
 
             foreach (var key in keys) {
@@ -175,7 +175,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        public bool TryCreateWalker(int version, int walkerDepthLimit, out IDependencyChainWalker<TKey, TValue> walker) {
+        public bool TryCreateWalker(in int version, in int walkerDepthLimit, out IDependencyChainWalker<TKey, TValue> walker) {
             ImmutableArray<DependencyVertex<TKey, TValue>> vertices;
 
             lock (_syncObj) {
@@ -210,8 +210,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             // Iterate original graph to get starting vertices
-            var startingVertices = walkingGraph.Where(v => v.IncomingCount == 0);
-            if (!TryFindMissingDependencies(vertices, walkingGraph, version)) {
+            if (!TryFindMissingDependencies(vertices, walkingGraph, version, out var missingKeys)) {
                 walker = default;
                 return false;
             }
@@ -222,26 +221,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
-            var missingKeys = ImmutableArray<TKey>.Empty;
-
-            lock (_syncObj) {
-                if (version != _version) {
-                    walker = default;
-                    return false;
-                }
-                
-                foreach (var (key, index) in _keys) {
-                    if (vertices[index] == default/* && depths[index] <= walkerDepthLimit*/) {
-                        missingKeys = missingKeys.Add(key);
-                    }
-                }
-            }
-
-            walker = new DependencyChainWalker(startingVertices, affectedValues, depths, missingKeys, totalNodesCount, version);
-            return true;
+            var startingVertices = walkingGraph.Where(v => !v.HasIncoming);
+            walker = new DependencyChainWalker(this, startingVertices, affectedValues, depths, missingKeys, totalNodesCount, version);
+            return version == _version;
         }
 
-        private bool TryBuildReverseGraph(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, int version) {
+        private bool TryBuildReverseGraph(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, in int version) {
             var reverseGraphIsBuilt = true;
             foreach (var vertex in vertices) {
                 if (vertex != null && !vertex.IsSealed) {
@@ -256,7 +241,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             var outgoingVertices = new HashSet<int>[vertices.Count];
             foreach (var vertex in vertices) {
-                if (vertex == null) {
+                if (vertex == default) {
                     continue;
                 }
 
@@ -283,7 +268,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
 
                 foreach (var vertex in vertices) {
-                    if (vertex != null && !vertex.IsSealed) {
+                    if (vertex != default && !vertex.IsSealed) {
                         vertex.Seal(outgoingVertices[vertex.Index]);
                     }
                 }
@@ -292,7 +277,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        private bool TryCreateWalkingGraph(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, ImmutableArray<int> depths, int version, out ImmutableArray<WalkingVertex<TKey, TValue>> analysisGraph) {
+        private bool TryCreateWalkingGraph(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, in ImmutableArray<int> depths, in int version, out ImmutableArray<WalkingVertex<TKey, TValue>> analysisGraph) {
             if (version != _version) {
                 analysisGraph = default;
                 return false;
@@ -326,7 +311,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 foreach (var outgoingIndex in node.DependencyVertex.Outgoing) {
                     if (!nodesByVertexIndex.TryGetValue(outgoingIndex, out var outgoingNode)) {
                         var vertex = vertices[outgoingIndex];
-                        if (vertex == null) {
+                        if (vertex == null || depths[vertex.Index] == -1) {
                             continue;
                         }
 
@@ -541,10 +526,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        private bool TryFindMissingDependencies(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, in ImmutableArray<WalkingVertex<TKey, TValue>> walkingGraph, int version) {
+        private bool TryFindMissingDependencies(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, in ImmutableArray<WalkingVertex<TKey, TValue>> walkingGraph, int version, out ImmutableArray<TKey> missingKeys) {
             var haveMissingDependencies = new bool[vertices.Count];
             var queue = new Queue<DependencyVertex<TKey, TValue>>();
+            var missingIndicesHashSet = new HashSet<int>();
 
+            // First, go through all the vertices and find those that have missing incoming edges
             foreach (var vertex in vertices) {
                 if (vertex == default) {
                     continue;
@@ -554,11 +541,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     if (vertices[incoming] == default) {
                         haveMissingDependencies[vertex.Index] = true;
                         queue.Enqueue(vertex);
-                        break;
+                        missingIndicesHashSet.Add(incoming);
                     }
                 }
             }
 
+            missingKeys = ImmutableArray<TKey>.Empty;
+
+            // From them, go through the edges and mark all reachable vertices
             while (queue.Count > 0) {
                 if (version != _version) {
                     return false;
@@ -566,6 +556,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 var vertex = queue.Dequeue();
                 foreach (var outgoing in vertex.Outgoing) {
+                    if (vertices[outgoing] == default) {
+                        continue;
+                    }
+
                     if (haveMissingDependencies[outgoing]) {
                         continue; // This vertex has been visited
                     }
@@ -582,10 +576,19 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
-            return true;
+            lock (_syncObj) {
+                foreach (var (key, index) in _keys) {
+                    if (missingIndicesHashSet.Contains(index)/* && depths[index] <= walkerDepthLimit*/) {
+                        missingKeys = missingKeys.Add(key);
+                    }
+                }
+            }
+            
+            return version == _version;
         }
 
         private sealed class DependencyChainWalker : IDependencyChainWalker<TKey, TValue> {
+            private readonly DependencyResolver<TKey, TValue> _dependencyResolver;
             private readonly ImmutableArray<WalkingVertex<TKey, TValue>> _startingVertices;
             private readonly ImmutableArray<int> _depths;
             private readonly object _syncObj;
@@ -604,14 +607,16 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
-            public DependencyChainWalker(
+            public DependencyChainWalker(in DependencyResolver<TKey, TValue> dependencyResolver,
                 in ImmutableArray<WalkingVertex<TKey, TValue>> startingVertices,
                 in ImmutableArray<TValue> affectedValues,
                 in ImmutableArray<int> depths,
                 in ImmutableArray<TKey> missingKeys,
                 in int totalNodesCount,
                 in int version) {
+
                 _syncObj = new object();
+                _dependencyResolver = dependencyResolver;
                 _startingVertices = startingVertices;
                 _depths = depths;
                 AffectedValues = affectedValues;
@@ -638,18 +643,18 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 return ppc.ConsumeAsync(cancellationToken);
             }
 
-            public void MarkCompleted(WalkingVertex<TKey, TValue> vertex, bool commitChanges) {
+            public void MoveNext(WalkingVertex<TKey, TValue> vertex) {
                 var verticesToProduce = new List<WalkingVertex<TKey, TValue>>();
                 var isCompleted = false;
                 lock (_syncObj) {
                     _remaining--;
                     foreach (var outgoing in vertex.Outgoing) {
-                        if (outgoing.IncomingCount == 0) {
+                        if (!outgoing.HasIncoming) {
                             continue;
                         }
 
-                        outgoing.DecrementIncoming();
-                        if (outgoing.IncomingCount > 0) {
+                        outgoing.DecrementIncoming(vertex.HasOnlyWalkedIncoming);
+                        if (outgoing.HasIncoming) {
                             continue;
                         }
 
@@ -661,15 +666,19 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
 
-                if (commitChanges && vertex.SecondPass == null) {
-                    vertex.DependencyVertex.MarkWalked();
-                }
-
                 if (isCompleted) {
                     _ppc.Produce(null);
                 } else {
                     foreach (var toProduce in verticesToProduce) {
                         _ppc.Produce(new DependencyChainNode(this, toProduce, _depths[toProduce.DependencyVertex.Index]));
+                    }
+                }
+            }
+
+            public bool IsValidVersion {
+                get {
+                    lock (_dependencyResolver._syncObj) {
+                        return _dependencyResolver._version == Version;
                     }
                 }
             }
@@ -679,9 +688,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private readonly WalkingVertex<TKey, TValue> _vertex;
             private DependencyChainWalker _walker;
             public TValue Value => _vertex.DependencyVertex.Value;
-            public bool HasMissingDependencies => _vertex.HasMissingDependencies;
             public int VertexDepth { get; }
-            public bool IsComplete => _vertex.SecondPass == null && !HasMissingDependencies;
+            public bool HasMissingDependencies => _vertex.HasMissingDependencies;
+            public bool HasOnlyWalkedDependencies => _vertex.HasOnlyWalkedIncoming && _vertex.SecondPass == default;
+            public bool IsValidVersion => _walker.IsValidVersion;
 
             public DependencyChainNode(DependencyChainWalker walker, WalkingVertex<TKey, TValue> vertex, int depth) {
                 _walker = walker;
@@ -689,8 +699,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 VertexDepth = depth;
             }
 
-            public void Commit() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex, true);
-            public void Skip() => Interlocked.Exchange(ref _walker, null)?.MarkCompleted(_vertex, false);
+            public void MarkWalked() {
+                if (_vertex.SecondPass == null) {
+                    _vertex.DependencyVertex.MarkWalked();
+                }
+            }
+
+            public void MoveNext() => Interlocked.Exchange(ref _walker, null)?.MoveNext(_vertex);
         }
     }
 }

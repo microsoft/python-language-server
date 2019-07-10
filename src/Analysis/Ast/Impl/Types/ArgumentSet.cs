@@ -17,8 +17,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Values;
@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly DictArg _dictArgument;
         private bool _evaluated;
 
-        public static IArgumentSet Empty = new ArgumentSet();
+        public static IArgumentSet WithoutContext = new ArgumentSet();
 
         /// <summary>Module that declares the function</summary>
         public IPythonModule DeclaringModule { get; }
@@ -49,21 +49,38 @@ namespace Microsoft.Python.Analysis.Types {
         public int OverloadIndex { get; }
         public IExpressionEvaluator Eval { get; }
 
+        public Expression Expression { get; }
 
         private ArgumentSet() { }
 
-        public ArgumentSet(IReadOnlyList<IPythonType> typeArgs) {
-            _arguments = typeArgs.Select(t => new Argument(t)).ToList();
+        /// <summary>
+        /// Creates an empty argument set with some context in how the argument set was used.
+        /// </summary>
+        /// <param name="expr">Expression associated with argument set.</param>
+        /// <param name="eval">Evaluator for the expression involving the argument set.</param>
+        /// <returns></returns>
+        public static ArgumentSet Empty(Expression expr, IExpressionEvaluator eval) {
+            return new ArgumentSet(new List<IMember>(), expr, eval);
+        }
+        
+        /// <summary>
+        /// Creates a set of arguments for a call
+        ///
+        /// Use in the cases a corresponding function is unknown, but it is still convenient to have the context
+        /// of the expression which the arguments are needed for and the evaluator that is analyzing
+        /// that expression.
+        /// 
+        /// </summary>
+        /// <param name="args">Arguments for the call.</param>
+        /// <param name="expr">Expression for the call.</param>
+        /// <param name="eval">Evaluator of the current analysis.</param>
+        public ArgumentSet(IReadOnlyList<IMember> args, Expression expr, IExpressionEvaluator eval) {
+            _arguments = args.Select(t => new Argument(t)).ToList();
+            Expression = expr;
+            Eval = eval;
+
             _evaluated = true;
         }
-
-        public ArgumentSet(IReadOnlyList<IMember> memberArgs) {
-            _arguments = memberArgs.Select(t => new Argument(t)).ToList();
-            _evaluated = true;
-        }
-
-        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, ExpressionEval eval) :
-            this(fn, overloadIndex, instance, callExpr, eval.Module, eval) { }
 
         /// <summary>
         /// Creates set of arguments for a function call based on the call expression
@@ -75,12 +92,12 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="overloadIndex">Function overload to call.</param>
         /// <param name="instance">Type instance the function is bound to. For derived classes it is different from the declared type.</param>
         /// <param name="callExpr">Call expression that invokes the function.</param>
-        /// <param name="module">Module that contains the call expression.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
-        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IPythonModule module, IExpressionEvaluator eval) {
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IExpressionEvaluator eval) {
             Eval = eval;
             OverloadIndex = overloadIndex;
             DeclaringModule = fn.DeclaringModule;
+            Expression = callExpr;
 
             if (callExpr == null) {
                 // Typically invoked by specialization code without call expression in the code.
@@ -108,7 +125,7 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            var callLocation = callExpr.GetLocation(module);
+            var callLocation = callExpr.GetLocation(eval);
 
             // https://www.python.org/dev/peps/pep-3102/#id5
             // For each formal parameter, there is a slot which will be used to contain
@@ -159,7 +176,7 @@ namespace Microsoft.Python.Analysis.Types {
                     if (formalParamIndex >= overload.Parameters.Count) {
                         // We ran out of formal parameters and yet haven't seen
                         // any sequence or dictionary ones. This looks like an error.
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(eval).Span,
                             ErrorCodes.TooManyFunctionArguments, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }
@@ -168,7 +185,7 @@ namespace Microsoft.Python.Analysis.Types {
                     if (formalParam.Kind == ParameterKind.List) {
                         if (string.IsNullOrEmpty(formalParam.Name)) {
                             // If the next unfilled slot is a vararg slot, and it does not have a name, then it is an error.
-                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(eval).Span,
                                 ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
@@ -176,7 +193,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // If the next unfilled slot is a vararg slot then all remaining
                         // non-keyword arguments are placed into the vararg slot.
                         if (_listArgument == null) {
-                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(module).Span,
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(eval).Span,
                                 ErrorCodes.TooManyFunctionArguments, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
@@ -196,7 +213,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                     if (formalParam.Kind == ParameterKind.Dictionary) {
                         // Next slot is a dictionary slot, but we have positional arguments still.
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(module).Span,
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyPositionalArgumentBeforeStar, arg.GetLocation(eval).Span,
                             ErrorCodes.TooManyPositionalArgumentsBeforeStar, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }
@@ -210,7 +227,7 @@ namespace Microsoft.Python.Analysis.Types {
                     var arg = callExpr.Args[callParamIndex];
 
                     if (string.IsNullOrEmpty(arg.Name)) {
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_PositionalArgumentAfterKeyword, arg.GetLocation(module).Span,
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_PositionalArgumentAfterKeyword, arg.GetLocation(eval).Span,
                             ErrorCodes.PositionalArgumentAfterKeyword, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }
@@ -222,13 +239,13 @@ namespace Microsoft.Python.Analysis.Types {
                         // to the dictionary using the keyword name as the dictionary key,
                         // unless there is already an entry with that key, in which case it is an error.
                         if (_dictArgument == null) {
-                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_UnknownParameterName, arg.GetLocation(module).Span,
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_UnknownParameterName, arg.GetLocation(eval).Span,
                                 ErrorCodes.UnknownParameterName, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
 
                         if (_dictArgument.Arguments.ContainsKey(arg.Name)) {
-                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
+                            _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(eval).Span,
                                 ErrorCodes.ParameterAlreadySpecified, Severity.Warning, DiagnosticSource.Analysis));
                             return;
                         }
@@ -239,7 +256,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                     if (nvp.ValueExpression != null || nvp.Value != null) {
                         // Slot is already filled.
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(module).Span,
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(eval).Span,
                             ErrorCodes.ParameterAlreadySpecified, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }

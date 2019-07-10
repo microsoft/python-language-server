@@ -90,11 +90,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IMember GetValueFromClassCtor(IPythonClassType cls, CallExpression expr) {
             SymbolTable.Evaluate(cls.ClassDefinition);
             // Determine argument types
-            var args = ArgumentSet.Empty;
+            var args = ArgumentSet.Empty(expr, this);
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
             if (init != null) {
                 using (OpenScope(cls.DeclaringModule, cls.ClassDefinition, out _)) {
-                    var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, Module, this);
+                    var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, this);
                     if (a.Errors.Count > 0) {
                         // AddDiagnostics(Module.Uri, a.Errors);
                     }
@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonFunctionType fn:
                     return GetValueFromFunctionType(fn, t.Self, expr);
                 case IPythonPropertyType p:
-                    return GetValueFromProperty(p, t.Self);
+                    return GetValueFromProperty(p, t.Self, expr);
                 case IPythonIteratorType _ when t.Self is IPythonCollection seq:
                     return seq.GetIterator();
             }
@@ -202,10 +202,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        private IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {
+        private IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance, CallExpression expr) {
             // Function may not have been walked yet. Do it now.
             SymbolTable.Evaluate(p.FunctionDefinition);
-            return instance.Call(p.Name, ArgumentSet.Empty);
+            return instance.Call(p.Name, ArgumentSet.Empty(expr, this));
         }
 
 
