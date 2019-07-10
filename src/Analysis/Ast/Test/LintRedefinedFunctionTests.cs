@@ -25,7 +25,7 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class RedefinedFunctionTests : AnalysisTestBase {
+    public class LintRedefinedFunctionTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
