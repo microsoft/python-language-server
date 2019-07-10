@@ -256,10 +256,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void ResetPathWatcher() {
-            if (!_watchSearchPaths) {
-                return;
-            }
-
             var paths = _interpreter.ModuleResolution.InterpreterPaths.ToArray();
 
             if (_searchPaths == null || !_searchPaths.SequenceEqual(paths)) {
@@ -278,8 +274,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
                 _log?.Log(TraceEventType.Information, Resources.Done);
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
+
                 RestartAnalysis();
-                ResetPathWatcher();
+                
+                if (_watchSearchPaths) {
+                    ResetPathWatcher();
+                }
             }, cancellationToken).DoNotWait();
 
         }
