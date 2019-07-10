@@ -126,7 +126,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             } else {
                 var index = GetValueFromExpression(expr.Index);
                 // Don't count null indexes as arguments
-                if(index != null) {
+                if (index != null) {
                     indices.Add(index);
                 }
             }
