@@ -238,19 +238,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
         #endregion
 
-        public void HandlePathWatchChanges(bool watchSearchPaths) {
-            if (!watchSearchPaths) {
+        public void HandleWatchPathsChange(bool watchSearchPaths) {
+            if (watchSearchPaths == _watchSearchPaths) {
+                return;
+            }
+
+            _watchSearchPaths = watchSearchPaths;
+
+            if (!_watchSearchPaths) {
                 _searchPaths = null;
-                _watchSearchPaths = false;
                 _pathsWatcher?.Dispose();
                 _pathsWatcher = null;
                 return;
             }
 
-            if (!_watchSearchPaths) {
-                _watchSearchPaths = true;
-                ResetPathWatcher();
-            }
+            ResetPathWatcher();
         }
 
         private void ResetPathWatcher() {
@@ -283,7 +285,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void RestartAnalysis() {
-            var analyzer = Services.GetService<IPythonAnalyzer>(); ;
+            var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.ResetAnalyzer();
             foreach (var doc in _rdt.GetDocuments()) {
                 doc.Reset(null);

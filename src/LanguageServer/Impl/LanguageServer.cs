@@ -353,7 +353,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void HandlePathWatchChanges(JToken section)
-            => _server.HandlePathWatchChanges(GetSetting(section, "watchSearchPaths", true));
+            => _server.HandleWatchPathsChange(GetSetting(section, "watchSearchPaths", true));
 
         private static CancellationToken GetToken(CancellationToken original)
                 => Debugger.IsAttached ? CancellationToken.None : original;
