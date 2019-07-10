@@ -123,6 +123,7 @@ class D(x):
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
 
+        [Ignore]
         [TestMethod, Priority(0)]
         public async Task InheritFromBinaryOp() {
             const string code = @"
