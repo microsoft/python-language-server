@@ -205,6 +205,6 @@
     <value>Arguments to Generic must all be unique.</value>
   </data>
   <data name="WrongNumberArguments" xml:space="preserve">
-    <value>Function '{0}' expected {1} argument(s) but received {2}.</value>
+    <value>Function '{0}' expected {1} argument(s) but got {2}.</value>
   </data>
 </root>

@@ -322,7 +322,7 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Function &apos;{0}&apos; expected {1} argument(s) but received {2}..
+        ///   Looks up a localized string similar to Function &apos;{0}&apos; expected {1} argument(s) but got {2}..
         /// </summary>
         internal static string WrongNumberArguments {
             get {
