@@ -62,15 +62,7 @@ namespace Microsoft.Python.Analysis {
         }
 
         internal static bool HasComment(this PythonAst ast, PythonModule module, string comment, int lineNum) {
-            var commentLines = ast.CommentLocations.Select(c => c.Line).ToArray();
-            var match = Array.BinarySearch(commentLines, lineNum);
-
-            // line is not a comment
-            if (match < 0 || match >= commentLines.Length) {
-                return false;
-            }
-
-            string line = module.GetLine(lineNum);
+            string line = module.GetLine(ast, lineNum);
 
             int commentPos = line.IndexOf('#');
             if (commentPos < 0) {
