@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -59,12 +60,17 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
         public override IEnumerable<string> GetMemberNames() {
-            var names = new HashSet<string>();
-            names.UnionWith(Members.Keys);
+            IEnumerable<string> names = Members.Keys;
+
             foreach (var m in Mro.Skip(1)) {
-                names.UnionWith(m.GetMemberNames());
+                names = names.Concat(m.GetMemberNames());
             }
-            return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods).Distinct() : names;
+
+            if (DeclaringModule.Interpreter.LanguageVersion.Is3x()) {
+                names = names.Concat(_classMethods);
+            }
+
+            return names.Distinct();
         }
 
         public override IMember GetMember(string name) {
@@ -484,7 +490,8 @@ namespace Microsoft.Python.Analysis.Types {
             // Resolve return types of methods, if any were annotated as generics
             var members = classType.GetMemberNames()
                 .Except(new[] { "__class__", "__bases__", "__base__" })
-                .ToDictionary(n => n, classType.GetMember);
+                .Select(n => new KeyValuePair<string, IMember>(n, classType.GetMember(n)))
+                .Where(kvp => kvp.Value is IPythonTemplateType || kvp.Value is IPythonInstance);
 
             // Create specific types.
             // Functions handle generics internally upon the call to Call.
