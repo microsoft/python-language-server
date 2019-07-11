@@ -1,14 +1,17 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Core;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Tests {
 
@@ -40,7 +43,7 @@ _T = _X
             string code = GenericSetup + decl;
 
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         [DataRow("x = 'str' + 5 #noqa")]
@@ -48,7 +51,7 @@ _T = _X
         [DataTestMethod, Priority(0)]
         public async Task IgnoreBadBinaryOp(string code) {
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         [DataRow("x = 'str' + 5 #    noqa")]
@@ -56,18 +59,30 @@ _T = _X
         [DataTestMethod, Priority(0)]
         public async Task IgnoreNoQAWithSpace(string code) {
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task VarNamedNoQAStillGivesDiagnostic() {
+            const string code = @"
+noqa = 1 + 'str'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
 
-
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.UnsupportedOperandType);
+            diagnostic.Message.Should().Be(Resources.UnsupporedOperandType.FormatInvariant("+", "int", "str"));
+            diagnostic.SourceSpan.Should().Be(2, 8, 2, 17);
+            diagnostic.Severity.Should().Be(Severity.Error);
+        }
 
         [DataRow("x = y #noqa")]
         [DataRow("x = z + 2  #noqa")]
         [DataTestMethod, Priority(0)]
         public async Task IgnoreUndefinedVar(string code) {
             var d = await LintAsync(code);
-            d.Should().HaveCount(0);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -76,7 +91,7 @@ _T = _X
 from fake_module import User         #noqa
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {

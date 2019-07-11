@@ -62,17 +62,22 @@ namespace Microsoft.Python.Analysis {
         }
 
         internal static bool HasComment(this PythonAst ast, PythonModule module, string comment, int lineNum) {
-            var match = Array.BinarySearch(ast.CommentLocations, new SourceLocation(1, lineNum));
+            var commentLines = ast.CommentLocations.Select(c => c.Line).ToArray();
+            var match = Array.BinarySearch(commentLines, lineNum);
 
             // line is not a comment
-            if (match < 0 || match >= ast.CommentLocations.Length) {
+            if (match < 0 || match >= commentLines.Length) {
                 return false;
             }
 
-            var commentLoc = ast.CommentLocations[match];
-            string line = module.GetLine(commentLoc.Line);
+            string line = module.GetLine(lineNum);
 
-            return line.Contains(comment);
+            int commentPos = line.IndexOf('#');
+            if (commentPos < 0) {
+                return false; 
+            }
+
+            return line.Substring(commentPos + 1).Contains(comment);
         }
 
         public static bool IsInsideString(this PythonAst ast, SourceLocation location) {

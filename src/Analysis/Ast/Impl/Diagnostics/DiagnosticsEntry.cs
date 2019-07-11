@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
                 return false;
             }
 
-            if(!module.GetAst().HasComment(pythonModule, "noqa", SourceSpan.Start.Line)) {
+            if (module.GetAst().HasComment(pythonModule, "noqa", SourceSpan.Start.Line)) {
                 return false;
             }
 
