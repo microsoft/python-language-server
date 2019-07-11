@@ -16,7 +16,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
@@ -30,6 +32,8 @@ using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
@@ -38,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    internal partial class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer {
+    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer {
         private enum State {
             None,
             Loading,
@@ -51,6 +55,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private readonly DocumentBuffer _buffer = new DocumentBuffer();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonModule>();
+        private readonly object _syncObj = new object();
         private IReadOnlyList<DiagnosticsEntry> _parseErrors = Array.Empty<DiagnosticsEntry>();
         private readonly Dictionary<object, Node> _astMap = new Dictionary<object, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
@@ -64,7 +69,6 @@ namespace Microsoft.Python.Analysis.Modules {
         protected ILogger Log { get; }
         protected IFileSystem FileSystem { get; }
         protected IServiceContainer Services { get; }
-        private object AnalysisLock { get; } = new object();
         private State ContentState { get; set; } = State.None;
 
         protected PythonModule(string name, ModuleType moduleType, IServiceContainer services) : base(null) {
@@ -75,7 +79,6 @@ namespace Microsoft.Python.Analysis.Modules {
             Log = services.GetService<ILogger>();
             Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
-            GlobalScope = Analysis.GlobalScope;
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
             SetDeclaringModule(this);
@@ -115,7 +118,6 @@ namespace Microsoft.Python.Analysis.Modules {
         #region IPythonType
         public string Name { get; }
         public string QualifiedName => Name;
-
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
@@ -148,10 +150,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
+        public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
-            return GlobalScope.Variables
+            return Analysis.GlobalScope.Variables
                 .Where(v => {
                     // Instances are always fine.
                     if (v.Value is IPythonInstance) {
@@ -172,9 +174,10 @@ namespace Microsoft.Python.Analysis.Modules {
         public override LocationInfo Definition => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
         #endregion
 
-        #region IPythonModule
         public virtual string FilePath { get; protected set; }
         public virtual Uri Uri { get; }
+
+        #region IPythonModule
         public IDocumentAnalysis Analysis { get; private set; }
 
         public IPythonInterpreter Interpreter { get; }
@@ -188,7 +191,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Global cope of the module.
         /// </summary>
-        public virtual IGlobalScope GlobalScope { get; protected set; }
+        public IGlobalScope GlobalScope { get; protected set; }
 
         /// <summary>
         /// If module is a stub points to the primary module.
@@ -196,7 +199,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
-
         #endregion
 
         #region IDisposable
@@ -232,11 +234,340 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Returns module content (code).
         /// </summary>
-        public string Content => _buffer.Text;
+        public string Content {
+            get {
+                lock (_syncObj) {
+                    return _buffer.Text;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Parsing
+        /// <summary>
+        /// Returns document parse tree.
+        /// </summary>
+        public async Task<PythonAst> GetAstAsync(CancellationToken cancellationToken = default) {
+            Task t = null;
+            while (true) {
+                lock (_syncObj) {
+                    if (t == _parsingTask) {
+                        break;
+                    }
+                    cancellationToken.ThrowIfCancellationRequested();
+                    t = _parsingTask;
+                }
+                try {
+                    await (t ?? Task.CompletedTask);
+                    break;
+                } catch (OperationCanceledException) {
+                    // Parsing as canceled, try next task.
+                }
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            return this.GetAst();
+        }
+
+        /// <summary>
+        /// Provides collection of parsing errors, if any.
+        /// </summary>
+        public IEnumerable<DiagnosticsEntry> GetParseErrors() => _parseErrors.ToArray();
+
+        public void Update(IEnumerable<DocumentChange> changes) {
+            lock (_syncObj) {
+                _parseCts?.Cancel();
+                _parseCts = new CancellationTokenSource();
+
+                _linkedParseCts?.Dispose();
+                _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
+
+                _buffer.Update(changes);
+                _updated = true;
+
+                Parse();
+            }
+
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
+        }
+
+        public void Reset(string content) {
+            lock (_syncObj) {
+                if (content != Content) {
+                    ContentState = State.None;
+                    InitializeContent(content, _buffer.Version + 1);
+                }
+            }
+
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
+        }
+
+        private void Parse() {
+            _parseCts?.Cancel();
+            _parseCts = new CancellationTokenSource();
+
+            _linkedParseCts?.Dispose();
+            _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
+
+            ContentState = State.Parsing;
+            _parsingTask = Task.Run(() => Parse(_linkedParseCts.Token), _linkedParseCts.Token);
+        }
+
+        private void Parse(CancellationToken cancellationToken) {
+            CollectingErrorSink sink = null;
+            int version;
+            Parser parser;
+
+            //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
+
+            lock (_syncObj) {
+                version = _buffer.Version;
+                var options = new ParserOptions {
+                    StubFile = FilePath != null && Path.GetExtension(FilePath).Equals(".pyi", FileSystem.StringComparison)
+                };
+                if (ModuleType == ModuleType.User) {
+                    sink = new CollectingErrorSink();
+                    options.ErrorSink = sink;
+                }
+                parser = Parser.CreateParser(new StringReader(_buffer.Text), Interpreter.LanguageVersion, options);
+            }
+
+            var ast = parser.ParseFile(Uri);
+
+            //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
+
+            lock (_syncObj) {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (version != _buffer.Version) {
+                    throw new OperationCanceledException();
+                }
+
+                // Stored nodes are no longer valid.
+                _astMap.Clear();
+                _astMap[this] = ast;
+
+                _parseErrors = sink?.Diagnostics ?? Array.Empty<DiagnosticsEntry>();
+
+                // Do not report issues with libraries or stubs
+                if (sink != null) {
+                    _diagnosticsService?.Replace(Uri, _parseErrors, DiagnosticSource.Parser);
+                }
+
+                ContentState = State.Parsed;
+                Analysis = new EmptyAnalysis(Services, this);
+            }
+
+            NewAst?.Invoke(this, EventArgs.Empty);
+
+            if (ContentState < State.Analyzing) {
+                ContentState = State.Analyzing;
+
+                var analyzer = Services.GetService<IPythonAnalyzer>();
+                analyzer.EnqueueDocumentForAnalysis(this, ast, version);
+            }
+
+            lock (_syncObj) {
+                _parsingTask = null;
+            }
+        }
+
+        private class CollectingErrorSink : ErrorSink {
+            private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
+
+            public IReadOnlyList<DiagnosticsEntry> Diagnostics => _diagnostics;
+            public override void Add(string message, SourceSpan span, int errorCode, Severity severity)
+                => _diagnostics.Add(new DiagnosticsEntry(message, span, $"parser-{errorCode}", severity, DiagnosticSource.Parser));
+        }
+        #endregion
+
+        #region IAnalyzable
+
+        public void NotifyAnalysisBegins() {
+            lock (_syncObj) {
+                if (_updated) {
+                    _updated = false;
+                    // In all variables find those imported, then traverse imported modules
+                    // and remove references to this module. If variable refers to a module,
+                    // recurse into module but only process global scope.
+
+                    if (GlobalScope == null) {
+                        return;
+                    }
+
+                    // TODO: Figure out where the nulls below are coming from.
+                    var importedVariables = ((IScope)GlobalScope)
+                        .TraverseDepthFirst(c => c?.Children ?? Enumerable.Empty<IScope>())
+                        .SelectMany(s => s?.Variables ?? VariableCollection.Empty)
+                        .Where(v => v?.Source == VariableSource.Import);
+
+                    foreach (var v in importedVariables) {
+                        v.RemoveReferences(this);
+                        if (v.Value is IPythonModule module) {
+                            RemoveReferencesInModule(module);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
+            lock (_syncObj) {
+                if (analysis.Version < Analysis.Version) {
+                    return;
+                }
+
+                Analysis = analysis;
+                GlobalScope = analysis.GlobalScope;
+
+                // Derived classes can override OnAnalysisComplete if they want
+                // to perform additional actions on the completed analysis such
+                // as declare additional variables, etc.
+                OnAnalysisComplete();
+                ContentState = State.Analyzed;
+
+                if (ModuleType != ModuleType.User) {
+                    _buffer.Reset(_buffer.Version, string.Empty);
+                }
+            }
+
+            // Do not report issues with libraries or stubs
+            if (ModuleType == ModuleType.User) {
+                _diagnosticsService?.Replace(Uri, analysis.Diagnostics, DiagnosticSource.Analysis);
+            }
+
+            NewAnalysis?.Invoke(this, EventArgs.Empty);
+        }
+
+        protected virtual void OnAnalysisComplete() { }
         #endregion
 
         #region IEquatable
         public bool Equals(IPythonModule other) => Name.Equals(other?.Name) && FilePath.Equals(other?.FilePath);
         #endregion
+
+        #region IAstNodeContainer
+        public Node GetAstNode(object o) {
+            lock (_syncObj) {
+                return _astMap.TryGetValue(o, out var n) ? n : null;
+            }
+        }
+
+        public void AddAstNode(object o, Node n) {
+            lock (_syncObj) {
+                Debug.Assert(!_astMap.ContainsKey(o) || _astMap[o] == n);
+                _astMap[o] = n;
+            }
+        }
+
+        public void ClearContent() {
+            lock (_syncObj) {
+                if (ModuleType != ModuleType.User) {
+                    _buffer.Reset(_buffer.Version, string.Empty);
+                    _astMap.Clear();
+                }
+            }
+        }
+        #endregion
+
+        #region Analysis
+        public IDocumentAnalysis GetAnyAnalysis() => Analysis;
+
+        public Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default)
+            => Services.GetService<IPythonAnalyzer>().GetAnalysisAsync(this, waitTime, cancellationToken);
+
+        #endregion
+
+        #region Content management
+        protected virtual string LoadContent() {
+            if (ContentState < State.Loading) {
+                ContentState = State.Loading;
+                try {
+                    var code = FileSystem.ReadTextWithRetry(FilePath);
+                    ContentState = State.Loaded;
+                    return code;
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+            return null; // Keep content as null so module can be loaded later.
+        }
+
+        private void InitializeContent(string content, int version) {
+            lock (_syncObj) {
+                LoadContent(content, version);
+
+                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
+                if (startParse) {
+                    Parse();
+                }
+            }
+        }
+
+        private void LoadContent(string content, int version) {
+            if (ContentState < State.Loading) {
+                try {
+                    content = content ?? LoadContent();
+                    _buffer.Reset(version, content);
+                    ContentState = State.Loaded;
+                } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+        }
+        #endregion
+
+        #region Documentation
+        private string TryGetDocFromModuleInitFile() {
+            if (string.IsNullOrEmpty(FilePath) || !FileSystem.FileExists(FilePath)) {
+                return string.Empty;
+            }
+
+            try {
+                using (var sr = new StreamReader(FilePath)) {
+                    string quote = null;
+                    string line;
+                    while (true) {
+                        line = sr.ReadLine()?.Trim();
+                        if (line == null) {
+                            break;
+                        }
+                        if (line.Length == 0 || line.StartsWithOrdinal("#")) {
+                            continue;
+                        }
+                        if (line.StartsWithOrdinal("\"\"\"") || line.StartsWithOrdinal("r\"\"\"")) {
+                            quote = "\"\"\"";
+                        } else if (line.StartsWithOrdinal("'''") || line.StartsWithOrdinal("r'''")) {
+                            quote = "'''";
+                        }
+                        break;
+                    }
+
+                    if (line != null && quote != null) {
+                        // Check if it is a single-liner, but do distinguish from """<eol>
+                        // Also, handle quadruple+ quotes.
+                        line = line.Trim();
+                        line = line.All(c => c == quote[0]) ? quote : line;
+                        if (line.EndsWithOrdinal(quote) && line.IndexOf(quote, StringComparison.Ordinal) < line.LastIndexOf(quote, StringComparison.Ordinal)) {
+                            return line.Substring(quote.Length, line.Length - 2 * quote.Length).Trim();
+                        }
+                        var sb = new StringBuilder();
+                        while (true) {
+                            line = sr.ReadLine();
+                            if (line == null || line.EndsWithOrdinal(quote)) {
+                                break;
+                            }
+                            sb.AppendLine(line);
+                        }
+                        return sb.ToString();
+                    }
+                }
+            } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            return string.Empty;
+        }
+        #endregion
+
+        private void RemoveReferencesInModule(IPythonModule module) {
+            if (module.GlobalScope?.Variables != null) {
+                foreach (var v in module.GlobalScope.Variables) {
+                    v.RemoveReferences(this);
+                }
+            }
+        }
     }
 }

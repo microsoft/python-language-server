@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
                 => _getter.Call(args, instance?.GetPythonType() ?? DeclaringType);
 
-        public IMember ReturnType => _getter?.Call(ArgumentSet.Empty, DeclaringType);
+        public IMember ReturnType => _getter?.Call(ArgumentSet.WithoutContext, DeclaringType);
         #endregion
 
         internal void AddOverload(IPythonFunctionOverload overload) => _getter = _getter ?? overload;

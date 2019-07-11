@@ -1194,5 +1194,25 @@ def test(x: Foo = func()):
             var comps = cs.GetCompletions(analysis, new SourceLocation(13, 7));
             comps.Should().HaveLabels("name", "z");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task AddBrackets() {
+            const string code = @"prin";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            ServerSettings.completion.addBrackets = true;
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var comps = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            var print = comps.Completions.FirstOrDefault(x => x.label == "print");
+            print.Should().NotBeNull();
+            print.insertText.Should().Be("print($0)");
+
+            cs.Options.addBrackets = false;
+            comps = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            print = comps.Completions.FirstOrDefault(x => x.label == "print");
+            print.Should().NotBeNull();
+            print.insertText.Should().Be("print");
+        }
     }
 }

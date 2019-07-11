@@ -13,18 +13,30 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class NodeExtensions {
-        public static LocationInfo GetLocation(this Node node, IPythonModule module) {
+        public static LocationInfo GetLocation(this Node node, IExpressionEvaluator eval) {
             if (node == null || node.StartIndex >= node.EndIndex) {
                 return LocationInfo.Empty;
             }
 
-            var start = node.GetStart(module.GetAst());
-            var end = node.GetEnd(module.GetAst());
+            return GetLocation(node, eval.Ast, eval.Module);
+        }
+        public static LocationInfo GetLocation(this Node node, IDocumentAnalysis analysis) {
+            if (node == null || node.StartIndex >= node.EndIndex) {
+                return LocationInfo.Empty;
+            }
+
+            return GetLocation(node, analysis.Ast, analysis.Document);
+        }
+
+        private static LocationInfo GetLocation(Node node, PythonAst ast, IPythonModule module) {
+            var start = node.GetStart(ast);
+            var end = node.GetEnd(ast);
             return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 

@@ -52,11 +52,6 @@ namespace Microsoft.Python.Analysis.Documents {
         Task<IDocumentAnalysis> GetAnalysisAsync(int waitTime = 200, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns last known document AST. The AST may be out of date or null.
-        /// </summary>
-        PythonAst GetAnyAst();
-
-        /// <summary>
         /// Returns last known document analysis. The analysis may be out of date.
         /// </summary>
         IDocumentAnalysis GetAnyAnalysis();

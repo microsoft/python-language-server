@@ -45,6 +45,11 @@ def clean(path):
 BEFORE_SITE = set(clean(p) for p in BEFORE_SITE)
 AFTER_SITE = set(clean(p) for p in AFTER_SITE)
 
+try:
+    SITE_PKGS = set(clean(p) for p in site.getsitepackages())
+except AttributeError:
+    SITE_PKGS = set()
+
 for prefix in [
     sys.prefix,
     sys.exec_prefix,
@@ -69,4 +74,7 @@ for p in sys.path:
         if p in BEFORE_SITE:
             print("%s|stdlib|" % p)
         elif p in AFTER_SITE:
-            print("%s||" % p)
+            if p in SITE_PKGS:
+                print("%s|site|" % p)
+            else:
+                print("%s|pth|" % p)

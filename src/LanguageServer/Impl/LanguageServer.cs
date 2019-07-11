@@ -432,7 +432,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return item.Task;
             }
 
-            private struct QueueItem {
+            private readonly struct QueueItem {
                 private readonly TaskCompletionSource<IDisposable> _tcs;
                 public Task<IDisposable> Task => _tcs.Task;
                 public bool IsAwaitable { get; }
