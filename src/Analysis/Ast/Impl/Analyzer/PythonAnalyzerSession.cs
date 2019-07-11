@@ -349,7 +349,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void LogCompleted(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
-                var completed = node != null && module.Analysis is LibraryAnalysis ? "completed" : "completed for library";
+                var completed = node != null && module.Analysis is LibraryAnalysis ? "completed for library" : "completed";
                 var message = node != null
                     ? $"Analysis of {module.Name}({module.ModuleType}) on depth {node.VertexDepth} {completed} in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms."
                     : $"Out of order analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.";
