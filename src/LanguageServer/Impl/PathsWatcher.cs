@@ -43,7 +43,7 @@ namespace Microsoft.Python.LanguageServer {
             _onChanged = onChanged;
 
             var reduced = ReduceToCommonRoots(paths);
-            
+
             foreach (var p in reduced) {
                 try {
                     if (!Directory.Exists(p)) {
@@ -60,13 +60,16 @@ namespace Microsoft.Python.LanguageServer {
                     var fsw = new System.IO.FileSystemWatcher(p) {
                         IncludeSubdirectories = true,
                         EnableRaisingEvents = true,
-                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
+                        InternalBufferSize = 1 << 16, // Max buffer size of 64 KB
                     };
 
                     fsw.Changed += OnChanged;
                     fsw.Created += OnChanged;
                     fsw.Deleted += OnChanged;
                     fsw.Renamed += OnChanged;
+
+                    fsw.Filter = "*.p*"; // .py, .pyc, .pth - TODO: Use Filters in .NET Core 3.0.
 
                     _disposableBag
                         .Add(() => _throttleTimer?.Dispose())
