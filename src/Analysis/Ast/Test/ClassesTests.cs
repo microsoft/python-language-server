@@ -595,5 +595,30 @@ f = getattr(a, 3.141)
                 .And.HaveVariable("e").OfType(BuiltinTypeId.Unknown)
                 .And.HaveVariable("f").OfType(BuiltinTypeId.Unknown);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ProxyBase() {
+            const string code = @"
+from weakref import proxy
+
+class C0(): pass
+class C1(C0): pass
+class C2(C1): pass
+
+class Test():
+    def __init__(self):
+        p = proxy(self)
+
+    F1 = C1
+    F2 = C2
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType("A")
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Float)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Unknown)
+                .And.HaveVariable("e").OfType(BuiltinTypeId.Unknown)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Unknown);
+        }
     }
 }
