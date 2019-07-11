@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
 
         public bool ShouldReport(IPythonModule module) {
             // module should always be a user written python module
-            if (module.ModuleType != ModuleType.User || !(module is PythonModule pythonModule)) {
+            if (module.ModuleType != ModuleType.User) {
                 return false;
             }
 
