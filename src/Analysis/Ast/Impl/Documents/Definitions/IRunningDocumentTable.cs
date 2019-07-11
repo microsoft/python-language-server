@@ -52,6 +52,12 @@ namespace Microsoft.Python.Analysis.Documents {
         void CloseDocument(Uri uri);
 
         /// <summary>
+        /// Forcibly removes the document from the table. This
+        /// shouldn't be called if the document is locked/has references.
+        /// </summary>
+        void RemoveDocument(Uri uri);
+
+        /// <summary>
         /// Fetches document by its URI. Returns null if document is not loaded.
         /// </summary>
         IDocument GetDocument(Uri uri);

@@ -189,6 +189,19 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
+        public void RemoveDocument(Uri documentUri) {
+            DocumentEntry entry;
+            lock (_lock) {
+                if (_documentsByUri.TryGetValue(documentUri, out entry)) {
+                    Debug.Assert(entry.LockCount == 0);
+                    _documentsByUri.Remove(documentUri);
+                    entry.Document.Dispose();
+                }
+            }
+            Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
+            Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
+        }
+
         public void Dispose() {
             lock (_lock) {
                 foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {

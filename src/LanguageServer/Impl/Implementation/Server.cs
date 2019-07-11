@@ -288,7 +288,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.ResetAnalyzer();
             foreach (var doc in _rdt.GetDocuments()) {
-                doc.Reset(null);
+                if (!doc.IsOpen) {
+                    _rdt.RemoveDocument(doc.Uri);
+                } else {
+                    doc.Reset(null);
+                }
             }
         }
     }
