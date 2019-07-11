@@ -29,5 +29,6 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string ReturnInInit = "return-in-init";
         public const string TypingNewTypeArguments = "typing-newtype-arguments";
         public const string TypingGenericArguments = "typing-generic-arguments";
+        public const string InheritNonClass = "inherit-non-class";
     }
 }
