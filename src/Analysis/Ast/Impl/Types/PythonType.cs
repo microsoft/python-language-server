@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
         /// <param name="index">Index arguments.</param>
-        public virtual IMember Index(IPythonInstance instance, object index) => instance?.Index(index) ?? UnknownType;
+        public virtual IMember Index(IPythonInstance instance, IArgumentSet args) => instance?.Index(args) ?? UnknownType;
         #endregion
 
         #region IMemberContainer
