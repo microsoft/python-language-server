@@ -19,15 +19,10 @@ using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal static class ActivityTracker {
-        private static readonly Dictionary<string, AnalysisState> _modules = new Dictionary<string, AnalysisState>();
+        private static readonly HashSet<string> _modules = new HashSet<string>();
         private static readonly object _lock = new object();
         private static bool _tracking;
         private static Stopwatch _sw;
-
-        private struct AnalysisState {
-            public int Count;
-            public bool IsComplete;
-        }
 
         public static void OnEnqueueModule(string path) {
             if (string.IsNullOrEmpty(path)) {
@@ -35,31 +30,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             lock (_lock) {
-                if (!_modules.TryGetValue(path, out var st)) {
-                    _modules[path] = default;
-                } else {
-                    st.IsComplete = false;
-                }
+                _modules.Add(path);
             }
         }
-
-        public static void OnModuleAnalysisComplete(string path) {
-            lock (_lock) {
-                if (_modules.TryGetValue(path, out var st)) {
-                    st.Count++;
-                    st.IsComplete = true;
-                }
-            }
-        }
-
-        public static bool IsAnalysisComplete {
-            get {
-                lock (_lock) {
-                    return _modules.All(m => m.Value.IsComplete);
-                }
-            }
-        }
-
 
         public static void StartTracking() {
             lock (_lock) {
@@ -71,22 +44,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public static void EndTracking() {
+        public static (int modulesCount, double totalMilliseconds) EndTracking() {
             lock (_lock) {
                 if (_tracking) {
                     _sw?.Stop();
                     _tracking = false;
                 }
-            }
-        }
 
-        public static int ModuleCount {
-            get {
-                lock (_lock) {
-                    return _modules.Count;
-                }
+                return (_modules.Count, _sw?.Elapsed.TotalMilliseconds ?? 0);
             }
         }
-        public static double MillisecondsElapsed => _sw?.Elapsed.TotalMilliseconds ?? 0;
     }
 }

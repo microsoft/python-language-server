@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 var o = interpreter.GetBuiltinType(BuiltinTypeId.Object);
                 var m = new SentinelModule("test", s);
 
-                var location = new Location(m, default);
+                var location = new Location(m);
                 var O = new PythonClassType("O", location);
                 var A = new PythonClassType("A", location);
                 var B = new PythonClassType("B", location);

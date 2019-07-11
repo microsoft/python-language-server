@@ -17,6 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -191,6 +193,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             bases = bases != null ? bases.Where(b => !b.GetPythonType().IsUnknown()).ToArray() : Array.Empty<IPythonType>();
+
             // For Python 3+ attach object as a base class by default except for the object class itself.
             if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
                 var objectType = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
@@ -403,7 +406,7 @@ namespace Microsoft.Python.Analysis.Types {
                         .Where(p => !p.IsUnknown())
                         .ToArray();
                     if (st.Length > 0) {
-                        var type = gt.CreateSpecificType(new ArgumentSet(st));
+                        var type = gt.CreateSpecificType(new ArgumentSet(st, args.Expression, args.Eval));
                         if (!type.IsUnknown()) {
                             bases.Add(type);
                         }

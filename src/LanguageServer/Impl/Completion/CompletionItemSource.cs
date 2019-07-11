@@ -28,12 +28,13 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public static readonly CompletionItem Star = CreateCompletionItem("*", CompletionItemKind.Keyword);
 
         private readonly IDocumentationSource _docSource;
-        private readonly ServerSettings.PythonCompletionOptions _options;
 
         public CompletionItemSource(IDocumentationSource docSource, ServerSettings.PythonCompletionOptions options) {
             _docSource = docSource;
-            _options = options;
+            Options = options;
         }
+
+        public ServerSettings.PythonCompletionOptions Options { get; set; }
 
         public CompletionItem CreateCompletionItem(string text, IMember member, IPythonType self = null, string label = null)
             => CreateCompletionItem(text, ToCompletionItemKind(member?.MemberType ?? PythonMemberType.Class), member, self, label);
@@ -42,7 +43,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
             var t = member?.GetPythonType();
             var docFormat = _docSource.DocumentationFormat;
 
-            if (_options.addBrackets && (kind == CompletionItemKind.Constructor || kind == CompletionItemKind.Function || kind == CompletionItemKind.Method)) {
+            if (Options.addBrackets && (kind == CompletionItemKind.Constructor || kind == CompletionItemKind.Function || kind == CompletionItemKind.Method)) {
+                label = text;
                 text += "($0)";
                 docFormat = InsertTextFormat.Snippet;
             }

@@ -18,12 +18,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     [DebuggerDisplay("{FunctionDefinition.Name}")]
@@ -34,7 +37,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         public FunctionEvaluator(ExpressionEval eval, PythonFunctionOverload overload)
             : base(eval, overload.FunctionDefinition) {
-
             _overload = overload;
             _function = overload.ClassMember ?? throw new NullReferenceException(nameof(overload.ClassMember));
             _self = _function.DeclaringType as PythonClassType;
@@ -77,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
-                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.Empty);
+                var t = annotationType.CreateInstance(annotationType.Name, ArgumentSet.WithoutContext);
                 // If instance could not be created, such as when return type is List[T] and
                 // type of T is not yet known, just use the type.
                 var instance = t.IsUnknown() ? annotationType : t;
@@ -116,6 +118,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override bool Walk(ReturnStatement node) {
             var value = Eval.GetValueFromExpression(node.Expression);
             if (value != null) {
+                // although technically legal, __init__ in a constructor should not have a not-none return value
+                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class 
+                    && !value.IsOfType(BuiltinTypeId.NoneType)) { 
+
+                    Eval.ReportDiagnostics(Module.Uri, new Diagnostics.DiagnosticsEntry(
+                            Resources.ReturnInInit,
+                            node.GetLocation(Eval).Span,
+                            ErrorCodes.ReturnInInit,
+                            Severity.Warning,
+                            DiagnosticSource.Analysis));
+                }
+
                 _overload.AddReturnValue(value);
             }
             return true; // We want to evaluate all code so all private variables in __new__ get defined

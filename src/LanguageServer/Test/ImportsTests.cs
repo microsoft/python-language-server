@@ -229,8 +229,8 @@ module2.";
 
         [TestMethod, Priority(0)]
         public async Task UserSearchPathsInsideWorkspace() {
-            var folder1 = TestData.GetTestSpecificPath("folder1");
-            var folder2 = TestData.GetTestSpecificPath("folder2");
+            var folder2 = TestData.GetTestSpecificPath("src");
+            var folder1 = TestData.GetTestSpecificPath("src", "virtualenv");
             var packageInFolder1 = Path.Combine(folder1, "package");
             var packageInFolder2 = Path.Combine(folder2, "package");
             var module1Path = Path.Combine(packageInFolder1, "module1.py");
