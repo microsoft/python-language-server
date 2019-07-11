@@ -136,7 +136,60 @@ def test():
             string code = setup + decl;
 
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ComparisonsWithMethods() {
+            const string code = @"
+class C:
+    def hello(self):
+        pass
+
+h = C()
+
+x = C.hello < 5
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.Severity.Should().Be(Severity.Warning);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.ComparisonWithCallable);
+            diagnostic.Message.Should().Be(Resources.ComparisonWithCallable);
+            diagnostic.SourceSpan.Should().Be(8, 5, 8, 16);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ComparisonsWithClassConstructors() {
+            const string code = @"
+class C:
+    def hello(self):
+        pass
+
+h = C < 5
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ComparisonsWithProperties() {
+            const string code = @"
+class C:
+    def __init__(self):
+        self.x = 10
+
+    @property
+    def get_x(self):
+        return self.x
+
+h = C()
+
+x = C.get_x < 5
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
         }
     }
 }

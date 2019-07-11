@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Interpreter.GetBuiltinType(leftTypeId);
             }
 
-            if ((left is PythonFunctionType || right is PythonFunctionType) && op.IsComparison()) {
+            if ((left is IPythonFunctionType || right is IPythonFunctionType) && op.IsComparison()) {
                 ReportDiagnostics(
                     Module.Uri,
                     new DiagnosticsEntry(
