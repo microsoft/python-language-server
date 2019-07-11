@@ -33,17 +33,18 @@ namespace Microsoft.Python.Analysis {
         /// Returns the string line corresponding to the given location
         /// </summary>
         /// <param name="line">The line number</param>
-        internal static string GetLine(this PythonModule module, PythonAst ast, int line) {
+        internal static string GetLine(this IPythonModule module, PythonAst ast, int line) {
+            string content = module.Analysis?.Document?.Content;
+            if (string.IsNullOrEmpty(content)) {
+                return string.Empty;
+            }
+
             SourceLocation source = new SourceLocation(line, 1);
-            string content = module.Content;
             var start = ast.LocationToIndex(source);
             var end = start;
 
-            if (string.IsNullOrEmpty(content)) {
-                return content;
-            }
 
-            for (; end < content.Length && content[end] != '\n' && content[end] != '\r'; end++);
+            for (; end < content.Length && content[end] != '\n' && content[end] != '\r'; end++) ;
             return content.Substring(start, end - start);
         }
     }

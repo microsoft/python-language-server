@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -61,7 +62,7 @@ namespace Microsoft.Python.Analysis {
             return ast.CommentLocations[match].Column < location.Column;
         }
 
-        internal static bool HasComment(this PythonAst ast, PythonModule module, string comment, int lineNum) {
+        internal static bool HasComment(this PythonAst ast, IPythonModule module, string comment, int lineNum) {
             string line = module.GetLine(ast, lineNum);
 
             int commentPos = line.IndexOf('#');
