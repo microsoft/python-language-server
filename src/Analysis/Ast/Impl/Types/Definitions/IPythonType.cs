@@ -77,6 +77,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
         /// <param name="index">Index arguments.</param>
-        IMember Index(IPythonInstance instance, object index);
+        IMember Index(IPythonInstance instance, IArgumentSet args);
     }
 }

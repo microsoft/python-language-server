@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Values {
             return null;
         }
 
-        public virtual IMember Index(object index) => this; // Helps with str slicing
+        public virtual IMember Index(IArgumentSet args) => this; // Helps with str slicing
 
         protected IMember UnknownType => Type.DeclaringModule.Interpreter.UnknownType;
 

@@ -46,8 +46,8 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         /// <summary>
         /// Invokes indexer the instance.
         /// </summary>
-        public override IMember Index(object index) {
-            var n = GetIndex(index);
+        public override IMember Index(IArgumentSet args) {
+            var n = GetIndex(args);
             if (n < 0) {
                 n = Contents.Count + n; // -1 means last, etc.
             }
@@ -60,8 +60,14 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IReadOnlyList<IMember> Contents { get; protected set; }
         public override IPythonIterator GetIterator() => new PythonIterator(BuiltinTypeId.ListIterator, this);
 
-        public static int GetIndex(object index) {
-            switch (index) {
+        public static int GetIndex(IArgumentSet args) {
+            // syntax error 
+            if (args.Arguments.Count != 1) {
+                return 0;
+            }
+
+            var arg = args.Arguments[0].Value;
+            switch (arg) {
                 case IPythonConstant c when c.Type.TypeId == BuiltinTypeId.Int || c.Type.TypeId == BuiltinTypeId.Long:
                     return (int)c.Value;
                 case int i:
