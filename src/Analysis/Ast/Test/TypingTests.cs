@@ -50,7 +50,7 @@ T = TypeVar('T', str, bytes)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("T")
                 .Which.Value.Should().HaveDocumentation("TypeVar('T', str, bytes)");
-            analysis.Should().HaveGenericVariable("X");
+            analysis.Should().HaveGenericVariable("T");
         }
 
         [TestMethod, Priority(0)]
