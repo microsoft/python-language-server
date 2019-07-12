@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -594,6 +595,44 @@ f = getattr(a, 3.141)
                 .And.HaveVariable("d").OfType(BuiltinTypeId.Unknown)
                 .And.HaveVariable("e").OfType(BuiltinTypeId.Unknown)
                 .And.HaveVariable("f").OfType(BuiltinTypeId.Unknown);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ProxyBase() {
+            const string code = @"
+from weakref import proxy
+
+class C0(): pass
+class C1(C0): pass
+class C2(C1): pass
+class C3(C2): pass
+class C4(C3): pass
+class C5(C4): pass
+class C6(C5): pass
+class C7(C6): pass
+class C8(C7): pass
+
+class Test():
+    def __init__(self):
+        p = proxy(self)
+
+    F1 = C1
+    F2 = C2
+    F3 = C3
+    F4 = C4
+    F5 = C5
+    F6 = C6
+    F7 = C7
+    F8 = C8
+";
+            // Verifies that analysis of the fragment completes in reasonable time.
+            // see https://github.com/microsoft/python-language-server/issues/1291.
+            var sw = Stopwatch.StartNew();
+            await GetAnalysisAsync(code);
+            sw.Stop();
+            // Desktop: product time is typically less few seconds second.
+            // Test run time: typically ~ 20 sec.
+            sw.ElapsedMilliseconds.Should().BeLessThan(60000); 
         }
     }
 }
