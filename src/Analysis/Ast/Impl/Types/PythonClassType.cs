@@ -151,11 +151,11 @@ namespace Microsoft.Python.Analysis.Types {
             return new PythonInstance(this);
         }
 
-        public override IMember Index(IPythonInstance instance, object index) {
-            var defaultReturn = base.Index(instance, index);
+        public override IMember Index(IPythonInstance instance, IArgumentSet args) {
+            var defaultReturn = base.Index(instance, args);
             var fromBases = Bases
                 .MaybeEnumerate()
-                .Select(b => b.Index(instance, index))
+                .Select(b => b.Index(instance, args))
                 .Except(new[] { defaultReturn, UnknownType })
                 .FirstOrDefault();
 
@@ -192,7 +192,6 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             bases = bases != null ? bases.Where(b => !b.GetPythonType().IsUnknown()).ToArray() : Array.Empty<IPythonType>();
-
             // For Python 3+ attach object as a base class by default except for the object class itself.
             if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
                 var objectType = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);

@@ -204,7 +204,4 @@
   <data name="GenericNotAllUnique" xml:space="preserve">
     <value>Arguments to Generic must all be unique.</value>
   </data>
-  <data name="InheritNonClass" xml:space="preserve">
-    <value>Inheriting '{0}', which is not a class.</value>
-  </data>
 </root>
