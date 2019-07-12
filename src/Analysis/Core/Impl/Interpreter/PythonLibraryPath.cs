@@ -186,11 +186,14 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             try {
                 var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
                 return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Select(s => {
-                    if (PathUtils.PathStartsWith(s, tempWorkingDir)) {
-                        return null;
-                    }
                     try {
-                        return Parse(s);
+                        var p = Parse(s);
+
+                        if (PathUtils.PathStartsWith(p.Path, tempWorkingDir)) {
+                            return null;
+                        }
+
+                        return p;
                     } catch (ArgumentException) {
                         Debug.Fail("Invalid search path: " + (s ?? "<null>"));
                         return null;
@@ -245,6 +248,12 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             foreach (var p in allPaths) {
                 // If path is within a stdlib path, then treat it as interpreter.
                 if (stdlib.Any(s => fs.IsPathUnderRoot(s.Path, p.Path))) {
+                    interpreterPaths.Add(p);
+                    continue;
+                }
+
+                // If Python says it's site, then treat is as interpreter.
+                if (p.Type == PythonLibraryPathType.Site) {
                     interpreterPaths.Add(p);
                     continue;
                 }
