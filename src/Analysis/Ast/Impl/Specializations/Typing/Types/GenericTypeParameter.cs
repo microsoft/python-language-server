@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
             var args = argSet.Arguments;
-            var constraintArgs = argSet.ListArgument?.Values;
+            var constraintArgs = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
 
             if (args.Count == 0) {
                 // TODO: report that at least one argument is required.
@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var constraints = constraintArgs?.Select(a => {
+            var constraints = constraintArgs.Select(a => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
@@ -65,14 +65,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         private static string GetDocumentation(IReadOnlyList<IArgument> args, IReadOnlyList<IPythonType> constraints) {
             var name = (args[0].Value as IPythonConstant).GetString();
-            var keyWordArgs = new List<string>();
-
-            foreach (var arg in args.Skip(1)) {
-                if (arg.ValueIsDefault)
-                    continue;
-
-                keyWordArgs.Add($"{arg.Name}={(arg.Value as IPythonConstant)?.Value}");
-            }
+            var keyWordArgs = args.Skip(1)
+                .Where(x => !x.ValueIsDefault)
+                .Select(x => $"{x.Name}={(x.Value as IPythonConstant)?.Value}");
 
             var docArgs = constraints.Select(c => c.IsUnknown() ? "?" : c.Name).Concat(keyWordArgs).Prepend($"'{name}'");
             var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);

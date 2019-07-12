@@ -193,7 +193,7 @@ with open('a', 'xb') as xb:
                 .And.HaveVariable("x").OfType("TextIOWrapper")
                 .And.HaveVariable("xb").OfType("BufferedWriter");
         }
-       
+
         [TestMethod, Priority(0)]
         public async Task Global() {
             const string code = @"
