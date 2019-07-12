@@ -328,8 +328,8 @@ class MainClass:
     def foo(self):
         return self.bar.get_name()
 ";
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var mainPath = TestData.GetTestSpecificUri("main.py");

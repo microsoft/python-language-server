@@ -146,9 +146,6 @@ namespace Microsoft.Python.Core {
             return "\"{0}\"".FormatInvariant(arg);
         }
 
-        public static bool PathStartsWith(this string s, string prefix)
-            => s?.StartsWith(prefix, PathsStringComparison) ?? false;
-
         public static bool StartsWithOrdinal(this string s, string prefix, bool ignoreCase = false)
             => s?.StartsWith(prefix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
 
