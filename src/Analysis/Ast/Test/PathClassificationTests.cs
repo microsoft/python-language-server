@@ -214,5 +214,39 @@ namespace Microsoft.Python.Analysis.Tests {
                 new PythonLibraryPath(src, PythonLibraryPathType.Unspecified),
             });
         }
+
+        [TestMethod]
+        public void SiteOutsideStdlib() {
+            var appPath = TestData.GetTestSpecificPath("app.py");
+            var root = Path.GetDirectoryName(appPath);
+
+            var venv = Path.Combine(root, "venv");
+            var venvLib = Path.Combine(venv, "Lib");
+            var sitePackages = Path.Combine(root, "site-packages");
+
+            var src = Path.Combine(root, "src");
+
+            var fromInterpreter = new[] {
+                new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(venv, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(sitePackages, PythonLibraryPathType.Site),
+            };
+
+            var fromUser = new[] {
+                "./src",
+            };
+
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
+
+            interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(venv, PythonLibraryPathType.StdLib),
+                new PythonLibraryPath(sitePackages, PythonLibraryPathType.Site),
+            });
+
+            userPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new PythonLibraryPath(src, PythonLibraryPathType.Unspecified),
+            });
+        }
     }
 }
