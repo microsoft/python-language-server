@@ -47,6 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly IPythonAnalyzer _analyzer;
         private readonly ILogger _log;
         private readonly ITelemetryService _telemetry;
+        private readonly IModuleDatabaseService _moduleDatabaseService;
 
         private State _state;
         private bool _isCanceled;
@@ -86,6 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analyzer = _services.GetService<IPythonAnalyzer>();
             _log = _services.GetService<ILogger>();
             _telemetry = _services.GetService<ITelemetryService>();
+            _moduleDatabaseService = _services.GetService<IModuleDatabaseService>();
             _progress = progress;
         }
 
@@ -294,7 +296,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 var startTime = stopWatch?.Elapsed ?? TimeSpan.Zero;
-
                 AnalyzeEntry(null, _entry, module, ast, Version);
 
                 LogCompleted(null, module, stopWatch, startTime);
@@ -384,8 +385,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
             document.SetAst(ast);
+
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);
-            return new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
+            var analysis  = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
+
+            _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            return analysis;
         }
 
         private enum State {

@@ -208,7 +208,7 @@
       "Name": "Session"
     },
     {
-      "Value": "i:typing:Any",
+      "Value": "i:requests.structures:LookupDict",
       "Id": 753305199,
       "Name": "codes"
     },

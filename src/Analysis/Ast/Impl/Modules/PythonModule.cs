@@ -209,6 +209,8 @@ namespace Microsoft.Python.Analysis.Modules {
             _disposeToken.TryMarkDisposed();
             var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.RemoveAnalysis(this);
+            _parseCts?.Dispose();
+            _linkedParseCts?.Dispose();
         }
         #endregion
 
