@@ -13,15 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
@@ -53,12 +50,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 EvaluateInnerClasses(_classDef);
 
                 _class = classInfo;
-
-                var bases = ProcessBases(outerScope);
-
+                // Set bases to the class.
+                var bases = new List<IPythonType>();
+                foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
+                    // We cheat slightly and treat base classes as annotations.
+                    var b = Eval.GetTypeFromAnnotation(a.Expression);
+                    if (b != null) {
+                        var t = b.GetPythonType();
+                        bases.Add(t);
+                        t.AddReference(Eval.GetLocationOfName(a.Expression));
+                    }
+                }
                 _class.SetBases(bases);
+
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
+
                 ProcessClassBody();
             }
         }
@@ -111,47 +118,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             UpdateClassMembers();
         }
 
-        private IEnumerable<IPythonType> ProcessBases(Scope outerScope) {
-            var bases = new List<IPythonType>();
-            foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
-                var expr = a.Expression;
-
-                switch (expr) {
-                    // class declared in the current module
-                    case NameExpression nameExpression:
-                        var name = Eval.GetInScope(nameExpression.Name, outerScope);
-                        switch (name) {
-                            case PythonClassType classType:
-                                bases.Add(classType);
-                                break;
-                            case IPythonConstant constant:
-                                ReportInvalidBase(constant.Value);
-                                break;
-                            default:
-                                TryAddBase(bases, a);
-                                break;
-                        }
-                        break;
-                    default:
-                        TryAddBase(bases, a);
-                        break;
-                }
-            }
-            return bases;
-        }
-
-        private void TryAddBase(List<IPythonType> bases, Arg arg) {
-            // We cheat slightly and treat base classes as annotations.
-            var b = Eval.GetTypeFromAnnotation(arg.Expression);
-            if (b != null) {
-                var t = b.GetPythonType();
-                bases.Add(t);
-                t.AddReference(Eval.GetLocationOfName(arg.Expression));
-            } else {
-                ReportInvalidBase(arg.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
-            }
-        }
-
         private void EvaluateConstructors(ClassDefinition cd) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
@@ -184,17 +150,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Add members from this file
             var members = Eval.CurrentScope.Variables.Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Import);
             _class.AddMembers(members, false);
-        }
-
-        private void ReportInvalidBase(object argVal) {
-            Eval.ReportDiagnostics(Eval.Module.Uri,
-                new DiagnosticsEntry(
-                Resources.InheritNonClass.FormatInvariant(argVal),
-                _classDef.NameExpression.GetLocation(Eval)?.Span ?? default,
-                Diagnostics.ErrorCodes.InheritNonClass,
-                Severity.Error,
-                DiagnosticSource.Analysis
-            ));
         }
 
         // Classes and functions are walked by their respective evaluators
