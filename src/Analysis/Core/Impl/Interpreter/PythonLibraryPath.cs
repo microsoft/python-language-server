@@ -186,7 +186,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             try {
                 var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
                 return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Select(s => {
-                    if (s.PathStartsWith(tempWorkingDir)) {
+                    if (PathUtils.PathStartsWith(s, tempWorkingDir)) {
                         return null;
                     }
                     try {
