@@ -186,11 +186,14 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             try {
                 var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
                 return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Select(s => {
-                    if (PathUtils.PathStartsWith(s, tempWorkingDir)) {
-                        return null;
-                    }
                     try {
-                        return Parse(s);
+                        var p = Parse(s);
+
+                        if (PathUtils.PathStartsWith(p.Path, tempWorkingDir)) {
+                            return null;
+                        }
+
+                        return p;
                     } catch (ArgumentException) {
                         Debug.Fail("Invalid search path: " + (s ?? "<null>"));
                         return null;
