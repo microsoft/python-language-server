@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Types {
         Node Location { get; }
 
         /// <summary>
-        /// Returns true if this is a default argument.
+        /// Returns true if this value of the argument is default
         /// </summary>
         bool ValueIsDefault { get; }
     }

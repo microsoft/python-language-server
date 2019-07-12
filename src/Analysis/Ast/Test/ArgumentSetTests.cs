@@ -227,7 +227,7 @@ from typing import NewType
 NewType('T', int)
 ";
             var argSet = await GetArgSetAsync(code, funcName: "NewType");
-            argSet.Arguments.Count.Should().Be(2);
+            argSet.Arguments.Should().HaveCount(2);
             argSet.Arguments[0].Name.Should().Be("arg0");
             argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("T");
             argSet.Arguments[1].Name.Should().Be("arg1");

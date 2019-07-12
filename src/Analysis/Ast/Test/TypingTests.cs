@@ -19,7 +19,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
@@ -51,7 +50,7 @@ T = TypeVar('T', str, bytes)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("T")
                 .Which.Value.Should().HaveDocumentation("TypeVar('T', str, bytes)");
-            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeDefinition));
+            analysis.Should().HaveGenericVariable("X");
         }
 
         [TestMethod, Priority(0)]
@@ -65,7 +64,7 @@ T = TypeVar('T', bound='io.TextIOWrapper')
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("T")
                 .Which.Value.Should().HaveDocumentation("TypeVar('T', bound=io.TextIOWrapper)");
-            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeDefinition));
+            analysis.Should().HaveGenericVariable("T");
         }
 
 
@@ -79,7 +78,7 @@ T = TypeVar('T', str, int, covariant=True)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("T")
                 .Which.Value.Should().HaveDocumentation("TypeVar('T', str, int, covariant=True)");
-            analysis.Should().HaveVariable("T").OfType(typeof(IGenericTypeDefinition));
+            analysis.Should().HaveGenericVariable("T");
         }
 
 
@@ -92,7 +91,7 @@ X = TypeVar('X', bound='hello', covariant=True)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("X")
                 .Which.Value.Should().HaveDocumentation("TypeVar('X', bound=hello, covariant=True)");
-            analysis.Should().HaveVariable("X").OfType(typeof(IGenericTypeDefinition));
+            analysis.Should().HaveGenericVariable("X");
         }
 
         [Ignore]
@@ -110,7 +109,7 @@ X = TypeVar('X', bound='hello' + 'tmp', covariant= a == 2)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("X")
                 .Which.Value.Should().HaveDocumentation("TypeVar('X', bound=hellotmp, covariant=True)");
-            analysis.Should().HaveVariable("X").OfType(typeof(IGenericTypeDefinition));
+            analysis.Should().HaveGenericVariable("X");
         }
 
 
