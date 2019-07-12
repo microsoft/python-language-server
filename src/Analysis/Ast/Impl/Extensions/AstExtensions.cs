@@ -62,17 +62,6 @@ namespace Microsoft.Python.Analysis {
             return ast.CommentLocations[match].Column < location.Column;
         }
 
-        internal static bool HasComment(this PythonAst ast, IPythonModule module, string comment, int lineNum) {
-            string line = module.GetLine(ast, lineNum);
-
-            int commentPos = line.IndexOf('#');
-            if (commentPos < 0) {
-                return false; 
-            }
-
-            return line.Substring(commentPos + 1).Contains(comment);
-        }
-
         public static bool IsInsideString(this PythonAst ast, SourceLocation location) {
             var index = ast.LocationToIndex(location);
             return ast.FindExpression(index, new FindExpressionOptions { Literals = true }) != null;

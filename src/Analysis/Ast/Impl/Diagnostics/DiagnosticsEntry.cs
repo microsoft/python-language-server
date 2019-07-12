@@ -15,6 +15,7 @@
 
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
@@ -54,12 +55,13 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public DiagnosticSource Source { get; }
 
         public bool ShouldReport(IPythonModule module) {
-            // module should always be a user written python module
+            // Only report for user written modules
             if (module.ModuleType != ModuleType.User) {
                 return false;
             }
 
-            if (module.GetAst().HasComment(module, "noqa", SourceSpan.Start.Line)) {
+            // If user specifies #noqa, then do not report diagnostic
+            if (module.GetComment(SourceSpan.Start.Line).EqualsIgnoreCase("noqa")) {
                 return false;
             }
 
