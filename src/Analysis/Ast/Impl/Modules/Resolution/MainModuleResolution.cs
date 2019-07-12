@@ -212,7 +212,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             await ReloadSearchPaths(cancellationToken);
 
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
-            addedRoots.UnionWith(PathResolver.SetUserSearchPaths(userSearchPaths));
+            addedRoots.UnionWith(PathResolver.SetUserSearchPaths(_userPaths));
             ReloadModulePaths(addedRoots);
         }
 
