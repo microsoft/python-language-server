@@ -252,6 +252,12 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                     continue;
                 }
 
+                // If Python says it's site, then treat is as interpreter.
+                if (p.Type == PythonLibraryPathType.Site) {
+                    interpreterPaths.Add(p);
+                    continue;
+                }
+
                 // If path is outside the workspace, then treat it as interpreter.
                 if (root == null || !fs.IsPathUnderRoot(root, p.Path)) {
                     interpreterPaths.Add(p);
