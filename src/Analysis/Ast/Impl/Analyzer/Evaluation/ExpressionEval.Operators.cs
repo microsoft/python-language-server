@@ -123,9 +123,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 ReportDiagnostics(
                     Module.Uri,
                     new DiagnosticsEntry(
-                        Resources.ComparisonWithCallable,
+                        Resources.FunctionComparison,
                         GetLocation(expr).Span,
-                        ErrorCodes.ComparisonWithCallable,
+                        ErrorCodes.FunctionComparison,
                         Severity.Warning,
                         DiagnosticSource.Analysis
                 ));

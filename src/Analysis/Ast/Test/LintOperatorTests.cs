@@ -110,7 +110,7 @@ def test():
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.Severity.Should().Be(Severity.Warning);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.ComparisonWithCallable);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionComparison);
             diagnostic.Message.Should().Be(Resources.ComparisonWithCallable);
             diagnostic.SourceSpan.Should().Be(7, 5, 7, decl.Length + 1);
         }
@@ -155,7 +155,7 @@ x = C.hello < 5
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.Severity.Should().Be(Severity.Warning);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.ComparisonWithCallable);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionComparison);
             diagnostic.Message.Should().Be(Resources.ComparisonWithCallable);
             diagnostic.SourceSpan.Should().Be(8, 5, 8, 16);
         }
