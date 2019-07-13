@@ -62,6 +62,23 @@ _T = _X
             analysis.Diagnostics.Should().BeEmpty();
         }
 
+        [DataRow("x = 'str' + 5 #                   noqa")]
+        [DataRow("x = float(1) * 'str'  #                       noqa")]
+        [DataTestMethod, Priority(0)]
+        public async Task IgnoreNoQAWithTab(string code) {
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [DataRow("x = 'str' + 5 #NOQA")]
+        [DataRow("x = float(1) * 'str'  # NOQA")]
+        [DataRow("x = float(1) * 'str'  #   NOQA")]
+        [DataTestMethod, Priority(0)]
+        public async Task IgnoreNoQAUppercase(string code) {
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         [TestMethod, Priority(0)]
         public async Task VarNamedNoQAStillGivesDiagnostic() {
             const string code = @"

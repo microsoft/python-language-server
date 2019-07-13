@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis {
         /// </summary>
         /// <param name="lineNum">The line number</param>
         internal static string GetLine(this IPythonModule module, int lineNum) {
-            string content = module.GetAst().Module;
+            string content = module.Analysis?.Document?.Content;
             if (string.IsNullOrEmpty(content)) {
                 return string.Empty;
             }
@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis {
 
 
             for (; end < content.Length && content[end] != '\n' && content[end] != '\r'; end++) ;
-            return content.Substring(start, end - start).Trim();
+            return content.Substring(start, end - start).Trim('\t', ' ');
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis {
                 return null;
             }
 
-            return line.Substring(commentPos + 1);
+            return line.Substring(commentPos + 1).Trim('\t', ' ');
         }
     }
 }
