@@ -65,6 +65,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
+        public bool IsAnalyzedLibrary(int analysisVersion) {
+            lock (_syncObj) {
+                return analysisVersion == _analysisVersion && _analysisTcs.Task.Status == TaskStatus.RanToCompletion && _analysisTcs.Task.Result is LibraryAnalysis;
+            }
+        }
+
         public IDocumentAnalysis PreviousAnalysis {
             get {
                 lock (_syncObj) {
