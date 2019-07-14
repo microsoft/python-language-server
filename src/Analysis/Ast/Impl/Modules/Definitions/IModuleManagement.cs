@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        IPythonModule GetSpecializedModule(string name);
+        IPythonModule GetSpecializedModule(string name, string modulePath = null);
 
         /// <summary>
         /// Root directory of the path resolver.

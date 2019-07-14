@@ -20,7 +20,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -258,8 +257,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return dependencies;
         }
 
-        private static bool Ignore(IModuleManagement moduleResolution, string name)
-            => moduleResolution.BuiltinModuleName.EqualsOrdinal(name) || moduleResolution.GetSpecializedModule(name) != null;
+        private static bool Ignore(IModuleManagement moduleResolution, string fullName, string modulePath)
+            => moduleResolution.BuiltinModuleName.EqualsOrdinal(fullName) || moduleResolution.GetSpecializedModule(fullName, modulePath) != null;
 
         private void UpdateAnalysisTcs(int analysisVersion) {
             _analysisVersion = analysisVersion;
@@ -326,10 +325,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             private void HandleSearchResults(IImportSearchResult searchResult) {
                 switch (searchResult) {
-                    case ModuleImport moduleImport when !Ignore(_moduleResolution, moduleImport.FullName):
+                    case ModuleImport moduleImport when !Ignore(_moduleResolution, moduleImport.FullName, moduleImport.ModulePath):
                         Dependencies.Add(new AnalysisModuleKey(moduleImport.FullName, moduleImport.ModulePath, _isTypeshed));
                         return;
-                    case PossibleModuleImport possibleModuleImport when !Ignore(_moduleResolution, possibleModuleImport.PrecedingModuleFullName):
+                    case PossibleModuleImport possibleModuleImport when !Ignore(_moduleResolution, possibleModuleImport.PrecedingModuleFullName, possibleModuleImport.PrecedingModulePath):
                         Dependencies.Add(new AnalysisModuleKey(possibleModuleImport.PrecedingModuleFullName, possibleModuleImport.PrecedingModulePath, _isTypeshed));
                         return;
                     default:
