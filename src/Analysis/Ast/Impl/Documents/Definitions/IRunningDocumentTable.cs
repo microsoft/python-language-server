@@ -52,12 +52,6 @@ namespace Microsoft.Python.Analysis.Documents {
         void CloseDocument(Uri uri);
 
         /// <summary>
-        /// Forcibly removes the document from the table. This
-        /// shouldn't be called if the document is locked/has references.
-        /// </summary>
-        void RemoveDocument(Uri uri);
-
-        /// <summary>
         /// Fetches document by its URI. Returns null if document is not loaded.
         /// </summary>
         IDocument GetDocument(Uri uri);
@@ -75,6 +69,12 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="uri"></param>
         /// <returns>New lock count or -1 if document was not found.</returns>
         int UnlockDocument(Uri uri);
+
+        /// <summary>
+        /// Reloads the table by removing all unopened files (which would have been loaded from disk),
+        /// and resetting the content of all other files to trigger reanalysis.
+        /// </summary>
+        void ReloadAll();
 
         /// <summary>
         /// Fires when document is opened.

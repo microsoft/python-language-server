@@ -287,13 +287,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void RestartAnalysis() {
             var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.ResetAnalyzer();
-            foreach (var doc in _rdt.GetDocuments()) {
-                if (!doc.IsOpen) {
-                    _rdt.RemoveDocument(doc.Uri);
-                } else {
-                    doc.Reset(null);
-                }
-            }
+            _rdt.ReloadAll();
         }
     }
 }

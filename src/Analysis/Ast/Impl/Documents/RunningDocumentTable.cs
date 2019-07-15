@@ -21,6 +21,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Documents {
@@ -189,17 +190,27 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public void RemoveDocument(Uri documentUri) {
-            DocumentEntry entry;
+        public void ReloadAll() {
+            ImmutableArray<KeyValuePair<Uri, DocumentEntry>> opened;
+            ImmutableArray<KeyValuePair<Uri, DocumentEntry>> closed;
+
             lock (_lock) {
-                if (_documentsByUri.TryGetValue(documentUri, out entry)) {
-                    Debug.Assert(entry.LockCount == 0);
-                    _documentsByUri.Remove(documentUri);
+                _documentsByUri.Split(kvp => kvp.Value.Document.IsOpen, out opened, out closed);
+
+                foreach (var (uri, entry) in closed) {
+                    _documentsByUri.Remove(uri);
                     entry.Document.Dispose();
                 }
             }
-            Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
-            Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
+
+            foreach (var (_, entry) in closed) {
+                Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
+                Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
+            }
+
+            foreach (var (_, entry) in opened) {
+                entry.Document.Reset(null);
+            }
         }
 
         public void Dispose() {
