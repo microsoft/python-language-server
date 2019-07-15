@@ -213,7 +213,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return member;
         }
 
-        private void ReportRedefinedFunction(FunctionDefinition redefined, PythonType existing) {
+        private void ReportRedefinedFunction(FunctionDefinition redefined, ILocatedMember existing) {
+            // get line number of existing function for diagnostic message
             var existingLoc = existing.Definition;
             var existingLine = existingLoc.Span.Start.Line;
 
