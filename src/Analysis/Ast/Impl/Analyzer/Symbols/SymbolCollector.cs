@@ -102,10 +102,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local);
 
-            if(existing?.MemberType == PythonMemberType.Method || existing?.MemberType == PythonMemberType.Function || existing?.MemberType == PythonMemberType.Property) {
-                ReportRedefinedFunction(fd, existing as PythonType);
+            switch(existing?.MemberType) {
+                case PythonMemberType.Method:
+                case PythonMemberType.Function:
+                case PythonMemberType.Property:
+                    ReportRedefinedFunction(fd, existing as PythonType);
+                    break;
             }
-
+           
             if (!TryAddProperty(fd, existing, declaringType)) {
                 AddFunction(fd, existing, declaringType);
             }
