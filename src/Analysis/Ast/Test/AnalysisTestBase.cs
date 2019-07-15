@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -42,7 +43,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected virtual IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => null;
 
-        protected virtual ServiceManager CreateServiceManager() {
+        protected ServiceManager CreateServiceManager() {
             Services = new ServiceManager();
 
             var platform = new OSPlatform();
@@ -55,26 +56,23 @@ namespace Microsoft.Python.Analysis.Tests {
             return Services;
         }
 
-        protected string GetAnalysisTestDataFilesPath() => TestData.GetPath(Path.Combine("TestData", "AstAnalysis"));
+        protected string GetAnalysisTestDataFilesPath() => TestData.GetPath("TestData", "AstAnalysis");
 
-        protected Task<IServiceManager> CreateServicesAsync(InterpreterConfiguration configuration, IServiceManager sm = null)
-            => CreateServicesAsync(TestData.GetTestSpecificRootUri().AbsolutePath, configuration, null, sm);
+        protected Task<IServiceManager> CreateServicesAsync(InterpreterConfiguration configuration, string[] searchPaths = null)
+            => CreateServicesAsync(TestData.GetTestSpecificRootPath(), configuration, null, null, searchPaths);
 
-        protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration, string stubCacheFolderPath = null, IServiceManager sm = null) {
+        protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration, string stubCacheFolderPath = null, IServiceManager sm = null, string[] searchPaths = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
             stubCacheFolderPath = stubCacheFolderPath ?? TestData.GetAstAnalysisCachePath(configuration.Version, true);
             Trace.TraceInformation("Cache Path: " + stubCacheFolderPath);
-            configuration.SearchPaths = new[] { GetAnalysisTestDataFilesPath() };
+            configuration.SearchPaths = searchPaths ?? new[] { GetAnalysisTestDataFilesPath() };
             configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
 
             sm = sm ?? CreateServiceManager();
 
-            var clientApp = Substitute.For<IClientApplication>();
-            sm.AddService(clientApp);
-
-            var idle = Substitute.For<IIdleTimeService>();
-            sm.AddService(idle);
+            sm.AddService(Substitute.For<IClientApplication>())
+              .AddService(Substitute.For<IIdleTimeService>());
 
             var ds = GetDiagnosticsService(Services);
             if (ds != null) {
@@ -90,8 +88,7 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(interpreter);
 
             TestLogger.Log(TraceEventType.Information, "Create RunningDocumentTable");
-            var documentTable = new RunningDocumentTable(sm);
-            sm.AddService(documentTable);
+            sm.AddService(new RunningDocumentTable(sm));
 
             return sm;
         }

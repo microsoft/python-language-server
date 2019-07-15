@@ -45,7 +45,14 @@ namespace Microsoft.Python.Core.IO {
         /// Returns true if the path has a directory separator character at the end.
         /// </summary>
         public static bool HasEndSeparator(string path)
-            => !string.IsNullOrEmpty(path) && DirectorySeparators.Contains(path[path.Length - 1]);
+            => !string.IsNullOrEmpty(path) && IsDirectorySeparator(path[path.Length - 1]);
+
+
+        public static bool IsDirectorySeparator(char c) => Array.IndexOf(DirectorySeparators, c) != -1;
+
+        public static bool PathStartsWith(string s, string prefix)
+            => s != null && s.StartsWith(prefix, StringExtensions.PathsStringComparison) &&
+               (s.Length == prefix.Length || IsDirectorySeparator(s[prefix.Length]));
 
         /// <summary>
         /// Removes up to one directory separator character from the end of path.
@@ -400,7 +407,7 @@ namespace Microsoft.Python.Core.IO {
             var altSeparator = Path.AltDirectorySeparatorChar;
             int offset;
             if (path.Length >= 1 && path[0] == separator) {
-                offset = 1;
+                offset = IsUncStart(path) ? 2 : 1;
             } else if (IsWindows && path.Length >= 2 && IsValidWindowsDriveChar(path[0]) && path[1] == ':') {
                 offset = 2;
             } else {
@@ -436,6 +443,11 @@ namespace Microsoft.Python.Core.IO {
             return !(impossibleName || last == '.' || char.IsWhiteSpace(last));
         }
 
+        private static bool IsUncStart(string path) {
+            var separator = Path.DirectorySeparatorChar;
+            return IsWindows && path.Length >= 2 && path[0] == separator && path[1] == separator;
+        }
+
         /// <summary>
         /// Normalizes and returns the provided path.
         /// </summary>
@@ -451,7 +463,7 @@ namespace Microsoft.Python.Core.IO {
                 return path;
             }
 
-            var root = EnsureEndSeparator(Path.GetPathRoot(path));
+            var root = IsUncStart(path) ? new string(Path.DirectorySeparatorChar, 2) : EnsureEndSeparator(Path.GetPathRoot(path));
             var parts = path.Substring(root.Length).Split(DirectorySeparators);
             var isDir = string.IsNullOrWhiteSpace(parts[parts.Length - 1]);
 

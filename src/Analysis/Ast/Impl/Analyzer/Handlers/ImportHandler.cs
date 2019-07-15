@@ -55,25 +55,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // import_module('fob.oar')
             // import_module('fob.oar.baz')
             var importNames = ImmutableArray<string>.Empty;
-            var variableModule = default(PythonVariableModule);
-            var importedNamesCount = 0;
+            var lastModule = default(PythonVariableModule);
+            var firstModule = default(PythonVariableModule);
             foreach (var nameExpression in moduleImportExpression.Names) {
                 importNames = importNames.Add(nameExpression.Name);
                 var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, forceAbsolute);
-                if (!HandleImportSearchResult(imports, variableModule, asNameExpression, moduleImportExpression, out variableModule)) {
+                if (!HandleImportSearchResult(imports, lastModule, asNameExpression, moduleImportExpression, out lastModule)) {
+                    lastModule = default;
                     break;
                 }
 
-                importedNamesCount++;
+                if (firstModule == default) {
+                    firstModule = lastModule;
+                }
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (!string.IsNullOrEmpty(asNameExpression?.Name) && importedNamesCount == moduleImportExpression.Names.Count) {
-                Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
-            } else if (importedNamesCount > 0 && !string.IsNullOrEmpty(importNames[0]) && _variableModules.TryGetValue(importNames[0], out variableModule)) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
+                Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
+            } else if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
                 var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
+                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
             }
         }
 

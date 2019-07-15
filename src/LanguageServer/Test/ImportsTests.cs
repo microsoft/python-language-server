@@ -143,8 +143,7 @@ VALUE = 42";
             var uri2 = await TestData.CreateTestSpecificFileAsync("module2.py", content2);
             var uri3 = await TestData.CreateTestSpecificFileAsync("module3.py", content3);
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
             var analyzer = Services.GetService<IPythonAnalyzer>();
 
@@ -168,8 +167,7 @@ mod.";
 sys.modules['module1.mod'] = None
 VALUE = 42");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var doc = rdt.OpenDocument(TestData.GetDefaultModuleUri(), content);
@@ -192,12 +190,9 @@ VALUE = 42");
 module1.
 module2.";
             var appPath = TestData.GetTestSpecificPath("app.py");
-            var root = Path.GetDirectoryName(appPath);
 
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, new[] { @"q:\Folder", @"\\machine\share" });
             var rdt = Services.GetService<IRunningDocumentTable>();
-            var interpreter = Services.GetService<IPythonInterpreter>();
-            interpreter.ModuleResolution.SetUserSearchPaths(new[] { @"q:\Folder\", @"\\machine\share\" });
 
             rdt.OpenDocument(new Uri(module1Path), "X = 42");
             rdt.OpenDocument(new Uri(module2Path), "Y = 6 * 9");
@@ -248,18 +243,15 @@ mod1.
 mod2.
 mod1.A.
 mod2.B.";
-            var root = Path.GetDirectoryName(folder1);
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X, new[] { folder1, folder2 });
 
             var rdt = Services.GetService<IRunningDocumentTable>();
             var analyzer = Services.GetService<IPythonAnalyzer>();
-            var interpreter = Services.GetService<IPythonInterpreter>();
-            interpreter.ModuleResolution.SetUserSearchPaths(new[] { folder1, folder2 });
 
             rdt.OpenDocument(new Uri(module1Path), module1Content);
             rdt.OpenDocument(new Uri(module2Path), module2Content);
 
-            var mainPath = Path.Combine(root, "main.py");
+            var mainPath = TestData.GetTestSpecificPath("main.py");
             var doc = rdt.OpenDocument(new Uri(mainPath), mainContent);
             await analyzer.WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(-1);
@@ -330,8 +322,7 @@ submodule.";
             var initPyUri = TestData.GetTestSpecificUri("package", "module", "__init__.py");
             var submoduleUri = TestData.GetTestSpecificUri("package", "module", "submodule.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(initPyUri, "Y = 6 * 9");
@@ -362,8 +353,7 @@ submodule.";
             var initPyUri = TestData.GetTestSpecificUri("package", "module", "__init__.py");
             var submoduleUri = TestData.GetTestSpecificUri("package", "module", "submodule.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(initPyUri, "Y = 6 * 9");
@@ -394,8 +384,7 @@ submodule.";
             var initPyPath = TestData.GetTestSpecificPath("package", "sub_package", "module", "__init__.py");
             var submoduleUri = TestData.GetTestSpecificUri("package", "sub_package", "module", "submodule.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(new Uri(initPyPath), "Y = 6 * 9");
@@ -532,9 +521,9 @@ module1.";
             await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
-            var modulePath = Path.Combine(root, "package", "sub_package", "module.py");
+            var moduleUri = TestData.GetTestSpecificUri("package", "sub_package", "module.py");
 
-            rdt.OpenDocument(new Uri(modulePath), "X = 42");
+            rdt.OpenDocument(moduleUri, "X = 42");
             var doc = rdt.OpenDocument(new Uri(appPath), appCode1);
             var analysis = await doc.GetAnalysisAsync(-1);
 
@@ -751,8 +740,7 @@ B().
             var module1Uri = TestData.GetTestSpecificUri("module1.py");
             var appUri = TestData.GetTestSpecificUri("app.py");
 
-            var root = Path.GetDirectoryName(appUri.AbsolutePath);
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
             var analyzer = Services.GetService<IPythonAnalyzer>();
 
@@ -771,6 +759,76 @@ B().
 
             comps = cs.GetCompletions(analysis, new SourceLocation(7, 5));
             comps.Should().HaveLabels("bar");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Python2XRelativeImportInRoot() {
+            var folder1 = TestData.GetTestSpecificPath("folder1");
+            var folder2 = TestData.GetTestSpecificPath("folder2");
+
+            var initUri = TestData.GetTestSpecificUri("folder1", "module", "__init__.py");
+            var moduleUri = TestData.GetTestSpecificUri("folder2", "module.py");
+            var moduleInPackageUri = TestData.GetTestSpecificUri("folder2", "package", "module.py");
+            var appUri = TestData.GetTestSpecificUri("folder2", "app.py");
+            var appInPackageUri = TestData.GetTestSpecificUri("folder2", "package", "app.py");
+
+            const string initPath = @"X = 42";
+            const string moduleContent = @"Y = 6*9";
+            const string appContent = @"import module
+module.";
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable2X, new[] { folder1, folder2 });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(initUri, initPath);
+            rdt.OpenDocument(moduleUri, moduleContent);
+            rdt.OpenDocument(moduleInPackageUri, moduleContent);
+            var app = rdt.OpenDocument(appUri, appContent);
+            var appInPackage = rdt.OpenDocument(appInPackageUri, appContent);
+            var analysis = await app.GetAnalysisAsync(-1);
+            var analysisInPackage = await appInPackage.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 8));
+            comps.Should().HaveLabels("X");
+
+            comps = cs.GetCompletions(analysisInPackage, new SourceLocation(2, 8));
+            comps.Should().HaveLabels("Y");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SecondRootIsPartOfFirstRoot() {
+            var folder1 = TestData.GetTestSpecificPath("folder");
+            var folder2 = TestData.GetTestSpecificPath("folder2");
+            var folder3 = TestData.GetTestSpecificPath("src");
+
+            var module1Uri = TestData.GetTestSpecificUri("folder", "module1.py");
+            var module2Uri = TestData.GetTestSpecificUri("folder2", "module2.py");
+            var appUri = TestData.GetTestSpecificUri("src", "app.py");
+
+            const string module1Content = @"X = 42";
+            const string module2Content = @"Y = 6*9";
+            const string appContent = @"import module1
+import module2
+module1.
+module2.";
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable2X, new[] { folder1, folder2, folder3 });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module1Uri, module1Content);
+            rdt.OpenDocument(module2Uri, module2Content);
+            var app = rdt.OpenDocument(appUri, appContent);
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(3, 9));
+            comps.Should().HaveLabels("X");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(4, 9));
+            comps.Should().HaveLabels("Y");
         }
     }
 }

@@ -86,6 +86,7 @@ namespace TestUtilities {
         public static string GetTestSpecificPath(string relativePath) => TestRunScopeAsyncLocal.Value.GetTestSpecificPath(relativePath);
         public static string GetTestSpecificPath(params string[] parts) => TestRunScopeAsyncLocal.Value.GetTestSpecificPath(Path.Combine(parts));
         public static string GetTestRelativePath(Uri uri) => TestRunScopeAsyncLocal.Value.GetTestRelativePath(uri);
+        public static string GetTestSpecificRootPath() => TestRunScopeAsyncLocal.Value.Root;
         public static string GetDefaultModulePath() => TestRunScopeAsyncLocal.Value.GetDefaultModulePath();
         public static string GetNextModulePath() => TestRunScopeAsyncLocal.Value.GetNextModulePath();
 
@@ -149,7 +150,7 @@ namespace TestUtilities {
             var path = Path.Combine(TestOutputRootLazy.Value, testDirectoryName);
 
             Directory.CreateDirectory(path);
-            TestRunScopeAsyncLocal.Value = new TestRunScope(PathUtils.EnsureEndSeparator(path));
+            TestRunScopeAsyncLocal.Value = new TestRunScope(path);
         }
 
         internal static void ClearTestRunScope() {
@@ -158,18 +159,18 @@ namespace TestUtilities {
     }
 
     internal class TestRunScope {
-        private readonly string _root;
         private int _moduleCounter;
+        public string Root { get; }
         public Uri RootUri { get; }
 
         public TestRunScope(string root) {
-            _root = root;
-            RootUri = new Uri(_root);
+            Root = root;
+            RootUri = new Uri(Root);
         }
 
         public string GetDefaultModulePath() => GetTestSpecificPath($"module.py");
         public string GetNextModulePath() => GetTestSpecificPath($"module{++_moduleCounter}.py");
-        public string GetTestSpecificPath(string relativePath) => Path.Combine(_root, relativePath);
+        public string GetTestSpecificPath(string relativePath) => Path.Combine(Root, relativePath);
         public string GetTestRelativePath(Uri uri) {
             var relativeUri = RootUri.MakeRelativeUri(uri);
             var relativePath = Uri.UnescapeDataString(relativeUri.ToString());

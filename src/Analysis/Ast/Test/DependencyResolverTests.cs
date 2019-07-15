@@ -339,6 +339,106 @@ namespace Microsoft.Python.Analysis.Tests {
         }
 
         [TestMethod]
+        public async Task ChangeValue_PartiallyWalkLoop() {
+            var resolver = new DependencyResolver<string, string>();
+            resolver.ChangeValue("A", "A:B", true, "B");
+            resolver.ChangeValue("B", "B:CE", false, "C", "E");
+            resolver.ChangeValue("C", "C:DE", false, "D", "E");
+            resolver.ChangeValue("D", "D:BE", false, "B", "E");
+            resolver.ChangeValue("E", "E", false);
+
+            var walker = resolver.CreateWalker();
+            walker.MissingKeys.Should().BeEmpty();
+
+            var node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("E");
+            node.HasOnlyWalkedDependencies.Should().BeTrue();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("B:CE");
+            node.HasOnlyWalkedDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("D:BE");
+            node.HasOnlyWalkedDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("C:DE");
+            node.HasOnlyWalkedDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            // Create new walker
+            var newWalker = resolver.CreateWalker();
+
+            // Mark vertex walked as it would've in parallel
+            node = await walker.GetNextAsync(default);
+            node.Value.Should().Be("B:CE");
+            node.HasOnlyWalkedDependencies.Should().BeTrue();
+            node.IsWalkedWithDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            // Now iterate with new walker
+            node = await newWalker.GetNextAsync(default);
+            node.Value.Should().Be("B:CE");
+            node.HasOnlyWalkedDependencies.Should().BeFalse();
+            node.IsWalkedWithDependencies.Should().BeTrue();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await newWalker.GetNextAsync(default);
+            node.Value.Should().Be("D:BE");
+            node.HasOnlyWalkedDependencies.Should().BeFalse();
+            node.IsWalkedWithDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await newWalker.GetNextAsync(default);
+            node.Value.Should().Be("C:DE");
+            node.HasOnlyWalkedDependencies.Should().BeFalse();
+            node.IsWalkedWithDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await newWalker.GetNextAsync(default);
+            node.Value.Should().Be("B:CE");
+            node.HasOnlyWalkedDependencies.Should().BeTrue();
+            node.IsWalkedWithDependencies.Should().BeTrue();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await newWalker.GetNextAsync(default);
+            node.Value.Should().Be("D:BE");
+            node.HasOnlyWalkedDependencies.Should().BeTrue();
+            node.IsWalkedWithDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await newWalker.GetNextAsync(default);
+            node.Value.Should().Be("C:DE");
+            node.HasOnlyWalkedDependencies.Should().BeTrue();
+            node.IsWalkedWithDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            node = await newWalker.GetNextAsync(default);
+            node.Value.Should().Be("A:B");
+            node.HasOnlyWalkedDependencies.Should().BeTrue();
+            node.IsWalkedWithDependencies.Should().BeFalse();
+            node.MarkWalked();
+            node.MoveNext();
+
+            newWalker.Remaining.Should().Be(0);
+        }
+
+        [TestMethod]
         public async Task ChangeValue_Remove() {
             var resolver = new DependencyResolver<string, string>();
             resolver.ChangeValue("A", "A:BC", true, "B", "C");
