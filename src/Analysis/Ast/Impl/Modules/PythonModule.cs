@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer {
+    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer, ILocationConverter {
         private enum State {
             None,
             Loading,
@@ -562,6 +562,11 @@ namespace Microsoft.Python.Analysis.Modules {
             } catch (IOException) { } catch (UnauthorizedAccessException) { }
             return string.Empty;
         }
+        #endregion
+
+        #region ILocationConverter
+        public SourceLocation IndexToLocation(int index) => this.GetAst()?.IndexToLocation(index) ?? default;
+        public int LocationToIndex(SourceLocation location) => this.GetAst()?.LocationToIndex(location) ?? default;
         #endregion
 
         private void RemoveReferencesInModule(IPythonModule module) {
