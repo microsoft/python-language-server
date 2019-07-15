@@ -194,7 +194,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     isCanceled = _isCanceled;
                 }
 
-                if (isCanceled && !node.Value.NotAnalyzed) {
+                if (isCanceled && !node.Value.NotAnalyzed || IsAnalyzedLibraryInLoop(node)) {
                     remaining++;
                     node.MoveNext();
                     continue;
@@ -228,6 +228,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return remaining;
         }
 
+
+        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node) 
+            => !node.HasMissingDependencies && node.Value.IsAnalyzedLibrary(_walker.Version) && node.IsWalkedWithDependencies && node.IsValidVersion;
 
         private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
             => Task.Run(() => Analyze(node, ace, stopWatch));
@@ -310,10 +313,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void AnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version) {
-            if (entry.PreviousAnalysis is LibraryAnalysis) {
-                _log?.Log(TraceEventType.Verbose, $"Request to re-analyze finalized {module.Name}.");
-            }
-
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
@@ -348,7 +347,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void LogCompleted(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
-                var completed = node != null && module.Analysis is LibraryAnalysis ? "completed" : "completed for library";
+                var completed = node != null && module.Analysis is LibraryAnalysis ? "completed for library" : "completed ";
                 var message = node != null
                     ? $"Analysis of {module.Name}({module.ModuleType}) on depth {node.VertexDepth} {completed} in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms."
                     : $"Out of order analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.";

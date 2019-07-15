@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
             return new AndWhichConstraint<TScopeAssertions, IPythonFunctionType>((TScopeAssertions)this, (IPythonFunctionType)f.Value);
         }
-        
+
         public AndWhichConstraint<TScopeAssertions, IVariable> HaveVariable(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
 
@@ -80,7 +80,18 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
             return new AndWhichConstraint<TScopeAssertions, IVariable>((TScopeAssertions)this, v);
         }
-        
+
+        public AndWhichConstraint<TScopeAssertions, IVariable> HaveGenericVariable(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+
+            var v = Subject.Variables[name];
+            Execute.Assertion.ForCondition(v != null && v.IsGeneric())
+                           .BecauseOf(because, reasonArgs)
+                           .FailWith($"Expected scope '{Subject.Name}' to have generic variable '{name}'{{reason}}.");
+
+            return new AndWhichConstraint<TScopeAssertions, IVariable>((TScopeAssertions)this, v);
+        }
+
         public AndConstraint<TScopeAssertions> HaveClassVariables(params string[] classNames)
             => HaveClassVariables(classNames, string.Empty);
 
@@ -94,7 +105,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndConstraint<TScopeAssertions>((TScopeAssertions)this);
         }
 
-        public AndConstraint<TScopeAssertions> HaveFunctionVariables(params string[] functionNames) 
+        public AndConstraint<TScopeAssertions> HaveFunctionVariables(params string[] functionNames)
             => HaveFunctionVariables(functionNames, string.Empty);
 
         public AndConstraint<TScopeAssertions> HaveFunctionVariables(IEnumerable<string> functionNames, string because = "", params object[] reasonArgs) {

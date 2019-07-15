@@ -133,6 +133,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicate argument name &apos;{0}&apos; in function definition..
+        /// </summary>
+        internal static string DuplicateArgumentName {
+            get {
+                return ResourceManager.GetString("DuplicateArgumentName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Environment variable &apos;{0}&apos; is not set, using the default cache location instead..
         /// </summary>
         internal static string EnvVariableNotSet {
@@ -318,15 +327,6 @@ namespace Microsoft.Python.Analysis {
         internal static string UndefinedVariable {
             get {
                 return ResourceManager.GetString("UndefinedVariable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unsupported operand types for &apos;{0}&apos;: &apos;{1}&apos; and &apos;{2}&apos;.
-        /// </summary>
-        internal static string UnsupporedOperandType {
-            get {
-                return ResourceManager.GetString("UnsupporedOperandType", resourceCulture);
             }
         }
     }

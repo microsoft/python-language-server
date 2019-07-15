@@ -18,9 +18,15 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
+using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Extensibility {
     public interface ICompletionExtension {
         Task HandleCompletionAsync(IDocumentAnalysis analysis, SourceLocation location, CompletionItemEx[] completions, CancellationToken token);
+
+    }
+
+    public interface ICompletionExtension2 {
+        Task HandleCompletionAsync(IDocumentAnalysis analysis, SourceLocation location, CompletionList completions, CancellationToken token);
     }
 }

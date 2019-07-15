@@ -77,14 +77,14 @@ namespace Microsoft.Python.Analysis.Types {
             return result ?? DeclaringModule.Interpreter.UnknownType;
         }
 
-        public IMember Index(IPythonInstance instance, object index) {
+        public IMember Index(IPythonInstance instance, IArgumentSet args) {
             IPythonType[] types;
             lock (_lock) {
                 types = _types.ToArray();
             }
             // Check if any types support indexing
             var result = types
-                    .Select(t => t.Index(instance, index))
+                    .Select(t => t.Index(instance, args))
                     .FirstOrDefault(r => !r.IsUnknown() && r.GetPythonType() != this);
             return result ?? DeclaringModule.Interpreter.UnknownType;
         }

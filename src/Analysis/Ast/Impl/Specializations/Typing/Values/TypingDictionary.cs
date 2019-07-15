@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
             return new TypingIterator(iteratorType, this);
         }
 
-        public override IMember Index(object key) => new PythonInstance(_dictType.ValueType);
+        public override IMember Index(IArgumentSet args) => new PythonInstance(_dictType.ValueType);
 
         public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations

@@ -21,6 +21,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Documents {
@@ -186,6 +187,29 @@ namespace Microsoft.Python.Analysis.Documents {
             }
             if (removed) {
                 Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
+            }
+        }
+
+        public void ReloadAll() {
+            ImmutableArray<KeyValuePair<Uri, DocumentEntry>> opened;
+            ImmutableArray<KeyValuePair<Uri, DocumentEntry>> closed;
+
+            lock (_lock) {
+                _documentsByUri.Split(kvp => kvp.Value.Document.IsOpen, out opened, out closed);
+
+                foreach (var (uri, entry) in closed) {
+                    _documentsByUri.Remove(uri);
+                    entry.Document.Dispose();
+                }
+            }
+
+            foreach (var (_, entry) in closed) {
+                Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
+                Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
+            }
+
+            foreach (var (_, entry) in opened) {
+                entry.Document.Reset(null);
             }
         }
 

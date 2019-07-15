@@ -167,6 +167,77 @@ f(b=1, a=2, c=3, d=4, e='str')
         }
 
         [TestMethod, Priority(0)]
+        public async Task TypeVarSpecializedArgs() {
+            const string code = @"
+from typing import TypeVar
+
+TypeVar('T', int, float, str, bound='test', covariant=True)
+";
+            var argSet = await GetArgSetAsync(code, funcName: "TypeVar");
+            argSet.Arguments.Count.Should().Be(4);
+
+            argSet.Arguments[0].Name.Should().Be("name");
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("T");
+            argSet.Arguments[1].Name.Should().Be("bound");
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("test");
+            argSet.Arguments[2].Name.Should().Be("covariant");
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(true);
+            argSet.Arguments[3].Name.Should().Be("contravariant");
+            argSet.Arguments[3].Value.Should().BeOfType<PythonConstant>().Which.Value.Should().Be(false);
+
+            argSet.ListArgument.Should().NotBeNull();
+            argSet.ListArgument.Name.Should().Be("constraints");
+            argSet.ListArgument.Expressions.OfType<NameExpression>().Select(c => c.Name).Should().ContainInOrder("int", "float", "str");
+
+            argSet.DictionaryArgument.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeVarDefaultValues() {
+            const string code = @"
+from typing import TypeVar
+
+TypeVar('T', int, float, str)
+";
+            var argSet = await GetArgSetAsync(code, funcName: "TypeVar");
+            argSet.Arguments.Count.Should().Be(4);
+
+            argSet.Arguments[0].Name.Should().Be("name");
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("T");
+            argSet.Arguments[1].Name.Should().Be("bound");
+            argSet.Arguments[1].Value.Should().BeOfType<PythonConstant>().Which.Value.Should().Be(null);
+            argSet.Arguments[2].Name.Should().Be("covariant");
+            argSet.Arguments[2].Value.Should().BeOfType<PythonConstant>().Which.Value.Should().Be(false);
+            argSet.Arguments[3].Name.Should().Be("contravariant");
+            argSet.Arguments[3].Value.Should().BeOfType<PythonConstant>().Which.Value.Should().Be(false);
+
+            argSet.ListArgument.Should().NotBeNull();
+            argSet.ListArgument.Name.Should().Be("constraints");
+            argSet.ListArgument.Expressions.OfType<NameExpression>().Select(c => c.Name).Should().ContainInOrder("int", "float", "str");
+
+            argSet.DictionaryArgument.Should().BeNull();
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task NewTypeSpecializedArgs() {
+            const string code = @"
+from typing import NewType
+
+NewType('T', int)
+";
+            var argSet = await GetArgSetAsync(code, funcName: "NewType");
+            argSet.Arguments.Should().HaveCount(2);
+            argSet.Arguments[0].Name.Should().Be("arg0");
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("T");
+            argSet.Arguments[1].Name.Should().Be("arg1");
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<NameExpression>().Which.Name.Should().Be("int");
+
+            argSet.ListArgument.Should().BeNull();
+            argSet.DictionaryArgument.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NamedDictExtraPositionals() {
             const string code = @"
 def f(a, b, **dict): ...
