@@ -284,5 +284,46 @@ def hello():
             var analysis = await app.GetAnalysisAsync(-1);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsOneIsProperty() {
+            const string code = @"
+class tmp:
+    def foo(self):
+        return 123
+   
+    @property
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(7, 9, 7, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(3));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothAreProperties() {
+            const string code = @"
+class tmp:
+    @property
+    def foo(self):
+        return 123
+   
+    @property
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
+        }
     }
 }
