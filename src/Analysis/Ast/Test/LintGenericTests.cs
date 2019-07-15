@@ -80,7 +80,26 @@ _T = _X
         public async Task GenericArgumentsNoDiagnosticOnValid(string decl) {
             string code = GenericSetup + decl;
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericNoArgumentsNoDiagnostic() {
+            string code = GenericSetup + @"
+x = Generic[]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task GenericArgumentSpaceNoDiagnostic() {
+            string code = GenericSetup + @"
+x = Generic[  ]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
         }
     }
 }

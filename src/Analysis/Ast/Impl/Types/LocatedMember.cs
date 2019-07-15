@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
         private HashSet<Location> _references;
 
-        protected LocatedMember(IPythonModule module) : this(new Location(module, default)) { }
+        protected LocatedMember(IPythonModule module) : this(new Location(module)) { }
 
         protected LocatedMember(Location location) {
             Location = location;

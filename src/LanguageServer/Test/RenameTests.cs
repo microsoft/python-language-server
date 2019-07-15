@@ -150,6 +150,62 @@ y = x
         }
 
         [TestMethod, Priority(0)]
+        public async Task Rename_ImportInitPy() {
+            const string packageInitCode = @"x = 1";
+            const string moduleCode = @"import package
+y = package.x";
+            var initPyUri = TestData.GetTestSpecificUri("package", "__init__.py");
+            var moduleUri = TestData.GetTestSpecificUri("module.py");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var initPy = rdt.OpenDocument(initPyUri, packageInitCode);
+            var module = rdt.OpenDocument(moduleUri, moduleCode);
+            
+            await initPy.GetAnalysisAsync();
+            await module.GetAnalysisAsync();
+
+            var rs = new RenameSource(Services);
+            var wse = await rs.RenameAsync(initPyUri, new SourceLocation(1, 1), "z");
+
+            wse.changes.Should().HaveCount(2);
+
+            wse.changes[initPyUri].Should().HaveCount(1);
+            wse.changes[initPyUri][0].range.Should().Be(0, 0, 0, 1);
+
+            wse.changes[moduleUri].Should().HaveCount(1);
+            wse.changes[moduleUri][0].range.Should().Be(1, 12, 1, 13);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Rename_ImportSubmodule() {
+            const string packageInitCode = @"x = 1";
+            const string moduleCode = @"import package.submodule
+y = package.x";
+            var initPyUri = TestData.GetTestSpecificUri("package", "__init__.py");
+            var moduleUri = TestData.GetTestSpecificUri("module.py");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var initPy = rdt.OpenDocument(initPyUri, packageInitCode);
+            var module = rdt.OpenDocument(moduleUri, moduleCode);
+            
+            await initPy.GetAnalysisAsync();
+            await module.GetAnalysisAsync();
+
+            var rs = new RenameSource(Services);
+            var wse = await rs.RenameAsync(initPyUri, new SourceLocation(1, 1), "z");
+
+            wse.changes.Should().HaveCount(2);
+
+            wse.changes[initPyUri].Should().HaveCount(1);
+            wse.changes[initPyUri][0].range.Should().Be(0, 0, 0, 1);
+
+            wse.changes[moduleUri].Should().HaveCount(1);
+            wse.changes[moduleUri][0].range.Should().Be(1, 12, 1, 13);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NoRenameInCompiled() {
             const string code = "from sys import path";
 

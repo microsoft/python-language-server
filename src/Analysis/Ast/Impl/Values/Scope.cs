@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Values {
                 return;
             }
 
-            var location = new Location(Module, default);
+            var location = new Location(Module);
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var objType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
 
