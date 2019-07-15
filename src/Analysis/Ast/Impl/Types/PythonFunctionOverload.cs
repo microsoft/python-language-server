@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -125,7 +124,6 @@ namespace Microsoft.Python.Analysis.Types {
 
             return GetSpecificReturnType(self as IPythonClassType, args);
         }
-
         #endregion
 
         private IMember GetSpecificReturnType(IPythonClassType selfClassType, IArgumentSet args) {
