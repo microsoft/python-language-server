@@ -23,29 +23,22 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Name} : {FilePath}")]
     internal readonly struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
-        private enum KeyType { Default, Typeshed, LibraryAsDocument, Specialized }
+        private enum KeyType { Default, Typeshed, LibraryAsDocument }
 
         private readonly KeyType _type;
         public string Name { get; }
         public string FilePath { get; }
         public bool IsTypeshed => _type == KeyType.Typeshed;
         public bool IsLibraryAsDocument => _type == KeyType.LibraryAsDocument;
-        public bool IsSpecialized => _type == KeyType.Specialized;
 
         public AnalysisModuleKey(IPythonModule module) {
             Name = module.Name;
             FilePath = module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath;
-            switch (module.ModuleType) {
-                case ModuleType.Specialized:
-                    _type = KeyType.Specialized;
-                    break;
-                case ModuleType.Library when module is IDocument document && document.IsOpen:
-                    _type = KeyType.LibraryAsDocument;
-                    break;
-                default:
-                    _type = module is StubPythonModule stub && stub.IsTypeshed ? KeyType.Typeshed : KeyType.Default;
-                    break;
-            }
+            _type = module is StubPythonModule stub && stub.IsTypeshed              
+                ? KeyType.Typeshed
+                : module.ModuleType == ModuleType.Library && module is IDocument document && document.IsOpen
+                    ? KeyType.LibraryAsDocument
+                    : KeyType.Default;
         }
 
         public AnalysisModuleKey(string name, string filePath, bool isTypeshed) {
