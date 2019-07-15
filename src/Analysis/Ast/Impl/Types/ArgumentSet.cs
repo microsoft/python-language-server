@@ -328,7 +328,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             if (arg.ValueIsDefault) {
-                using (Eval.OpenScope(DeclaringModule.Analysis.GlobalScope)) {
+                using (Eval.OpenScope(DeclaringModule.GlobalScope)) {
                     return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
                 }
             }

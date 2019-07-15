@@ -26,8 +26,7 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly int _fileSize;
 
         public PythonDbModule(ModuleModel model, string filePath, IServiceContainer services)
-            : base(model.Name, string.Empty, services) {
-            FilePath = filePath;
+            : base(model.Name, filePath, services) {
             GlobalScope = new GlobalScope(model, this, services);
             Documentation = model.Documentation;
 

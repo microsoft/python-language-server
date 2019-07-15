@@ -193,10 +193,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var type = target?.GetPythonType();
 
             switch (type) {
-                case IPythonModule m when m.Analysis.GlobalScope != null:
+                case IPythonModule m when m.GlobalScope != null:
                     // Module GetMember returns module variable value while we
                     // want the variable itself since we want to know its location.
-                    var v1 = m.Analysis.GlobalScope.Variables[mex.Name];
+                    var v1 = m.GlobalScope.Variables[mex.Name];
                     if (v1 != null) {
                         definingMember = v1;
                         return FromMember(v1);
@@ -251,8 +251,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private static bool CanNavigateToModule(IPythonModule m)
-            => m?.ModuleType == ModuleType.User ||
+            => m?.ModuleType == ModuleType.Stub ||
                m?.ModuleType == ModuleType.Package ||
-               m?.ModuleType == ModuleType.Library;
+               m?.ModuleType == ModuleType.Library ||
+               m?.ModuleType == ModuleType.Specialized;
     }
 }

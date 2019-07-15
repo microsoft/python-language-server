@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         protected override IPythonFunctionType CreateMember(FunctionModel fm, IPythonType declaringType) {
             var f = new PythonFunctionType(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan), declaringType, fm.Documentation);
             foreach (var om in fm.Overloads) {
-                var o = new PythonFunctionOverload(fm.Name, ModuleFactory.DefaultLocation);
+                var o = new PythonFunctionOverload(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan));
                 o.SetDocumentation(fm.Documentation);
                 o.SetReturnValue(ModuleFactory.ConstructMember(om.ReturnType), true);
                 o.SetParameters(om.Parameters.Select(ConstructParameter).ToArray());
