@@ -79,6 +79,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Log = services.GetService<ILogger>();
             Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
+            GlobalScope = Analysis.GlobalScope;
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
             SetDeclaringModule(this);
@@ -150,10 +151,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
+        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
-            return Analysis.GlobalScope.Variables
+            return GlobalScope.Variables
                 .Where(v => {
                     // Instances are always fine.
                     if (v.Value is IPythonInstance) {
@@ -565,8 +566,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region ILocationConverter
-        public SourceLocation IndexToLocation(int index) => this.GetAst()?.IndexToLocation(index) ?? default;
-        public int LocationToIndex(SourceLocation location) => this.GetAst()?.LocationToIndex(location) ?? default;
+        public virtual SourceLocation IndexToLocation(int index) => this.GetAst()?.IndexToLocation(index) ?? default;
+        public virtual int LocationToIndex(SourceLocation location) => this.GetAst()?.LocationToIndex(location) ?? default;
         #endregion
 
         private void RemoveReferencesInModule(IPythonModule module) {

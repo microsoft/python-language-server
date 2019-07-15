@@ -26,6 +26,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return new PropertyModel {
                 Id = prop.Name.GetStableHash(),
                 Name = prop.Name,
+                IndexSpan = prop.Location.IndexSpan,
                 Documentation = prop.Documentation,
                 ReturnType = prop.ReturnType.GetQualifiedName(),
                 // TODO: attributes.

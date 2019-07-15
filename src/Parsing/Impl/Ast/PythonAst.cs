@@ -144,6 +144,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
         #endregion
+
         internal int GetLineEndFromPosition(int index) {
             var loc = IndexToLocation(index);
             if (loc.Line >= NewLineLocations.Length) {
