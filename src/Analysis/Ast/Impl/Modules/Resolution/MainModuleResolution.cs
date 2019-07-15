@@ -211,12 +211,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
-            addedRoots.UnionWith(SetUserSearchPaths(userSearchPaths));
+            addedRoots.UnionWith(PathResolver.SetUserSearchPaths(userSearchPaths));
             ReloadModulePaths(addedRoots);
         }
-
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths)
-            => PathResolver.SetUserSearchPaths(searchPaths);
 
         // For tests
         internal void AddUnimportableModule(string moduleName)

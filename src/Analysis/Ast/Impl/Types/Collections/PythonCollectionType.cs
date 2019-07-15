@@ -78,8 +78,8 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
             => DeclaringModule.Interpreter.GetBuiltinType(TypeId)?.Call(instance, memberName, args);
 
-        public override IMember Index(IPythonInstance instance, object index)
-            => (instance as IPythonCollection)?.Index(index) ?? UnknownType;
+        public override IMember Index(IPythonInstance instance, IArgumentSet args)
+            => (instance as IPythonCollection)?.Index(args) ?? UnknownType;
         #endregion
 
 

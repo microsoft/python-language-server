@@ -241,15 +241,6 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Inheriting &apos;{0}&apos;, which is not a class..
-        /// </summary>
-        internal static string InheritNonClass {
-            get {
-                return ResourceManager.GetString("InheritNonClass", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Interpreter does not exist; analysis will not be available..
         /// </summary>
         internal static string InterpreterNotFound {

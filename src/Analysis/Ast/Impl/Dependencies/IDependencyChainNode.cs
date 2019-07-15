@@ -26,6 +26,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
         /// </summary>
         bool HasOnlyWalkedDependencies { get; }
         /// <summary>
+        /// Returns true if node has been walked and all its direct and indirect dependencies have been walked, otherwise false
+        /// </summary>
+        bool IsWalkedWithDependencies { get; }
+        /// <summary>
         /// Returns true if node version matches version of the walked graph
         /// </summary>
         bool IsValidVersion { get; }

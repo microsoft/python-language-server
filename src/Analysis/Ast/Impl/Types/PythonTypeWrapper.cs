@@ -69,8 +69,8 @@ namespace Microsoft.Python.Analysis.Types {
             => IsAbstract ? null : InnerType.CreateInstance(typeName, args);
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => InnerType.Call(instance, memberName, args);
-        public virtual IMember Index(IPythonInstance instance, object index) 
-            => InnerType.Index(instance, index);
+        public virtual IMember Index(IPythonInstance instance, IArgumentSet args) 
+            => InnerType.Index(instance, args);
         #endregion
 
         #region ILocatedMember

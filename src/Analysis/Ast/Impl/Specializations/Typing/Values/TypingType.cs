@@ -44,6 +44,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         public IMember CreateInstance(string typeName, IArgumentSet args) => _type;
         public IMember GetMember(string name) => _type.GetMember(name);
         public IEnumerable<string> GetMemberNames() => _type.GetMemberNames();
-        public IMember Index(IPythonInstance instance, object index) => _type.Index(instance, index);
+        public IMember Index(IPythonInstance instance, IArgumentSet args) => _type.Index(instance, args);
     }
 }

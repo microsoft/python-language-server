@@ -42,8 +42,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var result = _completionSource.GetCompletions(analysis, @params.position);
                 res.items = result?.Completions?.ToArray() ?? Array.Empty<CompletionItem>();
 
-                await InvokeExtensionsAsync((ext, token)
-                    => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken), cancellationToken);
+                await InvokeExtensionsAsync(async (ext, token)
+                    => {
+                        switch (ext) {
+                            case ICompletionExtension2 e:
+                                await e.HandleCompletionAsync(analysis, @params.position, res, cancellationToken);
+                                break;
+                            case ICompletionExtension e:
+                                await e.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken);
+                                break;
+                            default:
+                                // ext is not a completion extension, ignore it.
+                                break;
+                        }
+                    }, cancellationToken);
             }
 
             return res;
