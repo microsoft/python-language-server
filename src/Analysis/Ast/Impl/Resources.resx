@@ -192,9 +192,6 @@
   <data name="NewTypeFirstArgNotString" xml:space="preserve">
     <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
   </data>
-  <data name="UnsupporedOperandType" xml:space="preserve">
-    <value>Unsupported operand types for '{0}': '{1}' and '{2}'</value>
-  </data>
   <data name="ReturnInInit" xml:space="preserve">
     <value>Explicit return in __init__ </value>
   </data>
