@@ -13,6 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
@@ -50,6 +53,20 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         /// Subsystem that produced the diagnostics.
         /// </summary>
         public DiagnosticSource Source { get; }
+
+        public bool ShouldReport(IPythonModule module) {
+            // Only report for user written modules
+            if (module.ModuleType != ModuleType.User) {
+                return false;
+            }
+
+            // If user specifies #noqa, then do not report diagnostic
+            if (module.GetComment(SourceSpan.Start.Line).EqualsIgnoreCase("noqa")) {
+                return false;
+            }
+
+            return true;
+        }
 
         public override bool Equals(object obj) {
             if (!(obj is DiagnosticsEntry e)) {
