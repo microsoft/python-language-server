@@ -81,16 +81,15 @@ _T = _X
 
         [TestMethod, Priority(0)]
         public async Task VarNamedNoQAStillGivesDiagnostic() {
-            const string code = @"
-noqa = 1 + 'str'
-";
+            string code = GenericSetup + "NOQA = Generic[T, T]";
+
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.UnsupportedOperandType);
-            diagnostic.Message.Should().Be(Resources.UnsupporedOperandType.FormatInvariant("+", "int", "str"));
-            diagnostic.SourceSpan.Should().Be(2, 8, 2, 17);
+            diagnostic.Message.Should().Be(Resources.GenericNotAllUnique);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingGenericArguments);
+            diagnostic.SourceSpan.Should().Be(8, 8, 8, 21);
             diagnostic.Severity.Should().Be(Severity.Error);
         }
 
