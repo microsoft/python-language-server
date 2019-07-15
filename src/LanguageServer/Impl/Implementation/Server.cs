@@ -49,6 +49,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IIndexManager _indexManager;
         private string _rootDir;
 
+        private bool _watchSearchPaths;
+        private PathsWatcher _pathsWatcher;
+        private string[] _searchPaths;
+
         public Server(IServiceManager services) {
             _services = services;
 
@@ -58,6 +62,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         ext.Dispose();
                     }
                 })
+                .Add(() => _pathsWatcher?.Dispose())
                 .Add(() => _shutdownCts.Cancel());
         }
 
@@ -173,11 +178,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag.ThrowIfDisposed();
             switch (@params.settings) {
                 case ServerSettings settings: {
-                    if (HandleConfigurationChanges(settings)) {
-                        RestartAnalysis();
+                        if (HandleConfigurationChanges(settings)) {
+                            RestartAnalysis();
+                        }
+                        break;
                     }
-                    break;
-                }
                 default:
                     _log?.Log(TraceEventType.Error, "change configuration notification sent unsupported settings");
                     break;
@@ -233,7 +238,34 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
         #endregion
 
-        public void NotifyPackagesChanged(CancellationToken cancellationToken) {
+        public void HandleWatchPathsChange(bool watchSearchPaths) {
+            if (watchSearchPaths == _watchSearchPaths) {
+                return;
+            }
+
+            _watchSearchPaths = watchSearchPaths;
+
+            if (!_watchSearchPaths) {
+                _searchPaths = null;
+                _pathsWatcher?.Dispose();
+                _pathsWatcher = null;
+                return;
+            }
+
+            ResetPathWatcher();
+        }
+
+        private void ResetPathWatcher() {
+            var paths = _interpreter.ModuleResolution.InterpreterPaths.ToArray();
+
+            if (_searchPaths == null || !_searchPaths.SequenceEqual(paths)) {
+                _searchPaths = paths;
+                _pathsWatcher?.Dispose();
+                _pathsWatcher = new PathsWatcher(_searchPaths, () => NotifyPackagesChanged(), _log);
+            }
+        }
+
+        public void NotifyPackagesChanged(CancellationToken cancellationToken = default) {
             var interpreter = _services.GetService<IPythonInterpreter>();
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
             // No need to reload typeshed resolution since it is a static storage.
@@ -242,17 +274,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
                 _log?.Log(TraceEventType.Information, Resources.Done);
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
+
                 RestartAnalysis();
+                
+                if (_watchSearchPaths) {
+                    ResetPathWatcher();
+                }
             }, cancellationToken).DoNotWait();
 
         }
 
         private void RestartAnalysis() {
-            var analyzer = Services.GetService<IPythonAnalyzer>();;
+            var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.ResetAnalyzer();
-            foreach (var doc in _rdt.GetDocuments()) {
-                doc.Reset(null);
-            }
+            _rdt.ReloadAll();
         }
     }
 }
