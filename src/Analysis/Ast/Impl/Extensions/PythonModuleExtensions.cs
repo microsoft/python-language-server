@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis {
         }
 
         /// <summary>
-        /// Returns the comment corresponding to the given line or null if there is no comment
+        /// Returns the comment corresponding to the given line or an empty string if there is no comment
         /// </summary>
         /// <param name="lineNum">The line number</param>
         internal static string GetComment(this IPythonModule module, int lineNum) {
@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis {
 
             int commentPos = line.IndexOf('#');
             if (commentPos < 0) {
-                return null;
+                return string.Empty;
             }
 
             return line.Substring(commentPos + 1).Trim('\t', ' ');
