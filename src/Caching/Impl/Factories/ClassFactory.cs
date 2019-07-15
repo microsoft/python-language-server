@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         }
 
         protected override PythonClassType CreateMember(ClassModel cm, IPythonType declaringType) 
-            => new PythonClassType(cm.Name, new Location(ModuleFactory.Module, cm.IndexSpan));
+            => new PythonClassType(cm.Name, new Location(ModuleFactory.Module, cm.IndexSpan.ToSpan()));
 
         protected override void CreateMemberParts(ClassModel cm, PythonClassType cls) {
             // In Python 3 exclude object since type creation will add it automatically.

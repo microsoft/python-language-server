@@ -31,12 +31,12 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
-        
+
         /// <summary>
         /// Collection of new line information for conversion of linear spans
         /// to line/columns in navigation to member definitions and references.
         /// </summary>
-        public NewLineLocation[] NewLines { get; set; }
+        public NewLineModel[] NewLines { get; set; }
 
         /// <summary>
         /// Length of the original module file. Used in conversion of indices to line/columns.
@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 string typeName = null;
 
                 switch (v.Value) {
-                    case IPythonFunctionType ft 
+                    case IPythonFunctionType ft
                         when ft.DeclaringModule.Equals(analysis.Document) || ft.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!functions.ContainsKey(ft.Name)) {
                             typeName = ft.Name;
@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                         }
 
                         break;
-                    case IPythonClassType cls 
+                    case IPythonClassType cls
                         when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!classes.ContainsKey(cls.Name)) {
                             typeName = cls.Name;
@@ -91,7 +91,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),
                 Classes = classes.Values.ToArray(),
-                NewLines = analysis.Ast.NewLineLocations.ToArray(),
+                NewLines = analysis.Ast.NewLineLocations.Select(l => new NewLineModel {
+                    EndIndex = l.EndIndex,
+                    Kind = l.Kind
+                }).ToArray(),
                 FileSize = analysis.Ast.EndIndex
             };
         }

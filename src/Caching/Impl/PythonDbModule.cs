@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
@@ -30,7 +31,7 @@ namespace Microsoft.Python.Analysis.Caching {
             GlobalScope = new GlobalScope(model, this, services);
             Documentation = model.Documentation;
 
-            _newLines = model.NewLines;
+            _newLines = model.NewLines.Select(nl => new NewLineLocation(nl.EndIndex, nl.Kind)).ToArray();
             _fileSize = model.FileSize;
         }
 

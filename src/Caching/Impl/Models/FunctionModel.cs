@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return new FunctionModel {
                 Id = ft.Name.GetStableHash(),
                 Name = ft.Name,
-                IndexSpan = ft.Location.IndexSpan,
+                IndexSpan = ft.Location.IndexSpan.ToModel(),
                 Documentation = ft.Documentation,
                 Overloads = ft.Overloads.Select(FromOverload).ToArray()
                 // TODO: attributes, inner functions and inner classes.

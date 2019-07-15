@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
+using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
@@ -247,7 +248,9 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
             var rdt = _services.GetService<IRunningDocumentTable>();
             var doc = rdt.GetDocument(uri);
-            return CanNavigateToModule(doc);
+            //  Allow navigation to modules not in RDT - most probably
+            // it is a module that was restored from database.
+            return doc == null || CanNavigateToModule(doc);
         }
 
         private static bool CanNavigateToModule(IPythonModule m)

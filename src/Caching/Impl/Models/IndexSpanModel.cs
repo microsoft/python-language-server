@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -16,9 +17,10 @@
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal abstract class MemberModel {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public IndexSpanModel IndexSpan { get; set; }
+    internal sealed class IndexSpanModel {
+        public int Start { get; set; }
+        public int Length { get; set; }
+
+        public IndexSpan ToSpan() => new IndexSpan(Start, Length);
     }
 }
