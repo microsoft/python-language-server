@@ -25,7 +25,7 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class InheritNonClassTests : AnalysisTestBase {
+    public class LintInheritNonClassTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -114,12 +114,12 @@ class D(x):
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.SourceSpan.Should().Be(4, 7, 4, 8);
-            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("str"));
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("x"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
             diagnostic.SourceSpan.Should().Be(10, 7, 10, 8);
-            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("5"));
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("x"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
 
@@ -168,6 +168,92 @@ class C(tmp):
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromProperty() {
+            const string code = @"
+class B:
+    @property
+    def test(self):
+        pass
+
+b = B()
+
+class C(b.test):
+    def method(self):
+        return 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(4, 7, 4, 8);
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b.test"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromMethod() {
+            const string code = @"
+class B:
+    def test(self):
+        pass
+
+b = B()
+
+class C(b.test):
+    def method(self):
+        return 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(8, 7, 8, 8);
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b.test"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromObjectInstance() {
+            const string code = @"
+class B:
+    def test(self):
+        pass
+
+b = B()
+
+class C(b):
+    def method(self):
+        return 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(8, 7, 8, 8);
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromFunction() {
+            const string code = @"
+def test(self):
+    pass
+
+class C(test):
+    def method(self):
+        return 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(5, 7, 5, 8);
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("test"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
     }
 }

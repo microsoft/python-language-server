@@ -115,28 +115,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var bases = new List<IPythonType>();
             foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
                 var expr = a.Expression;
+                var m = Eval.GetValueFromExpression(expr);
 
-                switch (expr) {
-                    // class declared in the current module
-                    case NameExpression nameExpression:
-                        var name = Eval.GetInScope(nameExpression.Name, outerScope);
-                        switch (name) {
-                            case PythonClassType classType:
-                                bases.Add(classType);
-                                break;
-                            case IPythonConstant constant:
-                                ReportInvalidBase(constant.Value);
-                                break;
-                            default:
-                                TryAddBase(bases, a);
-                                break;
-                        }
+                switch (m?.MemberType) {
+                    case PythonMemberType.Method:
+                    case PythonMemberType.Function:
+                    case PythonMemberType.Property:
+                    case PythonMemberType.Instance:
+                    case PythonMemberType.Variable when m is IPythonConstant:
+                        // all invalid types to inherit from
+                        ReportInvalidBase(a.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
                         break;
                     default:
                         TryAddBase(bases, a);
                         break;
                 }
             }
+
             return bases;
         }
 
@@ -147,8 +142,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var t = b.GetPythonType();
                 bases.Add(t);
                 t.AddReference(Eval.GetLocationOfName(arg.Expression));
-            } else {
-                ReportInvalidBase(arg.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
             }
         }
 
