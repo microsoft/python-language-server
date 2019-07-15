@@ -13,12 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
@@ -65,7 +68,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
-
                 ProcessClassBody();
             }
         }

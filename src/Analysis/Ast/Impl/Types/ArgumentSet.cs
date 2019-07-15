@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Values;

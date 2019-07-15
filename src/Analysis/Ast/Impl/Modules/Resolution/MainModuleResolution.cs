@@ -220,9 +220,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ReloadModulePaths(addedRoots);
         }
 
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) 
-            => PathResolver.SetUserSearchPaths(searchPaths);
-
         // For tests
         internal void AddUnimportableModule(string moduleName)
             => Modules[moduleName] = new ModuleRef(new SentinelModule(moduleName, _services));
