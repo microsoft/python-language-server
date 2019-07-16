@@ -20,7 +20,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -219,9 +218,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 UpdateAnalysisTcs(analysisVersion);
-                dependencies = _parserDependencies != null
-                    ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
-                    : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);
+                if (_analysisDependencies != null) {
+                    dependencies = _parserDependencies != null
+                        ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
+                        : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);
+                } else if(_parserDependencies != null) {
+                    dependencies = ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies);
+                }
+
                 return true;
             }
         }
