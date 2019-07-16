@@ -233,6 +233,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
+        [JsonRpcMethod("textDocument/declaration")]
+        public async Task<Location> GotoDeclaration(JToken token, CancellationToken cancellationToken) {
+            using (_requestTimer.Time("textDocument/declaration")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                return await _server.GotoDeclaration(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            }
+        }
+
         [JsonRpcMethod("textDocument/references")]
         public async Task<Reference[]> FindReferences(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/references")) {

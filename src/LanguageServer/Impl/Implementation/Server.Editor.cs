@@ -92,6 +92,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return reference != null ? new[] { reference } : Array.Empty<Reference>();
         }
 
+        public async Task<Location> GotoDeclaration(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Goto Declaration in {uri} at {@params.position}");
+
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
+            var reference = new DeclarationSource(Services).FindDefinition(analysis, @params.position, out _);
+            return reference != null ? new Location { uri = reference.uri, range = reference.range} : null;
+        }
+
         public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"References in {uri} at {@params.position}");
