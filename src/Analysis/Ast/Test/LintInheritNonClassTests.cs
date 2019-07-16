@@ -369,5 +369,25 @@ b = B()
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritChainFirstBadInheritance() {
+            const string code = @"
+X = 123
+
+class Foo(X):
+   pass
+
+class Bar(Foo):
+   pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(4, 7, 4, 10);
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("X"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
+        }
     }
 }
