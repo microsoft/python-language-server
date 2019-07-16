@@ -14,54 +14,94 @@
       "Classes": null,
       "Functions": null,
       "Id": 24395611,
-      "Name": "func"
+      "Name": "func",
+      "IndexSpan": {
+        "Start": 207,
+        "Length": 4
+      }
     }
   ],
   "Variables": [
     {
       "Value": "bool",
       "Id": -529376420,
-      "Name": "__debug__"
+      "Name": "__debug__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": -1636005055,
-      "Name": "__doc__"
+      "Name": "__doc__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": 875442003,
-      "Name": "__file__"
+      "Name": "__file__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": 1097116834,
-      "Name": "__name__"
+      "Name": "__name__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": 75395663,
-      "Name": "__package__"
+      "Name": "__package__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "list",
       "Id": 1154586556,
-      "Name": "__path__"
+      "Name": "__path__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "dict",
       "Id": 817929997,
-      "Name": "__dict__"
+      "Name": "__dict__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "i:str",
       "Id": 833,
-      "Name": "x"
+      "Name": "x",
+      "IndexSpan": {
+        "Start": 2,
+        "Length": 1
+      }
     },
     {
       "Value": "i:module:C",
       "Id": 812,
-      "Name": "c"
+      "Name": "c",
+      "IndexSpan": {
+        "Start": 234,
+        "Length": 1
+      }
     }
   ],
   "Classes": [
@@ -90,7 +130,11 @@
           "Classes": null,
           "Functions": null,
           "Id": 965872103,
-          "Name": "__init__"
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 45,
+            "Length": 8
+          }
         },
         {
           "Documentation": null,
@@ -111,7 +155,11 @@
           "Classes": null,
           "Functions": null,
           "Id": -2139806792,
-          "Name": "method"
+          "Name": "method",
+          "IndexSpan": {
+            "Start": 100,
+            "Length": 6
+          }
         }
       ],
       "Properties": [
@@ -120,37 +168,135 @@
           "ReturnType": "i:int",
           "Attributes": 0,
           "Id": 24690682,
-          "Name": "prop"
+          "Name": "prop",
+          "IndexSpan": {
+            "Start": 163,
+            "Length": 4
+          }
         }
       ],
       "Fields": [
         {
           "Value": "i:int",
           "Id": 833,
-          "Name": "x"
+          "Name": "x",
+          "IndexSpan": null
         },
         {
           "Value": "i:int",
           "Id": 834,
-          "Name": "y"
+          "Name": "y",
+          "IndexSpan": null
         },
         {
           "Value": "dict",
           "Id": 817929997,
-          "Name": "__dict__"
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
           "Value": "object",
           "Id": 1225024228,
-          "Name": "__weakref__"
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": 780,
-      "Name": "C"
+      "Name": "C",
+      "IndexSpan": {
+        "Start": 21,
+        "Length": 1
+      }
     }
   ],
+  "NewLines": [
+    {
+      "EndIndex": 2,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 13,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 15,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 25,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 37,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 62,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 82,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 92,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 115,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 138,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 140,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 155,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 183,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 201,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 203,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 216,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 232,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 234,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 243,
+      "Kind": 3
+    }
+  ],
+  "FileSize": 243,
   "Id": -2131035837,
-  "Name": "module"
+  "Name": "module",
+  "IndexSpan": null
 }

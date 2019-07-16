@@ -6,47 +6,83 @@
     {
       "Value": "bool",
       "Id": -529376420,
-      "Name": "__debug__"
+      "Name": "__debug__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": -1636005055,
-      "Name": "__doc__"
+      "Name": "__doc__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": 875442003,
-      "Name": "__file__"
+      "Name": "__file__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": 1097116834,
-      "Name": "__name__"
+      "Name": "__name__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "str",
       "Id": 75395663,
-      "Name": "__package__"
+      "Name": "__package__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "list",
       "Id": 1154586556,
-      "Name": "__path__"
+      "Name": "__path__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "dict",
       "Id": 817929997,
-      "Name": "__dict__"
+      "Name": "__dict__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     },
     {
       "Value": "i:str",
       "Id": 833,
-      "Name": "x"
+      "Name": "x",
+      "IndexSpan": {
+        "Start": 2,
+        "Length": 1
+      }
     },
     {
       "Value": "i:module:C",
       "Id": 812,
-      "Name": "c"
+      "Name": "c",
+      "IndexSpan": {
+        "Start": 323,
+        "Length": 1
+      }
     }
   ],
   "Classes": [
@@ -75,7 +111,11 @@
           "Classes": null,
           "Functions": null,
           "Id": -1909501047,
-          "Name": "methodA"
+          "Name": "methodA",
+          "IndexSpan": {
+            "Start": 33,
+            "Length": 7
+          }
         }
       ],
       "Properties": [],
@@ -83,18 +123,30 @@
         {
           "Value": "dict",
           "Id": 817929997,
-          "Name": "__dict__"
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
           "Value": "object",
           "Id": 1225024228,
-          "Name": "__weakref__"
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         }
       ],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": 778,
-      "Name": "A"
+      "Name": "A",
+      "IndexSpan": {
+        "Start": 21,
+        "Length": 1
+      }
     },
     {
       "Documentation": null,
@@ -121,7 +173,11 @@
           "Classes": null,
           "Functions": null,
           "Id": 935009767,
-          "Name": "methodB1"
+          "Name": "methodB1",
+          "IndexSpan": {
+            "Start": 235,
+            "Length": 8
+          }
         },
         {
           "Documentation": null,
@@ -142,7 +198,11 @@
           "Classes": null,
           "Functions": null,
           "Id": 935009768,
-          "Name": "methodB2"
+          "Name": "methodB2",
+          "IndexSpan": {
+            "Start": 282,
+            "Length": 8
+          }
         }
       ],
       "Properties": [],
@@ -150,17 +210,26 @@
         {
           "Value": "i:int",
           "Id": 833,
-          "Name": "x"
+          "Name": "x",
+          "IndexSpan": null
         },
         {
           "Value": "dict",
           "Id": 817929997,
-          "Name": "__dict__"
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
           "Value": "object",
           "Id": 1225024228,
-          "Name": "__weakref__"
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         }
       ],
       "GenericParameters": null,
@@ -190,7 +259,11 @@
               "Classes": null,
               "Functions": null,
               "Id": 965872103,
-              "Name": "__init__"
+              "Name": "__init__",
+              "IndexSpan": {
+                "Start": 122,
+                "Length": 8
+              }
             },
             {
               "Documentation": null,
@@ -211,7 +284,11 @@
               "Classes": null,
               "Functions": null,
               "Id": -1909501045,
-              "Name": "methodC"
+              "Name": "methodC",
+              "IndexSpan": {
+                "Start": 175,
+                "Length": 7
+              }
             }
           ],
           "Properties": [],
@@ -219,29 +296,142 @@
             {
               "Value": "i:int",
               "Id": 834,
-              "Name": "y"
+              "Name": "y",
+              "IndexSpan": null
             },
             {
               "Value": "dict",
               "Id": 817929997,
-              "Name": "__dict__"
+              "Name": "__dict__",
+              "IndexSpan": {
+                "Start": 0,
+                "Length": 0
+              }
             },
             {
               "Value": "object",
               "Id": 1225024228,
-              "Name": "__weakref__"
+              "Name": "__weakref__",
+              "IndexSpan": {
+                "Start": 0,
+                "Length": 0
+              }
             }
           ],
           "GenericParameters": null,
           "InnerClasses": [],
           "Id": 780,
-          "Name": "C"
+          "Name": "C",
+          "IndexSpan": {
+            "Start": 106,
+            "Length": 1
+          }
         }
       ],
       "Id": 779,
-      "Name": "B"
+      "Name": "B",
+      "IndexSpan": {
+        "Start": 78,
+        "Length": 1
+      }
     }
   ],
+  "NewLines": [
+    {
+      "EndIndex": 2,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 13,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 15,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 25,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 49,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 70,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 72,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 82,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 94,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 96,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 110,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 139,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 163,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 191,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 217,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 227,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 252,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 272,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 274,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 299,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 321,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 323,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 343,
+      "Kind": 3
+    }
+  ],
+  "FileSize": 343,
   "Id": -2131035837,
-  "Name": "module"
+  "Name": "module",
+  "IndexSpan": null
 }
