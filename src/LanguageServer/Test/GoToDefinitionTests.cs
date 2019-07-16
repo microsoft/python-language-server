@@ -171,13 +171,33 @@ log
         }
 
         [TestMethod, Priority(0)]
-        public async Task GotoModuleSourceFromImport2() {
+        public async Task GotoDefitionFromImport() {
             const string code = @"
 from MultiValues import t
 x = t
 ";
             var analysis = await GetAnalysisAsync(code);
             var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 5), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 0, 2, 1);
+            reference.uri.AbsolutePath.Should().Contain("MultiValues.py");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 25), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 0, 2, 1);
+            reference.uri.AbsolutePath.Should().Contain("MultiValues.py");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoDeclarationFromImport() {
+            const string code = @"
+from MultiValues import t
+x = t
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DeclarationSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(3, 5), out _);
             reference.Should().NotBeNull();
