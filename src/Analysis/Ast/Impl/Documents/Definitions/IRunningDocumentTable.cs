@@ -71,6 +71,12 @@ namespace Microsoft.Python.Analysis.Documents {
         int UnlockDocument(Uri uri);
 
         /// <summary>
+        /// Reloads the table by removing all unopened files (which would have been loaded from disk),
+        /// and resetting the content of all other files to trigger reanalysis.
+        /// </summary>
+        void ReloadAll();
+
+        /// <summary>
         /// Fires when document is opened.
         /// </summary>
         event EventHandler<DocumentEventArgs> Opened;

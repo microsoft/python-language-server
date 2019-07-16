@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -43,7 +44,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 
         protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
-            => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new [] { "-W", "ignore", "-B", "-E", sb };
+            => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new[] { "-W", "ignore", "-B", "-E", sb };
 
         protected override void OnAnalysisComplete() {
             SpecializeTypes();
@@ -158,7 +159,9 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis.SpecializeFunction("max", BuiltinsSpecializations.Identity);
             Analysis.SpecializeFunction("min", BuiltinsSpecializations.Identity);
             Analysis.SpecializeFunction("next", BuiltinsSpecializations.Next);
-            Analysis.SpecializeFunction("open", BuiltinsSpecializations.Open, new[] { "io" });
+
+            Analysis.SpecializeFunction("open", BuiltinsSpecializations.Open, OpenConstructor(), new[] { "io" });
+
             Analysis.SpecializeFunction("ord", Interpreter.GetBuiltinType(BuiltinTypeId.Int));
             Analysis.SpecializeFunction("pow", BuiltinsSpecializations.Identity);
             Analysis.SpecializeFunction("range", BuiltinsSpecializations.Range);
@@ -169,6 +172,27 @@ namespace Microsoft.Python.Analysis.Modules {
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
             //SpecializeFunction(_builtinName, "super", SpecialSuper);
+        }
+
+        private IReadOnlyList<ParameterInfo> OpenConstructor() {
+            if (Interpreter.LanguageVersion.Is2x()) {
+                return new[] {
+                    new ParameterInfo("name", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
+                    new ParameterInfo("mode", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant("r", Interpreter.GetBuiltinType(BuiltinTypeId.Str))),
+                    new ParameterInfo("buffering", Interpreter.GetBuiltinType(BuiltinTypeId.Int), ParameterKind.Normal, new PythonConstant(-1, Interpreter.GetBuiltinType(BuiltinTypeId.Int))),
+                };
+            } else {
+                return new[] {
+                    new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
+                    new ParameterInfo("mode", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant("r", Interpreter.GetBuiltinType(BuiltinTypeId.Str))),
+                    new ParameterInfo("buffering", Interpreter.GetBuiltinType(BuiltinTypeId.Int), ParameterKind.Normal, new PythonConstant(-1, Interpreter.GetBuiltinType(BuiltinTypeId.Int))),
+                    new ParameterInfo("encoding", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
+                    new ParameterInfo("errors", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
+                    new ParameterInfo("newline", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
+                    new ParameterInfo("closefd", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.Normal, new PythonConstant(true, Interpreter.GetBuiltinType(BuiltinTypeId.Bool))),
+                    new ParameterInfo("opener", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.Str)))
+                };
+            }
         }
     }
 }

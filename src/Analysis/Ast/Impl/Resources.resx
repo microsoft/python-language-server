@@ -189,11 +189,11 @@
   <data name="UnableToDetermineCachePathException" xml:space="preserve">
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
   </data>
+  <data name="FunctionRedefined" xml:space="preserve">
+    <value>Function already defined at line {0}.</value>
+  </data>
   <data name="NewTypeFirstArgNotString" xml:space="preserve">
     <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
-  </data>
-  <data name="UnsupporedOperandType" xml:space="preserve">
-    <value>Unsupported operand types for '{0}': '{1}' and '{2}'</value>
   </data>
   <data name="ReturnInInit" xml:space="preserve">
     <value>Explicit return in __init__ </value>
@@ -206,5 +206,8 @@
   </data>
   <data name="InheritNonClass" xml:space="preserve">
     <value>Inheriting '{0}', which is not a class.</value>
+  </data>
+  <data name="DuplicateArgumentName" xml:space="preserve">
+    <value>Duplicate argument name '{0}' in function definition.</value>
   </data>
 </root>

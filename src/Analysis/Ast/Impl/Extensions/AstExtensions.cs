@@ -17,16 +17,18 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class AstExtensions {
-        public static Expression FindExpression(this PythonAst ast, int index, FindExpressionOptions options) 
+        public static Expression FindExpression(this PythonAst ast, int index, FindExpressionOptions options)
             => new ExpressionFinder(ast, options).GetExpression(index) as Expression;
 
-        public static Expression FindExpression(this PythonAst ast, SourceLocation location, FindExpressionOptions options) 
+        public static Expression FindExpression(this PythonAst ast, SourceLocation location, FindExpressionOptions options)
             => new ExpressionFinder(ast, options).GetExpression(location) as Expression;
 
         public static string GetDocumentation(this ScopeStatement node) {
@@ -62,7 +64,7 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsInsideString(this PythonAst ast, SourceLocation location) {
             var index = ast.LocationToIndex(location);
-            return ast.FindExpression(index, new FindExpressionOptions {Literals = true}) != null;
+            return ast.FindExpression(index, new FindExpressionOptions { Literals = true }) != null;
         }
 
         public static bool IsInParameter(this FunctionDefinition fd, PythonAst tree, SourceLocation location) {

@@ -716,8 +716,7 @@ x.abc()
             var module2Path = TestData.GetTestSpecificUri("package", "module2.py");
             var module3Path = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var module1 = rdt.OpenDocument(module1Path, "import package.");
@@ -937,8 +936,7 @@ os.path.
             var initPyPath = TestData.GetTestSpecificUri("__init__.py");
             var module1Path = TestData.GetTestSpecificUri("module1.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(initPyPath, string.Empty);
@@ -959,8 +957,7 @@ os.path.
             var module2Path = TestData.GetTestSpecificUri("package", "module2.py");
             var module3Path = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
             var analyzer = Services.GetService<IPythonAnalyzer>();
 
@@ -983,8 +980,7 @@ os.path.
             var module1Path = TestData.GetTestSpecificUri("package", "module1.py");
             var module2Path = TestData.GetTestSpecificUri("package", "sub_package", "module2.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var module = rdt.OpenDocument(initPyPath, "answer = 42");
@@ -1009,8 +1005,7 @@ os.path.
             var module2 = TestData.GetTestSpecificUri("package", "module2.py");
             var module3 = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var module = rdt.OpenDocument(module1, "from .");

@@ -691,6 +691,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             public int VertexDepth { get; }
             public bool HasMissingDependencies => _vertex.HasMissingDependencies;
             public bool HasOnlyWalkedDependencies => _vertex.HasOnlyWalkedIncoming && _vertex.SecondPass == default;
+            public bool IsWalkedWithDependencies => _vertex.HasOnlyWalkedIncoming && _vertex.DependencyVertex.IsWalked;
             public bool IsValidVersion => _walker.IsValidVersion;
 
             public DependencyChainNode(DependencyChainWalker walker, WalkingVertex<TKey, TValue> vertex, int depth) {
