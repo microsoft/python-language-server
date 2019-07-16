@@ -1,6 +1,9 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -8,7 +11,9 @@ namespace Microsoft.Python.Analysis.Tests {
 
     [TestClass]
     public class LintTypeVarTests : AnalysisTestBase {
-        public const string TypeVarImport = "from typing import TypeVar";
+        public const string TypeVarImport = @"
+from typing import TypeVar
+";
 
         public TestContext TestContext { get; set; }
 
@@ -43,7 +48,6 @@ T = TypeVar(1f)
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingTypeVarArguments);
             diagnostic.Message.Should().Be(Resources.TypeVarFirstArgumentNotString);
-
         }
 
         [DataRow(TypeVarImport + @"
@@ -59,7 +63,7 @@ T = TypeVar('T', float, int)
         [DataTestMethod, Priority(0)]
         public async Task TypeVarNoDiagnosticOnValidUse(string code) {
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
 
@@ -74,33 +78,26 @@ T = TypeVar()
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingTypeVarArguments);
-            diagnostic.Message.Should().Be(Resources.TypeVarMissingFirstArgument);
+            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.ParameterMissing);
+            diagnostic.Message.Should().Be(Resources.Analysis_ParameterMissing.FormatInvariant("name"));
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 14);
         }
 
-        [DataRow(TypeVarImport + @"
-T = TypeVar('T', 'test_constraint')
-")]
-        [DataRow(TypeVarImport + @"
-T = TypeVar('T', int)
-")]
-        [DataRow(TypeVarImport + @"
-T = TypeVar('T', complex)
-")]
-        [DataRow(TypeVarImport + @"
-T = TypeVar('T', str)
-")]
-        [DataRow(TypeVarImport + @"
-T = TypeVar('T', 5)
-")]
+        [DataRow("T = TypeVar('T', 'test_constraint')")]
+        [DataRow("T = TypeVar('T', int)")]
+        [DataRow("T = TypeVar('T', complex)")]
+        [DataRow("T = TypeVar('T', str)")]
+        [DataRow("T = TypeVar('T', 5)")]
         [DataTestMethod, Priority(0)]
-        public async Task TypeVarOneConstraint(string code) {
+        public async Task TypeVarOneConstraint(string decl) {
+            string code = TypeVarImport + decl;
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingTypeVarArguments);
             diagnostic.Message.Should().Be(Resources.TypeVarSingleConstraint);
+            diagnostic.SourceSpan.Should().Be(3, 5, 3, decl.IndexOf(")") + 2);
         }
     }
 }

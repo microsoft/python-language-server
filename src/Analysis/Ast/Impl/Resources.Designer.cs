@@ -232,14 +232,14 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        /// Looks up a localized string similar to Function already defined at line {0}..
+        ///   Looks up a localized string similar to Function already defined at line {0}..
         /// </summary>
         internal static string FunctionRedefined {
             get {
                 return ResourceManager.GetString("FunctionRedefined", resourceCulture);
-	    }
-	}
-
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
         /// </summary>
@@ -295,6 +295,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Explicit return in __init__ .
+        /// </summary>
+        internal static string ReturnInInit {
+            get {
+                return ResourceManager.GetString("ReturnInInit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The first argument to TypeVar must be a string..
         /// </summary>
         internal static string TypeVarFirstArgumentNotString {
@@ -304,29 +313,11 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to TypeVar must have at least one argument..
-        /// </summary>
-        internal static string TypeVarMissingFirstArgument {
-            get {
-                return ResourceManager.GetString("TypeVarMissingFirstArgument", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to A single constraint to TypeVar is not allowed..
         /// </summary>
         internal static string TypeVarSingleConstraint {
             get {
                 return ResourceManager.GetString("TypeVarSingleConstraint", resourceCulture);
-	    }
-	}
-
-	/// <summary>
-        ///   Looks up a localized string similar to Explicit return in __init__ .
-        /// </summary>
-        internal static string ReturnInInit {
-            get {
-                return ResourceManager.GetString("ReturnInInit", resourceCulture);
             }
         }
         

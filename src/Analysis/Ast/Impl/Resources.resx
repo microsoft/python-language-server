@@ -189,9 +189,6 @@
   <data name="UnableToDetermineCachePathException" xml:space="preserve">
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
   </data>
-  <data name="TypeVarMissingFirstArgument" xml:space="preserve">
-    <value>TypeVar must have at least one argument.</value>
-  </data>
   <data name="TypeVarFirstArgumentNotString" xml:space="preserve">
     <value>The first argument to TypeVar must be a string.</value>
   </data>

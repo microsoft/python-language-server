@@ -41,6 +41,12 @@ namespace Microsoft.Python.Analysis {
             return value as T;
         }
 
+        public static void ReportErrors(this IArgumentSet args) {
+            foreach (var arg in args.Errors) {
+                args.Eval?.ReportDiagnostics(args.Eval?.Module?.Uri, arg);
+            }
+        }
+
         internal static void DeclareParametersInScope(this IArgumentSet args, ExpressionEval eval) {
             if (eval == null) {
                 return;
