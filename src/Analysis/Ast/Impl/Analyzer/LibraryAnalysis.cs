@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     /// Analysis of a library code.
     /// </summary>
     internal sealed class LibraryAnalysis : IDocumentAnalysis {
-        public LibraryAnalysis(IDocument document, int version, IServiceContainer services, GlobalScope globalScope, IReadOnlyList<string> starImportMemberNames) {
+        public LibraryAnalysis(IDocument document, int version, IGlobalScope globalScope, IExpressionEvaluator eval, IReadOnlyList<string> starImportMemberNames) {
             Check.ArgumentNotNull(nameof(document), document);
             Check.ArgumentNotNull(nameof(globalScope), globalScope);
 
@@ -37,14 +37,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             Version = version;
             GlobalScope = globalScope;
 
-            var ast = Document.GetAst();
-            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
-            var c = (IAstNodeContainer)Document;
-            c.ClearContent();
-            c.ClearAst();
-            c.AddAstNode(document, ast);
-
-            ExpressionEvaluator = new ExpressionEval(services, document, globalScope);
+            ExpressionEvaluator = eval;
             StarImportMemberNames = starImportMemberNames;
         }
 

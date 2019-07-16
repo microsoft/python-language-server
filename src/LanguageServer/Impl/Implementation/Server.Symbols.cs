@@ -36,7 +36,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var path = @params.textDocument.uri.AbsolutePath;
             var symbols = await _indexManager.HierarchicalDocumentSymbolsAsync(path, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            return symbols.Select(hSym => MakeDocumentSymbol(hSym)).ToArray();
+            return symbols.Select(MakeDocumentSymbol).ToArray();
         }
 
         private static SymbolInformation MakeSymbolInfo(FlatSymbol s) {

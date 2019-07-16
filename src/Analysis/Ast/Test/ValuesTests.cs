@@ -17,6 +17,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -158,8 +159,11 @@ with X():
                     .Which.Should().HaveMember("x_method");
         }
 
-        [TestMethod, Priority(0)]
-        public async Task WithIOStatement() {
+
+        [DataRow(PythonLanguageVersion.V27)]
+        [DataRow(PythonLanguageVersion.V37)]
+        [DataTestMethod, Priority(0)]
+        public async Task WithIOStatement(PythonLanguageVersion version) {
             const string code = @"
 with open('a', 'r') as r:
     pass
@@ -178,7 +182,7 @@ with open('a', 'x') as x:
 with open('a', 'xb') as xb:
     pass
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, version);
 
             analysis.Should().HaveVariable("r").OfType("TextIOWrapper")
                 .And.HaveVariable("rb").OfType("BufferedReader")

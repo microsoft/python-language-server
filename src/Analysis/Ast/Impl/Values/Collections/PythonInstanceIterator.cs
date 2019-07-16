@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             __next__ = instance.GetPythonType().GetMember(@"__next__") as IPythonFunctionType;
         }
 
-        public IMember Next => __next__?.Call(null, @"__next__", ArgumentSet.Empty) ?? UnknownType;
+        public IMember Next => __next__?.Call(null, @"__next__", ArgumentSet.WithoutContext) ?? UnknownType;
 
         public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations
@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IPythonIterator GetIterator() => this;
         public IPythonType Type { get; }
         public IMember Call(string memberName, IArgumentSet args) => Type;
-        public IMember Index(object index) => Type;
+        public IMember Index(IArgumentSet args) => Type;
         public IMember Next => Type;
     }
 }

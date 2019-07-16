@@ -32,6 +32,8 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
+
+        private Dictionary<string, PythonClassType> _specificTypeCache;
         private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -149,11 +151,11 @@ namespace Microsoft.Python.Analysis.Types {
             return new PythonInstance(this);
         }
 
-        public override IMember Index(IPythonInstance instance, object index) {
-            var defaultReturn = base.Index(instance, index);
+        public override IMember Index(IPythonInstance instance, IArgumentSet args) {
+            var defaultReturn = base.Index(instance, args);
             var fromBases = Bases
                 .MaybeEnumerate()
-                .Select(b => b.Index(instance, index))
+                .Select(b => b.Index(instance, args))
                 .Except(new[] { defaultReturn, UnknownType })
                 .FirstOrDefault();
 
@@ -350,19 +352,20 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // For still undefined parameters try matching passed types in order
-            for (var i = 0; i < args.Arguments.Count; i++) {
+            for (int i = 0, gtIndex = 0; i < args.Arguments.Count; i++) {
                 var arg = args.Arguments[i];
                 if (Equals(arg.Type)) {
-                    continue;
+                    continue; // Typically 'self'.
                 }
 
                 if (arg.Value is IMember member) {
                     var type = member.GetPythonType();
                     if (!type.IsUnknown()) {
-                        var gtd = i < genericTypeDefinitions.Count ? genericTypeDefinitions[i] : null;
+                        var gtd = gtIndex < genericTypeDefinitions.Count ? genericTypeDefinitions[gtIndex] : null;
                         if (gtd != null && !specificClassTypeParameters.ContainsKey(gtd.Name)) {
                             specificClassTypeParameters[gtd.Name] = type;
                         }
+                        gtIndex++;
                     }
                 }
             }
@@ -374,7 +377,11 @@ namespace Microsoft.Python.Analysis.Types {
                 .ToArray();
 
             var specificName = CodeFormatter.FormatSequence(Name, '[', specificTypes);
-            var classType = new PythonClassType(specificName, new Location(DeclaringModule));
+            _specificTypeCache = _specificTypeCache ?? new Dictionary<string, PythonClassType>();
+            if (_specificTypeCache.TryGetValue(specificName, out var classType)) {
+                return classType;
+            }
+            _specificTypeCache[specificName] = classType = new PythonClassType(specificName, new Location(DeclaringModule));
 
             // Methods returning generic types need to know how to match generic
             // parameter name to the actual supplied type.
@@ -402,7 +409,7 @@ namespace Microsoft.Python.Analysis.Types {
                         .Where(p => !p.IsUnknown())
                         .ToArray();
                     if (st.Length > 0) {
-                        var type = gt.CreateSpecificType(new ArgumentSet(st));
+                        var type = gt.CreateSpecificType(new ArgumentSet(st, args.Expression, args.Eval));
                         if (!type.IsUnknown()) {
                             bases.Add(type);
                         }
@@ -487,7 +494,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Functions handle generics internally upon the call to Call.
             foreach (var m in members) {
                 switch (m.Value) {
-                    case IPythonTemplateType tt: {
+                    case IPythonTemplateType tt when tt.IsGeneric(): {
                             var specificType = tt.CreateSpecificType(args);
                             classType.AddMember(m.Key, specificType, true);
                             break;

@@ -15,31 +15,48 @@
 
 using System;
 using System.Diagnostics;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Name} : {FilePath}")]
-    internal struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
+    internal readonly struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
+        private enum KeyType { Default, Typeshed, LibraryAsDocument }
+
+        private readonly KeyType _type;
         public string Name { get; }
         public string FilePath { get; }
-        public bool IsTypeshed { get; }
+        public bool IsTypeshed => _type == KeyType.Typeshed;
+        public bool IsLibraryAsDocument => _type == KeyType.LibraryAsDocument;
 
         public AnalysisModuleKey(IPythonModule module) {
             Name = module.Name;
             FilePath = module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath;
-            IsTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
+            _type = module is StubPythonModule stub && stub.IsTypeshed
+                ? KeyType.Typeshed
+                : module.ModuleType == ModuleType.Library && module is IDocument document && document.IsOpen
+                    ? KeyType.LibraryAsDocument
+                    : KeyType.Default;
         }
 
         public AnalysisModuleKey(string name, string filePath, bool isTypeshed) {
             Name = name;
             FilePath = filePath;
-            IsTypeshed = isTypeshed;
+            _type = isTypeshed ? KeyType.Typeshed : KeyType.Default;
         }
 
+        private AnalysisModuleKey(string name, string filePath, KeyType type) {
+            Name = name;
+            FilePath = filePath;
+            _type = type;
+        }
+
+        public AnalysisModuleKey GetLibraryAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, KeyType.LibraryAsDocument);
+
         public bool Equals(AnalysisModuleKey other)
-            => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed;
+            => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && _type == other._type;
 
         public override bool Equals(object obj) => obj is AnalysisModuleKey other && Equals(other);
 
@@ -47,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             unchecked {
                 var hashCode = (Name != null ? Name.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (FilePath != null ? FilePath.GetPathHashCode() : 0);
-                hashCode = (hashCode * 397) ^ IsTypeshed.GetHashCode();
+                hashCode = (hashCode * 397) ^ _type.GetHashCode();
                 return hashCode;
             }
         }

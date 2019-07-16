@@ -716,8 +716,7 @@ x.abc()
             var module2Path = TestData.GetTestSpecificUri("package", "module2.py");
             var module3Path = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var module1 = rdt.OpenDocument(module1Path, "import package.");
@@ -937,8 +936,7 @@ os.path.
             var initPyPath = TestData.GetTestSpecificUri("__init__.py");
             var module1Path = TestData.GetTestSpecificUri("module1.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             rdt.OpenDocument(initPyPath, string.Empty);
@@ -959,8 +957,7 @@ os.path.
             var module2Path = TestData.GetTestSpecificUri("package", "module2.py");
             var module3Path = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
             var analyzer = Services.GetService<IPythonAnalyzer>();
 
@@ -983,8 +980,7 @@ os.path.
             var module1Path = TestData.GetTestSpecificUri("package", "module1.py");
             var module2Path = TestData.GetTestSpecificUri("package", "sub_package", "module2.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var module = rdt.OpenDocument(initPyPath, "answer = 42");
@@ -1009,8 +1005,7 @@ os.path.
             var module2 = TestData.GetTestSpecificUri("package", "module2.py");
             var module3 = TestData.GetTestSpecificUri("package", "sub_package", "module3.py");
 
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var module = rdt.OpenDocument(module1, "from .");
@@ -1193,6 +1188,26 @@ def test(x: Foo = func()):
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var comps = cs.GetCompletions(analysis, new SourceLocation(13, 7));
             comps.Should().HaveLabels("name", "z");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AddBrackets() {
+            const string code = @"prin";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            ServerSettings.completion.addBrackets = true;
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var comps = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            var print = comps.Completions.FirstOrDefault(x => x.label == "print");
+            print.Should().NotBeNull();
+            print.insertText.Should().Be("print($0)");
+
+            cs.Options.addBrackets = false;
+            comps = cs.GetCompletions(analysis, new SourceLocation(1, 5));
+            print = comps.Completions.FirstOrDefault(x => x.label == "print");
+            print.Should().NotBeNull();
+            print.insertText.Should().Be("print");
         }
     }
 }

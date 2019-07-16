@@ -29,6 +29,11 @@ namespace Microsoft.Python.LanguageServer.Completion {
             _itemSource = new CompletionItemSource(docSource, completionSettings);
         }
 
+        public ServerSettings.PythonCompletionOptions Options {
+            get => _itemSource.Options;
+            set => _itemSource.Options = value;
+        }
+
         public CompletionResult GetCompletions(IDocumentAnalysis analysis, SourceLocation location) {
             if(analysis.Document.ModuleType != ModuleType.User) {
                 return CompletionResult.Empty;

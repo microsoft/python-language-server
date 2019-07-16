@@ -113,7 +113,7 @@ if sys.version_info >= (2, 7):
                 }
 
                 Console.WriteLine(@"Testing with {0}", ver.InterpreterPath);
-                using (var s = await CreateServicesAsync(TestData.Root, ver)) {
+                using (var s = await CreateServicesAsync(ver)) {
                     var analysis = await GetAnalysisAsync(code, s, @"testmodule", TestData.GetTestSpecificPath(@"testmodule.pyi"));
 
                     var expected = new List<string>();

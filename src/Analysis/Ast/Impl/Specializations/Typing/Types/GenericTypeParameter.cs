@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return false;
             }
 
-            var name = (args[0] as IPythonConstant)?.GetString();
+            var name = (args[0].Value as IPythonConstant)?.GetString();
             if (string.IsNullOrEmpty(name)) {
                 var firstArgLocation = callExpression?.Args[0]?.GetLocation(eval.Module);
                 eval.ReportDiagnostics(
@@ -83,26 +83,39 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return true;
         }
 
+
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
-            if (!TypeVarArgumentsValid(argSet))
+            var args = argSet.Arguments;
+            var constraintArgs = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
+
+            if (!TypeVarArgumentsValid(args))
                 return declaringModule.Interpreter.UnknownType;
 
-            var args = argSet.Values<IMember>();
             var name = (args[0] as IPythonConstant)?.GetString();
-            var constraints = args.Skip(1).Select(a => {
+
+                        var constraints = constraintArgs.Select(a => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
-            }).ToArray();
+            }).ToArray() ?? Array.Empty<IPythonType>();
 
             if (constraints.Any(c => c.IsUnknown())) {
                 // TODO: report that some constraints could not be resolved.
             }
 
-            var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.IsUnknown() ? "?" : c.Name));
-            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
-
+            var documentation = GetDocumentation(args, constraints);
             return new GenericTypeParameter(name, declaringModule, constraints, documentation, location);
+        }
+
+        private static string GetDocumentation(IReadOnlyList<IArgument> args, IReadOnlyList<IPythonType> constraints) {
+            var name = (args[0].Value as IPythonConstant).GetString();
+            var keyWordArgs = args.Skip(1)
+                .Where(x => !x.ValueIsDefault)
+                .Select(x => $"{x.Name}={(x.Value as IPythonConstant)?.Value}");
+
+            var docArgs = constraints.Select(c => c.IsUnknown() ? "?" : c.Name).Concat(keyWordArgs).Prepend($"'{name}'");
+            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
+            return documentation;
         }
     }
 }

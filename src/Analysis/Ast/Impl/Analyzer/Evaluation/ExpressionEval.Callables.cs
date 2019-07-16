@@ -16,13 +16,17 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
@@ -89,12 +93,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public IMember GetValueFromClassCtor(IPythonClassType cls, CallExpression expr) {
             SymbolTable.Evaluate(cls.ClassDefinition);
+
             // Determine argument types
-            var args = ArgumentSet.Empty;
+            var args = ArgumentSet.Empty(expr, this);
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
             if (init != null) {
                 using (OpenScope(cls.DeclaringModule, cls.ClassDefinition, out _)) {
-                    var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, Module, this);
+                    var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, this);
                     if (a.Errors.Count > 0) {
                         // AddDiagnostics(Module.Uri, a.Errors);
                     }
@@ -109,7 +114,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonFunctionType fn:
                     return GetValueFromFunctionType(fn, t.Self, expr);
                 case IPythonPropertyType p:
-                    return GetValueFromProperty(p, t.Self);
+                    return GetValueFromProperty(p, t.Self, expr);
                 case IPythonIteratorType _ when t.Self is IPythonCollection seq:
                     return seq.GetIterator();
             }
@@ -202,10 +207,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        private IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance) {
+        private IMember GetValueFromProperty(IPythonPropertyType p, IPythonInstance instance, CallExpression expr) {
             // Function may not have been walked yet. Do it now.
             SymbolTable.Evaluate(p.FunctionDefinition);
-            return instance.Call(p.Name, ArgumentSet.Empty);
+            return instance.Call(p.Name, ArgumentSet.Empty(expr, this));
         }
 
 
@@ -319,6 +324,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
             // For regular bound methods add first parameter and set it to the class.
+            ValidateParameters(fd);
 
             var parameters = new List<ParameterInfo>();
             var skip = 0;
@@ -341,6 +347,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Declare parameters in scope
             for (var i = skip; i < fd.Parameters.Length; i++) {
                 var p = fd.Parameters[i];
+
                 if (!string.IsNullOrEmpty(p.Name)) {
                     var defaultValue = GetValueFromExpression(p.DefaultValue);
                     var paramType = GetTypeFromAnnotation(p.Annotation, out var isGeneric) ?? UnknownType;
@@ -365,6 +372,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
             return parameters;
+        }
+
+        private void ValidateParameters(FunctionDefinition fd) {
+            var duplicates = fd.Parameters.Where(p => !string.IsNullOrEmpty(p.Name)).GroupBy(p => p.Name).Where(g => g.Count() > 1).Select(y => y.Key);
+
+            foreach (var paramName in duplicates) {
+                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
+                    Resources.DuplicateArgumentName.FormatInvariant(paramName),
+                    GetLocation(fd.NameExpression).Span,
+                    ErrorCodes.DuplicateArgumentName,
+                    Severity.Error,
+                    DiagnosticSource.Analysis
+                ));
+            }
         }
 
         private void DeclareParameter(Parameter p, ParameterInfo pi) {

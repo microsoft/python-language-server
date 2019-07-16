@@ -76,6 +76,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 if (m is IVariable v && v.Source != VariableSource.Declaration) {
                     continue;
                 }
+
                 // If this is class member completion, unmangle private member names.
                 var unmangledName = cls.UnmangleMemberName(t);
                 if (!string.IsNullOrEmpty(unmangledName)) {

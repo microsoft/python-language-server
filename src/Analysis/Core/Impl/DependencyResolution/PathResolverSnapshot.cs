@@ -141,7 +141,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             }
 
             var rootEdges = _roots.Select((r, i) => new Edge(i, r));
-            if (!lastEdge.IsEmpty && !forceAbsolute) {
+            if (!lastEdge.IsEmpty && !forceAbsolute && !lastEdge.Previous.IsFirst) {
                 rootEdges = rootEdges.Prepend(lastEdge.Previous);
             }
 
@@ -711,7 +711,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             var rootIndex = 0;
             while (rootIndex < _roots.Count) {
                 var rootPath = _roots[rootIndex].Name;
-                if (normalizedPath.PathStartsWith(rootPath) && IsRootedPathEndsWithValidNames(normalizedPath, rootPath.Length)) {
+                if (PathUtils.PathStartsWith(normalizedPath, rootPath) && IsRootedPathEndsWithValidNames(normalizedPath, rootPath.Length)) {
                     break;
                 }
 

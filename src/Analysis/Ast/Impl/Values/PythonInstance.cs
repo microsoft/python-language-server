@@ -49,14 +49,14 @@ namespace Microsoft.Python.Analysis.Values {
             return null;
         }
 
-        public virtual IMember Index(object index) => this; // Helps with str slicing
+        public virtual IMember Index(IArgumentSet args) => this; // Helps with str slicing
 
         protected IMember UnknownType => Type.DeclaringModule.Interpreter.UnknownType;
 
         public virtual IPythonIterator GetIterator() {
             var iteratorFunc = Type.GetMember(@"__iter__") as IPythonFunctionType;
             var o = iteratorFunc?.Overloads.FirstOrDefault();
-            var instance = o?.Call(ArgumentSet.Empty, Type);
+            var instance = o?.Call(ArgumentSet.WithoutContext, Type);
             if (instance != null) {
                 return new PythonInstanceIterator(instance, Type.DeclaringModule.Interpreter);
             }

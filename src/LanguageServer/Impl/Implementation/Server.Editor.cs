@@ -42,8 +42,20 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var result = _completionSource.GetCompletions(analysis, @params.position);
                 res.items = result?.Completions?.ToArray() ?? Array.Empty<CompletionItem>();
 
-                await InvokeExtensionsAsync((ext, token)
-                    => (ext as ICompletionExtension)?.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken), cancellationToken);
+                await InvokeExtensionsAsync(async (ext, token)
+                    => {
+                        switch (ext) {
+                            case ICompletionExtension2 e:
+                                await e.HandleCompletionAsync(analysis, @params.position, res, cancellationToken);
+                                break;
+                            case ICompletionExtension e:
+                                await e.HandleCompletionAsync(analysis, @params.position, res.items.OfType<CompletionItemEx>().ToArray(), cancellationToken);
+                                break;
+                            default:
+                                // ext is not a completion extension, ignore it.
+                                break;
+                        }
+                    }, cancellationToken);
             }
 
             return res;
@@ -78,6 +90,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
             var reference = new DefinitionSource(Services).FindDefinition(analysis, @params.position, out _);
             return reference != null ? new[] { reference } : Array.Empty<Reference>();
+        }
+
+        public async Task<Location> GotoDeclaration(TextDocumentPositionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Goto Declaration in {uri} at {@params.position}");
+
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
+            var reference = new DeclarationSource(Services).FindDefinition(analysis, @params.position, out _);
+            return reference != null ? new Location { uri = reference.uri, range = reference.range} : null;
         }
 
         public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {

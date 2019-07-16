@@ -35,6 +35,6 @@ namespace Microsoft.Python.Analysis.Values {
         /// <summary>
         /// Invokes indexer the instance.
         /// </summary>
-        IMember Index(object index);
+        IMember Index(IArgumentSet args);
     }
 }

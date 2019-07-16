@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region IScope
         public string Name => Node?.Name ?? "<global>";
-        public virtual ScopeStatement Node => Module.GetAstNode<ScopeStatement>(this);
+        public virtual ScopeStatement Node => Module.GetAstNode<ScopeStatement>(this) ?? Module.GetAst();
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
 
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Values {
                 return;
             }
 
-            var location = new Location(Module, default);
+            var location = new Location(Module);
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var objType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
 
@@ -126,9 +126,9 @@ namespace Microsoft.Python.Analysis.Values {
         }
         public IPythonModule Module { get; }
         public string Name => string.Empty;
-        public ScopeStatement Node => null;
+        public ScopeStatement Node => Module.Analysis.Ast;
         public IScope OuterScope => null;
-        public IGlobalScope GlobalScope { get; protected set; }
+        public IGlobalScope GlobalScope { get; }
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);

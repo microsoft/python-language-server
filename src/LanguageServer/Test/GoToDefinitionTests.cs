@@ -158,7 +158,7 @@ log
         }
 
         [TestMethod, Priority(0)]
-        public async Task GotoModuleSourceFromImport1() {
+        public async Task GotoModuleSourceFromImport() {
             const string code = @"from logging import A";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var ds = new DefinitionSource(Services);
@@ -171,13 +171,33 @@ log
         }
 
         [TestMethod, Priority(0)]
-        public async Task GotoModuleSourceFromImport2() {
+        public async Task GotoDefitionFromImport() {
             const string code = @"
 from MultiValues import t
 x = t
 ";
             var analysis = await GetAnalysisAsync(code);
             var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 5), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 0, 2, 1);
+            reference.uri.AbsolutePath.Should().Contain("MultiValues.py");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 25), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 0, 2, 1);
+            reference.uri.AbsolutePath.Should().Contain("MultiValues.py");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoDeclarationFromImport() {
+            const string code = @"
+from MultiValues import t
+x = t
+";
+            var analysis = await GetAnalysisAsync(code);
+            var ds = new DeclarationSource(Services);
 
             var reference = ds.FindDefinition(analysis, new SourceLocation(3, 5), out _);
             reference.Should().NotBeNull();
@@ -203,15 +223,49 @@ x = t
         }
 
         [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromImportAs() {
+            const string code = @"
+from logging import critical as crit
+x = crit
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 6), out _);
+            reference.Should().NotBeNull();
+            reference.range.start.line.Should().BeGreaterThan(500);
+            reference.uri.AbsolutePath.Should().Contain("logging");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoDeclarationFromImportAs() {
+            const string code = @"
+from logging import critical as crit
+x = crit
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DeclarationSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 6), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(1, 32, 1, 36);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GotoBuiltinObject() {
             const string code = @"
 class A(object):
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            var ds = new DefinitionSource(Services);
 
-            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 12), out _);
+            var ds1 = new DefinitionSource(Services);
+            var reference = ds1.FindDefinition(analysis, new SourceLocation(2, 12), out _);
+            reference.Should().BeNull();
+
+            var ds2 = new DeclarationSource(Services);
+            reference = ds2.FindDefinition(analysis, new SourceLocation(2, 12), out _);
             reference.Should().BeNull();
         }
 
@@ -328,8 +382,8 @@ class MainClass:
     def foo(self):
         return self.bar.get_name()
 ";
-            var root = TestData.GetTestSpecificRootUri().AbsolutePath;
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
 
             var mainPath = TestData.GetTestSpecificUri("main.py");

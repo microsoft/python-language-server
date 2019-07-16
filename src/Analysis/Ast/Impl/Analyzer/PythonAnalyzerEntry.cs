@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -32,13 +33,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly object _syncObj = new object();
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
         private IPythonModule _module;
-        private bool _isUserModule;
+        private ModuleType _moduleType;
+        private PythonAst _ast;
         private IDocumentAnalysis _previousAnalysis;
         private HashSet<AnalysisModuleKey> _parserDependencies;
         private HashSet<AnalysisModuleKey> _analysisDependencies;
         private int _bufferVersion;
         private int _analysisVersion;
-        private int _depth;
 
         public IPythonModule Module {
             get {
@@ -48,11 +49,25 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
+        public bool IsUserOrBuiltin {
+            get {
+                lock (_syncObj) {
+                    return _moduleType == ModuleType.User || _moduleType == ModuleType.Builtins;
+                }
+            }
+        }
+
         public bool IsUserModule {
             get {
                 lock (_syncObj) {
-                    return _isUserModule;
+                    return _moduleType == ModuleType.User;
                 }
+            }
+        }
+
+        public bool IsAnalyzedLibrary(int analysisVersion) {
+            lock (_syncObj) {
+                return analysisVersion == _analysisVersion && _analysisTcs.Task.Status == TaskStatus.RanToCompletion && _analysisTcs.Task.Result is LibraryAnalysis;
             }
         }
 
@@ -74,21 +89,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public int Depth {
-            get {
-                lock (_syncObj) {
-                    return _depth;
-                }
-            }
-        }
-
         public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis;
         
         public PythonAnalyzerEntry(EmptyAnalysis emptyAnalysis) {
             _previousAnalysis = emptyAnalysis;
             _module = emptyAnalysis.Document;
-            _isUserModule = emptyAnalysis.Document.ModuleType == ModuleType.User;
-            _depth = _isUserModule ? 0 : -1;
+            _moduleType = _module.ModuleType;
 
             _bufferVersion = -1;
             _analysisVersion = 0;
@@ -101,12 +107,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public bool IsValidVersion(int version, out IPythonModule module, out PythonAst ast) {
             lock (_syncObj) {
                 module = _module;
-                ast = module.GetAst();
-                if (ast == null || module == null) {
+                ast = _ast;
+
+                if (module == null) {
                     return false;
                 }
 
-                return _previousAnalysis is EmptyAnalysis || _isUserModule || _analysisVersion <= version;
+                if (ast == null) {
+                    Debug.Assert(!(_previousAnalysis is LibraryAnalysis), $"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                    return false;
+                }
+
+                return _previousAnalysis is EmptyAnalysis || _moduleType == ModuleType.User || _analysisVersion <= version;
             }
         }
 
@@ -118,6 +130,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 if (_analysisVersion > version) {
                     return;
+                }
+
+                if (analysis is LibraryAnalysis) {
+                    _ast = null;
+                    _parserDependencies = null;
                 }
 
                 _analysisDependencies = null;
@@ -209,20 +226,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public bool Invalidate(IPythonModule module, int bufferVersion, int analysisVersion, out ImmutableArray<AnalysisModuleKey> dependencies) {
+        public bool Invalidate(IPythonModule module, PythonAst ast, int bufferVersion, int analysisVersion, out ImmutableArray<AnalysisModuleKey> dependencies) {
             dependencies = ImmutableArray<AnalysisModuleKey>.Empty;
             if (_bufferVersion >= bufferVersion) {
                 return false;
             }
 
-            var dependenciesHashSet = FindDependencies(module, bufferVersion);
+            var dependenciesHashSet = FindDependencies(module, ast, bufferVersion);
             lock (_syncObj) {
                 if (_analysisVersion >= analysisVersion && _bufferVersion >= bufferVersion) {
                     return false;
                 }
 
+                _ast = ast;
                 _module = module;
-                _isUserModule = module.ModuleType == ModuleType.User;
+                _moduleType = module.ModuleType;
                 _parserDependencies = dependenciesHashSet;
 
                 Interlocked.Exchange(ref _bufferVersion, bufferVersion);
@@ -234,13 +252,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module,  int bufferVersion) {
+        private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module, PythonAst ast, int bufferVersion) {
             if (_bufferVersion > bufferVersion) {
                 return new HashSet<AnalysisModuleKey>();
             }
 
             var walker = new DependencyWalker(module);
-            module.GetAst().Walk(walker);
+            ast.Walk(walker);
             var dependencies = walker.Dependencies;
             dependencies.Remove(new AnalysisModuleKey(module));
             return dependencies;
@@ -285,8 +303,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             public override bool Walk(ImportStatement import) {
+                var forceAbsolute = import.ForceAbsolute;
                 foreach (var moduleName in import.Names) {
-                    HandleSearchResults(_pathResolver.FindImports(_module.FilePath, moduleName, import.ForceAbsolute));
+                    var importNames = ImmutableArray<string>.Empty;
+                    foreach (var nameExpression in moduleName.Names) {
+                        importNames = importNames.Add(nameExpression.Name);
+                        var imports = _pathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, forceAbsolute);
+                        HandleSearchResults(imports);
+                    }
                 }
 
                 return false;

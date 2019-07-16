@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -47,7 +46,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var fn = instance.GetPythonType()?.GetMember<IPythonFunctionType>(op);
                 // Process functions declared in code modules. Scraped/compiled/stub modules do not actually perform any operations.
                 if (fn?.DeclaringModule != null && (fn.DeclaringModule.ModuleType == ModuleType.User || fn.DeclaringModule.ModuleType == ModuleType.Library)) {
-                    var result = fn.Call(instance, op, ArgumentSet.Empty);
+                    var result = fn.Call(instance, op, ArgumentSet.Empty(expr, this));
                     if (!result.IsUnknown()) {
                         return result;
                     }
@@ -132,9 +131,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (op.IsComparison()) {
                     // If the op is a comparison, and the thing on the left is the builtin,
                     // flip the operation and call it instead.
-                    ret = CallOperator(op.InvertComparison(), right, rightType, left, leftType, tryRight: false);
+                    ret = CallOperator(op.InvertComparison(), right, rightType, left, leftType, expr, tryRight: false);
                 } else {
-                    ret = CallOperator(op, left, leftType, right, rightType, tryLeft: false);
+                    ret = CallOperator(op, left, leftType, right, rightType, expr, tryLeft: false);
                 }
 
                 if (!ret.IsUnknown()) {
@@ -146,7 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             if (rightIsSupported) {
                 // Try calling the function on the left side, otherwise just return right.
-                var ret = CallOperator(op, left, leftType, right, rightType, tryRight: false);
+                var ret = CallOperator(op, left, leftType, right, rightType, expr, tryRight: false);
 
                 if (!ret.IsUnknown()) {
                     return ret;
@@ -155,13 +154,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : right;
             }
 
-            var callRet = CallOperator(op, left, leftType, right, rightType);
+            var callRet = CallOperator(op, left, leftType, right, rightType, expr);
             if (!callRet.IsUnknown()) {
                 return callRet;
             }
 
             if (op.IsComparison()) {
-                callRet = CallOperator(op.InvertComparison(), right, rightType, left, leftType);
+                callRet = CallOperator(op.InvertComparison(), right, rightType, left, leftType, expr);
 
                 if (!callRet.IsUnknown()) {
                     return callRet;
@@ -197,18 +196,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return left.IsUnknown() ? right : left;
         }
 
-        private IMember CallOperator(PythonOperator op, IMember left, IPythonType leftType, IMember right, IPythonType rightType, bool tryLeft = true, bool tryRight = true) {
+        private IMember CallOperator(PythonOperator op, IMember left, IPythonType leftType, IMember right, IPythonType rightType, Expression expr, bool tryLeft = true, bool tryRight = true) {
             var (funcName, swappedFuncName) = OpMethodName(op);
 
             if (tryLeft && funcName != null && left is IPythonInstance lpi) {
-                var ret = leftType.Call(lpi, funcName, new ArgumentSet(new[] { right }));
+                var ret = leftType.Call(lpi, funcName, new ArgumentSet(new[] { right }, expr, this));
                 if (!ret.IsUnknown()) {
                     return ret;
                 }
             }
 
             if (tryRight && swappedFuncName != null && right is IPythonInstance rpi) {
-                var ret = rightType.Call(rpi, swappedFuncName, new ArgumentSet(new[] { left }));
+                var ret = rightType.Call(rpi, swappedFuncName, new ArgumentSet(new[] { left }, expr, this));
                 if (!ret.IsUnknown()) {
                     return ret;
                 }

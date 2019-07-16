@@ -18,9 +18,6 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
     public static class AstUtilities {
-        public static IImportSearchResult FindImports(this PathResolverSnapshot pathResolver, string modulePath, ModuleName importName, bool forceAbsolute) 
-            => pathResolver.GetImportsFromAbsoluteName(modulePath, importName.Names.Select(n => n.Name), forceAbsolute);
-
         public static IImportSearchResult FindImports(this PathResolverSnapshot pathResolver, string modulePath, FromImportStatement fromImportStatement) {
             var rootNames = fromImportStatement.Root.Names.Select(n => n.Name);
             return fromImportStatement.Root is RelativeModuleName relativeName

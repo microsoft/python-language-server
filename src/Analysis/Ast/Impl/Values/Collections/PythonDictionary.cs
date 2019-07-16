@@ -62,15 +62,26 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
 
         public override IPythonIterator GetIterator() =>
-            Call(@"iterkeys", ArgumentSet.Empty) as IPythonIterator ?? new EmptyIterator(Type.DeclaringModule.Interpreter.UnknownType);
+            Call(@"iterkeys", ArgumentSet.WithoutContext) as IPythonIterator ?? new EmptyIterator(Type.DeclaringModule.Interpreter.UnknownType);
 
-        public override IMember Index(object key) => key is IMember m ? this[m] : UnknownType;
+        public override IMember Index(IArgumentSet args) {
+            if (args.Arguments.Count == 1) {
+                return args.Arguments[0].Value is IMember m ? this[m] : UnknownType;
+            }
+            return UnknownType;
+        }
 
         public override IMember Call(string memberName, IArgumentSet args) {
             // Specializations
             switch (memberName) {
                 case @"get":
-                    return args.Arguments.Count > 1 ? Index(args.Arguments[1].Value) : _interpreter.UnknownType;
+                    // d = {}
+                    // d.get("test", 3.14), 3.14 is the default value so we infer the type of the return from it
+                    if (args.Arguments.Count > 1) {
+                        var defaultArg = args.Arguments[1].Value as IMember;
+                        return Index(new ArgumentSet(new List<IMember>() { defaultArg }, args.Expression, args.Eval));
+                    }
+                    return _interpreter.UnknownType;
                 case @"items":
                     return CreateList(Items);
                 case @"keys":

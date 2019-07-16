@@ -33,6 +33,8 @@ namespace Microsoft.Python.Analysis {
                     eval.LookupNameInScopes(name, out _, out var v, LookupOptions.Local);
                     v?.AddReference(location);
                 }
+            } else if (type is IPythonModule module && module.GlobalScope != null && module.GlobalScope.Variables.TryGetVariable(name, out var variable)) {
+                variable.AddReference(location);
             }
         }
 

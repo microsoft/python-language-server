@@ -54,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     return Array.Empty<Reference>();
                 }
 
-                var rootDefinition = GetRootDefinition(definingMember);
+                var rootDefinition = definingMember.GetRootDefinition();
                 var name = definingMember.GetName();
 
                 // If it is an implicitly declared variable, such as function or a class
@@ -83,7 +83,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     return Array.Empty<Reference>();
                 }
 
-                rootDefinition = GetRootDefinition(definingMember);
+                rootDefinition = definingMember.GetRootDefinition();
             }
 
             return rootDefinition.References
@@ -121,6 +121,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     }
 
                     var content = fs.ReadTextWithRetry(filePath);
+                    if (content == null) {
+                        continue;
+                    }
+
                     if (content.Contains(name)) {
                         files.Add(uri);
                     }
@@ -146,21 +150,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             return analysisTasks.Count > 0;
-        }
-
-        private ILocatedMember GetRootDefinition(ILocatedMember lm) {
-            if (!(lm is IImportedMember im) || im.Parent == null) {
-                return lm;
-            }
-
-            var parent = im.Parent;
-            for (; parent != null;) {
-                if (!(parent is IImportedMember im1) || im1.Parent == null) {
-                    break;
-                }
-                parent = im1.Parent;
-            }
-            return parent;
         }
     }
 }

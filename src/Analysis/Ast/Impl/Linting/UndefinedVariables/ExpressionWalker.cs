@@ -98,7 +98,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             //    y = x
             //    x = 1
             var variableDefinitionSpan = v.Definition.Span;
-            var nameUseLocation = node.GetLocation(analysis.Document);
+            var nameUseLocation = node.GetLocation(analysis);
 
             // Make sure we are in the same scope in order to avoid
             //    def func():
