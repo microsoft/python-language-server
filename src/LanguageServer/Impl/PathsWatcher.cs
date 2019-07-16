@@ -43,6 +43,7 @@ namespace Microsoft.Python.LanguageServer {
             _onChanged = onChanged;
 
             var reduced = ReduceToCommonRoots(paths);
+
             foreach (var p in reduced) {
                 try {
                     if (!Directory.Exists(p)) {
@@ -53,20 +54,29 @@ namespace Microsoft.Python.LanguageServer {
                     continue;
                 }
 
+                _log.Log(TraceEventType.Verbose, $"Watching {p}");
+
                 try {
                     var fsw = new System.IO.FileSystemWatcher(p) {
                         IncludeSubdirectories = true,
                         EnableRaisingEvents = true,
-                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
+                        InternalBufferSize = 1 << 16, // Max buffer size of 64 KB
                     };
 
+                    fsw.Changed += OnChanged;
                     fsw.Created += OnChanged;
                     fsw.Deleted += OnChanged;
+                    fsw.Renamed += OnChanged;
+
+                    fsw.Filter = "*.p*"; // .py, .pyc, .pth - TODO: Use Filters in .NET Core 3.0.
 
                     _disposableBag
                         .Add(() => _throttleTimer?.Dispose())
+                        .Add(() => fsw.Changed -= OnChanged)
                         .Add(() => fsw.Created -= OnChanged)
                         .Add(() => fsw.Deleted -= OnChanged)
+                        .Add(() => fsw.Renamed -= OnChanged)
                         .Add(() => fsw.EnableRaisingEvents = false)
                         .Add(fsw);
                 } catch (ArgumentException ex) {

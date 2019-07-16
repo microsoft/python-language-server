@@ -50,6 +50,13 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<DocumentAnalysisAssertions, IVariable>(this, constraint.Which);
         }
 
+        public AndWhichConstraint<DocumentAnalysisAssertions, IVariable> HaveGenericVariable(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+            var constraint = _scopeAssertions.HaveGenericVariable(name, because, reasonArgs);
+            return new AndWhichConstraint<DocumentAnalysisAssertions, IVariable>(this, constraint.Which);
+        }
+
+
         public AndConstraint<DocumentAnalysisAssertions> HaveClassVariables(params string[] classNames)
             => HaveClassVariables(classNames, string.Empty);
 
@@ -59,7 +66,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndConstraint<DocumentAnalysisAssertions>(this);
         }
 
-        public AndConstraint<DocumentAnalysisAssertions> HaveFunctionVariables(params string[] functionNames) 
+        public AndConstraint<DocumentAnalysisAssertions> HaveFunctionVariables(params string[] functionNames)
             => HaveFunctionVariables(functionNames, string.Empty);
 
         public AndConstraint<DocumentAnalysisAssertions> HaveFunctionVariables(IEnumerable<string> functionNames, string because = "", params object[] reasonArgs) {

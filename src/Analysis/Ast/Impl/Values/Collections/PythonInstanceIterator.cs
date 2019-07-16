@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         public IPythonIterator GetIterator() => this;
         public IPythonType Type { get; }
         public IMember Call(string memberName, IArgumentSet args) => Type;
-        public IMember Index(object index) => Type;
+        public IMember Index(IArgumentSet args) => Type;
         public IMember Next => Type;
     }
 }

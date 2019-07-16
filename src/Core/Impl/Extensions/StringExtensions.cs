@@ -146,9 +146,6 @@ namespace Microsoft.Python.Core {
             return "\"{0}\"".FormatInvariant(arg);
         }
 
-        public static bool PathStartsWith(this string s, string prefix)
-            => s?.StartsWith(prefix, PathsStringComparison) ?? false;
-
         public static bool StartsWithOrdinal(this string s, string prefix, bool ignoreCase = false)
             => s?.StartsWith(prefix, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ?? false;
 
@@ -203,6 +200,9 @@ namespace Microsoft.Python.Core {
 
         public static bool PathEquals(this string s, string other)
             => string.Equals(s, other, PathsStringComparison);
+
+        public static int PathCompare(this string s, string other)
+            => string.Compare(s, other, PathsStringComparison);
 
         public static bool EqualsOrdinal(this string s, int index, string other, int otherIndex, int length, bool ignoreCase = false)
             => string.Compare(s, index, other, otherIndex, length, ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) == 0;

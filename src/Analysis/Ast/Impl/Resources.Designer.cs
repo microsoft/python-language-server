@@ -133,6 +133,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicate argument name &apos;{0}&apos; in function definition..
+        /// </summary>
+        internal static string DuplicateArgumentName {
+            get {
+                return ResourceManager.GetString("DuplicateArgumentName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Environment variable &apos;{0}&apos; is not set, using the default cache location instead..
         /// </summary>
         internal static string EnvVariableNotSet {
@@ -222,6 +231,15 @@ namespace Microsoft.Python.Analysis {
             }
         }
         
+        /// <summary>
+        ///   Looks up a localized string similar to Function already defined at line {0}..
+        /// </summary>
+        internal static string FunctionRedefined {
+            get {
+                return ResourceManager.GetString("FunctionRedefined", resourceCulture);
+	    }
+	}
+
         /// <summary>
         ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
         /// </summary>

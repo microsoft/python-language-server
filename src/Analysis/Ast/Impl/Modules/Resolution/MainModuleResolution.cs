@@ -37,7 +37,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
         private IRunningDocumentTable _rdt;
-        private IReadOnlyList<string> _searchPaths;
+
+        private IEnumerable<string> _userPaths = Enumerable.Empty<string>();
 
         public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
@@ -62,29 +63,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             cancellationToken.ThrowIfCancellationRequested();
         }
 
-        public async Task<IReadOnlyList<string>> GetSearchPathsAsync(CancellationToken cancellationToken = default) {
-            if (_searchPaths != null) {
-                return _searchPaths;
-            }
-
-            _searchPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            Debug.Assert(_searchPaths != null, "Should have search paths");
-            _searchPaths = _searchPaths ?? Array.Empty<string>();
-
-            _log?.Log(TraceEventType.Verbose, "Python search paths:");
-            foreach (var s in _searchPaths) {
-                _log?.Log(TraceEventType.Verbose, $"    {s}");
-            }
-
-            var configurationSearchPaths = Configuration.SearchPaths ?? Array.Empty<string>();
-
-            _log?.Log(TraceEventType.Verbose, "Configuration search paths:");
-            foreach (var s in configurationSearchPaths) {
-                _log?.Log(TraceEventType.Verbose, $"    {s}");
-            }
-            return _searchPaths;
-        }
-
         protected override IPythonModule CreateModule(string name) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport == null) {
@@ -99,7 +77,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     return module;
                 }
             }
-            
+
             // If there is a stub, make sure it is loaded and attached
             // First check stub next to the module.
             if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
@@ -135,11 +113,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return GetRdt().AddModule(mco);
         }
 
-        private async Task<IReadOnlyList<string>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {
+        private async Task<IReadOnlyList<PythonLibraryPath>> GetInterpreterSearchPathsAsync(CancellationToken cancellationToken = default) {
             if (!_fs.FileExists(Configuration.InterpreterPath)) {
                 _log?.Log(TraceEventType.Warning, "Interpreter does not exist:", Configuration.InterpreterPath);
                 _ui?.ShowMessageAsync(Resources.InterpreterNotFound, TraceEventType.Error);
-                return Array.Empty<string>();
+                return Array.Empty<PythonLibraryPath>();
             }
 
             _log?.Log(TraceEventType.Information, "GetCurrentSearchPaths", Configuration.InterpreterPath);
@@ -148,11 +126,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 var ps = _services.GetService<IProcessServices>();
                 var paths = await PythonLibraryPath.GetSearchPathsAsync(Configuration, fs, ps, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                return paths.MaybeEnumerate().Select(p => p.Path).ToArray();
+                return paths.ToArray();
             } catch (InvalidOperationException ex) {
                 _log?.Log(TraceEventType.Warning, "Exception getting search paths", ex);
                 _ui?.ShowMessageAsync(Resources.ExceptionGettingSearchPaths, TraceEventType.Error);
-                return Array.Empty<string>();
+                return Array.Empty<PythonLibraryPath>();
             }
         }
 
@@ -193,6 +171,26 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
         }
 
+        internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
+            var ps = _services.GetService<IProcessServices>();
+
+            var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
+
+            InterpreterPaths = interpreterPaths.Select(p => p.Path);
+            _userPaths = userPaths.Select(p => p.Path);
+
+            _log?.Log(TraceEventType.Information, "Interpreter search paths:");
+            foreach (var s in InterpreterPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+
+            _log?.Log(TraceEventType.Information, "User search paths:");
+            foreach (var s in _userPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+        }
+
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             foreach (var uri in Modules
                 .Where(m => m.Value.Value?.Name != BuiltinModuleName)
@@ -200,7 +198,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 .ExcludeDefault()) {
                 GetRdt()?.UnlockDocument(uri);
             }
-            
+
             // Preserve builtins, they don't need to be reloaded since interpreter does not change.
             var builtins = Modules[BuiltinModuleName];
             Modules.Clear();
@@ -211,34 +209,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var addedRoots = new HashSet<string>();
             addedRoots.UnionWith(PathResolver.SetRoot(Root));
 
-            InterpreterPaths = await GetSearchPathsAsync(cancellationToken);
-
-            IEnumerable<string> userSearchPaths = Configuration.SearchPaths;
-            InterpreterPaths = InterpreterPaths.Except(userSearchPaths, StringExtensions.PathsStringComparer).Where(p => !p.PathEquals(Root));
-
-            if (Root != null) {
-                var underRoot = userSearchPaths.ToLookup(p => _fs.IsPathUnderRoot(Root, p));
-                userSearchPaths = underRoot[true];
-                InterpreterPaths = underRoot[false].Concat(InterpreterPaths);
-            }
-
-            _log?.Log(TraceEventType.Information, "Interpreter search paths:");
-            foreach (var s in InterpreterPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
-            }
-
-            _log?.Log(TraceEventType.Information, "User search paths:");
-            foreach (var s in userSearchPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
-            }
+            await ReloadSearchPaths(cancellationToken);
 
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
-            addedRoots.UnionWith(SetUserSearchPaths(userSearchPaths));
+            addedRoots.UnionWith(PathResolver.SetUserSearchPaths(_userPaths));
             ReloadModulePaths(addedRoots);
         }
-
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) 
-            => PathResolver.SetUserSearchPaths(searchPaths);
 
         // For tests
         internal void AddUnimportableModule(string moduleName)

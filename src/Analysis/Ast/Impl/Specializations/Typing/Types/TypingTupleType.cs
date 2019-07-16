@@ -44,8 +44,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override IMember CreateInstance(string typeName, IArgumentSet args)
             => new TypingTuple(this);
 
-        public override IMember Index(IPythonInstance instance, object index) {
-            var n = PythonCollection.GetIndex(index);
+        public override IMember Index(IPythonInstance instance, IArgumentSet args) {
+            var n = PythonCollection.GetIndex(args);
             if (n < 0) {
                 n = ItemTypes.Count + n; // -1 means last, etc.
             }
