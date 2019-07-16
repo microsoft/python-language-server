@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
         }
-        
+
         public int BufferVersion => _bufferVersion;
 
         public int AnalysisVersion {
@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public bool NotAnalyzed => PreviousAnalysis is EmptyAnalysis;
-        
+
         public PythonAnalyzerEntry(EmptyAnalysis emptyAnalysis) {
             _previousAnalysis = emptyAnalysis;
             _module = emptyAnalysis.Document;
@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
-        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken) 
+        public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken)
             => _analysisTcs.Task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken);
 
         public bool IsValidVersion(int version, out IPythonModule module, out PythonAst ast) {
@@ -164,7 +164,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 _analysisVersion = version;
             }
-            
+
             _analysisTcs.TrySetCanceled(oce.CancellationToken);
         }
 
@@ -222,7 +222,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     dependencies = _parserDependencies != null
                         ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
                         : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);
-                } else if(_parserDependencies != null) {
+                } else if (_parserDependencies != null) {
                     dependencies = ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies);
                 }
 
@@ -249,7 +249,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 Interlocked.Exchange(ref _bufferVersion, bufferVersion);
                 UpdateAnalysisTcs(analysisVersion);
-                dependencies = _analysisDependencies != null 
+                dependencies = _analysisDependencies != null
                     ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
                     : ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies);
                 return true;
