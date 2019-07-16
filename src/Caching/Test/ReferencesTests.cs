@@ -19,7 +19,9 @@ using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 using TestUtilities;
+using Microsoft.Python.Analysis.Modules;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
     [TestClass]
@@ -89,6 +91,35 @@ class B:
                 methodB2.Should().NotBeNull();
                 methodB2.Definition.Span.Should().Be(20, 9, 20, 17);
             }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Logging() {
+            const string code = @"
+import logging
+logging.critical()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var logging = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("logging");
+            var model = ModuleModel.FromAnalysis(logging.Analysis, Services);
+
+            var dbModule = new PythonDbModule(model, logging.FilePath, Services);
+            analysis.Document.Interpreter.ModuleResolution.SpecializeModule("logging", x => dbModule);
+
+            var moduleName = $"{analysis.Document.Name}_db.py";
+            var modulePath = TestData.GetTestSpecificPath(moduleName);
+            analysis = await GetAnalysisAsync(code, Services, moduleName, modulePath);
+
+            var v = analysis.Should().HaveVariable("logging").Which;
+            var vm = v.Value.Should().BeOfType<PythonVariableModule>().Which;
+            var m = vm.Module.Should().BeOfType<PythonDbModule>().Which;
+
+            var critical = m.GetMember("critical") as IPythonFunctionType;
+            critical.Should().NotBeNull();
+
+            var span = critical.Definition.Span;
+            span.Start.Line.Should().BeGreaterThan(1000);
+            (span.End.Column - span.Start.Column).Should().Be("critical".Length);
         }
     }
 }

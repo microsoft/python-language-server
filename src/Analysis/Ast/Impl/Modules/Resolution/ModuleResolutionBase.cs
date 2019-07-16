@@ -86,13 +86,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
-            if (Modules.TryGetValue(name, out var moduleRef)) {
-                return moduleRef.GetOrCreate(name, this);
-            }
-
+            // Specialization should always win.
             var module = _interpreter.ModuleResolution.GetSpecializedModule(name);
             if (module != null) {
                 return module;
+            }
+
+            if (Modules.TryGetValue(name, out var moduleRef)) {
+                return moduleRef.GetOrCreate(name, this);
             }
 
             moduleRef = Modules.GetOrAdd(name, new ModuleRef());

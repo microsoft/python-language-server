@@ -146,6 +146,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var import = CurrentPathResolver.GetModuleImportFromModuleName(name);
             var module = specializationConstructor(import?.ModulePath);
             _specialized[name] = module;
+
+            // Remove real module if it exists. This is normally only used in test.
+            Modules.TryRemove(name, out _);
             return module;
         }
 
