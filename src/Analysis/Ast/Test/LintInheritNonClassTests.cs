@@ -354,5 +354,20 @@ class C(test):
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("test"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromVarThatHoldsType() {
+            const string code = @"
+class A: pass
+
+a = A
+
+class B(a):
+    pass
+b = B()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }
