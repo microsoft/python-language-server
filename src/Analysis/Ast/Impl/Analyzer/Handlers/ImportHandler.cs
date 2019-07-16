@@ -55,22 +55,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // import_module('fob.oar')
             // import_module('fob.oar.baz')
             var importNames = ImmutableArray<string>.Empty;
-            var variableModule = default(PythonVariableModule);
+            var lastModule = default(PythonVariableModule);
+            var firstModule = default(PythonVariableModule);
             foreach (var nameExpression in moduleImportExpression.Names) {
                 importNames = importNames.Add(nameExpression.Name);
                 var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, forceAbsolute);
-                if (!HandleImportSearchResult(imports, variableModule, asNameExpression, moduleImportExpression, out variableModule)) {
-                    return;
+                if (!HandleImportSearchResult(imports, lastModule, asNameExpression, moduleImportExpression, out lastModule)) {
+                    lastModule = default;
+                    break;
+                }
+
+                if (firstModule == default) {
+                    firstModule = lastModule;
                 }
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (!string.IsNullOrEmpty(asNameExpression?.Name)) {
-                Eval.DeclareVariable(asNameExpression.Name, variableModule, VariableSource.Import, asNameExpression);
-            } else if (importNames.Count > 0 && !string.IsNullOrEmpty(importNames[0]) && _variableModules.TryGetValue(importNames[0], out variableModule)) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
+                Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
+            } else if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
                 var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], variableModule, VariableSource.Import, firstName);
+                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
             }
         }
 
@@ -87,7 +93,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 case RelativeImportBeyondTopLevel importBeyondTopLevel:
                     var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
                     Eval.ReportDiagnostics(Eval.Module.Uri, 
-                        new DiagnosticsEntry(message, location.GetLocation(Eval.Module).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
+                        new DiagnosticsEntry(message, location.GetLocation(Eval).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
                     variableModule = default;
                     return false;
                 case ImportNotFound importNotFound:

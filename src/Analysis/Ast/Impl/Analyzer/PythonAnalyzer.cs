@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
@@ -31,6 +32,7 @@ using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
@@ -68,9 +70,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
-            var key = new AnalysisModuleKey(module);
             PythonAnalyzerEntry entry;
             lock (_syncObj) {
+                var key = new AnalysisModuleKey(module);
                 if (!_analysisEntries.TryGetValue(key, out entry)) {
                     var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
                     entry = new PythonAnalyzerEntry(emptyAnalysis);
@@ -120,11 +122,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void RemoveAnalysis(IPythonModule module) {
+            AnalysisModuleKey key;
             lock (_syncObj) {
-                _analysisEntries.Remove(new AnalysisModuleKey(module));
+                key = new AnalysisModuleKey(module);
+                _analysisEntries.Remove(key);
             }
 
-            _dependencyResolver.Remove(new AnalysisModuleKey(module));
+            _dependencyResolver.Remove(key);
         }
 
         public void EnqueueDocumentForAnalysis(IPythonModule module, ImmutableArray<IPythonModule> analysisDependencies) {
@@ -144,16 +148,28 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public void EnqueueDocumentForAnalysis(IPythonModule module, int bufferVersion) {
-            var key = new AnalysisModuleKey(module);
+        public void EnqueueDocumentForAnalysis(IPythonModule module, PythonAst ast, int bufferVersion) {
             PythonAnalyzerEntry entry;
+            AnalysisModuleKey key;
             int version;
+
             lock (_syncObj) {
+                key = new AnalysisModuleKey(module);
                 version = _version + 1;
                 if (_analysisEntries.TryGetValue(key, out entry)) {
                     if (entry.BufferVersion >= bufferVersion) {
                         return;
                     }
+
+                    // It is possible that parsing request for the library has been started when document is open,
+                    // but it is closed at the moment of analysis and then become open again.
+                    // In this case, we still need to analyze the document, but using correct entry.
+                    var libraryAsDocumentKey = key.GetLibraryAsDocumentKey();
+                    if (entry.PreviousAnalysis is LibraryAnalysis && _analysisEntries.TryGetValue(libraryAsDocumentKey, out var documentEntry)) {
+                        key = libraryAsDocumentKey;
+                        entry = documentEntry;
+                    }
+
                 } else {
                     entry = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
                     _analysisEntries[key] = entry;
@@ -161,7 +177,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
 
-            if (entry.Invalidate(module, bufferVersion, version, out var dependencies)) {
+            if (entry.Invalidate(module, ast, bufferVersion, version, out var dependencies)) {
                 AnalyzeDocument(key, entry, dependencies);
             }
         }
@@ -174,7 +190,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Linter always runs no matter of the option since it looks up variables
             // which also enumerates and updates variable references for find all
             // references and rename operations.
-            var result = new LinterAggregator().Lint(module.Analysis, _services);
+            var result = new LinterAggregator().Lint(module, _services);
 
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
             return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
@@ -205,12 +221,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) 
             => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
 
-        private void AnalyzeDocument(AnalysisModuleKey key, PythonAnalyzerEntry entry, ImmutableArray<AnalysisModuleKey> dependencies) {
+        private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
             _analysisCompleteEvent.Reset();
             ActivityTracker.StartTracking();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
-            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserModule, dependencies);
+            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsLibraryAsDocument, dependencies);
 
             lock (_syncObj) {
                 if (_version > graphVersion) {
@@ -226,7 +242,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
         
-        private bool TryCreateSession(int graphVersion, PythonAnalyzerEntry entry, out PythonAnalyzerSession session) {
+        private bool TryCreateSession(in int graphVersion, in PythonAnalyzerEntry entry, out PythonAnalyzerSession session) {
             var analyzeUserModuleOutOfOrder = false;
             lock (_syncObj) {
                 if (_currentSession != null) {
@@ -244,11 +260,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (!_dependencyResolver.TryCreateWalker(graphVersion, 2, out var walker)) {
-                if (entry.Module.ModuleType == ModuleType.Builtins) {
-                    session = CreateSession(null, entry);
-                    return true;
-                }
-
                 session = null;
                 return false;
             }
@@ -290,7 +301,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             session.Start(false);
         }
 
-        private PythonAnalyzerSession CreateSession(IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, PythonAnalyzerEntry entry) 
+        private PythonAnalyzerSession CreateSession(in IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, in PythonAnalyzerEntry entry) 
             => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry);
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {

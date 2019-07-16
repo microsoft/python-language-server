@@ -99,23 +99,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void AddFunctionOrProperty(FunctionDefinition fd) {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
-            if (!TryAddProperty(fd, declaringType)) {
-                AddFunction(fd, declaringType);
+            var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local);
+
+            switch (existing?.MemberType) {
+                case PythonMemberType.Method:
+                case PythonMemberType.Function:
+                case PythonMemberType.Property:
+                    ReportRedefinedFunction(fd, existing as PythonType);
+                    break;
+            }
+
+            if (!TryAddProperty(fd, existing, declaringType)) {
+                AddFunction(fd, existing, declaringType);
             }
         }
 
-        private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
-            var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local) as PythonFunctionType;
-            if (existing is null) {
-                existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
+        private void AddFunction(FunctionDefinition fd, IMember existing, IPythonType declaringType) {
+            if (!(existing is PythonFunctionType f)) {
+                f = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
-            } else {
-                ReportRedefinedFunction(fd, existing);
+                _eval.DeclareVariable(fd.Name, f, VariableSource.Declaration);
             }
-
-            AddOverload(fd, existing, o => existing.AddOverload(o));
+            AddOverload(fd, f, o => f.AddOverload(o));
         }
 
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
@@ -156,31 +162,31 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return null;
         }
 
-        private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType) {
+        private bool TryAddProperty(FunctionDefinition node, IMember existing, IPythonType declaringType) {
             var dec = node.Decorators?.Decorators;
             var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
 
             foreach (var d in decorators.OfType<NameExpression>()) {
                 switch (d.Name) {
                     case @"property":
-                        AddProperty(node, declaringType, false);
+                        AddProperty(node, existing, declaringType, false);
                         return true;
                     case @"abstractproperty":
-                        AddProperty(node, declaringType, true);
+                        AddProperty(node, existing, declaringType, true);
                         return true;
                 }
             }
             return false;
         }
 
-        private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
-            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
+        private void AddProperty(FunctionDefinition fd, IMember existing, IPythonType declaringType, bool isAbstract) {
+            if (!(existing is PythonPropertyType p)) {
+                p = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+                _eval.DeclareVariable(fd.Name, p, VariableSource.Declaration);
             }
-            AddOverload(fd, existing, o => existing.AddOverload(o));
+            AddOverload(fd, p, o => p.AddOverload(o));
         }
 
         private IMember GetMemberFromStub(string name) {
@@ -210,8 +216,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return member;
         }
 
-        private void ReportRedefinedFunction(FunctionDefinition redefined, PythonFunctionType existing) {
-            var existingLoc = _eval.GetLocationInfo(existing.FunctionDefinition);
+        private void ReportRedefinedFunction(FunctionDefinition redefined, ILocatedMember existing) {
+            // get line number of existing function for diagnostic message
+            var existingLoc = existing.Definition;
             var existingLine = existingLoc.Span.Start.Line;
 
             _eval.ReportDiagnostics(

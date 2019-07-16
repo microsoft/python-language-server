@@ -121,6 +121,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     }
 
                     var content = fs.ReadTextWithRetry(filePath);
+                    if (content == null) {
+                        continue;
+                    }
+
                     if (content.Contains(name)) {
                         files.Add(uri);
                     }

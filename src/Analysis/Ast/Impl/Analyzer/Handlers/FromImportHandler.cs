@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
-                HandleModuleImportStar(variableModule);
+                HandleModuleImportStar(variableModule, imports is ImplicitPackageImport);
                 return;
             }
 
@@ -75,14 +75,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private void HandleModuleImportStar(PythonVariableModule variableModule) {
+        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage) {
             if (variableModule.Module == Module) {
                 // from self import * won't define any new members
                 return;
             }
 
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
-            var memberNames = variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
+            var memberNames = isImplicitPackage 
+                ? variableModule.GetMemberNames()
+                : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
             foreach (var memberName in memberNames) {
                 var member = variableModule.GetMember(memberName);
@@ -125,8 +127,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var printNameExpression = node.Names.FirstOrDefault(n => n?.Name == "print_function");
             if (printNameExpression != null) {
-                var fn = new PythonFunctionType("print", new Location(Module, default), null, string.Empty);
-                var o = new PythonFunctionOverload(fn.Name, new Location(Module, default));
+                var fn = new PythonFunctionType("print", new Location(Module), null, string.Empty);
+                var o = new PythonFunctionOverload(fn.Name, new Location(Module));
                 var parameters = new List<ParameterInfo> {
                     new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
                     new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),

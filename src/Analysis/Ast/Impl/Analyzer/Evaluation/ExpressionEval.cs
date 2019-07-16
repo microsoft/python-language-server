@@ -20,7 +20,6 @@ using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
@@ -38,15 +37,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly object _lock = new object();
         private readonly List<DiagnosticsEntry> _diagnostics = new List<DiagnosticsEntry>();
 
-        public ExpressionEval(IServiceContainer services, IPythonModule module)
-            : this(services, module, new GlobalScope(module)) { }
-
-        public ExpressionEval(IServiceContainer services, IPythonModule module, GlobalScope gs) {
+        public ExpressionEval(IServiceContainer services, IPythonModule module, PythonAst ast) {
             Services = services ?? throw new ArgumentNullException(nameof(services));
             Module = module ?? throw new ArgumentNullException(nameof(module));
-            Ast = module.GetAst();
+            Ast = ast ?? throw new ArgumentNullException(nameof(ast));
 
-            GlobalScope = gs;
+            GlobalScope = new GlobalScope(module, ast);
             CurrentScope = GlobalScope;
             DefaultLocation = new Location(module);
             //Log = services.GetService<ILogger>();
@@ -60,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IPythonType UnknownType => Interpreter.UnknownType;
         public Location DefaultLocation { get; }
 
-        public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
+        public LocationInfo GetLocationInfo(Node node) => node?.GetLocation(this) ?? LocationInfo.Empty;
 
         public Location GetLocationOfName(Node node) {
             if (node == null || (Module.ModuleType != ModuleType.User && Module.ModuleType != ModuleType.Library)) {
@@ -103,12 +99,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IServiceContainer Services { get; }
         IScope IExpressionEvaluator.CurrentScope => CurrentScope;
         IGlobalScope IExpressionEvaluator.GlobalScope => GlobalScope;
-        public LocationInfo GetLocation(Node node) => node?.GetLocation(Module) ?? LocationInfo.Empty;
+        public LocationInfo GetLocation(Node node) => node?.GetLocation(this) ?? LocationInfo.Empty;
         public IEnumerable<DiagnosticsEntry> Diagnostics => _diagnostics;
 
         public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
             // Do not add if module is library, etc. Only handle user code.
-            if (Module.ModuleType == ModuleType.User) {
+            if (entry.ShouldReport(Module)) {
                 lock (_lock) {
                     _diagnostics.Add(entry);
                 }
@@ -186,6 +182,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
                 case NamedExpression namedExpr:
                     m = GetValueFromExpression(namedExpr.Value);
+                    break;
+                // indexing with nothing, e.g Generic[]
+                case ErrorExpression error:
+                    m = null;
                     break;
                 default:
                     m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);

@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Array.Empty<string>();
 
-        public IMember Index(IPythonInstance instance, object index)
+        public IMember Index(IPythonInstance instance, IArgumentSet args)
             => DeclaringModule.Interpreter.UnknownType;
     }
 }

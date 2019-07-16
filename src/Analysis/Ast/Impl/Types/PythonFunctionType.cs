@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates function for specializations
         /// </summary>
         public static PythonFunctionType Specialize(string name, IPythonModule declaringModule, string documentation)
-            => new PythonFunctionType(name, new Location(declaringModule, default), documentation, true);
+            => new PythonFunctionType(name, new Location(declaringModule), documentation, true);
 
         private PythonFunctionType(string name, Location location, string documentation, bool isSpecialized = false) :
             base(name, location, documentation ?? string.Empty, BuiltinTypeId.Function) {
