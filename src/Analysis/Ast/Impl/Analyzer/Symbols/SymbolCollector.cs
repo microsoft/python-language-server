@@ -145,7 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // collection types cannot be determined as imports haven't been processed.
                 var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
 
-                CheckValidOverload(fd, overload);
+                CheckValidOverload(fd, function, overload);
 
                 addOverload(overload);
                 _table.Add(new FunctionEvaluator(_eval, overload));
@@ -232,8 +232,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     DiagnosticSource.Analysis));
         }
 
-        private void CheckValidOverload(FunctionDefinition fd, IPythonFunctionOverload overload) {
-            if (overload.ClassMember.DeclaringType is PythonClassType) {
+        private void CheckValidOverload(FunctionDefinition fd, IPythonClassMember fn, IPythonFunctionOverload overload) {
+            if (overload.ClassMember.DeclaringType?.MemberType == PythonMemberType.Class) {
+                if(fn is IPythonFunctionType f) {
+                    if(f.IsClassMethod) {
+                        // TODO check for bad-classmethod-argument
+                        // for now don't handle it
+                        return;
+                    }
+                }
+
+                // if declared in a class, should have first argument as self
                 if (fd.Parameters.Length > 0) {
                     var param = fd.Parameters[0];
                     if (!param.Name.Equals("self")) {

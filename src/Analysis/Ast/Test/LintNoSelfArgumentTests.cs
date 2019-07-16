@@ -24,7 +24,7 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class NoSelfArgumentTests : AnalysisTestBase {
+    public class LintNoSelfArgumentTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task FirstArgumentNotSelf() {
+        public async Task FirstArgumentMethodNotSelf() {
             const string code = @"
 class Test:
     def test(x, y, z):
@@ -49,6 +49,41 @@ class Test:
             diagnostic.SourceSpan.Should().Be(3, 9, 3, 13);
             diagnostic.Message.Should().Be(Resources.NoSelfArgument);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task FirstArgumentPropertyNotSelf() {
+            const string code = @"
+class Test:
+    @property
+    def test(x, y, z):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
+            diagnostic.SourceSpan.Should().Be(4, 9, 4, 13);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FirstArgumentAbstractPropertyNotSelf() {
+            const string code = @"
+class Test:
+    @abstractproperty
+    def test(x, y, z):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
+            diagnostic.SourceSpan.Should().Be(4, 9, 4, 13);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task FirstArgumentNotSelfMultiple() {
@@ -72,6 +107,18 @@ class Test:
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(6, 9, 6, 14);
             diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FirstArgumentClassMethod() {
+            const string code = @"
+class Test:
+    @classmethod
+    def test(arg1, arg2):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(0);
         }
 
         [TestMethod, Priority(0)]
