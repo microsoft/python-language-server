@@ -42,6 +42,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>Module that declares the function</summary>
         public IPythonModule DeclaringModule { get; }
         public IReadOnlyList<IArgument> Arguments => _arguments;
+
         public IListArgument ListArgument => _listArgument;
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
@@ -178,7 +179,7 @@ namespace Microsoft.Python.Analysis.Types {
                     if (formalParamIndex >= overload.Parameters.Count) {
                         // We ran out of formal parameters and yet haven't seen
                         // any sequence or dictionary ones. This looks like an error.
-                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, arg.GetLocation(eval).Span,
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, callLocation.Span,
                             ErrorCodes.TooManyFunctionArguments, Severity.Warning, DiagnosticSource.Analysis));
                         return;
                     }

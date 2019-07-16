@@ -67,13 +67,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["TypeVar"] = fn;
 
             // NewType
-            fn = PythonFunctionType.Specialize("NewType", this, GetMemberDocumentation("NewType"));
-            o = new PythonFunctionOverload(fn.Name, location);
-            // When called, create generic parameter type. For documentation
-            // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args) => CreateTypeAlias(args));
-            fn.AddOverload(o);
-            _members["NewType"] = fn;
+            _members["NewType"] = CreateNewType(location);
 
             // Type
             fn = PythonFunctionType.Specialize("Type", this, GetMemberDocumentation("Type"));
@@ -150,9 +144,23 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["Generic"] = new GenericType("Generic", CreateGenericClassParameter, this);
         }
 
-
         private string GetMemberDocumentation(string name)
         => base.GetMember(name)?.GetPythonType()?.Documentation;
+
+        private IPythonType CreateNewType(Location location) {
+            // NewType
+            var fn = PythonFunctionType.Specialize("NewType", this, GetMemberDocumentation("NewType"));
+            var o = new PythonFunctionOverload(fn.Name, location);
+            // When called, create generic parameter type. For documentation
+            // use original TypeVar declaration so it appear as a tooltip.
+            o.SetReturnValueProvider((interpreter, overload, args) => CreateTypeAlias(args));
+            o.SetParameters(new[] {
+                    new ParameterInfo("name", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
+                    new ParameterInfo("tp", Interpreter.GetBuiltinType(BuiltinTypeId.Type), ParameterKind.Normal, null),
+            });
+            fn.AddOverload(o);
+            return fn;
+        }
 
         private IPythonType CreateListType(string typeName, BuiltinTypeId typeId, IReadOnlyList<IPythonType> typeArgs, bool isMutable) {
             if (typeArgs.Count == 1) {
@@ -228,14 +236,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         }
 
         private IPythonType CreateTypeAlias(IArgumentSet args) {
-            var typeArgs = args.Values<IMember>();
-            if (typeArgs.Count == 2) {
-                var typeName = (typeArgs[0] as IPythonConstant)?.Value as string;
-                if (!string.IsNullOrEmpty(typeName)) {
-                    return new TypeAlias(typeName, typeArgs[1].GetPythonType() ?? Interpreter.UnknownType);
-                }
+            TryReportArgErrors(args);
 
-                var firstArgType = (typeArgs[0] as PythonInstance)?.Type.Name;
+            var typeArgs = args.Values<IMember>();
+
+            var typeName = (typeArgs[0] as IPythonConstant)?.Value as string;
+            if (!string.IsNullOrEmpty(typeName)) {
+                return new TypeAlias(typeName, typeArgs[1].GetPythonType() ?? Interpreter.UnknownType);
+            }
+
+            // Give diagnostic if user specified something for first parameter and was not a string
+            if (!args.Arguments[0].ValueIsDefault) {
+                var firstArgType = typeArgs[0].GetPythonType().Name;
                 var eval = args.Eval;
                 var expression = args.Expression;
 
@@ -246,8 +258,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Error, DiagnosticSource.Analysis)
                 );
-            } else {
-                ReportWrongNumArgs(args, "NewType", 2);
             }
 
             return Interpreter.UnknownType;
@@ -360,17 +370,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 ? new GenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId, typeArgs)
                 : Interpreter.UnknownType;
 
-        private void ReportWrongNumArgs(IArgumentSet args, string funcName, int expected) {
+        private void TryReportArgErrors(IArgumentSet args) {
             var eval = args.Eval;
-            eval?.ReportDiagnostics(
-                eval.Module?.Uri,
-                new DiagnosticsEntry(
-                    Resources.WrongArgumentCount.FormatInvariant(funcName, expected, args.Arguments.Count),
-                    args.Expression?.GetLocation(eval)?.Span ?? default,
-                    Diagnostics.ErrorCodes.WrongArgumentCount,
-                    Severity.Error,
-                    DiagnosticSource.Analysis
-            ));
+            foreach (var err in args.Errors) {
+                eval?.ReportDiagnostics(eval.Module?.Uri, err);
+            }
         }
     }
 }

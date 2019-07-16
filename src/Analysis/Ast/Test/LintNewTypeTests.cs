@@ -66,7 +66,7 @@ T = NewType({nameType}(10), {type})
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant(nameType));
         }
 
@@ -88,8 +88,24 @@ T = NewType(h, int)
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.SourceSpan.Should().Be(10, 5, 10, 20);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("X"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeFirstArg() {
+            string code = $@"
+from typing import NewType
+
+T = NewType(float, int)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 24);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
+            diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("float"));
         }
 
         [TestMethod, Priority(0)]
@@ -111,7 +127,7 @@ T = NewType(h, int)
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.SourceSpan.Should().Be(11, 5, 11, 20);
-            diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingNewTypeArguments);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgNotString.FormatInvariant("X[int]"));
         }
 
@@ -133,7 +149,6 @@ T = NewType('{name}', {type})
             string code = $@"
 from typing import NewType
 
-X = NewType(5)
 Y = NewType()
 Z = NewType('str', int, float)
 ";
@@ -141,19 +156,19 @@ Z = NewType('str', int, float)
             analysis.Diagnostics.Should().HaveCount(3);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongArgumentCount);
-            diagnostic.Message.Should().Be(Resources.WrongArgumentCount.FormatInvariant("NewType", 2, 1));
-            diagnostic.SourceSpan.Should().Be(4, 5, 4, 15);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.ParameterMissing);
+            diagnostic.Message.Should().Be(Resources.Analysis_ParameterMissing.FormatInvariant("name"));
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 14);
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongArgumentCount);
-            diagnostic.Message.Should().Be(Resources.WrongArgumentCount.FormatInvariant("NewType", 2, 0));
-            diagnostic.SourceSpan.Should().Be(5, 5, 5, 14);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.ParameterMissing);
+            diagnostic.Message.Should().Be(Resources.Analysis_ParameterMissing.FormatInvariant("tp"));
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 14);
 
             diagnostic = analysis.Diagnostics.ElementAt(2);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.WrongArgumentCount);
-            diagnostic.Message.Should().Be(Resources.WrongArgumentCount.FormatInvariant("NewType", 2, 3));
-            diagnostic.SourceSpan.Should().Be(6, 5, 6, 31);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.TooManyFunctionArguments);
+            diagnostic.Message.Should().Be(Resources.Analysis_TooManyFunctionArguments);
+            diagnostic.SourceSpan.Should().Be(5, 5, 5, 31);
         }
     }
 }

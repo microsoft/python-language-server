@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -146,6 +147,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Evaluator associated with the argument set.
         /// </summary>
         IExpressionEvaluator Eval { get; }
+
+        /// <summary>
+        /// Errors encountered while evaluating argument set
+        /// </summary>
+        IReadOnlyList<DiagnosticsEntry> Errors { get; }
 
         /// <summary>
         /// Expression associated with the argument set
