@@ -15,6 +15,7 @@
 
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -62,6 +63,20 @@ c = B().methodB1()
             var model = ModuleModel.FromAnalysis(analysis, Services);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task StubSignature() {
+            var analysis = await GetAnalysisAsync("import logging");
+            var logging = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("logging");
+            var model = ModuleModel.FromAnalysis(logging.Analysis, Services);
+
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = new PythonDbModule(model, logging.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(logging);
+            }
         }
     }
 }

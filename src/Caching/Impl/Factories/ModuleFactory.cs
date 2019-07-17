@@ -23,10 +23,11 @@ using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal sealed class ModuleFactory : IDisposable {
-        private static readonly ReentrancyGuard<string> _processing = new ReentrancyGuard<string>();
+        private readonly ReentrancyGuard<string> _processing = new ReentrancyGuard<string>();
 
         public IPythonModule Module { get; }
         public ClassFactory ClassFactory { get; }
@@ -58,7 +59,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             // TODO: better resolve circular references.
-            if (!_processing.Push(qualifiedName) || memberNames.Count < 2) {
+            if (!_processing.Push(qualifiedName)) {
                 return null;
             }
 
@@ -86,16 +87,25 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
         private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames) {
             if (memberNames.Count == 0) {
-                return null;
+                return module;
             }
 
             IMember member = module;
-            foreach (var memberName in memberNames) {
-                var typeArgs = GetTypeArguments(memberName, out _);
+            foreach (var n in memberNames) {
+                var memberName = n;
+                var typeArgs = GetTypeArguments(memberName, out var typeName);
+                if (typeArgs.Count > 0) {
+                    memberName = typeName;
+                }
 
                 var mc = member as IMemberContainer;
                 Debug.Assert(mc != null);
-                member = mc?.GetMember(memberName);
+
+                if (mc is IBuiltinsPythonModule builtins) {
+                    member = GetBuiltinMember(builtins, memberName);
+                } else {
+                    member = mc?.GetMember(memberName);
+                }
 
                 if (member == null) {
                     Debug.Assert(member != null);
@@ -108,6 +118,20 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             return member;
+        }
+
+        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string  memberName) {
+            if (memberName.StartsWithOrdinal("__")) {
+                memberName = memberName.Substring(2, memberName.Length - 4);
+            }
+
+            switch (memberName) {
+                case "NoneType":
+                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
+                case "Unknown":
+                    return builtins.Interpreter.UnknownType;
+            }
+            return builtins.GetMember(memberName);
         }
 
         private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
