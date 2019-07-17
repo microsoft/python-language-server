@@ -221,7 +221,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 dependencies = _parserDependencies != null
                     ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
                     : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);
-
                 return true;
             }
         }
