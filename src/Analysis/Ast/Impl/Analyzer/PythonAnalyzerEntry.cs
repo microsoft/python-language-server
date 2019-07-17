@@ -218,13 +218,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 UpdateAnalysisTcs(analysisVersion);
-                if (_analysisDependencies != null) {
-                    dependencies = _parserDependencies != null
-                        ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
-                        : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);
-                } else if (_parserDependencies != null) {
-                    dependencies = ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies);
-                }
+                dependencies = _parserDependencies != null
+                    ? ImmutableArray<AnalysisModuleKey>.Create(_parserDependencies.Union(_analysisDependencies).ToArray())
+                    : ImmutableArray<AnalysisModuleKey>.Create(_analysisDependencies);
 
                 return true;
             }
@@ -275,7 +271,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _analysisVersion = analysisVersion;
             if (_analysisTcs.Task.Status == TaskStatus.RanToCompletion) {
                 _previousAnalysis = _analysisTcs.Task.Result;
-                _analysisDependencies = null;
             }
 
             if (_analysisTcs.Task.IsCompleted) {
