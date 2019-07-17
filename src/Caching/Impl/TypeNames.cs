@@ -20,7 +20,7 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class TypeNames {
-        public static string GetQualifiedName(this IMember m) {
+        public static string GetPersistentQualifiedName(this IMember m) {
             var t = m.GetPythonType();
             if (!t.IsUnknown()) {
                 switch (m) {
@@ -28,6 +28,8 @@ namespace Microsoft.Python.Analysis.Caching {
                         return $"i:{t.QualifiedName}";
                     case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
                         return pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.Name;
+                    case IPythonModule mod:
+                        return $":{mod.QualifiedName}";
                     case IPythonType pt:
                         return pt.QualifiedName;
                     case null:
@@ -64,32 +66,42 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             var moduleSeparatorIndex = qualifiedName.IndexOf(':');
-            if (moduleSeparatorIndex < 0) {
-                moduleName = @"builtins";
-                memberNames = new[] { qualifiedName };
-                return true;
+            switch (moduleSeparatorIndex) {
+                case -1:
+                    // Unqualified type means built-in type like 'str'.
+                    moduleName = @"builtins";
+                    memberNames = new[] { qualifiedName };
+                    break;
+                case 0:
+                    // Type is module persisted as ':sys';
+                    var memberSeparatorIndex = qualifiedName.IndexOf('.');
+                    moduleName = memberSeparatorIndex < 0 ? qualifiedName.Substring(1) : qualifiedName.Substring(1, memberSeparatorIndex - 1);
+                    memberNames = GetTypeNames(qualifiedName.Substring(moduleName.Length + 1), '.');
+                    break;
+                default:
+                    moduleName = qualifiedName.Substring(0, moduleSeparatorIndex);
+                    // First chunk is qualified module name except dots in braces.
+                    // Builtin types don't have module prefix.
+                    memberNames = GetTypeNames(qualifiedName.Substring(moduleSeparatorIndex + 1), '.');
+                    break;
             }
 
-            moduleName = qualifiedName.Substring(0, moduleSeparatorIndex);
-            // First chunk is qualified module name except dots in braces.
-            // Builtin types don't have module prefix.
-            memberNames = GetParts(qualifiedName.Substring(moduleSeparatorIndex+1));
             return !string.IsNullOrEmpty(moduleName);
         }
 
-        private static IReadOnlyList<string> GetParts(string qualifiedTypeName) {
+        public static IReadOnlyList<string> GetTypeNames(string qualifiedTypeName, char separator) {
             var parts = new List<string>();
             for (var i = 0; i < qualifiedTypeName.Length; i++) {
-                var part = GetSubPart(qualifiedTypeName, ref i);
+                var part = GetTypeName(qualifiedTypeName, ref i, separator);
                 if (string.IsNullOrEmpty(part)) {
                     break;
                 }
-                parts.Add(part);
+                parts.Add(part.Trim());
             }
             return parts;
         }
 
-        private static string GetSubPart(string s, ref int i) {
+        public static string GetTypeName(string s, ref int i, char separator) {
             var braceCounter = new Stack<char>();
             var start = i;
             for (; i < s.Length; i++) {
@@ -106,12 +118,12 @@ namespace Microsoft.Python.Analysis.Caching {
                     }
                 }
 
-                if (braceCounter.Count == 0 && ch == '.') {
+                if (braceCounter.Count == 0 && ch == separator) {
                     break;
                 }
             }
 
-            return s.Substring(start, i - start);
+            return s.Substring(start, i - start).Trim();
         }
     }
 }

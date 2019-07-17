@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Name = prop.Name,
                 IndexSpan = prop.Location.IndexSpan.ToModel(),
                 Documentation = prop.Documentation,
-                ReturnType = prop.ReturnType.GetQualifiedName(),
+                ReturnType = prop.ReturnType.GetPersistentQualifiedName(),
                 // TODO: attributes.
             };
         }

@@ -224,7 +224,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:typing:_T"
+          "ReturnType": "i:sys:_T"
         }
       ],
       "Attributes": 0,
@@ -1005,7 +1005,7 @@
   ],
   "Variables": [
     {
-      "Value": "_io",
+      "Value": ":_io",
       "Id": 668243680,
       "Name": "_mod__io",
       "IndexSpan": {
@@ -1023,7 +1023,7 @@
       }
     },
     {
-      "Value": "types",
+      "Value": ":types",
       "Id": -2043043116,
       "Name": "_mod_types",
       "IndexSpan": {
@@ -1545,7 +1545,7 @@
       }
     },
     {
-      "Value": "typing:_T",
+      "Value": "sys:_T",
       "Id": 25132,
       "Name": "_T",
       "IndexSpan": {

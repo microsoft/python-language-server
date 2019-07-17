@@ -33,7 +33,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override PythonMemberType MemberType => PythonMemberType.Generic;
         public override bool IsSpecialized => true;
 
-
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
             var args = argSet.Values<IMember>();
             if (args.Count == 0) {

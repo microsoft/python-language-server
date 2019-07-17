@@ -51,8 +51,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args)
-                => GenericTypeParameter.FromTypeVar(args, interpreter));
+            o.SetReturnValueProvider((declaringModule, overload, args)
+                => GenericTypeParameter.FromTypeVar(args, declaringModule));
 
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args) => CreateTypeAlias(args));
+            o.SetReturnValueProvider((declaringModule, overload, args) => CreateTypeAlias(args));
             fn.AddOverload(o);
             _members["NewType"] = fn;
 
@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args) => {
+            o.SetReturnValueProvider((declaringModule, overload, args) => {
                 var a = args.Values<IMember>();
                 return a.Count == 1 ? a[0] : Interpreter.UnknownType;
             });

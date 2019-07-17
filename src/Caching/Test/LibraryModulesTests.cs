@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         private string BaselineFileName => GetBaselineFileName(TestContext.TestName);
 
         [TestMethod, Priority(0)]
+        [Ignore("Builtins module have custom member handling. We do not persist it yet.")]
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;

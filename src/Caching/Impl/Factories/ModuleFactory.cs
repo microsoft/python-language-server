@@ -54,6 +54,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();
 
         public IMember ConstructMember(string qualifiedName) {
+            // Determine module name, member chain and if this is an instance.
             if (!TypeNames.DeconstructQualifiedName(qualifiedName, out var moduleName, out var memberNames, out var isInstance)) {
                 return null;
             }
@@ -93,6 +94,8 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             IMember member = module;
             foreach (var n in memberNames) {
                 var memberName = n;
+                // Check if name has type arguments such as Union[int, str]
+                // Note that types can be nested like Union[int, Union[A, B]]
                 var typeArgs = GetTypeArguments(memberName, out var typeName);
                 if (typeArgs.Count > 0) {
                     memberName = typeName;
@@ -102,6 +105,8 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 Debug.Assert(mc != null);
 
                 if (mc is IBuiltinsPythonModule builtins) {
+                    // Builtins require special handling since there may be 'hidden' names
+                    // like __NoneType__ which need to be mapped to visible types.
                     member = GetBuiltinMember(builtins, memberName);
                 } else {
                     member = mc?.GetMember(memberName);
@@ -158,7 +163,9 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 var closeBracket = memberName.LastIndexOf(']');
                 if (closeBracket > 0) {
                     var argumentString = memberName.Substring(openBracket + 1, closeBracket - openBracket - 1);
-                    var arguments = argumentString.Split(',').Select(s => s.Trim()).ToArray();
+                    // Extract type names from argument string. Note that types themselves
+                    // can have arguments: Union[int, Union[int, Union[str, bool]], ...].
+                    var arguments = TypeNames.GetTypeNames(argumentString, ',');
                     foreach (var a in arguments) {
                         var t = ConstructType(a);
                         // TODO: better handle generics type definitions from TypeVar.

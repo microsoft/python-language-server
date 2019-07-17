@@ -88,7 +88,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             IndexSpan = cls.Location.IndexSpan.ToModel();
 
             Documentation = cls.Documentation;
-            Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetQualifiedName()).ToArray();
+            Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetPersistentQualifiedName()).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();

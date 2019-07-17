@@ -42,11 +42,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return new OverloadModel {
                 Parameters = o.Parameters.Select(p => new ParameterModel {
                     Name = p.Name,
-                    Type = p.Type.GetQualifiedName(),
+                    Type = p.Type.GetPersistentQualifiedName(),
                     Kind = p.Kind,
-                    DefaultValue = p.DefaultValue.GetQualifiedName(),
+                    DefaultValue = p.DefaultValue.GetPersistentQualifiedName(),
                 }).ToArray(),
-                ReturnType = o.StaticReturnValue.GetQualifiedName()
+                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName()
             };
         }
     }

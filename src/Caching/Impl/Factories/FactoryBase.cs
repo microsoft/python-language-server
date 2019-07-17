@@ -20,6 +20,10 @@ using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
+    /// <summary>
+    /// Represents base factory that implements creation of a type
+    /// from its model (persistent form).
+    /// </summary>
     internal abstract class FactoryBase<TModel, TMember> : IDisposable
         where TModel : MemberModel
         where TMember : IMember {
@@ -41,6 +45,9 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         public TMember TryCreate(string name, IPythonType declaringType = null) 
             => _data.TryGetValue(name, out var data) ? Construct(data.Model, declaringType) : default;
 
+        /// <summary>
+        /// Constructs member from its persistent model.
+        /// </summary>
         public TMember Construct(TModel cm, IPythonType declaringType = null, bool cached = true) {
             TMember m;
 
