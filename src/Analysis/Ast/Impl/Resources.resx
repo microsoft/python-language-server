@@ -189,6 +189,12 @@
   <data name="UnableToDetermineCachePathException" xml:space="preserve">
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
   </data>
+  <data name="TypeVarFirstArgumentNotString" xml:space="preserve">
+    <value>The first argument to TypeVar must be a string.</value>
+  </data>
+  <data name="TypeVarSingleConstraint" xml:space="preserve">
+    <value>A single constraint to TypeVar is not allowed.</value>
+  </data>
   <data name="FunctionRedefined" xml:space="preserve">
     <value>Function already defined at line {0}.</value>
   </data>

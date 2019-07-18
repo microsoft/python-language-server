@@ -16,10 +16,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
@@ -33,31 +35,62 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override PythonMemberType MemberType => PythonMemberType.Generic;
         public override bool IsSpecialized => true;
 
+        private static bool TypeVarArgumentsValid(IArgumentSet argSet) {
+            var args = argSet.Arguments;
+            var constraints = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
+
+            var eval = argSet.Eval;
+            var expr = argSet.Expression;
+            var callLocation = expr?.GetLocation(eval);
+
+            if (argSet.Errors.Count > 0) {
+                argSet.ReportErrors();
+                return false;
+            }
+
+            // Report diagnostic if user passed in a value for name and it is not a string
+            var name = (args[0].Value as IPythonConstant)?.GetString();
+            if (string.IsNullOrEmpty(name)) {
+                eval.ReportDiagnostics(
+                    eval.Module.Uri,
+                    new DiagnosticsEntry(Resources.TypeVarFirstArgumentNotString,
+                        callLocation?.Span ?? default,
+                        Diagnostics.ErrorCodes.TypingTypeVarArguments,
+                        Severity.Warning, DiagnosticSource.Analysis)
+                );
+                return false;
+            }
+
+            // Python gives runtime error when TypeVar has one constraint
+            // e.g. T = TypeVar('T', int)
+            if (constraints.Count == 1) {
+                eval.ReportDiagnostics(
+                    eval.Module.Uri,
+                    new DiagnosticsEntry(Resources.TypeVarSingleConstraint,
+                        callLocation?.Span ?? default,
+                        Diagnostics.ErrorCodes.TypingTypeVarArguments,
+                        Severity.Error, DiagnosticSource.Analysis)
+                );
+                return false;
+            }
+
+            return true;
+        }
 
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
+            if (!TypeVarArgumentsValid(argSet)) {
+                return declaringModule.Interpreter.UnknownType;
+            }
+
             var args = argSet.Arguments;
             var constraintArgs = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
 
-            if (args.Count == 0) {
-                // TODO: report that at least one argument is required.
-                return declaringModule.Interpreter.UnknownType;
-            }
-
             var name = (args[0].Value as IPythonConstant)?.GetString();
-            if (string.IsNullOrEmpty(name)) {
-                // TODO: report that type name is not a string.
-                return declaringModule.Interpreter.UnknownType;
-            }
-
             var constraints = constraintArgs.Select(a => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray() ?? Array.Empty<IPythonType>();
-
-            if (constraints.Any(c => c.IsUnknown())) {
-                // TODO: report that some constraints could not be resolved.
-            }
 
             var documentation = GetDocumentation(args, constraints);
             return new GenericTypeParameter(name, declaringModule, constraints, documentation, location);

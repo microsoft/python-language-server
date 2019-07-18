@@ -237,9 +237,9 @@ namespace Microsoft.Python.Analysis {
         internal static string FunctionRedefined {
             get {
                 return ResourceManager.GetString("FunctionRedefined", resourceCulture);
-	    }
-	}
-
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
         /// </summary>
@@ -309,6 +309,24 @@ namespace Microsoft.Python.Analysis {
         internal static string ReturnInInit {
             get {
                 return ResourceManager.GetString("ReturnInInit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The first argument to TypeVar must be a string..
+        /// </summary>
+        internal static string TypeVarFirstArgumentNotString {
+            get {
+                return ResourceManager.GetString("TypeVarFirstArgumentNotString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A single constraint to TypeVar is not allowed..
+        /// </summary>
+        internal static string TypeVarSingleConstraint {
+            get {
+                return ResourceManager.GetString("TypeVarSingleConstraint", resourceCulture);
             }
         }
         
