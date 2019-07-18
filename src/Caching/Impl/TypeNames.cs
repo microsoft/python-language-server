@@ -26,10 +26,12 @@ namespace Microsoft.Python.Analysis.Caching {
                 switch (m) {
                     case IPythonInstance _:
                         return $"i:{t.QualifiedName}";
-                    case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
-                        return pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.Name;
+                    case IBuiltinsPythonModule b:
+                        return $":{b.QualifiedName}";
                     case IPythonModule mod:
                         return $":{mod.QualifiedName}";
+                    case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
+                        return pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.Name;
                     case IPythonType pt:
                         return pt.QualifiedName;
                     case null:

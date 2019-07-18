@@ -1014,7 +1014,7 @@
       }
     },
     {
-      "Value": "builtins",
+      "Value": ":builtins",
       "Id": -1070584715,
       "Name": "_mod_builtins",
       "IndexSpan": {
@@ -1239,7 +1239,7 @@
       }
     },
     {
-      "Value": "i:_implementation",
+      "Value": "i:sys:_implementation",
       "Id": 1997289353,
       "Name": "implementation",
       "IndexSpan": {
@@ -1509,6 +1509,15 @@
       }
     },
     {
+      "Value": ":sys",
+      "Id": 799574,
+      "Name": "sys",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
       "Value": "types:FrameType",
       "Id": -1970702352,
       "Name": "FrameType",
@@ -1554,6 +1563,33 @@
       }
     },
     {
+      "Value": "i:str",
+      "Id": -1483247562,
+      "Name": "abiflags",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "BaseException",
+      "Id": 1788480780,
+      "Name": "last_type",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "i:BaseException",
+      "Id": -390541857,
+      "Name": "last_value",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
       "Value": "i:types:TracebackType",
       "Id": 2060329242,
       "Name": "last_traceback",
@@ -1563,9 +1599,36 @@
       }
     },
     {
+      "Value": "i:str",
+      "Id": 796439,
+      "Name": "ps1",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "i:str",
+      "Id": 796440,
+      "Name": "ps2",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
       "Value": "i:tuple",
       "Id": -1174870545,
       "Name": "subversion",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "i:int",
+      "Id": -779061402,
+      "Name": "tracebacklimit",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -8014,6 +8077,66 @@
       "InnerClasses": [],
       "Id": 440196887,
       "Name": "_hash_info",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:str",
+          "Id": 24614690,
+          "Name": "name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:sys:_version_info",
+          "Id": 1781540065,
+          "Name": "version",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": -471599948,
+          "Name": "hexversion",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -778094810,
+          "Name": "cache_tag",
+          "IndexSpan": null
+        },
+        {
+          "Value": "dict",
+          "Id": 817929997,
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "object",
+          "Id": 1225024228,
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 14485722,
+      "Name": "_implementation",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
