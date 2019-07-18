@@ -101,12 +101,25 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local);
 
-            switch (existing?.MemberType) {
-                case PythonMemberType.Method:
-                case PythonMemberType.Function:
-                case PythonMemberType.Property:
-                    ReportRedefinedFunction(fd, existing as PythonType);
-                    break;
+            // Pylint source: https://github.com/PyCQA/pylint/blob/f38bd0d1b5d2e601d2a6034b3f0d6ee11343e26e/pylint/checkers/base.py#L393
+            // If function is a redefinition of something, only output diagnostic if function name
+            // is not redefined by decorator
+            // e.g
+            // 
+            // @property
+            // def x(self): ...
+            // 
+            // @x.setter
+            // def x(self): ...
+            // Should not give any diagnostics
+            if (!IsRedefinedByDecorator(fd)) {
+                switch (existing?.MemberType) {
+                    case PythonMemberType.Method:
+                    case PythonMemberType.Function:
+                    case PythonMemberType.Property:
+                        ReportRedefinedFunction(fd, existing as LocatedMember);
+                        break;
+                }
             }
 
             if (!TryAddProperty(fd, existing, declaringType)) {
@@ -227,6 +240,39 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     ErrorCodes.FunctionRedefined,
                     Parsing.Severity.Error,
                     DiagnosticSource.Analysis));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="fd"></param>
+        /// <returns></returns>
+        private bool IsRedefinedByDecorator(FunctionDefinition fd) {
+            if (fd.Decorators != null) {
+                foreach (var d in fd.Decorators.Decorators) {
+                    switch (d) {
+                        case NameExpression n:
+                            if (fd.Name.Equals(n.Name)) {
+                                return true;
+                            }
+                            break;
+                        case MemberExpression m:
+                            // pylint only compares one level member expressions for decorators
+                            // e.g 
+                            // @foo.a
+                            // def foo(self): ...
+                            // is valid but not
+                            // @foo.a.b
+                            // def foo(self): ... 
+                            var ne = m.Target as NameExpression;
+                            if (fd.Name.Equals(ne?.Name ?? string.Empty)) {
+                                return true;
+                            }
+                            break;
+                    }
+                }
+            }
+            return false;
         }
 
         private static bool IsDeprecated(ClassDefinition cd)

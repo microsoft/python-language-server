@@ -325,5 +325,138 @@ class tmp:
             diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
             diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
         }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothArePropertiesNotSamePrefix() {
+            const string code = @"
+class tmp:
+    @foo.hello
+    def foo(self):
+        return 123
+   
+    @tmp.temp
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothArePropertiesSamePrefix() {
+            const string code = @"
+class tmp:
+    @foo.hello
+    def foo(self):
+        return 123
+   
+    @foo.temp
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothArePropertiesFirstMember() {
+            const string code = @"
+class tmp:
+    @foo.a
+    def foo(self):
+        return 123
+
+    @radius
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothArePropertiesMultipleMember() {
+            const string code = @"
+class tmp:
+    @foo.a.b.c
+    def foo(self):
+        return 123
+
+    @foo.a.c.d
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothHaveSameMemberProperty() {
+            const string code = @"
+class tmp:
+    @foo.a
+    def foo(self):
+        return 123
+
+    @foo.a
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothHaveSamePropertiesMultipleMember() {
+            const string code = @"
+class tmp:
+    @foo.a.b.c
+    def foo(self):
+        return 123
+
+    @foo.a.b.c
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothPropertiesSameMethod() {
+            const string code = @"
+class tmp:
+    @foo.setter
+    def foo(self):
+        return 123
+   
+    @foo.getter
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }
