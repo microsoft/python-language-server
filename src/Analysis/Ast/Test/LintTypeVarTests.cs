@@ -50,6 +50,21 @@ T = TypeVar(1f)
             diagnostic.Message.Should().Be(Resources.TypeVarFirstArgumentNotString);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task TypeVarFirstArgumentFunction() {
+            const string code = @"
+from typing import TypeVar
+
+def temp():
+    return 'str'
+
+T = TypeVar(temp(), int, str)
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
         [DataRow(TypeVarImport + @"
 T = TypeVar('T', int, str)")]
         [DataRow(TypeVarImport + @"

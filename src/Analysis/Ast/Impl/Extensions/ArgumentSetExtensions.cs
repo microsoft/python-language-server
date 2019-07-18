@@ -42,8 +42,8 @@ namespace Microsoft.Python.Analysis {
         }
 
         public static void ReportErrors(this IArgumentSet args) {
-            foreach (var arg in args.Errors) {
-                args.Eval?.ReportDiagnostics(args.Eval?.Module?.Uri, arg);
+            foreach (var err in args.Errors) {
+                args.Eval?.ReportDiagnostics(args.Eval?.Module?.Uri, err);
             }
         }
 

@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             // Report diagnostic if user passed in a value for name and it is not a string
             var name = (args[0].Value as IPythonConstant)?.GetString();
-            if (!args[0].ValueIsDefault && string.IsNullOrEmpty(name)) {
+            if (string.IsNullOrEmpty(name)) {
                 eval.ReportDiagnostics(
                     eval.Module.Uri,
                     new DiagnosticsEntry(Resources.TypeVarFirstArgumentNotString,
