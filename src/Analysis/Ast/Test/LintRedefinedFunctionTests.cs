@@ -458,5 +458,26 @@ class tmp:
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedFuncsBothPropertiesSameMethodNoMember() {
+            const string code = @"
+class tmp:
+    @foo
+    def foo(self):
+        return 123
+   
+    @foo
+    def foo(self):
+        return 123
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.FunctionRedefined);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
+            diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
+        }
     }
 }
