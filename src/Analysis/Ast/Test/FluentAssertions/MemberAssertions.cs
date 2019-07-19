@@ -101,8 +101,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             var subjectMemberNames = subjectType.GetMemberNames().ToArray();
             var otherMemberNames = otherContainer.GetMemberNames().ToArray();
 
-            var missingNames = otherMemberNames.Except(subjectMemberNames);
-            var extraNames = subjectMemberNames.Except(otherMemberNames);
+            var missingNames = otherMemberNames.Except(subjectMemberNames).ToArray();
+            var extraNames = subjectMemberNames.Except(otherMemberNames).ToArray();
 
             missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
             extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
@@ -120,24 +120,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
                 if(subjectMemberType is IPythonFunctionType subjectFunction) {
                     var otherFunction = (IPythonFunctionType)otherMemberType;
-                    subjectFunction.Overloads.Should().HaveCount(otherFunction.Overloads.Count);
-                    for(var i = 0; i < subjectFunction.Overloads.Count; i++) {
-                        var subjectOverload = subjectFunction.Overloads[i];
-                        var otherOverload = otherFunction.Overloads[i];
-
-                        subjectOverload.Parameters.Should().HaveCount(otherOverload.Parameters.Count);
-                        for (var j = 0; j < subjectOverload.Parameters.Count; j++) {
-                            var subjectParam = subjectOverload.Parameters[j];
-                            var otherParam = otherOverload.Parameters[j];
-                            subjectParam.Name.Should().Be(otherParam.Name);
-
-                            if (subjectParam.Type == null) {
-                                otherParam.Type.Should().BeNull();
-                            } else {
-                                subjectParam.Type.Name.Should().Be(otherParam.Type.Name);
-                            }
-                        }
-                    }
+                    subjectFunction.Should().HaveSameOverloadsAs(otherFunction);
                 }
             }
         }

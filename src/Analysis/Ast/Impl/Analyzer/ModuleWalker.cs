@@ -252,7 +252,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // If types are the classes, merge members.
                 // Otherwise, replace type from one from the stub.
                 if (sourceType == null) {
-                    Eval.DeclareVariable(v.Name, v.Value, VariableSource.Declaration);
+                    Eval.DeclareVariable(v.Name, v.Value, v.Source);
                 } else if (sourceType is PythonClassType cls && Module.Equals(cls.DeclaringModule)) {
                     // If class exists and belongs to this module, add or replace
                     // its members with ones from the stub, preserving documentation.
@@ -283,7 +283,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     if (!(stubType is IPythonModule) && !builtins.Equals(stubType.DeclaringModule)) {
                         sourceType.TransferDocumentationAndLocation(stubType);
                         // TODO: choose best type between the scrape and the stub. Stub probably should always win.
-                        var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? VariableSource.Declaration;
+                        var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? v.Source;
                         Eval.DeclareVariable(v.Name, v.Value, source);
                     }
                 }

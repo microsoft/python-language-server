@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             var is3x = ModuleFactory.Module.Interpreter.LanguageVersion.Is3x();
             var bases = cm.Bases.Select(b => is3x && b == "object" ? null : TryCreate(b)).ExcludeDefault().ToArray();
             cls.SetBases(bases);
+            cls.SetDocumentation(cm.Documentation);
 
             foreach (var f in cm.Methods) {
                 cls.AddMember(f.Name, ModuleFactory.FunctionFactory.Construct(f, cls, false), false);
@@ -44,7 +45,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             foreach (var c in cm.InnerClasses) {
                 cls.AddMember(c.Name, Construct(c, cls, false), false);
             }
-            // TODO: fields. Bypass variable cache!
+            foreach(var vm in cm.Fields) {
+                var v = ModuleFactory.VariableFactory.Construct(vm, cls, false);
+                cls.AddMember(v.Name, v, false);
+            }
         }
     }
 }
