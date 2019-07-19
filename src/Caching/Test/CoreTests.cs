@@ -74,14 +74,14 @@ c = C()
         [DataRow("typing:Union[typing:Any, mod:y]", "typing", "Union[typing:Any, mod:y]", false)]
         [DataRow("typing:Union[typing:Union[str, int], mod:y]", "typing", "Union[typing:Union[str, int], mod:y]", false)]
         public void QualifiedNames(string qualifiedName, string moduleName, string typeName, bool isInstance) {
-            TypeNames.DeconstructQualifiedName(qualifiedName, out var actualModuleName, out var actualMemberNames, out var actualIsInstance);
-            actualModuleName.Should().Be(moduleName);
+            TypeNames.DeconstructQualifiedName(qualifiedName, out var parts);
+            parts.ModuleName.Should().Be(moduleName);
             if (string.IsNullOrEmpty(qualifiedName)) {
-                actualMemberNames.Should().BeNull();
+                parts.MemberNames.Should().BeNull();
             } else {
-                actualMemberNames[0].Should().Be(typeName);
+                parts.MemberNames[0].Should().Be(typeName);
             }
-            actualIsInstance.Should().Be(isInstance);
+            parts.IsInstance.Should().Be(isInstance);
         }
     }
 }

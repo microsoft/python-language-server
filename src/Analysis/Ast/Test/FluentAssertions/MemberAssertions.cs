@@ -21,6 +21,7 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -111,7 +112,12 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 var subjectMember = subjectType.GetMember(n);
                 var otherMember = otherContainer.GetMember(n);
 
-                subjectMember.Should().BeOfType(otherMember.GetType());
+                // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
+                if(subjectMember is IPythonInstance) {
+                    otherMember.Should().BeAssignableTo<IPythonInstance>();
+                } else {
+                    otherMember.Should().BeOfType(otherMember.GetType());
+                }
 
                 var subjectMemberType = subjectMember.GetPythonType();
                 var otherMemberType = otherMember.GetPythonType();

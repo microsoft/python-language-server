@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
@@ -55,7 +56,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
         public IMember ConstructMember(string qualifiedName) {
             // Determine module name, member chain and if this is an instance.
-            if (!TypeNames.DeconstructQualifiedName(qualifiedName, out var moduleName, out var memberNames, out var isInstance)) {
+            if (!TypeNames.DeconstructQualifiedName(qualifiedName, out var parts)) {
                 return null;
             }
 
@@ -66,16 +67,25 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
             try {
                 // See if member is a module first.
-                var module = moduleName == Module.Name ? Module : Module.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                IPythonModule module = null;
+                if (parts.ModuleName == Module.Name) {
+                    module = Module;
+                } else {
+                    var m = Module.Interpreter.ModuleResolution.GetOrLoadModule(parts.ModuleName);
+                    if (m != null) {
+                        module = parts.IsVariableModule ? new PythonVariableModule(m) : m;
+                    }
+                }
+
                 if (module == null) {
                     return null;
                 }
 
-                var member = moduleName == Module.Name
-                        ? GetMemberFromThisModule(memberNames)
-                        : GetMemberFromModule(module, memberNames);
+                var member = parts.ModuleName == Module.Name
+                        ? GetMemberFromThisModule(parts.MemberNames)
+                        : GetMemberFromModule(module, parts.MemberNames);
 
-                if (!isInstance) {
+                if (!parts.IsInstance) {
                     return member;
                 }
 

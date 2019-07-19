@@ -190,7 +190,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     m = null;
                     break;
                 default:
-                    m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr, options);
+                    m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr);
                     break;
             }
             if (m == null) {

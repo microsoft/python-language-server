@@ -22,7 +22,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [DebuggerDisplay("c:{Name}")]
+    [DebuggerDisplay("cls:{Name}")]
     internal sealed class ClassModel: MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }

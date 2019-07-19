@@ -1005,7 +1005,7 @@
   ],
   "Variables": [
     {
-      "Value": ":_io",
+      "Value": "::_io",
       "Id": 668243680,
       "Name": "_mod__io",
       "IndexSpan": {
@@ -1014,7 +1014,7 @@
       }
     },
     {
-      "Value": ":builtins",
+      "Value": "::builtins",
       "Id": -1070584715,
       "Name": "_mod_builtins",
       "IndexSpan": {
@@ -1023,7 +1023,7 @@
       }
     },
     {
-      "Value": ":types",
+      "Value": "::types",
       "Id": -2043043116,
       "Name": "_mod_types",
       "IndexSpan": {
@@ -1428,7 +1428,7 @@
       }
     },
     {
-      "Value": ":sys",
+      "Value": "::sys",
       "Id": 799574,
       "Name": "sys",
       "IndexSpan": {
