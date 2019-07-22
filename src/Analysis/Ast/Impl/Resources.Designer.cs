@@ -232,15 +232,6 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Function already defined at line {0}..
-        /// </summary>
-        internal static string FunctionRedefined {
-            get {
-                return ResourceManager.GetString("FunctionRedefined", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
         /// </summary>
         internal static string GenericNotAllTypeParameters {

@@ -195,9 +195,6 @@
   <data name="TypeVarSingleConstraint" xml:space="preserve">
     <value>A single constraint to TypeVar is not allowed.</value>
   </data>
-  <data name="FunctionRedefined" xml:space="preserve">
-    <value>Function already defined at line {0}.</value>
-  </data>
   <data name="NewTypeFirstArgNotString" xml:space="preserve">
     <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
   </data>
