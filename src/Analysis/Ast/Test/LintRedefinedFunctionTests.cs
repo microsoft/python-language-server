@@ -479,5 +479,28 @@ class tmp:
             diagnostic.SourceSpan.Should().Be(8, 9, 8, 12);
             diagnostic.Message.Should().Be(Resources.FunctionRedefined.FormatInvariant(4));
         }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedLambdas() {
+            const string code = @"
+x = lambda h: h
+y = lambda c: c
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task RedefinedNoNameFunction() {
+            const string code = @"
+def (a, b, c):
+    pass
+
+def (b, c, d):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }

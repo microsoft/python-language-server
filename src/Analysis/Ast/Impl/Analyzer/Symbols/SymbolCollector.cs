@@ -101,17 +101,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local);
 
-            // If function redefined, only output diagnostic if function name
-            // is not redefined via decorator
-            // e.g
-            // 
-            // @property
-            // def x(self): ...
-            // 
-            // @x.setter
-            // def x(self): ...
-            // Should not give any diagnostics because x is redefined by a valid decorator 
-            if (!IsRedefinedByDecorator(fd)) {
+            // lambdas have the same function name, so don't count them as redefinitions
+            if (!IsRedefinedByDecorator(fd) && !string.IsNullOrEmpty(fd.Name) && !fd.IsLambda) {
                 switch (existing?.MemberType) {
                     case PythonMemberType.Method:
                     case PythonMemberType.Function:
@@ -242,9 +233,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         /// <summary>
+        /// Returns whether a function is redefined via decorator.
         /// Pylint source: https://github.com/PyCQA/pylint/blob/f38bd0d1b5d2e601d2a6034b3f0d6ee11343e26e/pylint/checkers/base.py#L393
-        /// 
-        /// Returns if the function is redefined via decorator
         /// </summary>
         /// <param name="fd"></param>
         /// <returns></returns>
@@ -252,6 +242,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var decorators = fd.Decorators?.Decorators ?? Array.Empty<Expression>();
             foreach (var m in decorators.OfType<MemberExpression>()) {
                 // If the decorator prefix has the same name as the function, then the function is redefined by decorator
+                // e.g
+                // @property
+                // def x(self): ...
+                // 
+                // @x.setter
+                // def x(self): ...
+                //
                 // But pylint only compares one level member expressions for decorators
                 // e.g 
                 // @foo.a
@@ -260,7 +257,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // @foo.a.b
                 // def foo(self): ... 
                 var name = (m.Target as NameExpression)?.Name ?? string.Empty;
-                if (fd.Name.Equals(name)) {
+                if (name.Equals(fd.Name)) {
                     return true;
                 }
                 break;
