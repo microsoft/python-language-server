@@ -241,21 +241,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private bool IsRedefinedByDecorator(FunctionDefinition fd) {
             var decorators = fd.Decorators?.Decorators ?? Array.Empty<Expression>();
             foreach (var m in decorators.OfType<MemberExpression>()) {
-                // If the decorator prefix has the same name as the function, then the function is redefined by decorator
+                // If a decorator member expression's target has the same name as the function, then the function is redefined via decorator
                 // e.g
-                // @property
-                // def x(self): ...
-                // 
                 // @x.setter
                 // def x(self): ...
+                // x.setter has the target x and the function is named x, so x is redefined via decorator
                 //
                 // But pylint only compares one level member expressions for decorators
                 // e.g 
                 // @foo.a
-                // def foo(self): ...
-                // is valid but not
+                // def foo(self): ... is a redefinition but 
+                //
                 // @foo.a.b
-                // def foo(self): ... 
+                // def foo(self): ... is not.
                 var name = (m.Target as NameExpression)?.Name ?? string.Empty;
                 if (name.Equals(fd.Name)) {
                     return true;
