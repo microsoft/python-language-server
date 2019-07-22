@@ -101,9 +101,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             var existing = _eval.LookupNameInScopes(fd.Name, LookupOptions.Local);
 
+            // Most of the time, redefinitions won't occur so if existing is null 
             // lambdas have the same function name, so don't count them as redefinitions
-            if (!string.IsNullOrEmpty(fd.Name) && !fd.IsLambda && !IsRedefinedByDecorator(fd)) {
-                switch (existing?.MemberType) {
+            if (existing != null 
+                && !fd.IsLambda 
+                && !string.IsNullOrEmpty(fd.Name) 
+                && !IsRedefinedByDecorator(fd)) {
+                switch (existing.MemberType) {
                     case PythonMemberType.Method:
                     case PythonMemberType.Function:
                     case PythonMemberType.Property:
