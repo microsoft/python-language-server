@@ -120,6 +120,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var m = Eval.GetValueFromExpression(expr);
 
                 switch (m) {
+                    // Allow unknown members 
+                    case IMember member when member.GetPythonType() == Eval.UnknownType:
                     // Allow any members from typing module
                     // TODO handle typing module specialization better: https://github.com/microsoft/python-language-server/issues/1367
                     case ILocatedMember l when l.DeclaringModule is TypingModule:
