@@ -79,6 +79,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Log = services.GetService<ILogger>();
             Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
+            GlobalScope = Analysis.GlobalScope;
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
             SetDeclaringModule(this);
@@ -150,10 +151,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
+        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
-            return Analysis.GlobalScope.Variables
+            return GlobalScope.Variables
                 .Where(v => {
                     // Instances are always fine.
                     if (v.Value is IPythonInstance) {
@@ -209,6 +210,8 @@ namespace Microsoft.Python.Analysis.Modules {
             _disposeToken.TryMarkDisposed();
             var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.RemoveAnalysis(this);
+            _parseCts?.Dispose();
+            _linkedParseCts?.Dispose();
         }
         #endregion
 

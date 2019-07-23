@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public AnalysisModuleKey(IPythonModule module) {
             Name = module.Name;
             FilePath = module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath;
-            _type = module is StubPythonModule stub && stub.IsTypeshed
+            _type = module is StubPythonModule stub && stub.IsTypeshed              
                 ? KeyType.Typeshed
                 : module.ModuleType == ModuleType.Library && module is IDocument document && document.IsOpen
                     ? KeyType.LibraryAsDocument

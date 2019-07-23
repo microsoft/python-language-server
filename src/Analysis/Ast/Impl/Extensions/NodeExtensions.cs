@@ -26,7 +26,6 @@ namespace Microsoft.Python.Analysis {
 
             return GetLocation(node, eval.Ast, eval.Module);
         }
-
         public static LocationInfo GetLocation(this Node node, IDocumentAnalysis analysis) {
             if (node == null || node.StartIndex >= node.EndIndex) {
                 return LocationInfo.Empty;

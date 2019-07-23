@@ -36,6 +36,7 @@ using Microsoft.Python.Core.OS;
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
+        private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
         public MainModuleResolution(string root, IServiceContainer services)
@@ -74,11 +75,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     GetRdt().LockDocument(module.Uri);
                     return module;
                 }
-            }
-
-            var dbs = _services.GetService<IModuleDatabaseService>();
-            if (dbs != null && dbs.TryCreateModule(name, moduleImport.ModulePath, out var m) != ModuleStorageState.DoesNotExist && m != null) {
-                return m;
             }
 
             // If there is a stub, make sure it is loaded and attached
@@ -156,8 +152,17 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        public IPythonModule GetSpecializedModule(string name)
-        => _specialized.TryGetValue(name, out var module) ? module : null;
+        public IPythonModule GetSpecializedModule(string fullName, string modulePath = null) {
+            if (_specialized.TryGetValue(fullName, out var module)) {
+                return module;
+            }
+            var dbs = GetDbService();
+            if (dbs != null && dbs.TryCreateModule(fullName, modulePath, out module) != ModuleStorageState.DoesNotExist && module != null) {
+                SpecializeModule(fullName, s => module);
+                return module;
+            }
+            return null;
+        }
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             var analyzer = _services.GetService<IPythonAnalyzer>();
@@ -237,5 +242,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private IRunningDocumentTable GetRdt()
             => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
+
+        private IModuleDatabaseService GetDbService()
+            => _dbService ?? (_dbService = _services.GetService<IModuleDatabaseService>());
     }
 }
