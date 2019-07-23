@@ -209,13 +209,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (overload.ClassMember.DeclaringType?.MemberType == PythonMemberType.Class) {
                 if (fd.Parameters.Length == 0) {
                     ReportFunctionParams(fd, Resources.NoMethodArgument.FormatInvariant(fd.Name), ErrorCodes.NoMethodArgument);
-                    // TODO report no-method-argument
                     return;
                 }
 
                 // If fn is a function:
-                // If it is a class method check for cls
-                // If it is a regular method check for self
+                //      If it is a class method check for cls
+                //      If it is a regular method check for self
                 // If fn is a property, check for self
                 var param = fd.Parameters[0].Name;
                 if (fn is IPythonFunctionType f) {
