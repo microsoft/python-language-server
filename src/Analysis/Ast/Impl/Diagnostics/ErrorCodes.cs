@@ -28,7 +28,6 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string NoSelfArgument = "no-self-argument";
         public const string NoClsArgument = "no-cls-argument";
         public const string NoMethodArgument = "no-method-argument";
-        public const string UnsupportedOperandType = "unsupported-operand-type";
         public const string ReturnInInit = "return-in-init";
         public const string TypingTypeVarArguments = "typing-typevar-arguments";
         public const string TypingNewTypeArguments = "typing-newtype-arguments";
