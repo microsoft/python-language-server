@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -119,8 +120,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var m = Eval.GetValueFromExpression(expr);
 
                 switch (m) {
-                    // Allow any members from specialized module
-                    case ILocatedMember l when l.DeclaringModule.ModuleType == ModuleType.Specialized:
+                    // Allow any members from typing module
+                    // TODO handle typing module specialization better: https://github.com/microsoft/python-language-server/issues/1367
+                    case ILocatedMember l when l.DeclaringModule is TypingModule:
                         TryAddBase(bases, a);
                         break;
                     default:
