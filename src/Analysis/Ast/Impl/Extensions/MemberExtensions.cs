@@ -86,5 +86,21 @@ namespace Microsoft.Python.Analysis {
             }
             return null;
         }
+
+        public static ILocatedMember GetRootDefinition(this ILocatedMember lm) {
+            if (!(lm is IImportedMember im) || im.Parent == null) {
+                return lm;
+            }
+
+            var parent = im.Parent;
+            for (; parent != null;) {
+                if (!(parent is IImportedMember im1) || im1.Parent == null) {
+                    break;
+                }
+                parent = im1.Parent;
+            }
+            return parent;
+        }
+
     }
 }

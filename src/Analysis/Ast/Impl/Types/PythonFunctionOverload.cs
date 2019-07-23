@@ -113,7 +113,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public IMember StaticReturnValue { get; private set; }
 
-        public IMember Call(IArgumentSet args, IPythonType self, Node callLocation = null) {
+        public IMember Call(IArgumentSet args, IPythonType self) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
                 var rt = _returnValueProvider?.Invoke(DeclaringModule, this, args);
