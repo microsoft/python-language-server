@@ -286,7 +286,16 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Method should have &apos;self&apos; as first argument..
+        ///   Looks up a localized string similar to Method &apos;{0}&apos; has no argument..
+        /// </summary>
+        internal static string NoMethodArgument {
+            get {
+                return ResourceManager.GetString("NoMethodArgument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Method &apos;{0}&apos; should have &apos;self&apos; as first argument..
         /// </summary>
         internal static string NoSelfArgument {
             get {

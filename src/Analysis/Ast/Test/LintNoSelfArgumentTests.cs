@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -47,7 +48,7 @@ class Test:
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(3, 9, 3, 13);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
 
         [TestMethod, Priority(0)]
@@ -64,7 +65,7 @@ class Test:
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(4, 9, 4, 13);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
 
         [TestMethod, Priority(0)]
@@ -81,9 +82,8 @@ class Test:
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(4, 9, 4, 13);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
-
 
         [TestMethod, Priority(0)]
         public async Task FirstArgumentNotSelfMultiple() {
@@ -101,12 +101,12 @@ class Test:
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(3, 9, 3, 13);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(6, 9, 6, 14);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test2"));
         }
 
         [TestMethod, Priority(0)]
@@ -123,7 +123,7 @@ class Test:
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(4, 13, 4, 18);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("hello"));
         }
 
         [TestMethod, Priority(0)]

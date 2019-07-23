@@ -196,7 +196,7 @@
     <value>A single constraint to TypeVar is not allowed.</value>
   </data>
   <data name="NoSelfArgument" xml:space="preserve">
-    <value>Method should have 'self' as first argument.</value>
+    <value>Method '{0}' should have 'self' as first argument.</value>
   </data>
   <data name="NewTypeFirstArgNotString" xml:space="preserve">
     <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
@@ -218,5 +218,8 @@
   </data>
   <data name="NoClsArgument" xml:space="preserve">
     <value>Class method '{0}' should have 'cls' as first argument.</value>
+  </data>
+  <data name="NoMethodArgument" xml:space="preserve">
+    <value>Method '{0}' has no argument.</value>
   </data>
 </root>

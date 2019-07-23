@@ -52,6 +52,8 @@ class Test:
             diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
         }
 
+        // Putting property and classmethod is a bug per https://bugs.python.org/issue20659
+        [Ignore]
         [TestMethod, Priority(0)]
         public async Task FirstArgumentClassMethodAndPropertyNotCls() {
             const string code = @"
@@ -84,24 +86,6 @@ class Test:
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
             diagnostic.SourceSpan.Should().Be(3, 9, 3, 16);
             diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("__new__"));
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task FirstArgumentClassMethodAbstractPropertyNotCls() {
-            const string code = @"
-class Test:
-    @classmethod
-    @abstractproperty
-    def test(x, y, z):
-        pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(1);
-
-            var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(5, 9, 5, 13);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
         }
 
         [TestMethod, Priority(0)]
