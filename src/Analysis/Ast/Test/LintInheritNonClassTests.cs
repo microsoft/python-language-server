@@ -410,7 +410,7 @@ class MyEntity(x):
         [TestMethod, Priority(0)]
         public async Task InheritFromUnknownInstance() {
             const string code = @"
-x = Y
+x = Y()
 class MyEntity(x): 
     mystr = 'test'
 ";
