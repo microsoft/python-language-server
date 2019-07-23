@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -117,17 +118,25 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var expr = a.Expression;
                 var m = Eval.GetValueFromExpression(expr);
 
-                switch (m?.MemberType) {
-                    case PythonMemberType.Method:
-                    case PythonMemberType.Function:
-                    case PythonMemberType.Property:
-                    case PythonMemberType.Instance:
-                    case PythonMemberType.Variable when m is IPythonConstant:
-                        // all invalid types to inherit from
-                        ReportInvalidBase(a.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
+                switch (m) {
+                    // Allow any members from specialized module
+                    case ILocatedMember l when l.DeclaringModule.ModuleType == ModuleType.Specialized:
+                        TryAddBase(bases, a);
                         break;
                     default:
-                        TryAddBase(bases, a);
+                        switch (m?.MemberType) {
+                            case PythonMemberType.Method:
+                            case PythonMemberType.Function:
+                            case PythonMemberType.Property:
+                            case PythonMemberType.Instance:
+                            case PythonMemberType.Variable when m is IPythonConstant:
+                                // all invalid types to inherit from
+                                ReportInvalidBase(a.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
+                                break;
+                            default:
+                                TryAddBase(bases, a);
+                                break;
+                        }
                         break;
                 }
             }

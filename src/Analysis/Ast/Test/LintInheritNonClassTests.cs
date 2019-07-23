@@ -146,13 +146,6 @@ class C(x + 2):
         }
 
 
-        /// <summary>
-        /// Because typing module is specialized with functions instead of classes,
-        /// we think that we are extending a function instead of a class so we would erroneously
-        /// give a diagnostic message
-        /// </summary>
-        /// <returns></returns>
-        [Ignore]
         [TestMethod, Priority(0)]
         public async Task InheritFromTypingModule() {
             const string code = @"
@@ -161,6 +154,18 @@ import typing
 class C(typing.TypeVar):
     def method(self):
         return 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromTypingModuleNamedTuple() {
+            const string code = @"
+from typing import NamedTuple
+
+class X(NamedTuple):
+    y: str
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
