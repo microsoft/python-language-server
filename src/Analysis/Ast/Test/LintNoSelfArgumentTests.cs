@@ -149,6 +149,18 @@ class Test:
         }
 
         [TestMethod, Priority(0)]
+        public async Task StaticMethodNoSelfValid() {
+            const string code = @"
+class C:
+    @staticmethod
+    def test(a, b):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task NormalFunction() {
             const string code = @"
 def test():

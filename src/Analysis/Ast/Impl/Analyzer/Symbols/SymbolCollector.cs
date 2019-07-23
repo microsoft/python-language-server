@@ -212,17 +212,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     return;
                 }
 
-                // If fn is a function:
-                //      If it is a class method check for cls
-                //      If it is a regular method check for self
-                // If fn is a property, check for self
                 var param = fd.Parameters[0].Name;
                 if (fn is IPythonFunctionType f) {
-                    if (f.IsClassMethod && !param.Equals("cls")) {
+                    // static methods don't need self or cls
+                    if (f.IsStatic) {
+                        return;
+                    }
+
+                    // If it is a class method check for cls
+                    if (f.IsClassMethod && param.Equals("cls")) {
+                        return;
+                    }
+
+                    // If it is a regular method check for self
+                    if (!f.IsClassMethod && param.Equals("self")) {
+                        return;
+                    }
+
+                    // f is incorrect, report accordingly
+                    if (f.IsClassMethod) {
                         ReportFunctionParams(fd, Resources.NoClsArgument.FormatInvariant(fd.Name), ErrorCodes.NoClsArgument);
-                    } else if (!f.IsClassMethod && !param.Equals("self")) {
+                    } else {
                         ReportFunctionParams(fd, Resources.NoSelfArgument.FormatInvariant(fd.Name), ErrorCodes.NoSelfArgument);
                     }
+                    // If fn is a property, check for self
                 } else if (!param.Equals("self")) {
                     ReportFunctionParams(fd, Resources.NoSelfArgument.FormatInvariant(fd.Name), ErrorCodes.NoSelfArgument);
                 }
