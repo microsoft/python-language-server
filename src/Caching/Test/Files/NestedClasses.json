@@ -4,7 +4,7 @@
   "Functions": [],
   "Variables": [
     {
-      "Value": "bool",
+      "Value": "t:bool",
       "Id": -529376420,
       "Name": "__debug__",
       "IndexSpan": {
@@ -13,7 +13,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": -1636005055,
       "Name": "__doc__",
       "IndexSpan": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": 875442003,
       "Name": "__file__",
       "IndexSpan": {
@@ -31,7 +31,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": 1097116834,
       "Name": "__name__",
       "IndexSpan": {
@@ -40,7 +40,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": 75395663,
       "Name": "__package__",
       "IndexSpan": {
@@ -49,7 +49,7 @@
       }
     },
     {
-      "Value": "list",
+      "Value": "t:list",
       "Id": 1154586556,
       "Name": "__path__",
       "IndexSpan": {
@@ -58,7 +58,7 @@
       }
     },
     {
-      "Value": "dict",
+      "Value": "t:dict",
       "Id": 817929997,
       "Name": "__dict__",
       "IndexSpan": {
@@ -89,7 +89,7 @@
     {
       "Documentation": null,
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -99,7 +99,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module:A",
+                  "Type": "t:module:A",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -121,7 +121,7 @@
       "Properties": [],
       "Fields": [
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -130,7 +130,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -151,7 +151,7 @@
     {
       "Documentation": null,
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -161,7 +161,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module:B",
+                  "Type": "t:module:B",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -186,7 +186,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module:B",
+                  "Type": "t:module:B",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -214,7 +214,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -223,7 +223,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -237,7 +237,7 @@
         {
           "Documentation": null,
           "Bases": [
-            "object"
+            "t:object"
           ],
           "Methods": [
             {
@@ -247,7 +247,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "module:C",
+                      "Type": "t:module:C",
                       "DefaultValue": null,
                       "Kind": 0
                     }
@@ -272,7 +272,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "module:C",
+                      "Type": "t:module:C",
                       "DefaultValue": null,
                       "Kind": 0
                     }
@@ -300,7 +300,7 @@
               "IndexSpan": null
             },
             {
-              "Value": "dict",
+              "Value": "t:dict",
               "Id": 817929997,
               "Name": "__dict__",
               "IndexSpan": {
@@ -309,7 +309,7 @@
               }
             },
             {
-              "Value": "object",
+              "Value": "t:object",
               "Id": 1225024228,
               "Name": "__weakref__",
               "IndexSpan": {

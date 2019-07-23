@@ -38,6 +38,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             KeyType = keyType;
             ValueType = valueType;
             Name = $"{name}[{keyType.Name}, {valueType.Name}]";
+            QualifiedName = $"typing:{name}[{keyType.QualifiedName}, {valueType.QualifiedName}]";
         }
 
         public IPythonType KeyType { get; }
@@ -45,6 +46,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonType ItemType => _itemType ?? (_itemType = CreateItemType());
 
         public override string Name { get; }
+        public override string QualifiedName { get; }
 
         public override IMember CreateInstance(string typeName, IArgumentSet args) => new TypingDictionary(this);
         public override IMember Index(IPythonInstance instance, IArgumentSet args) => new PythonInstance(ValueType);

@@ -97,7 +97,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:dict"
+          "ReturnType": "i:typing:Dict[int, typing:Any]"
         }
       ],
       "Attributes": 0,
@@ -285,7 +285,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:tuple"
+          "ReturnType": "i:typing:Tuple[typing:Type[BaseException], BaseException, types:TracebackType]"
         }
       ],
       "Attributes": 0,
@@ -1113,7 +1113,7 @@
       }
     },
     {
-      "Value": "i:dict",
+      "Value": "i:typing:Dict[typing:Any, typing:Any]",
       "Id": 1595009614,
       "Name": "_xoptions",
       "IndexSpan": {
@@ -1131,7 +1131,7 @@
       }
     },
     {
-      "Value": "i:list",
+      "Value": "i:typing:List[str]",
       "Id": 24243575,
       "Name": "argv",
       "IndexSpan": {
@@ -1158,7 +1158,7 @@
       }
     },
     {
-      "Value": "i:list",
+      "Value": "i:typing:Sequence[str]",
       "Id": 1963179240,
       "Name": "builtin_module_names",
       "IndexSpan": {
@@ -1266,7 +1266,7 @@
       }
     },
     {
-      "Value": "i:list",
+      "Value": "i:typing:List[importlib.abc:MetaPathFinder]",
       "Id": -1294259224,
       "Name": "meta_path",
       "IndexSpan": {
@@ -1275,7 +1275,7 @@
       }
     },
     {
-      "Value": "i:dict",
+      "Value": "i:typing:Dict[str, _importlib_modulespec:ModuleType]",
       "Id": -1637601392,
       "Name": "modules",
       "IndexSpan": {
@@ -1284,7 +1284,7 @@
       }
     },
     {
-      "Value": "i:list",
+      "Value": "i:typing:List[str]",
       "Id": 24674492,
       "Name": "path",
       "IndexSpan": {
@@ -1293,7 +1293,7 @@
       }
     },
     {
-      "Value": "i:list",
+      "Value": "i:typing:List[typing:Any]",
       "Id": -1506404755,
       "Name": "path_hooks",
       "IndexSpan": {
@@ -1302,7 +1302,7 @@
       }
     },
     {
-      "Value": "i:dict",
+      "Value": "i:typing:Dict[str, typing:Any]",
       "Id": 376899064,
       "Name": "path_importer_cache",
       "IndexSpan": {
@@ -1482,7 +1482,7 @@
       }
     },
     {
-      "Value": "i:tuple",
+      "Value": "i:typing:Tuple[str, str, str]",
       "Id": -1174870545,
       "Name": "subversion",
       "IndexSpan": {
@@ -7101,6 +7101,31 @@
           }
         },
         {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:sys:__version_info",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
           "Documentation": "Return self<=value.",
           "Overloads": [
             {
@@ -7581,15 +7606,6 @@
       "Properties": [],
       "Fields": [
         {
-          "Value": "t:tuple_iterator",
-          "Id": 971292143,
-          "Name": "__iter__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
           "Value": "i:int",
           "Id": 762129410,
           "Name": "major",
@@ -7666,7 +7682,7 @@
       }
     },
     {
-      "Documentation": "sys.flags\n\nFlags provided through command line arguments or environment vars.",
+      "Documentation": null,
       "Bases": [
         "t:object"
       ],
@@ -7780,7 +7796,7 @@
       }
     },
     {
-      "Documentation": "sys.float_info\n\nA structseq holding information about the float type. It contains low level\ninformation about the precision and internal representation. Please study\nyour system's :file:`float.h` for more information.",
+      "Documentation": null,
       "Bases": [
         "t:object"
       ],
@@ -7882,7 +7898,7 @@
       }
     },
     {
-      "Documentation": "hash_info\n\nA struct sequence providing parameters used for computing\nhashes. The attributes are read only.",
+      "Documentation": null,
       "Bases": [
         "t:object"
       ],
@@ -8008,7 +8024,7 @@
       }
     },
     {
-      "Documentation": "sys.int_info\n\nA struct sequence that holds information about Python's\ninternal representation of integers.  The attributes are read only.",
+      "Documentation": null,
       "Bases": [
         "t:object"
       ],
@@ -8056,7 +8072,7 @@
       }
     },
     {
-      "Documentation": "sys.version_info\n\nVersion information as a named tuple.",
+      "Documentation": "Built-in immutable sequence.\n\nIf no argument is given, the constructor returns an empty tuple.\nIf iterable is specified the tuple is initialized from iterable's items.\n\nIf the argument is a tuple, the return value is the same object.",
       "Bases": [
         "t:object"
       ],
@@ -8193,7 +8209,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:tuple",
+          "Value": "i:typing:Tuple[int, int, int]",
           "Id": -1420100829,
           "Name": "platform_version",
           "IndexSpan": null

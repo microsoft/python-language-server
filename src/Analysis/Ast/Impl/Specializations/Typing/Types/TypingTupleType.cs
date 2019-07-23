@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
@@ -30,14 +31,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="itemTypes">Tuple item types.</param>
         /// <param name="interpreter">Python interpreter.</param>
         public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
-            : base(null, BuiltinTypeId.Tuple, interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
+            : base(BuiltinTypeId.Tuple, interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
             ItemTypes = itemTypes;
             Name = CodeFormatter.FormatSequence("Tuple", '[', itemTypes);
+            QualifiedName = CodeFormatter.FormatSequence("typing:Tuple", '[', itemTypes.Select(t => t.QualifiedName));
         }
 
         public IReadOnlyList<IPythonType> ItemTypes { get; }
 
         public override string Name { get; }
+        public override string QualifiedName { get; }
+
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 

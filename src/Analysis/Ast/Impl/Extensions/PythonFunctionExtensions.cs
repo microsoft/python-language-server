@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -37,6 +38,10 @@ namespace Microsoft.Python.Analysis {
         }
 
         public static string GetQualifiedName(this IPythonClassMember cm) {
+            if(cm.DeclaringModule.ModuleType == ModuleType.Builtins) {
+                return cm.Name;
+            }
+
             var s = new Stack<string>();
             s.Push(cm.Name);
             for (var p = cm.DeclaringType as IPythonClassMember; p != null; p = p.DeclaringType as IPythonClassMember) {

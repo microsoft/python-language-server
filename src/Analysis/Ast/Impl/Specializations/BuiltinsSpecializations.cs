@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static IMember Range(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet) {
             var args = argSet.Values<IMember>();
             if (args.Count > 0) {
-                var type = new PythonCollectionType(null, BuiltinTypeId.List, module.Interpreter.ModuleResolution.BuiltinsModule, false);
+                var type = new PythonCollectionType(BuiltinTypeId.List, module.Interpreter.ModuleResolution.BuiltinsModule, false);
                 return new PythonCollection(type, new[] { args[0] });
             }
             return null;

@@ -9,7 +9,7 @@
           "Parameters": [
             {
               "Name": "lvl",
-              "Type": "int",
+              "Type": "t:int",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -34,13 +34,13 @@
           "Parameters": [
             {
               "Name": "lvl",
-              "Type": "int",
+              "Type": "t:int",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "levelName",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -284,7 +284,7 @@
           "Parameters": [
             {
               "Name": "attrdict",
-              "Type": "dict",
+              "Type": "t:typing:Mapping[str, typing:Any]",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -359,7 +359,7 @@
           "Parameters": [
             {
               "Name": "klass",
-              "Type": "type",
+              "Type": "t:type",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -382,7 +382,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:builtins:type"
+          "ReturnType": "i:type"
         }
       ],
       "Attributes": 0,
@@ -408,49 +408,49 @@
             },
             {
               "Name": "filename",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "filemode",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "format",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "datefmt",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "style",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "level",
-              "Type": "typing:Union[int, Unknown]",
+              "Type": "t:typing:Union[int, Unknown]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stream",
-              "Type": "ellipsis",
+              "Type": "t:ellipsis",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "handlers",
-              "Type": "list",
+              "Type": "t:typing:Iterable[logging:Handler]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             }
@@ -471,37 +471,37 @@
             },
             {
               "Name": "filename",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "filemode",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "format",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "datefmt",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "level",
-              "Type": "typing:Union[int, Unknown]",
+              "Type": "t:typing:Union[int, Unknown]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stream",
-              "Type": "ellipsis",
+              "Type": "t:ellipsis",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             }
@@ -526,7 +526,7 @@
           "Parameters": [
             {
               "Name": "name",
-              "Type": "str",
+              "Type": "t:str",
               "DefaultValue": "i:ellipsis",
               "Kind": 0
             }
@@ -541,7 +541,7 @@
           "Parameters": [
             {
               "Name": "name",
-              "Type": "typing:Union[Unknown, str]",
+              "Type": "t:typing:Union[Unknown, str]",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -566,37 +566,37 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -607,31 +607,31 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -656,37 +656,37 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -697,31 +697,31 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -746,37 +746,37 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -787,31 +787,31 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -836,37 +836,37 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -877,31 +877,31 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -926,37 +926,37 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -967,31 +967,31 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -1016,37 +1016,37 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -1057,31 +1057,31 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -1106,37 +1106,37 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -1147,31 +1147,31 @@
           "Parameters": [
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -1196,43 +1196,43 @@
           "Parameters": [
             {
               "Name": "lvl",
-              "Type": "int",
+              "Type": "t:int",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "stack_info",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -1243,37 +1243,37 @@
           "Parameters": [
             {
               "Name": "lvl",
-              "Type": "int",
+              "Type": "t:int",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "msg",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "args",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 1
             },
             {
               "Name": "exc_info",
-              "Type": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "extra",
-              "Type": "dict",
+              "Type": "t:typing:Dict[str, typing:Any]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
             {
               "Name": "kwargs",
-              "Type": "typing:Any",
+              "Type": "t:typing:Any",
               "DefaultValue": null,
               "Kind": 2
             }
@@ -1298,7 +1298,7 @@
           "Parameters": [
             {
               "Name": "lvl",
-              "Type": "int",
+              "Type": "t:int",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -1396,7 +1396,7 @@
           "Parameters": [
             {
               "Name": "capture",
-              "Type": "bool",
+              "Type": "t:bool",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -1417,7 +1417,7 @@
   ],
   "Variables": [
     {
-      "Value": "logging:<lambda>",
+      "Value": "t:logging:<lambda>",
       "Id": -977992405,
       "Name": "currentframe",
       "IndexSpan": {
@@ -1426,7 +1426,7 @@
       }
     },
     {
-      "Value": "logging:LogRecord",
+      "Value": "t:logging:LogRecord",
       "Id": 1140309437,
       "Name": "_logRecordFactory",
       "IndexSpan": {
@@ -1435,7 +1435,7 @@
       }
     },
     {
-      "Value": "logging:Logger",
+      "Value": "t:logging:Logger",
       "Id": 493334944,
       "Name": "_loggerClass",
       "IndexSpan": {
@@ -1444,7 +1444,7 @@
       }
     },
     {
-      "Value": ":sys",
+      "Value": "p:sys",
       "Id": 799574,
       "Name": "sys",
       "IndexSpan": {
@@ -1453,7 +1453,7 @@
       }
     },
     {
-      "Value": ":os",
+      "Value": "p:os",
       "Id": 25659,
       "Name": "os",
       "IndexSpan": {
@@ -1462,7 +1462,7 @@
       }
     },
     {
-      "Value": ":time",
+      "Value": "p:time",
       "Id": 24801124,
       "Name": "time",
       "IndexSpan": {
@@ -1471,7 +1471,7 @@
       }
     },
     {
-      "Value": ":io",
+      "Value": "p:io",
       "Id": 25469,
       "Name": "io",
       "IndexSpan": {
@@ -1480,7 +1480,7 @@
       }
     },
     {
-      "Value": ":traceback",
+      "Value": "p:traceback",
       "Id": 499840373,
       "Name": "traceback",
       "IndexSpan": {
@@ -1489,7 +1489,7 @@
       }
     },
     {
-      "Value": ":warnings",
+      "Value": "p:warnings",
       "Id": 1876311406,
       "Name": "warnings",
       "IndexSpan": {
@@ -1498,7 +1498,7 @@
       }
     },
     {
-      "Value": ":weakref",
+      "Value": "p:weakref",
       "Id": -1641853404,
       "Name": "weakref",
       "IndexSpan": {
@@ -1507,7 +1507,7 @@
       }
     },
     {
-      "Value": ":collections",
+      "Value": "p:collections",
       "Id": 527827230,
       "Name": "collections",
       "IndexSpan": {
@@ -1516,7 +1516,7 @@
       }
     },
     {
-      "Value": "string:Template",
+      "Value": "t:string:Template",
       "Id": 121317809,
       "Name": "Template",
       "IndexSpan": {
@@ -1534,7 +1534,7 @@
       }
     },
     {
-      "Value": ":threading",
+      "Value": "p:threading",
       "Id": -1787068575,
       "Name": "threading",
       "IndexSpan": {
@@ -1696,7 +1696,7 @@
       }
     },
     {
-      "Value": "i:dict",
+      "Value": "i:typing:Dict[int, str]",
       "Id": -1270738910,
       "Name": "_levelToName",
       "IndexSpan": {
@@ -1705,7 +1705,7 @@
       }
     },
     {
-      "Value": "i:dict",
+      "Value": "i:typing:Dict[str, int]",
       "Id": 219717782,
       "Name": "_nameToLevel",
       "IndexSpan": {
@@ -1723,7 +1723,7 @@
       }
     },
     {
-      "Value": "i:threading:_RLock",
+      "Value": "i:typing:Union[threading:_RLock, NoneType]",
       "Id": 749532243,
       "Name": "_lock",
       "IndexSpan": {
@@ -1732,7 +1732,7 @@
       }
     },
     {
-      "Value": "i:_weakrefset:WeakSet[...]",
+      "Value": "i:_weakrefset:WeakSet",
       "Id": 201842736,
       "Name": "_at_fork_acquire_release_weakset",
       "IndexSpan": {
@@ -1750,7 +1750,7 @@
       }
     },
     {
-      "Value": "i:dict",
+      "Value": "i:typing:Dict[str, typing:Tuple[logging:PercentStyle, str]]",
       "Id": -1995009526,
       "Name": "_STYLES",
       "IndexSpan": {
@@ -1813,7 +1813,7 @@
       }
     },
     {
-      "Value": "logging:critical",
+      "Value": "t:logging:critical",
       "Id": 755673933,
       "Name": "fatal",
       "IndexSpan": {
@@ -1822,7 +1822,7 @@
       }
     },
     {
-      "Value": ":atexit",
+      "Value": "p:atexit",
       "Id": 1825031848,
       "Name": "atexit",
       "IndexSpan": {
@@ -1840,97 +1840,7 @@
       }
     },
     {
-      "Value": "typing:Any",
-      "Id": 751189,
-      "Name": "Any",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:Dict",
-      "Id": 23370861,
-      "Name": "Dict",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:Iterable",
-      "Id": -1669586519,
-      "Name": "Iterable",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:List",
-      "Id": 23609685,
-      "Name": "List",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:Mapping",
-      "Id": -362825545,
-      "Name": "Mapping",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:MutableMapping",
-      "Id": -1922278721,
-      "Name": "MutableMapping",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:Optional",
-      "Id": 1363847319,
-      "Name": "Optional",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:Tuple",
-      "Id": 739642865,
-      "Name": "Tuple",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:Union",
-      "Id": 740351224,
-      "Name": "Union",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "time:struct_time",
-      "Id": 97024128,
-      "Name": "struct_time",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "typing:Union[tuple, tuple]",
+      "Value": "t:typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]]",
       "Id": 287899507,
       "Name": "_SysExcInfoType",
       "IndexSpan": {
@@ -1939,7 +1849,7 @@
       }
     },
     {
-      "Value": "typing:Union[bool, typing:Union[tuple, tuple], BaseException]",
+      "Value": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
       "Id": 1370479344,
       "Name": "_ExcInfoType",
       "IndexSpan": {
@@ -1948,7 +1858,7 @@
       }
     },
     {
-      "Value": "typing:Union[tuple, dict]",
+      "Value": "t:typing:Union[typing:Tuple[typing:Any, ellipsis], typing:Dict[str, typing:Any]]",
       "Id": -1661936385,
       "Name": "_ArgsType",
       "IndexSpan": {
@@ -1957,7 +1867,7 @@
       }
     },
     {
-      "Value": "typing:Union[Unknown]",
+      "Value": "t:typing:Union[str, Unknown]",
       "Id": 202661914,
       "Name": "_FilterType",
       "IndexSpan": {
@@ -1966,7 +1876,7 @@
       }
     },
     {
-      "Value": "typing:Union[int, Unknown]",
+      "Value": "t:typing:Union[int, Unknown]",
       "Id": 1730830652,
       "Name": "_Level",
       "IndexSpan": {
@@ -1979,7 +1889,7 @@
     {
       "Documentation": "\n    A LogRecord instance represents an event being logged.\n\n    LogRecord instances are created every time something is logged. They\n    contain all the information pertinent to the event being logged. The\n    main information passed in is in msg and args, which are combined\n    using str(msg) % args to create the message field of the record. The\n    record also includes information such as when the record was created,\n    the source line where the logging call was made, and any exception\n    information to be logged.\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -1989,7 +1899,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2011,7 +1921,7 @@
       "Properties": [],
       "Fields": [
         {
-          "Value": "logging:__str__",
+          "Value": "t:logging:__str__",
           "Id": 1215429388,
           "Name": "__repr__",
           "IndexSpan": {
@@ -2062,7 +1972,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "str",
+          "Value": "t:str",
           "Id": -2131035837,
           "Name": "module",
           "IndexSpan": {
@@ -2143,7 +2053,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2152,7 +2062,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2173,7 +2083,7 @@
     {
       "Documentation": null,
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [],
       "Properties": [],
@@ -2197,7 +2107,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2206,7 +2116,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2227,8 +2137,8 @@
     {
       "Documentation": null,
       "Bases": [
-        "logging:PercentStyle",
-        "object"
+        "t:logging:PercentStyle",
+        "t:object"
       ],
       "Methods": [],
       "Properties": [],
@@ -2252,7 +2162,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2261,7 +2171,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2282,8 +2192,8 @@
     {
       "Documentation": null,
       "Bases": [
-        "logging:PercentStyle",
-        "object"
+        "t:logging:PercentStyle",
+        "t:object"
       ],
       "Methods": [
         {
@@ -2293,7 +2203,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:StringTemplateStyle",
+                  "Type": "t:logging:StringTemplateStyle",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2351,7 +2261,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2360,7 +2270,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2381,7 +2291,7 @@
     {
       "Documentation": "\n    Formatter instances are used to convert a LogRecord to text.\n\n    Formatters need to know how a LogRecord is constructed. They are\n    responsible for converting a LogRecord to (usually) a string which can\n    be interpreted by either a human or an external system. The base Formatter\n    allows a formatting string to be specified. If none is supplied, the\n    the style-dependent default value, \"%(message)s\", \"{message}\", or\n    \"${message}\", is used.\n\n    The Formatter can be initialized with a format string which makes use of\n    knowledge of the LogRecord attributes - e.g. the default value mentioned\n    above makes use of the fact that the user's message and arguments are pre-\n    formatted into a LogRecord's message attribute. Currently, the useful\n    attributes in a LogRecord are described by:\n\n    %(name)s            Name of the logger (logging channel)\n    %(levelno)s         Numeric logging level for the message (DEBUG, INFO,\n                        WARNING, ERROR, CRITICAL)\n    %(levelname)s       Text logging level for the message (\"DEBUG\", \"INFO\",\n                        \"WARNING\", \"ERROR\", \"CRITICAL\")\n    %(pathname)s        Full pathname of the source file where the logging\n                        call was issued (if available)\n    %(filename)s        Filename portion of pathname\n    %(module)s          Module (name portion of filename)\n    %(lineno)d          Source line number where the logging call was issued\n                        (if available)\n    %(funcName)s        Function name\n    %(created)f         Time when the LogRecord was created (time.time()\n                        return value)\n    %(asctime)s         Textual time when the LogRecord was created\n    %(msecs)d           Millisecond portion of the creation time\n    %(relativeCreated)d Time in milliseconds when the LogRecord was created,\n                        relative to the time the logging module was loaded\n                        (typically at application startup time)\n    %(thread)d          Thread ID (if available)\n    %(threadName)s      Thread name (if available)\n    %(process)d         Process ID (if available)\n    %(message)s         The result of record.getMessage(), computed just as\n                        the record is emitted\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -2391,7 +2301,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Formatter",
+                  "Type": "t:logging:Formatter",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2416,7 +2326,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Formatter",
+                  "Type": "t:logging:Formatter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2456,7 +2366,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2465,7 +2375,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2486,7 +2396,7 @@
     {
       "Documentation": "\n    A formatter suitable for formatting a number of records.\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -2496,7 +2406,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:BufferingFormatter",
+                  "Type": "t:logging:BufferingFormatter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2527,7 +2437,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:BufferingFormatter",
+                  "Type": "t:logging:BufferingFormatter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2558,7 +2468,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:BufferingFormatter",
+                  "Type": "t:logging:BufferingFormatter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2589,7 +2499,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:BufferingFormatter",
+                  "Type": "t:logging:BufferingFormatter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2600,7 +2510,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "str"
+              "ReturnType": "t:str"
             }
           ],
           "Attributes": 0,
@@ -2623,7 +2533,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2632,7 +2542,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2653,13 +2563,13 @@
     {
       "Documentation": "\n    Filter instances are used to perform arbitrary filtering of LogRecords.\n\n    Loggers and Handlers can optionally use Filter instances to filter\n    records as desired. The base filter class only allows events which are\n    below a certain point in the logger hierarchy. For example, a filter\n    initialized with \"A.B\" will allow events logged by loggers \"A.B\",\n    \"A.B.C\", \"A.B.C.D\", \"A.B.D\" etc. but not \"A.BB\", \"B.A.B\" etc. If\n    initialized with the empty string, all events are passed.\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [],
       "Properties": [],
       "Fields": [
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2668,7 +2578,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2689,19 +2599,19 @@
     {
       "Documentation": "\n    A base class for loggers and handlers which allows them to share\n    common code.\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [],
       "Properties": [],
       "Fields": [
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2710,7 +2620,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2731,8 +2641,8 @@
     {
       "Documentation": "\n    Handler instances dispatch logging events to specific destinations.\n\n    The base handler class. Acts as a placeholder which defines the Handler\n    interface. Handlers can optionally use Formatter instances to format\n    records as desired. By default, no formatter is specified; in this case,\n    the 'raw' message as determined by record.message is logged.\n    ",
       "Bases": [
-        "logging:Filterer",
-        "object"
+        "t:logging:Filterer",
+        "t:object"
       ],
       "Methods": [
         {
@@ -2742,7 +2652,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Handler",
+                  "Type": "t:logging:Handler",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2767,7 +2677,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Handler",
+                  "Type": "t:logging:Handler",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2798,7 +2708,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2844,13 +2754,13 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2859,7 +2769,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -2880,8 +2790,8 @@
     {
       "Documentation": "\n    A handler class which writes logging records, appropriately formatted,\n    to a stream. Note that this class does not close the stream, as\n    sys.stdout or sys.stderr may be used.\n    ",
       "Bases": [
-        "logging:Handler",
-        "object"
+        "t:logging:Handler",
+        "t:object"
       ],
       "Methods": [
         {
@@ -2891,7 +2801,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:StreamHandler",
+                  "Type": "t:logging:StreamHandler",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -2922,7 +2832,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -2968,7 +2878,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
@@ -2986,7 +2896,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -2995,7 +2905,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -3016,8 +2926,8 @@
     {
       "Documentation": "\n    A handler class which writes formatted logging records to disk files.\n    ",
       "Bases": [
-        "logging:StreamHandler",
-        "object"
+        "t:logging:StreamHandler",
+        "t:object"
       ],
       "Methods": [
         {
@@ -3027,7 +2937,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:FileHandler",
+                  "Type": "t:logging:FileHandler",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3052,7 +2962,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3086,7 +2996,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
@@ -3116,7 +3026,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -3125,7 +3035,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -3146,8 +3056,8 @@
     {
       "Documentation": "\n    This class is like a StreamHandler using sys.stderr, but always uses\n    whatever sys.stderr is currently set to rather than the value of\n    sys.stderr at handler construction time.\n    ",
       "Bases": [
-        "logging:StreamHandler",
-        "object"
+        "t:logging:StreamHandler",
+        "t:object"
       ],
       "Methods": [],
       "Properties": [
@@ -3177,7 +3087,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
@@ -3201,7 +3111,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -3210,7 +3120,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -3231,13 +3141,13 @@
     {
       "Documentation": "\n    PlaceHolder instances are used in the Manager logger hierarchy to take\n    the place of nodes for which no loggers have been defined. This class is\n    intended for internal use only and not as part of the public API.\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [],
       "Properties": [],
       "Fields": [
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -3246,7 +3156,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -3267,7 +3177,7 @@
     {
       "Documentation": "\n    There is [under normal circumstances] just one Manager instance, which\n    holds the hierarchy of loggers.\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -3277,7 +3187,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Manager",
+                  "Type": "t:logging:Manager",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3308,7 +3218,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Manager",
+                  "Type": "t:logging:Manager",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3339,7 +3249,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Manager",
+                  "Type": "t:logging:Manager",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3370,7 +3280,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Manager",
+                  "Type": "t:logging:Manager",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3401,7 +3311,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Manager",
+                  "Type": "t:logging:Manager",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3432,7 +3342,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Manager",
+                  "Type": "t:logging:Manager",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3469,7 +3379,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Manager",
+                  "Type": "t:logging:Manager",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3527,7 +3437,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -3536,7 +3446,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -3557,8 +3467,8 @@
     {
       "Documentation": "\n    Instances of the Logger class represent a single logging channel. A\n    \"logging channel\" indicates an area of an application. Exactly how an\n    \"area\" is defined is up to the application developer. Since an\n    application can have any number of areas, logging channels are identified\n    by a unique string. Application areas can be nested (e.g. an area\n    of \"input processing\" might include sub-areas \"read CSV files\", \"read\n    XLS files\" and \"read Gnumeric files\"). To cater for this natural nesting,\n    channel names are organized into a namespace hierarchy where levels are\n    separated by periods, much like the Java or Python package namespace. So\n    in the instance given above, channel names might be \"input\" for the upper\n    level, and \"input.csv\", \"input.xls\" and \"input.gnu\" for the sub-levels.\n    There is no arbitrary limit to the depth of nesting.\n    ",
       "Bases": [
-        "logging:Filterer",
-        "object"
+        "t:logging:Filterer",
+        "t:object"
       ],
       "Methods": [
         {
@@ -3568,7 +3478,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Logger",
+                  "Type": "t:logging:Logger",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3604,7 +3514,7 @@
                 },
                 {
                   "Name": "stack_info",
-                  "Type": "bool",
+                  "Type": "t:bool",
                   "DefaultValue": "i:bool",
                   "Kind": 0
                 }
@@ -3629,7 +3539,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:Logger",
+                  "Type": "t:logging:Logger",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3660,7 +3570,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3685,7 +3595,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3707,7 +3617,7 @@
       "Properties": [],
       "Fields": [
         {
-          "Value": "logging:critical",
+          "Value": "t:logging:critical",
           "Id": 755673933,
           "Name": "fatal",
           "IndexSpan": {
@@ -3722,19 +3632,19 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Handler]",
           "Id": 1380289408,
           "Name": "handlers",
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -3743,7 +3653,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -3764,8 +3674,8 @@
     {
       "Documentation": "\n    A root logger is not that different to any other logger, except that\n    it must have a logging level and there is only one instance of it in\n    the hierarchy.\n    ",
       "Bases": [
-        "logging:Logger",
-        "object"
+        "t:logging:Logger",
+        "t:object"
       ],
       "Methods": [
         {
@@ -3775,7 +3685,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:RootLogger",
+                  "Type": "t:logging:RootLogger",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3806,7 +3716,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -3834,19 +3744,19 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Handler]",
           "Id": 1380289408,
           "Name": "handlers",
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -3855,7 +3765,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -3876,7 +3786,7 @@
     {
       "Documentation": "\n    An adapter for loggers which makes it easier to specify contextual\n    information in logging output.\n    ",
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -3886,7 +3796,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:LoggerAdapter",
+                  "Type": "t:logging:LoggerAdapter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3929,7 +3839,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:LoggerAdapter",
+                  "Type": "t:logging:LoggerAdapter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -3965,7 +3875,7 @@
                 },
                 {
                   "Name": "stack_info",
-                  "Type": "bool",
+                  "Type": "t:bool",
                   "DefaultValue": "i:bool",
                   "Kind": 0
                 }
@@ -3990,7 +3900,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "logging:LoggerAdapter",
+                  "Type": "t:logging:LoggerAdapter",
                   "DefaultValue": null,
                   "Kind": 0
                 },
@@ -4021,7 +3931,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "object",
+                  "Type": "t:object",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -4055,7 +3965,7 @@
       ],
       "Fields": [
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -4064,7 +3974,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {
@@ -4085,8 +3995,8 @@
     {
       "Documentation": "\n    This handler does nothing. It's intended to be used to avoid the\n    \"No handlers could be found for logger XXX\" one-off warning. This is\n    important for library code, which may contain code to log events. If a user\n    of the library does not configure logging, the one-off warning might be\n    produced; to avoid this, the library developer simply needs to instantiate\n    a NullHandler and add it to the top-level logger of the library module or\n    package.\n    ",
       "Bases": [
-        "logging:Handler",
-        "object"
+        "t:logging:Handler",
+        "t:object"
       ],
       "Methods": [],
       "Properties": [],
@@ -4104,7 +4014,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:list",
+          "Value": "i:typing:List[logging:Filter]",
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
@@ -4122,7 +4032,7 @@
           "IndexSpan": null
         },
         {
-          "Value": "dict",
+          "Value": "t:dict",
           "Id": 817929997,
           "Name": "__dict__",
           "IndexSpan": {
@@ -4131,7 +4041,7 @@
           }
         },
         {
-          "Value": "object",
+          "Value": "t:object",
           "Id": 1225024228,
           "Name": "__weakref__",
           "IndexSpan": {

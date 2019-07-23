@@ -25,22 +25,17 @@ namespace Microsoft.Python.Analysis.Types.Collections {
     /// Type info for an iterable entity. Most base collection class.
     /// </summary>
     internal class PythonCollectionType : PythonTypeWrapper, IPythonCollectionType {
-        private string _typeName;
-
         /// <summary>
         /// Creates type info for an collection.
         /// </summary>
-        /// <param name="typeName">Iterable type name. If null, name of the type id will be used.</param>
         /// <param name="collectionTypeId">Collection type id, such as <see cref="BuiltinTypeId.List"/>.</param>
         /// <param name="declaringModule">Declaring module.</param>
         /// <param name="isMutable">Indicates if collection is mutable (like list) or immutable (like tuple).</param>
         public PythonCollectionType(
-            string typeName,
             BuiltinTypeId collectionTypeId,
             IPythonModule declaringModule,
             bool isMutable
             ) : base(collectionTypeId, declaringModule) {
-            _typeName = typeName;
             TypeId = collectionTypeId;
             IteratorType = new PythonIteratorType(collectionTypeId.GetIteratorTypeId(), declaringModule);
             IsMutable = isMutable;
@@ -56,18 +51,6 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         #endregion
 
         #region IPythonType
-        public override string Name {
-            get {
-                if (_typeName == null) {
-                    var type = DeclaringModule.Interpreter.GetBuiltinType(TypeId);
-                    if (!type.IsUnknown()) {
-                        _typeName = type.Name;
-                    }
-                }
-                return _typeName ?? "<not set>"; ;
-            }
-        }
-
         public override BuiltinTypeId TypeId { get; }
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? IteratorType : base.GetMember(name);
@@ -98,7 +81,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         }
 
         public static IPythonCollection CreateList(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, declaringModule, true);
+            var collectionType = new PythonCollectionType(BuiltinTypeId.List, declaringModule, true);
             return new PythonCollection(collectionType, contents, flatten, exact: exact);
         }
 
@@ -109,7 +92,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         }
 
         public static IPythonCollection CreateTuple(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, declaringModule, false);
+            var collectionType = new PythonCollectionType(BuiltinTypeId.Tuple, declaringModule, false);
             return new PythonCollection(collectionType, contents, exact: exact);
         }
 
@@ -120,7 +103,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         }
 
         public static IPythonCollection CreateSet(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, declaringModule, true);
+            var collectionType = new PythonCollectionType(BuiltinTypeId.Set, declaringModule, true);
             return new PythonCollection(collectionType, contents, flatten, exact: exact);
         }
 
