@@ -394,5 +394,28 @@ class Bar(Foo):
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("X"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromUnknownType() {
+            const string code = @"
+x = Y
+class MyEntity(x): 
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromUnknownInstance() {
+            const string code = @"
+x = Y()
+class MyEntity(x): 
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }
