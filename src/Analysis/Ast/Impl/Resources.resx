@@ -216,4 +216,7 @@
   <data name="DuplicateArgumentName" xml:space="preserve">
     <value>Duplicate argument name '{0}' in function definition.</value>
   </data>
+  <data name="NoClsArgument" xml:space="preserve">
+    <value>Class method '{0}' should have 'cls' as first argument.</value>
+  </data>
 </root>

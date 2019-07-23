@@ -25,6 +25,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal sealed class PythonFunctionType : PythonType, IPythonFunctionType {
+        private readonly IReadOnlyList<string> DefaultClassMethods = new[] { "__new__", "__init_subclass__", "__class_getitem__" };
         private ImmutableArray<IPythonFunctionOverload> _overloads = ImmutableArray<IPythonFunctionOverload>.Empty;
         private bool _isAbstract;
         private bool _isSpecialized;
@@ -60,12 +61,13 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             Location location
         ) : base(fd.Name, location,
-            fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(), 
+            fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(),
             declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
 
             location.Module.AddAstNode(this, fd);
             ProcessDecorators(fd);
+            DecideClassMethod();
         }
 
         #region IPythonType
@@ -116,6 +118,14 @@ namespace Microsoft.Python.Analysis.Types {
             => _overloads = _overloads.Count > 0 ? _overloads.Add(overload) : ImmutableArray<IPythonFunctionOverload>.Create(overload);
 
         internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
+
+        private void DecideClassMethod() {
+            if (IsClassMethod) {
+                return;
+            }
+
+            IsClassMethod = DefaultClassMethods.Contains(Name);
+        }
 
         private void ProcessDecorators(FunctionDefinition fd) {
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {

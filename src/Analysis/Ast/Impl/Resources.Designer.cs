@@ -230,7 +230,9 @@ namespace Microsoft.Python.Analysis {
                 return ResourceManager.GetString("ExceptionGettingSearchPaths", resourceCulture);
             }
         }
-                ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Arguments to Generic must all be type parameters..
         /// </summary>
         internal static string GenericNotAllTypeParameters {
             get {
@@ -271,6 +273,15 @@ namespace Microsoft.Python.Analysis {
         internal static string NewTypeFirstArgNotString {
             get {
                 return ResourceManager.GetString("NewTypeFirstArgNotString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Class method &apos;{0}&apos; should have &apos;cls&apos; as first argument..
+        /// </summary>
+        internal static string NoClsArgument {
+            get {
+                return ResourceManager.GetString("NoClsArgument", resourceCulture);
             }
         }
         

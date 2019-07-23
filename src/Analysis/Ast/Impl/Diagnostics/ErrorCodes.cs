@@ -26,6 +26,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string VariableNotDefinedGlobally= "variable-not-defined-globally";
         public const string VariableNotDefinedNonLocal = "variable-not-defined-nonlocal";
         public const string NoSelfArgument = "no-self-argument";
+        public const string NoClsArgument = "no-cls-argument";
         public const string UnsupportedOperandType = "unsupported-operand-type";
         public const string ReturnInInit = "return-in-init";
         public const string TypingTypeVarArguments = "typing-typevar-arguments";

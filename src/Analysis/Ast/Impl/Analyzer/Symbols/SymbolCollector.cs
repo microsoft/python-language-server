@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
@@ -207,33 +208,40 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void CheckValidOverload(FunctionDefinition fd, IPythonClassMember fn, IPythonFunctionOverload overload) {
             if (overload.ClassMember.DeclaringType?.MemberType == PythonMemberType.Class) {
-                if(fn is IPythonFunctionType f) {
-                    if(f.IsClassMethod) {
-                        // TODO check for bad-classmethod-argument
-                        // for now don't handle it
-                        return;
-                    }
+                if (fd.Parameters.Length == 0) {
+                    ReportFunctionParams(fd, Resources.NoClsArgument, ErrorCodes.NoClsArgument);
+                    // TODO report no-method-argument
+                    return;
                 }
 
-                // if declared in a class, should have first argument as self
-                if (fd.Parameters.Length > 0) {
-                    var param = fd.Parameters[0];
-                    if (!param.Name.Equals("self")) {
-                        _eval.ReportDiagnostics(
-                            _eval.Module.Uri,
-                            new DiagnosticsEntry(
-                                Resources.NoSelfArgument,
-                                // only highlight the redefined name
-                                _eval.GetLocationInfo(fd.NameExpression).Span,
-                                ErrorCodes.NoSelfArgument, 
-                                Parsing.Severity.Error, 
-                                DiagnosticSource.Analysis));
+                // If fn is a function:
+                //      If it is a class method check for cls
+                //      If it is a regular method check for self
+                // If fn is a property, check for self
+                var param = fd.Parameters[0].Name;
+                if (fn is IPythonFunctionType f) {
+                    if (f.IsClassMethod && !param.Equals("cls")) {
+                        ReportFunctionParams(fd, Resources.NoClsArgument.FormatInvariant(fd.Name), ErrorCodes.NoClsArgument);
+                    } else if (!f.IsClassMethod && !param.Equals("self")) {
+                        ReportFunctionParams(fd, Resources.NoSelfArgument, ErrorCodes.NoSelfArgument);
                     }
-                } else {
-                    // TODO report no-method-argument
+                } else if (!param.Equals("self")) {
+                    ReportFunctionParams(fd, Resources.NoSelfArgument.FormatInvariant(fd.Name), ErrorCodes.NoSelfArgument);
                 }
             }
         }
+
+        private void ReportFunctionParams(FunctionDefinition fd, string message, string errorCode) {
+            _eval.ReportDiagnostics(
+                _eval.Module.Uri,
+                new DiagnosticsEntry(
+                    message,
+                    _eval.GetLocationInfo(fd.NameExpression).Span,
+                    errorCode,
+                    Parsing.Severity.Warning,
+                    DiagnosticSource.Analysis));
+        }
+
         private static bool IsDeprecated(ClassDefinition cd)
             => cd.Decorators?.Decorators != null && IsDeprecated(cd.Decorators.Decorators);
 
