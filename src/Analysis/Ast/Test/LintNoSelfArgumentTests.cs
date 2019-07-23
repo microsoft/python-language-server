@@ -110,18 +110,6 @@ class Test:
         }
 
         [TestMethod, Priority(0)]
-        public async Task FirstArgumentClassMethod() {
-            const string code = @"
-class Test:
-    @classmethod
-    def test(arg1, arg2):
-        pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
-        }
-
-        [TestMethod, Priority(0)]
         public async Task NestedClassFuncNoSelfArg() {
             const string code = @"
 class Test:
@@ -146,7 +134,7 @@ class Test:
         pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -157,7 +145,7 @@ class Test:
         pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -167,7 +155,7 @@ def test():
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(0);
+            analysis.Diagnostics.Should().BeEmpty();
         }
     }
 }
