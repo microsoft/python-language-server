@@ -72,6 +72,8 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     module = Module;
                 } else {
                     var m = Module.Interpreter.ModuleResolution.GetOrLoadModule(parts.ModuleName);
+                    // Try stub-only case (ex _importlib_modulespec).
+                    m = m ?? Module.Interpreter.TypeshedResolution.GetOrLoadModule(parts.ModuleName);
                     if (m != null) {
                         module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
                     }
@@ -135,7 +137,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             return member;
         }
 
-        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string  memberName) {
+        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
             if (memberName.StartsWithOrdinal("__")) {
                 memberName = memberName.Substring(2, memberName.Length - 4);
             }

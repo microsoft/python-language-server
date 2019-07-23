@@ -15,29 +15,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching {
-    public enum ObjectType {
-        Type,
-        Instance,
-        Module,
-        VariableModule,
-        BuiltinModule
-    }
-
-    internal struct QualifiedNameParts {
-        /// <summary>Object type.</summary>
-        public ObjectType ObjectType;
-        /// <summary>Module name.</summary>
-        public string ModuleName;
-        /// <summary>Module member names such as 'A', 'B', 'C' from module:A.B.C.</summary>
-        public IReadOnlyList<string> MemberNames;
-    }
-
     internal static class TypeNames {
         public static string GetPersistentQualifiedName(this IMember m) {
             var t = m.GetPythonType();
