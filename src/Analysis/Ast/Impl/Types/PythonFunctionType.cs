@@ -117,7 +117,10 @@ namespace Microsoft.Python.Analysis.Types {
         internal void AddOverload(IPythonFunctionOverload overload)
             => _overloads = _overloads.Count > 0 ? _overloads.Add(overload) : ImmutableArray<IPythonFunctionOverload>.Create(overload);
 
-        internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
+        internal IPythonFunctionType ToUnbound() {
+            Debug.Assert(DeclaringType != null, "Attempt to unbound standalone function.");
+            return new PythonUnboundMethod(this);
+        }
 
         private void ProcessDecorators(FunctionDefinition fd) {
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
