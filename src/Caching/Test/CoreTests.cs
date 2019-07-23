@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Caching.Models;
@@ -61,27 +62,31 @@ c = C()
             Baseline.CompareToFile(BaselineFileName, json);
         }
 
-
         [DataTestMethod, Priority(0)]
-        [DataRow("", null, null, false)]
-        [DataRow("str", "builtins", "str", false)]
-        [DataRow("i:str", "builtins", "str", true)]
-        [DataRow("i:...", "builtins", "ellipsis", true)]
-        [DataRow("ellipsis", "builtins", "ellipsis", false)]
-        [DataRow("i:builtins:str", "builtins", "str", true)]
-        [DataRow("i:mod:x", "mod", "x", true)]
-        [DataRow("typing:Union[str, tuple]", "typing", "Union[str, tuple]", false)]
-        [DataRow("typing:Union[typing:Any, mod:y]", "typing", "Union[typing:Any, mod:y]", false)]
-        [DataRow("typing:Union[typing:Union[str, int], mod:y]", "typing", "Union[typing:Union[str, int], mod:y]", false)]
-        public void QualifiedNames(string qualifiedName, string moduleName, string typeName, bool isInstance) {
+        [DataRow("t:str", "builtins", "str", ObjectType.Type)]
+        [DataRow("i:str", "builtins", "str", ObjectType.Instance)]
+        [DataRow("i:...", "builtins", "ellipsis", ObjectType.Instance)]
+        [DataRow("t:ellipsis", "builtins", "ellipsis", ObjectType.Type)]
+        [DataRow("i:builtins:str", "builtins", "str", ObjectType.Instance)]
+        [DataRow("i:mod:x", "mod", "x", ObjectType.Instance)]
+        [DataRow("t:typing:Union[str, tuple]", "typing", "Union[str, tuple]", ObjectType.Type)]
+        [DataRow("t:typing:Union[typing:Any, mod:y]", "typing", "Union[typing:Any, mod:y]", ObjectType.Type)]
+        [DataRow("t:typing:Union[typing:Union[str, int], mod:y]", "typing", "Union[typing:Union[str, int], mod:y]", ObjectType.Type)]
+        [DataRow("m:typing", "typing", "", ObjectType.Module)]
+        [DataRow("p:A", "A", "", ObjectType.VariableModule)]
+        public void QualifiedNames(string qualifiedName, string moduleName, string typeName, ObjectType objectType) {
             TypeNames.DeconstructQualifiedName(qualifiedName, out var parts);
             parts.ModuleName.Should().Be(moduleName);
-            if (string.IsNullOrEmpty(qualifiedName)) {
-                parts.MemberNames.Should().BeNull();
-            } else {
-                parts.MemberNames[0].Should().Be(typeName);
+            switch(objectType) {
+                case ObjectType.Instance:
+                case ObjectType.Type:
+                    parts.MemberNames[0].Should().Be(typeName);
+                    break;
+                default:
+                    parts.MemberNames.Should().BeEmpty();
+                    break;
             }
-            parts.IsInstance.Should().Be(isInstance);
+            parts.ObjectType.Should().Be(objectType);
         }
     }
 }

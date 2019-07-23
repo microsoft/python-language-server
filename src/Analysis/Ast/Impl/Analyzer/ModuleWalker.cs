@@ -248,11 +248,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue; ;
                 }
 
-                // If type does not exist in module, but exists in stub, declare it.
-                // If types are the classes, merge members.
-                // Otherwise, replace type from one from the stub.
+                // If type does not exist in module, but exists in stub, declare it unless it is an import.
+                // If types are the classes, merge members. Otherwise, replace type from one from the stub.
                 if (sourceType == null) {
-                    Eval.DeclareVariable(v.Name, v.Value, v.Source);
+                    if (v.Source == VariableSource.Declaration) {
+                        Eval.DeclareVariable(v.Name, v.Value, v.Source);
+                    }
                 } else if (sourceType is PythonClassType cls && Module.Equals(cls.DeclaringModule)) {
                     // If class exists and belongs to this module, add or replace
                     // its members with ones from the stub, preserving documentation.

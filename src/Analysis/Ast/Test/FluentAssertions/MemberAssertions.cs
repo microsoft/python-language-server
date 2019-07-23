@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             NotBeNull();
 
             var t = Subject.GetPythonType();
-            var mc =  (IMemberContainer) t;
+            var mc = (IMemberContainer)t;
             Execute.Assertion.ForCondition(mc != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName(t)} to be a member container{{reason}}.");
@@ -111,22 +111,41 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             foreach (var n in subjectMemberNames) {
                 var subjectMember = subjectType.GetMember(n);
                 var otherMember = otherContainer.GetMember(n);
-
-                // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
-                if(subjectMember is IPythonInstance) {
-                    otherMember.Should().BeAssignableTo<IPythonInstance>();
-                } else {
-                    otherMember.Should().BeOfType(otherMember.GetType());
-                }
-
                 var subjectMemberType = subjectMember.GetPythonType();
                 var otherMemberType = otherMember.GetPythonType();
-                subjectMemberType.Should().BeOfType(otherMemberType.GetType());
+
+                // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
+                if (subjectMember is IPythonInstance) {
+                    otherMember.Should().BeAssignableTo<IPythonInstance>();
+                }
 
                 subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
-                if(subjectMemberType is IPythonFunctionType subjectFunction) {
-                    var otherFunction = (IPythonFunctionType)otherMemberType;
-                    subjectFunction.Should().HaveSameOverloadsAs(otherFunction);
+                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
+
+                switch (subjectMemberType.MemberType) {
+                    case PythonMemberType.Class:
+                        // Restored collections (like instance of tuple) turn into classes
+                        // rather than into collections with content since we don't track
+                        // collection content in libraries.
+                        subjectMemberType.QualifiedName.Should().Be(otherMemberType.QualifiedName);
+                        break;
+                    case PythonMemberType.Function:
+                    case PythonMemberType.Method:
+                        subjectMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        otherMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        if (subjectMemberType is IPythonFunctionType subjectFunction) {
+                            var otherFunction = (IPythonFunctionType)otherMemberType;
+                            subjectFunction.Should().HaveSameOverloadsAs(otherFunction);
+                        }
+
+                        break;
+                    case PythonMemberType.Property:
+                        subjectMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        otherMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        break;
+                    case PythonMemberType.Unknown:
+                        subjectMemberType.IsUnknown().Should().BeTrue();
+                        break;
                 }
             }
         }

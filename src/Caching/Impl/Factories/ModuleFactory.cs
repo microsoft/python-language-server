@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 } else {
                     var m = Module.Interpreter.ModuleResolution.GetOrLoadModule(parts.ModuleName);
                     if (m != null) {
-                        module = parts.IsVariableModule ? new PythonVariableModule(m) : m;
+                        module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
                     }
                 }
 
@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                         ? GetMemberFromThisModule(parts.MemberNames)
                         : GetMemberFromModule(module, parts.MemberNames);
 
-                if (!parts.IsInstance) {
+                if (parts.ObjectType != ObjectType.Instance) {
                     return member;
                 }
 

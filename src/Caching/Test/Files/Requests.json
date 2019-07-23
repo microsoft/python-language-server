@@ -61,7 +61,7 @@
   ],
   "Variables": [
     {
-      "Value": "urllib3",
+      "Value": "p:urllib3",
       "Id": 1260465222,
       "Name": "urllib3",
       "IndexSpan": {
@@ -70,7 +70,7 @@
       }
     },
     {
-      "Value": "chardet",
+      "Value": "p:chardet",
       "Id": -2125975290,
       "Name": "chardet",
       "IndexSpan": {
@@ -79,7 +79,7 @@
       }
     },
     {
-      "Value": "warnings",
+      "Value": "p:warnings",
       "Id": 1876311406,
       "Name": "warnings",
       "IndexSpan": {
@@ -88,7 +88,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:RequestsDependencyWarning",
+      "Value": "t:requests.exceptions:RequestsDependencyWarning",
       "Id": -802098666,
       "Name": "RequestsDependencyWarning",
       "IndexSpan": {
@@ -97,7 +97,7 @@
       }
     },
     {
-      "Value": "urllib3.contrib.pyopenssl",
+      "Value": "p:urllib3.contrib.pyopenssl",
       "Id": -1632802014,
       "Name": "pyopenssl",
       "IndexSpan": {
@@ -106,7 +106,7 @@
       }
     },
     {
-      "Value": "urllib3.exceptions:DependencyWarning",
+      "Value": "t:urllib3.exceptions:DependencyWarning",
       "Id": -891041158,
       "Name": "DependencyWarning",
       "IndexSpan": {
@@ -205,7 +205,7 @@
       }
     },
     {
-      "Value": "requests.utils",
+      "Value": "p:requests.utils",
       "Id": 770082554,
       "Name": "utils",
       "IndexSpan": {
@@ -214,7 +214,7 @@
       }
     },
     {
-      "Value": "requests.packages",
+      "Value": "p:requests.packages",
       "Id": 2129088004,
       "Name": "packages",
       "IndexSpan": {
@@ -223,7 +223,7 @@
       }
     },
     {
-      "Value": "requests.models:Request",
+      "Value": "t:requests.models:Request",
       "Id": -104689032,
       "Name": "Request",
       "IndexSpan": {
@@ -232,7 +232,7 @@
       }
     },
     {
-      "Value": "requests.models:Response",
+      "Value": "t:requests.models:Response",
       "Id": 1102541176,
       "Name": "Response",
       "IndexSpan": {
@@ -241,7 +241,7 @@
       }
     },
     {
-      "Value": "requests.models:PreparedRequest",
+      "Value": "t:requests.models:PreparedRequest",
       "Id": 1337118331,
       "Name": "PreparedRequest",
       "IndexSpan": {
@@ -250,7 +250,7 @@
       }
     },
     {
-      "Value": "requests.api:request",
+      "Value": "t:requests.api:request",
       "Id": -1769342312,
       "Name": "request",
       "IndexSpan": {
@@ -259,7 +259,7 @@
       }
     },
     {
-      "Value": "requests.api:get",
+      "Value": "t:requests.api:get",
       "Id": 787423,
       "Name": "get",
       "IndexSpan": {
@@ -268,7 +268,7 @@
       }
     },
     {
-      "Value": "requests.api:head",
+      "Value": "t:requests.api:head",
       "Id": 24439415,
       "Name": "head",
       "IndexSpan": {
@@ -277,7 +277,7 @@
       }
     },
     {
-      "Value": "requests.api:post",
+      "Value": "t:requests.api:post",
       "Id": 24687927,
       "Name": "post",
       "IndexSpan": {
@@ -286,7 +286,7 @@
       }
     },
     {
-      "Value": "requests.api:patch",
+      "Value": "t:requests.api:patch",
       "Id": 764909201,
       "Name": "patch",
       "IndexSpan": {
@@ -295,7 +295,7 @@
       }
     },
     {
-      "Value": "requests.api:put",
+      "Value": "t:requests.api:put",
       "Id": 796568,
       "Name": "put",
       "IndexSpan": {
@@ -304,7 +304,7 @@
       }
     },
     {
-      "Value": "requests.api:delete",
+      "Value": "t:requests.api:delete",
       "Id": 1897257090,
       "Name": "delete",
       "IndexSpan": {
@@ -313,7 +313,7 @@
       }
     },
     {
-      "Value": "requests.api:options",
+      "Value": "t:requests.api:options",
       "Id": 180457127,
       "Name": "options",
       "IndexSpan": {
@@ -322,7 +322,7 @@
       }
     },
     {
-      "Value": "requests.sessions:session",
+      "Value": "t:requests.sessions:session",
       "Id": -880047457,
       "Name": "session",
       "IndexSpan": {
@@ -331,7 +331,7 @@
       }
     },
     {
-      "Value": "requests.sessions:Session",
+      "Value": "t:requests.sessions:Session",
       "Id": 784605823,
       "Name": "Session",
       "IndexSpan": {
@@ -349,7 +349,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:RequestException",
+      "Value": "t:requests.exceptions:RequestException",
       "Id": 355509431,
       "Name": "RequestException",
       "IndexSpan": {
@@ -358,7 +358,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:Timeout",
+      "Value": "t:requests.exceptions:Timeout",
       "Id": 1780673866,
       "Name": "Timeout",
       "IndexSpan": {
@@ -367,7 +367,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:URLRequired",
+      "Value": "t:requests.exceptions:URLRequired",
       "Id": 1361573271,
       "Name": "URLRequired",
       "IndexSpan": {
@@ -376,7 +376,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:TooManyRedirects",
+      "Value": "t:requests.exceptions:TooManyRedirects",
       "Id": 511002043,
       "Name": "TooManyRedirects",
       "IndexSpan": {
@@ -385,7 +385,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:HTTPError",
+      "Value": "t:requests.exceptions:HTTPError",
       "Id": -1546903511,
       "Name": "HTTPError",
       "IndexSpan": {
@@ -394,7 +394,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:ConnectionError",
+      "Value": "t:requests.exceptions:ConnectionError",
       "Id": 853386419,
       "Name": "ConnectionError",
       "IndexSpan": {
@@ -403,7 +403,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:FileModeWarning",
+      "Value": "t:requests.exceptions:FileModeWarning",
       "Id": 1675678790,
       "Name": "FileModeWarning",
       "IndexSpan": {
@@ -412,7 +412,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:ConnectTimeout",
+      "Value": "t:requests.exceptions:ConnectTimeout",
       "Id": -1047738098,
       "Name": "ConnectTimeout",
       "IndexSpan": {
@@ -421,7 +421,7 @@
       }
     },
     {
-      "Value": "requests.exceptions:ReadTimeout",
+      "Value": "t:requests.exceptions:ReadTimeout",
       "Id": -1711523244,
       "Name": "ReadTimeout",
       "IndexSpan": {
@@ -430,7 +430,7 @@
       }
     },
     {
-      "Value": "logging",
+      "Value": "p:logging",
       "Id": 1772213096,
       "Name": "logging",
       "IndexSpan": {
@@ -439,21 +439,12 @@
       }
     },
     {
-      "Value": "logging:NullHandler",
+      "Value": "t:logging:NullHandler",
       "Id": -1600735444,
       "Name": "NullHandler",
       "IndexSpan": {
         "Start": 3747,
         "Length": 11
-      }
-    },
-    {
-      "Value": "typing:Any",
-      "Id": 751189,
-      "Name": "Any",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
       }
     }
   ],
