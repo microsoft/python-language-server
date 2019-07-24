@@ -189,8 +189,11 @@
   <data name="UnableToDetermineCachePathException" xml:space="preserve">
     <value>Unable to determine analysis cache path. Exception: {0}. Using default '{1}'.</value>
   </data>
-  <data name="FunctionRedefined" xml:space="preserve">
-    <value>Function already defined at line {0}.</value>
+  <data name="TypeVarFirstArgumentNotString" xml:space="preserve">
+    <value>The first argument to TypeVar must be a string.</value>
+  </data>
+  <data name="TypeVarSingleConstraint" xml:space="preserve">
+    <value>A single constraint to TypeVar is not allowed.</value>
   </data>
   <data name="NewTypeFirstArgNotString" xml:space="preserve">
     <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
@@ -204,8 +207,8 @@
   <data name="GenericNotAllUnique" xml:space="preserve">
     <value>Arguments to Generic must all be unique.</value>
   </data>
-  <data name="WrongArgumentCount" xml:space="preserve">
-    <value>Function '{0}' expected {1} argument(s) but got {2}.</value>
+  <data name="InheritNonClass" xml:space="preserve">
+    <value>Inheriting '{0}', which is not a class.</value>
   </data>
   <data name="DuplicateArgumentName" xml:space="preserve">
     <value>Duplicate argument name '{0}' in function definition.</value>

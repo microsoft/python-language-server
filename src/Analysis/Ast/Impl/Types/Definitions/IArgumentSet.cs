@@ -149,7 +149,7 @@ namespace Microsoft.Python.Analysis.Types {
         IExpressionEvaluator Eval { get; }
 
         /// <summary>
-        /// Errors encountered while evaluating argument set
+        /// Errors upon building the argument set
         /// </summary>
         IReadOnlyList<DiagnosticsEntry> Errors { get; }
 

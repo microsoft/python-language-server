@@ -849,6 +849,19 @@ pass";
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
+        public async Task NoCompletionInEllipsis(bool is2x) {
+            const string code = "...";
+            var analysis = await GetAnalysisAsync(code, is2x ? PythonVersions.LatestAvailable2X: PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 4));
+            result.Should().HaveNoCompletion();
+        }
+
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
         public async Task NoCompletionInString(bool is2x) {
             var analysis = await GetAnalysisAsync("\"str.\"", is2x ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
