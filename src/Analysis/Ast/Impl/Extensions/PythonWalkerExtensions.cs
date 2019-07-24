@@ -20,41 +20,42 @@ namespace Microsoft.Python.Analysis {
     public static class PythonWalkerExtensions {
         public static bool WalkIfWithSystemConditions(this IfStatement node, PythonWalker walker, PythonLanguageVersion languageVersion, bool isWindows) {
             // System version, platform and os.path specializations
-            var someRecognized = false;
+            var executeElse = false;
             foreach (var test in node.Tests) {
+
                 var result = test.TryHandleSysVersionInfo(languageVersion);
-                if (result != ConditionTestResult.Unrecognized) {
-                    if (result == ConditionTestResult.WalkBody) {
-                        test.Walk(walker);
-                    } else {
-                        node.ElseStatement?.Walk(walker);
+                if (result == ConditionTestResult.Unrecognized) {
+                    result = test.TryHandleSysPlatform(isWindows);
+                    if (result == ConditionTestResult.Unrecognized) {
+                        result = test.TryHandleOsPath(isWindows);
                     }
-                    someRecognized = true;
-                    continue;
                 }
 
-                result = test.TryHandleSysPlatform(isWindows);
-                if (result != ConditionTestResult.Unrecognized) {
-                    if (result == ConditionTestResult.WalkBody) {
+                // If condition is satisfied, walk the corresponding block and 
+                // return false indicating that statement should not be walked again.
+                // If condition is false or was not recognized, continue but remember
+                // if we need to execute final else clause.
+                switch (result) {
+                    case ConditionTestResult.WalkBody:
                         test.Walk(walker);
-                    } else {
-                        node.ElseStatement?.Walk(walker);
-                    }
-                    someRecognized = true;
-                    continue;
-                }
-
-                result = test.TryHandleOsPath(isWindows);
-                if (result != ConditionTestResult.Unrecognized) {
-                    if (result == ConditionTestResult.WalkBody) {
-                        test.Walk(walker);
-                    } else {
-                        node.ElseStatement?.Walk(walker);
-                    }
-                    return false; // Execute only one condition.
+                        return false; // We only need to execute one of the clauses.
+                    case ConditionTestResult.DontWalkBody:
+                        // If condition is false, continue but remember
+                        // if we may need to execute the final else clause.
+                        executeElse = true;
+                        break;
+                    case ConditionTestResult.Unrecognized:
+                        continue; // See if other conditions may work.
                 }
             }
-            return !someRecognized;
+
+            if (executeElse) {
+                node.ElseStatement?.Walk(walker);
+                return false;
+            }
+
+            // We didn't walk anything, so me caller do their own thing.
+            return true;
         }
     }
 }

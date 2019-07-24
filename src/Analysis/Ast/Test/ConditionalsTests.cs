@@ -152,6 +152,22 @@ else:
                 .Which.Should().HaveParameters(is3x ? new[] { "a" } : new[] { "a", "b" });
         }
 
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task FunctionByVersionElif(bool is3x) {
+            const string code = @"
+if sys.version_info >= (3, 0):
+   def func(a): ...
+elif sys.version_info < (3, 0):
+   def func(a, b): ...
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters(is3x ? new[] { "a" } : new[] { "a", "b" });
+        }
+
         private IOSPlatform SubstitutePlatform(out IServiceManager sm) {
             sm = new ServiceManager();
             var platform = Substitute.For<IOSPlatform>();
