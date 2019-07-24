@@ -28,7 +28,9 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal sealed class ModuleFactory : IDisposable {
-        private readonly ReentrancyGuard<string> _processing = new ReentrancyGuard<string>();
+        // TODO: better resolve circular references.
+        private readonly ReentrancyGuard<string> _typeReentrancy = new ReentrancyGuard<string>();
+        private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
 
         public IPythonModule Module { get; }
         public ClassFactory ClassFactory { get; }
@@ -61,30 +63,13 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             // TODO: better resolve circular references.
-            if (!_processing.Push(qualifiedName)) {
+            if (!_typeReentrancy.Push(qualifiedName)) {
                 return null;
             }
 
             try {
                 // See if member is a module first.
-                IPythonModule module = null;
-                if (parts.ModuleName == Module.Name) {
-                    module = Module;
-                } else {
-                    // Here we do not call GetOrLoad since modules references here must
-                    // either be loaded already since they were required to create
-                    // persistent state from analysis. Also, occasionally types come
-                    // from the stub and the main module was never loaded. This, for example,
-                    // happens with io which has member with mmap type coming from mmap
-                    // stub rather than the primary mmap module.
-                    var m = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
-                    // Try stub-only case (ex _importlib_modulespec).
-                    m = m ?? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
-                    if (m != null) {
-                        module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
-                    }
-                }
-
+                var module = GetModule(parts);
                 if (module == null) {
                     return null;
                 }
@@ -100,7 +85,35 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
                 return new PythonInstance(t);
             } finally {
-                _processing.Pop();
+                _typeReentrancy.Pop();
+            }
+        }
+
+        private IPythonModule GetModule(QualifiedNameParts parts) {
+            if (parts.ModuleName == Module.Name) {
+                return Module;
+            }
+            if(!_moduleReentrancy.Push(parts.ModuleName)) {
+                return null;
+            }
+
+            try {
+                // Here we do not call GetOrLoad since modules references here must
+                // either be loaded already since they were required to create
+                // persistent state from analysis. Also, occasionally types come
+                // from the stub and the main module was never loaded. This, for example,
+                // happens with io which has member with mmap type coming from mmap
+                // stub rather than the primary mmap module.
+                var m = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
+                // Try stub-only case (ex _importlib_modulespec).
+                m = m ?? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
+                if (m != null) {
+                    return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
+                }
+
+                return null;
+            } finally {
+                _moduleReentrancy.Pop();
             }
         }
 

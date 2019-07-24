@@ -13,10 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -77,7 +78,7 @@ c = C()
         public void QualifiedNames(string qualifiedName, string moduleName, string typeName, ObjectType objectType) {
             TypeNames.DeconstructQualifiedName(qualifiedName, out var parts);
             parts.ModuleName.Should().Be(moduleName);
-            switch(objectType) {
+            switch (objectType) {
                 case ObjectType.Instance:
                 case ObjectType.Type:
                     parts.MemberNames[0].Should().Be(typeName);
@@ -87,6 +88,26 @@ c = C()
                     break;
             }
             parts.ObjectType.Should().Be(objectType);
+        }
+
+        [DataTestMethod, Priority(0)]
+        [DataRow(true)]
+        [DataRow(false)]
+        public async Task VersionHandling(bool is3x) {
+            const string code = @"
+if sys.version_info >= (3, 0):
+    def func(a, b, c): ...
+else:
+    def func(a): ...
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters(is3x ? new[] { "a", "b", "c" } : new[] { "a" });
+
+            var model = ModuleModel.FromAnalysis(analysis, Services);
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
         }
     }
 }

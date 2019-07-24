@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task IO() {
+        public async Task Io() {
             var analysis = await GetAnalysisAsync("import io");
             var io = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("io");
             var model = ModuleModel.FromAnalysis(io.Analysis, Services);
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task OS() {
+        public async Task Os() {
             var analysis = await GetAnalysisAsync("import os");
             var os = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("os");
             var model = ModuleModel.FromAnalysis(os.Analysis, Services);
