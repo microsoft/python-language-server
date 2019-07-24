@@ -195,8 +195,8 @@
   <data name="TypeVarSingleConstraint" xml:space="preserve">
     <value>A single constraint to TypeVar is not allowed.</value>
   </data>
-  <data name="NewTypeFirstArgNotString" xml:space="preserve">
-    <value>The first argument to NewType must be a string, but it is of type '{0}'.</value>
+  <data name="NewTypeFirstArgument" xml:space="preserve">
+    <value>The first argument to NewType must be a string.</value>
   </data>
   <data name="ReturnInInit" xml:space="preserve">
     <value>Explicit return in __init__ </value>

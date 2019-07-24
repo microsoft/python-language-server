@@ -235,28 +235,29 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateTypeAlias(IArgumentSet args) {
-            TryReportArgErrors(args);
-
-            var typeArgs = args.Values<IMember>();
-
-            var typeName = (typeArgs[0] as IPythonConstant)?.Value as string;
-            if (!string.IsNullOrEmpty(typeName)) {
-                return new TypeAlias(typeName, typeArgs[1].GetPythonType() ?? Interpreter.UnknownType);
+        private IPythonType CreateTypeAlias(IArgumentSet argSet) {
+            if (argSet.Errors.Count > 0) {
+                argSet.ReportErrors();
+                return Interpreter.UnknownType;
             }
 
-            // Give diagnostic if user specified something for first parameter and was not a string
-            if (!args.Arguments[0].ValueIsDefault) {
-                var firstArgType = typeArgs[0].GetPythonType().Name;
-                var eval = args.Eval;
-                var expression = args.Expression;
+            var args = argSet.Values<IMember>();
+            var name = (args[0] as IPythonConstant)?.GetString();
 
+            if (!string.IsNullOrEmpty(name)) {
+                return new TypeAlias(name, args[1].GetPythonType() ?? Interpreter.UnknownType);
+            }
+
+            // If first arg is not a string and not unknown, provide diagnostic
+            if (!args[0].IsUnknown() && args[0].GetPythonType() != Interpreter.GetBuiltinType(BuiltinTypeId.Str)) {
+                var eval = argSet.Eval;
+                var expression = argSet.Expression;
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
-                    new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType),
+                    new DiagnosticsEntry(Resources.NewTypeFirstArgument,
                         expression?.GetLocation(eval)?.Span ?? default,
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
-                        Severity.Error, DiagnosticSource.Analysis)
+                        Severity.Warning, DiagnosticSource.Analysis)
                 );
             }
 
@@ -369,12 +370,5 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             => _members[typeName] is GenericType gt
                 ? new GenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId, typeArgs)
                 : Interpreter.UnknownType;
-
-        private void TryReportArgErrors(IArgumentSet args) {
-            var eval = args.Eval;
-            foreach (var err in args.Errors) {
-                eval?.ReportDiagnostics(eval.Module?.Uri, err);
-            }
-        }
     }
 }

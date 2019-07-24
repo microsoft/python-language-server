@@ -268,11 +268,11 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The first argument to NewType must be a string, but it is of type &apos;{0}&apos;..
+        ///   Looks up a localized string similar to The first argument to NewType must be a string..
         /// </summary>
-        internal static string NewTypeFirstArgNotString {
+        internal static string NewTypeFirstArgument {
             get {
-                return ResourceManager.GetString("NewTypeFirstArgNotString", resourceCulture);
+                return ResourceManager.GetString("NewTypeFirstArgument", resourceCulture);
             }
         }
         
@@ -345,24 +345,6 @@ namespace Microsoft.Python.Analysis {
         internal static string UndefinedVariable {
             get {
                 return ResourceManager.GetString("UndefinedVariable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unsupported operand types for &apos;{0}&apos;: &apos;{1}&apos; and &apos;{2}&apos;.
-        /// </summary>
-        internal static string UnsupporedOperandType {
-            get {
-                return ResourceManager.GetString("UnsupporedOperandType", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Function &apos;{0}&apos; expected {1} argument(s) but got {2}..
-        /// </summary>
-        internal static string WrongArgumentCount {
-            get {
-                return ResourceManager.GetString("WrongArgumentCount", resourceCulture);
             }
         }
     }
