@@ -406,12 +406,31 @@ class MyEntity(x):
             analysis.Diagnostics.Should().BeEmpty();
         }
 
-
         [TestMethod, Priority(0)]
         public async Task InheritFromUnknownInstance() {
             const string code = @"
 x = Y()
 class MyEntity(x): 
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromType() {
+            const string code = @"
+class MyEntity(type): 
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromIntType() {
+            const string code = @"
+class MyEntity(int): 
     mystr = 'test'
 ";
             var analysis = await GetAnalysisAsync(code);

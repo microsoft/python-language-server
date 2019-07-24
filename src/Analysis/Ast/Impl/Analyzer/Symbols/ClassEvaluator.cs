@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Evaluate inner classes, if any
                 EvaluateInnerClasses(_classDef);
                 _class = classInfo;
-                
+
                 var bases = ProcessBases();
                 _class.SetBases(bases);
                 // Declare __class__ variable in the scope.
@@ -131,9 +131,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 return true;
             }
 
-            // Allow any members from typing module
-            // TODO handle typing module specialization better: https://github.com/microsoft/python-language-server/issues/1367
-            if (m is ILocatedMember l && l.DeclaringModule is TypingModule) {
+            // Allow extensions from specialized functions 
+            // We specialized type to be a function even though it is a class, so this allows extension of type
+            // TODO handle module specialization better: https://github.com/microsoft/python-language-server/issues/1367
+            if (m is IPythonType t && t.IsSpecialized) {
                 return true;
             }
 
