@@ -148,7 +148,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         => base.GetMember(name)?.GetPythonType()?.Documentation;
 
         private IPythonType CreateNewType(Location location) {
-            // NewType
             var fn = PythonFunctionType.Specialize("NewType", this, GetMemberDocumentation("NewType"));
             var o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation

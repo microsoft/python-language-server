@@ -42,7 +42,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>Module that declares the function</summary>
         public IPythonModule DeclaringModule { get; }
         public IReadOnlyList<IArgument> Arguments => _arguments;
-
         public IListArgument ListArgument => _listArgument;
         public IDictionaryArgument DictionaryArgument => _dictArgument;
         public IReadOnlyList<DiagnosticsEntry> Errors => _errors;
