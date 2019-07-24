@@ -69,6 +69,22 @@ class Test:
         }
 
         [TestMethod, Priority(0)]
+        public async Task FirstArgumentComma() {
+            const string code = @"
+class Test:
+    def test(, , ):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
+            diagnostic.SourceSpan.Should().Be(3, 9, 3, 13);
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
+        }
+
+        [TestMethod, Priority(0)]
         public async Task FirstArgumentAbstractPropertyNotSelf() {
             const string code = @"
 class Test:

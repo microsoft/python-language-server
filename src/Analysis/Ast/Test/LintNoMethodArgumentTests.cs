@@ -100,5 +100,21 @@ class Test:
             diagnostic.SourceSpan.Should().Be(3, 9, 3, 17);
             diagnostic.Message.Should().Be(Resources.NoMethodArgument.FormatInvariant("__init__"));
         }
+
+        [TestMethod, Priority(0)]
+        public async Task FirstArgumentSpace() {
+            const string code = @"
+class Test:
+    def test( ):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoMethodArgument);
+            diagnostic.SourceSpan.Should().Be(3, 9, 3, 13);
+            diagnostic.Message.Should().Be(Resources.NoMethodArgument.FormatInvariant("test"));
+        }
     }
 }
