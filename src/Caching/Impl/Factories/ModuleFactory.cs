@@ -71,9 +71,15 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 if (parts.ModuleName == Module.Name) {
                     module = Module;
                 } else {
-                    var m = Module.Interpreter.ModuleResolution.GetOrLoadModule(parts.ModuleName);
+                    // Here we do not call GetOrLoad since modules references here must
+                    // either be loaded already since they were required to create
+                    // persistent state from analysis. Also, occasionally types come
+                    // from the stub and the main module was never loaded. This, for example,
+                    // happens with io which has member with mmap type coming from mmap
+                    // stub rather than the primary mmap module.
+                    var m = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
                     // Try stub-only case (ex _importlib_modulespec).
-                    m = m ?? Module.Interpreter.TypeshedResolution.GetOrLoadModule(parts.ModuleName);
+                    m = m ?? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
                     if (m != null) {
                         module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
                     }
@@ -119,7 +125,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 if (mc is IBuiltinsPythonModule builtins) {
                     // Builtins require special handling since there may be 'hidden' names
                     // like __NoneType__ which need to be mapped to visible types.
-                    member = GetBuiltinMember(builtins, memberName);
+                    member = GetBuiltinMember(builtins, memberName) ?? builtins.Interpreter.UnknownType;
                 } else {
                     member = mc?.GetMember(memberName);
                 }

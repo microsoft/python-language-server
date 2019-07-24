@@ -68,6 +68,48 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public async Task IO() {
+            var analysis = await GetAnalysisAsync("import io");
+            var io = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("io");
+            var model = ModuleModel.FromAnalysis(io.Analysis, Services);
+
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = new PythonDbModule(model, io.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(io);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Re() {
+            var analysis = await GetAnalysisAsync("import re");
+            var re = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("re");
+            var model = ModuleModel.FromAnalysis(re.Analysis, Services);
+
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = new PythonDbModule(model, re.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(re);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task OS() {
+            var analysis = await GetAnalysisAsync("import os");
+            var os = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("os");
+            var model = ModuleModel.FromAnalysis(os.Analysis, Services);
+
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = new PythonDbModule(model, os.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(os);
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Requests() {
             const string code = @"
 import requests

@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="interpreter">Python interpreter.</param>
         public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
             : base(BuiltinTypeId.Tuple, interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
-            ItemTypes = itemTypes;
+            ItemTypes = itemTypes.Count > 0 ? itemTypes : new[] { interpreter.UnknownType };
             Name = CodeFormatter.FormatSequence("Tuple", '[', itemTypes);
             QualifiedName = CodeFormatter.FormatSequence("typing:Tuple", '[', itemTypes.Select(t => t.QualifiedName));
         }
@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return true;
         }
 
-        public override int GetHashCode() 
+        public override int GetHashCode()
             => ItemTypes.Aggregate(0, (current, item) => current ^ item.GetHashCode()) ^ Name.GetHashCode();
     }
 }

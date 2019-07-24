@@ -23,6 +23,8 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     internal class PythonTypeWrapper : IPythonType {
         private readonly BuiltinTypeId _builtinTypeId;
+        private readonly string _typeName;
+        private readonly string _documentation;
         private IPythonType _innerType;
 
         protected IPythonType InnerType 
@@ -32,7 +34,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates delegate type wrapper over an existing type.
         /// Use dedicated constructor for wrapping builtin types.
         /// </summary>
-        public PythonTypeWrapper(IPythonType type) : this(type, type.DeclaringModule) {
+        public PythonTypeWrapper(IPythonType type) : this(type, type.DeclaringModule) { }
+
+        public PythonTypeWrapper(string typeName, string documentation, IPythonModule declaringModule, IPythonType baseType) : this(baseType, declaringModule) {
+            _typeName = typeName;
+            _documentation = documentation;
         }
 
         /// <summary>
@@ -55,10 +61,10 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
-        public virtual string Name => InnerType.Name;
-        public virtual string QualifiedName => InnerType.QualifiedName;
+        public virtual string Name => _typeName ?? InnerType.Name;
+        public virtual string QualifiedName => _typeName != null ? $"{DeclaringModule.Name}:{_typeName}" : InnerType.QualifiedName;
         public IPythonModule DeclaringModule { get; }
-        public virtual string Documentation => InnerType.Documentation;
+        public virtual string Documentation => _documentation ?? InnerType.Documentation;
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
         public virtual PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;

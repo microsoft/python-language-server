@@ -232,8 +232,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
-                    new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType), 
-                        expression?.GetLocation(eval)?.Span ?? default, 
+                    new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType),
+                        expression?.GetLocation(eval)?.Span ?? default,
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Error, DiagnosticSource.Analysis)
                 );
@@ -318,15 +318,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var str = Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var bytes = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             var unicode = Interpreter.GetBuiltinType(BuiltinTypeId.Unicode);
-            var name = "AnyStr";
 
             var constraints = Interpreter.LanguageVersion.Is3x()
-                ? new IPythonType[] { str, bytes }
-                : new IPythonType[] { str, unicode };
-            var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.Name));
-            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
+                ? new[] { str, bytes }
+                : new[] { str, unicode };
+            var docArgs = new[] { "'AnyStr'" }.Concat(constraints.Select(c => c.Name));
 
-            return new GenericTypeParameter(name, this, constraints, documentation, default);
+            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
+            return new PythonTypeWrapper("AnyStr", documentation, this, Interpreter.GetBuiltinType(BuiltinTypeId.Str));
         }
 
         private IPythonType CreateGenericClassParameter(IReadOnlyList<IPythonType> typeArgs) {

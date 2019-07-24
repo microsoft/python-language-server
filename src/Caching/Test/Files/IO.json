@@ -1,0 +1,843 @@
+{
+  "UniqueId": "io(3.7)",
+  "Documentation": "The io module provides the Python interfaces to stream handling. The\nbuiltin open function is defined in this module.\n\nAt the top of the I/O hierarchy is the abstract base class IOBase. It\ndefines the basic interface to a stream. Note, however, that there is no\nseparation between reading and writing to streams; implementations are\nallowed to raise an OSError if they do not support a given operation.\n\nExtending IOBase is RawIOBase which deals simply with the reading and\nwriting of raw bytes to a stream. FileIO subclasses RawIOBase to provide\nan interface to OS files.\n\nBufferedIOBase deals with buffering on a raw byte stream (RawIOBase). Its\nsubclasses, BufferedWriter, BufferedReader, and BufferedRWPair buffer\nstreams that are readable, writable, and both respectively.\nBufferedRandom provides a buffered interface to random access\nstreams. BytesIO is a simple stream of in-memory bytes.\n\nAnother IOBase subclass, TextIOBase, deals with the encoding and decoding\nof streams into text. TextIOWrapper, which extends it, is a buffered text\ninterface to a buffered raw stream (`BufferedIOBase`). Finally, StringIO\nis an in-memory stream for text.\n\nArgument names are not part of the specification, and only the arguments\nof open() are intended to be used as keyword arguments.\n\ndata:\n\nDEFAULT_BUFFER_SIZE\n\n   An int containing the default buffer size used by the module's buffered\n   I/O classes. open() uses the file's blksize (as obtained by os.stat) if\n   possible.\n",
+  "Functions": [],
+  "Variables": [
+    {
+      "Value": "i:str",
+      "Id": 1654469090,
+      "Name": "__author__",
+      "IndexSpan": {
+        "Start": 1559,
+        "Length": 10
+      }
+    },
+    {
+      "Value": "i:list",
+      "Id": -1638856342,
+      "Name": "__all__",
+      "IndexSpan": {
+        "Start": 1905,
+        "Length": 7
+      }
+    },
+    {
+      "Value": "p:_io",
+      "Id": 779854,
+      "Name": "_io",
+      "IndexSpan": {
+        "Start": 2240,
+        "Length": 3
+      }
+    },
+    {
+      "Value": "p:abc",
+      "Id": 781547,
+      "Name": "abc",
+      "IndexSpan": {
+        "Start": 2252,
+        "Length": 3
+      }
+    },
+    {
+      "Value": "i:int",
+      "Id": 120916491,
+      "Name": "DEFAULT_BUFFER_SIZE",
+      "IndexSpan": {
+        "Start": 2276,
+        "Length": 19
+      }
+    },
+    {
+      "Value": "t:BlockingIOError",
+      "Id": -1410423402,
+      "Name": "BlockingIOError",
+      "IndexSpan": {
+        "Start": 2297,
+        "Length": 15
+      }
+    },
+    {
+      "Value": "t:_io:open",
+      "Id": 24658657,
+      "Name": "open",
+      "IndexSpan": {
+        "Start": 2354,
+        "Length": 4
+      }
+    },
+    {
+      "Value": "t:_io:FileIO",
+      "Id": 1042075289,
+      "Name": "FileIO",
+      "IndexSpan": {
+        "Start": 2360,
+        "Length": 6
+      }
+    },
+    {
+      "Value": "t:_io:BytesIO",
+      "Id": -844956998,
+      "Name": "BytesIO",
+      "IndexSpan": {
+        "Start": 2368,
+        "Length": 7
+      }
+    },
+    {
+      "Value": "t:_io:StringIO",
+      "Id": -1057094098,
+      "Name": "StringIO",
+      "IndexSpan": {
+        "Start": 2377,
+        "Length": 8
+      }
+    },
+    {
+      "Value": "t:_io:BufferedReader",
+      "Id": 1385220729,
+      "Name": "BufferedReader",
+      "IndexSpan": {
+        "Start": 2387,
+        "Length": 14
+      }
+    },
+    {
+      "Value": "t:_io:BufferedWriter",
+      "Id": 1540625961,
+      "Name": "BufferedWriter",
+      "IndexSpan": {
+        "Start": 2421,
+        "Length": 14
+      }
+    },
+    {
+      "Value": "t:_io:BufferedRWPair",
+      "Id": 1371782229,
+      "Name": "BufferedRWPair",
+      "IndexSpan": {
+        "Start": 2437,
+        "Length": 14
+      }
+    },
+    {
+      "Value": "t:_io:BufferedRandom",
+      "Id": 1381914233,
+      "Name": "BufferedRandom",
+      "IndexSpan": {
+        "Start": 2453,
+        "Length": 14
+      }
+    },
+    {
+      "Value": "t:_io:IncrementalNewlineDecoder",
+      "Id": -796597709,
+      "Name": "IncrementalNewlineDecoder",
+      "IndexSpan": {
+        "Start": 2487,
+        "Length": 25
+      }
+    },
+    {
+      "Value": "t:_io:TextIOWrapper",
+      "Id": 734996265,
+      "Name": "TextIOWrapper",
+      "IndexSpan": {
+        "Start": 2514,
+        "Length": 13
+      }
+    },
+    {
+      "Value": "t:_io:open",
+      "Id": 1740485202,
+      "Name": "OpenWrapper",
+      "IndexSpan": {
+        "Start": 2532,
+        "Length": 11
+      }
+    },
+    {
+      "Value": "i:int",
+      "Id": -1136577774,
+      "Name": "SEEK_SET",
+      "IndexSpan": {
+        "Start": 2689,
+        "Length": 8
+      }
+    },
+    {
+      "Value": "i:int",
+      "Id": -1136592656,
+      "Name": "SEEK_CUR",
+      "IndexSpan": {
+        "Start": 2703,
+        "Length": 8
+      }
+    },
+    {
+      "Value": "i:int",
+      "Id": -1136590965,
+      "Name": "SEEK_END",
+      "IndexSpan": {
+        "Start": 2717,
+        "Length": 8
+      }
+    },
+    {
+      "Value": "t:_io:StringIO",
+      "Id": 760601545,
+      "Name": "klass",
+      "IndexSpan": {
+        "Start": 3266,
+        "Length": 5
+      }
+    },
+    {
+      "Value": "t:_io:_WindowsConsoleIO",
+      "Id": -74871614,
+      "Name": "_WindowsConsoleIO",
+      "IndexSpan": {
+        "Start": 3516,
+        "Length": 17
+      }
+    },
+    {
+      "Value": "t:typing:Union[bytearray, mmap:mmap]",
+      "Id": -1043490323,
+      "Name": "_bytearray_like",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    }
+  ],
+  "Classes": [
+    {
+      "Documentation": "The abstract base class for all I/O classes, acting on streams of\nbytes. There is no public constructor.\n\nThis class provides dummy implementations for many methods that\nderived classes can override selectively; the default implementations\nrepresent a file that cannot be read, written or seeked.\n\nEven though IOBase does not declare read, readinto, or write because\ntheir signatures will vary, implementations and clients should\nconsider those methods part of the interface. Also, implementations\nmay raise UnsupportedOperation when operations they do not support are\ncalled.\n\nThe basic type used for binary data read from or written to a file is\nbytes. Other bytes-like objects are accepted as method arguments too.\nIn some cases (such as readinto), a writable object is required. Text\nI/O classes work with str data.\n\nNote that calling any method (except additional calls to close(),\nwhich are ignored) on a closed stream should raise a ValueError.\n\nIOBase (and its subclasses) support the iterator protocol, meaning\nthat an IOBase object can be iterated over yielding the lines in a\nstream.\n\nIOBase also supports the :keyword:`with` statement. In this example,\nfp is closed after the suite of the with statement is complete:\n\nwith open('spam.txt', 'r') as fp:\n    fp.write('Spam and eggs!')\n",
+      "Bases": [
+        "t:_io:_IOBase",
+        "t:object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": null,
+          "Id": -1636005055,
+          "Name": "__doc__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:dict",
+          "Id": 817929997,
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:object",
+          "Id": 1225024228,
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1102697454,
+      "Name": "IOBase",
+      "IndexSpan": {
+        "Start": 2886,
+        "Length": 6
+      }
+    },
+    {
+      "Documentation": "Base class for raw binary I/O.",
+      "Bases": [
+        "t:_io:_RawIOBase",
+        "t:io:IOBase",
+        "t:object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": null,
+          "Id": -1636005055,
+          "Name": "__doc__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:dict",
+          "Id": 817929997,
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:object",
+          "Id": 1225024228,
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -454638360,
+      "Name": "RawIOBase",
+      "IndexSpan": {
+        "Start": 2974,
+        "Length": 9
+      }
+    },
+    {
+      "Documentation": "Base class for buffered IO objects.\n\nThe main difference with RawIOBase is that the read() method\nsupports omitting the size argument, and does not have a default\nimplementation that defers to readinto().\n\nIn addition, read(), readinto() and write() may raise\nBlockingIOError if the underlying raw stream is in non-blocking\nmode and not ready; unlike their raw counterparts, they will never\nreturn None.\n\nA typical implementation should not inherit from a RawIOBase\nimplementation, but wrap one.\n",
+      "Bases": [
+        "t:_io:_BufferedIOBase",
+        "t:io:IOBase",
+        "t:object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": null,
+          "Id": -1636005055,
+          "Name": "__doc__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:dict",
+          "Id": 817929997,
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:object",
+          "Id": 1225024228,
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1106314925,
+      "Name": "BufferedIOBase",
+      "IndexSpan": {
+        "Start": 3056,
+        "Length": 14
+      }
+    },
+    {
+      "Documentation": "Base class for text I/O.\n\nThis class provides a character and line based interface to stream\nI/O. There is no readinto method because Python's character strings\nare immutable. There is no public constructor.\n",
+      "Bases": [
+        "t:_io:_TextIOBase",
+        "t:io:IOBase",
+        "t:object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": null,
+          "Id": -1636005055,
+          "Name": "__doc__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:dict",
+          "Id": 817929997,
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:object",
+          "Id": 1225024228,
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 848255995,
+      "Name": "TextIOBase",
+      "IndexSpan": {
+        "Start": 3153,
+        "Length": 10
+      }
+    },
+    {
+      "Documentation": "Base class for I/O related errors.",
+      "Bases": [
+        "t:OSError",
+        "t:ValueError",
+        "t:object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "t:dict",
+          "Id": 817929997,
+          "Name": "__dict__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Value": "t:object",
+          "Id": 1225024228,
+          "Name": "__weakref__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1009041769,
+      "Name": "UnsupportedOperation",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    }
+  ],
+  "NewLines": [
+    {
+      "EndIndex": 73,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 123,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 125,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 196,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 270,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 342,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 413,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 415,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 486,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 560,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 587,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 589,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 664,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 735,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 796,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 859,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 916,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 918,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 993,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1068,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1142,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1176,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1178,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1252,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1309,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1311,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1318,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1320,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1341,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1343,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1419,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1495,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1509,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1514,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1557,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1559,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1614,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1671,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1728,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1784,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1845,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1903,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1905,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 1977,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2030,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2096,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2157,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2229,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2231,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2233,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2245,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2257,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2259,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2337,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2404,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2470,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2530,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2532,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2587,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2589,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2633,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2673,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2675,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2689,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2703,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2717,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2731,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2733,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2784,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2860,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2880,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2931,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2966,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 2968,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3010,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3048,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3050,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3102,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3145,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3147,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3191,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3230,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3232,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3260,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3262,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3334,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3366,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3402,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3404,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3445,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3477,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3488,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3490,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3496,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3535,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3556,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3566,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3573,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 3616,
+      "Kind": 3
+    }
+  ],
+  "FileSize": 3616,
+  "Id": -950087368,
+  "Name": "io",
+  "IndexSpan": null
+}
