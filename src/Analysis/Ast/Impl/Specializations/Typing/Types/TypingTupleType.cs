@@ -29,9 +29,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Creates type info for a strongly-typed tuple, such as Tuple[T1, T2, ...].
         /// </summary>
         /// <param name="itemTypes">Tuple item types.</param>
+        /// <param name="declaringModule">Declaring module. If null, then 'typing' is assumed.</param>
         /// <param name="interpreter">Python interpreter.</param>
-        public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
-            : base(BuiltinTypeId.Tuple, interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
+        public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IPythonInterpreter interpreter)
+            : base(BuiltinTypeId.Tuple, declaringModule ?? interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
             ItemTypes = itemTypes.Count > 0 ? itemTypes : new[] { interpreter.UnknownType };
             Name = CodeFormatter.FormatSequence("Tuple", '[', itemTypes);
             QualifiedName = CodeFormatter.FormatSequence("typing:Tuple", '[', itemTypes.Select(t => t.QualifiedName));

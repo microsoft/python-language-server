@@ -2210,7 +2210,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:typing:uname_result(sysname: str, nodename: str, release: str, version: str, machine: str)"
+          "ReturnType": "i:Microsoft.Python.Analysis.Modules.StubPythonModule:uname_result(sysname: str, nodename: str, release: str, version: str, machine: str)"
         },
         {
           "Parameters": [],
@@ -4004,7 +4004,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:typing:waitid_result(si_pid: int, si_uid: int, si_signo: int, si_status: int, si_code: int)"
+          "ReturnType": "i:Microsoft.Python.Analysis.Modules.StubPythonModule:waitid_result(si_pid: int, si_uid: int, si_signo: int, si_status: int, si_code: int)"
         }
       ],
       "Attributes": 0,
@@ -4342,7 +4342,7 @@
             },
             {
               "Name": "param",
-              "Type": "t:typing:sched_priority(sched_priority)",
+              "Type": "t:Microsoft.Python.Analysis.Modules.StubPythonModule:sched_priority(sched_priority)",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -4398,7 +4398,7 @@
             },
             {
               "Name": "param",
-              "Type": "t:typing:sched_priority(sched_priority)",
+              "Type": "t:Microsoft.Python.Analysis.Modules.StubPythonModule:sched_priority(sched_priority)",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -4428,7 +4428,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:typing:sched_priority(sched_priority)"
+          "ReturnType": "i:Microsoft.Python.Analysis.Modules.StubPythonModule:sched_priority(sched_priority)"
         }
       ],
       "Attributes": 0,
@@ -5528,7 +5528,7 @@
       }
     },
     {
-      "Value": "t:typing:terminal_size(columns: int, lines: int)",
+      "Value": "t:Microsoft.Python.Analysis.Modules.StubPythonModule:terminal_size(columns: int, lines: int)",
       "Id": -196456147,
       "Name": "terminal_size",
       "IndexSpan": {

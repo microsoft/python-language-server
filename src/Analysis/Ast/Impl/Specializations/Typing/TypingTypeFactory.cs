@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             => new TypingListType(typeName, typeId, itemType, interpreter, isMutable);
 
         public static ITypingTupleType CreateTupleType(IPythonInterpreter interpreter, IReadOnlyList<IPythonType> types)
-            => new TypingTupleType(types, interpreter);
+            => new TypingTupleType(types, null, interpreter);
 
         public static ITypingIteratorType CreateIteratorType(IPythonInterpreter interpreter, IPythonType itemType)
             => new TypingIteratorType(itemType, BuiltinTypeId.ListIterator, interpreter);
@@ -55,8 +55,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         public static IPythonType CreateUnionType(IPythonInterpreter interpreter, IReadOnlyList<IMember> types, IPythonModule declaringModule)
             => new PythonUnionType(types.Select(a => a.GetPythonType()), declaringModule);
 
-        public static ITypingNamedTupleType CreateNamedTupleType(IPythonInterpreter interpreter, string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes)
-            => new NamedTupleType(tupleName, itemNames, itemTypes, interpreter);
+        public static ITypingNamedTupleType CreateNamedTupleType(IPythonInterpreter interpreter, string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule)
+            => new NamedTupleType(tupleName, itemNames, itemTypes, declaringModule, interpreter);
 
         public static IPythonType CreateOptionalType(IPythonModule declaringModule, IPythonType type)
             => new OptionalType(declaringModule, type);

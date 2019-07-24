@@ -27,8 +27,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <summary>
         /// Creates type info for a strongly-typed tuple, such as Tuple[T1, T2, ...].
         /// </summary>
-        public NamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
-            : base(itemTypes, interpreter) {
+        public NamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IPythonInterpreter interpreter)
+            : base(itemTypes, declaringModule, interpreter) {
             TupleName = tupleName ?? throw new ArgumentNullException(nameof(tupleName));
             ItemNames = itemNames;
 
@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             typeNames = itemTypes.Select(t => t.IsUnknown() ? string.Empty : t.QualifiedName);
             pairs = itemNames.Zip(typeNames, (name, typeName) => string.IsNullOrEmpty(typeName) ? name : $"{name}: {typeName}");
-            QualifiedName = CodeFormatter.FormatSequence($"typing:{tupleName}", '(', pairs);
+            QualifiedName = CodeFormatter.FormatSequence($"{declaringModule}:{tupleName}", '(', pairs);
         }
 
         public string TupleName { get; }

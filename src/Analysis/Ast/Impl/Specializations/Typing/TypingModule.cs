@@ -127,12 +127,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             fn = PythonFunctionType.Specialize("NamedTuple", this, GetMemberDocumentation("NamedTuple"));
             o = new PythonFunctionOverload(fn.Name, location);
-            o.SetReturnValueProvider((interpreter, overload, args) => CreateNamedTuple(args.Values<IMember>()));
+            o.SetReturnValueProvider((declaringModule, overload, args) => CreateNamedTuple(args.Values<IMember>(), declaringModule));
             fn.AddOverload(o);
             _members["NamedTuple"] = fn;
 
             _members["Any"] = new AnyType(this);
-
             _members["AnyStr"] = CreateAnyStr();
 
             _members["Optional"] = new GenericType("Optional", CreateOptional, this);
@@ -250,7 +249,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs) {
+        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs, IPythonModule declaringModule) {
             if (typeArgs.Count != 2) {
                 // TODO: report wrong number of arguments
                 return Interpreter.UnknownType;
@@ -295,7 +294,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 itemNames.Add(itemName2);
                 itemTypes.Add(c.Contents[1].GetPythonType());
             }
-            return TypingTypeFactory.CreateNamedTupleType(Interpreter, tupleName, itemNames, itemTypes);
+            return TypingTypeFactory.CreateNamedTupleType(Interpreter, tupleName, itemNames, itemTypes, declaringModule);
         }
 
         private IPythonType CreateOptional(IReadOnlyList<IPythonType> typeArgs) {

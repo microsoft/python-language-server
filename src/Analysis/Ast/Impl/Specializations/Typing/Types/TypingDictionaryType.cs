@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsSpecialized => true;
 
         private TypingTupleType CreateItemType() {
-            var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule.Interpreter);
+            var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule, DeclaringModule.Interpreter);
             return itemType;
         }
 
