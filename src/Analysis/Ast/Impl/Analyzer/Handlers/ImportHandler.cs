@@ -49,17 +49,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute) {
+        private void FindModule(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute, 
+            out PythonVariableModule firstModule, out PythonVariableModule lastModule, out ImmutableArray<string> importNames, out IImportSearchResult imports) {
             // "import fob.oar.baz" means
             // import_module('fob')
             // import_module('fob.oar')
             // import_module('fob.oar.baz')
-            var importNames = ImmutableArray<string>.Empty;
-            var lastModule = default(PythonVariableModule);
-            var firstModule = default(PythonVariableModule);
+            importNames = ImmutableArray<string>.Empty;
+            lastModule = default;
+            firstModule = default;
+            imports = null;
             foreach (var nameExpression in moduleImportExpression.Names) {
                 importNames = importNames.Add(nameExpression.Name);
-                var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, forceAbsolute);
+                imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, forceAbsolute);
                 if (!HandleImportSearchResult(imports, lastModule, asNameExpression, moduleImportExpression, out lastModule)) {
                     lastModule = default;
                     break;
@@ -69,7 +71,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     firstModule = lastModule;
                 }
             }
+        }
 
+        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute) {
+            FindModule(moduleImportExpression, asNameExpression, forceAbsolute, out var firstModule, out var lastModule, out var importNames, out _);
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
             if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
