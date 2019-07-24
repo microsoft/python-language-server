@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.IO;
