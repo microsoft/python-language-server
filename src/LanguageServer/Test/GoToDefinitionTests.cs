@@ -103,6 +103,25 @@ c.method(1, 2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromParent() {
+            const string code = @"
+class base:
+    def foo(self):
+        pass
+
+class child(base):
+    def tmp(self):
+        self.foo()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(8, 15), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 8, 2, 11);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GotoModuleSource() {
             const string code = @"
 import sys

@@ -15,8 +15,10 @@
 
 using System;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class EvaluatorExtensions {
@@ -25,8 +27,10 @@ namespace Microsoft.Python.Analysis {
         public static IMember LookupNameInScopes(this IExpressionEvaluator eval, string name, LookupOptions options = LookupOptions.Normal)
             => eval.LookupNameInScopes(name, out _, out _, options);
 
-        public static IDisposable OpenScope(this IExpressionEvaluator eval, IPythonClassType cls)
-            => eval.OpenScope(cls.DeclaringModule, cls.ClassDefinition);
+        public static IDisposable OpenScope(this IExpressionEvaluator eval, IPythonClassType cls) {
+            return eval.OpenScope(cls.DeclaringModule, cls.ClassDefinition);
+        }
+
         public static IDisposable OpenScope(this IExpressionEvaluator eval, IPythonFunctionType ft)
             => eval.OpenScope(ft.DeclaringModule, ft.FunctionDefinition);
     }
