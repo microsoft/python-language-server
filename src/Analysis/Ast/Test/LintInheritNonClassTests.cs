@@ -436,5 +436,28 @@ class MyEntity(int):
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromTypingSpecialCase() {
+            const string code = @"
+from typing import ByteString, Type, Any, SupportsInt, FrozenSet
+class Test(ByteString): 
+    mystr = 'test'
+
+class Test1(Type): 
+    mystr = 'test'
+
+class Test2(Any): 
+    mystr = 'test'
+
+class Test3(SupportsInt):
+    mystr = 'test'
+
+class Test3(FrozenSet):
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }
