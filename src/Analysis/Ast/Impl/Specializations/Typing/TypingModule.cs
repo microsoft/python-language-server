@@ -244,7 +244,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                     new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType), 
                         expression?.GetLocation(eval)?.Span ?? default, 
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
-                        Severity.Error, DiagnosticSource.Analysis)
+                        Severity.Warning, DiagnosticSource.Analysis)
                 );
             }
             // TODO: report wrong number of arguments

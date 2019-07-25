@@ -202,7 +202,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 Resources.InheritNonClass.FormatInvariant(argVal),
                 _classDef.NameExpression.GetLocation(Eval)?.Span ?? default,
                 Diagnostics.ErrorCodes.InheritNonClass,
-                Severity.Error,
+                Severity.Warning,
                 DiagnosticSource.Analysis
             ));
         }
