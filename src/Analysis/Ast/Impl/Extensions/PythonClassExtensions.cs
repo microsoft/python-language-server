@@ -63,7 +63,7 @@ namespace Microsoft.Python.Analysis {
             return unmangledName.StartsWithOrdinal("__") && memberName.EqualsOrdinal($"_{cls.Name}{unmangledName}");
         }
         public static IScope GetScope(this IPythonClassType f, IExpressionEvaluator eval) {
-            IScope gs = eval.Module.Equals(f.DeclaringModule) || f.DeclaringModule == null ? eval.GlobalScope : f.DeclaringModule as IScope;
+            IScope gs = eval.Module.Equals(f.DeclaringModule) || f.DeclaringModule == null ? eval.GlobalScope : f.DeclaringModule.GlobalScope as IScope;
             return gs?.TraverseBreadthFirst(s => s.Children).FirstOrDefault(s => s.Node == f.ClassDefinition);
         }
     }
