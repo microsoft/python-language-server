@@ -48,15 +48,20 @@ namespace Microsoft.Python.Analysis.Modules {
         /// content is loaded and analyzed only for class/functions definitions
         /// so the original documentation can be extracted.
         /// </summary>
-        /// <param name="name">Module to specialize.</param>
+        /// <param name="fullName">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
         /// <returns>Original (library) module loaded as stub, if any.</returns>
-        IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor);
+        IPythonModule SpecializeModule(string fullName, Func<string, IPythonModule> specializationConstructor);
 
         /// <summary>
-        /// Returns specialized module, if any.
+        /// Returns specialized module, if any. Will attempt to load module from persistent state.
         /// </summary>
-        IPythonModule GetSpecializedModule(string name, string modulePath = null);
+        IPythonModule GetSpecializedModule(string fullName, bool allowCreation = false, string modulePath = null);
+
+        /// <summary>
+        /// Determines of module is specialized or exists in the database.
+        /// </summary>
+        bool IsSpecializedModule(string fullName, string modulePath = null);
 
         /// <summary>
         /// Root directory of the path resolver.

@@ -86,13 +86,23 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
-            if (Modules.TryGetValue(name, out var moduleRef)) {
-                return moduleRef.GetOrCreate(name, this);
-            }
-
-            var module = _interpreter.ModuleResolution.GetSpecializedModule(name);
+            // Specialized should always win. However, we don't want
+            // to allow loading from the database just yet since module
+            // may already exist in the analyzed state.
+            var module = GetImportedModule(name);
             if (module != null) {
                 return module;
+            }
+
+            // Now try restoring from the database.
+            module = _interpreter.ModuleResolution.GetSpecializedModule(name, true);
+            if (module != null) {
+                return module;
+            }
+
+            // Now try regular case.
+            if (Modules.TryGetValue(name, out var moduleRef)) {
+                return moduleRef.GetOrCreate(name, this);
             }
 
             moduleRef = Modules.GetOrAdd(name, new ModuleRef());
