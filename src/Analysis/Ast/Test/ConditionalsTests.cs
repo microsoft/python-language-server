@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Threading.Tasks;
-using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.IO;
@@ -76,15 +75,13 @@ if sys.version_info < (3, 0):
             const string code = @"
 if sys.platform == 'win32':
     x = 1
+else:
+    x = 'a'
 ";
             var platform = SubstitutePlatform(out var sm);
             platform.IsWindows.Returns(x => isWindows);
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, sm);
-            if (isWindows) {
-                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
-            } else {
-                analysis.Should().NotHaveVariable("x");
-            }
+            analysis.Should().HaveVariable("x").OfType(isWindows ? BuiltinTypeId.Int : BuiltinTypeId.Str);
         }
 
         [DataRow(false)]
@@ -130,15 +127,45 @@ if 'nt' in _names:
             const string code = @"
 if 'posix' in _names:
     x = 1
+else:
+    x = 'a'
 ";
             var platform = SubstitutePlatform(out var sm);
             platform.IsWindows.Returns(x => isWindows);
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X, sm);
-            if (!isWindows) {
-                analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
-            } else {
-                analysis.Should().NotHaveVariable("x");
-            }
+            analysis.Should().HaveVariable("x").OfType(isWindows ? BuiltinTypeId.Str : BuiltinTypeId.Int);
+        }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task FunctionByVersion(bool is3x) {
+            const string code = @"
+if sys.version_info >= (3, 0):
+   def func(a): ...
+else:
+   def func(a, b): ...
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters(is3x ? new[] { "a" } : new[] { "a", "b" });
+        }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task FunctionByVersionElif(bool is3x) {
+            const string code = @"
+if sys.version_info >= (3, 0):
+   def func(a): ...
+elif sys.version_info < (3, 0):
+   def func(a, b): ...
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters(is3x ? new[] { "a" } : new[] { "a", "b" });
         }
 
         private IOSPlatform SubstitutePlatform(out IServiceManager sm) {

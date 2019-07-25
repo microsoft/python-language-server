@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Linting.UndefinedVariables;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Linting {
@@ -27,7 +28,7 @@ namespace Microsoft.Python.Analysis.Linting {
             // TODO: develop mechanism for dynamic and external linter discovery.
             _linters.Add(new UndefinedVariablesLinter());
         }
-        public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services)
-            => _linters.SelectMany(l => l.Lint(analysis, services)).ToArray();
+        public IReadOnlyList<DiagnosticsEntry> Lint(IPythonModule module, IServiceContainer services)
+            => _linters.SelectMany(l => l.Lint(module.Analysis, services)).Where(d => d.ShouldReport(module)).ToArray();
     }
 }

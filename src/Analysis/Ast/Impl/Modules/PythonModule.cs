@@ -252,8 +252,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     return _buffer.Text;
                 }
             }
-        }
-
+        } 
         #endregion
 
         #region Parsing

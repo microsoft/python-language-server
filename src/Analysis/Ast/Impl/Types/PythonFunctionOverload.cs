@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -114,7 +113,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<IParameterInfo> Parameters { get; private set; } = Array.Empty<IParameterInfo>();
         public IMember StaticReturnValue { get; private set; }
 
-        public IMember Call(IArgumentSet args, IPythonType self, Node callLocation = null) {
+        public IMember Call(IArgumentSet args, IPythonType self) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
                 var rt = _returnValueProvider?.Invoke(args.Eval.Module, this, args);
@@ -125,7 +124,6 @@ namespace Microsoft.Python.Analysis.Types {
 
             return GetSpecificReturnType(self as IPythonClassType, args);
         }
-
         #endregion
 
         private IMember GetSpecificReturnType(IPythonClassType selfClassType, IArgumentSet args) {

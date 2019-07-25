@@ -32,6 +32,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         return new PythonAsciiString(b, Interpreter);
                     case int integer:
                         return new PythonConstant(integer, Interpreter.GetBuiltinType(BuiltinTypeId.Int));
+                    case bool b:
+                        return new PythonConstant(b, Interpreter.GetBuiltinType(BuiltinTypeId.Bool));
                 }
             }
 

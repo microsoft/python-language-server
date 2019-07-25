@@ -108,10 +108,13 @@ namespace Microsoft.Python.Analysis.Types {
             var overload = fn.Overloads[overloadIndex];
             var fd = overload.FunctionDefinition;
 
-            if (fn.IsSpecialized) {
-                // Typically specialized function, like TypeVar() that does not actually have AST definition.
-                // Make the arguments from the call expression. If argument does not have name, 
-                // try using name from the function definition based on the argument position.
+            // Some specialized functions have more complicated definitions, so we pass
+            // parameters to those, TypeVar() is an example, so we allow the latter logic to handle
+            // argument instatiation. For simple specialized functions, it is enough to handle here.
+            if (fn.IsSpecialized && overload.Parameters.Count == 0) {
+                // Specialized functions typically don't have AST definitions.
+                // We construct the arguments from the call expression. If an argument does not have a name, 
+                // we try using name from the function definition based on the argument's position.
                 _arguments = new List<Argument>();
                 for (var i = 0; i < callExpr.Args.Count; i++) {
                     var name = callExpr.Args[i].Name;

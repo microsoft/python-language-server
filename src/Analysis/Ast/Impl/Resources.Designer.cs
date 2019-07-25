@@ -133,6 +133,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Duplicate argument name &apos;{0}&apos; in function definition..
+        /// </summary>
+        internal static string DuplicateArgumentName {
+            get {
+                return ResourceManager.GetString("DuplicateArgumentName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Environment variable &apos;{0}&apos; is not set, using the default cache location instead..
         /// </summary>
         internal static string EnvVariableNotSet {
@@ -241,6 +250,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Inheriting &apos;{0}&apos;, which is not a class..
+        /// </summary>
+        internal static string InheritNonClass {
+            get {
+                return ResourceManager.GetString("InheritNonClass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Interpreter does not exist; analysis will not be available..
         /// </summary>
         internal static string InterpreterNotFound {
@@ -286,6 +304,24 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The first argument to TypeVar must be a string..
+        /// </summary>
+        internal static string TypeVarFirstArgumentNotString {
+            get {
+                return ResourceManager.GetString("TypeVarFirstArgumentNotString", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A single constraint to TypeVar is not allowed..
+        /// </summary>
+        internal static string TypeVarSingleConstraint {
+            get {
+                return ResourceManager.GetString("TypeVarSingleConstraint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to determine analysis cache path. Using default &apos;{0}&apos;..
         /// </summary>
         internal static string UnableToDetermineCachePath {
@@ -309,15 +345,6 @@ namespace Microsoft.Python.Analysis {
         internal static string UndefinedVariable {
             get {
                 return ResourceManager.GetString("UndefinedVariable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Unsupported operand types for &apos;{0}&apos;: &apos;{1}&apos; and &apos;{2}&apos;.
-        /// </summary>
-        internal static string UnsupporedOperandType {
-            get {
-                return ResourceManager.GetString("UnsupporedOperandType", resourceCulture);
             }
         }
     }

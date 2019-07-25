@@ -55,11 +55,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private JsonRpc _rpc;
         private JsonSerializer _jsonSerializer;
-        private PathsWatcher _pathsWatcher;
         private IIdleTimeTracker _idleTimeTracker;
-
-        private bool _watchSearchPaths;
-        private string[] _searchPaths = Array.Empty<string>();
 
         public CancellationToken Start(IServiceManager services, JsonRpc rpc) {
             _server = new Server(services);
@@ -78,7 +74,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposables
                 .Add(() => _shutdownCts.Cancel())
                 .Add(_prioritizer)
-                .Add(() => _pathsWatcher?.Dispose())
                 .Add(() => _rpc.TraceSource.Listeners.Remove(rpcTraceListener));
 
             services.AddService(_optionsProvider);
@@ -238,6 +233,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
+        [JsonRpcMethod("textDocument/declaration")]
+        public async Task<Location> GotoDeclaration(JToken token, CancellationToken cancellationToken) {
+            using (_requestTimer.Time("textDocument/declaration")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                return await _server.GotoDeclaration(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
+            }
+        }
+
         [JsonRpcMethod("textDocument/references")]
         public async Task<Reference[]> FindReferences(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/references")) {
@@ -357,30 +360,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return MessageType.Error;
         }
 
-        private void HandlePathWatchChanges(JToken section, CancellationToken cancellationToken) {
-            var watchSearchPaths = GetSetting(section, "watchSearchPaths", true);
-            if (!watchSearchPaths) {
-                // No longer watching.
-                _pathsWatcher?.Dispose();
-                _searchPaths = Array.Empty<string>();
-                _watchSearchPaths = false;
-                return;
-            }
-
-            // Now watching.
-            if (!_watchSearchPaths || (_watchSearchPaths && _searchPaths.SetEquals(_initParams.initializationOptions.searchPaths))) {
-                // Were not watching OR were watching but paths have changed. Recreate the watcher.
-                _pathsWatcher?.Dispose();
-                _pathsWatcher = new PathsWatcher(
-                    _initParams.initializationOptions.searchPaths,
-                    () =>_server.NotifyPackagesChanged(cancellationToken),
-                        _services.GetService<ILogger>()
-                    );
-
-                _watchSearchPaths = true;
-                _searchPaths = _initParams.initializationOptions.searchPaths;
-            }
-        }
+        private void HandlePathWatchChanges(JToken section)
+            => _server.HandleWatchPathsChange(GetSetting(section, "watchSearchPaths", true));
 
         private static CancellationToken GetToken(CancellationToken original)
                 => Debugger.IsAttached ? CancellationToken.None : original;
