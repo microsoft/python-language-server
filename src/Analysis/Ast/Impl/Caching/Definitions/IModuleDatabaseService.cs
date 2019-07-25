@@ -33,5 +33,10 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Writes module data to the database.
         /// </summary>
         Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Determines if module analysis exists in the storage.
+        /// </summary>
+        bool ModuleExistsInStorage(string moduleName, string filePath);
     }
 }

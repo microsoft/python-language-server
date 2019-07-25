@@ -85,10 +85,28 @@ namespace Microsoft.Python.Analysis.Caching {
             return ModuleStorageState.DoesNotExist;
         }
 
+        /// <summary>
+        /// Writes module data to the database.
+        /// </summary>
         public Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default)
             => Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken));
 
-        private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) { 
+        /// <summary>
+        /// Determines if module analysis exists in the storage.
+        /// </summary>
+        public bool ModuleExistsInStorage(string moduleName, string filePath) {
+            for (var retries = 50; retries > 0; --retries) {
+                try {
+                    var dbPath = FindDatabaseFile(moduleName, filePath);
+                    return !string.IsNullOrEmpty(dbPath);
+                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+                    Thread.Sleep(10);
+                }
+            }
+            return false;
+        }
+
+        private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
             var model = ModuleModel.FromAnalysis(analysis, _services);
             Exception ex = null;
             for (var retries = 50; retries > 0; --retries) {

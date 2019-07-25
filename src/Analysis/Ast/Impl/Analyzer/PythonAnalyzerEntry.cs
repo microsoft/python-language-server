@@ -264,7 +264,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private static bool Ignore(IModuleManagement moduleResolution, string fullName, string modulePath)
-            => moduleResolution.BuiltinModuleName.EqualsOrdinal(fullName) || moduleResolution.GetSpecializedModule(fullName, modulePath) != null;
+            => moduleResolution.BuiltinModuleName.EqualsOrdinal(fullName) || moduleResolution.IsSpecializedModule(fullName, modulePath);
 
         private void UpdateAnalysisTcs(int analysisVersion) {
             _analysisVersion = analysisVersion;
