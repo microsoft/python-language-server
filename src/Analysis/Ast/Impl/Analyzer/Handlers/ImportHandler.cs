@@ -49,7 +49,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void FindModule(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute, 
+        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute) {
+            FindModuleByAbsoluteName(moduleImportExpression, asNameExpression, forceAbsolute, out var firstModule, out var lastModule, out var importNames, out _);
+            // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
+            // "import fob.oar.baz" is handled as fob = import_module('fob')
+            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
+                Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
+            } else if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
+                var firstName = moduleImportExpression.Names[0];
+                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
+            }
+        }
+
+        private void FindModuleByAbsoluteName(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute,
             out PythonVariableModule firstModule, out PythonVariableModule lastModule, out ImmutableArray<string> importNames, out IImportSearchResult imports) {
             // "import fob.oar.baz" means
             // import_module('fob')
@@ -70,18 +82,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (firstModule == default) {
                     firstModule = lastModule;
                 }
-            }
-        }
-
-        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute) {
-            FindModule(moduleImportExpression, asNameExpression, forceAbsolute, out var firstModule, out var lastModule, out var importNames, out _);
-            // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
-            // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
-                Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
-            } else if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
-                var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
             }
         }
 
