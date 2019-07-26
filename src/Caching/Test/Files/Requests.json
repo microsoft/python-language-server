@@ -27,7 +27,11 @@
       "Classes": null,
       "Functions": null,
       "Id": 435179778,
-      "Name": "check_compatibility"
+      "Name": "check_compatibility",
+      "IndexSpan": {
+        "Start": 973,
+        "Length": 19
+      }
     },
     {
       "Documentation": null,
@@ -48,232 +52,940 @@
       "Classes": null,
       "Functions": null,
       "Id": -399540245,
-      "Name": "_check_cryptography"
+      "Name": "_check_cryptography",
+      "IndexSpan": {
+        "Start": 1808,
+        "Length": 19
+      }
     }
   ],
   "Variables": [
     {
       "Value": "urllib3",
       "Id": 1260465222,
-      "Name": "urllib3"
+      "Name": "urllib3",
+      "IndexSpan": {
+        "Start": 878,
+        "Length": 7
+      }
     },
     {
       "Value": "chardet",
       "Id": -2125975290,
-      "Name": "chardet"
+      "Name": "chardet",
+      "IndexSpan": {
+        "Start": 893,
+        "Length": 7
+      }
     },
     {
       "Value": "warnings",
       "Id": 1876311406,
-      "Name": "warnings"
+      "Name": "warnings",
+      "IndexSpan": {
+        "Start": 908,
+        "Length": 8
+      }
     },
     {
       "Value": "requests.exceptions:RequestsDependencyWarning",
       "Id": -802098666,
-      "Name": "RequestsDependencyWarning"
+      "Name": "RequestsDependencyWarning",
+      "IndexSpan": {
+        "Start": 941,
+        "Length": 25
+      }
     },
     {
       "Value": "urllib3.contrib.pyopenssl",
       "Id": -1632802014,
-      "Name": "pyopenssl"
+      "Name": "pyopenssl",
+      "IndexSpan": {
+        "Start": 2657,
+        "Length": 9
+      }
     },
     {
       "Value": "urllib3.exceptions:DependencyWarning",
       "Id": -891041158,
-      "Name": "DependencyWarning"
+      "Name": "DependencyWarning",
+      "IndexSpan": {
+        "Start": 2960,
+        "Length": 17
+      }
     },
     {
       "Value": "i:str",
       "Id": 916650529,
-      "Name": "__title__"
+      "Name": "__title__",
+      "IndexSpan": {
+        "Start": 3055,
+        "Length": 9
+      }
     },
     {
       "Value": "i:str",
       "Id": -1883656187,
-      "Name": "__description__"
+      "Name": "__description__",
+      "IndexSpan": {
+        "Start": 3066,
+        "Length": 15
+      }
     },
     {
       "Value": "i:str",
       "Id": -1620207176,
-      "Name": "__url__"
+      "Name": "__url__",
+      "IndexSpan": {
+        "Start": 3083,
+        "Length": 7
+      }
     },
     {
       "Value": "i:str",
       "Id": 1161199201,
-      "Name": "__version__"
+      "Name": "__version__",
+      "IndexSpan": {
+        "Start": 3092,
+        "Length": 11
+      }
     },
     {
       "Value": "i:int",
       "Id": -1840123721,
-      "Name": "__build__"
+      "Name": "__build__",
+      "IndexSpan": {
+        "Start": 3129,
+        "Length": 9
+      }
     },
     {
       "Value": "i:str",
       "Id": 1654469090,
-      "Name": "__author__"
+      "Name": "__author__",
+      "IndexSpan": {
+        "Start": 3140,
+        "Length": 10
+      }
     },
     {
       "Value": "i:str",
       "Id": -94198849,
-      "Name": "__author_email__"
+      "Name": "__author_email__",
+      "IndexSpan": {
+        "Start": 3152,
+        "Length": 16
+      }
     },
     {
       "Value": "i:str",
       "Id": -386551926,
-      "Name": "__license__"
+      "Name": "__license__",
+      "IndexSpan": {
+        "Start": 3170,
+        "Length": 11
+      }
     },
     {
       "Value": "i:str",
       "Id": 1739624272,
-      "Name": "__copyright__"
+      "Name": "__copyright__",
+      "IndexSpan": {
+        "Start": 3207,
+        "Length": 13
+      }
     },
     {
       "Value": "i:str",
       "Id": 782136591,
-      "Name": "__cake__"
+      "Name": "__cake__",
+      "IndexSpan": {
+        "Start": 3222,
+        "Length": 8
+      }
     },
     {
       "Value": "requests.utils",
       "Id": 770082554,
-      "Name": "utils"
+      "Name": "utils",
+      "IndexSpan": {
+        "Start": 3246,
+        "Length": 5
+      }
     },
     {
       "Value": "requests.packages",
       "Id": 2129088004,
-      "Name": "packages"
+      "Name": "packages",
+      "IndexSpan": {
+        "Start": 3266,
+        "Length": 8
+      }
     },
     {
       "Value": "requests.models:Request",
       "Id": -104689032,
-      "Name": "Request"
+      "Name": "Request",
+      "IndexSpan": {
+        "Start": 3295,
+        "Length": 7
+      }
     },
     {
       "Value": "requests.models:Response",
       "Id": 1102541176,
-      "Name": "Response"
+      "Name": "Response",
+      "IndexSpan": {
+        "Start": 3304,
+        "Length": 8
+      }
     },
     {
       "Value": "requests.models:PreparedRequest",
       "Id": 1337118331,
-      "Name": "PreparedRequest"
+      "Name": "PreparedRequest",
+      "IndexSpan": {
+        "Start": 3314,
+        "Length": 15
+      }
     },
     {
       "Value": "requests.api:request",
       "Id": -1769342312,
-      "Name": "request"
+      "Name": "request",
+      "IndexSpan": {
+        "Start": 3347,
+        "Length": 7
+      }
     },
     {
       "Value": "requests.api:get",
       "Id": 787423,
-      "Name": "get"
+      "Name": "get",
+      "IndexSpan": {
+        "Start": 3356,
+        "Length": 3
+      }
     },
     {
       "Value": "requests.api:head",
       "Id": 24439415,
-      "Name": "head"
+      "Name": "head",
+      "IndexSpan": {
+        "Start": 3361,
+        "Length": 4
+      }
     },
     {
       "Value": "requests.api:post",
       "Id": 24687927,
-      "Name": "post"
+      "Name": "post",
+      "IndexSpan": {
+        "Start": 3367,
+        "Length": 4
+      }
     },
     {
       "Value": "requests.api:patch",
       "Id": 764909201,
-      "Name": "patch"
+      "Name": "patch",
+      "IndexSpan": {
+        "Start": 3373,
+        "Length": 5
+      }
     },
     {
       "Value": "requests.api:put",
       "Id": 796568,
-      "Name": "put"
+      "Name": "put",
+      "IndexSpan": {
+        "Start": 3380,
+        "Length": 3
+      }
     },
     {
       "Value": "requests.api:delete",
       "Id": 1897257090,
-      "Name": "delete"
+      "Name": "delete",
+      "IndexSpan": {
+        "Start": 3385,
+        "Length": 6
+      }
     },
     {
       "Value": "requests.api:options",
       "Id": 180457127,
-      "Name": "options"
+      "Name": "options",
+      "IndexSpan": {
+        "Start": 3393,
+        "Length": 7
+      }
     },
     {
       "Value": "requests.sessions:session",
       "Id": -880047457,
-      "Name": "session"
+      "Name": "session",
+      "IndexSpan": {
+        "Start": 3423,
+        "Length": 7
+      }
     },
     {
       "Value": "requests.sessions:Session",
       "Id": 784605823,
-      "Name": "Session"
+      "Name": "Session",
+      "IndexSpan": {
+        "Start": 3432,
+        "Length": 7
+      }
     },
     {
       "Value": "i:requests.structures:LookupDict",
       "Id": 753305199,
-      "Name": "codes"
+      "Name": "codes",
+      "IndexSpan": {
+        "Start": 3466,
+        "Length": 5
+      }
     },
     {
       "Value": "requests.exceptions:RequestException",
       "Id": 355509431,
-      "Name": "RequestException"
+      "Name": "RequestException",
+      "IndexSpan": {
+        "Start": 3502,
+        "Length": 16
+      }
     },
     {
       "Value": "requests.exceptions:Timeout",
       "Id": 1780673866,
-      "Name": "Timeout"
+      "Name": "Timeout",
+      "IndexSpan": {
+        "Start": 3520,
+        "Length": 7
+      }
     },
     {
       "Value": "requests.exceptions:URLRequired",
       "Id": 1361573271,
-      "Name": "URLRequired"
+      "Name": "URLRequired",
+      "IndexSpan": {
+        "Start": 3529,
+        "Length": 11
+      }
     },
     {
       "Value": "requests.exceptions:TooManyRedirects",
       "Id": 511002043,
-      "Name": "TooManyRedirects"
+      "Name": "TooManyRedirects",
+      "IndexSpan": {
+        "Start": 3546,
+        "Length": 16
+      }
     },
     {
       "Value": "requests.exceptions:HTTPError",
       "Id": -1546903511,
-      "Name": "HTTPError"
+      "Name": "HTTPError",
+      "IndexSpan": {
+        "Start": 3564,
+        "Length": 9
+      }
     },
     {
       "Value": "requests.exceptions:ConnectionError",
       "Id": 853386419,
-      "Name": "ConnectionError"
+      "Name": "ConnectionError",
+      "IndexSpan": {
+        "Start": 3575,
+        "Length": 15
+      }
     },
     {
       "Value": "requests.exceptions:FileModeWarning",
       "Id": 1675678790,
-      "Name": "FileModeWarning"
+      "Name": "FileModeWarning",
+      "IndexSpan": {
+        "Start": 3596,
+        "Length": 15
+      }
     },
     {
       "Value": "requests.exceptions:ConnectTimeout",
       "Id": -1047738098,
-      "Name": "ConnectTimeout"
+      "Name": "ConnectTimeout",
+      "IndexSpan": {
+        "Start": 3613,
+        "Length": 14
+      }
     },
     {
       "Value": "requests.exceptions:ReadTimeout",
       "Id": -1711523244,
-      "Name": "ReadTimeout"
+      "Name": "ReadTimeout",
+      "IndexSpan": {
+        "Start": 3629,
+        "Length": 11
+      }
     },
     {
       "Value": "logging",
       "Id": 1772213096,
-      "Name": "logging"
+      "Name": "logging",
+      "IndexSpan": {
+        "Start": 3719,
+        "Length": 7
+      }
     },
     {
       "Value": "logging:NullHandler",
       "Id": -1600735444,
-      "Name": "NullHandler"
+      "Name": "NullHandler",
+      "IndexSpan": {
+        "Start": 3747,
+        "Length": 11
+      }
     },
     {
       "Value": "typing:Any",
       "Id": 751189,
-      "Name": "Any"
+      "Name": "Any",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     }
   ],
   "Classes": [],
+  "NewLines": [
+    {
+      "EndIndex": 24,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 25,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 32,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 63,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 93,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 106,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 107,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 111,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 133,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 155,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 156,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 232,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 239,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 240,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 263,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 313,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 334,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 341,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 396,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 404,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 405,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 418,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 419,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 471,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 538,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 559,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 564,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 573,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 588,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 613,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 637,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 645,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 654,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 659,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 660,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 738,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 774,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 775,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 814,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 866,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 870,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 871,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 886,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 901,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 917,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 967,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 968,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 969,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1028,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1077,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1159,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1160,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1219,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1253,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1289,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1290,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1329,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1385,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1446,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1479,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1501,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1524,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1547,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1548,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1587,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1644,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1705,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1737,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1759,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1780,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1802,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1803,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1804,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1851,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1878,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1887,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1966,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 1989,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2004,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2005,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2046,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2148,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2206,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2207,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2256,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2261,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2327,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2364,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2440,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2519,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2564,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2565,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2620,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2625,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2667,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2703,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2704,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2737,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2802,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2848,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2868,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2877,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2878,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2929,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 2978,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3029,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3030,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3104,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3182,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3231,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3232,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3252,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3275,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3330,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3401,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3440,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3472,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3498,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3542,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3592,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3641,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3643,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3644,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3712,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3727,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3759,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3760,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3814,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3815,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3858,
+      "Kind": 1
+    },
+    {
+      "EndIndex": 3921,
+      "Kind": 1
+    }
+  ],
+  "FileSize": 3921,
   "Id": -203071489,
-  "Name": "requests"
+  "Name": "requests",
+  "IndexSpan": null
 }

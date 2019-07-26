@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         }
 
         public IPythonPropertyType Construct(PropertyModel pm, IPythonClassType cls) {
-            var prop = new PythonPropertyType(pm.Name, _mf.DefaultLocation, cls, (pm.Attributes & FunctionAttributes.Abstract) != 0);
+            var prop = new PythonPropertyType(pm.Name, new Location(_mf.Module, pm.IndexSpan.ToSpan()), cls, (pm.Attributes & FunctionAttributes.Abstract) != 0);
             prop.SetDocumentation(pm.Documentation);
             var o = new PythonFunctionOverload(pm.Name, _mf.DefaultLocation);
             o.SetDocumentation(pm.Documentation); // TODO: own documentation?

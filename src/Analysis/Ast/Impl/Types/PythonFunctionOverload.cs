@@ -182,7 +182,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Try returning the constraint
             // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
             var name = StaticReturnValue.GetPythonType()?.Name;
-            var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
+            var typeDefVar = DeclaringModule.GlobalScope.Variables[name];
             if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
                 // See if the instance (self) type satisfies one of the constraints.
                 return selfClassType.Mro.Any(b => gtp2.Constraints.Any(c => c.Equals(b)))

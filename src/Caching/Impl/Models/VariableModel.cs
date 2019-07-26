@@ -26,6 +26,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public static VariableModel FromVariable(IVariable v) => new VariableModel {
             Id = v.Name.GetStableHash(),
             Name = v.Name,
+            IndexSpan = v.Location.IndexSpan.ToModel(),
             Value = v.Value.GetQualifiedName()
         };
 
@@ -38,6 +39,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public static VariableModel FromType(string name, IPythonType t) => new VariableModel {
             Id = name.GetStableHash(),
             Name = name,
+            IndexSpan = t.Location.IndexSpan.ToModel(),
             Value = t.QualifiedName
         };
     }

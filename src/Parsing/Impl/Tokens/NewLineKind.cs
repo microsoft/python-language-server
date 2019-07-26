@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,12 +14,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Core.Text;
-
-namespace Microsoft.Python.Analysis.Caching.Models {
-    internal abstract class MemberModel {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public IndexSpanModel IndexSpan { get; set; }
+namespace Microsoft.Python.Parsing {
+    public enum NewLineKind {
+        None,
+        LineFeed,
+        CarriageReturn,
+        CarriageReturnLineFeed
     }
 }

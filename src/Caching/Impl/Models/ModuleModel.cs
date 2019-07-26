@@ -18,14 +18,31 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class ModuleModel : MemberModel {
+        /// <summary>
+        /// Module unique id that includes version.
+        /// </summary>
         public string UniqueId { get; set; }
+
         public string Documentation { get; set; }
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
+
+        /// <summary>
+        /// Collection of new line information for conversion of linear spans
+        /// to line/columns in navigation to member definitions and references.
+        /// </summary>
+        public NewLineModel[] NewLines { get; set; }
+
+        /// <summary>
+        /// Length of the original module file. Used in conversion of indices to line/columns.
+        /// </summary>
+        public int FileSize { get; set; }
+
         // TODO: TypeVars, ...
 
         public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services) {
@@ -42,7 +59,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 string typeName = null;
 
                 switch (v.Value) {
-                    case IPythonFunctionType ft 
+                    case IPythonFunctionType ft
                         when ft.DeclaringModule.Equals(analysis.Document) || ft.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!functions.ContainsKey(ft.Name)) {
                             typeName = ft.Name;
@@ -50,7 +67,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                         }
 
                         break;
-                    case IPythonClassType cls 
+                    case IPythonClassType cls
                         when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!classes.ContainsKey(cls.Name)) {
                             typeName = cls.Name;
@@ -73,7 +90,12 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Documentation = analysis.Document.Documentation,
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),
-                Classes = classes.Values.ToArray()
+                Classes = classes.Values.ToArray(),
+                NewLines = analysis.Ast.NewLineLocations.Select(l => new NewLineModel {
+                    EndIndex = l.EndIndex,
+                    Kind = l.Kind
+                }).ToArray(),
+                FileSize = analysis.Ast.EndIndex
             };
         }
     }

@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -26,7 +27,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Contains either module members, members + imported children of explicit package or imported implicit package children
     /// Instance is unique for each module analysis
     /// </summary>
-    internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
+    internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule>, ILocationConverter {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
  
         public string Name { get; }
@@ -71,5 +72,10 @@ namespace Microsoft.Python.Analysis.Modules {
         public IMember CreateInstance(string typeName = null, IArgumentSet args = null) => this;
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
+
+        #region ILocationConverter
+        public SourceLocation IndexToLocation(int index) => (Module as ILocationConverter)?.IndexToLocation(index) ?? default;
+        public int LocationToIndex(SourceLocation location) => (Module as ILocationConverter)?.LocationToIndex(location) ?? default;
+        #endregion
     }
 }

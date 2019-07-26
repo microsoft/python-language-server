@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
+using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
@@ -193,10 +194,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var type = target?.GetPythonType();
 
             switch (type) {
-                case IPythonModule m when m.Analysis.GlobalScope != null:
+                case IPythonModule m when m.GlobalScope != null:
                     // Module GetMember returns module variable value while we
                     // want the variable itself since we want to know its location.
-                    var v1 = m.Analysis.GlobalScope.Variables[mex.Name];
+                    var v1 = m.GlobalScope.Variables[mex.Name];
                     if (v1 != null) {
                         definingMember = v1;
                         return FromMember(v1);
@@ -247,12 +248,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
             var rdt = _services.GetService<IRunningDocumentTable>();
             var doc = rdt.GetDocument(uri);
-            return CanNavigateToModule(doc);
+            //  Allow navigation to modules not in RDT - most probably
+            // it is a module that was restored from database.
+            return doc == null || CanNavigateToModule(doc);
         }
 
         private static bool CanNavigateToModule(IPythonModule m)
-            => m?.ModuleType == ModuleType.User ||
+            => m?.ModuleType == ModuleType.Stub ||
                m?.ModuleType == ModuleType.Package ||
-               m?.ModuleType == ModuleType.Library;
+               m?.ModuleType == ModuleType.Library ||
+               m?.ModuleType == ModuleType.Specialized;
     }
 }

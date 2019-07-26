@@ -69,12 +69,19 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
+            IPythonModule module;
             if (moduleImport.ModulePath != null) {
-                var module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
+                module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
                 if (module != null) {
                     GetRdt().LockDocument(module.Uri);
                     return module;
                 }
+            }
+
+            var dbs = GetDbService();
+            if (dbs != null && dbs.TryCreateModule(name, moduleImport.ModulePath, out module) != ModuleStorageState.DoesNotExist && module != null) {
+                SpecializeModule(name, s => module);
+                return module;
             }
 
             // If there is a stub, make sure it is loaded and attached
@@ -152,17 +159,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        public IPythonModule GetSpecializedModule(string fullName, string modulePath = null) {
-            if (_specialized.TryGetValue(fullName, out var module)) {
-                return module;
-            }
-            var dbs = GetDbService();
-            if (dbs != null && dbs.TryCreateModule(fullName, modulePath, out module) != ModuleStorageState.DoesNotExist && module != null) {
-                SpecializeModule(fullName, s => module);
-                return module;
-            }
-            return null;
-        }
+        public IPythonModule GetSpecializedModule(string fullName, bool allowCreation = false, string modulePath = null) 
+            => _specialized.TryGetValue(fullName, out var module) ? module : null;
+
+        /// <summary>
+        /// Determines of module is specialized or exists in the database.
+        /// </summary>
+        public bool IsSpecializedModule(string fullName, string modulePath = null)
+            => _specialized.ContainsKey(fullName) || GetDbService()?.ModuleExistsInStorage(fullName, modulePath) == true;
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             var analyzer = _services.GetService<IPythonAnalyzer>();
