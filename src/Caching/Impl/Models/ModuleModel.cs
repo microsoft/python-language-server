@@ -18,7 +18,6 @@ using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class ModuleModel : MemberModel {
@@ -59,6 +58,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 string typeName = null;
 
                 switch (v.Value) {
+                    case IPythonFunctionType ft when ft.IsLambda():
+                        break;
                     case IPythonFunctionType ft
                         when ft.DeclaringModule.Equals(analysis.Document) || ft.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!functions.ContainsKey(ft.Name)) {
@@ -78,7 +79,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
                 // Do not re-declare classes and functions as variables in the model.
                 if (typeName == null && !variables.ContainsKey(v.Name)) {
-                    variables[v.Name] = VariableModel.FromVariable(v);
+                    if (!(v.Value is IPythonFunctionType f && f.IsLambda())) {
+                        variables[v.Name] = VariableModel.FromVariable(v);
+                    }
                 }
             }
 

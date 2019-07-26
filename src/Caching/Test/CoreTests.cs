@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         private string BaselineFileName => GetBaselineFileName(TestContext.TestName);
+        private string GetBaselineFileNameWithSuffix(string suffix) => GetBaselineFileName(TestContext.TestName, suffix);
 
         [TestMethod, Priority(0)]
         public async Task SmokeTest() {
@@ -107,7 +108,7 @@ else:
 
             var model = ModuleModel.FromAnalysis(analysis, Services);
             var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
+            Baseline.CompareToFile(GetBaselineFileNameWithSuffix(is3x ? "3" : "2"), json);
         }
     }
 }

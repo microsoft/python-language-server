@@ -119,13 +119,13 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     otherMember.Should().BeAssignableTo<IPythonInstance>();
                 }
 
-                // TODO: investigate why when a module is imported, some importers get type
-                // from stub while others type from the original code. This occasionally
-                // causes mismatch in documentation since stubs may fetch documentation
-                // from bases that do not exist in the original code (mostly from classes from typing).
-
-                subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
                 subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
+
+                if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
+                    otherMemberType.Documentation.Should().BeNullOrEmpty();
+                } else {
+                    subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
+                }
 
                 switch (subjectMemberType.MemberType) {
                     case PythonMemberType.Class:

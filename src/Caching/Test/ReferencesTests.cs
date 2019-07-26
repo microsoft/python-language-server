@@ -104,8 +104,8 @@ logging.critical()
             var model = ModuleModel.FromAnalysis(logging.Analysis, Services);
 
             var dbModule = new PythonDbModule(model, logging.FilePath, Services);
-            analysis.Document.Interpreter.ModuleResolution.SpecializeModule("logging", x => dbModule);
-
+            analysis.Document.Interpreter.ModuleResolution.SpecializeModule("logging", x => dbModule, replaceExisting: true);
+            
             var moduleName = $"{analysis.Document.Name}_db.py";
             var modulePath = TestData.GetTestSpecificPath(moduleName);
             analysis = await GetAnalysisAsync(code, Services, moduleName, modulePath);

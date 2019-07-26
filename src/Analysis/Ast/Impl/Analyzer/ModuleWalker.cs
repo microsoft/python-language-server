@@ -264,7 +264,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         // Don't augment types that do not come from this module.
                         // Do not replace __class__ since it has to match class type and we are not
                         // replacing class type, we are only merging members.
-                        foreach (var name in stubType.GetMemberNames().Except(new [] {"__class__", "__base__", "__bases__", "__mro__", "mro"})) {
+                        foreach (var name in stubType.GetMemberNames().Except(new[] { "__class__", "__base__", "__bases__", "__mro__", "mro" })) {
                             var stubMember = stubType.GetMember(name);
                             var member = cls.GetMember(name);
 
@@ -297,11 +297,27 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         // Re-declare variable with the data from the stub unless member is a module.
                         // Modules members that are modules should remain as they are, i.e. os.path
                         // should remain library with its own stub attached.
-                        if (!(stubType is IPythonModule) && !builtins.Equals(stubType.DeclaringModule)) {
+                        var stubModule = stubType.DeclaringModule;
+                        if (!(stubType is IPythonModule) && !builtins.Equals(stubModule)) {
                             TransferDocumentationAndLocation(sourceType, stubType);
                             // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                             var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? v.Source;
                             Eval.DeclareVariable(v.Name, v.Value, source);
+
+                            // If function is a stub, it may be that the function is from a child module via import.
+                            // For example, a number of functions in 'os' are imported from 'nt' on Windows via star import.
+                            // Their stubs, however, come from 'os' stub. So function may have declaring module as 'nt'
+                            // and we have to propagate type from 'os' stub to 'nt'.
+                            var valueType = v.Value.GetPythonType();
+                            if (!stubModule.Equals(valueType.DeclaringModule.Stub)) {
+                                var gs = valueType.DeclaringModule.Analysis.GlobalScope;
+                                var gsVar = gs.Variables[v.Name];
+                                var t = gsVar.GetPythonType();
+                                if (t != null && t.DeclaringModule.ModuleType != ModuleType.Stub) {
+                                    var value = gsVar.Value is IPythonInstance ? (IMember)new PythonInstance(stubType) : stubType;
+                                    gs.DeclareVariable(v.Name, value, gsVar.Source);
+                                }
+                            }
                         }
                         break;
                 }

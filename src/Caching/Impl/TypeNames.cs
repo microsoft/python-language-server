@@ -21,6 +21,10 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class TypeNames {
+        /// <summary>
+        /// Constructs persistent member name based on the member and the current module.
+        /// Persistent name contains complete information for the member restoration code.
+        /// </summary>
         public static string GetPersistentQualifiedName(this IMember m) {
             var t = m.GetPythonType();
             if (!t.IsUnknown()) {

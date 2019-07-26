@@ -108,29 +108,6 @@
             }
           ],
           "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "path",
-              "Type": "t:typing:Union[bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "mode",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "exist_ok",
-              "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
         }
       ],
       "Attributes": 0,
@@ -150,17 +127,6 @@
           "Parameters": [
             {
               "Name": "name",
-              "Type": "t:typing:Union[bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "path",
               "Type": "t:typing:Union[bytes, Unknown]",
               "DefaultValue": null,
               "Kind": 0
@@ -218,35 +184,6 @@
             {
               "Name": "top",
               "Type": "t:typing:Union[typing:AnyStr, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "topdown",
-              "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "onerror",
-              "Type": null,
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "followlinks",
-              "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:list_iterator"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "top",
-              "Type": "t:typing:AnyStr",
               "DefaultValue": null,
               "Kind": 0
             },
@@ -332,88 +269,6 @@
               "Name": "top",
               "Type": "t:bytes",
               "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "topdown",
-              "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "onerror",
-              "Type": null,
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "follow_symlinks",
-              "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "dir_fd",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            }
-          ],
-          "ReturnType": "i:list_iterator"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "top",
-              "Type": "t:typing:Union[str, Unknown]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "topdown",
-              "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "onerror",
-              "Type": null,
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "follow_symlinks",
-              "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "dir_fd",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            }
-          ],
-          "ReturnType": "i:list_iterator"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "top",
-              "Type": "t:str",
-              "DefaultValue": "i:ellipsis",
               "Kind": 0
             },
             {
@@ -791,48 +646,6 @@
       "IndexSpan": {
         "Start": 22397,
         "Length": 13
-      }
-    },
-    {
-      "Documentation": null,
-      "Overloads": [
-        {
-          "Parameters": [
-            {
-              "Name": "key",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "value",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:NoneType"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "key",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            }
-          ],
-          "ReturnType": null
-        }
-      ],
-      "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
-      "Id": -1480482126,
-      "Name": "<lambda>",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
       }
     },
     {
@@ -1295,29 +1108,6 @@
             }
           ],
           "ReturnType": "i:os:_wrap_close"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "__cmd",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "__mode",
-              "Type": "t:ellipsis",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "__bufsize",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:os:_wrap_close"
         }
       ],
       "Attributes": 0,
@@ -1476,17 +1266,6 @@
             }
           ],
           "ReturnType": "i:bytes"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "filename",
-              "Type": "t:typing:Union[str, bytes]",
-              "DefaultValue": null,
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:bytes"
         }
       ],
       "Attributes": 0,
@@ -1507,17 +1286,6 @@
             {
               "Name": "filename",
               "Type": "t:typing:Union[str, bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:str"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "filename",
-              "Type": "t:typing:Union[str, bytes]",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -2211,10 +1979,6 @@
         {
           "Parameters": [],
           "ReturnType": "i:Microsoft.Python.Analysis.Modules.StubPythonModule:uname_result(sysname: str, nodename: str, release: str, version: str, machine: str)"
-        },
-        {
-          "Parameters": [],
-          "ReturnType": "i:typing:Tuple[str, str, str, str, str]"
         }
       ],
       "Attributes": 0,
@@ -2974,23 +2738,6 @@
             }
           ],
           "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "path",
-              "Type": "t:typing:Union[bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:int",
-              "DefaultValue": null,
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
         }
       ],
       "Attributes": 0,
@@ -3043,29 +2790,6 @@
               "Type": "t:bool",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "path",
-              "Type": "t:typing:Union[bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "uid",
-              "Type": "t:int",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "gid",
-              "Type": "t:int",
-              "DefaultValue": null,
-              "Kind": 0
             }
           ],
           "ReturnType": "i:__NoneType__"
@@ -3236,23 +2960,6 @@
             }
           ],
           "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "path",
-              "Type": "t:typing:Union[bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "mode",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
         }
       ],
       "Attributes": 0,
@@ -3299,64 +3006,6 @@
               "Type": "t:int",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "filename",
-              "Type": "t:typing:Union[bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "mode",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "device",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "dir_fd",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "filename",
-              "Type": "t:typing:Union[bytes, Unknown]",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "mode",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "device",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
             }
           ],
           "ReturnType": "i:__NoneType__"
@@ -3479,35 +3128,6 @@
       "Functions": null,
       "Id": -1681886752,
       "Name": "pathconf",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Documentation": null,
-      "Overloads": [
-        {
-          "Parameters": [],
-          "ReturnType": "i:bool"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "__newvalue",
-              "Type": "t:bool",
-              "DefaultValue": null,
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        }
-      ],
-      "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
-      "Id": 2007421007,
-      "Name": "stat_float_times",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -3846,117 +3466,6 @@
       "Functions": null,
       "Id": 765232100,
       "Name": "plock",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Documentation": null,
-      "Overloads": [
-        {
-          "Parameters": [
-            {
-              "Name": "__cmd",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "__mode",
-              "Type": "t:ellipsis",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "__bufsize",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:Tuple[Unknown, Unknown]"
-        }
-      ],
-      "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
-      "Id": -2044806257,
-      "Name": "popen2",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Documentation": null,
-      "Overloads": [
-        {
-          "Parameters": [
-            {
-              "Name": "__cmd",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "__mode",
-              "Type": "t:ellipsis",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "__bufsize",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:Tuple[Unknown, Unknown, Unknown]"
-        }
-      ],
-      "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
-      "Id": -2044806256,
-      "Name": "popen3",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Documentation": null,
-      "Overloads": [
-        {
-          "Parameters": [
-            {
-              "Name": "__cmd",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "__mode",
-              "Type": "t:ellipsis",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "__bufsize",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:Tuple[Unknown, Unknown]"
-        }
-      ],
-      "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
-      "Id": -2044806255,
-      "Name": "popen4",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -5735,24 +5244,6 @@
       }
     },
     {
-      "Value": "t:os:<lambda>",
-      "Id": -1133458266,
-      "Name": "_putenv",
-      "IndexSpan": {
-        "Start": 25792,
-        "Length": 7
-      }
-    },
-    {
-      "Value": "t:os:<lambda>",
-      "Id": -153605044,
-      "Name": "_unsetenv",
-      "IndexSpan": {
-        "Start": 25954,
-        "Length": 9
-      }
-    },
-    {
       "Value": "t:bool",
       "Id": 1239934397,
       "Name": "supports_bytes_environ",
@@ -6639,7 +6130,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "od.__repr__() <==> repr(od)",
           "Overloads": [
             {
               "Parameters": [
@@ -7007,7 +6498,58 @@
       "Bases": [
         "t:object"
       ],
-      "Methods": [],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_ScandirIterator",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1101153034,
+          "Name": "__next__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_ScandirIterator",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
       "Properties": [],
       "Fields": [
         {

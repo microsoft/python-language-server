@@ -250,7 +250,7 @@
       }
     },
     {
-      "Value": "t:requests.api:request",
+      "Value": "t:requests:request",
       "Id": -1769342312,
       "Name": "request",
       "IndexSpan": {
@@ -259,7 +259,7 @@
       }
     },
     {
-      "Value": "t:requests.api:get",
+      "Value": "t:requests:get",
       "Id": 787423,
       "Name": "get",
       "IndexSpan": {
@@ -268,7 +268,7 @@
       }
     },
     {
-      "Value": "t:requests.api:head",
+      "Value": "t:requests:head",
       "Id": 24439415,
       "Name": "head",
       "IndexSpan": {
@@ -277,7 +277,7 @@
       }
     },
     {
-      "Value": "t:requests.api:post",
+      "Value": "t:requests:post",
       "Id": 24687927,
       "Name": "post",
       "IndexSpan": {
@@ -286,7 +286,7 @@
       }
     },
     {
-      "Value": "t:requests.api:patch",
+      "Value": "t:requests:patch",
       "Id": 764909201,
       "Name": "patch",
       "IndexSpan": {
@@ -295,7 +295,7 @@
       }
     },
     {
-      "Value": "t:requests.api:put",
+      "Value": "t:requests:put",
       "Id": 796568,
       "Name": "put",
       "IndexSpan": {
@@ -304,7 +304,7 @@
       }
     },
     {
-      "Value": "t:requests.api:delete",
+      "Value": "t:requests:delete",
       "Id": 1897257090,
       "Name": "delete",
       "IndexSpan": {
@@ -313,7 +313,7 @@
       }
     },
     {
-      "Value": "t:requests.api:options",
+      "Value": "t:requests:options",
       "Id": 180457127,
       "Name": "options",
       "IndexSpan": {
@@ -322,7 +322,7 @@
       }
     },
     {
-      "Value": "t:requests.sessions:session",
+      "Value": "t:requests:session",
       "Id": -880047457,
       "Name": "session",
       "IndexSpan": {

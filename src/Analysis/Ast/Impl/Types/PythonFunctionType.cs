@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
@@ -63,6 +64,11 @@ namespace Microsoft.Python.Analysis.Types {
             fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(), 
             declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
+            
+            // IsStub must be set permanently so when location of the stub is reassigned
+            // to the primary module for navigation purposes, function still remembers
+            // that it case from a stub.
+            IsStub = location.Module.ModuleType == ModuleType.Stub;
 
             location.Module.AddAstNode(this, fd);
             ProcessDecorators(fd);
@@ -97,7 +103,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override bool IsSpecialized => _isSpecialized;
 
         public bool IsOverload { get; private set; }
-        public bool IsStub { get; internal set; }
+        public bool IsStub { get; }
         public bool IsUnbound => DeclaringType == null;
 
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads;

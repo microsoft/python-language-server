@@ -370,10 +370,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
+            var saveAnalysis = document.ModuleType == ModuleType.Library || document.ModuleType == ModuleType.Compiled || document.ModuleType == ModuleType.CompiledBuiltin;
+            var moduleIsLibraryWithSource = saveAnalysis || document.ModuleType == ModuleType.Stub;
+
             var createLibraryAnalysis = !isCanceled &&
                 node != null &&
                 !node.HasMissingDependencies &&
-                document.ModuleType == ModuleType.Library &&
+                moduleIsLibraryWithSource &&
                 !document.IsOpen &&
                 node.HasOnlyWalkedDependencies &&
                 node.IsValidVersion;
@@ -388,7 +391,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);
             var analysis  = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
 
-            _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            if (saveAnalysis) {
+                _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            }
+
             return analysis;
         }
 

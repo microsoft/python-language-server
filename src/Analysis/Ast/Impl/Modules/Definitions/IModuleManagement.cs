@@ -50,8 +50,9 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         /// <param name="fullName">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <returns>Original (library) module loaded as stub, if any.</returns>
-        IPythonModule SpecializeModule(string fullName, Func<string, IPythonModule> specializationConstructor);
+        /// <param name="replaceExisting">Replace existing loaded module, if any.</param>
+        /// <returns>Specialized module.</returns>
+        IPythonModule SpecializeModule(string fullName, Func<string, IPythonModule> specializationConstructor, bool replaceExisting = false);
 
         /// <summary>
         /// Returns specialized module, if any. Will attempt to load module from persistent state.

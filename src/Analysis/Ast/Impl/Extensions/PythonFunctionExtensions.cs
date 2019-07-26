@@ -28,6 +28,8 @@ namespace Microsoft.Python.Analysis {
         public static bool IsBound(this IPythonFunctionType f) 
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Method;
 
+        public static bool IsLambda(this IPythonFunctionType f) => f.Name == "<lambda>";
+
         public static bool HasClassFirstArgument(this IPythonClassMember m)
             => (m is IPythonFunctionType f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
                (m is IPythonPropertyType prop);

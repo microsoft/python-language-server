@@ -65,6 +65,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             }
                             innerClasses.Add(FromType(ct));
                             break;
+                        case IPythonFunctionType ft when ft.IsLambda():
+                            break;
                         case IPythonFunctionType ft when ft.Name == name:
                             methods.Add(FunctionModel.FromType(ft));
                             break;

@@ -150,11 +150,16 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// </summary>
         /// <param name="name">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <returns>Original (library) module loaded as stub.</returns>
-        public IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor) {
+        /// <param name="replaceExisting">Replace existing loaded module, if any.</param>
+        /// <returns>Specialized module.</returns>
+        public IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor, bool replaceExisting = false) {
             var import = CurrentPathResolver.GetModuleImportFromModuleName(name);
             var module = specializationConstructor(import?.ModulePath);
             _specialized[name] = module;
+
+            if(replaceExisting) {
+                Modules.TryRemove(name, out _);
+            }
             return module;
         }
 

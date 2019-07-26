@@ -41,6 +41,9 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             }
         }
 
-        protected string GetBaselineFileName(string testName) => Path.ChangeExtension(Path.Combine(BaselineFilesFolder, testName), "json");
+        protected string GetBaselineFileName(string testName, string suffix = null) 
+            => Path.ChangeExtension(suffix == null 
+                ? Path.Combine(BaselineFilesFolder, testName)
+                : Path.Combine(BaselineFilesFolder, testName + suffix), "json");
     }
 }

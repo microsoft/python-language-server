@@ -164,6 +164,9 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (valueType is PythonModule) {
                         return false; // Do not re-export modules.
                     }
+                    if(valueType is IPythonFunctionType f && f.IsLambda()) {
+                        return false;
+                    }
                     if (this is TypingModule) {
                         return true; // Let typing module behave normally.
                     }

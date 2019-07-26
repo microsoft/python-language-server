@@ -62,24 +62,6 @@
       "Documentation": null,
       "Overloads": [
         {
-          "Parameters": [],
-          "ReturnType": "i:types:FrameType"
-        }
-      ],
-      "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
-      "Id": -1480482126,
-      "Name": "<lambda>",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Documentation": null,
-      "Overloads": [
-        {
           "Parameters": [
             {
               "Name": "level",
@@ -456,57 +438,6 @@
             }
           ],
           "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "filename",
-              "Type": "t:str",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "filemode",
-              "Type": "t:str",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "format",
-              "Type": "t:str",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "datefmt",
-              "Type": "t:str",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "level",
-              "Type": "t:typing:Union[int, Unknown]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "stream",
-              "Type": "t:ellipsis",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
         }
       ],
       "Attributes": 0,
@@ -528,21 +459,6 @@
               "Name": "name",
               "Type": "t:str",
               "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:logging:Logger"
-        },
-        {
-          "Parameters": [],
-          "ReturnType": "i:logging:Logger"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "name",
-              "Type": "t:typing:Union[Unknown, str]",
-              "DefaultValue": null,
               "Kind": 0
             }
           ],
@@ -585,41 +501,6 @@
             {
               "Name": "stack_info",
               "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
@@ -692,41 +573,6 @@
             }
           ],
           "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
         }
       ],
       "Attributes": 0,
@@ -765,41 +611,6 @@
             {
               "Name": "stack_info",
               "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
@@ -872,41 +683,6 @@
             }
           ],
           "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
         }
       ],
       "Attributes": 0,
@@ -945,41 +721,6 @@
             {
               "Name": "stack_info",
               "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
@@ -1052,41 +793,6 @@
             }
           ],
           "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
         }
       ],
       "Attributes": 0,
@@ -1125,41 +831,6 @@
             {
               "Name": "stack_info",
               "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
@@ -1221,47 +892,6 @@
             {
               "Name": "stack_info",
               "Type": "t:bool",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "extra",
-              "Type": "t:typing:Dict[str, typing:Any]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 3
-            },
-            {
-              "Name": "kwargs",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 2
-            }
-          ],
-          "ReturnType": "i:__NoneType__"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "lvl",
-              "Type": "t:int",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "msg",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "args",
-              "Type": "t:typing:Any",
-              "DefaultValue": null,
-              "Kind": 1
-            },
-            {
-              "Name": "exc_info",
-              "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
               "DefaultValue": "i:ellipsis",
               "Kind": 3
             },
@@ -1416,15 +1046,6 @@
     }
   ],
   "Variables": [
-    {
-      "Value": "t:logging:<lambda>",
-      "Id": -977992405,
-      "Name": "currentframe",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
     {
       "Value": "t:logging:LogRecord",
       "Id": 1140309437,
