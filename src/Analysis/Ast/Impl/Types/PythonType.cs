@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
         private readonly object _lock = new object();
-        private readonly string _name;
+        protected readonly string _name;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;

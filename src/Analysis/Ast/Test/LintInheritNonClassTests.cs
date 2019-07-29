@@ -160,6 +160,25 @@ class C(typing.TypeVar):
         }
 
         [TestMethod, Priority(0)]
+        public async Task InheritFromGenericString() {
+            const string code = @"
+import typing as t
+
+T = t.TypeVar('T')
+
+class GenericThing(t.Generic[T]):
+    def __init__(self, x: T):
+        self.x = x
+   
+class SpecificThing(GenericThing[str]):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task InheritFromTypingModuleNamedTuple() {
             const string code = @"
 from typing import NamedTuple
