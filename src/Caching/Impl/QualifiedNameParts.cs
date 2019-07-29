@@ -21,7 +21,8 @@ namespace Microsoft.Python.Analysis.Caching {
         Instance,
         Module,
         VariableModule,
-        BuiltinModule
+        BuiltinModule,
+        NamedTuple
     }
 
     internal struct QualifiedNameParts {

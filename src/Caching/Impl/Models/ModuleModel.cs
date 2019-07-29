@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -54,34 +55,25 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
             foreach (var v in analysis.GlobalScope.Variables
                 .Where(v => exportedNames.Contains(v.Name) || v.Source == VariableSource.Declaration || v.Source == VariableSource.Builtin)) {
-                // Create type model before variable since variable needs it.
-                string typeName = null;
 
                 switch (v.Value) {
-                    case IPythonFunctionType ft when ft.IsLambda():
-                        break;
-                    case IPythonFunctionType ft
-                        when ft.DeclaringModule.Equals(analysis.Document) || ft.DeclaringModule.Equals(analysis.Document.Stub):
-                        if (!functions.ContainsKey(ft.Name)) {
-                            typeName = ft.Name;
-                            functions[ft.Name] = FunctionModel.FromType(ft);
+                    case IPythonFunctionType ft:
+                        var fm = GetFunctionModel(analysis, v, ft);
+                        if (fm != null && !functions.ContainsKey(ft.Name)) {
+                            functions[ft.Name] = fm;
                         }
-
-                        break;
+                        continue;
                     case IPythonClassType cls
                         when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!classes.ContainsKey(cls.Name)) {
-                            typeName = cls.Name;
                             classes[cls.Name] = ClassModel.FromType(cls);
                         }
-                        break;
+                        continue;
                 }
 
                 // Do not re-declare classes and functions as variables in the model.
-                if (typeName == null && !variables.ContainsKey(v.Name)) {
-                    if (!(v.Value is IPythonFunctionType f && f.IsLambda())) {
-                        variables[v.Name] = VariableModel.FromVariable(v);
-                    }
+                if (!variables.ContainsKey(v.Name)) {
+                    variables[v.Name] = VariableModel.FromVariable(v);
                 }
             }
 
@@ -100,6 +92,25 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }).ToArray(),
                 FileSize = analysis.Ast.EndIndex
             };
+        }
+
+        private static FunctionModel GetFunctionModel(IDocumentAnalysis analysis, IVariable v, IPythonFunctionType f) {
+            if (f.IsLambda()) {
+                return null;
+            }
+            if (v.Source == VariableSource.Import && !f.DeclaringModule.Equals(analysis.Document) && !f.DeclaringModule.Equals(analysis.Document.Stub)) {
+                // It may be that the function is from a child module via import.
+                // For example, a number of functions in 'os' are imported from 'nt' on Windows via
+                // star import. Their stubs, however, come from 'os' stub. The function then have declaring
+                // module as 'nt' rather than 'os' and 'nt' does not have a stub. In this case use function
+                // model like if function was declared in 'os'.
+                return FunctionModel.FromType(f);
+            }
+
+            if (f.DeclaringModule.Equals(analysis.Document) || f.DeclaringModule.Equals(analysis.Document.Stub)) {
+                return FunctionModel.FromType(f);
+            }
+            return null;
         }
     }
 }

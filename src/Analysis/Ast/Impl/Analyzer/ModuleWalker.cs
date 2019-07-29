@@ -286,12 +286,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                         break;
 
-                    case IPythonClassType _:
-                        // We do not re-declare classes, we only transfer members, see above.
-                        break;
-                    case IPythonModule _:
-                        // We do not re-declare modules.
-                        break;
 
                     default:
                         // Re-declare variable with the data from the stub unless member is a module.
@@ -303,21 +297,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                             var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? v.Source;
                             Eval.DeclareVariable(v.Name, v.Value, source);
-
-                            // If function is a stub, it may be that the function is from a child module via import.
-                            // For example, a number of functions in 'os' are imported from 'nt' on Windows via star import.
-                            // Their stubs, however, come from 'os' stub. So function may have declaring module as 'nt'
-                            // and we have to propagate type from 'os' stub to 'nt'.
-                            var valueType = v.Value.GetPythonType();
-                            if (!stubModule.Equals(valueType.DeclaringModule.Stub)) {
-                                var gs = valueType.DeclaringModule.Analysis.GlobalScope;
-                                var gsVar = gs.Variables[v.Name];
-                                var t = gsVar.GetPythonType();
-                                if (t != null && t.DeclaringModule.ModuleType != ModuleType.Stub) {
-                                    var value = gsVar.Value is IPythonInstance ? (IMember)new PythonInstance(stubType) : stubType;
-                                    gs.DeclareVariable(v.Name, value, gsVar.Source);
-                                }
-                            }
                         }
                         break;
                 }

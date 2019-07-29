@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             typeNames = itemTypes.Select(t => t.IsUnknown() ? string.Empty : t.QualifiedName);
             pairs = itemNames.Zip(typeNames, (name, typeName) => string.IsNullOrEmpty(typeName) ? name : $"{name}: {typeName}");
-            QualifiedName = CodeFormatter.FormatSequence($"{declaringModule}:{tupleName}", '(', pairs);
+            QualifiedName = CodeFormatter.FormatSequence($"{declaringModule.Name}:{tupleName}", '(', pairs);
         }
 
         public string TupleName { get; }

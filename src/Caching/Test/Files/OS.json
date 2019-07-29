@@ -832,6 +832,86 @@
       }
     },
     {
+      "Documentation": "Execute the program specified by path in a new process.\n\n  mode\n    Mode of process creation.\n  path\n    Path of executable file.\n  argv\n    Tuple or list of strings.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "mode",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "args",
+              "Type": "t:typing:List[typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1958424782,
+      "Name": "spawnv",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Execute the program specified by path in a new process.\n\n  mode\n    Mode of process creation.\n  path\n    Path of executable file.\n  argv\n    Tuple or list of strings.\n  env\n    Dictionary of strings mapping to strings.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "mode",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "args",
+              "Type": "t:typing:List[typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "env",
+              "Type": "t:typing:Mapping[str, str]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -581625997,
+      "Name": "spawnve",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
       "Documentation": "spawnvp(mode, file, args) -> integer\n\nExecute file (which is looked for along $PATH) with arguments from\nargs in a subprocess.\nIf mode == P_NOWAIT return the pid of the process.\nIf mode == P_WAIT return the process's exit code if it exits normally;\notherwise return -SIG, where SIG is the signal that killed it. ",
       "Overloads": [
         {
@@ -1207,6 +1287,376 @@
       }
     },
     {
+      "Documentation": "Abort the interpreter immediately.\n\nThis function 'dumps core' or otherwise fails in the hardest way possible\non the hosting operating system.  This function never returns.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 751081849,
+      "Name": "abort",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Use the real uid/gid to test for access to a path.\n\n  path\n    Path to be tested; can be string, bytes, or a path-like object.\n  mode\n    Operating-system mode bitfield.  Can be F_OK to test existence,\n    or the inclusive-OR of R_OK, W_OK, and X_OK.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be relative; path will then be relative to that\n    directory.\n  effective_ids\n    If True, access will use the effective uid/gid instead of\n    the real uid/gid.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    access will examine the symbolic link itself instead of the file\n    the link points to.\n\ndir_fd, effective_ids, and follow_symlinks may not be implemented\n  on your platform.  If they are unavailable, using them will raise a\n  NotImplementedError.\n\nNote that most operations will use the effective uid/gid, therefore this\n  routine can be used in a suid/sgid environment to test if the invoking user\n  has the specified access to the path.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[int, typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "mode",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "effective_ids",
+              "Type": "t:bool",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "follow_symlinks",
+              "Type": "t:bool",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:bool"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1809254459,
+      "Name": "access",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Change the current working directory to the specified path.\n\npath may always be specified as a string.\nOn some platforms, path may also be specified as an open file descriptor.\n  If this functionality is unavailable, using it raises an exception.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[int, typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 753096785,
+      "Name": "chdir",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Change the access permissions of a file.\n\n  path\n    Path to be modified.  May always be specified as a str, bytes, or a path-like object.\n    On some platforms, path may also be specified as an open file descriptor.\n    If this functionality is unavailable, using it raises an exception.\n  mode\n    Operating-system mode bitfield.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be relative; path will then be relative to that\n    directory.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    chmod will modify the symbolic link itself instead of the file\n    the link points to.\n\nIt is an error to use dir_fd or follow_symlinks when specifying path as\n  an open file descriptor.\ndir_fd and follow_symlinks may not be implemented on your platform.\n  If they are unavailable, using them will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[int, typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "mode",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "follow_symlinks",
+              "Type": "t:bool",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 753105606,
+      "Name": "chmod",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Close a file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 753226817,
+      "Name": "close",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Closes all file descriptors in [fd_low, fd_high), ignoring errors.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd_low",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "fd_high",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -424778340,
+      "Name": "closerange",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return the number of CPUs in the system; return None if indeterminable.\n\nThis number is not equivalent to the number of CPUs the current process can\nuse.  The number of usable CPUs can be obtained with\n``len(os.sched_getaffinity(0))``",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1869577855,
+      "Name": "cpu_count",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return a string describing the encoding of a terminal's file descriptor.\n\nThe file descriptor must be attached to a terminal.\nIf the device is not a terminal, return None.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -211685339,
+      "Name": "device_encoding",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return a duplicate of a file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 785032,
+      "Name": "dup",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Duplicate file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "fd2",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24336042,
+      "Name": "dup2",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Execute an executable path with arguments, replacing current process.\n\n  path\n    Path of executable file.\n  argv\n    Tuple or list of strings.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "args",
+              "Type": "t:typing:Union[typing:Tuple[typing:Union[bytes, Unknown], ellipsis], typing:List[bytes], typing:List[Unknown], typing:List[typing:Union[bytes, Unknown]]]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 755421262,
+      "Name": "execv",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Execute an executable path with arguments, replacing current process.\n\n  path\n    Path of executable file.\n  argv\n    Tuple or list of strings.\n  env\n    Dictionary of strings mapping to strings.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[int, typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "args",
+              "Type": "t:typing:Union[typing:Tuple[typing:Union[bytes, Unknown], ellipsis], typing:List[bytes], typing:List[Unknown], typing:List[typing:Union[bytes, Unknown]]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "env",
+              "Type": "t:typing:Mapping[str, str]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1943222743,
+      "Name": "execve",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
       "Documentation": "Return the path representation of a path-like object.\n\n    If str or bytes is passed in, it is returned unchanged. Otherwise the\n    os.PathLike interface is used to get the path representation. If the\n    path representation is not str or bytes, TypeError is raised. If the\n    provided path is not str, bytes, or os.PathLike, TypeError is raised.\n    ",
       "Overloads": [
         {
@@ -1251,6 +1701,1429 @@
       "IndexSpan": {
         "Start": 37093,
         "Length": 7
+      }
+    },
+    {
+      "Documentation": "Perform a stat system call on the given file descriptor.\n\nLike stat(), but for an open file descriptor.\nEquivalent to os.stat(fd).",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:nt:stat_result"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 756210179,
+      "Name": "fstat",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Force write of fd to disk.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 756215370,
+      "Name": "fsync",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Truncate a file, specified by file descriptor, to a specific length.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "length",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1951379861,
+      "Name": "ftruncate",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Get the close-on-exe flag of the specified file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "handle",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1134633374,
+      "Name": "get_handle_inheritable",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Get the close-on-exe flag of the specified file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:bool"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -9323403,
+      "Name": "get_inheritable",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return the size of the terminal window as (columns, lines).\n\nThe optional argument fd (default standard output) specifies\nwhich file descriptor should be queried.\n\nIf the file descriptor is not connected to a terminal, an OSError\nis thrown.\n\nThis function will only be defined if an implementation is\navailable for this system.\n\nshutil.get_terminal_size is the high-level function which should \nnormally be used, os.get_terminal_size is the low-level implementation.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "n:os:terminal_size(columns: int, lines: int)"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1310152580,
+      "Name": "get_terminal_size",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return a unicode string representing the current working directory.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1983381041,
+      "Name": "getcwd",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return a bytes string representing the current working directory.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:bytes"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1355270225,
+      "Name": "getcwdb",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return the actual login name.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -928219414,
+      "Name": "getlogin",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return the current process id.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1983393100,
+      "Name": "getpid",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return the parent's process id.\n\nIf the parent process has already exited, Windows machines will still\nreturn its id; others systems will return the id of the 'init' process (1).",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1355650938,
+      "Name": "getppid",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return True if the fd is connected to a terminal.\n\nReturn True if the file descriptor is an open file descriptor\nconnected to the slave end of a terminal.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:bool"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 2053018873,
+      "Name": "isatty",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Kill a process with a signal.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "pid",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "sig",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24532981,
+      "Name": "kill",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Create a hard link to a file.\n\nIf either src_dir_fd or dst_dir_fd is not None, it should be a file\n  descriptor open to a directory, and the respective path string (src or dst)\n  should be relative; the path will then be relative to that directory.\nIf follow_symlinks is False, and the last element of src is a symbolic\n  link, link will create a link to the symbolic link itself instead of the\n  file the link points to.\nsrc_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your\n  platform.  If they are unavailable, using them will raise a\n  NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "src",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "link_name",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "src_dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "dst_dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "follow_symlinks",
+              "Type": "t:bool",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24562833,
+      "Name": "link",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return a list containing the names of the files in the directory.\n\npath can be specified as either str, bytes, or a path-like object.  If path is bytes,\n  the filenames returned will also be bytes; in all other circumstances\n  the filenames returned will be str.\nIf path is None, uses the path='.'.\nOn some platforms, path may also be specified as an open file descriptor;\\\n  the file descriptor must refer to a directory.\n  If this functionality is unavailable, using it raises NotImplementedError.\n\nThe list is in arbitrary order.  It does not include the special\nentries '.' and '..' even if they are present in the directory.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:str",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:typing:List[str]"
+        },
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:bytes",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:typing:List[bytes]"
+        },
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:typing:List[str]"
+        },
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:typing:List[str]"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1611902776,
+      "Name": "listdir",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Set the position of a file descriptor.  Return the new position.\n\nReturn the new cursor position in number of bytes\nrelative to the beginning of the file.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "pos",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "how",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 761737005,
+      "Name": "lseek",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Perform a stat system call on the given path, without following symbolic links.\n\nLike stat(), but do not follow symbolic links.\nEquivalent to stat(path, follow_symlinks=False).",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:nt:stat_result"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 761751305,
+      "Name": "lstat",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Create a directory.\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\ndir_fd may not be implemented on your platform.\n  If it is unavailable, using it will raise a NotImplementedError.\n\nThe mode argument is ignored on Windows.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "mode",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 762421368,
+      "Name": "mkdir",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Open a file for low level IO.  Returns a file descriptor (integer).\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\ndir_fd may not be implemented on your platform.\n  If it is unavailable, using it will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "file",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "flags",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "mode",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24658657,
+      "Name": "open",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Create a pipe.\n\nReturns a tuple of two file descriptors:\n  (read_fd, write_fd)",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:typing:Tuple[int, int]"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24682053,
+      "Name": "pipe",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Change or add an environment variable.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "key",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "value",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -2039145899,
+      "Name": "putenv",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Read from a file descriptor.  Returns a bytes object.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "n",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:bytes"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24737325,
+      "Name": "read",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "readlink(path, *, dir_fd=None) -> path\n\nReturn a string representing the path to which the symbolic link points.\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\ndir_fd may not be implemented on your platform.\n  If it is unavailable, using it will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[typing:AnyStr, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 511395751,
+      "Name": "readlink",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Remove a file (same as unlink()).\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\ndir_fd may not be implemented on your platform.\n  If it is unavailable, using it will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1996862629,
+      "Name": "remove",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Rename a file or directory.\n\nIf either src_dir_fd or dst_dir_fd is not None, it should be a file\n  descriptor open to a directory, and the respective path string (src or dst)\n  should be relative; the path will then be relative to that directory.\nsrc_dir_fd and dst_dir_fd, may not be implemented on your platform.\n  If they are unavailable, using them will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "src",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "dst",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "src_dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "dst_dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1996846571,
+      "Name": "rename",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Rename a file or directory, overwriting the destination.\n\nIf either src_dir_fd or dst_dir_fd is not None, it should be a file\n  descriptor open to a directory, and the respective path string (src or dst)\n  should be relative; the path will then be relative to that directory.\nsrc_dir_fd and dst_dir_fd, may not be implemented on your platform.\n  If they are unavailable, using them will raise a NotImplementedError.\"",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "src",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "dst",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "src_dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "dst_dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1770538307,
+      "Name": "replace",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Remove a directory.\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\ndir_fd may not be implemented on your platform.\n  If it is unavailable, using it will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 767098555,
+      "Name": "rmdir",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return an iterator of DirEntry objects for given path.\n\npath can be specified as either str, bytes, or a path-like object.  If path\nis bytes, the names of yielded DirEntry objects will also be bytes; in\nall other circumstances they will be str.\n\nIf path is None, uses the path='.'.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": null
+        },
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        },
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[typing:AnyStr, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -954083079,
+      "Name": "scandir",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Set the inheritable flag of the specified handle.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "handle",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "inheritable",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1847205614,
+      "Name": "set_handle_inheritable",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Set the inheritable flag of the specified file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "inheritable",
+              "Type": "t:bool",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 901429121,
+      "Name": "set_inheritable",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "startfile(filepath [, operation])\n\nStart a file with its associated application.\n\nWhen \"operation\" is not specified or \"open\", this acts like\ndouble-clicking the file in Explorer, or giving the file name as an\nargument to the DOS \"start\" command: the file is opened with whatever\napplication (if any) its extension is associated.\nWhen another \"operation\" is given, it specifies what should be done with\nthe file.  A typical operation is \"print\".\n\nstartfile returns as soon as the associated application is launched.\nThere is no option to wait for the application to close, and no way\nto retrieve the application's exit status.\n\nThe filepath is relative to the current directory.  If you want to use\nan absolute path, make sure the first character is not a slash (\"/\");\nthe underlying Win32 ShellExecute function doesn't work if it is.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "operation",
+              "Type": "t:str",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1941365415,
+      "Name": "startfile",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Perform a stat system call on the given path.\n\n  path\n    Path to be examined; can be string, bytes, a path-like object or\n    open-file-descriptor int.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be a relative string; path will then be relative to\n    that directory.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    stat will examine the symbolic link itself instead of the file\n    the link points to.\n\ndir_fd and follow_symlinks may not be implemented\n  on your platform.  If they are unavailable, using them will raise a\n  NotImplementedError.\n\nIt's an error to use dir_fd or follow_symlinks when specifying path as\n  an open file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[int, typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "follow_symlinks",
+              "Type": "t:bool",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:nt:stat_result"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24781547,
+      "Name": "stat",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Translate an error code to a message string.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "code",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:str"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1125301362,
+      "Name": "strerror",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Create a symbolic link pointing to src named dst.\n\ntarget_is_directory is required on Windows if the target is to be\n  interpreted as a directory.  (On Windows, symlink requires\n  Windows 6.0 or greater, and raises a NotImplementedError otherwise.)\n  target_is_directory is ignored on non-Windows platforms.\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\ndir_fd may not be implemented on your platform.\n  If it is unavailable, using it will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "source",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "link_name",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "target_is_directory",
+              "Type": "t:bool",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -313214134,
+      "Name": "symlink",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Execute the command in a subshell.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "command",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1949580026,
+      "Name": "system",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return a collection containing process timing information.\n\nThe object returned behaves like a named tuple with these fields:\n  (utime, stime, cutime, cstime, elapsed_time)\nAll fields are floating point numbers.",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "n:posix:times_result(user: float, system: float, children_user: float, children_system: float, elapsed: float)"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 768834959,
+      "Name": "times",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Truncate a file, specified by path, to a specific length.\n\nOn some platforms, path may also be specified as an open file descriptor.\n  If this functionality is unavailable, using it raises an exception.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[int, typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "length",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1063762307,
+      "Name": "truncate",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Set the current numeric umask and return the previous umask.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "mask",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 769866538,
+      "Name": "umask",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Remove a file (same as remove()).\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\ndir_fd may not be implemented on your platform.\n  If it is unavailable, using it will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[bytes, Unknown]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1902699286,
+      "Name": "unlink",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Return a bytes object containing random bytes suitable for cryptographic use.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "size",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:bytes"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1250361729,
+      "Name": "urandom",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Set the access and modified time of path.\n\npath may always be specified as a string.\nOn some platforms, path may also be specified as an open file descriptor.\n  If this functionality is unavailable, using it raises an exception.\n\nIf times is not None, it must be a tuple (atime, mtime);\n    atime and mtime should be expressed as float seconds since the epoch.\nIf ns is specified, it must be a tuple (atime_ns, mtime_ns);\n    atime_ns and mtime_ns should be expressed as integer nanoseconds\n    since the epoch.\nIf times is None and ns is unspecified, utime uses the current time.\nSpecifying tuples for both times and ns is an error.\n\nIf dir_fd is not None, it should be a file descriptor open to a directory,\n  and path should be relative; path will then be relative to that directory.\nIf follow_symlinks is False, and the last element of the path is a symbolic\n  link, utime will modify the symbolic link itself instead of the file the\n  link points to.\nIt is an error to use dir_fd or follow_symlinks when specifying path\n  as an open file descriptor.\ndir_fd and follow_symlinks may not be available on your platform.\n  If they are unavailable, using them will raise a NotImplementedError.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "path",
+              "Type": "t:typing:Union[int, typing:Union[bytes, Unknown]]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "times",
+              "Type": "t:typing:Union[typing:Tuple[int, int], typing:Tuple[float, float]]",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 1
+            },
+            {
+              "Name": "ns",
+              "Type": "t:typing:Tuple[int, int]",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "dir_fd",
+              "Type": "t:int",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            },
+            {
+              "Name": "follow_symlinks",
+              "Type": "t:bool",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 3
+            }
+          ],
+          "ReturnType": "i:__NoneType__"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 770082571,
+      "Name": "utime",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Wait for completion of a given process.\n\nReturns a tuple of information regarding the process:\n    (pid, status << 8)\n\nThe options argument is ignored on Windows.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "pid",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "options",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:typing:Tuple[int, int]"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1748715521,
+      "Name": "waitpid",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Write a bytes object to a file descriptor.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "fd",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "string",
+              "Type": "t:bytes",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": "i:int"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 771870248,
+      "Name": "write",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Exit to the system with specified status, without normal exit processing.",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "n",
+              "Type": "t:int",
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 749332550,
+      "Name": "_exit",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
       }
     },
     {
@@ -1978,7 +3851,7 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:Microsoft.Python.Analysis.Modules.StubPythonModule:uname_result(sysname: str, nodename: str, release: str, version: str, machine: str)"
+          "ReturnType": "n:posix:uname_result(sysname: str, nodename: str, release: str, version: str, machine: str)"
         }
       ],
       "Attributes": 0,
@@ -2152,7 +4025,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:os:statvfs_result"
+          "ReturnType": "i:nt:statvfs_result"
         }
       ],
       "Attributes": 0,
@@ -3145,7 +5018,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:os:statvfs_result"
+          "ReturnType": "i:nt:statvfs_result"
         }
       ],
       "Attributes": 0,
@@ -3513,7 +5386,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:Microsoft.Python.Analysis.Modules.StubPythonModule:waitid_result(si_pid: int, si_uid: int, si_signo: int, si_status: int, si_code: int)"
+          "ReturnType": "n:posix:waitid_result(si_pid: int, si_uid: int, si_signo: int, si_status: int, si_code: int)"
         }
       ],
       "Attributes": 0,
@@ -3851,7 +5724,7 @@
             },
             {
               "Name": "param",
-              "Type": "t:Microsoft.Python.Analysis.Modules.StubPythonModule:sched_priority(sched_priority)",
+              "Type": "n:posix:sched_priority(sched_priority)",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -3907,7 +5780,7 @@
             },
             {
               "Name": "param",
-              "Type": "t:Microsoft.Python.Analysis.Modules.StubPythonModule:sched_priority(sched_priority)",
+              "Type": "n:posix:sched_priority(sched_priority)",
               "DefaultValue": null,
               "Kind": 0
             }
@@ -3937,7 +5810,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:Microsoft.Python.Analysis.Modules.StubPythonModule:sched_priority(sched_priority)"
+          "ReturnType": "n:posix:sched_priority(sched_priority)"
         }
       ],
       "Attributes": 0,
@@ -4182,24 +6055,6 @@
   ],
   "Variables": [
     {
-      "Value": "t:nt:spawnv",
-      "Id": -1958424782,
-      "Name": "spawnv",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:spawnve",
-      "Id": -581625997,
-      "Name": "spawnve",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
       "Value": "p:abc",
       "Id": 781547,
       "Name": "abc",
@@ -4272,402 +6127,6 @@
       }
     },
     {
-      "Value": "t:nt:abort",
-      "Id": 751081849,
-      "Name": "abort",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:access",
-      "Id": 1809254459,
-      "Name": "access",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:chdir",
-      "Id": 753096785,
-      "Name": "chdir",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:chmod",
-      "Id": 753105606,
-      "Name": "chmod",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:close",
-      "Id": 753226817,
-      "Name": "close",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:closerange",
-      "Id": -424778340,
-      "Name": "closerange",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:cpu_count",
-      "Id": -1869577855,
-      "Name": "cpu_count",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:device_encoding",
-      "Id": -211685339,
-      "Name": "device_encoding",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:dup",
-      "Id": 785032,
-      "Name": "dup",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:dup2",
-      "Id": 24336042,
-      "Name": "dup2",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:execv",
-      "Id": 755421262,
-      "Name": "execv",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:execve",
-      "Id": 1943222743,
-      "Name": "execve",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:fstat",
-      "Id": 756210179,
-      "Name": "fstat",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:fsync",
-      "Id": 756215370,
-      "Name": "fsync",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:ftruncate",
-      "Id": 1951379861,
-      "Name": "ftruncate",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:get_handle_inheritable",
-      "Id": 1134633374,
-      "Name": "get_handle_inheritable",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:get_inheritable",
-      "Id": -9323403,
-      "Name": "get_inheritable",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:get_terminal_size",
-      "Id": 1310152580,
-      "Name": "get_terminal_size",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:getcwd",
-      "Id": 1983381041,
-      "Name": "getcwd",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:getcwdb",
-      "Id": 1355270225,
-      "Name": "getcwdb",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:getlogin",
-      "Id": -928219414,
-      "Name": "getlogin",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:getpid",
-      "Id": 1983393100,
-      "Name": "getpid",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:getppid",
-      "Id": 1355650938,
-      "Name": "getppid",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:isatty",
-      "Id": 2053018873,
-      "Name": "isatty",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:kill",
-      "Id": 24532981,
-      "Name": "kill",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:link",
-      "Id": 24562833,
-      "Name": "link",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:listdir",
-      "Id": 1611902776,
-      "Name": "listdir",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:lseek",
-      "Id": 761737005,
-      "Name": "lseek",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:lstat",
-      "Id": 761751305,
-      "Name": "lstat",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:mkdir",
-      "Id": 762421368,
-      "Name": "mkdir",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:open",
-      "Id": 24658657,
-      "Name": "open",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:pipe",
-      "Id": 24682053,
-      "Name": "pipe",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:putenv",
-      "Id": -2039145899,
-      "Name": "putenv",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:read",
-      "Id": 24737325,
-      "Name": "read",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:readlink",
-      "Id": 511395751,
-      "Name": "readlink",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:remove",
-      "Id": -1996862629,
-      "Name": "remove",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:rename",
-      "Id": -1996846571,
-      "Name": "rename",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:replace",
-      "Id": -1770538307,
-      "Name": "replace",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:rmdir",
-      "Id": 767098555,
-      "Name": "rmdir",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:scandir",
-      "Id": -954083079,
-      "Name": "scandir",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:set_handle_inheritable",
-      "Id": -1847205614,
-      "Name": "set_handle_inheritable",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:set_inheritable",
-      "Id": 901429121,
-      "Name": "set_inheritable",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:startfile",
-      "Id": 1941365415,
-      "Name": "startfile",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:stat",
-      "Id": 24781547,
-      "Name": "stat",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
       "Value": "t:nt:stat_result",
       "Id": -290614287,
       "Name": "stat_result",
@@ -4686,43 +6145,7 @@
       }
     },
     {
-      "Value": "t:nt:strerror",
-      "Id": -1125301362,
-      "Name": "strerror",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:symlink",
-      "Id": -313214134,
-      "Name": "symlink",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:system",
-      "Id": -1949580026,
-      "Name": "system",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:times",
-      "Id": 768834959,
-      "Name": "times",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:times_result",
+      "Value": "n:posix:times_result(user: float, system: float, children_user: float, children_system: float, elapsed: float)",
       "Id": -1841579827,
       "Name": "times_result",
       "IndexSpan": {
@@ -4731,72 +6154,9 @@
       }
     },
     {
-      "Value": "t:nt:truncate",
-      "Id": -1063762307,
-      "Name": "truncate",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:umask",
-      "Id": 769866538,
-      "Name": "umask",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:uname_result",
+      "Value": "n:posix:uname_result(sysname: str, nodename: str, release: str, version: str, machine: str)",
       "Id": 46568019,
       "Name": "uname_result",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:unlink",
-      "Id": -1902699286,
-      "Name": "unlink",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:urandom",
-      "Id": 1250361729,
-      "Name": "urandom",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:utime",
-      "Id": 770082571,
-      "Name": "utime",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:waitpid",
-      "Id": -1748715521,
-      "Name": "waitpid",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:write",
-      "Id": 771870248,
-      "Name": "write",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -5037,21 +6397,12 @@
       }
     },
     {
-      "Value": "t:Microsoft.Python.Analysis.Modules.StubPythonModule:terminal_size(columns: int, lines: int)",
+      "Value": "n:os:terminal_size(columns: int, lines: int)",
       "Id": -196456147,
       "Name": "terminal_size",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:_exit",
-      "Id": 749332550,
-      "Name": "_exit",
-      "IndexSpan": {
-        "Start": 2379,
-        "Length": 5
       }
     },
     {
@@ -5172,7 +6523,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": 372038356,
       "Name": "supports_dir_fd",
       "IndexSpan": {
@@ -5181,7 +6532,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": -2143478148,
       "Name": "supports_effective_ids",
       "IndexSpan": {
@@ -5190,7 +6541,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": 1118540770,
       "Name": "supports_fd",
       "IndexSpan": {
@@ -5199,7 +6550,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": -1940490884,
       "Name": "supports_follow_symlinks",
       "IndexSpan": {

@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -30,13 +31,15 @@ namespace Microsoft.Python.Analysis.Caching {
             if (!t.IsUnknown()) {
                 switch (m) {
                     case IPythonInstance _: // constants and strings map here.
-                        return $"i:{t.QualifiedName}";
+                        return t is ITypingNamedTupleType nt1 ? $"n:{nt1.QualifiedName}" : $"i:{t.QualifiedName}";
                     case IBuiltinsPythonModule b:
                         return $"b:{b.QualifiedName}";
                     case PythonVariableModule vm:
                         return $"p:{vm.QualifiedName}";
                     case IPythonModule mod:
                         return $"m:{mod.QualifiedName}";
+                    case ITypingNamedTupleType nt2:
+                        return $"n:{nt2.QualifiedName}";
                     case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
                         return $"t:{(pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.Name)}";
                     case IPythonType pt:
@@ -78,6 +81,8 @@ namespace Microsoft.Python.Analysis.Caching {
                 parts.ObjectType = ObjectType.BuiltinModule;
             } else if (qualifiedName.StartsWith("t:")) {
                 parts.ObjectType = ObjectType.Type;
+            } else if (qualifiedName.StartsWith("n:")) {
+                parts.ObjectType = ObjectType.NamedTuple;
             } else {
                 // Unprefixed name is typically an argument to another type like Union[int, typing:Any]
                 parts.ObjectType = ObjectType.Type;
