@@ -1239,7 +1239,7 @@
       }
     },
     {
-      "Value": "i:types:SimpleNamespace",
+      "Value": "i:sys:_implementation",
       "Id": 1997289353,
       "Name": "implementation",
       "IndexSpan": {

@@ -255,7 +255,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         if (v.Source == VariableSource.Declaration) {
                             Eval.DeclareVariable(v.Name, v.Value, v.Source);
                         }
-
                         break;
 
                     case PythonClassType cls when Module.Equals(cls.DeclaringModule):
@@ -286,6 +285,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                         break;
 
+                    case IPythonClassType c:
+                        // We do not re-declare classes, we only transfer members, see above.
+                        break;
+
+                    case IPythonModule _:
+                        // We do not re-declare modules.
+                        break;
 
                     default:
                         // Re-declare variable with the data from the stub unless member is a module.

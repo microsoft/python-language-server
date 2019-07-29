@@ -1715,7 +1715,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:nt:stat_result"
+          "ReturnType": "i:posix:stat_result"
         }
       ],
       "Attributes": 0,
@@ -2179,7 +2179,7 @@
               "Kind": 3
             }
           ],
-          "ReturnType": "i:nt:stat_result"
+          "ReturnType": "i:posix:stat_result"
         }
       ],
       "Attributes": 0,
@@ -2736,7 +2736,7 @@
               "Kind": 3
             }
           ],
-          "ReturnType": "i:nt:stat_result"
+          "ReturnType": "i:posix:stat_result"
         }
       ],
       "Attributes": 0,
@@ -4025,7 +4025,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:nt:statvfs_result"
+          "ReturnType": "i:os:statvfs_result"
         }
       ],
       "Attributes": 0,
@@ -5018,7 +5018,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:nt:statvfs_result"
+          "ReturnType": "i:os:statvfs_result"
         }
       ],
       "Attributes": 0,
@@ -6145,7 +6145,7 @@
       }
     },
     {
-      "Value": "n:posix:times_result(user: float, system: float, children_user: float, children_system: float, elapsed: float)",
+      "Value": "t:nt:times_result",
       "Id": -1841579827,
       "Name": "times_result",
       "IndexSpan": {
@@ -6154,7 +6154,7 @@
       }
     },
     {
-      "Value": "n:posix:uname_result(sysname: str, nodename: str, release: str, version: str, machine: str)",
+      "Value": "t:nt:uname_result",
       "Id": 46568019,
       "Name": "uname_result",
       "IndexSpan": {
@@ -6523,7 +6523,7 @@
       }
     },
     {
-      "Value": "i:typing:Set[Unknown]",
+      "Value": "i:set",
       "Id": 372038356,
       "Name": "supports_dir_fd",
       "IndexSpan": {
@@ -6532,7 +6532,7 @@
       }
     },
     {
-      "Value": "i:typing:Set[Unknown]",
+      "Value": "i:set",
       "Id": -2143478148,
       "Name": "supports_effective_ids",
       "IndexSpan": {
@@ -6541,7 +6541,7 @@
       }
     },
     {
-      "Value": "i:typing:Set[Unknown]",
+      "Value": "i:set",
       "Id": 1118540770,
       "Name": "supports_fd",
       "IndexSpan": {
@@ -6550,7 +6550,7 @@
       }
     },
     {
-      "Value": "i:typing:Set[Unknown]",
+      "Value": "i:set",
       "Id": -1940490884,
       "Name": "supports_follow_symlinks",
       "IndexSpan": {
@@ -7481,7 +7481,7 @@
           }
         },
         {
-          "Documentation": "od.__repr__() <==> repr(od)",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [

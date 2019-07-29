@@ -57,6 +57,320 @@
         "Start": 1808,
         "Length": 19
       }
+    },
+    {
+      "Documentation": "Constructs and sends a :class:`Request <Request>`.\n\n    :param method: method for the new :class:`Request` object.\n    :param url: URL for the new :class:`Request` object.\n    :param params: (optional) Dictionary, list of tuples or bytes to send\n        in the body of the :class:`Request`.\n    :param data: (optional) Dictionary, list of tuples, bytes, or file-like\n        object to send in the body of the :class:`Request`.\n    :param json: (optional) A JSON serializable Python object to send in the body of the :class:`Request`.\n    :param headers: (optional) Dictionary of HTTP Headers to send with the :class:`Request`.\n    :param cookies: (optional) Dict or CookieJar object to send with the :class:`Request`.\n    :param files: (optional) Dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``) for multipart encoding upload.\n        ``file-tuple`` can be a 2-tuple ``('filename', fileobj)``, 3-tuple ``('filename', fileobj, 'content_type')``\n        or a 4-tuple ``('filename', fileobj, 'content_type', custom_headers)``, where ``'content-type'`` is a string\n        defining the content type of the given file and ``custom_headers`` a dict-like object containing additional headers\n        to add for the file.\n    :param auth: (optional) Auth tuple to enable Basic/Digest/Custom HTTP Auth.\n    :param timeout: (optional) How many seconds to wait for the server to send data\n        before giving up, as a float, or a :ref:`(connect timeout, read\n        timeout) <timeouts>` tuple.\n    :type timeout: float or tuple\n    :param allow_redirects: (optional) Boolean. Enable/disable GET/OPTIONS/POST/PUT/PATCH/DELETE/HEAD redirection. Defaults to ``True``.\n    :type allow_redirects: bool\n    :param proxies: (optional) Dictionary mapping protocol to the URL of the proxy.\n    :param verify: (optional) Either a boolean, in which case it controls whether we verify\n            the server's TLS certificate, or a string, in which case it must be a path\n            to a CA bundle to use. Defaults to ``True``.\n    :param stream: (optional) if ``False``, the response content will be immediately downloaded.\n    :param cert: (optional) if String, path to ssl client cert file (.pem). If Tuple, ('cert', 'key') pair.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n\n    Usage::\n\n      >>> import requests\n      >>> req = requests.request('GET', 'https://httpbin.org/get')\n      <Response [200]>\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "method",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "url",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -1769342312,
+      "Name": "request",
+      "IndexSpan": {
+        "Start": 220,
+        "Length": 7
+      }
+    },
+    {
+      "Documentation": "Sends a GET request.\n\n    :param url: URL for the new :class:`Request` object.\n    :param params: (optional) Dictionary, list of tuples or bytes to send\n        in the body of the :class:`Request`.\n    :param \\*\\*kwargs: Optional arguments that ``request`` takes.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "url",
+              "Type": "t:typing:Union[str, bytes]",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "params",
+              "Type": "t:typing:Union[typing:Mapping[typing:Union[str, bytes, int, float], typing:Union[str, bytes, int, float, typing:Iterable[typing:Union[str, bytes, int, float]]]], typing:Union[str, bytes], typing:Tuple[typing:Union[str, bytes, int, float], typing:Union[str, bytes, int, float, typing:Iterable[typing:Union[str, bytes, int, float]]]], typing:Mapping[str, typing:Union[str, bytes, int, float, typing:Iterable[typing:Union[str, bytes, int, float]]]], typing:Mapping[bytes, typing:Union[str, bytes, int, float, typing:Iterable[typing:Union[str, bytes, int, float]]]], typing:Mapping[int, typing:Union[str, bytes, int, float, typing:Iterable[typing:Union[str, bytes, int, float]]]], typing:Mapping[float, typing:Union[str, bytes, int, float, typing:Iterable[typing:Union[str, bytes, int, float]]]]]",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 787423,
+      "Name": "get",
+      "IndexSpan": {
+        "Start": 3035,
+        "Length": 3
+      }
+    },
+    {
+      "Documentation": "Sends a HEAD request.\n\n    :param url: URL for the new :class:`Request` object.\n    :param \\*\\*kwargs: Optional arguments that ``request`` takes.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "url",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24439415,
+      "Name": "head",
+      "IndexSpan": {
+        "Start": 3905,
+        "Length": 4
+      }
+    },
+    {
+      "Documentation": "Sends a POST request.\n\n    :param url: URL for the new :class:`Request` object.\n    :param data: (optional) Dictionary, list of tuples, bytes, or file-like\n        object to send in the body of the :class:`Request`.\n    :param json: (optional) json data to send in the body of the :class:`Request`.\n    :param \\*\\*kwargs: Optional arguments that ``request`` takes.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "url",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "data",
+              "Type": "t:typing:Union[NoneType, str, bytes, typing:MutableMapping[str, typing:Any], typing:MutableMapping[Unknown, typing:Any], typing:Iterable[typing:Tuple[str, str]], Unknown]",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "json",
+              "Type": "t:ellipsis",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 24687927,
+      "Name": "post",
+      "IndexSpan": {
+        "Start": 4264,
+        "Length": 4
+      }
+    },
+    {
+      "Documentation": "Sends a PATCH request.\n\n    :param url: URL for the new :class:`Request` object.\n    :param data: (optional) Dictionary, list of tuples, bytes, or file-like\n        object to send in the body of the :class:`Request`.\n    :param json: (optional) json data to send in the body of the :class:`Request`.\n    :param \\*\\*kwargs: Optional arguments that ``request`` takes.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "url",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "data",
+              "Type": "t:typing:Union[NoneType, str, bytes, typing:MutableMapping[str, typing:Any], typing:MutableMapping[Unknown, typing:Any], typing:Iterable[typing:Tuple[str, str]], Unknown]",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "json",
+              "Type": "t:ellipsis",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 764909201,
+      "Name": "patch",
+      "IndexSpan": {
+        "Start": 5387,
+        "Length": 5
+      }
+    },
+    {
+      "Documentation": "Sends a PUT request.\n\n    :param url: URL for the new :class:`Request` object.\n    :param data: (optional) Dictionary, list of tuples, bytes, or file-like\n        object to send in the body of the :class:`Request`.\n    :param json: (optional) json data to send in the body of the :class:`Request`.\n    :param \\*\\*kwargs: Optional arguments that ``request`` takes.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "url",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "data",
+              "Type": "t:typing:Union[NoneType, str, bytes, typing:MutableMapping[str, typing:Any], typing:MutableMapping[Unknown, typing:Any], typing:Iterable[typing:Tuple[str, str]], Unknown]",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "json",
+              "Type": "t:ellipsis",
+              "DefaultValue": "i:ellipsis",
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 796568,
+      "Name": "put",
+      "IndexSpan": {
+        "Start": 4838,
+        "Length": 3
+      }
+    },
+    {
+      "Documentation": "Sends a DELETE request.\n\n    :param url: URL for the new :class:`Request` object.\n    :param \\*\\*kwargs: Optional arguments that ``request`` takes.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "url",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 1897257090,
+      "Name": "delete",
+      "IndexSpan": {
+        "Start": 5942,
+        "Length": 6
+      }
+    },
+    {
+      "Documentation": "Sends an OPTIONS request.\n\n    :param url: URL for the new :class:`Request` object.\n    :param \\*\\*kwargs: Optional arguments that ``request`` takes.\n    :return: :class:`Response <Response>` object\n    :rtype: requests.Response\n    ",
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "url",
+              "Type": "t:str",
+              "DefaultValue": null,
+              "Kind": 0
+            },
+            {
+              "Name": "kwargs",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 2
+            }
+          ],
+          "ReturnType": "i:requests.models:Response"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": 180457127,
+      "Name": "options",
+      "IndexSpan": {
+        "Start": 3537,
+        "Length": 7
+      }
+    },
+    {
+      "Documentation": "\n    Returns a :class:`Session` for context-management.\n\n    .. deprecated:: 1.0.0\n\n        This method has been deprecated since version 1.0.0 and is only kept for\n        backwards compatibility. New code should use :class:`~requests.sessions.Session`\n        to create a session. This may be removed at a future date.\n\n    :rtype: Session\n    ",
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:requests.sessions:Session"
+        }
+      ],
+      "Attributes": 0,
+      "Classes": null,
+      "Functions": null,
+      "Id": -880047457,
+      "Name": "session",
+      "IndexSpan": {
+        "Start": 28943,
+        "Length": 7
+      }
     }
   ],
   "Variables": [
@@ -247,87 +561,6 @@
       "IndexSpan": {
         "Start": 3314,
         "Length": 15
-      }
-    },
-    {
-      "Value": "t:requests:request",
-      "Id": -1769342312,
-      "Name": "request",
-      "IndexSpan": {
-        "Start": 3347,
-        "Length": 7
-      }
-    },
-    {
-      "Value": "t:requests:get",
-      "Id": 787423,
-      "Name": "get",
-      "IndexSpan": {
-        "Start": 3356,
-        "Length": 3
-      }
-    },
-    {
-      "Value": "t:requests:head",
-      "Id": 24439415,
-      "Name": "head",
-      "IndexSpan": {
-        "Start": 3361,
-        "Length": 4
-      }
-    },
-    {
-      "Value": "t:requests:post",
-      "Id": 24687927,
-      "Name": "post",
-      "IndexSpan": {
-        "Start": 3367,
-        "Length": 4
-      }
-    },
-    {
-      "Value": "t:requests:patch",
-      "Id": 764909201,
-      "Name": "patch",
-      "IndexSpan": {
-        "Start": 3373,
-        "Length": 5
-      }
-    },
-    {
-      "Value": "t:requests:put",
-      "Id": 796568,
-      "Name": "put",
-      "IndexSpan": {
-        "Start": 3380,
-        "Length": 3
-      }
-    },
-    {
-      "Value": "t:requests:delete",
-      "Id": 1897257090,
-      "Name": "delete",
-      "IndexSpan": {
-        "Start": 3385,
-        "Length": 6
-      }
-    },
-    {
-      "Value": "t:requests:options",
-      "Id": 180457127,
-      "Name": "options",
-      "IndexSpan": {
-        "Start": 3393,
-        "Length": 7
-      }
-    },
-    {
-      "Value": "t:requests:session",
-      "Id": -880047457,
-      "Name": "session",
-      "IndexSpan": {
-        "Start": 3423,
-        "Length": 7
       }
     },
     {

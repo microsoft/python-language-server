@@ -57,18 +57,22 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .Where(v => exportedNames.Contains(v.Name) || v.Source == VariableSource.Declaration || v.Source == VariableSource.Builtin)) {
 
                 switch (v.Value) {
+                    case IPythonFunctionType ft when ft.IsLambda():
+                        continue;
                     case IPythonFunctionType ft:
                         var fm = GetFunctionModel(analysis, v, ft);
                         if (fm != null && !functions.ContainsKey(ft.Name)) {
                             functions[ft.Name] = fm;
+                            continue;
                         }
-                        continue;
+                        break;
                     case IPythonClassType cls
                         when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!classes.ContainsKey(cls.Name)) {
                             classes[cls.Name] = ClassModel.FromType(cls);
+                            continue;
                         }
-                        continue;
+                        break;
                 }
 
                 // Do not re-declare classes and functions as variables in the model.
@@ -95,9 +99,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         }
 
         private static FunctionModel GetFunctionModel(IDocumentAnalysis analysis, IVariable v, IPythonFunctionType f) {
-            if (f.IsLambda()) {
-                return null;
-            }
             if (v.Source == VariableSource.Import && !f.DeclaringModule.Equals(analysis.Document) && !f.DeclaringModule.Equals(analysis.Document.Stub)) {
                 // It may be that the function is from a child module via import.
                 // For example, a number of functions in 'os' are imported from 'nt' on Windows via

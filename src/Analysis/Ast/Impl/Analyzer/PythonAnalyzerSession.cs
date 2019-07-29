@@ -371,7 +371,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
             var saveAnalysis = document.ModuleType == ModuleType.Library || document.ModuleType == ModuleType.Compiled || document.ModuleType == ModuleType.CompiledBuiltin;
-            var moduleIsLibraryWithSource = saveAnalysis || document.ModuleType == ModuleType.Stub;
+            var moduleIsLibraryWithSource = saveAnalysis; // TODO: fix this (asserts in 'already analyzed') || document.ModuleType == ModuleType.Stub;
 
             var createLibraryAnalysis = !isCanceled &&
                 node != null &&

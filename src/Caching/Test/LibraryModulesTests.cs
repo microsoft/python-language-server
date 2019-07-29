@@ -110,6 +110,21 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public async Task Logging() {
+            var analysis = await GetAnalysisAsync("import logging");
+            var logging = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("logging");
+            var model = ModuleModel.FromAnalysis(logging.Analysis, Services);
+
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = new PythonDbModule(model, logging.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(logging);
+            }
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task Requests() {
             const string code = @"
 import requests
