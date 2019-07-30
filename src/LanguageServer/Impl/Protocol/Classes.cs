@@ -453,6 +453,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public DocumentOnTypeFormattingOptions documentOnTypeFormattingProvider;
         public bool renameProvider;
         public DocumentLinkOptions documentLinkProvider;
+        public bool declarationProvider; // 3.14.0+
         public ExecuteCommandOptions executeCommandProvider;
         public object experimental;
     }

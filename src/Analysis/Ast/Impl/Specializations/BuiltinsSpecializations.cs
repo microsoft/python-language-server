@@ -135,8 +135,11 @@ namespace Microsoft.Python.Analysis.Specializations {
                 def = args[2];
             }
 
+            // second argument to getattr was not a string, which is a runtime error
+            // getattr(a, 3.14)
             if (name == null) {
-                return def;
+                // TODO diagnostic error when second arg of getattr is not a string
+                return  module.Interpreter.UnknownType;
             }
 
             return o?.GetPythonType().GetMember(name) ?? def;

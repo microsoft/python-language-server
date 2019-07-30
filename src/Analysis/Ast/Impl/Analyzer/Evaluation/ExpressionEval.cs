@@ -20,7 +20,6 @@ using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
@@ -106,7 +105,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public void ReportDiagnostics(Uri documentUri, DiagnosticsEntry entry) {
             // Do not add if module is library, etc. Only handle user code.
-            if (Module.ModuleType == ModuleType.User) {
+            if (entry.ShouldReport(Module)) {
                 lock (_lock) {
                     _diagnostics.Add(entry);
                 }

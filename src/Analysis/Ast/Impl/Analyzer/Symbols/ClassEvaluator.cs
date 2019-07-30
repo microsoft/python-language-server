@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -51,21 +52,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 // Evaluate inner classes, if any
                 EvaluateInnerClasses(_classDef);
-
                 _class = classInfo;
-                // Set bases to the class.
-                var bases = new List<IPythonType>();
-                foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
-                    // We cheat slightly and treat base classes as annotations.
-                    var b = Eval.GetTypeFromAnnotation(a.Expression);
-                    if (b != null) {
-                        var t = b.GetPythonType();
-                        bases.Add(t);
-                        t.AddReference(Eval.GetLocationOfName(a.Expression));
-                    }
-                }
-                _class.SetBases(bases);
 
+                var bases = ProcessBases();
+                _class.SetBases(bases);
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
                 ProcessClassBody();
@@ -120,6 +110,59 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             UpdateClassMembers();
         }
 
+        private IEnumerable<IPythonType> ProcessBases() {
+            var bases = new List<IPythonType>();
+            foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
+                if (IsValidBase(a)) {
+                    TryAddBase(bases, a);
+                } else {
+                    ReportInvalidBase(a.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
+                }
+            }
+
+            return bases;
+        }
+
+        private bool IsValidBase(Arg a) {
+            var expr = a.Expression;
+            var m = Eval.GetValueFromExpression(expr);
+
+            // Allow any unknown members
+            if (m.IsUnknown()) {
+                return true;
+            }
+
+            // Allow extensions from specialized functions 
+            // We specialized type to be a function even though it is a class, so this allows extension of type
+            // TODO handle module specialization better: https://github.com/microsoft/python-language-server/issues/1367
+            if (m is IPythonType t && t.IsSpecialized) {
+                return true;
+            }
+
+            switch (m.MemberType) {
+                // Inheriting from these members is invalid
+                case PythonMemberType.Method:
+                case PythonMemberType.Function:
+                case PythonMemberType.Property:
+                case PythonMemberType.Instance:
+                case PythonMemberType.Variable when m is IPythonConstant:
+                    return false;
+            }
+
+            // Optimistically say anything that passes these checks is a valid base 
+            return true;
+        }
+
+        private void TryAddBase(List<IPythonType> bases, Arg arg) {
+            // We cheat slightly and treat base classes as annotations.
+            var b = Eval.GetTypeFromAnnotation(arg.Expression);
+            if (b != null) {
+                var t = b.GetPythonType();
+                bases.Add(t);
+                t.AddReference(Eval.GetLocationOfName(arg.Expression));
+            }
+        }
+
         private void EvaluateConstructors(ClassDefinition cd) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
@@ -152,6 +195,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Add members from this file
             var members = Eval.CurrentScope.Variables.Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Import);
             _class.AddMembers(members, false);
+        }
+
+        private void ReportInvalidBase(string argVal) {
+            Eval.ReportDiagnostics(Eval.Module.Uri,
+                new DiagnosticsEntry(
+                Resources.InheritNonClass.FormatInvariant(argVal),
+                _classDef.NameExpression.GetLocation(Eval)?.Span ?? default,
+                Diagnostics.ErrorCodes.InheritNonClass,
+                Severity.Warning,
+                DiagnosticSource.Analysis
+            ));
         }
 
         // Classes and functions are walked by their respective evaluators

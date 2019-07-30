@@ -16,6 +16,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -43,11 +44,16 @@ namespace Microsoft.Python.Analysis.Types {
         /// Argument annotation type, if any.
         /// </summary>
         IPythonType Type { get; }
-        
+
         /// <summary>
         /// Parameter location in the AST.
         /// </summary>
         Node Location { get; }
+
+        /// <summary>
+        /// Returns true if this value of the argument is default
+        /// </summary>
+        bool ValueIsDefault { get; }
     }
 
     /// <summary>
@@ -58,7 +64,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Argument name.
         /// </summary>
         string Name { get; }
-        
+
         /// <summary>
         /// ValueExpression that evaluates to the value of the argument.
         /// Function call parameter.
@@ -141,6 +147,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Evaluator associated with the argument set.
         /// </summary>
         IExpressionEvaluator Eval { get; }
+
+        /// <summary>
+        /// Errors upon building the argument set
+        /// </summary>
+        IReadOnlyList<DiagnosticsEntry> Errors { get; }
 
         /// <summary>
         /// Expression associated with the argument set
