@@ -406,12 +406,54 @@ class MyEntity(x):
             analysis.Diagnostics.Should().BeEmpty();
         }
 
-
         [TestMethod, Priority(0)]
         public async Task InheritFromUnknownInstance() {
             const string code = @"
 x = Y()
 class MyEntity(x): 
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromType() {
+            const string code = @"
+class MyEntity(type): 
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromIntType() {
+            const string code = @"
+class MyEntity(int): 
+    mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromTypingSpecialCase() {
+            const string code = @"
+from typing import ByteString, Type, Any, SupportsInt, FrozenSet
+class Test(ByteString): 
+    mystr = 'test'
+
+class Test1(Type): 
+    mystr = 'test'
+
+class Test2(Any): 
+    mystr = 'test'
+
+class Test3(SupportsInt):
+    mystr = 'test'
+
+class Test3(FrozenSet):
     mystr = 'test'
 ";
             var analysis = await GetAnalysisAsync(code);
