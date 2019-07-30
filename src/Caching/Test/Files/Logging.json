@@ -3058,7 +3058,7 @@
           }
         },
         {
-          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
+          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3288,7 +3288,7 @@
           }
         },
         {
-          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
+          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3449,7 +3449,7 @@
           }
         },
         {
-          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
+          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -4930,7 +4930,7 @@
           }
         },
         {
-          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
+          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -5967,7 +5967,7 @@
           }
         },
         {
-          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
+          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
           "Overloads": [
             {
               "Parameters": [

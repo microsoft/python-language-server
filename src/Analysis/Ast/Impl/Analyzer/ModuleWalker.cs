@@ -227,6 +227,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (_stubAnalysis == null) {
                 return;
             }
+//            Debug.Assert(!(_stubAnalysis is EmptyAnalysis));
 
             var builtins = Module.Interpreter.ModuleResolution.BuiltinsModule;
 

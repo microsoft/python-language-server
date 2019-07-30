@@ -247,15 +247,6 @@
       }
     },
     {
-      "Value": "t:sys:_implementation",
-      "Id": -381504846,
-      "Name": "SimpleNamespace",
-      "IndexSpan": {
-        "Start": 536,
-        "Length": 15
-      }
-    },
-    {
       "Value": "t:generator",
       "Id": -191936042,
       "Name": "GeneratorType",
@@ -1358,6 +1349,154 @@
       "InnerClasses": [],
       "Id": 358755281,
       "Name": "MappingProxyType",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:SimpleNamespace",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:SimpleNamespace",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1329277859,
+          "Name": "__getattribute__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:SimpleNamespace",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -736377828,
+          "Name": "__setattr__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:SimpleNamespace",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 2095540485,
+          "Name": "__delattr__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -381504846,
+      "Name": "SimpleNamespace",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
