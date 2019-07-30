@@ -368,10 +368,22 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
+            var mtIsDroppable = false;
+
+            switch (document.ModuleType) {
+                case ModuleType.Library:
+                case ModuleType.Stub:
+                case ModuleType.Compiled:
+                //case ModuleType.CompiledBuiltin:
+                //case ModuleType.Builtins:
+                    mtIsDroppable = true;
+                    break;
+            }
+
             var createLibraryAnalysis = !isCanceled &&
                 node != null &&
                 !node.HasMissingDependencies &&
-                document.ModuleType == ModuleType.Library &&
+                mtIsDroppable &&
                 !document.IsOpen &&
                 node.HasOnlyWalkedDependencies &&
                 node.IsValidVersion;

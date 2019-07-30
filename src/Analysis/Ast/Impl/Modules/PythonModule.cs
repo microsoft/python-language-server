@@ -394,18 +394,22 @@ namespace Microsoft.Python.Analysis.Modules {
                         return;
                     }
 
-                    // TODO: Figure out where the nulls below are coming from.
-                    var importedVariables = ((IScope)GlobalScope)
-                        .TraverseDepthFirst(c => c?.Children ?? Enumerable.Empty<IScope>())
-                        .SelectMany(s => s?.Variables ?? VariableCollection.Empty)
-                        .Where(v => v?.Source == VariableSource.Import);
+                    RemoveAllReferences();
+                }
+            }
+        }
 
-                    foreach (var v in importedVariables) {
-                        v.RemoveReferences(this);
-                        if (v.Value is IPythonModule module) {
-                            RemoveReferencesInModule(module);
-                        }
-                    }
+        public void RemoveAllReferences() {
+            // TODO: Figure out where the nulls below are coming from.
+            var importedVariables = ((IScope)GlobalScope)
+                .TraverseDepthFirst(c => c?.Children ?? Enumerable.Empty<IScope>())
+                .SelectMany(s => s?.Variables ?? VariableCollection.Empty)
+                .Where(v => v?.Source == VariableSource.Import);
+
+            foreach (var v in importedVariables) {
+                v.RemoveReferences(this);
+                if (v.Value is IPythonModule module) {
+                    RemoveReferencesInModule(module);
                 }
             }
         }

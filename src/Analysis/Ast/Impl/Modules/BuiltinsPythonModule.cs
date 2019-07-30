@@ -54,6 +54,8 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             base.OnAnalysisComplete();
+
+            ClearContent();
         }
 
         private void SpecializeTypes() {

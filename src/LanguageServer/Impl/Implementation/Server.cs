@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
@@ -269,10 +270,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void NotifyPackagesChanged(CancellationToken cancellationToken = default) {
             var interpreter = _services.GetService<IPythonInterpreter>();
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
-            // No need to reload typeshed resolution since it is a static storage.
-            // User does can add stubs while application is running, but it is
-            // by design at this time that the app should be restarted.
-            interpreter.ModuleResolution.ReloadAsync(cancellationToken).ContinueWith(t => {
+
+            interpreter.TypeshedResolution.ReloadAsync().ContinueWith(async t => {
+                await interpreter.ModuleResolution.ReloadAsync();
+
                 _log?.Log(TraceEventType.Information, Resources.Done);
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
 
@@ -281,7 +282,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 if (_watchSearchPaths) {
                     ResetPathWatcher();
                 }
-            }, cancellationToken).DoNotWait();
+
+                await Task.Delay(10000);
+
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect();
+            }).DoNotWait();
 
         }
 

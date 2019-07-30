@@ -200,18 +200,26 @@ namespace Microsoft.Python.Analysis.Documents {
                 foreach (var (uri, entry) in closed) {
                     _documentsByUri.Remove(uri);
                     entry.Document.Dispose();
+                    (entry.Document.PrimaryModule as IDisposable)?.Dispose();
+                    (entry.Document.Stub as IDisposable)?.Dispose();
                 }
             }
+
+            var analyzer = _services.GetService<IPythonAnalyzer>();
 
             foreach (var (_, entry) in closed) {
                 Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
                 Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
+                analyzer.RemoveAnalysis(entry.Document); // Dispose does this???
             }
 
             foreach (var (_, entry) in opened) {
                 entry.Document.Reset(null);
             }
         }
+
+        // For debugging.
+        private IPythonAnalyzer Analyzer => _services.GetService<IPythonAnalyzer>();
 
         public void Dispose() {
             lock (_lock) {

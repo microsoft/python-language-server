@@ -198,7 +198,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void ResetAnalyzer() {
             lock (_syncObj) {
-                _analysisEntries.Split(kvp => kvp.Key.IsTypeshed || kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
+                _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
                 _analysisEntries.Clear();
                 foreach (var (key, entry) in entriesToPreserve) {
                     _analysisEntries.Add(key, entry);
