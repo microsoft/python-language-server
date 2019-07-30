@@ -30,8 +30,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24395611,
       "Name": "func",
       "IndexSpan": {

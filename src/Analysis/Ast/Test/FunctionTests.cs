@@ -581,6 +581,22 @@ def outer():
         }
 
         [TestMethod, Priority(0)]
+        public async Task NestedPropertyMembers() {
+            const string code = @"
+def outer():
+    @property
+    def p(self):
+        class innerClass(): ...
+        def innerFunc(): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            var outer = analysis.Should().HaveFunction("outer").Which as IPythonType;
+            var p = outer.Should().HaveMember<IPythonPropertyType>("p").Which as IPythonType;
+            p.Should().HaveMember<IPythonClassType>("innerClass");
+            p.Should().HaveMember<IPythonFunctionType>("innerFunc");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Deprecated() {
             const string code = @"
 @deprecation.deprecated('')

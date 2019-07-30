@@ -60,8 +60,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24658657,
       "Name": "open",
       "IndexSpan": {
@@ -294,8 +294,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 971292143,
           "Name": "__iter__",
           "IndexSpan": {
@@ -319,8 +319,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1101153034,
           "Name": "__next__",
           "IndexSpan": {
@@ -344,8 +344,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 631946913,
           "Name": "__enter__",
           "IndexSpan": {
@@ -387,8 +387,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 860590709,
           "Name": "__exit__",
           "IndexSpan": {
@@ -412,8 +412,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 753226817,
           "Name": "close",
           "IndexSpan": {
@@ -437,8 +437,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1958209300,
           "Name": "fileno",
           "IndexSpan": {
@@ -462,8 +462,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 756003149,
           "Name": "flush",
           "IndexSpan": {
@@ -487,8 +487,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 2053018873,
           "Name": "isatty",
           "IndexSpan": {
@@ -512,8 +512,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 511061255,
           "Name": "readable",
           "IndexSpan": {
@@ -543,8 +543,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1326600974,
           "Name": "readlines",
           "IndexSpan": {
@@ -580,8 +580,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24767247,
           "Name": "seek",
           "IndexSpan": {
@@ -605,8 +605,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1920114455,
           "Name": "seekable",
           "IndexSpan": {
@@ -630,8 +630,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24797256,
           "Name": "tell",
           "IndexSpan": {
@@ -661,8 +661,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1063762307,
           "Name": "truncate",
           "IndexSpan": {
@@ -686,8 +686,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -468366153,
           "Name": "writable",
           "IndexSpan": {
@@ -717,8 +717,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 995367383,
           "Name": "writelines",
           "IndexSpan": {
@@ -748,8 +748,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 511395745,
           "Name": "readline",
           "IndexSpan": {
@@ -773,8 +773,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1636294316,
           "Name": "__del__",
           "IndexSpan": {
@@ -840,8 +840,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1784629164,
           "Name": "readall",
           "IndexSpan": {
@@ -871,8 +871,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 511311373,
           "Name": "readinto",
           "IndexSpan": {
@@ -902,8 +902,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 771870248,
           "Name": "write",
           "IndexSpan": {
@@ -933,8 +933,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24737325,
           "Name": "read",
           "IndexSpan": {
@@ -988,8 +988,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1897491050,
           "Name": "detach",
           "IndexSpan": {
@@ -1019,8 +1019,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 511311373,
           "Name": "readinto",
           "IndexSpan": {
@@ -1050,8 +1050,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 771870248,
           "Name": "write",
           "IndexSpan": {
@@ -1081,8 +1081,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1329216572,
           "Name": "readinto1",
           "IndexSpan": {
@@ -1112,8 +1112,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24737325,
           "Name": "read",
           "IndexSpan": {
@@ -1143,8 +1143,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 766857124,
           "Name": "read1",
           "IndexSpan": {
@@ -1198,8 +1198,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 971292143,
           "Name": "__iter__",
           "IndexSpan": {
@@ -1223,8 +1223,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1101153034,
           "Name": "__next__",
           "IndexSpan": {
@@ -1248,8 +1248,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1897491050,
           "Name": "detach",
           "IndexSpan": {
@@ -1279,8 +1279,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 771870248,
           "Name": "write",
           "IndexSpan": {
@@ -1310,8 +1310,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 511395745,
           "Name": "readline",
           "IndexSpan": {
@@ -1341,8 +1341,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24737325,
           "Name": "read",
           "IndexSpan": {
@@ -1378,8 +1378,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24767247,
           "Name": "seek",
           "IndexSpan": {
@@ -1403,8 +1403,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24797256,
           "Name": "tell",
           "IndexSpan": {

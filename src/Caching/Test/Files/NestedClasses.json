@@ -108,8 +108,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1909501047,
           "Name": "methodA",
           "IndexSpan": {
@@ -151,8 +151,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 935009767,
           "Name": "methodB1",
           "IndexSpan": {
@@ -176,8 +176,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 935009768,
           "Name": "methodB2",
           "IndexSpan": {
@@ -219,8 +219,8 @@
                 }
               ],
               "Attributes": 0,
-              "Classes": null,
-              "Functions": null,
+              "Classes": [],
+              "Functions": [],
               "Id": 965872103,
               "Name": "__init__",
               "IndexSpan": {
@@ -244,8 +244,8 @@
                 }
               ],
               "Attributes": 0,
-              "Classes": null,
-              "Functions": null,
+              "Classes": [],
+              "Functions": [],
               "Id": -1909501045,
               "Name": "methodC",
               "IndexSpan": {

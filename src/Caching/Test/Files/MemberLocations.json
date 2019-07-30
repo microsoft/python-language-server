@@ -24,8 +24,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 799444,
       "Name": "sum",
       "IndexSpan": {
@@ -131,8 +131,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 935009768,
           "Name": "methodB2",
           "IndexSpan": {
@@ -160,24 +160,6 @@
           "Id": 833,
           "Name": "x",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -204,8 +186,8 @@
                 }
               ],
               "Attributes": 0,
-              "Classes": null,
-              "Functions": null,
+              "Classes": [],
+              "Functions": [],
               "Id": 965872103,
               "Name": "__init__",
               "IndexSpan": {
@@ -229,8 +211,8 @@
                 }
               ],
               "Attributes": 0,
-              "Classes": null,
-              "Functions": null,
+              "Classes": [],
+              "Functions": [],
               "Id": -1909501045,
               "Name": "methodC",
               "IndexSpan": {
@@ -240,26 +222,7 @@
             }
           ],
           "Properties": [],
-          "Fields": [
-            {
-              "Value": "t:dict",
-              "Id": 817929997,
-              "Name": "__dict__",
-              "IndexSpan": {
-                "Start": 0,
-                "Length": 0
-              }
-            },
-            {
-              "Value": "t:object",
-              "Id": 1225024228,
-              "Name": "__weakref__",
-              "IndexSpan": {
-                "Start": 0,
-                "Length": 0
-              }
-            }
-          ],
+          "Fields": [],
           "GenericParameters": null,
           "InnerClasses": [],
           "Id": 780,

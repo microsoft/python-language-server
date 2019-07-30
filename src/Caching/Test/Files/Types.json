@@ -11,8 +11,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 25150,
       "Name": "_f",
       "IndexSpan": {
@@ -29,8 +29,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 25151,
       "Name": "_g",
       "IndexSpan": {
@@ -47,8 +47,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 25147,
       "Name": "_c",
       "IndexSpan": {
@@ -90,8 +90,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -492886046,
       "Name": "new_class",
       "IndexSpan": {
@@ -115,8 +115,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1310635256,
       "Name": "resolve_bases",
       "IndexSpan": {
@@ -152,8 +152,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1501358711,
       "Name": "prepare_class",
       "IndexSpan": {
@@ -183,8 +183,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1630558310,
       "Name": "_calculate_meta",
       "IndexSpan": {
@@ -208,8 +208,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1505104735,
       "Name": "coroutine",
       "IndexSpan": {
@@ -244,6 +244,15 @@
       "IndexSpan": {
         "Start": 377,
         "Length": 12
+      }
+    },
+    {
+      "Value": "t:sys:_implementation",
+      "Id": -381504846,
+      "Name": "SimpleNamespace",
+      "IndexSpan": {
+        "Start": 536,
+        "Length": 15
       }
     },
     {
@@ -387,8 +396,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 25157,
           "Name": "_m",
           "IndexSpan": {
@@ -454,8 +463,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -491,8 +500,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1633516065,
           "Name": "__get__",
           "IndexSpan": {
@@ -528,8 +537,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1622433813,
           "Name": "__set__",
           "IndexSpan": {
@@ -559,8 +568,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1041108482,
           "Name": "__delete__",
           "IndexSpan": {
@@ -590,8 +599,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1983396834,
           "Name": "getter",
           "IndexSpan": {
@@ -621,8 +630,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1968020650,
           "Name": "setter",
           "IndexSpan": {
@@ -652,8 +661,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1314572240,
           "Name": "deleter",
           "IndexSpan": {
@@ -726,8 +735,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -757,8 +766,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24767519,
           "Name": "send",
           "IndexSpan": {
@@ -794,8 +803,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 768810287,
           "Name": "throw",
           "IndexSpan": {
@@ -819,8 +828,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 753226817,
           "Name": "close",
           "IndexSpan": {
@@ -844,8 +853,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1101153034,
           "Name": "__next__",
           "IndexSpan": {
@@ -869,8 +878,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 971292143,
           "Name": "__iter__",
           "IndexSpan": {
@@ -1111,8 +1120,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -1252,8 +1261,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -1283,8 +1292,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -293179214,
           "Name": "__getitem__",
           "IndexSpan": {
@@ -1308,8 +1317,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 971292143,
           "Name": "__iter__",
           "IndexSpan": {
@@ -1333,8 +1342,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1628904226,
           "Name": "__len__",
           "IndexSpan": {
@@ -1349,154 +1358,6 @@
       "InnerClasses": [],
       "Id": 358755281,
       "Name": "MappingProxyType",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Documentation": null,
-      "Bases": [
-        "t:object"
-      ],
-      "Methods": [
-        {
-          "Documentation": null,
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:types:SimpleNamespace",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "kwargs",
-                  "Type": "t:typing:Any",
-                  "DefaultValue": null,
-                  "Kind": 2
-                }
-              ],
-              "ReturnType": "i:__NoneType__"
-            }
-          ],
-          "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
-          "Id": 965872103,
-          "Name": "__init__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Documentation": null,
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:types:SimpleNamespace",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "name",
-                  "Type": "t:str",
-                  "DefaultValue": null,
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": "i:typing:Any"
-            }
-          ],
-          "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
-          "Id": -1329277859,
-          "Name": "__getattribute__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Documentation": null,
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:types:SimpleNamespace",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "name",
-                  "Type": "t:str",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "value",
-                  "Type": "t:typing:Any",
-                  "DefaultValue": null,
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": "i:__NoneType__"
-            }
-          ],
-          "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
-          "Id": -736377828,
-          "Name": "__setattr__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Documentation": null,
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:types:SimpleNamespace",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "name",
-                  "Type": "t:str",
-                  "DefaultValue": null,
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": "i:__NoneType__"
-            }
-          ],
-          "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
-          "Id": 2095540485,
-          "Name": "__delattr__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        }
-      ],
-      "Properties": [],
-      "Fields": [],
-      "GenericParameters": null,
-      "InnerClasses": [],
-      "Id": -381504846,
-      "Name": "SimpleNamespace",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -1548,8 +1409,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -1625,8 +1486,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 753216662,
           "Name": "clear",
           "IndexSpan": {
@@ -1732,8 +1593,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1633516065,
           "Name": "__get__",
           "IndexSpan": {
@@ -1763,8 +1624,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1622433813,
           "Name": "__set__",
           "IndexSpan": {
@@ -1794,8 +1655,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1041108482,
           "Name": "__delete__",
           "IndexSpan": {
@@ -1862,8 +1723,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1633516065,
           "Name": "__get__",
           "IndexSpan": {
@@ -1893,8 +1754,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1622433813,
           "Name": "__set__",
           "IndexSpan": {
@@ -1924,8 +1785,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1041108482,
           "Name": "__delete__",
           "IndexSpan": {
@@ -2016,8 +1877,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1633516065,
           "Name": "__get__",
           "IndexSpan": {

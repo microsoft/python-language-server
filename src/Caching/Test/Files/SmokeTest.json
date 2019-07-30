@@ -11,8 +11,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24395611,
       "Name": "func",
       "IndexSpan": {
@@ -127,8 +127,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -152,8 +152,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -2139806792,
           "Name": "method",
           "IndexSpan": {

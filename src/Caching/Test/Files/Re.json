@@ -9,43 +9,20 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": null
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
@@ -53,8 +30,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 762138638,
       "Name": "match",
       "IndexSpan": {
@@ -69,43 +46,20 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": null
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
@@ -113,8 +67,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1889459617,
       "Name": "fullmatch",
       "IndexSpan": {
@@ -129,43 +83,20 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": null
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
@@ -173,8 +104,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1968588673,
       "Name": "search",
       "IndexSpan": {
@@ -189,111 +120,6 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "repl",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "count",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:str"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "repl",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "count",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:str"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "repl",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "count",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:str"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
@@ -306,29 +132,29 @@
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "count",
               "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
+              "DefaultValue": "i:int",
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
-          "ReturnType": "i:str"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 799433,
       "Name": "sub",
       "IndexSpan": {
@@ -343,111 +169,6 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "repl",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "count",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:Tuple[typing:AnyStr, int]"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "repl",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "count",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:Tuple[typing:AnyStr, int]"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
-              "Type": null,
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "repl",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "count",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:Tuple[typing:AnyStr, int]"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
@@ -460,29 +181,29 @@
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "count",
               "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
+              "DefaultValue": "i:int",
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
-          "ReturnType": "i:typing:Tuple[typing:AnyStr, int]"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24782533,
       "Name": "subn",
       "IndexSpan": {
@@ -497,64 +218,35 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "maxsplit",
-              "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:List[typing:AnyStr]"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "maxsplit",
               "Type": "t:int",
-              "DefaultValue": "i:ellipsis",
+              "DefaultValue": "i:int",
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
-          "ReturnType": "i:typing:List[typing:AnyStr]"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 768119139,
       "Name": "split",
       "IndexSpan": {
@@ -569,52 +261,29 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:typing:List[typing:Any]"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
-          "ReturnType": "i:typing:List[typing:Any]"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 576750929,
       "Name": "findall",
       "IndexSpan": {
@@ -629,52 +298,29 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": "i:list_iterator"
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
-          "ReturnType": "i:list_iterator"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 699655528,
       "Name": "finditer",
       "IndexSpan": {
@@ -689,31 +335,14 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:AnyStr",
-              "DefaultValue": null,
-              "Kind": 0
-            },
-            {
-              "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
-              "Kind": 0
-            }
-          ],
-          "ReturnType": null
-        },
-        {
-          "Parameters": [
-            {
-              "Name": "pattern",
               "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
@@ -721,8 +350,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1914543556,
       "Name": "compile",
       "IndexSpan": {
@@ -735,12 +364,12 @@
       "Overloads": [
         {
           "Parameters": [],
-          "ReturnType": "i:__NoneType__"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 765503220,
       "Name": "purge",
       "IndexSpan": {
@@ -755,14 +384,14 @@
           "Parameters": [
             {
               "Name": "pattern",
-              "Type": "t:typing:Union[typing:AnyStr, Unknown]",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             },
             {
               "Name": "flags",
-              "Type": "t:typing:Union[int, re:RegexFlag]",
-              "DefaultValue": "i:ellipsis",
+              "Type": "t:int",
+              "DefaultValue": "i:int",
               "Kind": 0
             }
           ],
@@ -770,8 +399,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 56673681,
       "Name": "template",
       "IndexSpan": {
@@ -785,18 +414,18 @@
         {
           "Parameters": [
             {
-              "Name": "string",
-              "Type": "t:typing:AnyStr",
+              "Name": "pattern",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             }
           ],
-          "ReturnType": "i:str"
+          "ReturnType": "i:bytes"
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1938543448,
       "Name": "escape",
       "IndexSpan": {
@@ -822,12 +451,12 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:dict"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 391969291,
       "Name": "_compile",
       "IndexSpan": {
@@ -853,12 +482,12 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:typing:Tuple[typing:List[typing:Tuple[int, int]], typing:List[str]]"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -706434781,
       "Name": "_compile_repl",
       "IndexSpan": {
@@ -890,12 +519,12 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "i:str"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1445731390,
       "Name": "_expand",
       "IndexSpan": {
@@ -921,12 +550,44 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "t:typing:Union[str, re:_subx.filter]"
+          "ReturnType": "t:re:_subx.filter"
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "match",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "template",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1958223439,
+          "Name": "filter",
+          "IndexSpan": {
+            "Start": 13834,
+            "Length": 6
+          }
+        }
+      ],
       "Id": 749746528,
       "Name": "_subx",
       "IndexSpan": {
@@ -950,8 +611,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1145041278,
       "Name": "_pickle",
       "IndexSpan": {
@@ -1025,7 +686,7 @@
       }
     },
     {
-      "Value": "t:sre_constants:error",
+      "Value": null,
       "Id": 755255377,
       "Name": "error",
       "IndexSpan": {
@@ -1086,287 +747,169 @@
         "Start": 13990,
         "Length": 7
       }
-    },
-    {
-      "Value": "i:int",
-      "Id": 778,
-      "Name": "A",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 721038714,
-      "Name": "ASCII",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 723391612,
-      "Name": "DEBUG",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 786,
-      "Name": "I",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": -1309066407,
-      "Name": "IGNORECASE",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 789,
-      "Name": "L",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 1188582705,
-      "Name": "LOCALE",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 790,
-      "Name": "M",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 1355512406,
-      "Name": "MULTILINE",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 796,
-      "Name": "S",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 960055951,
-      "Name": "DOTALL",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 801,
-      "Name": "X",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": -1795945109,
-      "Name": "VERBOSE",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 798,
-      "Name": "U",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 1860898502,
-      "Name": "UNICODE",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 797,
-      "Name": "T",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "i:int",
-      "Id": 839300497,
-      "Name": "TEMPLATE",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:typing:Union[int, re:RegexFlag]",
-      "Id": 654213145,
-      "Name": "_FlagsType",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
     }
   ],
   "Classes": [
     {
-      "Documentation": "Support for integer-based Flags",
+      "Documentation": null,
       "Bases": [
-        "t:enum:IntFlag",
         "t:object"
       ],
       "Methods": [],
       "Properties": [],
       "Fields": [
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 721038714,
           "Name": "ASCII",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": -1309066407,
           "Name": "IGNORECASE",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 1188582705,
           "Name": "LOCALE",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 1860898502,
           "Name": "UNICODE",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 1355512406,
           "Name": "MULTILINE",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 960055951,
           "Name": "DOTALL",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": -1795945109,
           "Name": "VERBOSE",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 778,
           "Name": "A",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 786,
           "Name": "I",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 789,
           "Name": "L",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 798,
           "Name": "U",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 790,
           "Name": "M",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 796,
           "Name": "S",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 801,
           "Name": "X",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 839300497,
           "Name": "TEMPLATE",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 797,
           "Name": "T",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         },
         {
-          "Value": "i:int",
+          "Value": null,
           "Id": 723391612,
           "Name": "DEBUG",
-          "IndexSpan": null
-        },
-        {
-          "Value": "i:typing:Any",
-          "Id": 770443194,
-          "Name": "value",
-          "IndexSpan": null
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
         }
       ],
       "GenericParameters": null,
@@ -1412,8 +955,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -1443,8 +986,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24765204,
           "Name": "scan",
           "IndexSpan": {

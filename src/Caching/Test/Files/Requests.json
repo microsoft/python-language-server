@@ -24,8 +24,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 435179778,
       "Name": "check_compatibility",
       "IndexSpan": {
@@ -49,8 +49,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -399540245,
       "Name": "_check_cryptography",
       "IndexSpan": {
@@ -86,8 +86,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1769342312,
       "Name": "request",
       "IndexSpan": {
@@ -123,8 +123,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 787423,
       "Name": "get",
       "IndexSpan": {
@@ -154,8 +154,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24439415,
       "Name": "head",
       "IndexSpan": {
@@ -197,8 +197,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24687927,
       "Name": "post",
       "IndexSpan": {
@@ -240,8 +240,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 764909201,
       "Name": "patch",
       "IndexSpan": {
@@ -283,8 +283,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 796568,
       "Name": "put",
       "IndexSpan": {
@@ -314,8 +314,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1897257090,
       "Name": "delete",
       "IndexSpan": {
@@ -345,8 +345,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 180457127,
       "Name": "options",
       "IndexSpan": {
@@ -363,8 +363,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -880047457,
       "Name": "session",
       "IndexSpan": {

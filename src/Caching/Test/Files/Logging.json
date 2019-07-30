@@ -18,8 +18,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 175648528,
       "Name": "getLevelName",
       "IndexSpan": {
@@ -49,8 +49,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 47352357,
       "Name": "addLevelName",
       "IndexSpan": {
@@ -74,8 +74,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -774054780,
       "Name": "_checkLevel",
       "IndexSpan": {
@@ -92,8 +92,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1836502279,
       "Name": "_acquireLock",
       "IndexSpan": {
@@ -110,8 +110,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1432746410,
       "Name": "_releaseLock",
       "IndexSpan": {
@@ -146,8 +146,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 327938617,
       "Name": "_register_at_fork_acquire_release",
       "IndexSpan": {
@@ -171,8 +171,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 2007014151,
       "Name": "_at_fork_weak_calls",
       "IndexSpan": {
@@ -189,8 +189,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1742040183,
       "Name": "_before_at_fork_weak_calls",
       "IndexSpan": {
@@ -207,8 +207,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1673142,
       "Name": "_after_at_fork_weak_calls",
       "IndexSpan": {
@@ -232,8 +232,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -953005664,
       "Name": "setLogRecordFactory",
       "IndexSpan": {
@@ -250,8 +250,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 590722196,
       "Name": "getLogRecordFactory",
       "IndexSpan": {
@@ -275,8 +275,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1222081456,
       "Name": "makeLogRecord",
       "IndexSpan": {
@@ -300,8 +300,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1281089461,
       "Name": "_removeHandlerRef",
       "IndexSpan": {
@@ -325,8 +325,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1538935362,
       "Name": "_addHandlerRef",
       "IndexSpan": {
@@ -350,8 +350,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1470628829,
       "Name": "setLoggerClass",
       "IndexSpan": {
@@ -368,8 +368,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1052602263,
       "Name": "getLoggerClass",
       "IndexSpan": {
@@ -441,8 +441,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1679606937,
       "Name": "basicConfig",
       "IndexSpan": {
@@ -466,8 +466,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 373834319,
       "Name": "getLogger",
       "IndexSpan": {
@@ -521,8 +521,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -964595530,
       "Name": "critical",
       "IndexSpan": {
@@ -576,8 +576,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 755255377,
       "Name": "error",
       "IndexSpan": {
@@ -631,8 +631,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1256782360,
       "Name": "exception",
       "IndexSpan": {
@@ -686,8 +686,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1740589147,
       "Name": "warning",
       "IndexSpan": {
@@ -741,8 +741,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24882973,
       "Name": "warn",
       "IndexSpan": {
@@ -796,8 +796,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24478021,
       "Name": "info",
       "IndexSpan": {
@@ -851,8 +851,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 753929372,
       "Name": "debug",
       "IndexSpan": {
@@ -912,8 +912,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 792525,
       "Name": "log",
       "IndexSpan": {
@@ -937,8 +937,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -1193727247,
       "Name": "disable",
       "IndexSpan": {
@@ -955,8 +955,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1208876909,
       "Name": "shutdown",
       "IndexSpan": {
@@ -1010,8 +1010,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 1067573719,
       "Name": "_showwarning",
       "IndexSpan": {
@@ -1035,8 +1035,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": -460015418,
       "Name": "captureWarnings",
       "IndexSpan": {
@@ -1583,8 +1583,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -1608,8 +1608,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1621988870,
           "Name": "__str__",
           "IndexSpan": {
@@ -1633,8 +1633,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -683390168,
           "Name": "getMessage",
           "IndexSpan": {
@@ -1806,8 +1806,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -1831,8 +1831,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1112663504,
           "Name": "usesTime",
           "IndexSpan": {
@@ -1862,8 +1862,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1963936462,
           "Name": "format",
           "IndexSpan": {
@@ -1968,8 +1968,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -2060,8 +2060,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -2097,8 +2097,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1943599803,
           "Name": "formatTime",
           "IndexSpan": {
@@ -2128,8 +2128,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1767828769,
           "Name": "formatException",
           "IndexSpan": {
@@ -2153,8 +2153,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1112663504,
           "Name": "usesTime",
           "IndexSpan": {
@@ -2184,8 +2184,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -698406567,
           "Name": "formatMessage",
           "IndexSpan": {
@@ -2215,8 +2215,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 121444442,
           "Name": "formatStack",
           "IndexSpan": {
@@ -2246,8 +2246,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1963936462,
           "Name": "format",
           "IndexSpan": {
@@ -2308,8 +2308,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -2339,8 +2339,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -858962181,
           "Name": "formatHeader",
           "IndexSpan": {
@@ -2370,8 +2370,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -906552823,
           "Name": "formatFooter",
           "IndexSpan": {
@@ -2401,8 +2401,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1963936462,
           "Name": "format",
           "IndexSpan": {
@@ -2457,8 +2457,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -2488,8 +2488,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1958223439,
           "Name": "filter",
           "IndexSpan": {
@@ -2531,8 +2531,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -2562,8 +2562,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -606495422,
           "Name": "addFilter",
           "IndexSpan": {
@@ -2593,8 +2593,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 605737651,
           "Name": "removeFilter",
           "IndexSpan": {
@@ -2624,8 +2624,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1958223439,
           "Name": "filter",
           "IndexSpan": {
@@ -2681,8 +2681,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -2706,8 +2706,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -940260629,
           "Name": "get_name",
           "IndexSpan": {
@@ -2737,8 +2737,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1501373089,
           "Name": "set_name",
           "IndexSpan": {
@@ -2762,8 +2762,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1306195042,
           "Name": "createLock",
           "IndexSpan": {
@@ -2787,8 +2787,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 265709791,
           "Name": "acquire",
           "IndexSpan": {
@@ -2812,8 +2812,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1774440432,
           "Name": "release",
           "IndexSpan": {
@@ -2843,8 +2843,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1519168167,
           "Name": "setLevel",
           "IndexSpan": {
@@ -2874,8 +2874,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1963936462,
           "Name": "format",
           "IndexSpan": {
@@ -2905,8 +2905,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24357994,
           "Name": "emit",
           "IndexSpan": {
@@ -2936,8 +2936,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 2008137983,
           "Name": "handle",
           "IndexSpan": {
@@ -2967,8 +2967,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 897677343,
           "Name": "setFormatter",
           "IndexSpan": {
@@ -2992,8 +2992,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 756003149,
           "Name": "flush",
           "IndexSpan": {
@@ -3017,8 +3017,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 753226817,
           "Name": "close",
           "IndexSpan": {
@@ -3048,8 +3048,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 143386697,
           "Name": "handleError",
           "IndexSpan": {
@@ -3073,8 +3073,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1215429388,
           "Name": "__repr__",
           "IndexSpan": {
@@ -3104,8 +3104,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -606495422,
           "Name": "addFilter",
           "IndexSpan": {
@@ -3135,8 +3135,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 605737651,
           "Name": "removeFilter",
           "IndexSpan": {
@@ -3166,8 +3166,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1958223439,
           "Name": "filter",
           "IndexSpan": {
@@ -3247,8 +3247,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -3278,8 +3278,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 364564555,
           "Name": "setStream",
           "IndexSpan": {
@@ -3303,8 +3303,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1215429388,
           "Name": "__repr__",
           "IndexSpan": {
@@ -3414,8 +3414,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -3439,8 +3439,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 749622642,
           "Name": "_open",
           "IndexSpan": {
@@ -3464,8 +3464,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1215429388,
           "Name": "__repr__",
           "IndexSpan": {
@@ -3623,8 +3623,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -3654,8 +3654,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1821647345,
           "Name": "append",
           "IndexSpan": {
@@ -3703,8 +3703,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -3734,8 +3734,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 373834319,
           "Name": "getLogger",
           "IndexSpan": {
@@ -3765,8 +3765,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1470628829,
           "Name": "setLoggerClass",
           "IndexSpan": {
@@ -3796,8 +3796,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -953005664,
           "Name": "setLogRecordFactory",
           "IndexSpan": {
@@ -3827,8 +3827,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -599276383,
           "Name": "_fixupParents",
           "IndexSpan": {
@@ -3864,8 +3864,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -913335961,
           "Name": "_fixupChildren",
           "IndexSpan": {
@@ -3889,8 +3889,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -38531352,
           "Name": "_clear_cache",
           "IndexSpan": {
@@ -3982,8 +3982,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -4013,8 +4013,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1519168167,
           "Name": "setLevel",
           "IndexSpan": {
@@ -4074,8 +4074,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 753929372,
           "Name": "debug",
           "IndexSpan": {
@@ -4135,8 +4135,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24478021,
           "Name": "info",
           "IndexSpan": {
@@ -4196,8 +4196,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1740589147,
           "Name": "warning",
           "IndexSpan": {
@@ -4257,8 +4257,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24882973,
           "Name": "warn",
           "IndexSpan": {
@@ -4318,8 +4318,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 755255377,
           "Name": "error",
           "IndexSpan": {
@@ -4379,8 +4379,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1256782360,
           "Name": "exception",
           "IndexSpan": {
@@ -4440,8 +4440,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -964595530,
           "Name": "critical",
           "IndexSpan": {
@@ -4507,8 +4507,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 792525,
           "Name": "log",
           "IndexSpan": {
@@ -4538,8 +4538,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1248815611,
           "Name": "findCaller",
           "IndexSpan": {
@@ -4623,8 +4623,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1834861366,
           "Name": "makeRecord",
           "IndexSpan": {
@@ -4684,8 +4684,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24178460,
           "Name": "_log",
           "IndexSpan": {
@@ -4715,8 +4715,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 2008137983,
           "Name": "handle",
           "IndexSpan": {
@@ -4746,8 +4746,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -74137920,
           "Name": "addHandler",
           "IndexSpan": {
@@ -4777,8 +4777,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1149618321,
           "Name": "removeHandler",
           "IndexSpan": {
@@ -4802,8 +4802,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1550461612,
           "Name": "hasHandlers",
           "IndexSpan": {
@@ -4833,8 +4833,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1911867518,
           "Name": "callHandlers",
           "IndexSpan": {
@@ -4858,8 +4858,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -519663652,
           "Name": "getEffectiveLevel",
           "IndexSpan": {
@@ -4889,8 +4889,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1611647017,
           "Name": "isEnabledFor",
           "IndexSpan": {
@@ -4920,8 +4920,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -966290307,
           "Name": "getChild",
           "IndexSpan": {
@@ -4945,8 +4945,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1215429388,
           "Name": "__repr__",
           "IndexSpan": {
@@ -4970,8 +4970,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -544113923,
           "Name": "__reduce__",
           "IndexSpan": {
@@ -5001,8 +5001,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -606495422,
           "Name": "addFilter",
           "IndexSpan": {
@@ -5032,8 +5032,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 605737651,
           "Name": "removeFilter",
           "IndexSpan": {
@@ -5063,8 +5063,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1958223439,
           "Name": "filter",
           "IndexSpan": {
@@ -5141,8 +5141,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -5166,8 +5166,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -544113923,
           "Name": "__reduce__",
           "IndexSpan": {
@@ -5240,8 +5240,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -5277,8 +5277,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1120413304,
           "Name": "process",
           "IndexSpan": {
@@ -5338,8 +5338,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 753929372,
           "Name": "debug",
           "IndexSpan": {
@@ -5399,8 +5399,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24478021,
           "Name": "info",
           "IndexSpan": {
@@ -5460,8 +5460,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1740589147,
           "Name": "warning",
           "IndexSpan": {
@@ -5503,8 +5503,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24882973,
           "Name": "warn",
           "IndexSpan": {
@@ -5564,8 +5564,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 755255377,
           "Name": "error",
           "IndexSpan": {
@@ -5625,8 +5625,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1256782360,
           "Name": "exception",
           "IndexSpan": {
@@ -5686,8 +5686,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -964595530,
           "Name": "critical",
           "IndexSpan": {
@@ -5753,8 +5753,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 792525,
           "Name": "log",
           "IndexSpan": {
@@ -5784,8 +5784,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1611647017,
           "Name": "isEnabledFor",
           "IndexSpan": {
@@ -5815,8 +5815,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -1519168167,
           "Name": "setLevel",
           "IndexSpan": {
@@ -5840,8 +5840,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -519663652,
           "Name": "getEffectiveLevel",
           "IndexSpan": {
@@ -5865,8 +5865,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1550461612,
           "Name": "hasHandlers",
           "IndexSpan": {
@@ -5926,8 +5926,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 24178460,
           "Name": "_log",
           "IndexSpan": {
@@ -5957,8 +5957,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -2029774922,
           "Name": "manager",
           "IndexSpan": {
@@ -5982,8 +5982,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 1215429388,
           "Name": "__repr__",
           "IndexSpan": {
