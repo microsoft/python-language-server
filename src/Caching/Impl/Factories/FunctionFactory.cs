@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             : base(classes, mf) {
         }
 
-        protected override IPythonFunctionType CreateMember(FunctionModel fm, IPythonType declaringType) {
+        public override IPythonFunctionType CreateMember(FunctionModel fm, IPythonType declaringType) {
             var ft = new PythonFunctionType(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()), declaringType, fm.Documentation);
 
             foreach (var om in fm.Overloads) {
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             foreach (var model in fm.Classes) {
-                var c = ModuleFactory.ClassFactory.Construct(model, ft);
+                var c = ModuleFactory.ClassFactory.CreateMember(model, ft);
                 if (c != null) {
                     ft.AddMember(c.Name, c, overwrite: true);
                 }

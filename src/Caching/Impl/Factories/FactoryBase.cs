@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
         public virtual void Dispose() => _data.Clear();
 
-        protected abstract TMember CreateMember(TModel model, IPythonType declaringType);
+        public abstract TMember CreateMember(TModel model, IPythonType declaringType);
         protected virtual void CreateMemberParts(TModel model, TMember member) { }
     }
 }

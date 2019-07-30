@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             : base(classes, mf) {
         }
 
-        protected override PythonClassType CreateMember(ClassModel cm, IPythonType declaringType) 
+        public override PythonClassType CreateMember(ClassModel cm, IPythonType declaringType) 
             => new PythonClassType(cm.Name, new Location(ModuleFactory.Module, cm.IndexSpan.ToSpan()));
 
         protected override void CreateMemberParts(ClassModel cm, PythonClassType cls) {
