@@ -1514,6 +1514,85 @@
       ],
       "Methods": [
         {
+          "Documentation": "\n        Initialize a logging record with interesting information.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "level",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "pathname",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lineno",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Union[typing:Tuple[typing:Any, ellipsis], typing:Dict[str, typing:Any]]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "func",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "sinfo",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 10622,
+            "Length": 8
+          }
+        },
+        {
           "Documentation": "Convert to string, for str().",
           "Overloads": [
             {
@@ -1537,12 +1616,37 @@
             "Start": 13983,
             "Length": 7
           }
+        },
+        {
+          "Documentation": "\n        Return the message for this LogRecord.\n\n        Return the message for this LogRecord after merging any user-supplied\n        arguments with the message.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -683390168,
+          "Name": "getMessage",
+          "IndexSpan": {
+            "Start": 14164,
+            "Length": 10
+          }
         }
       ],
       "Properties": [],
       "Fields": [
         {
-          "Value": "t:logging:__str__",
+          "Value": "t:logging:LogRecord.__str__",
           "Id": 1215429388,
           "Name": "__repr__",
           "IndexSpan": {
@@ -1591,15 +1695,6 @@
           "Id": 643451678,
           "Name": "filename",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:str",
-          "Id": -2131035837,
-          "Name": "module",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         },
         {
           "Value": null,
@@ -1672,24 +1767,6 @@
           "Id": 1120413304,
           "Name": "process",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -1706,7 +1783,95 @@
       "Bases": [
         "t:object"
       ],
-      "Methods": [],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:PercentStyle",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "fmt",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 15753,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:PercentStyle",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1112663504,
+          "Name": "usesTime",
+          "IndexSpan": {
+            "Start": 16491,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:PercentStyle",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1963936462,
+          "Name": "format",
+          "IndexSpan": {
+            "Start": 16623,
+            "Length": 6
+          }
+        }
+      ],
       "Properties": [],
       "Fields": [
         {
@@ -1726,24 +1891,6 @@
           "Id": -126644192,
           "Name": "asctime_search",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -1781,24 +1928,6 @@
           "Id": -126644192,
           "Name": "asctime_search",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -1880,24 +2009,6 @@
           "Id": 24186184,
           "Name": "_tpl",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -1915,6 +2026,117 @@
         "t:object"
       ],
       "Methods": [
+        {
+          "Documentation": "\n        Initialize the formatter with specified format strings.\n\n        Initialize the formatter either with the specified format string, or a\n        default as described above. Allow for specialized date formatting with\n        the optional datefmt argument. If datefmt is omitted, you get an\n        ISO8601-like (or RFC 3339-like) format.\n\n        Use a style parameter of '%', '{' or '$' to specify that you want to\n        use one of %-formatting, :meth:`str.format` (``{}``) formatting or\n        :class:`string.Template` formatting in your format string.\n\n        .. versionchanged:: 3.2\n           Added the ``style`` parameter.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Formatter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "fmt",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "datefmt",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "style",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 19335,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Return the creation time of the specified LogRecord as formatted text.\n\n        This method should be called from format() by a formatter which\n        wants to make use of a formatted time. This method can be overridden\n        in formatters to provide for any specific requirement, but the\n        basic behaviour is as follows: if datefmt (a string) is specified,\n        it is used with time.strftime() to format the creation time of the\n        record. Otherwise, an ISO8601-like (or RFC 3339-like) format is used.\n        The resulting string is returned. This function uses a user-configurable\n        function to convert the creation time to a tuple. By default,\n        time.localtime() is used; to change this for a particular formatter\n        instance, set the 'converter' attribute to a function with the same\n        signature as time.localtime() or time.gmtime(). To change it for all\n        formatters, for example if you want all logging times to be shown in GMT,\n        set the 'converter' attribute in the Formatter class.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Formatter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "datefmt",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1943599803,
+          "Name": "formatTime",
+          "IndexSpan": {
+            "Start": 20427,
+            "Length": 10
+          }
+        },
+        {
+          "Documentation": "\n        Format and return the specified exception information as a string.\n\n        This default implementation just uses\n        traceback.print_exception()\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Formatter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1767828769,
+          "Name": "formatException",
+          "IndexSpan": {
+            "Start": 21837,
+            "Length": 15
+          }
+        },
         {
           "Documentation": "\n        Check if the format uses the creation time of the record.\n        ",
           "Overloads": [
@@ -1970,6 +2192,68 @@
             "Start": 22630,
             "Length": 13
           }
+        },
+        {
+          "Documentation": "\n        This method is provided as an extension point for specialized\n        formatting of stack information.\n\n        The input data is a string as returned from a call to\n        :func:`traceback.print_stack`, but with the last trailing newline\n        removed.\n\n        The base implementation just returns the value passed in.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Formatter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 121444442,
+          "Name": "formatStack",
+          "IndexSpan": {
+            "Start": 22713,
+            "Length": 11
+          }
+        },
+        {
+          "Documentation": "\n        Format the specified record as text.\n\n        The record's attribute dictionary is used as the operand to a\n        string formatting operation which yields the returned string.\n        Before formatting the dictionary, a couple of preparatory steps\n        are carried out. The message attribute of the record is computed\n        using LogRecord.getMessage(). If the formatting string uses the\n        time (as determined by a call to usesTime(), formatTime() is\n        called to format the event time. If there is exception information,\n        it is formatted using formatException() and appended to the message.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Formatter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1963936462,
+          "Name": "format",
+          "IndexSpan": {
+            "Start": 23148,
+            "Length": 6
+          }
         }
       ],
       "Properties": [],
@@ -1985,24 +2269,6 @@
           "Id": -1140841123,
           "Name": "default_msec_format",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -2152,24 +2418,6 @@
           "Id": 1606840354,
           "Name": "linefmt",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -2186,28 +2434,72 @@
       "Bases": [
         "t:object"
       ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [
+      "Methods": [
         {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
+          "Documentation": "\n        Initialize a filter.\n\n        Initialize with the name of the logger which, together with its\n        children, will have its events allowed through the filter. If no\n        name is specified, allow every event.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Filter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
           "IndexSpan": {
-            "Start": 0,
-            "Length": 0
+            "Start": 26500,
+            "Length": 8
           }
         },
         {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
+          "Documentation": "\n        Determine if the specified record is to be logged.\n\n        Is the specified record to be logged? Returns 0 for no, nonzero for\n        yes. If deemed appropriate, the record may be modified in-place.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Filter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1958223439,
+          "Name": "filter",
           "IndexSpan": {
-            "Start": 0,
-            "Length": 0
+            "Start": 26845,
+            "Length": 6
           }
         }
       ],
+      "Properties": [],
+      "Fields": [],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": 1042090607,
@@ -2222,7 +2514,126 @@
       "Bases": [
         "t:object"
       ],
-      "Methods": [],
+      "Methods": [
+        {
+          "Documentation": "\n        Initialize the list of filters to be an empty list.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Filterer",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 27502,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Add the specified filter to this handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Filterer",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "filter",
+                  "Type": "t:logging:Filter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -606495422,
+          "Name": "addFilter",
+          "IndexSpan": {
+            "Start": 27643,
+            "Length": 9
+          }
+        },
+        {
+          "Documentation": "\n        Remove the specified filter from this handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Filterer",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "filter",
+                  "Type": "t:logging:Filter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 605737651,
+          "Name": "removeFilter",
+          "IndexSpan": {
+            "Start": 27839,
+            "Length": 12
+          }
+        },
+        {
+          "Documentation": "\n        Determine if a record is loggable by consulting all the filters.\n\n        The default is to allow the record to be logged; any filter can veto\n        this and the record is then dropped. Returns a zero value if a record\n        is to be dropped, else non-zero.\n\n        .. versionchanged:: 3.2\n\n           Allow filters to be just callables.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Filterer",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1958223439,
+          "Name": "filter",
+          "IndexSpan": {
+            "Start": 28037,
+            "Length": 6
+          }
+        }
+      ],
       "Properties": [],
       "Fields": [
         {
@@ -2230,24 +2641,6 @@
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -2266,6 +2659,37 @@
         "t:object"
       ],
       "Methods": [
+        {
+          "Documentation": "\n        Initializes the instance - basically setting the formatter to None\n        and the filter list to empty.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "level",
+                  "Type": "t:typing:Union[int, Unknown]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 30493,
+            "Length": 8
+          }
+        },
         {
           "Documentation": null,
           "Overloads": [
@@ -2323,7 +2747,318 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "\n        Acquire a thread lock for serializing access to the underlying I/O.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1306195042,
+          "Name": "createLock",
+          "IndexSpan": {
+            "Start": 75136,
+            "Length": 10
+          }
+        },
+        {
+          "Documentation": "\n        Acquire the I/O thread lock.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 265709791,
+          "Name": "acquire",
+          "IndexSpan": {
+            "Start": 31555,
+            "Length": 7
+          }
+        },
+        {
+          "Documentation": "\n        Release the I/O thread lock.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1774440432,
+          "Name": "release",
+          "IndexSpan": {
+            "Start": 31701,
+            "Length": 7
+          }
+        },
+        {
+          "Documentation": "\n        Set the logging level of this handler.  level must be an int or a str.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:typing:Union[int, str]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1519168167,
+          "Name": "setLevel",
+          "IndexSpan": {
+            "Start": 31847,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Format the specified record.\n\n        If a formatter is set, use it. Otherwise, use the default formatter\n        for the module.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1963936462,
+          "Name": "format",
+          "IndexSpan": {
+            "Start": 32028,
+            "Length": 6
+          }
+        },
+        {
+          "Documentation": "Stub.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24357994,
+          "Name": "emit",
+          "IndexSpan": {
+            "Start": 75084,
+            "Length": 4
+          }
+        },
+        {
+          "Documentation": "Stub.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2008137983,
+          "Name": "handle",
+          "IndexSpan": {
+            "Start": 75030,
+            "Length": 6
+          }
+        },
+        {
+          "Documentation": "\n        Set the formatter for this handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "form",
+                  "Type": "t:logging:Formatter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 897677343,
+          "Name": "setFormatter",
+          "IndexSpan": {
+            "Start": 33324,
+            "Length": 12
+          }
+        },
+        {
+          "Documentation": "\n        Flushes the stream.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 756003149,
+          "Name": "flush",
+          "IndexSpan": {
+            "Start": 37361,
+            "Length": 5
+          }
+        },
+        {
+          "Documentation": "\n        Closes the stream.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 40171,
+            "Length": 5
+          }
+        },
+        {
+          "Documentation": "\n        Handle errors which occur during an emit() call.\n\n        This method should be called from handlers when an exception is\n        encountered during an emit() call. If raiseExceptions is false,\n        exceptions get silently ignored. This is what is mostly wanted\n        for a logging system - most users will not care about errors in\n        the logging system, they are more interested in application errors.\n        You could, however, replace this with a custom handler if you wish.\n        The record which was being processed is passed in to this method.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 143386697,
+          "Name": "handleError",
+          "IndexSpan": {
+            "Start": 34328,
+            "Length": 11
+          }
+        },
+        {
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -2345,6 +3080,99 @@
           "IndexSpan": {
             "Start": 36684,
             "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Add the specified filter to this handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "filt",
+                  "Type": "t:typing:Union[str, Unknown]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -606495422,
+          "Name": "addFilter",
+          "IndexSpan": {
+            "Start": 27643,
+            "Length": 9
+          }
+        },
+        {
+          "Documentation": "\n        Remove the specified filter from this handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "filt",
+                  "Type": "t:typing:Union[str, Unknown]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 605737651,
+          "Name": "removeFilter",
+          "IndexSpan": {
+            "Start": 27839,
+            "Length": 12
+          }
+        },
+        {
+          "Documentation": "\n        Determine if a record is loggable by consulting all the filters.\n\n        The default is to allow the record to be logged; any filter can veto\n        this and the record is then dropped. Returns a zero value if a record\n        is to be dropped, else non-zero.\n\n        .. versionchanged:: 3.2\n\n           Allow filters to be just callables.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1958223439,
+          "Name": "filter",
+          "IndexSpan": {
+            "Start": 28037,
+            "Length": 6
           }
         }
       ],
@@ -2379,24 +3207,6 @@
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -2415,6 +3225,37 @@
         "t:object"
       ],
       "Methods": [
+        {
+          "Documentation": "\n        Initialize the handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:StreamHandler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stream",
+                  "Type": null,
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 41829,
+            "Length": 8
+          }
+        },
         {
           "Documentation": "\n        Sets the StreamHandler's stream to the specified value,\n        if it is different.\n\n        Returns the old stream, if the stream was changed, or None\n        if it wasn't.\n        ",
           "Overloads": [
@@ -2447,7 +3288,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -2515,24 +3356,6 @@
           "Id": 749578675,
           "Name": "_name",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -2551,6 +3374,55 @@
         "t:object"
       ],
       "Methods": [
+        {
+          "Documentation": "\n        Open the specified file and use it as the stream for logging.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:FileHandler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "filename",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "mode",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "encoding",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "delay",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 39310,
+            "Length": 8
+          }
+        },
         {
           "Documentation": "\n        Open the current base file with the (original) mode and encoding.\n        Return the resulting stream.\n        ",
           "Overloads": [
@@ -2577,7 +3449,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -2645,24 +3517,6 @@
           "Id": 749578675,
           "Name": "_name",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -2730,24 +3584,6 @@
           "Id": 749578675,
           "Name": "_name",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -2764,28 +3600,72 @@
       "Bases": [
         "t:object"
       ],
-      "Methods": [],
-      "Properties": [],
-      "Fields": [
+      "Methods": [
         {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
+          "Documentation": "\n        Initialize with the specified logger being a child of this placeholder.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:PlaceHolder",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "alogger",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
           "IndexSpan": {
-            "Start": 0,
-            "Length": 0
+            "Start": 42582,
+            "Length": 8
           }
         },
         {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
+          "Documentation": "\n        Add the specified logger as a child of this placeholder.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:PlaceHolder",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "alogger",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1821647345,
+          "Name": "append",
           "IndexSpan": {
-            "Start": 0,
-            "Length": 0
+            "Start": 42770,
+            "Length": 6
           }
         }
       ],
+      "Properties": [],
+      "Fields": [],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": 23917820,
@@ -3056,24 +3936,6 @@
           "Id": -350880596,
           "Name": "logRecordFactory",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -3092,6 +3954,684 @@
         "t:object"
       ],
       "Methods": [
+        {
+          "Documentation": "\n        Initialize the logger with a name and an optional level.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "level",
+                  "Type": "t:typing:Union[int, Unknown]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 48941,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Set the logging level of this logger.  level must be an int or a str.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:typing:Union[int, str]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1519168167,
+          "Name": "setLevel",
+          "IndexSpan": {
+            "Start": 49324,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Log 'msg % args' with severity 'DEBUG'.\n\n        To pass exception information, use the keyword argument exc_info with\n        a true value, e.g.\n\n        logger.debug(\"Houston, we have a %s\", \"thorny problem\", exc_info=1)\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753929372,
+          "Name": "debug",
+          "IndexSpan": {
+            "Start": 49541,
+            "Length": 5
+          }
+        },
+        {
+          "Documentation": "\n        Log 'msg % args' with severity 'INFO'.\n\n        To pass exception information, use the keyword argument exc_info with\n        a true value, e.g.\n\n        logger.info(\"Houston, we have a %s\", \"interesting problem\", exc_info=1)\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24478021,
+          "Name": "info",
+          "IndexSpan": {
+            "Start": 49939,
+            "Length": 4
+          }
+        },
+        {
+          "Documentation": "\n        Log 'msg % args' with severity 'WARNING'.\n\n        To pass exception information, use the keyword argument exc_info with\n        a true value, e.g.\n\n        logger.warning(\"Houston, we have a %s\", \"bit of a problem\", exc_info=1)\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1740589147,
+          "Name": "warning",
+          "IndexSpan": {
+            "Start": 50337,
+            "Length": 7
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24882973,
+          "Name": "warn",
+          "IndexSpan": {
+            "Start": 50747,
+            "Length": 4
+          }
+        },
+        {
+          "Documentation": "\n        Log 'msg % args' with severity 'ERROR'.\n\n        To pass exception information, use the keyword argument exc_info with\n        a true value, e.g.\n\n        logger.error(\"Houston, we have a %s\", \"major problem\", exc_info=1)\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 755255377,
+          "Name": "error",
+          "IndexSpan": {
+            "Start": 50956,
+            "Length": 5
+          }
+        },
+        {
+          "Documentation": "\n        Convenience method for logging an ERROR with exception information.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1256782360,
+          "Name": "exception",
+          "IndexSpan": {
+            "Start": 51353,
+            "Length": 9
+          }
+        },
+        {
+          "Documentation": "\n        Log 'msg % args' with severity 'CRITICAL'.\n\n        To pass exception information, use the keyword argument exc_info with\n        a true value, e.g.\n\n        logger.critical(\"Houston, we have a %s\", \"major disaster\", exc_info=1)\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -964595530,
+          "Name": "critical",
+          "IndexSpan": {
+            "Start": 51582,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Log 'msg % args' with the integer severity 'level'.\n\n        To pass exception information, use the keyword argument exc_info with\n        a true value, e.g.\n\n        logger.log(level, \"We have a %s\", \"mysterious problem\", exc_info=1)\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 792525,
+          "Name": "log",
+          "IndexSpan": {
+            "Start": 52019,
+            "Length": 3
+          }
+        },
+        {
+          "Documentation": "\n        Find the stack frame of the caller so that we can note the source\n        file name, line number and function name.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Tuple[str, int, str, str]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1248815611,
+          "Name": "findCaller",
+          "IndexSpan": {
+            "Start": 52611,
+            "Length": 10
+          }
+        },
+        {
+          "Documentation": "\n        A factory method which can be overridden in subclasses to create\n        specialized LogRecords.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "fn",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lno",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Mapping[str, typing:Any]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "func",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Mapping[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "sinfo",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:logging:LogRecord"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1834861366,
+          "Name": "makeRecord",
+          "IndexSpan": {
+            "Start": 53746,
+            "Length": 10
+          }
+        },
         {
           "Documentation": "\n        Low-level logging routine which creates a LogRecord and then calls\n        all the handlers of this logger to handle the record.\n        ",
           "Overloads": [
@@ -3154,6 +4694,124 @@
           }
         },
         {
+          "Documentation": "\n        Call the handlers for the specified record.\n\n        This method is used for unpickled records received from a socket, as\n        well as those created locally. Logger-level filtering is applied.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2008137983,
+          "Name": "handle",
+          "IndexSpan": {
+            "Start": 55636,
+            "Length": 6
+          }
+        },
+        {
+          "Documentation": "\n        Add the specified handler to this logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "hdlr",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -74137920,
+          "Name": "addHandler",
+          "IndexSpan": {
+            "Start": 55999,
+            "Length": 10
+          }
+        },
+        {
+          "Documentation": "\n        Remove the specified handler from this logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "hdlr",
+                  "Type": "t:logging:Handler",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1149618321,
+          "Name": "removeHandler",
+          "IndexSpan": {
+            "Start": 56284,
+            "Length": 13
+          }
+        },
+        {
+          "Documentation": "\n        See if this logger has any handlers configured.\n\n        Loop through all handlers for this logger and its parents in the\n        logger hierarchy. Return True if a handler was found, else False.\n        Stop searching up the hierarchy whenever a logger with the \"propagate\"\n        attribute set to zero is found - that will be the last logger which\n        is checked for the existence of handlers.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1550461612,
+          "Name": "hasHandlers",
+          "IndexSpan": {
+            "Start": 56571,
+            "Length": 11
+          }
+        },
+        {
           "Documentation": "\n        Pass a record to all relevant handlers.\n\n        Loop through all handlers for this logger and its parents in the\n        logger hierarchy. If no handler was found, output a one-off error\n        message to sys.stderr. Stop searching up the hierarchy whenever a\n        logger with the \"propagate\" attribute set to zero is found - that\n        will be the last logger whose handlers are called.\n        ",
           "Overloads": [
             {
@@ -3185,7 +4843,94 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "\n        Get the effective level for this logger.\n\n        Loop through this logger and its parents in the logger hierarchy,\n        looking for a non-zero logging level. Return the first one found.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -519663652,
+          "Name": "getEffectiveLevel",
+          "IndexSpan": {
+            "Start": 58547,
+            "Length": 17
+          }
+        },
+        {
+          "Documentation": "\n        Is this logger enabled for level 'level'?\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1611647017,
+          "Name": "isEnabledFor",
+          "IndexSpan": {
+            "Start": 58983,
+            "Length": 12
+          }
+        },
+        {
+          "Documentation": "\n        Get a logger which is a descendant to this one.\n\n        This is a convenience method, such that\n\n        logging.getLogger('abc').getChild('def.ghi')\n\n        is the same as\n\n        logging.getLogger('abc.def.ghi')\n\n        It's useful, for example, when the parent logger is named using\n        __name__ rather than a literal string.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "suffix",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:logging:Logger"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -966290307,
+          "Name": "getChild",
+          "IndexSpan": {
+            "Start": 59474,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3233,12 +4978,105 @@
             "Start": 60186,
             "Length": 10
           }
+        },
+        {
+          "Documentation": "\n        Add the specified filter to this handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "filt",
+                  "Type": "t:typing:Union[str, Unknown]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -606495422,
+          "Name": "addFilter",
+          "IndexSpan": {
+            "Start": 27643,
+            "Length": 9
+          }
+        },
+        {
+          "Documentation": "\n        Remove the specified filter from this handler.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "filt",
+                  "Type": "t:typing:Union[str, Unknown]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 605737651,
+          "Name": "removeFilter",
+          "IndexSpan": {
+            "Start": 27839,
+            "Length": 12
+          }
+        },
+        {
+          "Documentation": "\n        Determine if a record is loggable by consulting all the filters.\n\n        The default is to allow the record to be logged; any filter can veto\n        this and the record is then dropped. Returns a zero value if a record\n        is to be dropped, else non-zero.\n\n        .. versionchanged:: 3.2\n\n           Allow filters to be just callables.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "record",
+                  "Type": "t:logging:LogRecord",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1958223439,
+          "Name": "filter",
+          "IndexSpan": {
+            "Start": 28037,
+            "Length": 6
+          }
         }
       ],
       "Properties": [],
       "Fields": [
         {
-          "Value": "t:logging:critical",
+          "Value": "t:logging:Logger.critical",
           "Id": 755673933,
           "Name": "fatal",
           "IndexSpan": {
@@ -3263,24 +5101,6 @@
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -3375,24 +5195,6 @@
           "Id": 575384580,
           "Name": "filters",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -3410,6 +5212,263 @@
         "t:object"
       ],
       "Methods": [
+        {
+          "Documentation": "\n        Initialize the adapter with a logger and a dict-like object which\n        provides contextual information. This constructor signature allows\n        easy stacking of LoggerAdapters, if so desired.\n\n        You can effectively pass keyword arguments as shown in the\n        following example:\n\n        adapter = LoggerAdapter(someLogger, dict(p1=v1, p2=\"v2\"))\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "logger",
+                  "Type": "t:logging:Logger",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Mapping[str, typing:Any]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 61168,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Process the logging message and keyword arguments passed in to\n        a logging call to insert contextual information. You can either\n        manipulate the message itself, the keyword args or both. Return\n        the message and kwargs modified (or not) to suit your needs.\n\n        Normally, you'll only need to override this one method in a\n        LoggerAdapter subclass for your specific needs.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:MutableMapping[str, typing:Any]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Tuple[typing:Any, typing:MutableMapping[str, typing:Any]]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1120413304,
+          "Name": "process",
+          "IndexSpan": {
+            "Start": 61669,
+            "Length": 7
+          }
+        },
+        {
+          "Documentation": "\n        Delegate a debug call to the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753929372,
+          "Name": "debug",
+          "IndexSpan": {
+            "Start": 62269,
+            "Length": 5
+          }
+        },
+        {
+          "Documentation": "\n        Delegate an info call to the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24478021,
+          "Name": "info",
+          "IndexSpan": {
+            "Start": 62445,
+            "Length": 4
+          }
+        },
+        {
+          "Documentation": "\n        Delegate a warning call to the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1740589147,
+          "Name": "warning",
+          "IndexSpan": {
+            "Start": 62619,
+            "Length": 7
+          }
+        },
         {
           "Documentation": null,
           "Overloads": [
@@ -3451,6 +5510,368 @@
           "IndexSpan": {
             "Start": 62801,
             "Length": 4
+          }
+        },
+        {
+          "Documentation": "\n        Delegate an error call to the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 755255377,
+          "Name": "error",
+          "IndexSpan": {
+            "Start": 63010,
+            "Length": 5
+          }
+        },
+        {
+          "Documentation": "\n        Delegate an exception call to the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1256782360,
+          "Name": "exception",
+          "IndexSpan": {
+            "Start": 63187,
+            "Length": 9
+          }
+        },
+        {
+          "Documentation": "\n        Delegate a critical call to the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -964595530,
+          "Name": "critical",
+          "IndexSpan": {
+            "Start": 63406,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Delegate a log call to the underlying logger, after adding\n        contextual information from this adapter instance.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "msg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "exc_info",
+                  "Type": "t:typing:Union[NoneType, bool, typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]], BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "stack_info",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "extra",
+                  "Type": "t:typing:Dict[str, typing:Any]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 3
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 792525,
+          "Name": "log",
+          "IndexSpan": {
+            "Start": 63591,
+            "Length": 3
+          }
+        },
+        {
+          "Documentation": "\n        Is this logger enabled for level 'level'?\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1611647017,
+          "Name": "isEnabledFor",
+          "IndexSpan": {
+            "Start": 63945,
+            "Length": 12
+          }
+        },
+        {
+          "Documentation": "\n        Set the specified level on the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lvl",
+                  "Type": "t:typing:Union[int, str]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1519168167,
+          "Name": "setLevel",
+          "IndexSpan": {
+            "Start": 64108,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": "\n        Get the effective level for the underlying logger.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -519663652,
+          "Name": "getEffectiveLevel",
+          "IndexSpan": {
+            "Start": 64264,
+            "Length": 17
+          }
+        },
+        {
+          "Documentation": "\n        See if the underlying logger has any handlers.\n        ",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:logging:LoggerAdapter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1550461612,
+          "Name": "hasHandlers",
+          "IndexSpan": {
+            "Start": 64434,
+            "Length": 11
           }
         },
         {
@@ -3546,7 +5967,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3584,26 +6005,7 @@
           }
         }
       ],
-      "Fields": [
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        }
-      ],
+      "Fields": [],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": -2125123384,
@@ -3651,24 +6053,6 @@
           "Id": 749578675,
           "Name": "_name",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,

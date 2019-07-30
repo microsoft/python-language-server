@@ -187,24 +187,6 @@
           "Id": 834,
           "Name": "y",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,

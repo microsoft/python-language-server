@@ -23,7 +23,7 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     [DebuggerDisplay("cls:{Name}")]
-    internal sealed class ClassModel: MemberModel {
+    internal sealed class ClassModel : MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }
         public FunctionModel[] Methods { get; set; }
@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 var m = cls.GetMember(name);
 
                 // Only take members from this class, skip members from bases.
-                if (m is IPythonClassMember cm && !cls.Equals(cm.DeclaringType)) {
+                if (m is IPythonClassMember cm && cls.QualifiedName != cm.DeclaringType?.QualifiedName) {
                     continue;
                 }
 

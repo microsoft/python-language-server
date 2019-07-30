@@ -119,26 +119,7 @@
         }
       ],
       "Properties": [],
-      "Fields": [
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        }
-      ],
+      "Fields": [],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": 778,
@@ -212,24 +193,6 @@
           "Id": 833,
           "Name": "x",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -298,24 +261,6 @@
               "Id": 834,
               "Name": "y",
               "IndexSpan": null
-            },
-            {
-              "Value": "t:dict",
-              "Id": 817929997,
-              "Name": "__dict__",
-              "IndexSpan": {
-                "Start": 0,
-                "Length": 0
-              }
-            },
-            {
-              "Value": "t:object",
-              "Id": 1225024228,
-              "Name": "__weakref__",
-              "IndexSpan": {
-                "Start": 0,
-                "Length": 0
-              }
             }
           ],
           "GenericParameters": null,

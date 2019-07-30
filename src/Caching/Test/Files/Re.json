@@ -921,7 +921,7 @@
               "Kind": 0
             }
           ],
-          "ReturnType": "t:typing:Union[str, re:filter]"
+          "ReturnType": "t:typing:Union[str, re:_subx.filter]"
         }
       ],
       "Attributes": 0,
@@ -1363,24 +1363,6 @@
           "IndexSpan": null
         },
         {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
           "Value": "i:typing:Any",
           "Id": 770443194,
           "Name": "value",
@@ -1493,24 +1475,6 @@
           "Id": 762138638,
           "Name": "match",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,

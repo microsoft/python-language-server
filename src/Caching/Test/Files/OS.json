@@ -3133,12 +3133,12 @@
           "Parameters": [
             {
               "Name": "filename",
-              "Type": "t:typing:Union[str, bytes, Unknown]",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             }
           ],
-          "ReturnType": "i:bytes"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
@@ -3158,12 +3158,12 @@
           "Parameters": [
             {
               "Name": "filename",
-              "Type": "t:typing:Union[str, bytes, Unknown]",
+              "Type": null,
               "DefaultValue": null,
               "Kind": 0
             }
           ],
-          "ReturnType": "i:str"
+          "ReturnType": null
         }
       ],
       "Attributes": 0,
@@ -7481,7 +7481,156 @@
           }
         },
         {
-          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_Environ",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": "t:typing:AnyStr",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -293179214,
+          "Name": "__getitem__",
+          "IndexSpan": {
+            "Start": 24414,
+            "Length": 11
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_Environ",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": "t:typing:AnyStr",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": "t:typing:AnyStr",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -507796290,
+          "Name": "__setitem__",
+          "IndexSpan": {
+            "Start": 24683,
+            "Length": 11
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_Environ",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "key",
+                  "Type": "t:typing:AnyStr",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1970845273,
+          "Name": "__delitem__",
+          "IndexSpan": {
+            "Start": 24867,
+            "Length": 11
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_Environ",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list_iterator"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__",
+          "IndexSpan": {
+            "Start": 25160,
+            "Length": 8
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_Environ",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1628904226,
+          "Name": "__len__",
+          "IndexSpan": {
+            "Start": 25343,
+            "Length": 7
+          }
+        },
+        {
+          "Documentation": "od.__repr__() <==> repr(od)",
           "Overloads": [
             {
               "Parameters": [
@@ -7503,6 +7652,31 @@
           "IndexSpan": {
             "Start": 25401,
             "Length": 8
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_Environ",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Dict[typing:AnyStr, typing:AnyStr]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24300556,
+          "Name": "copy",
+          "IndexSpan": {
+            "Start": 25613,
+            "Length": 4
           }
         },
         {
@@ -7604,24 +7778,6 @@
           "Id": 1525741209,
           "Name": "__reversed__",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -7686,6 +7842,31 @@
                   "Type": "t:os:_wrap_close",
                   "DefaultValue": null,
                   "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 36241,
+            "Length": 5
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:_wrap_close",
+                  "DefaultValue": null,
+                  "Kind": 0
                 },
                 {
                   "Name": "name",
@@ -7715,24 +7896,6 @@
           "Id": -1527733642,
           "Name": "newlines",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -7815,24 +7978,6 @@
           "Id": 110668478,
           "Name": "__slots__",
           "IndexSpan": null
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,
@@ -7902,26 +8047,7 @@
         }
       ],
       "Properties": [],
-      "Fields": [
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        }
-      ],
+      "Fields": [],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": -913552074,

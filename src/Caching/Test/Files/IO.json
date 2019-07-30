@@ -277,31 +277,530 @@
         "t:_io:_IOBase",
         "t:object"
       ],
-      "Methods": [],
-      "Properties": [],
+      "Methods": [
+        {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list_iterator"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Implement next(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1101153034,
+          "Name": "__next__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:io:_T"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 631946913,
+          "Name": "__enter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "exc_type",
+                  "Type": "t:typing:Type[BaseException]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "exc_val",
+                  "Type": "t:BaseException",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "exc_tb",
+                  "Type": "t:types:TracebackType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 860590709,
+          "Name": "__exit__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Flush and close the IO object.\n\nThis method has no effect if the file is already closed.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Returns underlying file descriptor if one exists.\n\nOSError is raised if the IO object does not use a file descriptor.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1958209300,
+          "Name": "fileno",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Flush write buffers, if applicable.\n\nThis is not implemented for read-only and non-blocking streams.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 756003149,
+          "Name": "flush",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Return whether this is an 'interactive' stream.\n\nReturn False if it can't be determined.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 2053018873,
+          "Name": "isatty",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Return whether object was opened for reading.\n\nIf False, read() will raise OSError.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 511061255,
+          "Name": "readable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Return a list of lines from the stream.\n\nhint can be specified to control the number of lines read: no more\nlines will be read if the total size (in bytes/characters) of all\nlines so far exceeds hint.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "hint",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:List[bytes]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1326600974,
+          "Name": "readlines",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Change stream position.\n\nChange the stream position to the given byte offset. The offset is\ninterpreted relative to the position indicated by whence.  Values\nfor whence are:\n\n* 0 -- start of stream (the default); offset should be zero or positive\n* 1 -- current stream position; offset may be negative\n* 2 -- end of stream; offset is usually negative\n\nReturn the new absolute position.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "offset",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "whence",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24767247,
+          "Name": "seek",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Return whether object supports random access.\n\nIf False, seek(), tell() and truncate() will raise OSError.\nThis method may need to do a test seek().",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1920114455,
+          "Name": "seekable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Return current stream position.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24797256,
+          "Name": "tell",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Truncate file to size bytes.\n\nFile pointer is left unchanged.  Size defaults to the current IO\nposition as reported by tell().  Returns the new size.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1063762307,
+          "Name": "truncate",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Return whether object was opened for writing.\n\nIf False, write() will raise OSError.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -468366153,
+          "Name": "writable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lines",
+                  "Type": "t:typing:Iterable[typing:Union[bytes, bytearray]]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 995367383,
+          "Name": "writelines",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Read and return a line from the stream.\n\nIf size is specified, at most size bytes will be read.\n\nThe line terminator is always b'\\n' for binary files; for text\nfiles, the newlines argument to open can be used to select the line\nterminator(s) recognized.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 511395745,
+          "Name": "readline",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1636294316,
+          "Name": "__del__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [
+        {
+          "Documentation": "",
+          "ReturnType": "i:bool",
+          "Attributes": 0,
+          "Id": 1875194947,
+          "Name": "closed",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
       "Fields": [
         {
           "Value": null,
           "Id": -1636005055,
           "Name": "__doc__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
           "IndexSpan": {
             "Start": 0,
             "Length": 0
@@ -324,31 +823,132 @@
         "t:io:IOBase",
         "t:object"
       ],
-      "Methods": [],
+      "Methods": [
+        {
+          "Documentation": "Read until EOF, using multiple read() call.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1784629164,
+          "Name": "readall",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:bytearray",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 511311373,
+          "Name": "readinto",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytes, bytearray]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 771870248,
+          "Name": "write",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24737325,
+          "Name": "read",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
       "Properties": [],
       "Fields": [
         {
           "Value": null,
           "Id": -1636005055,
           "Name": "__doc__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
           "IndexSpan": {
             "Start": 0,
             "Length": 0
@@ -371,31 +971,194 @@
         "t:io:IOBase",
         "t:object"
       ],
-      "Methods": [],
+      "Methods": [
+        {
+          "Documentation": "Disconnect this buffer from its underlying raw stream and return it.\n\nAfter the raw stream has been detached, the buffer is in an unusable\nstate.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:io:RawIOBase"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1897491050,
+          "Name": "detach",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytearray, mmap:mmap]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 511311373,
+          "Name": "readinto",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Write the given buffer to the IO stream.\n\nReturns the number of bytes written, which is always the length of b\nin bytes.\n\nRaises BlockingIOError if the buffer is full and the\nunderlying raw stream cannot accept more data at the moment.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytes, bytearray]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 771870248,
+          "Name": "write",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytearray, mmap:mmap]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": -1329216572,
+          "Name": "readinto1",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Read and return up to n bytes.\n\nIf the argument is omitted, None, or negative, reads and\nreturns all data until EOF.\n\nIf the argument is positive, and the underlying raw stream is\nnot 'interactive', multiple raw reads may be issued to satisfy\nthe byte count (unless EOF is reached first).  But for\ninteractive raw streams (as well as sockets and pipes), at most\none raw read will be issued, and a short result does not imply\nthat EOF is imminent.\n\nReturns an empty bytes object on EOF.\n\nReturns None if the underlying raw stream was open in non-blocking\nmode and no data is available at the moment.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24737325,
+          "Name": "read",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Read and return up to n bytes, with at most one read() call\nto the underlying raw stream. A short result does not imply\nthat EOF is imminent.\n\nReturns an empty bytes object on EOF.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 766857124,
+          "Name": "read1",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
       "Properties": [],
       "Fields": [
         {
           "Value": null,
           "Id": -1636005055,
           "Name": "__doc__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
           "IndexSpan": {
             "Start": 0,
             "Length": 0
@@ -418,31 +1181,244 @@
         "t:io:IOBase",
         "t:object"
       ],
-      "Methods": [],
+      "Methods": [
+        {
+          "Documentation": "Implement iter(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list_iterator"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 971292143,
+          "Name": "__iter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Implement next(self).",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1101153034,
+          "Name": "__next__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Separate the underlying buffer from the TextIOBase and return it.\n\nAfter the underlying buffer has been detached, the TextIO is in an\nunusable state.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:io:IOBase"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 1897491050,
+          "Name": "detach",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Write string to stream.\nReturns the number of characters written (which is always equal to\nthe length of the string).\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "s",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 771870248,
+          "Name": "write",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Read and return a line from the stream.\n\nIf size is specified, at most size bytes will be read.\n\nThe line terminator is always b'\\n' for binary files; for text\nfiles, the newlines argument to open can be used to select the line\nterminator(s) recognized.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 511395745,
+          "Name": "readline",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Read at most n characters from stream.\n\nRead from underlying buffer until we have n characters or we hit EOF.\nIf n is negative or omitted, read until EOF.\n",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24737325,
+          "Name": "read",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Change stream position.\n\nChange the stream position to the given byte offset. The offset is\ninterpreted relative to the position indicated by whence.  Values\nfor whence are:\n\n* 0 -- start of stream (the default); offset should be zero or positive\n* 1 -- current stream position; offset may be negative\n* 2 -- end of stream; offset is usually negative\n\nReturn the new absolute position.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "offset",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "whence",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24767247,
+          "Name": "seek",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": "Return current stream position.",
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": null,
+          "Functions": null,
+          "Id": 24797256,
+          "Name": "tell",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
       "Properties": [],
       "Fields": [
         {
           "Value": null,
           "Id": -1636005055,
           "Name": "__doc__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
           "IndexSpan": {
             "Start": 0,
             "Length": 0
@@ -467,26 +1443,7 @@
       ],
       "Methods": [],
       "Properties": [],
-      "Fields": [
-        {
-          "Value": "t:dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "t:object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        }
-      ],
+      "Fields": [],
       "GenericParameters": null,
       "InnerClasses": [],
       "Id": 1009041769,
