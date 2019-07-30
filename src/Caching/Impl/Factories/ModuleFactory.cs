@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,7 +26,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal sealed class ModuleFactory : IDisposable {
@@ -122,12 +122,38 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
         }
 
-        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames) {
-            if (memberNames.Count == 0) {
-                return module;
+        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames) 
+            => memberNames.Count == 0 ? module : GetMember(module, memberNames);
+
+        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
+            if (memberName.StartsWithOrdinal("__")) {
+                memberName = memberName.Substring(2, memberName.Length - 4);
             }
 
-            IMember member = module;
+            switch (memberName) {
+                case "NoneType":
+                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
+                case "Unknown":
+                    return builtins.Interpreter.UnknownType;
+            }
+            return builtins.GetMember(memberName);
+        }
+
+        private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
+            if (memberNames.Count == 0) {
+                return null;
+            }
+
+            var name = memberNames[0];
+            var root = ClassFactory.TryCreate(name)
+                   ?? (FunctionFactory.TryCreate(name)
+                       ?? (IMember)VariableFactory.TryCreate(name));
+
+            return GetMember(root, memberNames.Skip(1));
+        }
+
+        private IMember GetMember(IMember root, IEnumerable<string> memberNames) {
+            IMember member = root;
             foreach (var n in memberNames) {
                 var memberName = n;
                 // Check if name has type arguments such as Union[int, str]
@@ -159,32 +185,6 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             return member;
-        }
-
-        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
-            if (memberName.StartsWithOrdinal("__")) {
-                memberName = memberName.Substring(2, memberName.Length - 4);
-            }
-
-            switch (memberName) {
-                case "NoneType":
-                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
-                case "Unknown":
-                    return builtins.Interpreter.UnknownType;
-            }
-            return builtins.GetMember(memberName);
-        }
-
-        private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
-            if (memberNames.Count == 0) {
-                return null;
-            }
-
-            // TODO: nested classes, etc (traverse parts and recurse).
-            var name = memberNames[0];
-            return ClassFactory.TryCreate(name)
-                        ?? (FunctionFactory.TryCreate(name)
-                            ?? (IMember)VariableFactory.TryCreate(name));
         }
 
         private IReadOnlyList<IPythonType> GetTypeArguments(string memberName, out string typeName) {

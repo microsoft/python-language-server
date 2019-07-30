@@ -78,6 +78,8 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType
             => TypeId == BuiltinTypeId.Function ? PythonMemberType.Function : PythonMemberType.Method;
 
+        public override string QualifiedName => this.GetQualifiedName();
+
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             // Now we can go and find overload with matching arguments.
             var overload = Overloads[args.OverloadIndex];
@@ -161,22 +163,21 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
         /// </summary>
-        private sealed class PythonUnboundMethod : PythonTypeWrapper, IPythonFunctionType {
-            private readonly IPythonFunctionType _pf;
-
+        internal sealed class PythonUnboundMethod : PythonTypeWrapper, IPythonFunctionType {
             public PythonUnboundMethod(IPythonFunctionType function) : base(function, function.DeclaringModule) {
-                _pf = function;
+                Function = function;
             }
 
-            public FunctionDefinition FunctionDefinition => _pf.FunctionDefinition;
-            public IPythonType DeclaringType => _pf.DeclaringType;
-            public bool IsStatic => _pf.IsStatic;
-            public bool IsClassMethod => _pf.IsClassMethod;
-            public bool IsOverload => _pf.IsOverload;
-            public bool IsStub => _pf.IsStub;
+            public IPythonFunctionType Function { get; }
+            public FunctionDefinition FunctionDefinition => Function.FunctionDefinition;
+            public IPythonType DeclaringType => Function.DeclaringType;
+            public bool IsStatic => Function.IsStatic;
+            public bool IsClassMethod => Function.IsClassMethod;
+            public bool IsOverload => Function.IsOverload;
+            public bool IsStub => Function.IsStub;
             public bool IsUnbound => true;
 
-            public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
+            public IReadOnlyList<IPythonFunctionOverload> Overloads => Function.Overloads;
             public override BuiltinTypeId TypeId => BuiltinTypeId.Function;
             public override PythonMemberType MemberType => PythonMemberType.Function;
         }

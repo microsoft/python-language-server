@@ -58,13 +58,22 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
                 switch (v.Value) {
                     case IPythonFunctionType ft when ft.IsLambda():
+                        // No need to persist lambdas.
                         continue;
+                    case IPythonFunctionType ft when v.Name != ft.Name:
+                        // Variable assigned to type info of the function like
+                        //    def func(): ...
+                        //    x = type(func)
+                        break;
                     case IPythonFunctionType ft:
                         var fm = GetFunctionModel(analysis, v, ft);
                         if (fm != null && !functions.ContainsKey(ft.Name)) {
                             functions[ft.Name] = fm;
                             continue;
                         }
+                        break;
+                    case IPythonClassType cls when v.Name != cls.Name:
+                        // Variable assigned to type info of the class.
                         break;
                     case IPythonClassType cls
                         when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):

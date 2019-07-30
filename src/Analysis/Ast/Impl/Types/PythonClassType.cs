@@ -17,8 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -50,15 +48,18 @@ namespace Microsoft.Python.Analysis.Types {
 
         public PythonClassType(
             ClassDefinition classDefinition,
+            IPythonType declaringType,
             Location location,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
         ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             location.Module.AddAstNode(this, classDefinition);
+            DeclaringType = declaringType;
         }
 
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
+        public IPythonType DeclaringType { get; }
 
         public override IEnumerable<string> GetMemberNames() {
             var names = new HashSet<string>();

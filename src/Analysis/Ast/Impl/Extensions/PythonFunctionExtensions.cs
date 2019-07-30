@@ -22,10 +22,10 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonFunctionExtensions {
-        public static bool IsUnbound(this IPythonFunctionType f) 
+        public static bool IsUnbound(this IPythonFunctionType f)
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Function;
 
-        public static bool IsBound(this IPythonFunctionType f) 
+        public static bool IsBound(this IPythonFunctionType f)
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Method;
 
         public static bool IsLambda(this IPythonFunctionType f) => f.Name == "<lambda>";
@@ -40,16 +40,14 @@ namespace Microsoft.Python.Analysis {
         }
 
         public static string GetQualifiedName(this IPythonClassMember cm) {
-            if(cm.DeclaringModule.ModuleType == ModuleType.Builtins) {
-                return cm.Name;
-            }
-
             var s = new Stack<string>();
             s.Push(cm.Name);
             for (var p = cm.DeclaringType as IPythonClassMember; p != null; p = p.DeclaringType as IPythonClassMember) {
                 s.Push(p.Name);
             }
-            return $"{cm.DeclaringModule.Name}:{string.Join(".", s)}";
+            return cm.DeclaringModule.ModuleType == ModuleType.Builtins
+                ? string.Join(".", s)
+                : $"{cm.DeclaringModule.Name}:{string.Join(".", s)}";
         }
     }
 }

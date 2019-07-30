@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
@@ -41,7 +42,7 @@ namespace Microsoft.Python.Analysis.Caching {
                     case ITypingNamedTupleType nt2:
                         return $"n:{nt2.QualifiedName}";
                     case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
-                        return $"t:{(pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.Name)}";
+                        return $"t:{(pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.QualifiedName)}";
                     case IPythonType pt:
                         return $"t:{pt.QualifiedName}";
                     case null:
@@ -101,7 +102,7 @@ namespace Microsoft.Python.Analysis.Caching {
                     case ObjectType.Instance:
                         // No module name means built-in type like 'int' or 'i:str'.
                         parts.ModuleName = @"builtins";
-                        parts.MemberNames = new[] { typeName == "..." ? "ellipsis" : typeName };
+                        parts.MemberNames = typeName == "..." ? new[] { "ellipsis" } : typeName.Split('.').ToArray();
                         break;
                     default:
                         parts.ModuleName = typeName;

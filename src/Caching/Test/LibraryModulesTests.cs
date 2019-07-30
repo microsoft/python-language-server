@@ -54,75 +54,22 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
 
         [TestMethod, Priority(0)]
-        public async Task Sys() {
-            var analysis = await GetAnalysisAsync("import sys");
-            var sys = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("sys");
-            var model = ModuleModel.FromAnalysis(sys.Analysis, Services);
-
-            var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
-
-            using (var dbModule = new PythonDbModule(model, sys.FilePath, Services)) {
-                dbModule.Should().HaveSameMembersAs(sys);
-            }
-        }
+        public Task Sys() => TestModule("sys");
 
         [TestMethod, Priority(0)]
-        public async Task Io() {
-            var analysis = await GetAnalysisAsync("import io");
-            var io = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("io");
-            var model = ModuleModel.FromAnalysis(io.Analysis, Services);
-
-            var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
-
-            using (var dbModule = new PythonDbModule(model, io.FilePath, Services)) {
-                dbModule.Should().HaveSameMembersAs(io);
-            }
-        }
+        public Task Io() => TestModule("io");
 
         [TestMethod, Priority(0)]
-        public async Task Re() {
-            var analysis = await GetAnalysisAsync("import re");
-            var re = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("re");
-            var model = ModuleModel.FromAnalysis(re.Analysis, Services);
-
-            var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
-
-            using (var dbModule = new PythonDbModule(model, re.FilePath, Services)) {
-                dbModule.Should().HaveSameMembersAs(re);
-            }
-        }
+        public Task Re() => TestModule("re");
 
         [TestMethod, Priority(0)]
-        public async Task Os() {
-            var analysis = await GetAnalysisAsync("import os");
-            var os = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("os");
-            var model = ModuleModel.FromAnalysis(os.Analysis, Services);
-
-            var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
-
-            using (var dbModule = new PythonDbModule(model, os.FilePath, Services)) {
-                dbModule.Should().HaveSameMembersAs(os);
-            }
-        }
+        public Task Os() => TestModule("os");
 
         [TestMethod, Priority(0)]
-        public async Task Logging() {
-            var analysis = await GetAnalysisAsync("import logging");
-            var logging = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("logging");
-            var model = ModuleModel.FromAnalysis(logging.Analysis, Services);
+        public Task Logging() => TestModule("logging");
 
-            var json = ToJson(model);
-            Baseline.CompareToFile(BaselineFileName, json);
-
-            using (var dbModule = new PythonDbModule(model, logging.FilePath, Services)) {
-                dbModule.Should().HaveSameMembersAs(logging);
-            }
-        }
-
+        [TestMethod, Priority(0)]
+        public Task Types() => TestModule("types");
 
         [TestMethod, Priority(0)]
         public async Task Requests() {
@@ -151,6 +98,19 @@ x = requests.get('microsoft.com')
 
             using (var dbModule = new PythonDbModule(model, rq.FilePath, Services)) {
                 dbModule.Should().HaveSameMembersAs(rq);
+            }
+        }
+
+        private async Task TestModule(string name) {
+            var analysis = await GetAnalysisAsync($"import {name}");
+            var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
+            var model = ModuleModel.FromAnalysis(m.Analysis, Services);
+
+            var json = ToJson(model);
+            Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = new PythonDbModule(model, m.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(m);
             }
         }
     }

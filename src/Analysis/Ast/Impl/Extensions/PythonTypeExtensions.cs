@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -33,5 +32,8 @@ namespace Microsoft.Python.Analysis {
             => m.Name.EqualsOrdinal("__init__") || m.Name.EqualsOrdinal("__new__");
 
         public static string GetQualifiedName(this IPythonType t) => $"{t.DeclaringModule.Name}:{t.Name}";
+
+        internal static IPythonType ToBound(this IPythonType t) => t is PythonFunctionType.PythonUnboundMethod m ? m.Function : t;
+
     }
 }

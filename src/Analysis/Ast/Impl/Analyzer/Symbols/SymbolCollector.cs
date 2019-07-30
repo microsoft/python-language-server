@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
@@ -93,7 +94,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private PythonClassType CreateClass(ClassDefinition cd) {
-            var cls = new PythonClassType(cd, _eval.GetLocationOfName(cd),
+            IPythonType declaringType = null;
+            if(!(cd.Parent is PythonAst)) {
+                Debug.Assert(_typeMap.ContainsKey(cd.Parent));
+                _typeMap.TryGetValue(cd.Parent, out declaringType);
+            }
+            var cls = new PythonClassType(cd, declaringType, _eval.GetLocationOfName(cd),
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
             _typeMap[cd] = cls;
             return cls;
@@ -113,6 +119,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
                 _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+                _typeMap[fd] = existing;
             }
             AddOverload(fd, existing, o => existing.AddOverload(o));
         }
