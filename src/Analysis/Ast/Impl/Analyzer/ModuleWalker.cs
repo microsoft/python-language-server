@@ -246,7 +246,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 // If stub says 'Any' but we have better type, keep the current type.
                 if (!IsStubBetterType(sourceType, stubType)) {
-                    continue; ;
+                    continue;
                 }
 
                 // If type does not exist in module, but exists in stub, declare it unless it is an import.
@@ -286,7 +286,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                         break;
 
-                    case IPythonClassType c:
+                    case IPythonClassType _:
                         // We do not re-declare classes, we only transfer members, see above.
                         break;
 
@@ -318,8 +318,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (sourceType.IsUnknown()) {
                 return true; // Anything is better than unknowns.
             }
-            if (sourceType.MemberType != stubType.MemberType) {
-                // Types should match, we are not replacing unrelated types.
+
+            // Types should match, we are not replacing unrelated types
+            // except when it is a method/function replacement.
+            var compatibleReplacement = 
+                sourceType.MemberType == stubType.MemberType ||
+                (sourceType.MemberType == PythonMemberType.Function && stubType.MemberType == PythonMemberType.Method) ||
+                (sourceType.MemberType == PythonMemberType.Method && stubType.MemberType == PythonMemberType.Function);
+            if (!compatibleReplacement) {
                 return false;
             }
             // If stub says 'Any' but we have better type, keep the current type.

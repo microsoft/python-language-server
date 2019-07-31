@@ -238,7 +238,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var m = GetValueFromExpression(expr.Target);
-            if(m == null) {
+            if (m == null) {
                 return UnknownType;
             }
 
@@ -254,13 +254,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (m == type) {
                 // If container is class/type info rather than the instance, then the method is an unbound function.
                 // Example: C.f where f is a method of C. Compare to C().f where f is bound to the instance of C.
-                if (value is PythonFunctionType f) {
-                    return f.DeclaringType != null && !f.IsStatic && !f.IsClassMethod ? f.ToUnbound() : f;
+                if (value is PythonFunctionType f && f.DeclaringType != null && !f.IsStatic && !f.IsClassMethod) {
+                    f.AddReference(GetLocationOfName(expr));
+                    return f.ToUnbound();
                 }
-            } else {
-                instance = m as IPythonInstance ?? new PythonInstance(type);
+                instance = new PythonInstance(type);
             }
 
+            instance = instance ?? m as IPythonInstance;
 
             // Class type GetMember returns a type. However, class members are
             // mostly instances (consider self.x = 1, x is an instance of int).
