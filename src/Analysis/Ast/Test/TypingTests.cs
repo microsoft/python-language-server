@@ -265,9 +265,9 @@ n2 : AnyStr = b'abc'
 y = n2[0]
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("n1").OfType("AnyStr")
-                .And.HaveVariable("x").OfType("AnyStr")
-                .And.HaveVariable("y").OfType("AnyStr");
+            analysis.Should().HaveVariable("n1").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
