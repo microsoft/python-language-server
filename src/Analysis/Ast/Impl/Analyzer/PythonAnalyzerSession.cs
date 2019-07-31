@@ -391,10 +391,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);
             var analysis  = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
 
-            if (saveAnalysis) {
-                _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
-            }
-
+            _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
             return analysis;
         }
 
