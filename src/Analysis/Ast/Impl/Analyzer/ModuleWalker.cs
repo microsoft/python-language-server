@@ -255,7 +255,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         if (v.Source == VariableSource.Declaration) {
                             Eval.DeclareVariable(v.Name, v.Value, v.Source);
                         }
-
                         break;
 
                     case PythonClassType cls when Module.Equals(cls.DeclaringModule):
@@ -286,6 +285,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                         break;
 
+                    case IPythonClassType _:
+                        // We do not re-declare classes, we only transfer members, see above.
+                        break;
+
+                    case IPythonModule _:
+                        // We do not re-declare modules.
+                        break;
 
                     default:
                         // Re-declare variable with the data from the stub unless member is a module.
@@ -301,10 +307,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         break;
                 }
             }
-
-
-            var o = Eval.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-            Debug.Assert(o.DeclaringModule.ModuleType == ModuleType.Builtins);
         }
 
         private static bool IsStubBetterType(IPythonType sourceType, IPythonType stubType) {
@@ -315,10 +317,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (sourceType.IsUnknown()) {
                 return true; // Anything is better than unknowns.
             }
-            if (sourceType.MemberType != stubType.MemberType) {
-                // Types should match, we are not replacing unrelated types.
-                return false;
-            }
+
+            // Types should match, we are not replacing unrelated types
+            // except when it is a method/function replacement.
+            //var compatibleReplacement =
+            //    sourceType.MemberType == stubType.MemberType ||
+            //    (sourceType.MemberType == PythonMemberType.Function && stubType.MemberType == PythonMemberType.Method) ||
+            //    (sourceType.MemberType == PythonMemberType.Method && stubType.MemberType == PythonMemberType.Function);
+            //if (!compatibleReplacement) {
+            //    return false;
+            //}
             // If stub says 'Any' but we have better type, keep the current type.
             return !(stubType.DeclaringModule is TypingModule) || stubType.Name != "Any";
         }
