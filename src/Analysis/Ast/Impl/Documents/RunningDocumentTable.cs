@@ -69,9 +69,11 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public int Count() {
-            lock (_lock) {
-                return _documentsByUri.Count;
+        public int DocumentCount {
+            get {
+                lock (_lock) {
+                    return _documentsByUri.Count;
+                }
             }
         }
 

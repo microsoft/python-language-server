@@ -94,6 +94,6 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <summary>
         /// Gets the number of documents in the table.
         /// </summary>
-        int Count();
+        int DocumentCount { get; }
     }
 }
