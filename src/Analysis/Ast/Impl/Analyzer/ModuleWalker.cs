@@ -287,10 +287,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                         break;
 
-                    case IPythonClassType _ when stubType.MemberType != PythonMemberType.Class:
-                        // We do not replace classes with incompatible types.
-                        break;
-
                     case IPythonModule _:
                         // We do not re-declare modules.
                         break;
