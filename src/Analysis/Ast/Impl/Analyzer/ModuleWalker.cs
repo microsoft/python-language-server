@@ -252,6 +252,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // If types are the classes, merge members. Otherwise, replace type from one from the stub.
                 switch (sourceType) {
                     case null:
+                        // Nothing in sources, but there is type in the stub. Declare it.
                         if (v.Source == VariableSource.Declaration) {
                             Eval.DeclareVariable(v.Name, v.Value, v.Source);
                         }
@@ -285,10 +286,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         }
                         break;
 
-                    case IPythonClassType _:
-                        // We do not re-declare classes, we only transfer members, see above.
-                        break;
-
                     case IPythonModule _:
                         // We do not re-declare modules.
                         break;
@@ -317,16 +314,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (sourceType.IsUnknown()) {
                 return true; // Anything is better than unknowns.
             }
-
-            // Types should match, we are not replacing unrelated types
-            // except when it is a method/function replacement.
-            //var compatibleReplacement =
-            //    sourceType.MemberType == stubType.MemberType ||
-            //    (sourceType.MemberType == PythonMemberType.Function && stubType.MemberType == PythonMemberType.Method) ||
-            //    (sourceType.MemberType == PythonMemberType.Method && stubType.MemberType == PythonMemberType.Function);
-            //if (!compatibleReplacement) {
-            //    return false;
-            //}
             // If stub says 'Any' but we have better type, keep the current type.
             return !(stubType.DeclaringModule is TypingModule) || stubType.Name != "Any";
         }
