@@ -34,7 +34,6 @@ namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
-        private Dictionary<string, PythonClassType> _specificTypeCache;
         private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;

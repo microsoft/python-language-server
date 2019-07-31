@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             => baseType.GetMember(member)?.GetPythonType();
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
-            if (baseType is IGenericType gt) {
+            if (baseType is ISpecializedGenericType gt) {
                 return gt.CreateSpecificType(args);
             }
             if(baseType is IPythonClassType cls && cls.IsGeneric()) {

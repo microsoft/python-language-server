@@ -138,7 +138,7 @@ namespace Microsoft.Python.Analysis.Types {
                 case IGenericTypeDefinition gtd2 when args != null: // -> T on standalone function.
                     return args.Arguments.FirstOrDefault(a => gtd2.Equals(a.Type))?.Value as IMember;
 
-                case IGenericType gt when args != null: // -> CLASS[T] on standalone function (i.e. -> List[T]).
+                case ISpecializedGenericType gt when args != null: // -> CLASS[T] on standalone function (i.e. -> List[T]).
                     var typeArgs = ExpressionEval.GetTypeArgumentsFromParameters(this, args);
                     if (typeArgs != null) {
                         return gt.CreateSpecificType(typeArgs);

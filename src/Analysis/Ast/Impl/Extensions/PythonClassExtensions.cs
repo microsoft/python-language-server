@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis {
     public static class PythonClassExtensions {
         public static bool IsGeneric(this IPythonClassType cls)
             => cls.GenericParameters.Values.Any(v => v is IGenericTypeDefinition) ||
-            cls.Bases != null && cls.Bases.Any(b => b is IGenericType || b is IGenericClassParameter || b.IsGeneric());
+            cls.Bases != null && cls.Bases.Any(b => b is ISpecializedGenericType || b is IGenericClassParameter || b.IsGeneric());
 
         public static IEnumerable<IPythonType> GetUnfilledTypeParameters(this IPythonClassType cls) {
             return cls.GenericParameters.Values.Where(g => g is IGenericTypeDefinition);

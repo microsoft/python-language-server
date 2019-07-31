@@ -618,7 +618,7 @@ x = c.tmp()
         }
 
         [TestMethod, Priority(0)]
-        public async Task GenericClassMultipleGenericClassBaseSameMethod() {
+        public async Task GenericClassChainMiddleClassSpecific() {
             const string code = @"
 from typing import TypeVar, Generic, List
 
@@ -635,6 +635,7 @@ class A(Generic[_T]):
 class B(A[str], Generic[_T]):
     y: _T
     def __init__(self, y: _T):
+        super.__init__(y)
         self.y = y
 
     def get1(self) -> _T:
@@ -652,7 +653,7 @@ x = c.tmp()
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var c = analysis.Should().HaveVariable("c").Which;
-            c.Should().HaveMembers("get");
+            c.Should().HaveMembers("get", "get1");
 
             analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
         }
@@ -732,12 +733,14 @@ class C(A[str], B[str]):
 
 c = C('str')
 x = c.tmp()
+y = c.get()
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var c = analysis.Should().HaveVariable("c").Which;
             c.Should().HaveMembers("get");
 
             analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]

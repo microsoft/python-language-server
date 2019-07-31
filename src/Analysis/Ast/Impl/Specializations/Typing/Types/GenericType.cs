@@ -25,14 +25,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
     /// Base class for generic types and type declarations.
     /// </summary>
-    internal class GenericType : LocatedMember, IGenericType {
+    internal class SpecializedGenericType : LocatedMember, ISpecializedGenericType {
         internal SpecificTypeConstructor SpecificTypeConstructor { get; }
 
         /// <summary>
         /// Constructs generic type with generic type parameters. Typically used
         /// in generic classes such as when handling Generic[_T] base.
         /// </summary>
-        public GenericType(string name, IReadOnlyList<IGenericTypeDefinition> parameters, IPythonModule declaringModule) 
+        public SpecializedGenericType(string name, IReadOnlyList<IGenericTypeDefinition> parameters, IPythonModule declaringModule) 
             : this(name, declaringModule) {
             Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="typeId">Type id. Used in type comparisons such as when matching
         /// function arguments. For example, Iterator[T] normally has type id of ListIterator.</param>
         /// <param name="parameters">Optional type parameters as declared by TypeVar.</param>
-        public GenericType(
+        public SpecializedGenericType(
             string name,
             SpecificTypeConstructor specificTypeConstructor,
             IPythonModule declaringModule,
@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Parameters = parameters ?? Array.Empty<IGenericTypeDefinition>();
         }
 
-        private GenericType(string name, IPythonModule declaringModule) : base(declaringModule) {
+        private SpecializedGenericType(string name, IPythonModule declaringModule) : base(declaringModule) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 

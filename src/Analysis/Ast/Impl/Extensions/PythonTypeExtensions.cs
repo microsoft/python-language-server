@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis {
             => value is IGenericTypeDefinition;
 
         public static bool IsGeneric(this IPythonType value)
-            => value is IGenericTypeDefinition || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
+            => value is IGenericTypeDefinition || value is ISpecializedGenericType || (value is IPythonClassType c && c.IsGeneric());
 
         public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
             if (s != d && s is PythonType src && d is PythonType dst) {
