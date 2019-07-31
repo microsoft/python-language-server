@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             base.OnAnalysisComplete();
 
-            ClearContent();
+            this.SetAst(Analysis.Ast);
         }
 
         private void SpecializeTypes() {
