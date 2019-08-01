@@ -18,8 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Specializations.Typing;
-using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
@@ -34,10 +32,10 @@ namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
+        private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
-        private Dictionary<string, IPythonType> _genericParameters;
         private string _documentation;
 
         // For tests
@@ -95,7 +93,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
             }
 
-            if (Push(this)) {
+            if (_memberGuard.Push(this)) {
                 try {
                     foreach (var m in Mro.Reverse()) {
                         if (m == this) {
@@ -104,7 +102,7 @@ namespace Microsoft.Python.Analysis.Types {
                         member = member ?? m.GetMember(name);
                     }
                 } finally {
-                    Pop();
+                    _memberGuard.Pop();
                 }
             }
             return null;
@@ -116,7 +114,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return _documentation;
                 }
                 // Make sure we do not cycle through bases back here.
-                if (!Push(this)) {
+                if (!_memberGuard.Push(this)) {
                     return null;
                 }
                 try {
@@ -136,7 +134,7 @@ namespace Microsoft.Python.Analysis.Types {
                             ?.Documentation;
                     }
                 } finally {
-                    Pop();
+                    _memberGuard.Pop();
                 }
                 return _documentation;
             }
@@ -281,17 +279,6 @@ namespace Microsoft.Python.Analysis.Types {
                 recursionProtection.Remove(type);
             }
         }
-
-        #region Reentrancy guards
-        private bool Push(IPythonClassType cls) {
-            if (_processing == null) {
-                _processing = cls;
-                return true;
-            }
-            return false;
-        }
-        private void Pop() => _processing = null;
-        #endregion
 
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);

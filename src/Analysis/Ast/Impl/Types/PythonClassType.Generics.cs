@@ -4,12 +4,15 @@ using System.Linq;
 using System.Text;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
-        private Dictionary<string, PythonClassType> _specificTypeCache = new Dictionary<string, PythonClassType>();
+        private Dictionary<string, IPythonType> _genericParameters;
+        private Dictionary<string, PythonClassType> _specificTypeCache;
+        private ReentrancyGuard<IPythonClassType> _genericGuard = new ReentrancyGuard<IPythonClassType>();
 
         private IPythonType[] GetTypeParameters() {
             var fromBases = new HashSet<IPythonType>();
@@ -132,16 +135,22 @@ namespace Microsoft.Python.Analysis.Types {
             // parameter name to the actual supplied type.
             StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
 
+            // Store parameters first so name updates correctly, then check if class type has been cached
+            _specificTypeCache = _specificTypeCache ?? new Dictionary<string, PythonClassType>();
             if (_specificTypeCache.TryGetValue(classType.Name, out var cachedType)) {
                 return cachedType;
             }
-
             _specificTypeCache[classType.Name] = classType;
 
-            // Prevent reentrancy when resolving generic class where
-            // method may be returning instance of type of the same class.
-            if (!Push(classType)) {
-                return _processing;
+            // Prevent reentrancy when resolving generic class where method may be returning instance of type of the same class.
+            // e.g
+            // class C(Generic[T]): 
+            //  def tmp(self):
+            //    return C(5)
+            // C(5).tmp()
+            // We try to resolve generic type when instantiating object but end up resolving it again on the return value of the method, looping infinitely
+            if (!_genericGuard.Push(classType)) {
+                return _genericGuard.GetProcessing();
             }
 
             try {
@@ -197,7 +206,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // Transfer members from generic to specific type.
                 SetClassMembers(classType, args);
             } finally {
-                Pop();
+                _genericGuard.Pop();
             }
 
             return classType;
