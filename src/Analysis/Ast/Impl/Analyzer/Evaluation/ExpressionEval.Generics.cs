@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// of a generic class.
         /// </summary>
         private IMember GetValueFromGeneric(IMember target, Expression expr) {
-            if (!(target is PythonClassType c && c.IsGeneric()) && !(target is ISpecializedGenericType)) {
+            if (!(target is IGenericType t && t.IsGeneric())) {
                 return null;
             }
 
@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // rather than specific type instantiation as in List[str].
                 switch (expr) {
                     // Indexing returns type as from A[int]
-                    case IndexExpression indexExpr when target is ISpecializedGenericType gt:
+                    case IndexExpression indexExpr when target is IGenericType gt:
                         // Generic[T1, T2, ...]
                         var indices = EvaluateIndex(indexExpr);
                         return CreateSpecificTypeFromIndex(gt, indices, expr);

@@ -21,13 +21,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// Represents generic type, such as class or function.
     /// Generic type is a template for the actual type.
     /// </summary>
-    public interface ISpecializedGenericType : IPythonTemplateType {
+    public interface IGenericType : IPythonTemplateType {
         /// <summary>
         /// Type parameters such as in Tuple[T1, T2. ...] or
         /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
         IReadOnlyList<IGenericTypeDefinition> Parameters { get; }
 
-        IPythonType CreateSpecificType(IReadOnlyList<IPythonType> typeArguments);
+        /// <summary>
+        /// Returns whether the type is generic or not
+        /// </summary>
+        bool IsGeneric { get; }
     }
 }

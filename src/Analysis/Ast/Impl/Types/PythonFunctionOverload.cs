@@ -129,21 +129,21 @@ namespace Microsoft.Python.Analysis.Types {
         private IMember GetSpecificReturnType(IPythonClassType selfClassType, IArgumentSet args) {
             var returnValueType = StaticReturnValue.GetPythonType();
             switch (returnValueType) {
-                case PythonClassType cls when cls.IsGeneric():
+                case PythonClassType cls when cls.IsGeneric:
                     return CreateSpecificReturnFromClassType(selfClassType, cls, args); // -> A[_T1, _T2, ...]
+
+                case IGenericType gt when gt.IsGeneric && args != null: // -> CLASS[T] on standalone function (i.e. -> List[T]).
+                    var typeArgs = ExpressionEval.GetTypeArgumentsFromParameters(this, args);
+                    if (typeArgs != null) {
+                        return gt.CreateSpecificType(new ArgumentSet(typeArgs, args.Expression, args.Eval));
+                    }
+                    break;
 
                 case IGenericTypeDefinition gtd1 when selfClassType != null:
                     return CreateSpecificReturnFromTypeVar(selfClassType, gtd1); // -> _T
 
                 case IGenericTypeDefinition gtd2 when args != null: // -> T on standalone function.
                     return args.Arguments.FirstOrDefault(a => gtd2.Equals(a.Type))?.Value as IMember;
-
-                case ISpecializedGenericType gt when args != null: // -> CLASS[T] on standalone function (i.e. -> List[T]).
-                    var typeArgs = ExpressionEval.GetTypeArgumentsFromParameters(this, args);
-                    if (typeArgs != null) {
-                        return gt.CreateSpecificType(typeArgs);
-                    }
-                    break;
             }
 
             return StaticReturnValue;

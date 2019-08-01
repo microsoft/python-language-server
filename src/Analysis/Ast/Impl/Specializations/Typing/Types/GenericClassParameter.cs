@@ -29,6 +29,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             TypeDefinitions = typeArgs;
         }
 
+        public override bool IsGeneric => true;
+
         public IReadOnlyList<IGenericTypeDefinition> TypeDefinitions { get; }
 
         public override PythonMemberType MemberType => PythonMemberType.Generic;

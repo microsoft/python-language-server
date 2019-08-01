@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
@@ -29,11 +30,10 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
-    internal partial class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
+    internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
-        private IPythonClassType _processing;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
         private string _documentation;
@@ -190,8 +190,9 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IReadOnlyDictionary<string, IPythonType> GenericParameters
-            => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
+        public IReadOnlyDictionary<IGenericTypeDefinition, IPythonType> GenericParameters
+            => _genericParameters ?? EmptyDictionary<IGenericTypeDefinition, IPythonType>.Instance;
+
         #endregion
 
         internal void SetBases(IEnumerable<IPythonType> bases) {

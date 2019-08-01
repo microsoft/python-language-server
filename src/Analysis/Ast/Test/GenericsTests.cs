@@ -487,6 +487,42 @@ x = boxed.get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericClassSpecificTypeFillingMultipleTypeVariables() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+T = TypeVar('T')
+U = TypeVar('U')
+
+class A(Generic[T]):
+    a: T
+    def __init__(self, a: T):
+        self.a = a
+
+    def get(self) -> T:
+        return self.a
+
+class B(A[U]):
+    b: U
+    def __init__(self, b: U):
+        self.b = b
+        super().__init__(b)
+
+    def get1(self) -> U:
+        return self.b
+
+test = B(5)
+x = test.get()
+y = test.get1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            analysis.Should().HaveVariable("test").Which.Should().HaveMembers("get", "get1");
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GenericClassRegularBase() {
             const string code = @"
 from typing import TypeVar, Generic
