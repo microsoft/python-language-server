@@ -54,7 +54,9 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             base.OnAnalysisComplete();
+        }
 
+        public void ResetAst() {
             this.SetAst(Analysis.Ast);
         }
 

@@ -33,5 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     public interface IBuiltinsPythonModule : IPythonModule {
         IMember GetAnyMember(string name);
+
+        void ResetAst();
     }
 }

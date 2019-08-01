@@ -275,6 +275,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                                 continue; // Leave builtins alone.
                             }
 
+                            if (memberType?.DeclaringModule is SpecializedModule || stubMemberType?.DeclaringModule is SpecializedModule) {
+                                continue; // Leave specialized modules like typing alone.
+                            }
+
                             if (!IsStubBetterType(memberType, stubMemberType)) {
                                 continue;
                             }

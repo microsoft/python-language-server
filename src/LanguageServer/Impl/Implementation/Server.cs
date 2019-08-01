@@ -271,6 +271,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var interpreter = _services.GetService<IPythonInterpreter>();
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
 
+            interpreter.ModuleResolution.BuiltinsModule.ResetAst();
+
             interpreter.TypeshedResolution.ReloadAsync().ContinueWith(async t => {
                 await interpreter.ModuleResolution.ReloadAsync();
 
