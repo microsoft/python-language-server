@@ -984,7 +984,7 @@
       }
     },
     {
-      "Documentation": "Execute the program specified by path in a new process.\n\n  mode\n    Mode of process creation.\n  path\n    Path of executable file.\n  argv\n    Tuple or list of strings.",
+      "Documentation": "spawnv(mode, file, args) -> integer\n\nExecute file with arguments from args in a subprocess.\nIf mode == P_NOWAIT return the pid of the process.\nIf mode == P_WAIT return the process's exit code if it exits normally;\notherwise return -SIG, where SIG is the signal that killed it. ",
       "Overloads": [
         {
           "Parameters": [
@@ -1021,7 +1021,7 @@
       }
     },
     {
-      "Documentation": "Execute the program specified by path in a new process.\n\n  mode\n    Mode of process creation.\n  path\n    Path of executable file.\n  argv\n    Tuple or list of strings.\n  env\n    Dictionary of strings mapping to strings.",
+      "Documentation": "spawnve(mode, file, args, env) -> integer\n\nExecute file with arguments from args in a subprocess with the\nspecified environment.\nIf mode == P_NOWAIT return the pid of the process.\nIf mode == P_WAIT return the process's exit code if it exits normally;\notherwise return -SIG, where SIG is the signal that killed it. ",
       "Overloads": [
         {
           "Parameters": [
@@ -6234,7 +6234,7 @@
       }
     },
     {
-      "Value": "i:typing:Sequence[str]",
+      "Value": "i:tuple",
       "Id": 1762102560,
       "Name": "_names",
       "IndexSpan": {
@@ -6270,27 +6270,9 @@
       }
     },
     {
-      "Value": "t:nt:DirEntry",
-      "Id": 1659683100,
-      "Name": "DirEntry",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
       "Value": "t:nt:stat_result",
       "Id": -290614287,
       "Name": "stat_result",
-      "IndexSpan": {
-        "Start": 0,
-        "Length": 0
-      }
-    },
-    {
-      "Value": "t:nt:statvfs_result",
-      "Id": -1079311036,
-      "Name": "statvfs_result",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -8044,6 +8026,30 @@
       "Properties": [],
       "Fields": [
         {
+          "Value": "i:bool",
+          "Id": -411012882,
+          "Name": "line_buffering",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": 1875194947,
+          "Name": "closed",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1205524886,
+          "Name": "encoding",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 1938080322,
+          "Name": "errors",
+          "IndexSpan": null
+        },
+        {
           "Value": "i:typing:Union[str, typing:Tuple[str], __NoneType__]",
           "Id": -1527733642,
           "Name": "newlines",
@@ -8139,6 +8145,277 @@
       "IndexSpan": {
         "Start": 38461,
         "Length": 8
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:DirEntry",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 758827060,
+          "Name": "inode",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:DirEntry",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "follow_symlinks",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 2052943567,
+          "Name": "is_dir",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:DirEntry",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "follow_symlinks",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -783199366,
+          "Name": "is_file",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:DirEntry",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1376955523,
+          "Name": "is_symlink",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:DirEntry",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:posix:stat_result"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24781547,
+          "Name": "stat",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:os:DirEntry",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -117263095,
+          "Name": "__fspath__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:str",
+          "Id": 24614690,
+          "Name": "name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 24674492,
+          "Name": "path",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1659683100,
+      "Name": "DirEntry",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "statvfs_result: Result from statvfs or fstatvfs.\n\nThis object may be accessed either as a tuple of\n  (bsize, frsize, blocks, bfree, bavail, files, ffree, favail, flag, namemax),\nor via the attributes f_bsize, f_frsize, f_blocks, f_bfree, and so on.\n\nSee os.statvfs for more information.",
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 279832147,
+          "Name": "f_bsize",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 198737373,
+          "Name": "f_frsize",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 78554262,
+          "Name": "f_blocks",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 279452862,
+          "Name": "f_bfree",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 68602077,
+          "Name": "f_bavail",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 283230567,
+          "Name": "f_files",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 283146946,
+          "Name": "f_ffree",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 183118681,
+          "Name": "f_favail",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 1948801660,
+          "Name": "f_flag",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": -116382231,
+          "Name": "f_namemax",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -1079311036,
+      "Name": "statvfs_result",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
       }
     },
     {

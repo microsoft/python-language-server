@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Xml.Serialization;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -227,9 +228,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (_stubAnalysis == null) {
                 return;
             }
-            //            Debug.Assert(!(_stubAnalysis is EmptyAnalysis));
-
-            var builtins = Module.Interpreter.ModuleResolution.BuiltinsModule;
+            // TODO: figure out why module is getting analyzed before stub.
+            // https://github.com/microsoft/python-language-server/issues/907
+            // Debug.Assert(!(_stubAnalysis is EmptyAnalysis));
 
             // Note that scrape can pick up more functions than the stub contains
             // Or the stub can have definitions that scraping had missed. Therefore
@@ -272,8 +273,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             var memberType = member?.GetPythonType();
                             var stubMemberType = stubMember.GetPythonType();
 
-                            if (builtins.Equals(memberType?.DeclaringModule) || builtins.Equals(stubMemberType?.DeclaringModule)) {
-                                continue; // Leave builtins alone.
+                            if (sourceType.IsBuiltin || stubType.IsBuiltin) {
+                                // If stub type does not have an immediate member such as __init__() and
+                                // rather have it inherited from object, we do not want to use the inherited
+                                // since current class may either have its own of inherits it from the object.
+                                continue;
                             }
 
                             if (!IsStubBetterType(memberType, stubMemberType)) {
@@ -292,16 +296,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         break;
 
                     default:
-                        // Re-declare variable with the data from the stub unless member is a module.
-                        // Modules members that are modules should remain as they are, i.e. os.path
-                        // should remain library with its own stub attached.
                         var stubModule = stubType.DeclaringModule;
-                        if (!(stubType is IPythonModule) && !builtins.Equals(stubModule)) {
+                        if (stubType is IPythonModule || stubModule.ModuleType == ModuleType.Builtins) {
+                            // Modules members that are modules should remain as they are, i.e. os.path
+                            // should remain library with its own stub attached.
+                            break;
+                        }
+                        // We do not re-declaring variables that are imported.
+                        if (v.Source == VariableSource.Declaration) {
+                            // Re-declare variable with the data from the stub.
                             TransferDocumentationAndLocation(sourceType, stubType);
                             // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                             var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? v.Source;
                             Eval.DeclareVariable(v.Name, v.Value, source);
                         }
+
                         break;
                 }
             }
@@ -315,24 +324,51 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (sourceType.IsUnknown()) {
                 return true; // Anything is better than unknowns.
             }
-            // If stub says 'Any' but we have better type, keep the current type.
-            return !(stubType.DeclaringModule is TypingModule) || stubType.Name != "Any";
+            if (sourceType.DeclaringModule.ModuleType == ModuleType.Specialized) {
+                // Types in specialized modules should never be touched.
+                return false;
+            }
+            if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
+                // If stub says 'Any' but we have better type, keep the current type.
+                return false;
+            }
+            // Types should be compatible except it is allowed to replace function by a class.
+            // Consider stub of threading that replaces def RLock(): by class RLock().
+            // Similarly, in _json, make_scanner function is replaced by a class.
+            if (sourceType.MemberType == PythonMemberType.Function && stubType.MemberType == PythonMemberType.Class) {
+                return true;
+            }
+            return sourceType.MemberType == stubType.MemberType;
         }
 
         private static void TransferDocumentationAndLocation(IPythonType s, IPythonType d) {
-            if (s.IsUnknown()) {
-                return; // Do not transfer location of unknowns
+            if (s.IsUnknown() || d.IsBuiltin || s.IsBuiltin) {
+                return; // Do not transfer location of unknowns or builtins
             }
             // Documentation and location are always get transferred from module type
             // to the stub type and never the other way around. This makes sure that
             // we show documentation from the original module and goto definition
             // navigates to the module source and not to the stub.
             if (s != d && s is PythonType src && d is PythonType dst) {
-                var documentation = src.Documentation;
-                if (!string.IsNullOrEmpty(documentation)) {
-                    dst.SetDocumentation(documentation);
+                // Sometimes destination (stub type) already has documentation.
+                // This happens when stub type is used to augment more than one type.
+                // For example, in threading module RLock stub class replaces both 
+                // RLock function and _RLock class making 'factory' function RLock
+                // to look like a class constructor. Effectively a single  stub type
+                // is used for more than one type in the source and two source types
+                // may have different documentation. Thus transferring doc from one source
+                // type will affect documentation of another type. It may be better to
+                // clone stub type and make it separate for separate source type, but
+                // for now we'll just avoid stomping on the existing documentation.
+                if (string.IsNullOrEmpty(dst.Documentation)) {
+                    var srcDocumentation = src.Documentation;
+                    if (!string.IsNullOrEmpty(srcDocumentation)) {
+                        dst.SetDocumentation(srcDocumentation);
+                    }
                 }
-                dst.Location = src.Location;
+                if (src.Location.IsValid) {
+                    dst.Location = src.Location;
+                }
             }
         }
     }

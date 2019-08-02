@@ -126,87 +126,6 @@
       }
     },
     {
-      "Value": "t:_io:FileIO",
-      "Id": 1042075289,
-      "Name": "FileIO",
-      "IndexSpan": {
-        "Start": 2360,
-        "Length": 6
-      }
-    },
-    {
-      "Value": "t:_io:BytesIO",
-      "Id": -844956998,
-      "Name": "BytesIO",
-      "IndexSpan": {
-        "Start": 2368,
-        "Length": 7
-      }
-    },
-    {
-      "Value": "t:_io:StringIO",
-      "Id": -1057094098,
-      "Name": "StringIO",
-      "IndexSpan": {
-        "Start": 2377,
-        "Length": 8
-      }
-    },
-    {
-      "Value": "t:_io:BufferedReader",
-      "Id": 1385220729,
-      "Name": "BufferedReader",
-      "IndexSpan": {
-        "Start": 2387,
-        "Length": 14
-      }
-    },
-    {
-      "Value": "t:_io:BufferedWriter",
-      "Id": 1540625961,
-      "Name": "BufferedWriter",
-      "IndexSpan": {
-        "Start": 2421,
-        "Length": 14
-      }
-    },
-    {
-      "Value": "t:_io:BufferedRWPair",
-      "Id": 1371782229,
-      "Name": "BufferedRWPair",
-      "IndexSpan": {
-        "Start": 2437,
-        "Length": 14
-      }
-    },
-    {
-      "Value": "t:_io:BufferedRandom",
-      "Id": 1381914233,
-      "Name": "BufferedRandom",
-      "IndexSpan": {
-        "Start": 2453,
-        "Length": 14
-      }
-    },
-    {
-      "Value": "t:_io:IncrementalNewlineDecoder",
-      "Id": -796597709,
-      "Name": "IncrementalNewlineDecoder",
-      "IndexSpan": {
-        "Start": 2487,
-        "Length": 25
-      }
-    },
-    {
-      "Value": "t:_io:TextIOWrapper",
-      "Id": 734996265,
-      "Name": "TextIOWrapper",
-      "IndexSpan": {
-        "Start": 2514,
-        "Length": 13
-      }
-    },
-    {
       "Value": "t:_io:open",
       "Id": 1740485202,
       "Name": "OpenWrapper",
@@ -272,7 +191,7 @@
   ],
   "Classes": [
     {
-      "Documentation": "The abstract base class for all I/O classes, acting on streams of\nbytes. There is no public constructor.\n\nThis class provides dummy implementations for many methods that\nderived classes can override selectively; the default implementations\nrepresent a file that cannot be read, written or seeked.\n\nEven though IOBase does not declare read, readinto, or write because\ntheir signatures will vary, implementations and clients should\nconsider those methods part of the interface. Also, implementations\nmay raise UnsupportedOperation when operations they do not support are\ncalled.\n\nThe basic type used for binary data read from or written to a file is\nbytes. Other bytes-like objects are accepted as method arguments too.\nIn some cases (such as readinto), a writable object is required. Text\nI/O classes work with str data.\n\nNote that calling any method (except additional calls to close(),\nwhich are ignored) on a closed stream should raise a ValueError.\n\nIOBase (and its subclasses) support the iterator protocol, meaning\nthat an IOBase object can be iterated over yielding the lines in a\nstream.\n\nIOBase also supports the :keyword:`with` statement. In this example,\nfp is closed after the suite of the with statement is complete:\n\nwith open('spam.txt', 'r') as fp:\n    fp.write('Spam and eggs!')\n",
+      "Documentation": "The most base type",
       "Bases": [
         "t:_io:_IOBase",
         "t:object"
@@ -817,7 +736,7 @@
       }
     },
     {
-      "Documentation": "Base class for raw binary I/O.",
+      "Documentation": "The most base type",
       "Bases": [
         "t:_io:_RawIOBase",
         "t:io:IOBase",
@@ -965,7 +884,7 @@
       }
     },
     {
-      "Documentation": "Base class for buffered IO objects.\n\nThe main difference with RawIOBase is that the read() method\nsupports omitting the size argument, and does not have a default\nimplementation that defers to readinto().\n\nIn addition, read(), readinto() and write() may raise\nBlockingIOError if the underlying raw stream is in non-blocking\nmode and not ready; unlike their raw counterparts, they will never\nreturn None.\n\nA typical implementation should not inherit from a RawIOBase\nimplementation, but wrap one.\n",
+      "Documentation": "The most base type",
       "Bases": [
         "t:_io:_BufferedIOBase",
         "t:io:IOBase",
@@ -1175,7 +1094,7 @@
       }
     },
     {
-      "Documentation": "Base class for text I/O.\n\nThis class provides a character and line based interface to stream\nI/O. There is no readinto method because Python's character strings\nare immutable. There is no public constructor.\n",
+      "Documentation": "The most base type",
       "Bases": [
         "t:_io:_TextIOBase",
         "t:io:IOBase",
@@ -1448,6 +1367,2170 @@
       "InnerClasses": [],
       "Id": 1009041769,
       "Name": "UnsupportedOperation",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Open a file.\n\nThe mode can be 'r' (default), 'w', 'x' or 'a' for reading,\nwriting, exclusive creation or appending.  The file will be created if it\ndoesn't exist when opened for writing or appending; it will be truncated\nwhen opened for writing.  A FileExistsError will be raised if it already\nexists when opened for creating. Opening a file for creating implies\nwriting so this mode behaves in a similar way to 'w'.Add a '+' to the mode\nto allow simultaneous reading and writing. A custom opener can be used by\npassing a callable as *opener*. The underlying file descriptor for the file\nobject is then obtained by calling opener with (*name*, *flags*).\n*opener* must return an open file descriptor (passing os.open as *opener*\nresults in functionality similar to passing None).",
+      "Bases": [
+        "t:io:RawIOBase",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:FileIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "name",
+                  "Type": "t:typing:Union[str, bytes, int]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "mode",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "closefd",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "opener",
+                  "Type": null,
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:str",
+          "Id": 24598074,
+          "Name": "mode",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Union[int, str]",
+          "Id": 24614690,
+          "Name": "name",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1042075289,
+      "Name": "FileIO",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Buffered I/O implementation using an in-memory bytes buffer.",
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "initial_bytes",
+                  "Type": "t:bytes",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -919396110,
+          "Name": "getvalue",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:memoryview"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1009186015,
+          "Name": "getbuffer",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list_iterator"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 971292143,
+          "Name": "__iter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1101153034,
+          "Name": "__next__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:io:BytesIO"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 631946913,
+          "Name": "__enter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "t",
+                  "Type": "t:typing:Type[BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": "t:BaseException",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "traceback",
+                  "Type": "t:types:TracebackType",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 860590709,
+          "Name": "__exit__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1958209300,
+          "Name": "fileno",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 756003149,
+          "Name": "flush",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 2053018873,
+          "Name": "isatty",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 511061255,
+          "Name": "readable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "hint",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:List[bytes]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1326600974,
+          "Name": "readlines",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "offset",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "whence",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24767247,
+          "Name": "seek",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1920114455,
+          "Name": "seekable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24797256,
+          "Name": "tell",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1063762307,
+          "Name": "truncate",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -468366153,
+          "Name": "writable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lines",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 995367383,
+          "Name": "writelines",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 511395745,
+          "Name": "readline",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1636294316,
+          "Name": "__del__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:io:RawIOBase"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1897491050,
+          "Name": "detach",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytearray, mmap:mmap]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 511311373,
+          "Name": "readinto",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytes, bytearray]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 771870248,
+          "Name": "write",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytearray, mmap:mmap]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1329216572,
+          "Name": "readinto1",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24737325,
+          "Name": "read",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BytesIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 766857124,
+          "Name": "read1",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:typing:Any",
+          "Id": 24614690,
+          "Name": "name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": 1875194947,
+          "Name": "closed",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -844956998,
+      "Name": "BytesIO",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Character and line based layer over a BufferedIOBase object, buffer.\n\nencoding gives the name of the encoding that the stream will be\ndecoded or encoded with. It defaults to locale.getpreferredencoding(False).\n\nerrors determines the strictness of encoding and decoding (see\nhelp(codecs.Codec) or the documentation for codecs.register) and\ndefaults to \"strict\".\n\nnewline controls how line endings are handled. It can be None, '',\n'\\n', '\\r', and '\\r\\n'.  It works as follows:\n\n* On input, if newline is None, universal newlines mode is\n  enabled. Lines in the input can end in '\\n', '\\r', or '\\r\\n', and\n  these are translated into '\\n' before being returned to the\n  caller. If it is '', universal newline mode is enabled, but line\n  endings are returned to the caller untranslated. If it has any of\n  the other legal values, input lines are only terminated by the given\n  string, and the line ending is returned to the caller untranslated.\n\n* On output, if newline is None, any '\\n' characters written are\n  translated to the system default line separator, os.linesep. If\n  newline is '' or '\\n', no translation takes place. If newline is any\n  of the other legal values, any '\\n' characters written are translated\n  to the given string.\n\nIf line_buffering is True, a call to flush is implied when a call to\nwrite contains a newline character.",
+      "Bases": [
+        "t:io:TextIOWrapper",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:StringIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "initial_value",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "newline",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:StringIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -919396110,
+          "Name": "getvalue",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:StringIO",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:io:StringIO"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 631946913,
+          "Name": "__enter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:typing:Any",
+          "Id": 24614690,
+          "Name": "name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": -411012882,
+          "Name": "line_buffering",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": 1875194947,
+          "Name": "closed",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1205524886,
+          "Name": "encoding",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 1938080322,
+          "Name": "errors",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Union[str, typing:Tuple[str], __NoneType__]",
+          "Id": -1527733642,
+          "Name": "newlines",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -1057094098,
+      "Name": "StringIO",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Create a new buffered reader using the given readable raw IO object.",
+      "Bases": [
+        "t:io:BufferedIOBase",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedReader",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "raw",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "buffer_size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedReader",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bytes"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24677874,
+          "Name": "peek",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1385220729,
+      "Name": "BufferedReader",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "A buffer for a writeable sequential RawIO object.\n\nThe constructor creates a BufferedWriter for the given writeable raw\nstream. If the buffer_size is not given, it defaults to\nDEFAULT_BUFFER_SIZE.",
+      "Bases": [
+        "t:io:BufferedIOBase",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedWriter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "raw",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "buffer_size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedWriter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 756003149,
+          "Name": "flush",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedWriter",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "b",
+                  "Type": "t:typing:Union[bytes, bytearray]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 771870248,
+          "Name": "write",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1540625961,
+      "Name": "BufferedWriter",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "A buffered reader and writer object together.\n\nA buffered reader object and buffered writer object put together to\nform a sequential IO object that can read and write. This is typically\nused with a socket or two-way pipe.\n\nreader and writer are RawIOBase objects that are readable and\nwriteable respectively. If the buffer_size is omitted it defaults to\nDEFAULT_BUFFER_SIZE.",
+      "Bases": [
+        "t:io:BufferedIOBase",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedRWPair",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "reader",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "writer",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "buffer_size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1371782229,
+      "Name": "BufferedRWPair",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Create a new buffered reader using the given readable raw IO object.",
+      "Bases": [
+        "t:io:BufferedReader",
+        "t:io:BufferedWriter",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedRandom",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "raw",
+                  "Type": "t:io:RawIOBase",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "buffer_size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedRandom",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "offset",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "whence",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24767247,
+          "Name": "seek",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:BufferedRandom",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24797256,
+          "Name": "tell",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1381914233,
+      "Name": "BufferedRandom",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Codec used when reading a file in universal newlines mode.\n\nIt wraps another incremental decoder, translating \\r\\n and \\r into \\n.\nIt also records the types of newlines encountered.  When used with\ntranslate=False, it ensures that the newline sequence is returned in\none piece. When used with decoder=None, it expects unicode strings as\ndecode input and translates newlines without first invoking an external\ndecoder.",
+      "Bases": [
+        "t:codecs:IncrementalDecoder",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:IncrementalNewlineDecoder",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "input",
+                  "Type": "t:bytes",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "final",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1896998085,
+          "Name": "decode",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:str",
+          "Id": 1938080322,
+          "Name": "errors",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -796597709,
+      "Name": "IncrementalNewlineDecoder",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": "Character and line based layer over a BufferedIOBase object, buffer.\n\nencoding gives the name of the encoding that the stream will be\ndecoded or encoded with. It defaults to locale.getpreferredencoding(False).\n\nerrors determines the strictness of encoding and decoding (see\nhelp(codecs.Codec) or the documentation for codecs.register) and\ndefaults to \"strict\".\n\nnewline controls how line endings are handled. It can be None, '',\n'\\n', '\\r', and '\\r\\n'.  It works as follows:\n\n* On input, if newline is None, universal newlines mode is\n  enabled. Lines in the input can end in '\\n', '\\r', or '\\r\\n', and\n  these are translated into '\\n' before being returned to the\n  caller. If it is '', universal newline mode is enabled, but line\n  endings are returned to the caller untranslated. If it has any of\n  the other legal values, input lines are only terminated by the given\n  string, and the line ending is returned to the caller untranslated.\n\n* On output, if newline is None, any '\\n' characters written are\n  translated to the system default line separator, os.linesep. If\n  newline is '' or '\\n', no translation takes place. If newline is any\n  of the other legal values, any '\\n' characters written are translated\n  to the given string.\n\nIf line_buffering is True, a call to flush is implied when a call to\nwrite contains a newline character.",
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "buffer",
+                  "Type": null,
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "encoding",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "errors",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "newline",
+                  "Type": "t:str",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "line_buffering",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "write_through",
+                  "Type": "t:bool",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "t",
+                  "Type": "t:typing:Type[BaseException]",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "value",
+                  "Type": "t:BaseException",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "traceback",
+                  "Type": "t:types:TracebackType",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 860590709,
+          "Name": "__exit__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1958209300,
+          "Name": "fileno",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 756003149,
+          "Name": "flush",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 2053018873,
+          "Name": "isatty",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 511061255,
+          "Name": "readable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "hint",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:List[str]"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1326600974,
+          "Name": "readlines",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1920114455,
+          "Name": "seekable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1063762307,
+          "Name": "truncate",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:bool"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -468366153,
+          "Name": "writable",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "lines",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 995367383,
+          "Name": "writelines",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1636294316,
+          "Name": "__del__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:list_iterator"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 971292143,
+          "Name": "__iter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1101153034,
+          "Name": "__next__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 631946913,
+          "Name": "__enter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:io:IOBase"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1897491050,
+          "Name": "detach",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "s",
+                  "Type": "t:str",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 771870248,
+          "Name": "write",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 511395745,
+          "Name": "readline",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "size",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:str"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24737325,
+          "Name": "read",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "offset",
+                  "Type": "t:int",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "whence",
+                  "Type": "t:int",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24767247,
+          "Name": "seek",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:io:TextIOWrapper",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:int"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24797256,
+          "Name": "tell",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:bool",
+          "Id": -411012882,
+          "Name": "line_buffering",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": 1875194947,
+          "Name": "closed",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1205524886,
+          "Name": "encoding",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 1938080322,
+          "Name": "errors",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Union[str, typing:Tuple[str], __NoneType__]",
+          "Id": -1527733642,
+          "Name": "newlines",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 734996265,
+      "Name": "TextIOWrapper",
       "IndexSpan": {
         "Start": 0,
         "Length": 0

@@ -1344,7 +1344,7 @@
       }
     },
     {
-      "Value": "i:typing:Union[threading:_RLock, NoneType]",
+      "Value": "i:threading:_RLock",
       "Id": 749532243,
       "Name": "_lock",
       "IndexSpan": {
@@ -1655,19 +1655,19 @@
           }
         },
         {
-          "Value": null,
+          "Value": "i:str",
           "Id": 24614690,
           "Name": "name",
           "IndexSpan": null
         },
         {
-          "Value": null,
+          "Value": "i:str",
           "Id": 793610,
           "Name": "msg",
           "IndexSpan": null
         },
         {
-          "Value": null,
+          "Value": "i:typing:Union[typing:Tuple[typing:Any, ellipsis], typing:Dict[str, typing:Any]]",
           "Id": 24243572,
           "Name": "args",
           "IndexSpan": null
@@ -1679,13 +1679,13 @@
           "IndexSpan": null
         },
         {
-          "Value": null,
+          "Value": "i:int",
           "Id": 1499717710,
           "Name": "levelno",
           "IndexSpan": null
         },
         {
-          "Value": null,
+          "Value": "i:str",
           "Id": -1681572537,
           "Name": "pathname",
           "IndexSpan": null
@@ -1697,7 +1697,7 @@
           "IndexSpan": null
         },
         {
-          "Value": null,
+          "Value": "i:typing:Union[typing:Tuple[type, BaseException, types:TracebackType], typing:Tuple[NoneType, NoneType, NoneType]]",
           "Id": -935045484,
           "Name": "exc_info",
           "IndexSpan": null
@@ -1715,13 +1715,13 @@
           "IndexSpan": null
         },
         {
-          "Value": null,
+          "Value": "i:int",
           "Id": 2130043788,
           "Name": "lineno",
           "IndexSpan": null
         },
         {
-          "Value": null,
+          "Value": "i:str",
           "Id": -1536948090,
           "Name": "funcName",
           "IndexSpan": null
@@ -1766,6 +1766,18 @@
           "Value": "i:int",
           "Id": 1120413304,
           "Name": "process",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 710816967,
+          "Name": "asctime",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1910110192,
+          "Name": "message",
           "IndexSpan": null
         }
       ],
@@ -1891,6 +1903,12 @@
           "Id": -126644192,
           "Name": "asctime_search",
           "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 24172645,
+          "Name": "_fmt",
+          "IndexSpan": null
         }
       ],
       "GenericParameters": null,
@@ -1927,6 +1945,12 @@
           "Value": "i:str",
           "Id": -126644192,
           "Name": "asctime_search",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 24172645,
+          "Name": "_fmt",
           "IndexSpan": null
         }
       ],
@@ -2268,6 +2292,18 @@
           "Value": "i:str",
           "Id": -1140841123,
           "Name": "default_msec_format",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 24172645,
+          "Name": "_fmt",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1421713880,
+          "Name": "datefmt",
           "IndexSpan": null
         }
       ],
@@ -3058,7 +3094,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3191,6 +3227,12 @@
           "IndexSpan": null
         },
         {
+          "Value": "i:int",
+          "Id": 761336269,
+          "Name": "level",
+          "IndexSpan": null
+        },
+        {
           "Value": "i:logging:Formatter",
           "Id": 1586748051,
           "Name": "formatter",
@@ -3226,7 +3268,7 @@
       ],
       "Methods": [
         {
-          "Documentation": "\n        Initialize the handler.\n        ",
+          "Documentation": "\n        Initialize the handler.\n\n        If stream is not specified, sys.stderr is used.\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3288,7 +3330,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3340,12 +3382,6 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:typing:List[logging:Filter]",
-          "Id": 575384580,
-          "Name": "filters",
-          "IndexSpan": null
-        },
-        {
           "Value": "i:property",
           "Id": 24614690,
           "Name": "name",
@@ -3355,6 +3391,18 @@
           "Value": null,
           "Id": 749578675,
           "Name": "_name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 761336269,
+          "Name": "level",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:List[logging:Filter]",
+          "Id": 575384580,
+          "Name": "filters",
           "IndexSpan": null
         }
       ],
@@ -3435,7 +3483,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:_io:TextIOWrapper"
+              "ReturnType": "i:io:TextIOWrapper"
             }
           ],
           "Attributes": 0,
@@ -3449,7 +3497,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -3477,6 +3525,30 @@
       "Properties": [],
       "Fields": [
         {
+          "Value": "i:str",
+          "Id": -562368113,
+          "Name": "baseFilename",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 24598074,
+          "Name": "mode",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1205524886,
+          "Name": "encoding",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": 753938380,
+          "Name": "delay",
+          "IndexSpan": null
+        },
+        {
           "Value": "i:logging:Formatter",
           "Id": 1586748051,
           "Name": "formatter",
@@ -3486,12 +3558,6 @@
           "Value": "i:threading:Lock",
           "Id": 24568258,
           "Name": "lock",
-          "IndexSpan": null
-        },
-        {
-          "Value": "i:typing:List[logging:Filter]",
-          "Id": 575384580,
-          "Name": "filters",
           "IndexSpan": null
         },
         {
@@ -3516,6 +3582,18 @@
           "Value": null,
           "Id": 749578675,
           "Name": "_name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 761336269,
+          "Name": "level",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:List[logging:Filter]",
+          "Id": 575384580,
+          "Name": "filters",
           "IndexSpan": null
         }
       ],
@@ -3562,12 +3640,6 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:typing:List[logging:Filter]",
-          "Id": 575384580,
-          "Name": "filters",
-          "IndexSpan": null
-        },
-        {
           "Value": "i:str",
           "Id": 310976190,
           "Name": "terminator",
@@ -3583,6 +3655,18 @@
           "Value": null,
           "Id": 749578675,
           "Name": "_name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 761336269,
+          "Name": "level",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:List[logging:Filter]",
+          "Id": 575384580,
+          "Name": "filters",
           "IndexSpan": null
         }
       ],
@@ -4930,7 +5014,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -5085,15 +5169,39 @@
           }
         },
         {
+          "Value": "i:str",
+          "Id": 24614690,
+          "Name": "name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 761336269,
+          "Name": "level",
+          "IndexSpan": null
+        },
+        {
           "Value": "i:typing:Union[logging:Logger, logging:PlaceHolder]",
           "Id": -2057675903,
           "Name": "parent",
           "IndexSpan": null
         },
         {
+          "Value": "i:bool",
+          "Id": -951492366,
+          "Name": "propagate",
+          "IndexSpan": null
+        },
+        {
           "Value": "i:typing:List[logging:Handler]",
           "Id": 1380289408,
           "Name": "handlers",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 1649161107,
+          "Name": "disabled",
           "IndexSpan": null
         },
         {
@@ -5179,15 +5287,39 @@
       "Properties": [],
       "Fields": [
         {
+          "Value": "i:str",
+          "Id": 24614690,
+          "Name": "name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 761336269,
+          "Name": "level",
+          "IndexSpan": null
+        },
+        {
           "Value": "i:typing:Union[logging:Logger, logging:PlaceHolder]",
           "Id": -2057675903,
           "Name": "parent",
           "IndexSpan": null
         },
         {
+          "Value": "i:bool",
+          "Id": -951492366,
+          "Name": "propagate",
+          "IndexSpan": null
+        },
+        {
           "Value": "i:typing:List[logging:Handler]",
           "Id": 1380289408,
           "Name": "handlers",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 1649161107,
+          "Name": "disabled",
           "IndexSpan": null
         },
         {
@@ -5967,7 +6099,7 @@
           }
         },
         {
-          "Documentation": "Wrap __repr__() to reveal the real class name and socket\n        address(es).\n        ",
+          "Documentation": "Convert to formal string, for repr().\n\n        >>> tz = timezone.utc\n        >>> repr(tz)\n        'datetime.timezone.utc'\n        >>> tz = timezone(timedelta(hours=-5), 'EST')\n        >>> repr(tz)\n        \"datetime.timezone(datetime.timedelta(-1, 68400), 'EST')\"\n        ",
           "Overloads": [
             {
               "Parameters": [
@@ -6037,12 +6169,6 @@
           "IndexSpan": null
         },
         {
-          "Value": "i:typing:List[logging:Filter]",
-          "Id": 575384580,
-          "Name": "filters",
-          "IndexSpan": null
-        },
-        {
           "Value": "i:property",
           "Id": 24614690,
           "Name": "name",
@@ -6052,6 +6178,18 @@
           "Value": null,
           "Id": 749578675,
           "Name": "_name",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 761336269,
+          "Name": "level",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:List[logging:Filter]",
+          "Id": 575384580,
+          "Name": "filters",
           "IndexSpan": null
         }
       ],
