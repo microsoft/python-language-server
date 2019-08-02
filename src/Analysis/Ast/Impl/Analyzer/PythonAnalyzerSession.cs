@@ -372,12 +372,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
             var mtIsDroppable = false;
 
+            // Don't try to drop builtins; it causes issues elsewhere.
+            // We probably want the builtin module's AST and other info for evaluation.
             switch (document.ModuleType) {
                 case ModuleType.Library:
                 case ModuleType.Stub:
                 case ModuleType.Compiled:
-                //case ModuleType.CompiledBuiltin:
-                //case ModuleType.Builtins:
                     mtIsDroppable = true;
                     break;
             }
