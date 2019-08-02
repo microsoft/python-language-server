@@ -271,7 +271,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             var memberType = member?.GetPythonType();
                             var stubMemberType = stubMember.GetPythonType();
 
-                            if (builtins.Equals(memberType?.DeclaringModule) || builtins.Equals(stubMemberType?.DeclaringModule)) {
+                            if (sourceType.IsBuiltin || stubType.IsBuiltin) {
                                 continue; // Leave builtins alone.
                             }
 

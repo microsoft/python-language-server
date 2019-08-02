@@ -370,7 +370,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
-            var mtIsDroppable = false;
+            var canHaveLibraryAnalysis = false;
 
             // Don't try to drop builtins; it causes issues elsewhere.
             // We probably want the builtin module's AST and other info for evaluation.
@@ -378,14 +378,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case ModuleType.Library:
                 case ModuleType.Stub:
                 case ModuleType.Compiled:
-                    mtIsDroppable = true;
+                    canHaveLibraryAnalysis = true;
                     break;
             }
 
             var createLibraryAnalysis = !isCanceled &&
                 node != null &&
                 !node.HasMissingDependencies &&
-                mtIsDroppable &&
+                canHaveLibraryAnalysis &&
                 !document.IsOpen &&
                 node.HasOnlyWalkedDependencies &&
                 node.IsValidVersion;
