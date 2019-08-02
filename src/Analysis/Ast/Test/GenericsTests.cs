@@ -522,6 +522,23 @@ y = test.get1()
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task GenericSequence() {
+            const string code = @"
+from typing import Typevar, Sequence
+
+T = TypeVar('T')
+
+def first(seq: Sequence[T]) -> T:
+    return seq[0]
+
+s = first('foo')
+n = first([1, 2, 3])
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("s").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("n").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
 
         [TestMethod, Priority(0)]
         public async Task GenericClassHalfFilledParameters() {
@@ -723,6 +740,58 @@ x = c.tmp()
             c.Should().HaveMembers("get", "get1");
 
             analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassTypeVariableOrderGenericBase() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+T = TypeVar('T')
+S = TypeVar('S')
+U = TypeVar('U')
+
+class One(Generic[T]): ...
+class Two(Generic[T]): ...
+
+class First(One[T], Two[S]): 
+    def getT(self) -> T:
+        pass
+
+    def getS(self) -> S:
+        pass
+
+class Second(One[T], Another[S], Generic[S, U, T]): 
+    def getS(self) -> S:
+        pass
+
+    def getU(self) -> U:
+        pass
+
+    def getT(self) -> T:
+        pass
+
+x: First[int, str]
+x = First(1, 'hi')
+x1 = x.getT()
+x2 = x.getS()
+
+y: Second[int, str, Any]
+y = Second(1, 'hi', 2.0)
+y1 = y.getS()
+y2 = y.getU()
+y3 = y.getT()
+
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveMembers("getS", "getT");
+            analysis.Should().HaveVariable("x1").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("x2").Which.Should().HaveType(BuiltinTypeId.Str);
+
+            analysis.Should().HaveVariable("y").Which.Should().HaveMembers("getS", "getU", "getT");
+            analysis.Should().HaveVariable("y1").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y2").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("y3").Which.Should().HaveType(BuiltinTypeId.Float);
         }
 
         [TestMethod, Priority(0)]

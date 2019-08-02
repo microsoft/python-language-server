@@ -41,26 +41,27 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
 
+        /// <summary>
+        /// Gets a list of distinct type parameters looking at Bases and the class itself
+        /// </summary>
         private IGenericTypeDefinition[] GetTypeParameters() {
             var fromBases = new HashSet<IGenericTypeDefinition>();
-            foreach (var b in Bases) {
-                switch (b) {
-                    case IGenericClassParameter g:
-                        if (g.TypeDefinitions != null) {
-                            fromBases.UnionWith(g.TypeDefinitions);
-                        }
-                        break;
-                    // handles both specialized cases and generic class cases (inheriting classes that themselves inherit from Generic[T])
-                    case IGenericType t:
-                        if (t.Parameters != null) {
-                            fromBases.UnionWith(t.Parameters);
-                        }
-                        break;
+            var genericClassParameter = Bases.OfType<IGenericClassParameter>().FirstOrDefault();
+
+            // If Generic[...] is present, ordering of type variables is determined from that
+            if (genericClassParameter != null && genericClassParameter.TypeDefinitions != null) {
+                fromBases.UnionWith(genericClassParameter.TypeDefinitions);
+            } else {
+                // otherwise look at the generic class bases
+                foreach (var gt in Bases.OfType<IGenericType>()) {
+                    if (gt.Parameters != null) {
+                        fromBases.UnionWith(gt.Parameters);
+                    }
                 }
             }
 
             var fromSelf = Parameters;
-            return fromBases.Concat(fromSelf).ToArray();
+            return fromBases.Concat(fromSelf).Distinct().ToArray();
         }
 
         public IPythonType CreateSpecificType(IArgumentSet args) {
@@ -69,7 +70,7 @@ namespace Microsoft.Python.Analysis.Types {
             var genericTypeParameters = GetTypeParameters();
 
             // maps generic type parameter to the specific type for it
-            var genericTypeToSpecificType = genericTypeParameters.Distinct().ToDictionary(gtp => gtp, gtp => gtp as IPythonType);
+            var genericTypeToSpecificType = genericTypeParameters.ToDictionary(gtp => gtp, gtp => gtp as IPythonType);
 
             // new specific python class types
             var newBases = new List<IPythonType>();
