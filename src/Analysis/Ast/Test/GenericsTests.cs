@@ -725,10 +725,51 @@ y = c.get1()
             var c = analysis.Should().HaveVariable("c").Which;
             c.Should().HaveMembers("get", "get1");
 
-            var x = c.GetPythonType().GetMember("get");
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassMultipleTypeVarsDefinedByOneTypeVar() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+T = TypeVar('T')
+K = TypeVar('K')
+
+class A(Generic[T, K]):
+    v: T
+    def __init__(self, v: T):
+        self.v = v
+
+    def getT(self) -> T:
+        return self.v
+
+    def getK(self) -> K:
+        return self.v
+
+class B(A[T, T]):
+    y: T
+    def __init__(self, y: T):
+        self.y = y
+        super().__init__(y)
+
+    def get1(self) -> T:
+        return self.y
+
+c = B(5)
+x = c.getT()
+y = c.getK()
+z = c.get1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Diagnostics.Should().BeEmpty();
+            var c = analysis.Should().HaveVariable("c").Which;
+            c.Should().HaveMembers("getT", "getK", "get1");
 
             analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]

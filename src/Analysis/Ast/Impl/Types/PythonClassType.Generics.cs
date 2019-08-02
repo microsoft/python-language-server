@@ -20,6 +20,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// {T, T}
         /// Where T is a generic type parameter that needs to be filled in by the class
         /// </summary>
+        /// 
+        // should instead return keys where value is generic type definition
         public IReadOnlyList<IGenericTypeDefinition> Parameters => GenericParameters.Values.OfType<IGenericTypeDefinition>().ToList();
 
         public virtual bool IsGeneric {
@@ -67,7 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
             var genericTypeParameters = GetTypeParameters();
 
             // maps generic type parameter to the specific type for it
-            var genericTypeToSpecificType = genericTypeParameters.ToDictionary(gtp => gtp, gtp => gtp as IPythonType);
+            var genericTypeToSpecificType = genericTypeParameters.Distinct().ToDictionary(gtp => gtp, gtp => gtp as IPythonType);
 
             // new specific python class types
             var newBases = new List<IPythonType>();
@@ -144,8 +146,8 @@ namespace Microsoft.Python.Analysis.Types {
                     var type = member.GetPythonType();
                     if (!type.IsUnknown()) {
                         var gtd = gtIndex < genericTypeParameters.Length ? genericTypeParameters[gtIndex] : null;
-                        if (gtd != null && genericTypeToSpecificType.TryGetValue(gtd.Name, out var s) && s is IGenericTypeDefinition) {
-                            genericTypeToSpecificType[gtd.Name] = type;
+                        if (gtd != null && genericTypeToSpecificType.TryGetValue(gtd, out var s) && s is IGenericTypeDefinition) {
+                            genericTypeToSpecificType[gtd] = type;
                         }
                         gtIndex++;
                     }
@@ -224,13 +226,26 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="classType"></param>
         /// <param name="genericParameters"></param> Ordered generic parameters to fill in 
         /// <param name="genericToSpecificTypes"></param> Map between generic parameters to specific types
-        private void StoreGenericParameters(PythonClassType classType, IGenericTypeDefinition[] genericParameters, Dictionary<string, IPythonType> genericToSpecificTypes) {
+        private void StoreGenericParameters(PythonClassType classType, IGenericTypeDefinition[] genericParameters, Dictionary<IGenericTypeDefinition, IPythonType> genericToSpecificTypes) {
             // copy original generic parameters over and try to fill them in
             classType._genericParameters = new Dictionary<IGenericTypeDefinition, IPythonType>(GenericParameters.ToDictionary(k => k.Key, k => k.Value));
 
             for (var i = 0; i < genericParameters.Length; i++) {
                 var gb = genericParameters[i];
                 classType._genericParameters[gb] = genericToSpecificTypes.TryGetValue(gb, out var v) ? v : null;
+            }
+
+            // Handling when a type parameter leads to another type parameter
+            // e.g
+            // T -> E where T and E are defined by TypeVar
+            // class A(Generic[T]): ...
+            // class B(A[E]): ...
+            foreach (var gp in GenericParameters.Keys) {
+                var specificType = GenericParameters[gp] as IGenericTypeDefinition;
+                if (specificType != null) {
+                    // look and see if it was defined 
+                    classType._genericParameters[gp] = genericToSpecificTypes.TryGetValue(specificType, out var v) ? v : null;
+                }
             }
         }
 
@@ -248,28 +263,28 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="gt">Generic type (Generic[T1, T2, ...).</param>
         /// <param name="argumentValue">Argument value passed to the class constructor.</param>
         /// <param name="specificTypes">Dictionary or name (T1) to specific type to populate.</param>
-        private void GetSpecificTypeFromArgumentValue(IGenericType gt, object argumentValue, IDictionary<string, IPythonType> specificTypes) {
+        private void GetSpecificTypeFromArgumentValue(IGenericType gt, object argumentValue, IDictionary<IGenericTypeDefinition, IPythonType> specificTypes) {
             switch (argumentValue) {
                 case IPythonDictionary dict when gt.Parameters.Count == 2:
                     var keyType = dict.Keys.FirstOrDefault()?.GetPythonType();
                     var valueType = dict.Values.FirstOrDefault()?.GetPythonType();
                     if (!keyType.IsUnknown()) {
-                        specificTypes[gt.Parameters[0].Name] = keyType;
+                        specificTypes[gt.Parameters[0]] = keyType;
                     }
                     if (!valueType.IsUnknown()) {
-                        specificTypes[gt.Parameters[1].Name] = valueType;
+                        specificTypes[gt.Parameters[1]] = valueType;
                     }
                     break;
                 case IPythonIterable iter when gt.TypeId == BuiltinTypeId.List && gt.Parameters.Count == 1:
                     var itemType = iter.GetIterator().Next.GetPythonType();
                     if (!itemType.IsUnknown()) {
-                        specificTypes[gt.Parameters[0].Name] = itemType;
+                        specificTypes[gt.Parameters[0]] = itemType;
                     }
                     break;
                 case IPythonCollection coll when gt.TypeId == BuiltinTypeId.Tuple && gt.Parameters.Count >= 1:
                     var itemTypes = coll.Contents.Select(m => m.GetPythonType()).ToArray();
                     for (var i = 0; i < Math.Min(itemTypes.Length, gt.Parameters.Count); i++) {
-                        specificTypes[gt.Parameters[i].Name] = itemTypes[i];
+                        specificTypes[gt.Parameters[i]] = itemTypes[i];
                     }
                     break;
             }
@@ -307,7 +322,7 @@ namespace Microsoft.Python.Analysis.Types {
                                     specificType = tt.CreateSpecificType(args);
                                     break;
                                 case IGenericTypeDefinition gtd:
-                                    classType.GenericParameters.TryGetValue(gtd.Name, out specificType);
+                                    classType.GenericParameters.TryGetValue(gtd, out specificType);
                                     break;
                             }
 

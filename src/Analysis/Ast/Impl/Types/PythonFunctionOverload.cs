@@ -153,7 +153,7 @@ namespace Microsoft.Python.Analysis.Types {
             // -> A[_T1, _T2, ...]
             // Match arguments
             IReadOnlyList<IPythonType> typeArgs = null;
-            var classGenericParameters = selfClassType?.GenericParameters.Keys.ToArray() ?? Array.Empty<string>();
+            var classGenericParameters = selfClassType?.GenericParameters.Keys.ToArray() ?? Array.Empty<IGenericTypeDefinition>();
             if (classGenericParameters.Length > 0 && selfClassType != null) {
                 // Declaring class is specific and provides definitions of generic parameters
                 typeArgs = classGenericParameters
@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IGenericTypeDefinition returnType) {
-            if (selfClassType.GenericParameters.TryGetValue(returnType.Name, out var specificType)) {
+            if (selfClassType.GenericParameters.TryGetValue(returnType, out var specificType)) {
                 return new PythonInstance(specificType);
             }
 
@@ -181,11 +181,11 @@ namespace Microsoft.Python.Analysis.Types {
             var baseType = selfClassType.Mro
                 .OfType<IPythonClassType>()
                 .Skip(1)
-                .Where(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType.Name))
+                .Where(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType))
                 .FirstOrDefault();
 
             // Try and infer return value from base class
-            if (baseType != null && baseType.GenericParameters.TryGetValue(returnType.Name, out specificType)) {
+            if (baseType != null && baseType.GenericParameters.TryGetValue(returnType, out specificType)) {
                 return new PythonInstance(specificType);
             }
 

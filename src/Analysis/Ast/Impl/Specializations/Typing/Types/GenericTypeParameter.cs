@@ -106,5 +106,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
             return documentation;
         }
+
+        public bool Equals(IGenericTypeDefinition other) {
+            return Name.Equals(other.Name);
+        }
     }
 }
