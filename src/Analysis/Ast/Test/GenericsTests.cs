@@ -522,6 +522,43 @@ y = test.get1()
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassHalfFilledParameters() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+T = TypeVar('T')
+U = TypeVar('U')
+
+class A(Generic[T, U]):
+    a: U
+
+    def get(self) -> U:
+        return self.a
+
+    def get1(self) -> T:
+        return self.a
+
+
+class B(A[T, int], Generic[T]):
+    b: T
+
+    def get2(self) -> T:
+        return self.b
+
+
+b = B('a')
+x = b.get()
+y = b.get1()
+z = b.get2()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
         [TestMethod, Priority(0)]
         public async Task GenericClassRegularBase() {
             const string code = @"
