@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
@@ -225,7 +224,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) 
+        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed)
             => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
@@ -248,7 +247,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 session.Start(true);
             }
         }
-        
+
         private bool TryCreateSession(in int graphVersion, in PythonAnalyzerEntry entry, out PythonAnalyzerSession session) {
             var analyzeUserModuleOutOfOrder = false;
             lock (_syncObj) {
@@ -283,7 +282,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     session = null;
                     return false;
                 }
-                
+
                 if (_currentSession.IsCompleted) {
                     _currentSession = session = CreateSession(walker, null);
                     return true;
@@ -322,7 +321,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (missingKeys.Count == 0) {
                 return;
             }
-            
+
             var foundKeys = ImmutableArray<AnalysisModuleKey>.Empty;
             foreach (var missingKey in missingKeys) {
                 lock (_syncObj) {

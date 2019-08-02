@@ -15,10 +15,8 @@
 
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
@@ -279,7 +277,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _services.GetService<PythonAnalyzer>().GCNextSession();
 
                 RestartAnalysis();
-                
+
                 if (_watchSearchPaths) {
                     ResetPathWatcher();
                 }

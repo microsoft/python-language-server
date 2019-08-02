@@ -231,7 +231,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node) 
+        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node)
             => !node.HasMissingDependencies && node.Value.IsAnalyzedLibrary(_walker.Version) && node.IsWalkedWithDependencies && node.IsValidVersion;
 
         private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
