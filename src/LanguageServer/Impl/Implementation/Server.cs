@@ -276,19 +276,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             interpreter.TypeshedResolution.ReloadAsync().ContinueWith(async t => {
                 await interpreter.ModuleResolution.ReloadAsync();
 
-                _log?.Log(TraceEventType.Information, Resources.Done);
-                _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
+                _services.GetService<PythonAnalyzer>().GCNextSession();
 
                 RestartAnalysis();
                 
                 if (_watchSearchPaths) {
                     ResetPathWatcher();
                 }
-
-                await Task.Delay(10000);
-
-                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-                GC.Collect();
+                _log?.Log(TraceEventType.Information, Resources.Done);
+                _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
             }).DoNotWait();
 
         }

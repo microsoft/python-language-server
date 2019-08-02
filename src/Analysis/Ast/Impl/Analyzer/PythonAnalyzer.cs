@@ -49,6 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private int _version;
         private PythonAnalyzerSession _currentSession;
         private PythonAnalyzerSession _nextSession;
+        private bool _forceGCOnNextSession;
 
         public PythonAnalyzer(IServiceManager services, string cacheFolderPath = null) {
             _services = services;
@@ -218,6 +219,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
 
+        public void GCNextSession() {
+            lock (_syncObj) {
+                _forceGCOnNextSession = true;
+            }
+        }
+
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) 
             => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
 
@@ -301,8 +308,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             session.Start(false);
         }
 
-        private PythonAnalyzerSession CreateSession(in IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, in PythonAnalyzerEntry entry) 
-            => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry);
+        private PythonAnalyzerSession CreateSession(in IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, in PythonAnalyzerEntry entry) {
+            bool forceGC;
+            lock (_syncObj) {
+                forceGC = _forceGCOnNextSession;
+                _forceGCOnNextSession = false;
+            }
+
+            return new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
+        }
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             if (missingKeys.Count == 0) {
