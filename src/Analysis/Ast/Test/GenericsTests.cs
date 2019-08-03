@@ -973,6 +973,36 @@ y = d[0]
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericClassSelf() {
+            const string code = @"
+from typing import TypeVar
+
+T = TypeVar('T', bound='Shape')
+
+class Shape:
+    def set_scale(self: T, scale: float) -> T:
+        self.scale = scale
+        return self
+
+class Circle(Shape):
+    def set_radius(self, r: float) -> 'Circle':
+        self.radius = r
+        return self
+
+class Square(Shape):
+    def set_width(self, w: float) -> 'Square':
+        self.width = w
+        return self
+
+circle = Circle().set_scale(0.5).set_radius(2.7)  
+square = Square().set_scale(0.5).set_width(3.2)  
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("circle").Which.Should().HaveType("Circle");
+            analysis.Should().HaveVariable("square").Which.Should().HaveType("Square");
+        }
+       
+        [TestMethod, Priority(0)]
         public async Task GenericClassToDifferentTypes() {
             const string code = @"
 from typing import TypeVar, Generic

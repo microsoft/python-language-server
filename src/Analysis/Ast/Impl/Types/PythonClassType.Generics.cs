@@ -242,21 +242,28 @@ namespace Microsoft.Python.Analysis.Types {
             // copy original generic parameters over and try to fill them in
             classType._genericParameters = new Dictionary<IGenericTypeParameter, IPythonType>(GenericParameters.ToDictionary(k => k.Key, k => k.Value));
 
-            for (var i = 0; i < genericParameters.Length; i++) {
-                var gb = genericParameters[i];
-                classType._genericParameters[gb] = genericToSpecificTypes.TryGetValue(gb, out var v) ? v : null;
-            }
-
-            // Handling when a type parameter leads to another type parameter
-            // e.g
-            // T -> E where T and E are defined by TypeVar
-            // class A(Generic[T]): ...
-            // class B(A[E]): ...
-            foreach (var gp in GenericParameters.Keys) {
-                var specificType = GenericParameters[gp] as IGenericTypeParameter;
-                if (specificType != null) {
-                    // look and see if it was defined 
-                    classType._genericParameters[gp] = genericToSpecificTypes.TryGetValue(specificType, out var v) ? v : null;
+            // Case when creating a new specific class type
+            if (Parameters.Count == 0) {
+                // Assign class type generic type parameters to specific types 
+                for (var i = 0; i < genericParameters.Length; i++) {
+                    var gb = genericParameters[i];
+                    classType._genericParameters[gb] = genericToSpecificTypes.TryGetValue(gb, out var v) ? v : null;
+                }
+            } else {
+                // When Parameters field is not empty then need to update generic parameters field
+                foreach (var gp in GenericParameters.Keys) {
+                    // Handling when a type parameter leads to another type parameter as well as if a type parameter is unfilled
+                    // e.g
+                    // T -> E where T and E are defined by TypeVar
+                    // class A(Generic[T]): ...
+                    // class B(A[E]): ...
+                    // Also
+                    // T -> T
+                    // class A(Generic[T]): ...
+                    // class B(A[T]): ...
+                    if (GenericParameters[gp] is IGenericTypeParameter specificType) {
+                        classType._genericParameters[gp] = genericToSpecificTypes.TryGetValue(specificType, out var v) ? v : null;
+                    }
                 }
             }
         }
