@@ -190,8 +190,8 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public IReadOnlyDictionary<IGenericTypeDefinition, IPythonType> GenericParameters
-            => _genericParameters ?? EmptyDictionary<IGenericTypeDefinition, IPythonType>.Instance;
+        public IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
+            => _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 
         #endregion
 

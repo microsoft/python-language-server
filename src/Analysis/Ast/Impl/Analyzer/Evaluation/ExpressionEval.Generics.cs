@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// <summary>
         /// Returns whether the arguments to Generic are valid
         /// </summary>
-        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeDefinition> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
+        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeParameter> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
             // All arguments to Generic must be type parameters
             // e.g. Generic[T, str] throws a runtime error
             if (genericTypeArgs.Count != args.Count) {
@@ -111,7 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// (if the former) on specific type (if the latter).
         /// </summary>
         private IMember CreateSpecificTypeFromIndex(IPythonTemplateType tt, IReadOnlyList<IMember> args, Expression expr) {
-            var genericTypeArgs = args.OfType<IGenericTypeDefinition>().ToArray();
+            var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
 
             if (tt.Name.EqualsOrdinal("Generic")) {
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {

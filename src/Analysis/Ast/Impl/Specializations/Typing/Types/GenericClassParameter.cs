@@ -21,17 +21,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
     /// Represents Generic[T1, T2, ...] parameter. When class is instantiated
     /// or methods evaluated, class generic parameters are matched to
-    /// generic type parameters from TypeVar. <see cref="IGenericTypeDefinition"/>
+    /// generic type parameters from TypeVar. <see cref="IGenericTypeParameter"/>
     /// </summary>
     internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
-        internal GenericClassParameter(IReadOnlyList<IGenericTypeDefinition> typeArgs, IPythonModule declaringModule, string name= "GenericParameter")
+        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule, string name= "GenericParameter")
         : base(name, new Location(declaringModule)) {
             TypeDefinitions = typeArgs;
         }
 
         public override bool IsGeneric => true;
 
-        public IReadOnlyList<IGenericTypeDefinition> TypeDefinitions { get; }
+        public IReadOnlyList<IGenericTypeParameter> TypeDefinitions { get; }
 
         public override PythonMemberType MemberType => PythonMemberType.Generic;
     }

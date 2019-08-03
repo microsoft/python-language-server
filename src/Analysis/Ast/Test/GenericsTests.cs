@@ -523,7 +523,7 @@ y = test.get1()
         }
 
         [TestMethod, Priority(0)]
-        public async Task GenericSequence() {
+        public async Task GenericFunctionSequence() {
             const string code = @"
 from typing import Typevar, Sequence
 
@@ -539,6 +539,34 @@ n = first([1, 2, 3])
             analysis.Should().HaveVariable("s").Which.Should().HaveType(BuiltinTypeId.Str);
             analysis.Should().HaveVariable("n").Which.Should().HaveType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericMultipleFunctionSequenceSameTypeVariable() {
+            const string code = @"
+from typing import Typevar, Sequence
+
+T = TypeVar('T')
+
+def first(seq: Sequence[T]) -> T:
+    return seq[0]
+
+def last(seq: Sequence[T]) -> T:
+    return seq[-1]
+
+s = first('foo')
+n = first([1, 2, 3])
+
+s_last = last('foo')
+n_last = last([1, 2, 3])
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("s").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("n").Which.Should().HaveType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("s_last").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("n_last").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task GenericClassHalfFilledParameters() {

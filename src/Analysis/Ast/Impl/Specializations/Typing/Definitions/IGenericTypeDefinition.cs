@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
     /// Represents generic type definition. Typically value returned by TypeVar.
     /// </summary>
-    public interface IGenericTypeDefinition: IPythonType, IEquatable<IGenericTypeDefinition> {
+    public interface IGenericTypeParameter: IPythonType, IEquatable<IGenericTypeParameter> {
         /// <summary>
         /// List of constraints for the type.
         /// </summary>

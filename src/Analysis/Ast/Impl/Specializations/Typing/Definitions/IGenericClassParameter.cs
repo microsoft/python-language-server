@@ -21,6 +21,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// Represents Generic[T1, T2, ...]. Used as a base class to generic classes.
     /// </summary>
     public interface IGenericClassParameter: IPythonType {
-        IReadOnlyList<IGenericTypeDefinition> TypeDefinitions { get; }
+        IReadOnlyList<IGenericTypeParameter> TypeDefinitions { get; }
     }
 }

@@ -41,6 +41,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// If class is created off generic template, represents
         /// pairs of the generic parameter / actual supplied type.
         /// </summary>
-        IReadOnlyDictionary<IGenericTypeDefinition, IPythonType> GenericParameters { get; }
+        IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters { get; }
     }
 }
