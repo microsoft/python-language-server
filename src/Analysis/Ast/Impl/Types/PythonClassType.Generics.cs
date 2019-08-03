@@ -51,8 +51,8 @@ namespace Microsoft.Python.Analysis.Types {
             var genericClassParameter = Bases.OfType<IGenericClassParameter>().FirstOrDefault();
 
             // If Generic[...] is present, ordering of type variables is determined from that
-            if (genericClassParameter != null && genericClassParameter.TypeDefinitions != null) {
-                fromBases.UnionWith(genericClassParameter.TypeDefinitions);
+            if (genericClassParameter != null && genericClassParameter.TypeParameters != null) {
+                fromBases.UnionWith(genericClassParameter.TypeParameters);
             } else {
                 // otherwise look at the generic class bases
                 foreach (var gt in Bases.OfType<IGenericType>()) {
@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Given an argument set, returns a dictionary mapping generic type parameter to the supplied specific 
         /// type from arguments. 
         /// </summary>
-        private Dictionary<IGenericTypeParameter, IPythonType> GetSpecificTypes(IArgumentSet args,
+        private IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GetSpecificTypes(IArgumentSet args,
             IGenericTypeParameter[] genericTypeParameters,
             List<IPythonType> newBases) {
 
@@ -115,7 +115,7 @@ namespace Microsoft.Python.Analysis.Types {
                     // and see if any matches the builtin type id. For example, Mapping or Dict
                     // will have BultinTypeId.Dict and we can figure out specific types from
                     // the content of the collection.
-                    var b = _bases.OfType<IGenericType>().Where(g => g.Parameters.Count > 0).FirstOrDefault(x => x.TypeId == type.TypeId);
+                    var b = _bases.OfType<IGenericType>().Where(g => g.IsGeneric).FirstOrDefault(x => x.TypeId == type.TypeId);
                     if (b != null && b.Parameters.Count > 0) {
                         newBases.Add(type);
                         // Optimistically assign argument types if they match.
@@ -175,7 +175,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             PythonClassType classType = new PythonClassType(_name, new Location(DeclaringModule));
             // Storing generic parameters allows methods returning generic types 
-            // to know what generic type parameter returns what specific type
+            // to know what type parameter returns what specific type
             StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
 
             // Store generic parameters first so name updates correctly, then check if class type has been cached
@@ -238,7 +238,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Points the generic type parameter in class type to their corresponding specific type (or a generic
         /// type parameter if no specific type was provided)
         /// </summary>
-        private void StoreGenericParameters(PythonClassType classType, IGenericTypeParameter[] genericParameters, Dictionary<IGenericTypeParameter, IPythonType> genericToSpecificTypes) {
+        private void StoreGenericParameters(PythonClassType classType, IGenericTypeParameter[] genericParameters, IReadOnlyDictionary<IGenericTypeParameter, IPythonType> genericToSpecificTypes) {
             // copy original generic parameters over and try to fill them in
             classType._genericParameters = new Dictionary<IGenericTypeParameter, IPythonType>(GenericParameters.ToDictionary(k => k.Key, k => k.Value));
 
@@ -252,16 +252,13 @@ namespace Microsoft.Python.Analysis.Types {
             } else {
                 // When Parameters field is not empty then need to update generic parameters field
                 foreach (var gp in GenericParameters.Keys) {
-                    // Handling when a type parameter leads to another type parameter as well as if a type parameter is unfilled
-                    // e.g
-                    // T -> E where T and E are defined by TypeVar
-                    // class A(Generic[T]): ...
-                    // class B(A[E]): ...
-                    // Also
-                    // T -> T
-                    // class A(Generic[T]): ...
-                    // class B(A[T]): ...
                     if (GenericParameters[gp] is IGenericTypeParameter specificType) {
+                        // Get unfilled type parameter or type parameter that was filled with another type parameter
+                        // and try to fill it in
+                        // e.g 
+                        // class A(Generic[T]):
+                        // class B(A[U])
+                        // A has T => U
                         classType._genericParameters[gp] = genericToSpecificTypes.TryGetValue(specificType, out var v) ? v : null;
                     }
                 }
@@ -279,7 +276,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// the instance of the dictionary so concrete class type can be created with
         /// the specific type arguments.
         /// </remarks>
-        /// <param name="gt">Generic type (Generic[T1, T2, ...).</param>
+        /// <param name="gt">Generic type (Generic[T1, T2, ...], A[T1, T2, ..], etc.).</param>
         /// <param name="argumentValue">Argument value passed to the class constructor.</param>
         /// <param name="specificTypes">Dictionary or name (T1) to specific type to populate.</param>
         private void GetSpecificTypeFromArgumentValue(IGenericType gt, object argumentValue, IDictionary<IGenericTypeParameter, IPythonType> specificTypes) {

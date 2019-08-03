@@ -15,7 +15,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
@@ -24,14 +27,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// generic type parameters from TypeVar. <see cref="IGenericTypeParameter"/>
     /// </summary>
     internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
-        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule, string name= "GenericParameter")
-        : base(name, new Location(declaringModule)) {
-            TypeDefinitions = typeArgs;
+        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule)
+        : base("Generic", new Location(declaringModule)) {
+            TypeParameters = typeArgs;
         }
 
         public override bool IsGeneric => true;
 
-        public IReadOnlyList<IGenericTypeParameter> TypeDefinitions { get; }
+        public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
+            => TypeParameters?.ToDictionary(tp => tp, tp => tp as IPythonType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+
+        public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
 
         public override PythonMemberType MemberType => PythonMemberType.Generic;
     }

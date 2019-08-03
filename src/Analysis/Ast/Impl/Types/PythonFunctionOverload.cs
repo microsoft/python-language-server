@@ -177,19 +177,16 @@ namespace Microsoft.Python.Analysis.Types {
                 return new PythonInstance(specificType);
             }
 
-            // Find base class type in which function was declared
+            // Find first base class type in which function was declared
             var baseType = selfClassType.Mro
                 .OfType<IPythonClassType>()
                 .Skip(1)
-                .Where(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType))
-                .FirstOrDefault();
+                .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType));
 
             // Try and infer return value from base class
             if (baseType != null && baseType.GenericParameters.TryGetValue(returnType, out specificType)) {
                 return new PythonInstance(specificType);
             }
-
-            // look at function declaring type and select from selfClassType.bases where first matches 
 
             // Try returning the constraint
             // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T

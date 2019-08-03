@@ -49,27 +49,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         // Generic[T1, T2, ...]
                         var indices = EvaluateIndex(indexExpr);
                         return CreateSpecificTypeFromIndex(gt, indices, expr);
-                    case IndexExpression indexExpr when target is PythonClassType c1:
-                        if(!c1.IsGeneric()) {
-                            break;
-                        }
-
-                        indices = EvaluateIndex(indexExpr);
-                        // Handle case
-                        //  class A(Generic[T, Y, Z]): ...
-                        //  A[str, int, float] returns a type instead of being unknown
-                        //  For case A[T, int, Z] resolve later
-                        //if(indices.OfType<GenericTypeParameter>().Any()) {
-                            //return c1;
-                        //}
-
-                        return CreateSpecificTypeFromIndex(c1, indices, expr);
-                    case CallExpression callExpr when target is PythonClassType c2:
+                    case CallExpression callExpr when target is PythonClassType c1:
                         // Alternative instantiation:
                         //  class A(Generic[T]): ...
                         //  x = A(1234)
                         var arguments = EvaluateCallArgs(callExpr).ToArray();
-                        return CreateClassInstance(c2, arguments, callExpr);
+                        return CreateClassInstance(c1, arguments, callExpr);
                 }
             }
             return null;
@@ -106,14 +91,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         /// <summary>
-        /// Given template type and list of arguments in the expression like
-        /// Generic[T1, T2, ...] or List[str] or Mapping[str, int] where Mapping inherits from Generic[K,T] creates generic class base
+        /// Given generic type and list of arguments in the expression like
+        /// Mapping[T1, int, ...] or Mapping[str, int] where Mapping inherits from Generic[K,T] creates generic class base
         /// (if the former) on specific type (if the latter).
         /// </summary>
-        private IMember CreateSpecificTypeFromIndex(IPythonTemplateType tt, IReadOnlyList<IMember> args, Expression expr) {
+        private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr) {
             var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
 
-            if (tt.Name.EqualsOrdinal("Generic")) {
+            if (gt.Name.EqualsOrdinal("Generic")) {
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
                     return UnknownType;
                 }
@@ -124,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // For other types just use supplied arguments
             if (args.Count > 0) {
-                return tt.CreateSpecificType(new ArgumentSet(args, expr, this));
+                return gt.CreateSpecificType(new ArgumentSet(args, expr, this));
             }
 
             return UnknownType;

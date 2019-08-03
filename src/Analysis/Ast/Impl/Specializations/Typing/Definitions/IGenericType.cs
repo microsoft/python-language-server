@@ -28,9 +28,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// </summary>
         IReadOnlyList<IGenericTypeParameter> Parameters { get; }
 
-        /// <summary>
-        /// Returns whether the type is generic or not
-        /// </summary>
         bool IsGeneric { get; }
     }
 }
