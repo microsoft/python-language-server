@@ -193,7 +193,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             definingMember = null;
 
             var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
-            if (m == null || !(scope.Variables[name] is IVariable v)) {
+            if (m == null || scope.Module.ModuleType == ModuleType.Builtins || !(scope.Variables[name] is IVariable v)) {
                 return null;
             }
 
@@ -283,7 +283,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private static bool CanNavigateToModule(IPythonModule m)
-            => m?.ModuleType == ModuleType.Stub ||
+            => m?.ModuleType == ModuleType.User ||
+               m?.ModuleType == ModuleType.Stub ||
                m?.ModuleType == ModuleType.Package ||
                m?.ModuleType == ModuleType.Library ||
                m?.ModuleType == ModuleType.Specialized;
