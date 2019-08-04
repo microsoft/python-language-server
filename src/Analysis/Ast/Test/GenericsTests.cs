@@ -419,6 +419,25 @@ x = next(ia);
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
+        // TODO handle when can make Union type generic, at the moment defining a h = Union[T,str]
+        // and trying to make it specific h[int] doesn't work
+        /// <returns></returns>
+        [Ignore, TestMethod, Priority(0)]
+        public async Task GenericUnionTypeAlias() {
+            const string code = @"
+from typing import TypeVar, Union, 
+S = TypeVar('S')
+UInt = Union[S, int]
+def response(query: str) -> UInt[str]:  
+    return UInt[str]
+
+x = response('test')
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").Which
+                .Should().HaveType("Union[str, int]");
+        }
+
         [TestMethod, Priority(0)]
         public async Task GenericTypeInstance() {
             const string code = @"
@@ -644,15 +663,24 @@ class Box(Generic[_T], List[_T]):
 boxed = Box(1)
 x = boxed.get()
 y = boxed[0]
+
+boxed_int = Box[int](1)
+z = boxed_int[0]
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
 
             var boxed = analysis.Should().HaveVariable("boxed").Which;
             boxed.Should().HaveMembers("append", "index");
             boxed.Should().NotHaveMember("bit_length");
 
+            var boxedInt = analysis.Should().HaveVariable("boxed_int").Which;
+            boxedInt.Should().HaveMembers("append", "index");
+            boxedInt.Should().NotHaveMember("bit_length");
+
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]
@@ -727,6 +755,24 @@ x = c.tmp()
             c.Should().HaveMembers("get");
 
             analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NonGenericClassSubclassDict() {
+            const string code = @"
+from typing import Dict
+
+class StrDict(Dict[str, str]):  # Non-generic subclass 
+    def __str__(self) -> str:
+        return 'StrDict({})'.format(super().__str__())
+
+d: StrDict[int, int]  # StrDict is not generic, so should not update methods
+d = StrDict()
+h = d['t']
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("d").Which.Should().HaveType("StrDict");
+            analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
@@ -1001,7 +1047,7 @@ square = Square().set_scale(0.5).set_width(3.2)
             analysis.Should().HaveVariable("circle").Which.Should().HaveType("Circle");
             analysis.Should().HaveVariable("square").Which.Should().HaveType("Square");
         }
-       
+
         [TestMethod, Priority(0)]
         public async Task GenericClassToDifferentTypes() {
             const string code = @"

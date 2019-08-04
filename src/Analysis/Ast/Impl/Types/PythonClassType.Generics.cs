@@ -21,7 +21,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// {T, T}
         /// Where T is a generic type parameter that needs to be filled in by the class
         /// </summary>
-        public IReadOnlyList<IGenericTypeParameter> Parameters => GenericParameters.Values.OfType<IGenericTypeParameter>().ToList();
+        public virtual IReadOnlyList<IGenericTypeParameter> Parameters => GenericParameters.Values.
+            Distinct().OfType<IGenericTypeParameter>().ToList();
 
         /// <summary>
         /// A Class is generic if it has one or more unfilled generic type parameters or one of its bases is generic
@@ -33,7 +34,7 @@ namespace Microsoft.Python.Analysis.Types {
                 }
 
                 try {
-                    return Parameters.Count > 0 || (Bases?.OfType<IGenericType>().Any(g => g.IsGeneric) ?? false);
+                    return !Parameters.IsNullOrEmpty() || (Bases?.OfType<IGenericType>().Any(g => g.IsGeneric) ?? false);
                 } finally {
                     _genericResolutionGuard.Pop();
                 }
@@ -47,6 +48,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Gets a list of distinct type parameters from bases and the class itself
         /// </summary>
         private IGenericTypeParameter[] GetTypeParameters() {
+            // Case when updating with specific type and already has type parameters, return them
+            if(!Parameters.IsNullOrEmpty()) {
+                return Parameters.ToArray();
+            }
+
             var fromBases = new HashSet<IGenericTypeParameter>();
             var genericClassParameter = Bases.OfType<IGenericClassParameter>().FirstOrDefault();
 
@@ -62,8 +68,7 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
 
-            var fromSelf = Parameters;
-            return fromBases.Concat(fromSelf).Distinct().ToArray();
+            return fromBases.ToArray();
         }
 
         /// <summary>
@@ -86,7 +91,6 @@ namespace Microsoft.Python.Analysis.Types {
                 // The argument may either match generic type parameter or be a specific type
                 // created off generic type. Consider '__init__(self, v: _T)' and
                 // 'class A(Generic[K, V], Mapping[K, V])'.
-
                 if (arg.Type is IGenericTypeParameter argTypeDefinition) {
                     // Parameter is annotated as generic type definition. 
                     // __init__(self, v: _T), v is annotated as a generic type definition
@@ -116,7 +120,7 @@ namespace Microsoft.Python.Analysis.Types {
                     // will have BultinTypeId.Dict and we can figure out specific types from
                     // the content of the collection.
                     var b = _bases.OfType<IGenericType>().Where(g => g.IsGeneric).FirstOrDefault(x => x.TypeId == type.TypeId);
-                    if (b != null && b.Parameters.Count > 0) {
+                    if (b != null && !b.Parameters.IsNullOrEmpty()) {
                         newBases.Add(type);
                         // Optimistically assign argument types if they match.
                         // Handle common cases directly.
