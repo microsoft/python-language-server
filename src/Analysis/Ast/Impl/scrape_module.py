@@ -797,7 +797,7 @@ class MemberInfo(object):
 
     def _str_from_typename(self, type_name):
         mod_name, sep, name = type_name.rpartition('.')
-        return self.name + ' = ' + safe_module_name(mod_name) + sep + name + '()'
+        return self.name + ' = ' + safe_module_name(mod_name) + sep + name
 
     def _str_from_value(self, v):
         return self.name + ' = ' + repr(v)
