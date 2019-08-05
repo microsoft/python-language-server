@@ -634,5 +634,14 @@ class Test():
             // Test run time: typically ~ 20 sec.
             sw.ElapsedMilliseconds.Should().BeLessThan(60000); 
         }
+
+        [TestMethod, Priority(0)]
+        public async Task IOErrorBase() {
+            const string code = @"
+class A(IOError): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A").Which.Should().HaveBase("OSError");
+        }
     }
 }
