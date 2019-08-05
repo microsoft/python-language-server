@@ -146,7 +146,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// </summary>
         private string FindDatabaseFile(string moduleName, string filePath) {
             var interpreter = _services.GetService<IPythonInterpreter>();
-            var uniqueId = ModuleUniqueId.GetUniqieId(moduleName, filePath, ModuleType.Specialized, _services);
+            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, ModuleType.Specialized, _services);
             if (string.IsNullOrEmpty(uniqueId)) {
                 return null;
             }

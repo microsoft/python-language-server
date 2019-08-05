@@ -25,10 +25,10 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class ModuleUniqueId {
-        public static string GetUniqieId(this IPythonModule module, IServiceContainer services)
-            => GetUniqieId(module.Name, module.FilePath, module.ModuleType, services);
+        public static string GetUniqueId(this IPythonModule module, IServiceContainer services)
+            => GetUniqueId(module.Name, module.FilePath, module.ModuleType, services);
 
-        public static string GetUniqieId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services) {
+        public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services) {
             var interpreter = services.GetService<IPythonInterpreter>();
             var fs = services.GetService<IFileSystem>();
 

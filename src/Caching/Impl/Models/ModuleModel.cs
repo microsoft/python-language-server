@@ -90,7 +90,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
-            var uniqueId = analysis.Document.GetUniqieId(services);
+            var uniqueId = analysis.Document.GetUniqueId(services);
             return new ModuleModel {
                 Id = uniqueId.GetStableHash(),
                 UniqueId = uniqueId,
