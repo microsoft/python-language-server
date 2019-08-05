@@ -31,6 +31,12 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
     internal class PythonClassType : PythonType, IPythonClassType, IPythonTemplateType, IEquatable<IPythonClassType> {
+        internal enum ClassDocumentationSource {
+            Class,
+            Init,
+            Base
+        }
+
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private readonly object _specificTypeLock = new object();
@@ -56,7 +62,6 @@ namespace Microsoft.Python.Analysis.Types {
             Check.ArgumentNotNull(nameof(location), location.Module);
             location.Module.AddAstNode(this, classDefinition);
             DeclaringType = declaringType;
-            _documentation = classDefinition.GetDocumentation();
         }
 
         #region IPythonType
@@ -117,11 +122,14 @@ namespace Microsoft.Python.Analysis.Types {
                 try {
                     // Try doc from the type first (class definition AST node).
                     _documentation = base.Documentation;
+                    DocumentationSource = ClassDocumentationSource.Class;
+
                     if (string.IsNullOrEmpty(_documentation)) {
                         // If not present, try docs __init__. IPythonFunctionType handles
                         // __init__ in a special way so there is no danger of call coming
                         // back here and causing stack overflow.
                         _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                        DocumentationSource = ClassDocumentationSource.Init;
                     }
 
                     if (string.IsNullOrEmpty(_documentation) && Bases != null) {
@@ -129,6 +137,7 @@ namespace Microsoft.Python.Analysis.Types {
                         var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
                         _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
                             ?.Documentation;
+                        DocumentationSource = ClassDocumentationSource.Base;
                     }
                 } finally {
                     Pop();
@@ -191,6 +200,9 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyDictionary<string, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
         #endregion
+
+        internal ClassDocumentationSource DocumentationSource { get; private set; }
+        internal override void SetDocumentation(string documentation) => _documentation = documentation;
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
             if (_bases != null) {

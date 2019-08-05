@@ -1457,7 +1457,7 @@
       }
     },
     {
-      "Documentation": "Use the real uid/gid to test for access to a path.\n\n  path\n    Path to be tested; can be string, bytes, or a path-like object.\n  mode\n    Operating-system mode bitfield.  Can be F_OK to test existence,\n    or the inclusive-OR of R_OK, W_OK, and X_OK.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be relative; path will then be relative to that\n    directory.\n  effective_ids\n    If True, access will use the effective uid/gid instead of\n    the real uid/gid.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    access will examine the symbolic link itself instead of the file\n    the link points to.\n\ndir_fd, effective_ids, and follow_symlinks may not be implemented\n  on your platform.  If they are unavailable, using them will raise a\n  NotImplementedError.\n\nNote that most operations will use the effective uid/gid, therefore this\n  routine can be used in a suid/sgid environment to test if the invoking user\n  has the specified access to the path.",
+      "Documentation": "Use the real uid/gid to test for access to a path.\n\n  path\n    Path to be tested; can be string or bytes\n  mode\n    Operating-system mode bitfield.  Can be F_OK to test existence,\n    or the inclusive-OR of R_OK, W_OK, and X_OK.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be relative; path will then be relative to that\n    directory.\n  effective_ids\n    If True, access will use the effective uid/gid instead of\n    the real uid/gid.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    access will examine the symbolic link itself instead of the file\n    the link points to.\n\ndir_fd, effective_ids, and follow_symlinks may not be implemented\n  on your platform.  If they are unavailable, using them will raise a\n  NotImplementedError.\n\nNote that most operations will use the effective uid/gid, therefore this\n  routine can be used in a suid/sgid environment to test if the invoking user\n  has the specified access to the path.",
       "Overloads": [
         {
           "Parameters": [
@@ -1537,7 +1537,7 @@
       }
     },
     {
-      "Documentation": "Change the access permissions of a file.\n\n  path\n    Path to be modified.  May always be specified as a str, bytes, or a path-like object.\n    On some platforms, path may also be specified as an open file descriptor.\n    If this functionality is unavailable, using it raises an exception.\n  mode\n    Operating-system mode bitfield.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be relative; path will then be relative to that\n    directory.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    chmod will modify the symbolic link itself instead of the file\n    the link points to.\n\nIt is an error to use dir_fd or follow_symlinks when specifying path as\n  an open file descriptor.\ndir_fd and follow_symlinks may not be implemented on your platform.\n  If they are unavailable, using them will raise a NotImplementedError.",
+      "Documentation": "Change the access permissions of a file.\n\n  path\n    Path to be modified.  May always be specified as a str or bytes.\n    On some platforms, path may also be specified as an open file descriptor.\n    If this functionality is unavailable, using it raises an exception.\n  mode\n    Operating-system mode bitfield.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be relative; path will then be relative to that\n    directory.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    chmod will modify the symbolic link itself instead of the file\n    the link points to.\n\nIt is an error to use dir_fd or follow_symlinks when specifying path as\n  an open file descriptor.\ndir_fd and follow_symlinks may not be implemented on your platform.\n  If they are unavailable, using them will raise a NotImplementedError.",
       "Overloads": [
         {
           "Parameters": [
@@ -2213,7 +2213,7 @@
       }
     },
     {
-      "Documentation": "Return a list containing the names of the files in the directory.\n\npath can be specified as either str, bytes, or a path-like object.  If path is bytes,\n  the filenames returned will also be bytes; in all other circumstances\n  the filenames returned will be str.\nIf path is None, uses the path='.'.\nOn some platforms, path may also be specified as an open file descriptor;\\\n  the file descriptor must refer to a directory.\n  If this functionality is unavailable, using it raises NotImplementedError.\n\nThe list is in arbitrary order.  It does not include the special\nentries '.' and '..' even if they are present in the directory.",
+      "Documentation": "Return a list containing the names of the files in the directory.\n\npath can be specified as either str or bytes.  If path is bytes,\n  the filenames returned will also be bytes; in all other circumstances\n  the filenames returned will be str.\nIf path is None, uses the path='.'.\nOn some platforms, path may also be specified as an open file descriptor;\\\n  the file descriptor must refer to a directory.\n  If this functionality is unavailable, using it raises NotImplementedError.\n\nThe list is in arbitrary order.  It does not include the special\nentries '.' and '..' even if they are present in the directory.",
       "Overloads": [
         {
           "Parameters": [
@@ -2726,7 +2726,7 @@
       }
     },
     {
-      "Documentation": "Return an iterator of DirEntry objects for given path.\n\npath can be specified as either str, bytes, or a path-like object.  If path\nis bytes, the names of yielded DirEntry objects will also be bytes; in\nall other circumstances they will be str.\n\nIf path is None, uses the path='.'.",
+      "Documentation": "Return an iterator of DirEntry objects for given path.\n\npath can be specified as either str, bytes or path-like object.  If path\nis bytes, the names of yielded DirEntry objects will also be bytes; in\nall other circumstances they will be str.\n\nIf path is None, uses the path='.'.",
       "Overloads": [
         {
           "Parameters": [],
@@ -2859,7 +2859,7 @@
       }
     },
     {
-      "Documentation": "Perform a stat system call on the given path.\n\n  path\n    Path to be examined; can be string, bytes, a path-like object or\n    open-file-descriptor int.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be a relative string; path will then be relative to\n    that directory.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    stat will examine the symbolic link itself instead of the file\n    the link points to.\n\ndir_fd and follow_symlinks may not be implemented\n  on your platform.  If they are unavailable, using them will raise a\n  NotImplementedError.\n\nIt's an error to use dir_fd or follow_symlinks when specifying path as\n  an open file descriptor.",
+      "Documentation": "Perform a stat system call on the given path.\n\n  path\n    Path to be examined; can be string, bytes, path-like object or\n    open-file-descriptor int.\n  dir_fd\n    If not None, it should be a file descriptor open to a directory,\n    and path should be a relative string; path will then be relative to\n    that directory.\n  follow_symlinks\n    If False, and the last element of the path is a symbolic link,\n    stat will examine the symbolic link itself instead of the file\n    the link points to.\n\ndir_fd and follow_symlinks may not be implemented\n  on your platform.  If they are unavailable, using them will raise a\n  NotImplementedError.\n\nIt's an error to use dir_fd or follow_symlinks when specifying path as\n  an open file descriptor.",
       "Overloads": [
         {
           "Parameters": [
@@ -6234,7 +6234,7 @@
       }
     },
     {
-      "Value": "i:tuple",
+      "Value": "i:typing:Sequence[str]",
       "Id": 1762102560,
       "Name": "_names",
       "IndexSpan": {
@@ -6657,7 +6657,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": 372038356,
       "Name": "supports_dir_fd",
       "IndexSpan": {
@@ -6666,7 +6666,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": -2143478148,
       "Name": "supports_effective_ids",
       "IndexSpan": {
@@ -6675,7 +6675,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": 1118540770,
       "Name": "supports_fd",
       "IndexSpan": {
@@ -6684,7 +6684,7 @@
       }
     },
     {
-      "Value": "i:set",
+      "Value": "i:typing:Set[Unknown]",
       "Id": -1940490884,
       "Name": "supports_follow_symlinks",
       "IndexSpan": {
@@ -7541,79 +7541,12 @@
   ],
   "Classes": [
     {
-      "Documentation": null,
+      "Documentation": "OVERLAPPED structure wrapper",
       "Bases": [
         "t:_collections_abc:MutableMapping",
         "t:object"
       ],
       "Methods": [
-        {
-          "Documentation": null,
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:os:_Environ",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "data",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "encodekey",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "decodekey",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "encodevalue",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "decodevalue",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "putenv",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "unsetenv",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": null
-            }
-          ],
-          "Attributes": 0,
-          "Classes": [],
-          "Functions": [],
-          "Id": 965872103,
-          "Name": "__init__",
-          "IndexSpan": {
-            "Start": 24072,
-            "Length": 8
-          }
-        },
         {
           "Documentation": null,
           "Overloads": [
@@ -7764,31 +7697,6 @@
           }
         },
         {
-          "Documentation": "od.__repr__() <==> repr(od)",
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:object",
-                  "DefaultValue": null,
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": null
-            }
-          ],
-          "Attributes": 0,
-          "Classes": [],
-          "Functions": [],
-          "Id": 1215429388,
-          "Name": "__repr__",
-          "IndexSpan": {
-            "Start": 25401,
-            "Length": 8
-          }
-        },
-        {
           "Documentation": null,
           "Overloads": [
             {
@@ -7811,43 +7719,6 @@
           "IndexSpan": {
             "Start": 25613,
             "Length": 4
-          }
-        },
-        {
-          "Documentation": "Insert key with a value of default if key is not in the dictionary.\n\nReturn the value for key if key is in the dictionary, else default.",
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:dict",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "key",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "default",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 0
-                }
-              ],
-              "ReturnType": "i:dict"
-            }
-          ],
-          "Attributes": 0,
-          "Classes": [],
-          "Functions": [],
-          "Id": 178640630,
-          "Name": "setdefault",
-          "IndexSpan": {
-            "Start": 25663,
-            "Length": 10
           }
         }
       ],
@@ -7929,43 +7800,6 @@
         "t:object"
       ],
       "Methods": [
-        {
-          "Documentation": "OVERLAPPED structure wrapper",
-          "Overloads": [
-            {
-              "Parameters": [
-                {
-                  "Name": "self",
-                  "Type": "t:object",
-                  "DefaultValue": null,
-                  "Kind": 0
-                },
-                {
-                  "Name": "args",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 1
-                },
-                {
-                  "Name": "kwargs",
-                  "Type": null,
-                  "DefaultValue": null,
-                  "Kind": 2
-                }
-              ],
-              "ReturnType": null
-            }
-          ],
-          "Attributes": 0,
-          "Classes": [],
-          "Functions": [],
-          "Id": 965872103,
-          "Name": "__init__",
-          "IndexSpan": {
-            "Start": 36144,
-            "Length": 8
-          }
-        },
         {
           "Documentation": null,
           "Overloads": [

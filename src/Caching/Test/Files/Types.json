@@ -238,39 +238,12 @@
       }
     },
     {
-      "Value": "t:types:_f",
-      "Id": 1794815209,
-      "Name": "FunctionType",
+      "Value": "t:types:FunctionType",
+      "Id": 1064175384,
+      "Name": "LambdaType",
       "IndexSpan": {
-        "Start": 377,
-        "Length": 12
-      }
-    },
-    {
-      "Value": "t:generator",
-      "Id": -191936042,
-      "Name": "GeneratorType",
-      "IndexSpan": {
-        "Start": 606,
-        "Length": 13
-      }
-    },
-    {
-      "Value": "t:types:_c",
-      "Id": -1877481637,
-      "Name": "CoroutineType",
-      "IndexSpan": {
-        "Start": 669,
-        "Length": 13
-      }
-    },
-    {
-      "Value": "t:generator",
-      "Id": -599222264,
-      "Name": "AsyncGeneratorType",
-      "IndexSpan": {
-        "Start": 778,
-        "Length": 18
+        "Start": 402,
+        "Length": 10
       }
     },
     {
@@ -280,15 +253,6 @@
       "IndexSpan": {
         "Start": 847,
         "Length": 10
-      }
-    },
-    {
-      "Value": "t:len",
-      "Id": -1069598370,
-      "Name": "BuiltinFunctionType",
-      "IndexSpan": {
-        "Start": 877,
-        "Length": 19
       }
     },
     {
@@ -1000,6 +964,153 @@
       }
     },
     {
+      "Documentation": null,
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:FunctionType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 782173109,
+          "Name": "__call__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:FunctionType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "obj",
+                  "Type": "t:object",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "type",
+                  "Type": "t:type",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:types:MethodType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -1633516065,
+          "Name": "__get__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:typing:Tuple[types:_Cell]",
+          "Id": 2101485316,
+          "Name": "__closure__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:types:CodeType",
+          "Id": 794857348,
+          "Name": "__code__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Tuple[typing:Any]",
+          "Id": -1308361943,
+          "Name": "__defaults__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Dict[str, typing:Any]",
+          "Id": 817929997,
+          "Name": "__dict__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Dict[str, typing:Any]",
+          "Id": -1338696519,
+          "Name": "__globals__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 1097116834,
+          "Name": "__name__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1879833807,
+          "Name": "__qualname__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Dict[str, typing:Any]",
+          "Id": 1058045229,
+          "Name": "__annotations__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:typing:Dict[str, typing:Any]",
+          "Id": -56184875,
+          "Name": "__kwdefaults__",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": 1794815209,
+      "Name": "FunctionType",
+      "IndexSpan": {
+        "Start": 365,
+        "Length": 2
+      }
+    },
+    {
       "Documentation": "Create a code object.  Not for the faint of heart.",
       "Bases": [
         "t:object"
@@ -1497,6 +1608,658 @@
       "InnerClasses": [],
       "Id": -381504846,
       "Name": "SimpleNamespace",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:GeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:types:GeneratorType"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 971292143,
+          "Name": "__iter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:GeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1101153034,
+          "Name": "__next__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:GeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:GeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "arg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24767519,
+          "Name": "send",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:GeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "val",
+                  "Type": "t:BaseException",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            },
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:GeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "typ",
+                  "Type": "t:type",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "val",
+                  "Type": "t:BaseException",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "tb",
+                  "Type": "t:types:TracebackType",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 768810287,
+          "Name": "throw",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:types:CodeType",
+          "Id": 1450385203,
+          "Name": "gi_code",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:types:FrameType",
+          "Id": 2015125735,
+          "Name": "gi_frame",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": 1663620793,
+          "Name": "gi_running",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:types:GeneratorType",
+          "Id": -1949084879,
+          "Name": "gi_yieldfrom",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -191936042,
+      "Name": "GeneratorType",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:CoroutineType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:__NoneType__"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 753226817,
+          "Name": "close",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:CoroutineType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "arg",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24767519,
+          "Name": "send",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:CoroutineType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "val",
+                  "Type": "t:BaseException",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            },
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:CoroutineType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "typ",
+                  "Type": "t:type",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "val",
+                  "Type": "t:BaseException",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                },
+                {
+                  "Name": "tb",
+                  "Type": "t:types:TracebackType",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 768810287,
+          "Name": "throw",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:typing:Any",
+          "Id": -1268018531,
+          "Name": "cr_await",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:types:CodeType",
+          "Id": -1841967162,
+          "Name": "cr_code",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:types:FrameType",
+          "Id": -1263549772,
+          "Name": "cr_frame",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": -932513466,
+          "Name": "cr_running",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -1877481637,
+      "Name": "CoroutineType",
+      "IndexSpan": {
+        "Start": 646,
+        "Length": 2
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:types:GenericParameter",
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:AsyncGeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1233753730,
+          "Name": "__aiter__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:AsyncGeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1363614621,
+          "Name": "__anext__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:AsyncGeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "val",
+                  "Type": "t:types:_T_contra",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 751578546,
+          "Name": "asend",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:AsyncGeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "val",
+                  "Type": "t:BaseException",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            },
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:AsyncGeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "typ",
+                  "Type": "t:typing:Type[BaseException]",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "val",
+                  "Type": "t:BaseException",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "tb",
+                  "Type": "t:types:TracebackType",
+                  "DefaultValue": "i:ellipsis",
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1825115644,
+          "Name": "athrow",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        },
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:AsyncGeneratorType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 1809532174,
+          "Name": "aclose",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": null,
+          "Id": -1631277804,
+          "Name": "ag_await",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:types:FrameType",
+          "Id": -1626809045,
+          "Name": "ag_frame",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:bool",
+          "Id": -2132323843,
+          "Name": "ag_running",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:types:CodeType",
+          "Id": 363072111,
+          "Name": "ag_code",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -599222264,
+      "Name": "AsyncGeneratorType",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:object"
+      ],
+      "Methods": [
+        {
+          "Documentation": null,
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:types:BuiltinFunctionType",
+                  "DefaultValue": null,
+                  "Kind": 0
+                },
+                {
+                  "Name": "args",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 1
+                },
+                {
+                  "Name": "kwargs",
+                  "Type": "t:typing:Any",
+                  "DefaultValue": null,
+                  "Kind": 2
+                }
+              ],
+              "ReturnType": "i:typing:Any"
+            }
+          ],
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 782173109,
+          "Name": "__call__",
+          "IndexSpan": {
+            "Start": 0,
+            "Length": 0
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [
+        {
+          "Value": "i:typing:Union[object, _importlib_modulespec:ModuleType]",
+          "Id": 1243927843,
+          "Name": "__self__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": 1097116834,
+          "Name": "__name__",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:str",
+          "Id": -1879833807,
+          "Name": "__qualname__",
+          "IndexSpan": null
+        }
+      ],
+      "GenericParameters": null,
+      "InnerClasses": [],
+      "Id": -1069598370,
+      "Name": "BuiltinFunctionType",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
