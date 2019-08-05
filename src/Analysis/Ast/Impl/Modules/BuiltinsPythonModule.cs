@@ -56,10 +56,6 @@ namespace Microsoft.Python.Analysis.Modules {
             base.OnAnalysisComplete();
         }
 
-        public void ResetAst() {
-            this.SetAst(Analysis.Ast);
-        }
-
         private void SpecializeTypes() {
             IPythonType noneType = null;
             var isV3 = Interpreter.LanguageVersion.Is3x();

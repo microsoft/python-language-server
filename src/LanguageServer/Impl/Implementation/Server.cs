@@ -266,31 +266,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void NotifyPackagesChanged(CancellationToken cancellationToken = default) {
-            var interpreter = _services.GetService<IPythonInterpreter>();
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
 
-            interpreter.ModuleResolution.BuiltinsModule.ResetAst();
-
-            interpreter.TypeshedResolution.ReloadAsync().ContinueWith(async t => {
-                await interpreter.ModuleResolution.ReloadAsync();
-
-                _services.GetService<PythonAnalyzer>().GCNextSession();
-
-                RestartAnalysis();
-
+            _services.GetService<PythonAnalyzer>().ResetAnalyzer(true).ContinueWith(t => {
                 if (_watchSearchPaths) {
                     ResetPathWatcher();
                 }
                 _log?.Log(TraceEventType.Information, Resources.Done);
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
             }).DoNotWait();
-
         }
 
         private void RestartAnalysis() {
-            var analyzer = Services.GetService<IPythonAnalyzer>();
-            analyzer.ResetAnalyzer();
-            _rdt.ReloadAll();
+            _services.GetService<PythonAnalyzer>().ResetAnalyzer(false).DoNotWait();
         }
     }
 }

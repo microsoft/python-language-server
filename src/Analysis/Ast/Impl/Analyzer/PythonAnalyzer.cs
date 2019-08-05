@@ -196,8 +196,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
         }
 
-        public void ResetAnalyzer() {
+        public async Task ResetAnalyzer(bool full) {
+            if (full) {
+                var interpreter = _services.GetService<IPythonInterpreter>();
+                var builtins = interpreter.ModuleResolution.BuiltinsModule;
+                builtins.SetAst(builtins.Analysis.Ast);
+
+                await interpreter.TypeshedResolution.ReloadAsync();
+                await interpreter.ModuleResolution.ReloadAsync();
+            }
+
             lock (_syncObj) {
+                _forceGCOnNextSession = _forceGCOnNextSession || full;
+
                 _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
                 _analysisEntries.Clear();
                 foreach (var (key, entry) in entriesToPreserve) {
@@ -206,6 +217,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 _dependencyResolver.RemoveKeys(entriesToRemove.Select(e => e.Key));
             }
+
+            _services.GetService<IRunningDocumentTable>().ReloadAll();
         }
 
         public IReadOnlyList<IPythonModule> LoadedModules {
@@ -217,12 +230,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
-
-        public void GCNextSession() {
-            lock (_syncObj) {
-                _forceGCOnNextSession = true;
-            }
-        }
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed)
             => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));

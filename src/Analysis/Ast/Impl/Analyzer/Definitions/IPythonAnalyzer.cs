@@ -56,10 +56,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module);
 
+
         /// <summary>
-        /// Removes all the modules from the analysis, except Typeshed and builtin
+        /// Removes all the modules from the analysis and restarts it.
         /// </summary>
-        void ResetAnalyzer();
+        /// <param name="full">True if everything should be dropped, including closed files and stubs.</param>
+        Task ResetAnalyzer(bool full);
 
         /// <summary>
         /// Returns list of currently loaded modules.
