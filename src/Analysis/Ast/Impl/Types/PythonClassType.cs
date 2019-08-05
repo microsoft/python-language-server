@@ -190,6 +190,12 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
+        /// <summary>
+        /// Mapping from class generic type parameters to what it was filled in with 
+        /// class A(Generic[T, K]): ...
+        /// class B(A[int, str]): ...
+        /// Has the map {T: int, K: str}
+        /// </summary>
         public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
             => _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 

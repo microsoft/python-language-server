@@ -15,7 +15,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IGenericType
         /// <summary>
-        /// In PythonClassType, unfilled generic type parameters will be entries in the GenericParameters dictionary 
+        /// List of unfilled generic type parameters. Represented as entries in the GenericParameters dictionary 
         /// that have both key and value as generic type parameters
         /// e.g
         /// {T, T}
