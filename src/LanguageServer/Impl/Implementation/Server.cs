@@ -178,9 +178,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag.ThrowIfDisposed();
             switch (@params.settings) {
                 case ServerSettings settings: {
-                        if (HandleConfigurationChanges(settings)) {
-                            RestartAnalysis();
-                        }
+                        Settings = settings;
+                        _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
+                        _completionSource.Options = Settings.completion;
                         break;
                     }
                 default:
@@ -197,27 +197,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
                 ? Resources.InitializingForGenericInterpreter
                 : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
-        }
-
-        private bool HandleConfigurationChanges(ServerSettings newSettings) {
-            var oldSettings = Settings;
-            Settings = newSettings;
-
-            _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
-            _completionSource.Options = Settings.completion;
-
-            if (oldSettings == null) {
-                return true;
-            }
-
-            if (!newSettings.analysis.errors.SetEquals(oldSettings.analysis.errors) ||
-                !newSettings.analysis.warnings.SetEquals(oldSettings.analysis.warnings) ||
-                !newSettings.analysis.information.SetEquals(oldSettings.analysis.information) ||
-                !newSettings.analysis.disabled.SetEquals(oldSettings.analysis.disabled)) {
-                return true;
-            }
-
-            return false;
         }
 
         private IDocumentationSource ChooseDocumentationSource(string[] kinds) {
@@ -261,24 +240,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (_searchPaths == null || !_searchPaths.SequenceEqual(paths)) {
                 _searchPaths = paths;
                 _pathsWatcher?.Dispose();
-                _pathsWatcher = new PathsWatcher(_searchPaths, () => NotifyPackagesChanged(), _log);
+                _pathsWatcher = new PathsWatcher(_searchPaths, NotifyPackagesChanged, _log);
             }
         }
 
-        public void NotifyPackagesChanged(CancellationToken cancellationToken = default) {
+        private void NotifyPackagesChanged() {
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
 
-            _services.GetService<PythonAnalyzer>().ResetAnalyzer(true).ContinueWith(t => {
+            _services.GetService<PythonAnalyzer>().ResetAnalyzer().ContinueWith(t => {
                 if (_watchSearchPaths) {
                     ResetPathWatcher();
                 }
+
                 _log?.Log(TraceEventType.Information, Resources.Done);
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
             }).DoNotWait();
-        }
-
-        private void RestartAnalysis() {
-            _services.GetService<PythonAnalyzer>().ResetAnalyzer(false).DoNotWait();
         }
     }
 }

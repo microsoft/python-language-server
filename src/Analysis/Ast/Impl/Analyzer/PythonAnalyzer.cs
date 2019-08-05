@@ -196,18 +196,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
         }
 
-        public async Task ResetAnalyzer(bool full) {
-            if (full) {
-                var interpreter = _services.GetService<IPythonInterpreter>();
-                var builtins = interpreter.ModuleResolution.BuiltinsModule;
-                builtins.SetAst(builtins.Analysis.Ast);
+        public async Task ResetAnalyzer() {
+            var interpreter = _services.GetService<IPythonInterpreter>();
+            var builtins = interpreter.ModuleResolution.BuiltinsModule;
+            builtins.SetAst(builtins.Analysis.Ast);
 
-                await interpreter.TypeshedResolution.ReloadAsync();
-                await interpreter.ModuleResolution.ReloadAsync();
-            }
+            await interpreter.TypeshedResolution.ReloadAsync();
+            await interpreter.ModuleResolution.ReloadAsync();
 
             lock (_syncObj) {
-                _forceGCOnNextSession = _forceGCOnNextSession || full;
+                _forceGCOnNextSession = true;
 
                 _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
                 _analysisEntries.Clear();
