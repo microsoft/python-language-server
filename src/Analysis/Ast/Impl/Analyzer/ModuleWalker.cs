@@ -273,7 +273,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             var memberType = member?.GetPythonType();
                             var stubMemberType = stubMember.GetPythonType();
 
-                            if (sourceType.IsBuiltin || stubType.IsBuiltin) {
+                            if (sourceType.IsBuiltin || stubType.IsBuiltin || stubMemberType.IsBuiltin) {
                                 // If stub type does not have an immediate member such as __init__() and
                                 // rather have it inherited from object, we do not want to use the inherited
                                 // since current class may either have its own of inherits it from the object.
@@ -289,6 +289,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             TransferDocumentationAndLocation(memberType, stubMemberType);
                             cls.AddMember(name, stubMember, overwrite: true);
                         }
+                        TransferDocumentationAndLocation(sourceType, stubType);
                         break;
 
                     case IPythonModule _:
