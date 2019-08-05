@@ -21,8 +21,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// {T, T}
         /// Where T is a generic type parameter that needs to be filled in by the class
         /// </summary>
-        public virtual IReadOnlyList<IGenericTypeParameter> Parameters => GenericParameters.Values.
-            Distinct().OfType<IGenericTypeParameter>().ToList();
+        public virtual IReadOnlyList<IGenericTypeParameter> Parameters => GenericParameters.Values.Distinct().OfType<IGenericTypeParameter>().ToList();
 
         /// <summary>
         /// A Class is generic if it has one or more unfilled generic type parameters or one of its bases is generic
@@ -49,7 +48,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         private IGenericTypeParameter[] GetTypeParameters() {
             // Case when updating with specific type and already has type parameters, return them
-            if(!Parameters.IsNullOrEmpty()) {
+            if (!Parameters.IsNullOrEmpty()) {
                 return Parameters.ToArray();
             }
 
@@ -177,17 +176,20 @@ namespace Microsoft.Python.Analysis.Types {
             // type parameter T -> int, U -> str, etc.
             var genericTypeToSpecificType = GetSpecificTypes(args, genericTypeParameters, newBases);
 
-            PythonClassType classType = new PythonClassType(_name, new Location(DeclaringModule));
+            PythonClassType classType = new PythonClassType(BaseName, new Location(DeclaringModule));
             // Storing generic parameters allows methods returning generic types 
             // to know what type parameter returns what specific type
             StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
 
-            // Store generic parameters first so name updates correctly, then check if class type has been cached
-            _specificTypeCache = _specificTypeCache ?? new Dictionary<string, PythonClassType>();
-            if (_specificTypeCache.TryGetValue(classType.Name, out var cachedType)) {
-                return cachedType;
+            // Locking so only one thread access cache
+            lock (_genericParameterLock) {
+                // Store generic parameters first so name updates correctly, then check if class type has been cached
+                _specificTypeCache = _specificTypeCache ?? new Dictionary<string, PythonClassType>();
+                if (_specificTypeCache.TryGetValue(classType.Name, out var cachedType)) {
+                    return cachedType;
+                }
+                _specificTypeCache[classType.Name] = classType;
             }
-            _specificTypeCache[classType.Name] = classType;
 
             // Prevent reentrancy when resolving generic class where method may be returning instance of type of the same class.
             // e.g

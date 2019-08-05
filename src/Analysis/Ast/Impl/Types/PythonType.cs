@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
         private readonly object _lock = new object();
-        protected readonly string _name;
+        private readonly string _baseName;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;
@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private PythonType(string name, Location location, BuiltinTypeId typeId) : base(location) {
             Check.ArgumentNotNull(nameof(location), location.Module);
-            _name = name ?? throw new ArgumentNullException(nameof(name));
+            _baseName = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
 
@@ -55,9 +55,10 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
 
-        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
+        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _baseName;
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
+        public string BaseName => _baseName;
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
         public virtual bool IsSpecialized => false;

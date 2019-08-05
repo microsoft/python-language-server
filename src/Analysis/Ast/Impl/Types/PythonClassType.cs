@@ -33,6 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
+        private object _genericParameterLock = new object();
         private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -55,8 +56,9 @@ namespace Microsoft.Python.Analysis.Types {
 
         public override string Name {
             get {
-                if (GenericParameters.Values.Count() > 0) {
-                    return CodeFormatter.FormatSequence(_name, '[', GenericParameters.Values.ToList());
+                var genericParams = GenericParameters.Values.ToList();
+                if (!genericParams.IsNullOrEmpty()) {
+                    return CodeFormatter.FormatSequence(BaseName, '[', genericParams);
                 } else {
                     return base.Name;
                 }

@@ -29,13 +29,13 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
         internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule)
         : base("Generic", new Location(declaringModule)) {
-            TypeParameters = typeArgs;
+            TypeParameters = typeArgs ?? new List<IGenericTypeParameter>();
         }
 
         public override bool IsGeneric => true;
 
         public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
-            => TypeParameters?.ToDictionary(tp => tp, tp => tp as IPythonType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+            => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 
         public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
 
