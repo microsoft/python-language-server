@@ -21,7 +21,6 @@ using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -57,7 +56,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public string Root { get; protected set; }
         public IEnumerable<string> InterpreterPaths { get; protected set; } = Enumerable.Empty<string>();
 
-        public IModuleCache ModuleCache { get; protected set; }
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
 
         /// <summary>

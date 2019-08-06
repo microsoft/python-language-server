@@ -13,8 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 
@@ -54,5 +53,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// wants to see library code and not a stub.
         /// </summary>
         IPythonModule PrimaryModule { get; }
+
+        /// <summary>
+        /// Type of the module path describing the module location.
+        /// </summary>
+        PythonLibraryPathType PathType { get; }
     }
 }
