@@ -29,13 +29,41 @@ using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
-    internal sealed class DefinitionSource {
+    /// <summary>
+    /// Implements location of symbol declaration, such as 'B' in 'from A import B'
+    /// statement in the file. For 'goto definition' behavior see <see cref="DefinitionSource"/>.
+    /// </summary>
+    internal sealed class DeclarationSource : DefinitionSourceBase {
+        public DeclarationSource(IServiceContainer services) : base(services) { }
+        protected override ILocatedMember GetDefiningMember(IMember m) => m as ILocatedMember;
+    }
+
+    /// <summary>
+    /// Implements location of symbol definition. For example, in 'from A import B'
+    /// locates actual code of 'B' in module A. For 'goto declaration' behavior
+    /// see <see cref="DeclarationSource"/>.
+    /// </summary>
+    internal sealed class DefinitionSource : DefinitionSourceBase {
+        public DefinitionSource(IServiceContainer services) : base(services) { }
+        protected override ILocatedMember GetDefiningMember(IMember m) => (m as ILocatedMember)?.GetRootDefinition();
+    }
+
+    internal abstract class DefinitionSourceBase {
         private readonly IServiceContainer _services;
 
-        public DefinitionSource(IServiceContainer services) {
+        protected DefinitionSourceBase(IServiceContainer services) {
             _services = services;
         }
 
+        protected abstract ILocatedMember GetDefiningMember(IMember m);
+
+        /// <summary>
+        /// Locates definition or declaration of a symbol at the provided location.
+        /// </summary>
+        /// <param name="analysis">Document analysis.</param>
+        /// <param name="location">Location in the document.</param>
+        /// <param name="definingMember">Member location or null of not found.</param>
+        /// <returns>Definition location (module URI and the text range).</returns>
         public Reference FindDefinition(IDocumentAnalysis analysis, SourceLocation location, out ILocatedMember definingMember) {
             definingMember = null;
             if (analysis?.Ast == null) {
@@ -171,11 +199,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
             definingMember = v;
             if (statement is ImportStatement || statement is FromImportStatement) {
                 // If we are on the variable definition in this module,
-                // then goto definition should go to the parent, if any.
+                // then goto declaration should go to the parent, if any.
+                // Goto to definition navigates to the very root of the parent chain.
                 var indexSpan = v.Definition.Span.ToIndexSpan(analysis.Ast);
                 var index = location.ToIndex(analysis.Ast);
                 if (indexSpan.Start <= index && index < indexSpan.End) {
-                    var parent = (v as IImportedMember)?.Parent;
+                    var parent = GetDefiningMember((v as IImportedMember)?.Parent);
                     var definition = parent?.Definition ?? (v.Value as ILocatedMember)?.Definition;
                     if (definition != null && CanNavigateToModule(definition.DocumentUri)) {
                         return new Reference { range = definition.Span, uri = definition.DocumentUri };
@@ -227,7 +256,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private Reference FromMember(IMember m) {
-            var definition = (m as ILocatedMember)?.Definition;
+            var definition = GetDefiningMember(m)?.Definition;
             var moduleUri = definition?.DocumentUri;
             // Make sure module we are looking for is not a stub
             if (m is IPythonType t) {

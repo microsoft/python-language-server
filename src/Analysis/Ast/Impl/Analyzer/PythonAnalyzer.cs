@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
@@ -192,7 +191,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Linter always runs no matter of the option since it looks up variables
             // which also enumerates and updates variable references for find all
             // references and rename operations.
-            var result = new LinterAggregator().Lint(module.Analysis, _services);
+            var result = new LinterAggregator().Lint(module, _services);
 
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
             return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;

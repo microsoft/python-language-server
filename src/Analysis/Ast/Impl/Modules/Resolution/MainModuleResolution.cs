@@ -39,6 +39,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
+        private IEnumerable<string> _userPaths = Enumerable.Empty<string>();
+
         public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
 
@@ -179,6 +181,26 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
         }
 
+        internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
+            var ps = _services.GetService<IProcessServices>();
+
+            var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
+
+            InterpreterPaths = interpreterPaths.Select(p => p.Path);
+            _userPaths = userPaths.Select(p => p.Path);
+
+            _log?.Log(TraceEventType.Information, "Interpreter search paths:");
+            foreach (var s in InterpreterPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+
+            _log?.Log(TraceEventType.Information, "User search paths:");
+            foreach (var s in _userPaths) {
+                _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+        }
+
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {
             foreach (var uri in Modules
                 .Where(m => m.Value.Value?.Name != BuiltinModuleName)
@@ -197,26 +219,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var addedRoots = new HashSet<string>();
             addedRoots.UnionWith(PathResolver.SetRoot(Root));
 
-            var ps = _services.GetService<IProcessServices>();
-
-            var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
-
-            InterpreterPaths = interpreterPaths.Select(p => p.Path);
-            var userSearchPaths = userPaths.Select(p => p.Path);
-
-            _log?.Log(TraceEventType.Information, "Interpreter search paths:");
-            foreach (var s in InterpreterPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
-            }
-
-            _log?.Log(TraceEventType.Information, "User search paths:");
-            foreach (var s in userSearchPaths) {
-                _log?.Log(TraceEventType.Information, $"    {s}");
-            }
+            await ReloadSearchPaths(cancellationToken);
 
             addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
-            addedRoots.UnionWith(PathResolver.SetUserSearchPaths(userSearchPaths));
+            addedRoots.UnionWith(PathResolver.SetUserSearchPaths(_userPaths));
             ReloadModulePaths(addedRoots);
         }
 

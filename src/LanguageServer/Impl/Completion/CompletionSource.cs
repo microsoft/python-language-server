@@ -53,6 +53,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 case ConstantExpression ce2 when ce2.Value is string:
                 case ConstantExpression ce3 when ce3.Value is AsciiString:
                 // no completions in strings
+                case ConstantExpression ce4 when ce4.Value is Ellipsis:
+                // no completions in ellipsis
                 case null when context.Ast.IsInsideComment(context.Location):
                 case null when context.Ast.IsInsideString(context.Location):
                     return CompletionResult.Empty;
