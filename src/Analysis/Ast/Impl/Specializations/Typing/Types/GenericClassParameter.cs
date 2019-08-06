@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsGeneric => true;
 
         public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
-            => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+            => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 
         public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
 

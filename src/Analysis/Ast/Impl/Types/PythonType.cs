@@ -148,7 +148,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal bool IsHidden => ContainsMember("__hidden__");
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
-        protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
+        protected IPythonType UnknownType => DeclaringModule.Interpreter.UnknownType;
 
         //public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
 

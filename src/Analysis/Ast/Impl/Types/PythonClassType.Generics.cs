@@ -181,7 +181,7 @@ namespace Microsoft.Python.Analysis.Types {
             // to know what type parameter returns what specific type
             StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
 
-            // Locking so only one thread access cache
+            // Locking so threads can only access class after it's been initialized
             lock (_genericParameterLock) {
                 // Store generic parameters first so name updates correctly, then check if class type has been cached
                 _specificTypeCache = _specificTypeCache ?? new Dictionary<string, PythonClassType>();
@@ -189,53 +189,53 @@ namespace Microsoft.Python.Analysis.Types {
                     return cachedType;
                 }
                 _specificTypeCache[classType.Name] = classType;
-            }
 
-            // Prevent reentrancy when resolving generic class where method may be returning instance of type of the same class.
-            // e.g
-            // class C(Generic[T]): 
-            //  def tmp(self):
-            //    return C(5)
-            // C(5).tmp()
-            // We try to resolve generic type when instantiating 'C' but end up resolving it again on 'tmp' method call, looping infinitely
-            if (!_genericSpecializationGuard.Push(classType)) {
-                return _genericSpecializationGuard.GetProcessing();
-            }
-
-            try {
-                // Get declared generic class parameters, i.e. Generic[T1, T2, ...], Optional[Generic[T1, ...]]
-                var genericClassParameters = Bases.OfType<IGenericClassParameter>().ToArray();
-
-                // Get list of bases that are generic but not generic class parameters, e.g A[T], B[T] but not Generic[T1, T2]
-                var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().Where(g => g.IsGeneric).ToArray();
-
-                // Removing all generic bases, and will only specialize genericTypeBases, remove generic class paramters entirely
-                // We remove generic class paramters entirely because the type information is now stored in GenericParameters field
-                // We still need generic bases so we can specialize them 
-                var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
-
-                // Create specific types for generic type bases
-                foreach (var gt in genericTypeBases) {
-                    // Look through generic type bases and see if any of their required type parameters
-                    // have received a specific type, and if so create specific type
-                    var st = gt.Parameters
-                        .Select(p => classType.GenericParameters.TryGetValue(p, out var t) ? t : null)
-                        .Where(p => !p.IsUnknown())
-                        .ToArray();
-                    if (st.Length > 0) {
-                        var type = gt.CreateSpecificType(new ArgumentSet(st, args.Expression, args.Eval));
-                        if (!type.IsUnknown()) {
-                            bases.Add(type);
-                        }
-                    }
+                // Prevent reentrancy when resolving generic class where method may be returning instance of type of the same class.
+                // e.g
+                // class C(Generic[T]): 
+                //  def tmp(self):
+                //    return C(5)
+                // C(5).tmp()
+                // We try to resolve generic type when instantiating 'C' but end up resolving it again on 'tmp' method call, looping infinitely
+                if (!_genericSpecializationGuard.Push(classType)) {
+                    return _genericSpecializationGuard.GetProcessing();
                 }
 
-                // Set specific class bases
-                classType.SetBases(bases.Concat(newBases));
-                // Transfer members from generic to specific type.
-                SetClassMembers(classType, args);
-            } finally {
-                _genericSpecializationGuard.Pop();
+                try {
+                    // Get declared generic class parameters, i.e. Generic[T1, T2, ...], Optional[Generic[T1, ...]]
+                    var genericClassParameters = Bases.OfType<IGenericClassParameter>().ToArray();
+
+                    // Get list of bases that are generic but not generic class parameters, e.g A[T], B[T] but not Generic[T1, T2]
+                    var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().Where(g => g.IsGeneric).ToArray();
+
+                    // Removing all generic bases, and will only specialize genericTypeBases, remove generic class paramters entirely
+                    // We remove generic class paramters entirely because the type information is now stored in GenericParameters field
+                    // We still need generic bases so we can specialize them 
+                    var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
+
+                    // Create specific types for generic type bases
+                    foreach (var gt in genericTypeBases) {
+                        // Look through generic type bases and see if any of their required type parameters
+                        // have received a specific type, and if so create specific type
+                        var st = gt.Parameters
+                            .Select(p => classType.GenericParameters.TryGetValue(p, out var t) ? t : null)
+                            .Where(p => !p.IsUnknown())
+                            .ToArray();
+                        if (st.Length > 0) {
+                            var type = gt.CreateSpecificType(new ArgumentSet(st, args.Expression, args.Eval));
+                            if (!type.IsUnknown()) {
+                                bases.Add(type);
+                            }
+                        }
+                    }
+
+                    // Set specific class bases
+                    classType.SetBases(bases.Concat(newBases));
+                    // Transfer members from generic to specific type.
+                    SetClassMembers(classType, args);
+                } finally {
+                    _genericSpecializationGuard.Pop();
+                }
             }
             return classType;
         }
