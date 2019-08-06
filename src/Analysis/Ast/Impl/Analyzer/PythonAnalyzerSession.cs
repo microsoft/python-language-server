@@ -373,13 +373,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
             var canHaveLibraryAnalysis = false;
-
+            var saveAnalysis = false;
             // Don't try to drop builtins; it causes issues elsewhere.
             // We probably want the builtin module's AST and other info for evaluation.
             switch (document.ModuleType) {
                 case ModuleType.Library:
-                case ModuleType.Stub:
                 case ModuleType.Compiled:
+                case ModuleType.CompiledBuiltin:
+                    canHaveLibraryAnalysis = true;
+                    saveAnalysis = true;
+                    break;
+                case ModuleType.Stub:
                     canHaveLibraryAnalysis = true;
                     break;
             }
@@ -402,7 +406,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);
             var analysis  = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
 
-            _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            if (saveAnalysis) {
+                _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            }
+
             return analysis;
         }
 
