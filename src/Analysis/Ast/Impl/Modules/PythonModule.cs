@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -103,8 +104,11 @@ namespace Microsoft.Python.Analysis.Modules {
             if (uri == null && !string.IsNullOrEmpty(creationOptions.FilePath)) {
                 Uri.TryCreate(creationOptions.FilePath, UriKind.Absolute, out uri);
             }
+
             Uri = uri;
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
+            PathType = creationOptions.PathType;
+
             Stub = creationOptions.Stub;
             if (Stub is PythonModule stub && ModuleType != ModuleType.Stub) {
                 stub.PrimaryModule = this;
@@ -113,6 +117,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ModuleType == ModuleType.Specialized || ModuleType == ModuleType.Unresolved) {
                 ContentState = State.Analyzed;
             }
+
             InitializeContent(creationOptions.Content, 0);
         }
 
@@ -212,6 +217,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
+
+        /// <summary>
+        /// Type of the module path describing the module location.
+        /// </summary>
+        public PythonLibraryPathType PathType { get; }
         #endregion
 
         #region IDisposable

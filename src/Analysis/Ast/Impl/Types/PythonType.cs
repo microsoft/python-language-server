@@ -52,6 +52,14 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region ILocatedMember
         public override PythonMemberType MemberType => _typeId.GetMemberId();
+
+        public override void AddReference(Location location) {
+            if (DeclaringModule == null || DeclaringModule.ModuleType == ModuleType.Builtins) {
+                return;
+            }
+
+            base.AddReference(location);
+        }
         #endregion
 
         #region IPythonType

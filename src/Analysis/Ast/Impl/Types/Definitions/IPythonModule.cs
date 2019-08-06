@@ -13,7 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 
@@ -21,17 +21,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a Python module.
     /// </summary>
-    public interface IPythonModule : IPythonType {
-        /// <summary>
-        /// File path to the module.
-        /// </summary>
-        string FilePath { get; }
-
-        /// <summary>
-        /// Module URI.
-        /// </summary>
-        Uri Uri { get; }
-
+    public interface IPythonModule : IPythonType, IPythonFile, ILocatedMember {
         /// <summary>
         /// Module analysis.
         /// </summary>
@@ -63,5 +53,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// wants to see library code and not a stub.
         /// </summary>
         IPythonModule PrimaryModule { get; }
+
+        /// <summary>
+        /// Type of the module path describing the module location.
+        /// </summary>
+        PythonLibraryPathType PathType { get; }
     }
 }

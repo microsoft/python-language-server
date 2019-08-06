@@ -40,16 +40,9 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             ModulePrefix = modulePrefix ?? string.Empty;
         }
 
-        public PythonLibraryPath(string path, bool isStandardLibrary, string modulePrefix) :
-            this(path, isStandardLibrary ? PythonLibraryPathType.StdLib : PythonLibraryPathType.Unspecified, modulePrefix) { }
-
         public string Path { get; }
-
         public PythonLibraryPathType Type { get; }
-
-        public string ModulePrefix { get; } = string.Empty;
-
-        public bool IsStandardLibrary => Type == PythonLibraryPathType.StdLib;
+        public string ModulePrefix { get; }
 
         public override string ToString() {
             var type = string.Empty;
@@ -69,9 +62,9 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             return "{0}|{1}|{2}".FormatInvariant(Path, type, ModulePrefix);
         }
 
-        public static PythonLibraryPath Parse(string s) {
+        private static PythonLibraryPath Parse(string s) {
             if (string.IsNullOrEmpty(s)) {
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(s));
             }
 
             var parts = s.Split(new[] { '|' }, 3);
@@ -83,8 +76,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             var ty = parts[1];
             var prefix = parts[2];
 
-            PythonLibraryPathType type = PythonLibraryPathType.Unspecified;
-
+            var type = PythonLibraryPathType.Unspecified;
             switch (ty) {
                 case "stdlib":
                     type = PythonLibraryPathType.StdLib;
@@ -106,8 +98,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// </summary>
         /// <param name="library">Root of the standard library.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
-        /// <remarks>New in 2.2, moved in 3.3</remarks>
-        public static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
+        private static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
             var result = new List<PythonLibraryPath>();
             if (!Directory.Exists(library)) {
                 return result;
@@ -304,7 +295,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         }
 
         public static bool operator ==(PythonLibraryPath left, PythonLibraryPath right) => left?.Equals(right) ?? right is null;
-
         public static bool operator !=(PythonLibraryPath left, PythonLibraryPath right) => !(left?.Equals(right) ?? right is null);
     }
 }

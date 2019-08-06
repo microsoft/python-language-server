@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
+        private IReadOnlyList<PythonLibraryPath> _pythonLibraryPaths;
         private IEnumerable<string> _userPaths = Enumerable.Empty<string>();
 
         public MainModuleResolution(string root, IServiceContainer services)
@@ -115,6 +116,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                 FilePath = moduleImport.ModulePath,
+                PathType = GetModulePathType(moduleImport.ModulePath),
                 Stub = stub
             };
 
@@ -191,10 +193,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
-            var ps = _services.GetService<IProcessServices>();
-
-            var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
+            _pythonLibraryPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, _pythonLibraryPaths, Configuration.SearchPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
             _userPaths = userPaths.Select(p => p.Path);
@@ -260,5 +260,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private IModuleDatabaseService GetDbService()
             => _dbService ?? (_dbService = _services.GetService<IModuleDatabaseService>());
+
+        internal PythonLibraryPathType GetModulePathType(string filePath) {
+            return _pythonLibraryPaths
+                       .OrderByDescending(p => p.Path.Length)
+                       .FirstOrDefault(p => _fs.IsPathUnderRoot(p.Path, filePath))?.Type ?? PythonLibraryPathType.Unspecified;
+        }
     }
 }

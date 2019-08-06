@@ -141,6 +141,9 @@
   <data name="LineFormatter_UnmatchedToken" xml:space="preserve">
     <value>Unmatched token '{0}' on line {1}; line formatting may not be accurate.</value>
   </data>
+  <data name="PythonInterpreterVersionNotSpecified" xml:space="preserve">
+    <value>Python interpreter version not specified. Assuming latests 3.x.</value>
+  </data>
   <data name="ReloadingModules" xml:space="preserve">
     <value>Reloading modules... </value>
   </data>

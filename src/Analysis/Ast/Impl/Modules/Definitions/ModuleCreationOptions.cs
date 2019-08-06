@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Modules {
@@ -32,6 +33,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// The path to the file on disk. Can be null if URI is provided.
         /// </summary>
         public string FilePath { get; set; }
+
+        /// <summary>
+        /// Path type that describes module origin.
+        /// </summary>
+        public PythonLibraryPathType PathType { get; set; }
 
         /// <summary>
         /// Document URI. Can be null if file path is provided.

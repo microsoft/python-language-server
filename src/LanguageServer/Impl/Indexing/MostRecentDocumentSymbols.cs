@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
@@ -120,7 +121,20 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private async Task<IReadOnlyList<HierarchicalSymbol>> IndexAsync(IDocument doc, CancellationToken indexCt) {
-            var ast = await doc.GetAstAsync(indexCt);
+            PythonAst ast = null;
+
+            for (var i = 0; i < 5; i++) {
+                ast = await doc.GetAstAsync(indexCt);
+                if (ast != null) {
+                    break;
+                }
+                await Task.Delay(100);
+            }
+
+            if (ast == null) {
+                return Array.Empty<HierarchicalSymbol>();
+            }
+
             indexCt.ThrowIfCancellationRequested();
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);

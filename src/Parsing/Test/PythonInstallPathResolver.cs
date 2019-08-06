@@ -37,6 +37,5 @@ namespace Microsoft.Python.Parsing.Tests {
     public interface IPythonInstallPathResolver {
         InterpreterConfiguration GetCorePythonConfiguration(InterpreterArchitecture architecture, Version version);
         InterpreterConfiguration GetCondaPythonConfiguration(InterpreterArchitecture architecture, Version version);
-        InterpreterConfiguration GetIronPythonConfiguration(bool x64);
     }
 }

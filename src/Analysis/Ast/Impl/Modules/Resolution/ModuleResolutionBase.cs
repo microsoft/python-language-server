@@ -56,7 +56,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public string Root { get; protected set; }
         public IEnumerable<string> InterpreterPaths { get; protected set; } = Enumerable.Empty<string>();
 
-        public IModuleCache ModuleCache { get; protected set; }
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
 
         /// <summary>

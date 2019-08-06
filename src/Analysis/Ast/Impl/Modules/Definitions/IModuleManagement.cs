@@ -16,7 +16,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
@@ -32,8 +31,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <param name="filePath"></param>
         /// <returns></returns>
         ModulePath FindModule(string filePath);
-
-        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cache of module stubs generated from compiled modules.
