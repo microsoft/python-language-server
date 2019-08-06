@@ -107,7 +107,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
             Uri = uri;
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
-            PathType = creationOptions.PathType;
 
             Stub = creationOptions.Stub;
             if (Stub is PythonModule stub && ModuleType != ModuleType.Stub) {
@@ -217,11 +216,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
-
-        /// <summary>
-        /// Type of the module path describing the module location.
-        /// </summary>
-        public PythonLibraryPathType PathType { get; }
         #endregion
 
         #region IDisposable

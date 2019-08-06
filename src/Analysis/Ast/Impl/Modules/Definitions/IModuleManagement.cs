@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -70,5 +69,10 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Set of interpreter paths.
         /// </summary>
         IEnumerable<string> InterpreterPaths { get; }
+
+        /// <summary>
+        /// Interpreter paths with additional classification.
+        /// </summary>
+        IReadOnlyList<PythonLibraryPath> LibraryPaths { get; }
     }
 }

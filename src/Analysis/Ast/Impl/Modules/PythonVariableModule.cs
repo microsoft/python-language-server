@@ -42,7 +42,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public IDocumentAnalysis Analysis => Module?.Analysis;
         public string Documentation => Module?.Documentation ?? string.Empty;
         public string FilePath => Module?.FilePath;
-        public PythonLibraryPathType PathType => Module?.PathType ?? PythonLibraryPathType.Unspecified;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
         public bool IsSpecialized => Module?.IsSpecialized ?? false;

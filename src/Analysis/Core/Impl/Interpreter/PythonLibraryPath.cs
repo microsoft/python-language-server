@@ -165,19 +165,15 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             // sys.path will include the working directory, so we make an empty
             // path that we can filter out later
-            var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
-            fs.CreateDirectory(tempWorkingDir);
-            if (!InstallPath.TryGetFile("get_search_paths.py", out var srcGetSearchPaths)) {
+            if (!InstallPath.TryGetFile("get_search_paths.py", out var getSearchPathScript)) {
                 return new List<PythonLibraryPath>();
             }
-            var getSearchPaths = IOPath.Combine(tempWorkingDir, PathUtils.GetFileName(srcGetSearchPaths));
-            File.Copy(srcGetSearchPaths, getSearchPaths);
 
             var startInfo = new ProcessStartInfo(
                 interpreter,
-                new[] { "-S", "-E", getSearchPaths }.AsQuotedArguments()
+                new[] { "-S", "-E", getSearchPathScript }.AsQuotedArguments()
             ) {
-                WorkingDirectory = tempWorkingDir,
+                WorkingDirectory = IOPath.GetDirectoryName(getSearchPathScript),
                 UseShellExecute = false,
                 ErrorDialog = false,
                 CreateNoWindow = true,
@@ -185,17 +181,11 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 RedirectStandardOutput = true
             };
 
-            try {
-                var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
-                return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Select(s => {
+            var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
+            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Skip(1).Select(s => {
                     try {
-                        var p = Parse(s);
-
-                        if (PathUtils.PathStartsWith(p.Path, tempWorkingDir)) {
-                            return null;
-                        }
-
-                        return p;
+                        return Parse(s);
                     } catch (ArgumentException) {
                         Debug.Fail("Invalid search path: " + (s ?? "<null>"));
                         return null;
@@ -203,10 +193,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                         Debug.Fail("Invalid format for search path: " + s);
                         return null;
                     }
-                }).Where(p => p != null).ToList();
-            } finally {
-                fs.DeleteDirectory(tempWorkingDir, true);
-            }
+                })
+                .Where(p => p != null).ToList();
         }
 
         public static (IReadOnlyList<PythonLibraryPath> interpreterPaths, IReadOnlyList<PythonLibraryPath> userPaths) ClassifyPaths(

@@ -47,7 +47,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly IPythonAnalyzer _analyzer;
         private readonly ILogger _log;
         private readonly bool _forceGC;
-        private readonly ITelemetryService _telemetry;
         private readonly IModuleDatabaseService _moduleDatabaseService;
 
         private State _state;

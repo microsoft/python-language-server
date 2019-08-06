@@ -39,11 +39,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
-        private IReadOnlyList<PythonLibraryPath> _pythonLibraryPaths;
         private IEnumerable<string> _userPaths = Enumerable.Empty<string>();
 
         public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
+
+        public IReadOnlyList<PythonLibraryPath> LibraryPaths { get; private set; } = Array.Empty<PythonLibraryPath>();
 
         internal IBuiltinsPythonModule CreateBuiltinsModule() {
             if (BuiltinsModule == null) {
@@ -116,7 +117,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                 FilePath = moduleImport.ModulePath,
-                PathType = GetModulePathType(moduleImport.ModulePath),
                 Stub = stub
             };
 
@@ -159,7 +159,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var module = specializationConstructor(import?.ModulePath);
             _specialized[name] = module;
 
-            if(replaceExisting) {
+            if (replaceExisting) {
                 Modules.TryRemove(name, out _);
             }
             return module;
@@ -168,14 +168,21 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        public IPythonModule GetSpecializedModule(string fullName, bool allowCreation = false, string modulePath = null) 
+        public IPythonModule GetSpecializedModule(string fullName, bool allowCreation = false, string modulePath = null)
             => _specialized.TryGetValue(fullName, out var module) ? module : null;
 
         /// <summary>
         /// Determines of module is specialized or exists in the database.
         /// </summary>
-        public bool IsSpecializedModule(string fullName, string modulePath = null)
-            => _specialized.ContainsKey(fullName) || GetDbService()?.ModuleExistsInStorage(fullName, modulePath) == true;
+        public bool IsSpecializedModule(string fullName, string modulePath = null) {
+            if (_specialized.ContainsKey(fullName)) {
+                return true;
+            }
+            if (modulePath != null && Path.GetExtension(modulePath) == ".pyi") {
+                return false;
+            }
+            return GetDbService()?.ModuleExistsInStorage(fullName, modulePath) == true;
+        }
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             var analyzer = _services.GetService<IPythonAnalyzer>();
@@ -193,8 +200,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
-            _pythonLibraryPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, _pythonLibraryPaths, Configuration.SearchPaths);
+            LibraryPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, LibraryPaths, Configuration.SearchPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
             _userPaths = userPaths.Select(p => p.Path);
@@ -260,11 +267,5 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private IModuleDatabaseService GetDbService()
             => _dbService ?? (_dbService = _services.GetService<IModuleDatabaseService>());
-
-        internal PythonLibraryPathType GetModulePathType(string filePath) {
-            return _pythonLibraryPaths
-                       .OrderByDescending(p => p.Path.Length)
-                       .FirstOrDefault(p => _fs.IsPathUnderRoot(p.Path, filePath))?.Type ?? PythonLibraryPathType.Unspecified;
-        }
     }
 }

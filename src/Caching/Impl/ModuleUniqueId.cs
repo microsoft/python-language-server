@@ -14,9 +14,9 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -37,31 +37,38 @@ namespace Microsoft.Python.Analysis.Caching {
                 return $"{moduleName}";
             }
 
-            var config = interpreter.Configuration;
-            var standardLibraryPath = PythonLibraryPath.GetStandardLibraryPath(config);
-            var sitePackagesPath = PythonLibraryPath.GetSitePackagesPath(config);
+            var modulePathType = GetModulePathType(filePath, interpreter.ModuleResolution.LibraryPaths, fs);
 
-            if (!string.IsNullOrEmpty(filePath) && fs.IsPathUnderRoot(sitePackagesPath, filePath)) {
-                // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
-                // Example: 'requests' and 'requests-2.21.0.dist-info'.
-                var moduleFolder = Path.GetDirectoryName(Path.GetDirectoryName(filePath));
+            if (!string.IsNullOrEmpty(filePath) && modulePathType == PythonLibraryPathType.Site) {
+                // Module can be a submodule of a versioned package. In this case we want to use
+                // version of the enclosing package so we have to look up the chain of folders.
+                var moduleRootName = moduleName.Split('.')[0];
+                var moduleFilesFolder = Path.GetDirectoryName(filePath);
+                var installationFolder = Path.GetDirectoryName(moduleFilesFolder);
 
-                // TODO: for egg (https://github.com/microsoft/python-language-server/issues/196), consider *.egg-info
-                var folders = fs
-                    .GetFileSystemEntries(moduleFolder, "*-*.dist-info", SearchOption.TopDirectoryOnly)
-                    .Select(Path.GetFileName)
-                    .Where(n => n.StartsWith(moduleName, StringComparison.OrdinalIgnoreCase)) // Module name can be capitalized differently.
-                    .ToArray();
+                var versionFolder = installationFolder;
+                while (!string.IsNullOrEmpty(versionFolder)) {
+                    // If module is in site-packages and is versioned, then unique id = name + version + interpreter version.
+                    // Example: 'requests' and 'requests-2.21.0.dist-info'.
+                    // TODO: for egg (https://github.com/microsoft/python-language-server/issues/196), consider *.egg-info
+                    var folders = fs.GetFileSystemEntries(versionFolder, "*-*.dist-info", SearchOption.TopDirectoryOnly)
+                        .Select(Path.GetFileName)
+                        .Where(n => n.StartsWith(moduleRootName, StringComparison.OrdinalIgnoreCase)) // Module name can be capitalized differently.
+                        .ToArray();
 
-                if (folders.Length == 1) {
-                    var fileName = Path.GetFileNameWithoutExtension(folders[0]);
-                    var dash = fileName.IndexOf('-');
-                    return $"{fileName.Substring(0, dash)}({fileName.Substring(dash + 1)})";
+                    if (folders.Length == 1) {
+                        var fileName = Path.GetFileNameWithoutExtension(folders[0]);
+                        var dash = fileName.IndexOf('-');
+                        return $"{moduleName}({fileName.Substring(dash + 1)})";
+                    }
+                    // Move up if nothing is found.
+                    versionFolder = Path.GetDirectoryName(versionFolder);
                 }
             }
 
+            var config = interpreter.Configuration;
             if (moduleType == ModuleType.Builtins || moduleType == ModuleType.CompiledBuiltin ||
-                string.IsNullOrEmpty(filePath) || fs.IsPathUnderRoot(standardLibraryPath, filePath)) {
+                string.IsNullOrEmpty(filePath) || modulePathType == PythonLibraryPathType.StdLib) {
                 // If module is a standard library, unique id is its name + interpreter version.
                 return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
             }
@@ -72,17 +79,22 @@ namespace Microsoft.Python.Analysis.Caching {
 
         private static string HashModuleContent(string moduleFolder, IFileSystem fs) {
             // Hash file sizes 
-            using (var sha256 = SHA256.Create()) {
-                var total = fs
-                    .GetFileSystemEntries(moduleFolder, "*.*", SearchOption.AllDirectories)
-                    .Where(fs.FileExists)
-                    .Select(fs.FileSize)
-                    .Aggregate((hash, e) => unchecked(hash * 31 ^ e.GetHashCode()));
+            var total = fs
+                .GetFileSystemEntries(moduleFolder, "*.*", SearchOption.AllDirectories)
+                .Where(fs.FileExists)
+                .Select(fs.FileSize)
+                .Aggregate((hash, e) => unchecked(hash * 31 ^ e.GetHashCode()));
 
-                return Convert
-                    .ToBase64String(sha256.ComputeHash(BitConverter.GetBytes(total)))
-                    .Replace('/', '_').Replace('+', '-');
+            return ((uint)total).ToString();
+        }
+
+        private static PythonLibraryPathType GetModulePathType(string modulePath, IEnumerable<PythonLibraryPath> libraryPaths, IFileSystem fs) {
+            if (string.IsNullOrEmpty(modulePath)) {
+                return PythonLibraryPathType.Unspecified;
             }
+            return libraryPaths
+                .OrderByDescending(p => p.Path.Length)
+                .FirstOrDefault(p => fs.IsPathUnderRoot(p.Path, modulePath))?.Type ?? PythonLibraryPathType.Unspecified;
         }
     }
 }

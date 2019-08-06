@@ -35,11 +35,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public string FilePath { get; set; }
 
         /// <summary>
-        /// Path type that describes module origin.
-        /// </summary>
-        public PythonLibraryPathType PathType { get; set; }
-
-        /// <summary>
         /// Document URI. Can be null if file path is provided.
         /// </summary>
         public Uri Uri { get; set; }
