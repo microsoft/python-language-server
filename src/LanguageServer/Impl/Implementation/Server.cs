@@ -123,9 +123,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _rootDir = PathUtils.NormalizePathAndTrim(_rootDir);
             }
 
-            Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);
+            var interpreterVersionString = @params.initializationOptions.interpreter.properties?.Version;
+            if (string.IsNullOrEmpty(interpreterVersionString)) {
+                _log?.Log(TraceEventType.Warning, Resources.PythonInterpreterVersionNotSpecified);
+                interpreterVersionString = "3.7";
+            }
+            Version.TryParse(interpreterVersionString, out var version);
 
-            var configuration = new InterpreterConfiguration(null, null,
+            var configuration = new InterpreterConfiguration(
                 interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
                 version: version
             ) {

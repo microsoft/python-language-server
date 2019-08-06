@@ -40,8 +40,6 @@ namespace Microsoft.Python.Parsing.Tests {
         public InterpreterConfiguration GetCondaPythonConfiguration(InterpreterArchitecture architecture, Version version)
             => architecture == InterpreterArchitecture.x86 ? null : _condaCache.TryGetValue(version, out var interpreterConfiguration) ? interpreterConfiguration : null;
 
-        public InterpreterConfiguration GetIronPythonConfiguration(bool x64) => null;
-
         private void GetConfigurationsFromKnownPaths() {
             var homePath = Environment.GetEnvironmentVariable("HOME");
             var foldersFromPathVariable = Environment.GetEnvironmentVariable("PATH")?.Split(':') ?? Array.Empty<string>();
@@ -90,8 +88,6 @@ namespace Microsoft.Python.Parsing.Tests {
             var sitePackagesPath = GetSitePackagesLocation(pythonFilePath);
 
             return new InterpreterConfiguration(
-                id: $"{idPrefix}|{version}",
-                description: $"{idPrefix} {version} ({architecture})",
                 interpreterPath: pythonFilePath,
                 pathVar: pythonFilePath,
                 libPath: libPath,
