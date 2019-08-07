@@ -33,7 +33,6 @@ namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
-        private object _genericParameterLock = new object();
         private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -78,36 +77,38 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IMember GetMember(string name) {
-            // Push/Pop should be lock protected.
-            if (Members.TryGetValue(name, out var member)) {
-                return member;
-            }
-
-            // Special case names that we want to add to our own Members dict
-            var is3x = DeclaringModule.Interpreter.LanguageVersion.Is3x();
-            switch (name) {
-                case "__mro__":
-                case "mro":
-                    return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType as IMember;
-                case "__dict__":
-                    return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
-                case @"__weakref__":
-                    return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
-            }
-
-            if (_memberGuard.Push(this)) {
-                try {
-                    foreach (var m in Mro.Reverse()) {
-                        if (m == this) {
-                            return member;
-                        }
-                        member = member ?? m.GetMember(name);
-                    }
-                } finally {
-                    _memberGuard.Pop();
+            lock (_lock) {
+                // Push/Pop should be lock protected.
+                if (Members.TryGetValue(name, out var member)) {
+                    return member;
                 }
+
+                // Special case names that we want to add to our own Members dict
+                var is3x = DeclaringModule.Interpreter.LanguageVersion.Is3x();
+                switch (name) {
+                    case "__mro__":
+                    case "mro":
+                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType as IMember;
+                    case "__dict__":
+                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
+                    case @"__weakref__":
+                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
+                }
+
+                if (_memberGuard.Push(this)) {
+                    try {
+                        foreach (var m in Mro.Reverse()) {
+                            if (m == this) {
+                                return member;
+                            }
+                            member = member ?? m.GetMember(name);
+                        }
+                    } finally {
+                        _memberGuard.Pop();
+                    }
+                }
+                return null;
             }
-            return null;
         }
 
         public override string Documentation {
@@ -198,8 +199,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// class B(A[int, str]): ...
         /// Has the map {T: int, K: str}
         /// </summary>
-        public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
-            => _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters =>
+                _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 
         #endregion
 

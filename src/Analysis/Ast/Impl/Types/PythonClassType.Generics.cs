@@ -8,8 +8,11 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
+        private bool _isGeneric;
+        private object _genericParameterLock = new object();
         private Dictionary<string, PythonClassType> _specificTypeCache;
         private Dictionary<IGenericTypeParameter, IPythonType> _genericParameters;
+        private IReadOnlyList<IGenericTypeParameter> _parameters = new List<IGenericTypeParameter>();
         private ReentrancyGuard<IPythonClassType> _genericSpecializationGuard = new ReentrancyGuard<IPythonClassType>();
         private ReentrancyGuard<IPythonClassType> _genericResolutionGuard = new ReentrancyGuard<IPythonClassType>();
 
@@ -21,22 +24,21 @@ namespace Microsoft.Python.Analysis.Types {
         /// {T, T}
         /// Where T is a generic type parameter that needs to be filled in by the class
         /// </summary>
-        public virtual IReadOnlyList<IGenericTypeParameter> Parameters => GenericParameters.Values.Distinct().OfType<IGenericTypeParameter>().ToList();
+        public virtual IReadOnlyList<IGenericTypeParameter> Parameters => _parameters ?? Array.Empty<IGenericTypeParameter>();
+
+        public virtual bool IsGeneric => _isGeneric;
 
         /// <summary>
         /// A Class is generic if it has one or more unfilled generic type parameters or one of its bases is generic
         /// </summary>
-        public virtual bool IsGeneric {
-            get {
-                if (!_genericResolutionGuard.Push(this)) {
-                    return false;
-                }
-
-                try {
-                    return !Parameters.IsNullOrEmpty() || (Bases?.OfType<IGenericType>().Any(g => g.IsGeneric) ?? false);
-                } finally {
-                    _genericResolutionGuard.Pop();
-                }
+        public void DecideGeneric() {
+            if (!_genericResolutionGuard.Push(this)) {
+                _isGeneric = false;
+            }
+            try {
+                _isGeneric = !Parameters.IsNullOrEmpty() || (Bases?.OfType<IGenericType>().Any(g => g.IsGeneric) ?? false);
+            } finally {
+                _genericResolutionGuard.Pop();
             }
         }
 
@@ -52,15 +54,16 @@ namespace Microsoft.Python.Analysis.Types {
                 return Parameters.ToArray();
             }
 
+            var bases = Bases ?? Array.Empty<IPythonType>();
             var fromBases = new HashSet<IGenericTypeParameter>();
-            var genericClassParameter = Bases.OfType<IGenericClassParameter>().FirstOrDefault();
+            var genericClassParameter = bases.OfType<IGenericClassParameter>().FirstOrDefault();
 
             // If Generic[...] is present, ordering of type variables is determined from that
             if (genericClassParameter != null && genericClassParameter.TypeParameters != null) {
                 fromBases.UnionWith(genericClassParameter.TypeParameters);
             } else {
                 // otherwise look at the generic class bases
-                foreach (var gt in Bases.OfType<IGenericType>()) {
+                foreach (var gt in bases.OfType<IGenericType>()) {
                     if (gt.Parameters != null) {
                         fromBases.UnionWith(gt.Parameters);
                     }
@@ -169,20 +172,20 @@ namespace Microsoft.Python.Analysis.Types {
         /// B[int] inherits from A[int, str] 
         /// </summary>
         public IPythonType CreateSpecificType(IArgumentSet args) {
-            var genericTypeParameters = GetTypeParameters();
-            var newBases = new List<IPythonType>();
-
-            // Get map of generic type parameter to specific type - fill in what type goes to what
-            // type parameter T -> int, U -> str, etc.
-            var genericTypeToSpecificType = GetSpecificTypes(args, genericTypeParameters, newBases);
-
-            PythonClassType classType = new PythonClassType(BaseName, new Location(DeclaringModule));
-            // Storing generic parameters allows methods returning generic types 
-            // to know what type parameter returns what specific type
-            StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
-
-            // Locking so threads can only access class after it's been initialized
             lock (_genericParameterLock) {
+                var genericTypeParameters = GetTypeParameters();
+                var newBases = new List<IPythonType>();
+
+                // Get map of generic type parameter to specific type - fill in what type goes to what
+                // type parameter T -> int, U -> str, etc.
+                var genericTypeToSpecificType = GetSpecificTypes(args, genericTypeParameters, newBases);
+
+                PythonClassType classType = new PythonClassType(BaseName, new Location(DeclaringModule));
+                // Storing generic parameters allows methods returning generic types 
+                // to know what type parameter returns what specific type
+                StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
+
+                // Locking so threads can only access class after it's been initialized
                 // Store generic parameters first so name updates correctly, then check if class type has been cached
                 _specificTypeCache = _specificTypeCache ?? new Dictionary<string, PythonClassType>();
                 if (_specificTypeCache.TryGetValue(classType.Name, out var cachedType)) {
@@ -202,16 +205,18 @@ namespace Microsoft.Python.Analysis.Types {
                 }
 
                 try {
+                    // Bases can be null when not set
+                    var bases = Bases ?? Array.Empty<IPythonType>();
                     // Get declared generic class parameters, i.e. Generic[T1, T2, ...], Optional[Generic[T1, ...]]
-                    var genericClassParameters = Bases.OfType<IGenericClassParameter>().ToArray();
+                    var genericClassParameters = bases.OfType<IGenericClassParameter>().ToArray();
 
                     // Get list of bases that are generic but not generic class parameters, e.g A[T], B[T] but not Generic[T1, T2]
-                    var genericTypeBases = Bases.Except(genericClassParameters).OfType<IGenericType>().Where(g => g.IsGeneric).ToArray();
+                    var genericTypeBases = bases.Except(genericClassParameters).OfType<IGenericType>().Where(g => g.IsGeneric).ToArray();
 
                     // Removing all generic bases, and will only specialize genericTypeBases, remove generic class paramters entirely
                     // We remove generic class paramters entirely because the type information is now stored in GenericParameters field
                     // We still need generic bases so we can specialize them 
-                    var bases = Bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
+                    var specificBases = bases.Except(genericTypeBases).Except(genericClassParameters).ToList();
 
                     // Create specific types for generic type bases
                     foreach (var gt in genericTypeBases) {
@@ -224,20 +229,23 @@ namespace Microsoft.Python.Analysis.Types {
                         if (st.Length > 0) {
                             var type = gt.CreateSpecificType(new ArgumentSet(st, args.Expression, args.Eval));
                             if (!type.IsUnknown()) {
-                                bases.Add(type);
+                                specificBases.Add(type);
                             }
                         }
                     }
 
-                    // Set specific class bases
-                    classType.SetBases(bases.Concat(newBases));
+                    // Set specific class bases 
+                    classType.SetBases(specificBases.Concat(newBases));
+                    // Now that parameters are set, check if class is generic
+                    classType._parameters = classType._genericParameters.Values.Distinct().OfType<IGenericTypeParameter>().ToList();
+                    classType.DecideGeneric();
                     // Transfer members from generic to specific type.
                     SetClassMembers(classType, args);
                 } finally {
                     _genericSpecializationGuard.Pop();
                 }
+                return classType;
             }
-            return classType;
         }
 
         /// <summary>

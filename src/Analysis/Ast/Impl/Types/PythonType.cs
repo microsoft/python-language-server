@@ -23,8 +23,7 @@ using Microsoft.Python.Core.Diagnostics;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
-        private readonly object _lock = new object();
-        private readonly string _baseName;
+        protected readonly object _lock = new object();
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;
@@ -40,12 +39,13 @@ namespace Microsoft.Python.Analysis.Types {
             string documentation,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
         ) : this(name, location, typeId) {
+            BaseName = name ?? throw new ArgumentNullException(nameof(name));
             Documentation = documentation;
         }
 
         private PythonType(string name, Location location, BuiltinTypeId typeId) : base(location) {
             Check.ArgumentNotNull(nameof(location), location.Module);
-            _baseName = name ?? throw new ArgumentNullException(nameof(name));
+            BaseName = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
 
@@ -55,10 +55,10 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
 
-        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _baseName;
+        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : BaseName;
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
-        public string BaseName => _baseName;
+        public string BaseName { get; }
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
