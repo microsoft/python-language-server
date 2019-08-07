@@ -158,8 +158,11 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 // Check if name has type arguments such as Union[int, str]
                 // Note that types can be nested like Union[int, Union[A, B]]
                 var typeArgs = GetTypeArguments(memberName, out var typeName);
-                if (typeArgs.Count > 0) {
+                if (!string.IsNullOrEmpty(typeName) && typeName != memberName) {
                     memberName = typeName;
+                    if(typeArgs.Count == 0) {
+                        typeArgs = new[] { Module.Interpreter.UnknownType };
+                    }
                 }
 
                 var mc = member as IMemberContainer;
