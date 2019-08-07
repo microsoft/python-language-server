@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Types {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
+        private string _genericName;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
         private string _documentation;
@@ -53,16 +54,10 @@ namespace Microsoft.Python.Analysis.Types {
             location.Module.AddAstNode(this, classDefinition);
         }
 
-        public override string Name {
-            get {
-                var genericParams = GenericParameters.Values.ToList();
-                if (!genericParams.IsNullOrEmpty()) {
-                    return CodeFormatter.FormatSequence(BaseName, '[', genericParams);
-                } else {
-                    return base.Name;
-                }
-            }
-        }
+        /// <summary>
+        /// If class has generic type parameters, returns that form, e.g 'A[T1, int, ...]', otherwise returns base, e.g 'A'
+        /// </summary>
+        public override string Name => _genericName ?? base.Name;
 
         #region IPythonType
         public override PythonMemberType MemberType => PythonMemberType.Class;
@@ -77,24 +72,24 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IMember GetMember(string name) {
+            // Push/Pop should be lock protected.
+            if (Members.TryGetValue(name, out var member)) {
+                return member;
+            }
+
+            // Special case names that we want to add to our own Members dict
+            var is3x = DeclaringModule.Interpreter.LanguageVersion.Is3x();
+            switch (name) {
+                case "__mro__":
+                case "mro":
+                    return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType as IMember;
+                case "__dict__":
+                    return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
+                case @"__weakref__":
+                    return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
+            }
+
             lock (_lock) {
-                // Push/Pop should be lock protected.
-                if (Members.TryGetValue(name, out var member)) {
-                    return member;
-                }
-
-                // Special case names that we want to add to our own Members dict
-                var is3x = DeclaringModule.Interpreter.LanguageVersion.Is3x();
-                switch (name) {
-                    case "__mro__":
-                    case "mro":
-                        return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType as IMember;
-                    case "__dict__":
-                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
-                    case @"__weakref__":
-                        return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
-                }
-
                 if (_memberGuard.Push(this)) {
                     try {
                         foreach (var m in Mro.Reverse()) {
@@ -107,8 +102,8 @@ namespace Microsoft.Python.Analysis.Types {
                         _memberGuard.Pop();
                     }
                 }
-                return null;
             }
+            return null;
         }
 
         public override string Documentation {

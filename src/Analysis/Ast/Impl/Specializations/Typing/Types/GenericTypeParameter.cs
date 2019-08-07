@@ -107,8 +107,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return documentation;
         }
 
-        public bool Equals(IGenericTypeParameter other) {
-            return Name.Equals(other.Name);
-        }
+        public bool Equals(IGenericTypeParameter other) => Name.Equals(other.Name);
     }
 }
