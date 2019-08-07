@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
             }
 
-            lock (this) {
+            lock (_memberGuard) {
                 if (_memberGuard.Push(this)) {
                     try {
                         foreach (var m in Mro.Reverse()) {
@@ -111,28 +111,30 @@ namespace Microsoft.Python.Analysis.Types {
                 if (!string.IsNullOrEmpty(_documentation)) {
                     return _documentation;
                 }
-                // Make sure we do not cycle through bases back here.
-                if (!_memberGuard.Push(this)) {
-                    return null;
-                }
-                try {
-                    // Try doc from the type first (class definition AST node).
-                    _documentation = base.Documentation;
-                    if (string.IsNullOrEmpty(_documentation)) {
-                        // If not present, try docs __init__. IPythonFunctionType handles
-                        // __init__ in a special way so there is no danger of call coming
-                        // back here and causing stack overflow.
-                        _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                lock (_memberGuard) {
+                    // Make sure we do not cycle through bases back here.
+                    if (!_memberGuard.Push(this)) {
+                        return null;
                     }
+                    try {
+                        // Try doc from the type first (class definition AST node).
+                        _documentation = base.Documentation;
+                        if (string.IsNullOrEmpty(_documentation)) {
+                            // If not present, try docs __init__. IPythonFunctionType handles
+                            // __init__ in a special way so there is no danger of call coming
+                            // back here and causing stack overflow.
+                            _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                        }
 
-                    if (string.IsNullOrEmpty(_documentation) && Bases != null) {
-                        // If still not found, try bases. 
-                        var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
-                            ?.Documentation;
+                        if (string.IsNullOrEmpty(_documentation) && Bases != null) {
+                            // If still not found, try bases. 
+                            var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                            _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
+                                ?.Documentation;
+                        }
+                    } finally {
+                        _memberGuard.Pop();
                     }
-                } finally {
-                    _memberGuard.Pop();
                 }
                 return _documentation;
             }
