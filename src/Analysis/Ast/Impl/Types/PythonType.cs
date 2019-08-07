@@ -24,7 +24,7 @@ using Microsoft.Python.Core.Diagnostics;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
-        protected readonly object _lock = new object();
+        private readonly object _lock = new object();
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;

@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Types {
                     return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
             }
 
-            lock (_lock) {
+            lock (this) {
                 if (_memberGuard.Push(this)) {
                     try {
                         foreach (var m in Mro.Reverse()) {
