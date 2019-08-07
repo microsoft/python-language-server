@@ -67,10 +67,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     // For libraries remove declared local function variables to free up some memory
                     // unless function has inner classes or functions.
                     var optionsProvider = Eval.Services.GetService<IAnalysisOptionsProvider>();
-                    if (Module.ModuleType != ModuleType.User && 
+                    if (Module.ModuleType != ModuleType.User &&
                         optionsProvider?.Options.KeepLibraryLocalVariables != true &&
                         Eval.CurrentScope.Variables.All(
-                            v => v.GetPythonType<IPythonClassType>() == null || v.GetPythonType<IPythonFunctionType>() == null)
+                            v => v.GetPythonType<IPythonClassType>() == null &&
+                                 v.GetPythonType<IPythonFunctionType>() == null)
                         ) {
                         ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
