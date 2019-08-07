@@ -143,8 +143,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
             };
 
-            if (@params.initializationOptions.enableAnalysCache != false) {
+            if (@params.initializationOptions.enableAnalysisCache != false) {
+                _log?.Log(TraceEventType.Information, Resources.AnalysisCacheEnabled);
                 _services.AddService(new ModuleDatabase(_services));
+            } else {
+                _log?.Log(TraceEventType.Information, Resources.AnalysisCacheDisabled);
             }
 
             _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken);

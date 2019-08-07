@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AnalysisCacheDisabled" xml:space="preserve">
+    <value>Analysis cache disabled.</value>
+  </data>
+  <data name="AnalysisCacheEnabled" xml:space="preserve">
+    <value>Analysis cache enabled.</value>
+  </data>
   <data name="AnalysisIsInProgressHover" xml:space="preserve">
     <value>Code analysis is in progress...</value>
   </data>

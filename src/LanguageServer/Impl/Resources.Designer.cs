@@ -61,6 +61,24 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Analysis cache disabled..
+        /// </summary>
+        internal static string AnalysisCacheDisabled {
+            get {
+                return ResourceManager.GetString("AnalysisCacheDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Analysis cache enabled..
+        /// </summary>
+        internal static string AnalysisCacheEnabled {
+            get {
+                return ResourceManager.GetString("AnalysisCacheEnabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Code analysis is in progress....
         /// </summary>
         internal static string AnalysisIsInProgressHover {

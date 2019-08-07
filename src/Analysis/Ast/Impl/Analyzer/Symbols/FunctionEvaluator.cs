@@ -64,9 +64,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (ctor || returnType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
-                    // For libraries remove declared local function variables to free up some memory.
+                    // For libraries remove declared local function variables to free up some memory
+                    // unless function has inner classes or functions.
                     var optionsProvider = Eval.Services.GetService<IAnalysisOptionsProvider>();
-                    if (Module.ModuleType != ModuleType.User && optionsProvider?.Options.KeepLibraryLocalVariables != true) {
+                    if (Module.ModuleType != ModuleType.User && 
+                        optionsProvider?.Options.KeepLibraryLocalVariables != true &&
+                        Eval.CurrentScope.Variables.All(
+                            v => v.GetPythonType<IPythonClassType>() == null || v.GetPythonType<IPythonFunctionType>() == null)
+                        ) {
                         ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
                 }
@@ -120,8 +125,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var value = Eval.GetValueFromExpression(node.Expression);
             if (value != null) {
                 // although technically legal, __init__ in a constructor should not have a not-none return value
-                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class 
-                    && !value.IsOfType(BuiltinTypeId.NoneType)) { 
+                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class
+                    && !value.IsOfType(BuiltinTypeId.NoneType)) {
 
                     Eval.ReportDiagnostics(Module.Uri, new Diagnostics.DiagnosticsEntry(
                             Resources.ReturnInInit,
