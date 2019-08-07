@@ -634,5 +634,21 @@ class Test():
             // Test run time: typically ~ 20 sec.
             sw.ElapsedMilliseconds.Should().BeLessThan(60000); 
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedProperty() {
+            const string code = @"
+class x(object):
+    def func(self):
+        @property
+        def foo(*args, **kwargs):
+            pass
+        return 42
+
+a = x().func()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
     }
 }
