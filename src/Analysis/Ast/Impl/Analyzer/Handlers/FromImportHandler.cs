@@ -40,16 +40,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
 
-            if(node.Root is RelativeModuleName) {
-                var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-                if (HandleImportSearchResult(imports, null, null, node.Root, out var variableModule)) {
-                    AssignVariables(node, imports, variableModule);
-                }
-            } else {
-                FindModuleByAbsoluteName(node.Root, null, node.ForceAbsolute, out _, out var module, out _, out var imports);
-                AssignVariables(node, imports, module);
+            var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
+            if (HandleImportSearchResult(imports, null, null, node.Root, out var variableModule)) {
+                AssignVariables(node, imports, variableModule);
             }
-
             return false;
         }
 
@@ -88,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
-            var memberNames = isImplicitPackage
+            var memberNames = isImplicitPackage 
                 ? variableModule.GetMemberNames()
                 : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
