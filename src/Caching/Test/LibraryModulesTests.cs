@@ -52,24 +52,149 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             dbModule.Should().HaveSameMembersAs(builtins);
         }
 
+        [TestMethod, Priority(0)]
+        public Task Ast() => TestModule("ast");
 
         [TestMethod, Priority(0)]
-        public Task Sys() => TestModule("sys");
+        public Task Asyncio() => TestModule("asyncio");
+
+        [TestMethod, Priority(0)]
+        public Task Base64() => TestModule("base64");
+
+        [TestMethod, Priority(0)]
+        public Task Bisect() => TestModule("bisect");
+
+        [TestMethod, Priority(0)]
+        public Task Calendar() => TestModule("calendar");
+
+        [TestMethod, Priority(0)]
+        public Task Collections() => TestModule("collections");
+
+        [TestMethod, Priority(0)]
+        public Task Concurrent() => TestModule("concurrent");
+
+        [TestMethod, Priority(0)]
+        public Task CTypes() => TestModule("ctypes");
+
+        [TestMethod, Priority(0)]
+        public Task Curses() => TestModule("curses");
+
+        [TestMethod, Priority(0)]
+        public Task Datetime() => TestModule("datetime");
+
+        [TestMethod, Priority(0)]
+        public Task Dbm() => TestModule("dbm");
+
+        [TestMethod, Priority(0)]
+        public Task Distutils() => TestModule("distutils");
+
+        [TestMethod, Priority(0)]
+        public Task Email() => TestModule("email");
+
+        [TestMethod, Priority(0)]
+        public Task Encodings() => TestModule("encodings");
+
+        [TestMethod, Priority(0)]
+        public Task Enum() => TestModule("enum");
+
+        [TestMethod, Priority(0)]
+        public Task Filecmp() => TestModule("filecmp");
+
+        [TestMethod, Priority(0)]
+        public Task Html() => TestModule("html");
+
+        [TestMethod, Priority(0)]
+        public Task Http() => TestModule("http");
+
+        [TestMethod, Priority(0)]
+        public Task Importlib() => TestModule("importlib");
 
         [TestMethod, Priority(0)]
         public Task Io() => TestModule("io");
 
         [TestMethod, Priority(0)]
-        public Task Re() => TestModule("re");
-
-        [TestMethod, Priority(0)]
-        public Task Os() => TestModule("os");
+        public Task Json() => TestModule("json");
 
         [TestMethod, Priority(0)]
         public Task Logging() => TestModule("logging");
 
         [TestMethod, Priority(0)]
+        public Task Multiprocessing() => TestModule("multiprocessing");
+
+        [TestMethod, Priority(0)]
+        public Task Os() => TestModule("os");
+
+        [TestMethod, Priority(0)]
+        public Task Pydoc() => TestModule("pydoc");
+
+        [TestMethod, Priority(0)]
+        public Task Queue() => TestModule("queue");
+
+        [TestMethod, Priority(0)]
+        public Task Random() => TestModule("random");
+
+        [TestMethod, Priority(0)]
+        public Task Re() => TestModule("re");
+
+        [TestMethod, Priority(0)]
+        public Task Signal() => TestModule("signal");
+
+        [TestMethod, Priority(0)]
+        public Task Site() => TestModule("site");
+
+        [TestMethod, Priority(0)]
+        public Task Socket() => TestModule("socket");
+
+        [TestMethod, Priority(0)]
+        public Task Sqlite3() => TestModule("sqlite3");
+
+        [TestMethod, Priority(0)]
+        public Task Statistics() => TestModule("statistics");
+
+        [TestMethod, Priority(0)]
+        public Task String() => TestModule("string");
+
+        [TestMethod, Priority(0)]
+        public Task Ssl() => TestModule("ssl");
+
+        [TestMethod, Priority(0)]
+        public Task Sys() => TestModule("sys");
+
+        [TestMethod, Priority(0)]
+        public Task Time() => TestModule("time");
+
+        [TestMethod, Priority(0)]
+        public Task Threading() => TestModule("threading");
+
+        [TestMethod, Priority(0)]
+        public Task Token() => TestModule("token");
+
+        [TestMethod, Priority(0)]
+        public Task Trace() => TestModule("trace");
+
+        [TestMethod, Priority(0)]
         public Task Types() => TestModule("types");
+
+        [TestMethod, Priority(0)]
+        public Task Unittest() => TestModule("unittest");
+
+        [TestMethod, Priority(0)]
+        public Task Urllib() => TestModule("urllib");
+
+        [TestMethod, Priority(0)]
+        public Task Uuid() => TestModule("uuid");
+
+        [TestMethod, Priority(0)]
+        public Task Weakref() => TestModule("weakref");
+
+        [TestMethod, Priority(0)]
+        public Task Xml() => TestModule("xml");
+
+        [TestMethod, Priority(0)]
+        public Task XmlRpc() => TestModule("xmlrpc");
+
+        [TestMethod, Priority(0)]
+        public Task Zipfile() => TestModule("zipfile");
 
         [TestMethod, Priority(0)]
         public async Task Requests() {
