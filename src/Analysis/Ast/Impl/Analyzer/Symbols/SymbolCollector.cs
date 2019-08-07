@@ -17,10 +17,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
@@ -45,6 +45,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void Walk() => _eval.Ast.Walk(this);
+
+        public override bool Walk(IfStatement node)
+            => node.WalkIfWithSystemConditions(this, _eval.Ast.LanguageVersion, _eval.Services.GetService<IOSPlatform>().IsWindows);
 
         public override bool Walk(ClassDefinition cd) {
             if (IsDeprecated(cd)) {
