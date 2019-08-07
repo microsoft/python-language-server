@@ -90,7 +90,7 @@ _T = _X
             diagnostic.Message.Should().Be(Resources.GenericNotAllUnique);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingGenericArguments);
             diagnostic.SourceSpan.Should().Be(8, 8, 8, 21);
-            diagnostic.Severity.Should().Be(Severity.Error);
+            diagnostic.Severity.Should().Be(Severity.Warning);
         }
 
         [DataRow("x = y #noqa")]

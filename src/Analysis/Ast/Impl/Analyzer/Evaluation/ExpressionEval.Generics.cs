@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     Resources.GenericNotAllTypeParameters,
                     GetLocation(expr).Span,
                     ErrorCodes.TypingGenericArguments,
-                    Severity.Error,
+                    Severity.Warning,
                     DiagnosticSource.Analysis));
                 return false;
             }
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                    Resources.GenericNotAllUnique,
                    GetLocation(expr).Span,
                    ErrorCodes.TypingGenericArguments,
-                   Severity.Error,
+                   Severity.Warning,
                    DiagnosticSource.Analysis));
                 return false;
             }

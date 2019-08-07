@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
 
@@ -51,6 +52,14 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region ILocatedMember
         public override PythonMemberType MemberType => _typeId.GetMemberId();
+
+        public override void AddReference(Location location) {
+            if (DeclaringModule == null || DeclaringModule.ModuleType == ModuleType.Builtins) {
+                return;
+            }
+
+            base.AddReference(location);
+        }
         #endregion
 
         #region IPythonType

@@ -150,6 +150,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType) {
+            // We can't add a property to an unknown type. Fallback to a regular function for now.
+            // TOOD: Decouple declaring types from the property.
+            if (declaringType.IsUnknown()) {
+                return false;
+            }
+
             var dec = node.Decorators?.Decorators;
             var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
 

@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                     new DiagnosticsEntry(Resources.TypeVarSingleConstraint,
                         callLocation?.Span ?? default,
                         Diagnostics.ErrorCodes.TypingTypeVarArguments,
-                        Severity.Error, DiagnosticSource.Analysis)
+                        Severity.Warning, DiagnosticSource.Analysis)
                 );
                 return false;
             }

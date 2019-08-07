@@ -48,6 +48,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             te.Measurements["workingMB"] = workingMB;
             te.Measurements["elapsedMs"] = e.MillisecondsElapsed;
             te.Measurements["moduleCount"] = e.ModuleCount;
+            te.Measurements["rdtCount"] = _rdt.DocumentCount;
 
             telemetry.SendTelemetryAsync(te).DoNotWait();
         }
