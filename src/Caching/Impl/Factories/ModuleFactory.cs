@@ -203,12 +203,17 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     var argumentString = memberName.Substring(openBracket + 1, closeBracket - openBracket - 1);
                     // Extract type names from argument string. Note that types themselves
                     // can have arguments: Union[int, Union[int, Union[str, bool]], ...].
-                    var arguments = TypeNames.GetTypeNames(argumentString, ',');
-                    foreach (var a in arguments) {
-                        var t = ConstructType(a);
-                        // TODO: better handle generics type definitions from TypeVar.
-                        // https://github.com/microsoft/python-language-server/issues/1214
-                        t = t ?? new GenericTypeParameter(a, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
+                    var qualifiedNames= TypeNames.GetTypeNames(argumentString, ',');
+                    foreach (var qn in qualifiedNames) {
+                        var t = ConstructType(qn);
+                        if (t == null) {
+                            // TODO: better handle generics type definitions from TypeVar.
+                            // https://github.com/microsoft/python-language-server/issues/1214
+                            TypeNames.DeconstructQualifiedName(qn, out var parts);
+                            typeName = string.Join(".", parts.MemberNames);
+                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
+                        }
+
                         typeArgs.Add(t);
                     }
                     typeName = memberName.Substring(0, openBracket);

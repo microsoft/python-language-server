@@ -90,7 +90,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
-            }).ToArray() ?? Array.Empty<IPythonType>();
+            }).ToArray();
 
             var documentation = GetDocumentation(args, constraints);
             return new GenericTypeParameter(name, declaringModule, constraints, documentation, location);
