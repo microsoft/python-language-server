@@ -309,6 +309,48 @@ fob = D().func2()
         }
 
         [TestMethod, Priority(0)]
+        public async Task AssignBeforeClassDef() {
+            const string code = @"
+D = 5
+class D: ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("D").OfType("D");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AssignAfterClassDef() {
+            const string code = @"
+class D: ...
+D = 5
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("D").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AssignBeforeFunctionDef() {
+            const string code = @"
+D = 5
+def D():
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("D").OfType("D");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AssignAfterFunctionDef() {
+            const string code = @"
+def D():
+    pass
+D = 5
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("D").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task StrIndex() {
             const string code = @"
 a = 'abc'
