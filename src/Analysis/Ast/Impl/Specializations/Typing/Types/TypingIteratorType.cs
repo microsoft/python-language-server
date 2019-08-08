@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             ItemTypes = new[] { itemType };
             Repeat = true;
             Name = $"Iterator[{itemType.Name}]";
+            QualifiedName = $"typing:Iterator[{itemType.QualifiedName}]";
         }
 
         /// <summary>
@@ -44,11 +45,13 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             : base(iteratorType, interpreter.ModuleResolution.GetSpecializedModule("typing")) {
             ItemTypes = itemTypes;
             Name = $"Iterator[{CodeFormatter.FormatSequence(string.Empty, '(', itemTypes)}]";
+            QualifiedName = $"typing:Iterator[{CodeFormatter.FormatSequence(string.Empty, '(', itemTypes.Select(t => t.QualifiedName))}]";
         }
 
         public IReadOnlyList<IPythonType> ItemTypes { get; }
         public bool Repeat { get; }
         public override string Name { get; }
+        public override string QualifiedName { get; }
         public override bool IsSpecialized => true;
 
 

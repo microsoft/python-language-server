@@ -60,8 +60,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args)
-                => GenericTypeParameter.FromTypeVar(args, interpreter));
+            o.SetReturnValueProvider((declaringModule, overload, args)
+                => GenericTypeParameter.FromTypeVar(args, declaringModule));
 
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args) => CreateTypeAlias(args));
+            o.SetReturnValueProvider((declaringModule, overload, args) => CreateTypeAlias(args));
             fn.AddOverload(o);
             _members["NewType"] = fn;
 
@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args) => {
+            o.SetReturnValueProvider((declaringModule, overload, args) => {
                 var a = args.Values<IMember>();
                 return a.Count == 1 ? a[0] : Interpreter.UnknownType;
             });
@@ -136,12 +136,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             fn = PythonFunctionType.Specialize("NamedTuple", this, GetMemberDocumentation("NamedTuple"));
             o = new PythonFunctionOverload(fn.Name, location);
-            o.SetReturnValueProvider((interpreter, overload, args) => CreateNamedTuple(args.Values<IMember>()));
+            o.SetReturnValueProvider((declaringModule, overload, args) => CreateNamedTuple(args.Values<IMember>(), declaringModule));
             fn.AddOverload(o);
             _members["NamedTuple"] = fn;
 
             _members["Any"] = new AnyType(this);
-
             _members["AnyStr"] = CreateAnyStr();
 
             _members["Optional"] = new GenericType("Optional", CreateOptional, this);
@@ -241,8 +240,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
-                    new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType), 
-                        expression?.GetLocation(eval)?.Span ?? default, 
+                    new DiagnosticsEntry(Resources.NewTypeFirstArgNotString.FormatInvariant(firstArgType),
+                        expression?.GetLocation(eval)?.Span ?? default,
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Warning, DiagnosticSource.Analysis)
                 );
@@ -259,7 +258,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs) {
+        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs, IPythonModule declaringModule) {
             if (typeArgs.Count != 2) {
                 // TODO: report wrong number of arguments
                 return Interpreter.UnknownType;
@@ -304,7 +303,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 itemNames.Add(itemName2);
                 itemTypes.Add(c.Contents[1].GetPythonType());
             }
-            return TypingTypeFactory.CreateNamedTupleType(Interpreter, tupleName, itemNames, itemTypes);
+            return TypingTypeFactory.CreateNamedTupleType(Interpreter, tupleName, itemNames, itemTypes, declaringModule);
         }
 
         private IPythonType CreateOptional(IReadOnlyList<IPythonType> typeArgs) {
@@ -327,15 +326,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var str = Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var bytes = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             var unicode = Interpreter.GetBuiltinType(BuiltinTypeId.Unicode);
-            var name = "AnyStr";
 
             var constraints = Interpreter.LanguageVersion.Is3x()
-                ? new IPythonType[] { str, bytes }
-                : new IPythonType[] { str, unicode };
-            var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.Name));
-            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
+                ? new[] { str, bytes }
+                : new[] { str, unicode };
+            var docArgs = new[] { "'AnyStr'" }.Concat(constraints.Select(c => c.Name));
 
-            return new GenericTypeParameter(name, this, constraints, documentation, default);
+            var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
+            return new PythonTypeWrapper("AnyStr", documentation, this, Interpreter.GetBuiltinType(BuiltinTypeId.Str));
         }
 
         private IPythonType CreateGenericClassParameter(IReadOnlyList<IPythonType> typeArgs) {

@@ -40,16 +40,9 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             ModulePrefix = modulePrefix ?? string.Empty;
         }
 
-        public PythonLibraryPath(string path, bool isStandardLibrary, string modulePrefix) :
-            this(path, isStandardLibrary ? PythonLibraryPathType.StdLib : PythonLibraryPathType.Unspecified, modulePrefix) { }
-
         public string Path { get; }
-
         public PythonLibraryPathType Type { get; }
-
-        public string ModulePrefix { get; } = string.Empty;
-
-        public bool IsStandardLibrary => Type == PythonLibraryPathType.StdLib;
+        public string ModulePrefix { get; }
 
         public override string ToString() {
             var type = string.Empty;
@@ -69,9 +62,9 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             return "{0}|{1}|{2}".FormatInvariant(Path, type, ModulePrefix);
         }
 
-        public static PythonLibraryPath Parse(string s) {
+        private static PythonLibraryPath Parse(string s) {
             if (string.IsNullOrEmpty(s)) {
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(s));
             }
 
             var parts = s.Split(new[] { '|' }, 3);
@@ -83,8 +76,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             var ty = parts[1];
             var prefix = parts[2];
 
-            PythonLibraryPathType type = PythonLibraryPathType.Unspecified;
-
+            var type = PythonLibraryPathType.Unspecified;
             switch (ty) {
                 case "stdlib":
                     type = PythonLibraryPathType.StdLib;
@@ -106,8 +98,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// </summary>
         /// <param name="library">Root of the standard library.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
-        /// <remarks>New in 2.2, moved in 3.3</remarks>
-        public static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
+        private static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
             var result = new List<PythonLibraryPath>();
             if (!Directory.Exists(library)) {
                 return result;
@@ -174,19 +165,15 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             // sys.path will include the working directory, so we make an empty
             // path that we can filter out later
-            var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
-            fs.CreateDirectory(tempWorkingDir);
-            if (!InstallPath.TryGetFile("get_search_paths.py", out var srcGetSearchPaths)) {
+            if (!InstallPath.TryGetFile("get_search_paths.py", out var getSearchPathScript)) {
                 return new List<PythonLibraryPath>();
             }
-            var getSearchPaths = IOPath.Combine(tempWorkingDir, PathUtils.GetFileName(srcGetSearchPaths));
-            File.Copy(srcGetSearchPaths, getSearchPaths);
 
             var startInfo = new ProcessStartInfo(
                 interpreter,
-                new[] { "-S", "-E", getSearchPaths }.AsQuotedArguments()
+                new[] { "-S", "-E", getSearchPathScript }.AsQuotedArguments()
             ) {
-                WorkingDirectory = tempWorkingDir,
+                WorkingDirectory = IOPath.GetDirectoryName(getSearchPathScript),
                 UseShellExecute = false,
                 ErrorDialog = false,
                 CreateNoWindow = true,
@@ -194,17 +181,11 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 RedirectStandardOutput = true
             };
 
-            try {
-                var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
-                return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Select(s => {
+            var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
+            return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Skip(1).Select(s => {
                     try {
-                        var p = Parse(s);
-
-                        if (PathUtils.PathStartsWith(p.Path, tempWorkingDir)) {
-                            return null;
-                        }
-
-                        return p;
+                        return Parse(s);
                     } catch (ArgumentException) {
                         Debug.Fail("Invalid search path: " + (s ?? "<null>"));
                         return null;
@@ -212,10 +193,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                         Debug.Fail("Invalid format for search path: " + s);
                         return null;
                     }
-                }).Where(p => p != null).ToList();
-            } finally {
-                fs.DeleteDirectory(tempWorkingDir, true);
-            }
+                })
+                .Where(p => p != null).ToList();
         }
 
         public static (IReadOnlyList<PythonLibraryPath> interpreterPaths, IReadOnlyList<PythonLibraryPath> userPaths) ClassifyPaths(
@@ -304,7 +283,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         }
 
         public static bool operator ==(PythonLibraryPath left, PythonLibraryPath right) => left?.Equals(right) ?? right is null;
-
         public static bool operator !=(PythonLibraryPath left, PythonLibraryPath right) => !(left?.Equals(right) ?? right is null);
     }
 }

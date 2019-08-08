@@ -634,5 +634,39 @@ class Test():
             // Test run time: typically ~ 20 sec.
             sw.ElapsedMilliseconds.Should().BeLessThan(60000); 
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedClasses() {
+            const string code = @"
+class A:
+    class B:
+        def __init__(self): ...
+
+    def __init__(self): ...
+
+x = A.B
+ab = A.B()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Type);
+            var ab = analysis.Should().HaveVariable("ab").Which;
+            ab.Value.Should().BeAssignableTo<IPythonInstance>()
+                .And.HaveType(typeof(IPythonClassType));
+
+            var c = ab.Value.GetPythonType<IPythonClassType>();
+            c.Should().NotBeNull();
+            c.DeclaringType.Name.Should().Be("A");
+            c.DeclaringType.Should().BeAssignableTo<IPythonClassType>();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MethodType() {
+            const string code = @"
+x = type(object.__init__)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Method);
+        }
     }
 }

@@ -27,20 +27,25 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <summary>
         /// Creates type info for a strongly-typed tuple, such as Tuple[T1, T2, ...].
         /// </summary>
-        public NamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
-            : base(itemTypes, interpreter) {
+        public NamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IPythonInterpreter interpreter)
+            : base(itemTypes, declaringModule, interpreter) {
             TupleName = tupleName ?? throw new ArgumentNullException(nameof(tupleName));
             ItemNames = itemNames;
 
             var typeNames = itemTypes.Select(t => t.IsUnknown() ? string.Empty : t.Name);
             var pairs = itemNames.Zip(typeNames, (name, typeName) => string.IsNullOrEmpty(typeName) ? name : $"{name}: {typeName}");
             Name = CodeFormatter.FormatSequence(tupleName, '(', pairs);
+
+            typeNames = itemTypes.Select(t => t.IsUnknown() ? string.Empty : t.QualifiedName);
+            pairs = itemNames.Zip(typeNames, (name, typeName) => string.IsNullOrEmpty(typeName) ? name : $"{name}: {typeName}");
+            QualifiedName = CodeFormatter.FormatSequence($"{declaringModule.Name}:{tupleName}", '(', pairs);
         }
 
         public string TupleName { get; }
         public IReadOnlyList<string> ItemNames { get; }
 
         public override string Name { get; }
+        public override string QualifiedName { get; }
         public override bool IsSpecialized => true;
 
         public override IMember CreateInstance(string typeName, IArgumentSet args) => new TypingTuple(this);

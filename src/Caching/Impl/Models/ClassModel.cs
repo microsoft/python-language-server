@@ -22,8 +22,8 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [DebuggerDisplay("c:{Name}")]
-    internal sealed class ClassModel: MemberModel {
+    [DebuggerDisplay("cls:{Name}")]
+    internal sealed class ClassModel : MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }
         public FunctionModel[] Methods { get; set; }
@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 var m = cls.GetMember(name);
 
                 // Only take members from this class, skip members from bases.
-                if (m is IPythonClassMember cm && !cls.Equals(cm.DeclaringType)) {
+                if (m is IPythonClassMember cm && cls.QualifiedName != cm.DeclaringType?.QualifiedName) {
                     continue;
                 }
 
@@ -64,6 +64,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                                 continue;
                             }
                             innerClasses.Add(FromType(ct));
+                            break;
+                        case IPythonFunctionType ft when ft.IsLambda():
                             break;
                         case IPythonFunctionType ft when ft.Name == name:
                             methods.Add(FunctionModel.FromType(ft));
@@ -88,7 +90,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             IndexSpan = cls.Location.IndexSpan.ToModel();
 
             Documentation = cls.Documentation;
-            Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetQualifiedName()).ToArray();
+            Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetPersistentQualifiedName()).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();

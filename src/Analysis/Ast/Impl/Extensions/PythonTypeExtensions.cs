@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -29,20 +28,12 @@ namespace Microsoft.Python.Analysis {
         public static bool IsGeneric(this IPythonType value)
             => value is IGenericTypeDefinition || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
 
-        public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
-            if (s != d && s is PythonType src && d is PythonType dst) {
-                var documentation = src.Documentation;
-                if (!string.IsNullOrEmpty(documentation)) {
-                    dst.SetDocumentation(documentation);
-                }
-
-                dst.Location = src.Location;
-            }
-        }
-
         public static bool IsConstructor(this IPythonClassMember m)
             => m.Name.EqualsOrdinal("__init__") || m.Name.EqualsOrdinal("__new__");
 
         public static string GetQualifiedName(this IPythonType t) => $"{t.DeclaringModule.Name}:{t.Name}";
+
+        internal static IPythonType ToBound(this IPythonType t) => t is PythonFunctionType.PythonUnboundMethod m ? m.Function : t;
+
     }
 }

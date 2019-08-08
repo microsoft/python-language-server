@@ -69,6 +69,14 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
+        public int DocumentCount {
+            get {
+                lock (_lock) {
+                    return _documentsByUri.Count;
+                }
+            }
+        }
+
         /// <summary>
         /// Adds file to the list of available documents.
         /// </summary>

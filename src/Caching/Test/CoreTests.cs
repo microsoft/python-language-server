@@ -16,6 +16,8 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -32,6 +34,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         private string BaselineFileName => GetBaselineFileName(TestContext.TestName);
+        private string GetBaselineFileNameWithSuffix(string suffix) => GetBaselineFileName(TestContext.TestName, suffix);
 
         [TestMethod, Priority(0)]
         public async Task SmokeTest() {
@@ -61,27 +64,51 @@ c = C()
             Baseline.CompareToFile(BaselineFileName, json);
         }
 
+        [DataTestMethod, Priority(0)]
+        [DataRow("t:str", "builtins", "str", ObjectType.Type)]
+        [DataRow("i:str", "builtins", "str", ObjectType.Instance)]
+        [DataRow("i:...", "builtins", "ellipsis", ObjectType.Instance)]
+        [DataRow("t:ellipsis", "builtins", "ellipsis", ObjectType.Type)]
+        [DataRow("i:builtins:str", "builtins", "str", ObjectType.Instance)]
+        [DataRow("i:mod:x", "mod", "x", ObjectType.Instance)]
+        [DataRow("t:typing:Union[str, tuple]", "typing", "Union[str, tuple]", ObjectType.Type)]
+        [DataRow("t:typing:Union[typing:Any, mod:y]", "typing", "Union[typing:Any, mod:y]", ObjectType.Type)]
+        [DataRow("t:typing:Union[typing:Union[str, int], mod:y]", "typing", "Union[typing:Union[str, int], mod:y]", ObjectType.Type)]
+        [DataRow("m:typing", "typing", "", ObjectType.Module)]
+        [DataRow("p:A", "A", "", ObjectType.VariableModule)]
+        public void QualifiedNames(string qualifiedName, string moduleName, string typeName, ObjectType objectType) {
+            TypeNames.DeconstructQualifiedName(qualifiedName, out var parts);
+            parts.ModuleName.Should().Be(moduleName);
+            switch (objectType) {
+                case ObjectType.Instance:
+                case ObjectType.Type:
+                    parts.MemberNames[0].Should().Be(typeName);
+                    break;
+                default:
+                    parts.MemberNames.Should().BeEmpty();
+                    break;
+            }
+            parts.ObjectType.Should().Be(objectType);
+        }
 
         [DataTestMethod, Priority(0)]
-        [DataRow("", null, null, false)]
-        [DataRow("str", "builtins", "str", false)]
-        [DataRow("i:str", "builtins", "str", true)]
-        [DataRow("i:...", "builtins", "ellipsis", true)]
-        [DataRow("ellipsis", "builtins", "ellipsis", false)]
-        [DataRow("i:builtins:str", "builtins", "str", true)]
-        [DataRow("i:mod:x", "mod", "x", true)]
-        [DataRow("typing:Union[str, tuple]", "typing", "Union[str, tuple]", false)]
-        [DataRow("typing:Union[typing:Any, mod:y]", "typing", "Union[typing:Any, mod:y]", false)]
-        [DataRow("typing:Union[typing:Union[str, int], mod:y]", "typing", "Union[typing:Union[str, int], mod:y]", false)]
-        public void QualifiedNames(string qualifiedName, string moduleName, string typeName, bool isInstance) {
-            TypeNames.DeconstructQualifiedName(qualifiedName, out var actualModuleName, out var actualMemberNames, out var actualIsInstance);
-            actualModuleName.Should().Be(moduleName);
-            if (string.IsNullOrEmpty(qualifiedName)) {
-                actualMemberNames.Should().BeNull();
-            } else {
-                actualMemberNames[0].Should().Be(typeName);
-            }
-            actualIsInstance.Should().Be(isInstance);
+        [DataRow(true)]
+        [DataRow(false)]
+        public async Task VersionHandling(bool is3x) {
+            const string code = @"
+if sys.version_info >= (3, 0):
+    def func(a, b, c): ...
+else:
+    def func(a): ...
+";
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveFunction("func")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameters(is3x ? new[] { "a", "b", "c" } : new[] { "a" });
+
+            var model = ModuleModel.FromAnalysis(analysis, Services);
+            var json = ToJson(model);
+            Baseline.CompareToFile(GetBaselineFileNameWithSuffix(is3x ? "3" : "2"), json);
         }
     }
 }

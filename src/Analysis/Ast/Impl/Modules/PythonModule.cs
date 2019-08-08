@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -103,8 +104,10 @@ namespace Microsoft.Python.Analysis.Modules {
             if (uri == null && !string.IsNullOrEmpty(creationOptions.FilePath)) {
                 Uri.TryCreate(creationOptions.FilePath, UriKind.Absolute, out uri);
             }
+
             Uri = uri;
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
+
             Stub = creationOptions.Stub;
             if (Stub is PythonModule stub && ModuleType != ModuleType.Stub) {
                 stub.PrimaryModule = this;
@@ -113,6 +116,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ModuleType == ModuleType.Specialized || ModuleType == ModuleType.Unresolved) {
                 ContentState = State.Analyzed;
             }
+
             InitializeContent(creationOptions.Content, 0);
         }
 
@@ -164,8 +168,20 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (valueType is PythonModule) {
                         return false; // Do not re-export modules.
                     }
-                    // Do not re-export types from typing
-                    return !(valueType?.DeclaringModule is TypingModule) || this is TypingModule;
+                    if(valueType is IPythonFunctionType f && f.IsLambda()) {
+                        return false;
+                    }
+                    if (this is TypingModule) {
+                        return true; // Let typing module behave normally.
+                    }
+                    // Do not re-export types from typing. However, do export variables
+                    // assigned with types from typing. Example:
+                    //    from typing import Any # do NOT export Any
+                    //    x = Union[int, str] # DO export x
+                    if(valueType?.DeclaringModule is TypingModule && v.Name == valueType.Name) {
+                        return false;
+                    }
+                    return true;
                 })
                 .Select(v => v.Name);
         }

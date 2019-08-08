@@ -1,0 +1,123 @@
+{
+  "UniqueId": "module",
+  "Documentation": "",
+  "Functions": [
+    {
+      "Documentation": null,
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "a",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Attributes": 0,
+      "Classes": [],
+      "Functions": [],
+      "Id": 24395611,
+      "Name": "func",
+      "IndexSpan": {
+        "Start": 77,
+        "Length": 4
+      }
+    }
+  ],
+  "Variables": [
+    {
+      "Value": "t:bool",
+      "Id": -529376420,
+      "Name": "__debug__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": -1636005055,
+      "Name": "__doc__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 875442003,
+      "Name": "__file__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 1097116834,
+      "Name": "__name__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 75395663,
+      "Name": "__package__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:list",
+      "Id": 1154586556,
+      "Name": "__path__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:dict",
+      "Id": 817929997,
+      "Name": "__dict__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    }
+  ],
+  "Classes": [],
+  "NewLines": [
+    {
+      "EndIndex": 2,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 34,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 62,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 69,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 91,
+      "Kind": 3
+    }
+  ],
+  "FileSize": 91,
+  "Id": -2131035837,
+  "Name": "module",
+  "IndexSpan": null
+}

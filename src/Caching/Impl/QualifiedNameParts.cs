@@ -13,16 +13,24 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
+using System.Collections.Generic;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal sealed class TypeAlias: PythonTypeWrapper {
-        public TypeAlias(string name, IPythonType type) : base(type) {
-            Name = name;
-        }
-        public override string Name { get; }
-        public override string QualifiedName => $"typing:{Name}";
-        public override bool IsSpecialized => true;
+namespace Microsoft.Python.Analysis.Caching {
+    public enum ObjectType {
+        Type,
+        Instance,
+        Module,
+        VariableModule,
+        BuiltinModule,
+        NamedTuple
+    }
 
+    internal struct QualifiedNameParts {
+        /// <summary>Object type.</summary>
+        public ObjectType ObjectType;
+        /// <summary>Module name.</summary>
+        public string ModuleName;
+        /// <summary>Module member names such as 'A', 'B', 'C' from module:A.B.C.</summary>
+        public IReadOnlyList<string> MemberNames;
     }
 }

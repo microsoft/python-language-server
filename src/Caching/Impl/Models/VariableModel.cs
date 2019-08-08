@@ -27,20 +27,20 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Id = v.Name.GetStableHash(),
             Name = v.Name,
             IndexSpan = v.Location.IndexSpan.ToModel(),
-            Value = v.Value.GetQualifiedName()
+            Value = v.Value.GetPersistentQualifiedName()
         };
 
         public static VariableModel FromInstance(string name, IPythonInstance inst) => new VariableModel {
             Id = name.GetStableHash(),
             Name = name,
-            Value = inst.GetQualifiedName()
+            Value = inst.GetPersistentQualifiedName()
         };
 
         public static VariableModel FromType(string name, IPythonType t) => new VariableModel {
             Id = name.GetStableHash(),
             Name = name,
             IndexSpan = t.Location.IndexSpan.ToModel(),
-            Value = t.QualifiedName
+            Value = t.GetPersistentQualifiedName()
         };
     }
 }

@@ -24,9 +24,9 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             : base(models, mf) {
         }
 
-        protected override IVariable CreateMember(VariableModel vm, IPythonType declaringType) {
-            var m = ModuleFactory.ConstructMember(vm.Value);
-            return new Variable(vm.Name, m, VariableSource.Declaration, new Location(ModuleFactory.Module, vm.IndexSpan.ToSpan()));
+        public override IVariable CreateMember(VariableModel vm, IPythonType declaringType) {
+            var m = ModuleFactory.ConstructMember(vm.Value) ?? ModuleFactory.Module.Interpreter.UnknownType;
+            return new Variable(vm.Name, m, VariableSource.Declaration, new Location(ModuleFactory.Module, vm.IndexSpan?.ToSpan() ?? default));
         }
     }
 }

@@ -162,7 +162,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// <summary>
         /// Turns off analysis caching.
         /// </summary>
-        public bool? enableAnalysCache;
+        public bool? enableAnalysisCache;
     }
 
     [Serializable]

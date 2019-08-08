@@ -13,9 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
@@ -24,30 +27,62 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string Documentation { get; set; }
         public OverloadModel[] Overloads { get; set; }
         public FunctionAttributes Attributes { get; set; }
-        public string[] Classes { get; set; }
-        public string[] Functions { get; set; }
+        public ClassModel[] Classes { get; set; }
+        public FunctionModel[] Functions { get; set; }
 
-        public static FunctionModel FromType(IPythonFunctionType ft) {
-            return new FunctionModel {
-                Id = ft.Name.GetStableHash(),
-                Name = ft.Name,
-                IndexSpan = ft.Location.IndexSpan.ToModel(),
-                Documentation = ft.Documentation,
-                Overloads = ft.Overloads.Select(FromOverload).ToArray()
-                // TODO: attributes, inner functions and inner classes.
-            };
-        }
+        private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
+
+        public static FunctionModel FromType(IPythonFunctionType ft) => new FunctionModel(ft);
 
         private static OverloadModel FromOverload(IPythonFunctionOverload o) {
             return new OverloadModel {
                 Parameters = o.Parameters.Select(p => new ParameterModel {
                     Name = p.Name,
-                    Type = p.Type.GetQualifiedName(),
+                    Type = p.Type.GetPersistentQualifiedName(),
                     Kind = p.Kind,
-                    DefaultValue = p.DefaultValue.GetQualifiedName(),
+                    DefaultValue = p.DefaultValue.GetPersistentQualifiedName(),
                 }).ToArray(),
-                ReturnType = o.StaticReturnValue.GetQualifiedName()
+                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName()
             };
+        }
+
+        public FunctionModel() { } // For de-serializer from JSON
+
+        private FunctionModel(IPythonFunctionType func) {
+            var functions = new List<FunctionModel>();
+            var classes = new List<ClassModel>();
+
+            foreach (var name in func.GetMemberNames()) {
+                var m = func.GetMember(name);
+
+                // Only take members from this class, skip members from bases.
+                if (!_processing.Push(m)) {
+                    continue;
+                }
+
+                try {
+                    switch (m) {
+                        case IPythonFunctionType ft when ft.IsLambda():
+                            break;
+                        case IPythonFunctionType ft:
+                            functions.Add(FromType(ft));
+                            break;
+                        case IPythonClassType cls:
+                            classes.Add(ClassModel.FromType(cls));
+                            break;
+                    }
+                } finally {
+                    _processing.Pop();
+                }
+            }
+
+            Id = func.Name.GetStableHash();
+            Name = func.Name;
+            IndexSpan = func.Location.IndexSpan.ToModel();
+            Documentation = func.Documentation;
+            Overloads = func.Overloads.Select(FromOverload).ToArray();
+            Classes = classes.ToArray();
+            Functions = functions.ToArray();
         }
     }
 }

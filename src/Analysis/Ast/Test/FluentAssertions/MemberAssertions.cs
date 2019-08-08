@@ -21,6 +21,7 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -70,7 +71,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             NotBeNull();
 
             var t = Subject.GetPythonType();
-            var mc =  (IMemberContainer) t;
+            var mc = (IMemberContainer)t;
             Execute.Assertion.ForCondition(mc != null)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName(t)} to be a member container{{reason}}.");
@@ -88,9 +89,70 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<MemberAssertions, TMember>(this, typedMember);
         }
 
-        public AndConstraint<MemberAssertions> HaveSameMembersAs(IMember m) {
-            m.Should().BeAssignableTo<IMemberContainer>();
-            return HaveMembers(((IMemberContainer)m).GetMemberNames(), string.Empty);
+        public AndConstraint<MemberAssertions> HaveSameMemberNamesAs(IMember member) {
+            member.Should().BeAssignableTo<IMemberContainer>();
+            return HaveMembers(((IMemberContainer)member).GetMemberNames(), string.Empty);
+        }
+
+        public void HaveSameMembersAs(IMember other) {
+            other.Should().BeAssignableTo<IMemberContainer>();
+            var otherContainer = (IMemberContainer)other;
+
+            var subjectType = Subject.GetPythonType();
+            var subjectMemberNames = subjectType.GetMemberNames().ToArray();
+            var otherMemberNames = otherContainer.GetMemberNames().ToArray();
+
+            var missingNames = otherMemberNames.Except(subjectMemberNames).ToArray();
+            var extraNames = subjectMemberNames.Except(otherMemberNames).ToArray();
+
+            missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
+            extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
+
+            foreach (var n in subjectMemberNames) {
+                var subjectMember = subjectType.GetMember(n);
+                var otherMember = otherContainer.GetMember(n);
+                var subjectMemberType = subjectMember.GetPythonType();
+                var otherMemberType = otherMember.GetPythonType();
+
+                // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
+                if (subjectMember is IPythonInstance) {
+                    otherMember.Should().BeAssignableTo<IPythonInstance>();
+                }
+
+                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
+
+                if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
+                    otherMemberType.Documentation.Should().BeNullOrEmpty();
+                } else {
+                    subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
+                }
+
+                switch (subjectMemberType.MemberType) {
+                    case PythonMemberType.Class:
+                        // Restored collections (like instance of tuple) turn into classes
+                        // rather than into collections with content since we don't track
+                        // collection content in libraries.
+                        subjectMemberType.QualifiedName.Should().Be(otherMemberType.QualifiedName);
+                        break;
+                    case PythonMemberType.Function:
+                    case PythonMemberType.Method:
+                        subjectMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        otherMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        if (subjectMemberType is IPythonFunctionType subjectFunction) {
+                            var otherFunction = (IPythonFunctionType)otherMemberType;
+                            subjectFunction.Should().HaveSameOverloadsAs(otherFunction);
+                        }
+
+                        break;
+                    case PythonMemberType.Property:
+                        subjectMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        otherMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        break;
+                    case PythonMemberType.Unknown:
+                        subjectMemberType.IsUnknown().Should().BeTrue();
+                        break;
+                }
+            }
         }
 
         public AndConstraint<MemberAssertions> HaveMembers(params string[] memberNames)

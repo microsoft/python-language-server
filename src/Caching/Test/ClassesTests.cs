@@ -15,6 +15,7 @@
 
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 

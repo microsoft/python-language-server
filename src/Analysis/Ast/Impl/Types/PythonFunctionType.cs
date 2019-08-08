@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
@@ -51,7 +52,7 @@ namespace Microsoft.Python.Analysis.Types {
             Location location,
             IPythonType declaringType,
             string documentation
-        ) : base(name, location, documentation, declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+        ) : base(name, location, documentation, declaringType is IPythonClassType ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
         }
 
@@ -61,8 +62,13 @@ namespace Microsoft.Python.Analysis.Types {
             Location location
         ) : base(fd.Name, location,
             fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(), 
-            declaringType != null ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            declaringType is IPythonClassType ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
+            
+            // IsStub must be set permanently so when location of the stub is reassigned
+            // to the primary module for navigation purposes, function still remembers
+            // that it case from a stub.
+            IsStub = location.Module.ModuleType == ModuleType.Stub;
 
             location.Module.AddAstNode(this, fd);
             ProcessDecorators(fd);
@@ -99,7 +105,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override bool IsSpecialized => _isSpecialized;
 
         public bool IsOverload { get; private set; }
-        public bool IsStub { get; internal set; }
+        public bool IsStub { get; }
         public bool IsUnbound => DeclaringType == null;
 
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _overloads;
@@ -117,7 +123,10 @@ namespace Microsoft.Python.Analysis.Types {
         internal void AddOverload(IPythonFunctionOverload overload)
             => _overloads = _overloads.Count > 0 ? _overloads.Add(overload) : ImmutableArray<IPythonFunctionOverload>.Create(overload);
 
-        internal IPythonFunctionType ToUnbound() => new PythonUnboundMethod(this);
+        internal IPythonFunctionType ToUnbound() {
+            Debug.Assert(DeclaringType != null, "Attempt to unbound standalone function.");
+            return new PythonUnboundMethod(this);
+        }
 
         private void ProcessDecorators(FunctionDefinition fd) {
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
@@ -154,22 +163,21 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Represents unbound method, such in C.f where C is class rather than the instance.
         /// </summary>
-        private sealed class PythonUnboundMethod : PythonTypeWrapper, IPythonFunctionType {
-            private readonly IPythonFunctionType _pf;
-
+        internal sealed class PythonUnboundMethod : PythonTypeWrapper, IPythonFunctionType {
             public PythonUnboundMethod(IPythonFunctionType function) : base(function, function.DeclaringModule) {
-                _pf = function;
+                Function = function;
             }
 
-            public FunctionDefinition FunctionDefinition => _pf.FunctionDefinition;
-            public IPythonType DeclaringType => _pf.DeclaringType;
-            public bool IsStatic => _pf.IsStatic;
-            public bool IsClassMethod => _pf.IsClassMethod;
-            public bool IsOverload => _pf.IsOverload;
-            public bool IsStub => _pf.IsStub;
+            public IPythonFunctionType Function { get; }
+            public FunctionDefinition FunctionDefinition => Function.FunctionDefinition;
+            public IPythonType DeclaringType => Function.DeclaringType;
+            public bool IsStatic => Function.IsStatic;
+            public bool IsClassMethod => Function.IsClassMethod;
+            public bool IsOverload => Function.IsOverload;
+            public bool IsStub => Function.IsStub;
             public bool IsUnbound => true;
 
-            public IReadOnlyList<IPythonFunctionOverload> Overloads => _pf.Overloads;
+            public IReadOnlyList<IPythonFunctionOverload> Overloads => Function.Overloads;
             public override BuiltinTypeId TypeId => BuiltinTypeId.Function;
             public override PythonMemberType MemberType => PythonMemberType.Function;
         }

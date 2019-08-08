@@ -40,33 +40,8 @@ namespace Microsoft.Python.Parsing.Tests {
 
         private InterpreterConfiguration GetPythonConfiguration(string prefix, InterpreterArchitecture architecture, Version version)
             => _registryCache.FirstOrDefault(configuration =>
-            configuration.Id.StartsWith(prefix) &&
             configuration.Architecture == architecture &&
             configuration.Version == version);
-
-        public InterpreterConfiguration GetIronPythonConfiguration(bool x64) {
-            var installPath = GetIronPythonInstallDir();
-            if (!Directory.Exists(installPath)) {
-                return null;
-            }
-
-            var exeName = x64 ? "ipy64.exe" : "ipy.exe";
-            // IronPython changed to Any CPU for ipy.exe and ipy32.exe for 32-bit in 2.7.8
-            if (File.Exists(Path.Combine(installPath, "ipy32.exe"))) {
-                exeName = x64 ? "ipy.exe" : "ipy32.exe";
-            }
-
-            return new InterpreterConfiguration(
-                id: x64 ? "IronPython|2.7-64" : "IronPython|2.7-32",
-                description: string.Format("IronPython {0} 2.7", x64 ? "64-bit" : "32-bit"),
-                interpreterPath: Path.Combine(installPath, exeName),
-                libPath: Path.Combine(installPath, "Lib"),
-                sitePackagesPath: Path.Combine(installPath, "Lib", "site-packages"),
-                architecture: x64 ? InterpreterArchitecture.x64 : InterpreterArchitecture.x86,
-                version: new Version(2, 7),
-                pathVar: "IRONPYTHONPATH"
-            );
-        }
 
         private List<InterpreterConfiguration> FindPythonConfigurationsInRegistry() {
             var configurations = new List<InterpreterConfiguration>();
@@ -87,7 +62,6 @@ namespace Microsoft.Python.Parsing.Tests {
                 }
             }
 
-            InterpreterConfiguration.DisambiguateDescriptions(configurations);
             return configurations;
         }
 
@@ -183,16 +157,8 @@ namespace Microsoft.Python.Parsing.Tests {
             }
 
             var pathVar = tagKey.GetValue("PathEnvironmentVariable") as string ?? "PYTHONPATH";
-            var id = $"Global|{company}|{tag}";
-
-            var description = tagKey.GetValue("DisplayName") as string;
-            if (string.IsNullOrEmpty(description)) {
-                description = pythonCoreCompatibility ? "Python {0}{1: ()}".FormatUI(version, architecture) : "{0} {1}".FormatUI(company, tag);
-            }
 
             return new InterpreterConfiguration(
-                id: id,
-                description: description,
                 interpreterPath: exePath,
                 pathVar: pathVar,
                 libPath: Path.Combine(prefixPath, "Lib"),

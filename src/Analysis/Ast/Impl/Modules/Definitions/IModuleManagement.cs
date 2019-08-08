@@ -14,9 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
@@ -33,8 +31,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <returns></returns>
         ModulePath FindModule(string filePath);
 
-        IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken = default);
-
         /// <summary>
         /// Cache of module stubs generated from compiled modules.
         /// </summary>
@@ -50,8 +46,9 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         /// <param name="fullName">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <returns>Original (library) module loaded as stub, if any.</returns>
-        IPythonModule SpecializeModule(string fullName, Func<string, IPythonModule> specializationConstructor);
+        /// <param name="replaceExisting">Replace existing loaded module, if any.</param>
+        /// <returns>Specialized module.</returns>
+        IPythonModule SpecializeModule(string fullName, Func<string, IPythonModule> specializationConstructor, bool replaceExisting = false);
 
         /// <summary>
         /// Returns specialized module, if any. Will attempt to load module from persistent state.
@@ -72,5 +69,10 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Set of interpreter paths.
         /// </summary>
         IEnumerable<string> InterpreterPaths { get; }
+
+        /// <summary>
+        /// Interpreter paths with additional classification.
+        /// </summary>
+        IReadOnlyList<PythonLibraryPath> LibraryPaths { get; }
     }
 }

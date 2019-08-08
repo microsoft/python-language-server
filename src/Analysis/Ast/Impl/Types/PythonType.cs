@@ -52,6 +52,14 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region ILocatedMember
         public override PythonMemberType MemberType => _typeId.GetMemberId();
+
+        public override void AddReference(Location location) {
+            if (DeclaringModule == null || DeclaringModule.ModuleType == ModuleType.Builtins) {
+                return;
+            }
+
+            base.AddReference(location);
+        }
         #endregion
 
         #region IPythonType
@@ -61,7 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual string QualifiedName
             => DeclaringModule.ModuleType == ModuleType.Builtins
                        ? TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : Name
-                       : $"{DeclaringModule.Name}:{Name}";
+                       : this.GetQualifiedName();
 
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;

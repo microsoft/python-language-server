@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -32,7 +33,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Constructs generic type with generic type parameters. Typically used
         /// in generic classes such as when handling Generic[_T] base.
         /// </summary>
-        public GenericType(string name, IReadOnlyList<IGenericTypeDefinition> parameters, IPythonModule declaringModule) 
+        public GenericType(string name, IReadOnlyList<IGenericTypeDefinition> parameters, IPythonModule declaringModule)
             : this(name, declaringModule) {
             Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
@@ -90,7 +91,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsSpecialized => true;
 
         public IMember CreateInstance(string typeName, IArgumentSet args) {
-            var types = args.Values<IPythonType>();
+            var types = GetTypesFromValues(args.Arguments);
             if (types.Count != args.Arguments.Count) {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
             }
@@ -104,7 +105,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public virtual IMember Index(IPythonInstance instance, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
 
         public IPythonType CreateSpecificType(IArgumentSet typeArguments)
-            => CreateSpecificType(typeArguments.Arguments.Select(a => a.Value).OfType<IPythonType>().ToArray());
+            => CreateSpecificType(GetTypesFromValues(typeArguments.Arguments));
         #endregion
 
         public override bool Equals(object other) {
@@ -119,5 +120,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override int GetHashCode()
             => TypeId != BuiltinTypeId.Unknown ? TypeId.GetHashCode() : base.GetHashCode();
+
+        private IReadOnlyList<IPythonType> GetTypesFromValues(IEnumerable<IArgument> args)
+            => args.Select(a => a.Value).OfType<IMember>().Select(m => m.GetPythonType()).ToArray();
     }
 }

@@ -44,6 +44,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
 
+        public IReadOnlyList<PythonLibraryPath> LibraryPaths { get; private set; } = Array.Empty<PythonLibraryPath>();
+
         internal IBuiltinsPythonModule CreateBuiltinsModule() {
             if (BuiltinsModule == null) {
                 // Initialize built-in
@@ -150,25 +152,37 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// </summary>
         /// <param name="name">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <returns>Original (library) module loaded as stub.</returns>
-        public IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor) {
+        /// <param name="replaceExisting">Replace existing loaded module, if any.</param>
+        /// <returns>Specialized module.</returns>
+        public IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor, bool replaceExisting = false) {
             var import = CurrentPathResolver.GetModuleImportFromModuleName(name);
             var module = specializationConstructor(import?.ModulePath);
             _specialized[name] = module;
+
+            if (replaceExisting) {
+                Modules.TryRemove(name, out _);
+            }
             return module;
         }
 
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        public IPythonModule GetSpecializedModule(string fullName, bool allowCreation = false, string modulePath = null) 
+        public IPythonModule GetSpecializedModule(string fullName, bool allowCreation = false, string modulePath = null)
             => _specialized.TryGetValue(fullName, out var module) ? module : null;
 
         /// <summary>
         /// Determines of module is specialized or exists in the database.
         /// </summary>
-        public bool IsSpecializedModule(string fullName, string modulePath = null)
-            => _specialized.ContainsKey(fullName) || GetDbService()?.ModuleExistsInStorage(fullName, modulePath) == true;
+        public bool IsSpecializedModule(string fullName, string modulePath = null) {
+            if (_specialized.ContainsKey(fullName)) {
+                return true;
+            }
+            if (modulePath != null && Path.GetExtension(modulePath) == ".pyi") {
+                return false;
+            }
+            return GetDbService()?.ModuleExistsInStorage(fullName, modulePath) == true;
+        }
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             var analyzer = _services.GetService<IPythonAnalyzer>();
@@ -186,10 +200,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
-            var ps = _services.GetService<IProcessServices>();
-
-            var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
+            LibraryPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, LibraryPaths, Configuration.SearchPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
             _userPaths = userPaths.Select(p => p.Path);

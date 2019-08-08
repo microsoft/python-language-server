@@ -36,7 +36,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
                 var settings = new LanguageServerSettings();
 
-                var rootSection = token["settings"];
+                // https://github.com/microsoft/python-language-server/issues/915
+                // If token or settings are missing, assume defaults.
+                var rootSection = token?["settings"];
                 var pythonSection = rootSection?["python"];
                 if (pythonSection == null) {
                     return;

@@ -11,8 +11,8 @@
         }
       ],
       "Attributes": 0,
-      "Classes": null,
-      "Functions": null,
+      "Classes": [],
+      "Functions": [],
       "Id": 24395611,
       "Name": "func",
       "IndexSpan": {
@@ -23,7 +23,7 @@
   ],
   "Variables": [
     {
-      "Value": "bool",
+      "Value": "t:bool",
       "Id": -529376420,
       "Name": "__debug__",
       "IndexSpan": {
@@ -32,7 +32,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": -1636005055,
       "Name": "__doc__",
       "IndexSpan": {
@@ -41,7 +41,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": 875442003,
       "Name": "__file__",
       "IndexSpan": {
@@ -50,7 +50,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": 1097116834,
       "Name": "__name__",
       "IndexSpan": {
@@ -59,7 +59,7 @@
       }
     },
     {
-      "Value": "str",
+      "Value": "t:str",
       "Id": 75395663,
       "Name": "__package__",
       "IndexSpan": {
@@ -68,7 +68,7 @@
       }
     },
     {
-      "Value": "list",
+      "Value": "t:list",
       "Id": 1154586556,
       "Name": "__path__",
       "IndexSpan": {
@@ -77,7 +77,7 @@
       }
     },
     {
-      "Value": "dict",
+      "Value": "t:dict",
       "Id": 817929997,
       "Name": "__dict__",
       "IndexSpan": {
@@ -108,7 +108,7 @@
     {
       "Documentation": null,
       "Bases": [
-        "object"
+        "t:object"
       ],
       "Methods": [
         {
@@ -118,7 +118,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module:C",
+                  "Type": "t:module:C",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -127,8 +127,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
           "IndexSpan": {
@@ -143,7 +143,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "module:C",
+                  "Type": "t:module:C",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -152,8 +152,8 @@
             }
           ],
           "Attributes": 0,
-          "Classes": null,
-          "Functions": null,
+          "Classes": [],
+          "Functions": [],
           "Id": -2139806792,
           "Name": "method",
           "IndexSpan": {
@@ -187,24 +187,6 @@
           "Id": 834,
           "Name": "y",
           "IndexSpan": null
-        },
-        {
-          "Value": "dict",
-          "Id": 817929997,
-          "Name": "__dict__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
-        },
-        {
-          "Value": "object",
-          "Id": 1225024228,
-          "Name": "__weakref__",
-          "IndexSpan": {
-            "Start": 0,
-            "Length": 0
-          }
         }
       ],
       "GenericParameters": null,

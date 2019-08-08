@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly IProgressReporter _progress;
         private readonly IPythonAnalyzer _analyzer;
         private readonly ILogger _log;
-        private readonly ITelemetryService _telemetry;
+        private readonly bool _forceGC;
         private readonly IModuleDatabaseService _moduleDatabaseService;
 
         private State _state;
@@ -71,7 +71,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             CancellationToken analyzerCancellationToken,
             IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker,
             int version,
-            PythonAnalyzerEntry entry) {
+            PythonAnalyzerEntry entry,
+            bool forceGC = false) {
 
             _services = services;
             _analysisCompleteEvent = analysisCompleteEvent;
@@ -82,11 +83,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _walker = walker;
             _entry = entry;
             _state = State.NotStarted;
+            _forceGC = forceGC;
 
             _diagnosticsService = _services.GetService<IDiagnosticsService>();
             _analyzer = _services.GetService<IPythonAnalyzer>();
             _log = _services.GetService<ILogger>();
-            _telemetry = _services.GetService<ITelemetryService>();
             _moduleDatabaseService = _services.GetService<IModuleDatabaseService>();
             _progress = progress;
         }
@@ -161,11 +162,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var elapsed = stopWatch.Elapsed.TotalMilliseconds;
             LogResults(_log, elapsed, originalRemaining, remaining, Version);
-            ForceGCIfNeeded(originalRemaining, remaining);
+            ForceGCIfNeeded(_log, originalRemaining, remaining, _forceGC);
         }
 
-        private static void ForceGCIfNeeded(int originalRemaining, int remaining) {
-            if (originalRemaining - remaining > 1000) {
+        private static void ForceGCIfNeeded(ILogger logger, int originalRemaining, int remaining, bool force) {
+            if (force || originalRemaining - remaining > 1000) {
+                logger?.Log(TraceEventType.Verbose, "Forcing full garbage collection and heap compaction.");
                 GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
                 GC.Collect();
             }
@@ -232,7 +234,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node) 
+        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node)
             => !node.HasMissingDependencies && node.Value.IsAnalyzedLibrary(_walker.Version) && node.IsWalkedWithDependencies && node.IsValidVersion;
 
         private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
@@ -370,10 +372,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
+            var canHaveLibraryAnalysis = false;
+            var saveAnalysis = false;
+            // Don't try to drop builtins; it causes issues elsewhere.
+            // We probably want the builtin module's AST and other info for evaluation.
+            switch (document.ModuleType) {
+                case ModuleType.Library:
+                case ModuleType.Compiled:
+                case ModuleType.CompiledBuiltin:
+                    canHaveLibraryAnalysis = true;
+                    saveAnalysis = true;
+                    break;
+                case ModuleType.Stub:
+                    canHaveLibraryAnalysis = true;
+                    break;
+            }
+
             var createLibraryAnalysis = !isCanceled &&
                 node != null &&
                 !node.HasMissingDependencies &&
-                document.ModuleType == ModuleType.Library &&
+                canHaveLibraryAnalysis &&
                 !document.IsOpen &&
                 node.HasOnlyWalkedDependencies &&
                 node.IsValidVersion;
@@ -388,7 +406,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);
             var analysis  = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
 
-            _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            if (saveAnalysis) {
+                _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            }
+
             return analysis;
         }
 

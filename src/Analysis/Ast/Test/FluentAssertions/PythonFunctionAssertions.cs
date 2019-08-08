@@ -74,6 +74,17 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<PythonFunctionAssertions, IPythonFunctionOverload>(this, overloads[index]);
         }
 
+        public void HaveSameOverloadsAs(IPythonFunctionType other, string because = "", params object[] reasonArgs) {
+            var overloads = Subject.Overloads.ToArray();
+            Subject.Should().HaveOverloadCount(other.Overloads.Count);
+
+            for (var i = 0; i < Subject.Overloads.Count; i++) {
+                var subjectOverload = Subject.Overloads[i];
+                var otherOverload = other.Overloads[i];
+                subjectOverload.Should().HaveSameParametersAs(otherOverload);
+            }
+        }
+
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo> HaveParameterAt(int index, string because = "", params object[] reasonArgs) {
             var overloads = Subject.Overloads.ToArray();
             Execute.Assertion.ForCondition(overloads.Length == 1)

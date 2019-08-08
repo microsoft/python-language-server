@@ -24,16 +24,32 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             : base(classes, mf) {
         }
 
-        protected override IPythonFunctionType CreateMember(FunctionModel fm, IPythonType declaringType) {
-            var f = new PythonFunctionType(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()), declaringType, fm.Documentation);
+        public override IPythonFunctionType CreateMember(FunctionModel fm, IPythonType declaringType) {
+            var ft = new PythonFunctionType(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()), declaringType, fm.Documentation);
+
             foreach (var om in fm.Overloads) {
                 var o = new PythonFunctionOverload(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()));
                 o.SetDocumentation(fm.Documentation);
                 o.SetReturnValue(ModuleFactory.ConstructMember(om.ReturnType), true);
                 o.SetParameters(om.Parameters.Select(ConstructParameter).ToArray());
-                f.AddOverload(o);
+                ft.AddOverload(o);
             }
-            return f;
+
+            foreach(var model in fm.Functions) {
+                var f = CreateMember(model, ft);
+                if (f != null) {
+                    ft.AddMember(f.Name, f, overwrite: true);
+                }
+            }
+
+            foreach (var model in fm.Classes) {
+                var c = ModuleFactory.ClassFactory.CreateMember(model, ft);
+                if (c != null) {
+                    ft.AddMember(c.Name, c, overwrite: true);
+                }
+            }
+
+            return ft;
         }
 
         private IParameterInfo ConstructParameter(ParameterModel pm)

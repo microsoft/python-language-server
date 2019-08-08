@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Modules {

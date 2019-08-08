@@ -13,23 +13,38 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class TypeNames {
-        public static string GetQualifiedName(this IMember m) {
+        /// <summary>
+        /// Constructs persistent member name based on the member and the current module.
+        /// Persistent name contains complete information for the member restoration code.
+        /// </summary>
+        public static string GetPersistentQualifiedName(this IMember m) {
             var t = m.GetPythonType();
             if (!t.IsUnknown()) {
                 switch (m) {
-                    case IPythonInstance _:
-                        return $"i:{t.QualifiedName}";
+                    case IPythonInstance _: // constants and strings map here.
+                        return t is ITypingNamedTupleType nt1 ? $"n:{nt1.QualifiedName}" : $"i:{t.QualifiedName}";
+                    case IBuiltinsPythonModule b:
+                        return $"b:{b.QualifiedName}";
+                    case PythonVariableModule vm:
+                        return $"p:{vm.QualifiedName}";
+                    case IPythonModule mod:
+                        return $"m:{mod.QualifiedName}";
+                    case ITypingNamedTupleType nt2:
+                        return $"n:{nt2.QualifiedName}";
                     case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
-                        return pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.Name;
+                        return $"t:{(pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.QualifiedName)}";
                     case IPythonType pt:
-                        return pt.QualifiedName;
+                        return $"t:{pt.QualifiedName}";
                     case null:
                         break;
                 }
@@ -42,54 +57,80 @@ namespace Microsoft.Python.Analysis.Caching {
         /// qualified name designates instance (prefixed with 'i:').
         /// </summary>
         /// <param name="qualifiedName">Qualified name to split. May include instance prefix.</param>
-        /// <param name="moduleName">Module name.</param>
-        /// <param name="memberNames">Module member names such as 'A', 'B', 'C' from module:A.B.C.</param>
-        /// <param name="isInstance">If true, the qualified name describes instance of a type.</param>
-        public static bool DeconstructQualifiedName(string qualifiedName, out string moduleName, out IReadOnlyList<string> memberNames, out bool isInstance) {
-            moduleName = null;
-            memberNames = null;
-            isInstance = false;
-
+        /// <param name="parts">Qualified name parts.</param>
+        public static bool DeconstructQualifiedName(string qualifiedName, out QualifiedNameParts parts) {
+            parts = new QualifiedNameParts();
             if (string.IsNullOrEmpty(qualifiedName)) {
                 return false;
             }
 
-            isInstance = qualifiedName.StartsWith("i:");
-            qualifiedName = isInstance ? qualifiedName.Substring(2) : qualifiedName;
+            GetObjectTypeFromPrefix(qualifiedName, ref parts, out var prefixOffset);
+            GetModuleNameAndMembers(qualifiedName, ref parts, prefixOffset);
 
-            if (qualifiedName == "..." || qualifiedName == "ellipsis") {
-                moduleName = @"builtins";
-                memberNames = new[] { "ellipsis" };
-                return true;
-            }
-
-            var moduleSeparatorIndex = qualifiedName.IndexOf(':');
-            if (moduleSeparatorIndex < 0) {
-                moduleName = @"builtins";
-                memberNames = new[] { qualifiedName };
-                return true;
-            }
-
-            moduleName = qualifiedName.Substring(0, moduleSeparatorIndex);
-            // First chunk is qualified module name except dots in braces.
-            // Builtin types don't have module prefix.
-            memberNames = GetParts(qualifiedName.Substring(moduleSeparatorIndex+1));
-            return !string.IsNullOrEmpty(moduleName);
+            return !string.IsNullOrEmpty(parts.ModuleName);
         }
 
-        private static IReadOnlyList<string> GetParts(string qualifiedTypeName) {
+        private static void GetObjectTypeFromPrefix(string qualifiedName, ref QualifiedNameParts parts, out int prefixOffset) {
+            prefixOffset = 2;
+            if (qualifiedName.StartsWith("i:")) {
+                parts.ObjectType = ObjectType.Instance;
+            } else if (qualifiedName.StartsWith("m:")) {
+                parts.ObjectType = ObjectType.Module;
+            } else if (qualifiedName.StartsWith("p:")) {
+                parts.ObjectType = ObjectType.VariableModule;
+            } else if (qualifiedName.StartsWith("b:")) {
+                parts.ObjectType = ObjectType.BuiltinModule;
+            } else if (qualifiedName.StartsWith("t:")) {
+                parts.ObjectType = ObjectType.Type;
+            } else if (qualifiedName.StartsWith("n:")) {
+                parts.ObjectType = ObjectType.NamedTuple;
+            } else {
+                // Unprefixed name is typically an argument to another type like Union[int, typing:Any]
+                parts.ObjectType = ObjectType.Type;
+                prefixOffset = 0;
+            }
+        }
+
+        private static void GetModuleNameAndMembers(string qualifiedName, ref QualifiedNameParts parts, int prefixOffset) {
+            // Strip the prefix, turning i:module:A.B.C into module:A.B.C
+            var typeName = qualifiedName.Substring(prefixOffset);
+
+            var moduleSeparatorIndex = typeName.IndexOf(':');
+            if (moduleSeparatorIndex < 0) {
+                switch (parts.ObjectType) {
+                    case ObjectType.Type:
+                    case ObjectType.Instance:
+                        // No module name means built-in type like 'int' or 'i:str'.
+                        parts.ModuleName = @"builtins";
+                        parts.MemberNames = typeName == "..." ? new[] { "ellipsis" } : typeName.Split('.').ToArray();
+                        break;
+                    default:
+                        parts.ModuleName = typeName;
+                        parts.MemberNames = Array.Empty<string>();
+                        break;
+                }
+                return;
+            }
+            
+            // Extract module name and member names, of any.
+            parts.ModuleName = typeName.Substring(0, moduleSeparatorIndex);
+            var memberNamesOffset = parts.ModuleName.Length + 1;
+            parts.MemberNames = GetTypeNames(typeName.Substring(memberNamesOffset), '.');
+        }
+
+        public static IReadOnlyList<string> GetTypeNames(string qualifiedTypeName, char separator) {
             var parts = new List<string>();
             for (var i = 0; i < qualifiedTypeName.Length; i++) {
-                var part = GetSubPart(qualifiedTypeName, ref i);
+                var part = GetTypeName(qualifiedTypeName, ref i, separator);
                 if (string.IsNullOrEmpty(part)) {
                     break;
                 }
-                parts.Add(part);
+                parts.Add(part.Trim());
             }
             return parts;
         }
 
-        private static string GetSubPart(string s, ref int i) {
+        public static string GetTypeName(string s, ref int i, char separator) {
             var braceCounter = new Stack<char>();
             var start = i;
             for (; i < s.Length; i++) {
@@ -106,12 +147,12 @@ namespace Microsoft.Python.Analysis.Caching {
                     }
                 }
 
-                if (braceCounter.Count == 0 && ch == '.') {
+                if (braceCounter.Count == 0 && ch == separator) {
                     break;
                 }
             }
 
-            return s.Substring(start, i - start);
+            return s.Substring(start, i - start).Trim();
         }
     }
 }

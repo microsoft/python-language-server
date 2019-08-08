@@ -41,12 +41,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="isMutable">Tells of list represents a mutable collection.</param>
         /// <param name="formatName">If true, type will append item type names to the base type name.</param>
         public TypingListType(string typeName, BuiltinTypeId typeId, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable, bool formatName = true)
-            : base(null, typeId, interpreter.ModuleResolution.GetSpecializedModule("typing"), isMutable) {
+            : base(typeId, interpreter.ModuleResolution.GetSpecializedModule("typing"), isMutable) {
             ItemType = itemType;
             Name = formatName ? $"{typeName}[{itemType.Name}]" : typeName;
+            QualifiedName = formatName ? $"typing:{typeName}[{itemType.QualifiedName}]" : $"typing:{typeName}";
         }
 
         public override string Name { get; }
+        public override string QualifiedName { get; }
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 
