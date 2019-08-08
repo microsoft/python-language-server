@@ -89,21 +89,17 @@ namespace Microsoft.Python.Analysis.Types {
                     return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object) : UnknownType;
             }
 
-            lock (_memberGuard) {
-                if (_memberGuard.Push(this)) {
-                    try {
-                        foreach (var m in Mro.Reverse()) {
-                            if (m == this) {
-                                return member;
-                            }
-                            member = member ?? m.GetMember(name);
+            using (_memberGuard.Push(this, out var reentered)) {
+                if (!reentered) {
+                    foreach (var m in Mro.Reverse()) {
+                        if (m == this) {
+                            return member;
                         }
-                    } finally {
-                        _memberGuard.Pop();
+                        member = member ?? m.GetMember(name);
                     }
                 }
+                return null;
             }
-            return null;
         }
 
         public override string Documentation {
@@ -111,29 +107,26 @@ namespace Microsoft.Python.Analysis.Types {
                 if (!string.IsNullOrEmpty(_documentation)) {
                     return _documentation;
                 }
-                lock (_memberGuard) {
-                    // Make sure we do not cycle through bases back here.
-                    if (!_memberGuard.Push(this)) {
+
+                // Make sure we do not cycle through bases back here.
+                using (_memberGuard.Push(this, out var reentered)) {
+                    if (reentered) {
                         return null;
                     }
-                    try {
-                        // Try doc from the type first (class definition AST node).
-                        _documentation = base.Documentation;
-                        if (string.IsNullOrEmpty(_documentation)) {
-                            // If not present, try docs __init__. IPythonFunctionType handles
-                            // __init__ in a special way so there is no danger of call coming
-                            // back here and causing stack overflow.
-                            _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
-                        }
+                    // Try doc from the type first (class definition AST node).
+                    _documentation = base.Documentation;
+                    if (string.IsNullOrEmpty(_documentation)) {
+                        // If not present, try docs __init__. IPythonFunctionType handles
+                        // __init__ in a special way so there is no danger of call coming
+                        // back here and causing stack overflow.
+                        _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                    }
 
-                        if (string.IsNullOrEmpty(_documentation) && Bases != null) {
-                            // If still not found, try bases. 
-                            var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                            _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
-                                ?.Documentation;
-                        }
-                    } finally {
-                        _memberGuard.Pop();
+                    if (string.IsNullOrEmpty(_documentation) && Bases != null) {
+                        // If still not found, try bases. 
+                        var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
+                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
+                            ?.Documentation;
                     }
                 }
                 return _documentation;

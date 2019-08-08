@@ -77,11 +77,11 @@ namespace Microsoft.Python.Analysis.Types {
                 //    return C(5)
                 // C(5).tmp()
                 // We try to resolve generic type when instantiating 'C' but end up resolving it again on 'tmp' method call, looping infinitely
-                if (!_genericSpecializationGuard.Push(classType)) {
-                    return _genericSpecializationGuard.GetProcessing();
-                }
+                using (_genericSpecializationGuard.Push(classType, out var reentered)) {
+                    if (reentered) {
+                        return classType;
+                    }
 
-                try {
                     // Bases can be null when not set
                     var bases = Bases ?? Array.Empty<IPythonType>();
                     // Get declared generic class parameters, i.e. Generic[T1, T2, ...], Optional[Generic[T1, ...]]
@@ -118,8 +118,6 @@ namespace Microsoft.Python.Analysis.Types {
                     classType.DecideGeneric();
                     // Transfer members from generic to specific type.
                     SetClassMembers(classType, args);
-                } finally {
-                    _genericSpecializationGuard.Pop();
                 }
                 return classType;
             }
@@ -363,13 +361,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// A class is generic if it has at least one unfilled generic type parameters or one of its bases is generic
         /// </summary>
         public void DecideGeneric() {
-            if (!_genericResolutionGuard.Push(this)) {
-                _isGeneric = false;
-            }
-            try {
-                _isGeneric = !Parameters.IsNullOrEmpty() || (Bases?.OfType<IGenericType>().Any(g => g.IsGeneric) ?? false);
-            } finally {
-                _genericResolutionGuard.Pop();
+            using (_genericResolutionGuard.Push(this, out var reentered)) {
+                if (!reentered) {
+                    _isGeneric = !Parameters.IsNullOrEmpty() || (Bases?.OfType<IGenericType>().Any(g => g.IsGeneric) ?? false);
+                }
             }
         }
     }
