@@ -650,5 +650,14 @@ a = x().func()
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task IOErrorBase() {
+            const string code = @"
+class A(IOError): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A").Which.Should().HaveBase("OSError");
+        }
     }
 }
