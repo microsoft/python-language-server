@@ -137,7 +137,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Do not evaluate parameter types just yet. During light-weight top-level information
                 // collection types cannot be determined as imports haven't been processed.
                 var overload = new PythonFunctionOverload(function, fd, _eval.GetLocationOfName(fd), fd.ReturnAnnotation?.ToCodeString(_eval.Ast));
-                CheckValidOverload(fd, function, overload);
                 addOverload(overload);
 
                 _table.Add(new FunctionEvaluator(_eval, overload));
@@ -212,54 +211,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
 
             return member;
-        }
-
-        private void CheckValidOverload(FunctionDefinition fd, IPythonClassMember fn, IPythonFunctionOverload overload) {
-            if (overload.ClassMember.DeclaringType?.MemberType == PythonMemberType.Class) {
-                if (fd.Parameters.Length == 0) {
-                    ReportFunctionParams(fd, Resources.NoMethodArgument.FormatInvariant(fd.Name), ErrorCodes.NoMethodArgument);
-                    return;
-                }
-
-                var param = fd.Parameters[0].Name;
-                if (fn is IPythonFunctionType f) {
-                    // static methods don't need self or cls
-                    if (f.IsStatic) {
-                        return;
-                    }
-
-                    // If it is a class method check for cls
-                    if (f.IsClassMethod && param.Equals("cls")) {
-                        return;
-                    }
-
-                    // If it is a regular method check for self
-                    if (!f.IsClassMethod && param.Equals("self")) {
-                        return;
-                    }
-
-                    // f is incorrect, report accordingly
-                    if (f.IsClassMethod) {
-                        ReportFunctionParams(fd, Resources.NoClsArgument.FormatInvariant(fd.Name), ErrorCodes.NoClsArgument);
-                    } else {
-                        ReportFunctionParams(fd, Resources.NoSelfArgument.FormatInvariant(fd.Name), ErrorCodes.NoSelfArgument);
-                    }
-                    // If fn is a property, check for self
-                } else if (!param.Equals("self")) {
-                    ReportFunctionParams(fd, Resources.NoSelfArgument.FormatInvariant(fd.Name), ErrorCodes.NoSelfArgument);
-                }
-            }
-        }
-
-        private void ReportFunctionParams(FunctionDefinition fd, string message, string errorCode) {
-            _eval.ReportDiagnostics(
-                _eval.Module.Uri,
-                new DiagnosticsEntry(
-                    message,
-                    _eval.GetLocationInfo(fd.NameExpression).Span,
-                    errorCode,
-                    Parsing.Severity.Warning,
-                    DiagnosticSource.Analysis));
         }
 
         private static bool IsDeprecated(ClassDefinition cd)

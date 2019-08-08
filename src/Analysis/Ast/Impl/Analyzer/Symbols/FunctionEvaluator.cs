@@ -55,6 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var returnType = TryDetermineReturnValue();
 
                 var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub);
+                CheckValidOverload(parameters);
                 _overload.SetParameters(parameters);
 
                 // Do process body of constructors since they may be declaring
@@ -98,6 +99,70 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return annotationType;
         }
 
+        private void CheckValidOverload(IReadOnlyList<IParameterInfo> parameters) {
+            if (_self?.MemberType == PythonMemberType.Class) {
+                if (parameters.IsNullOrEmpty()) {
+                    ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument);
+                    return;
+                }
+
+                var param = parameters[0].Name;
+                if (_function is IPythonFunctionType f) {
+                    // Don't give diagnostics on functions defined in metaclasses
+                    if (IsMetaclassFunction()) {
+                        return;
+                    }
+
+                    // Static methods don't need self or cls
+                    if (f.IsStatic) {
+                        return;
+                    }
+
+                    // If it is a class method check for cls
+                    if (f.IsClassMethod) {
+                        if (!param.Equals("cls")) {
+                            ReportFunctionParams(Resources.NoClsArgument, ErrorCodes.NoClsArgument);
+                        }
+                    }
+
+                    // If it is a method check for self
+                    if (!f.IsClassMethod) {
+                        if (!param.Equals("self")) {
+                            ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument);
+                        }
+                    }
+
+                    // If fn is a property, check for self
+                } else if (!param.Equals("self")) {
+                    ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns if the function is part of a metaclass definition 
+        /// e.g 
+        /// class A(type):
+        ///  def f(cls): ...
+        /// f is a metaclass function
+        /// </summary>
+        /// <returns></returns>
+        private bool IsMetaclassFunction() {
+            // Just allow all specialized types in Mro to avoid false positives
+            return _self.Mro.Any(b => b.IsSpecialized);
+        }
+
+        private void ReportFunctionParams(string message, string errorCode) {
+            Eval.ReportDiagnostics(
+                Eval.Module.Uri,
+                new DiagnosticsEntry(
+                    message.FormatInvariant(FunctionDefinition.Name),
+                    Eval.GetLocationInfo(FunctionDefinition.NameExpression).Span,
+                    errorCode,
+                    Parsing.Severity.Warning,
+                    DiagnosticSource.Analysis));
+        }
+
         public override bool Walk(AssignmentStatement node) {
             var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             foreach (var lhs in node.Left) {
@@ -119,8 +184,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var value = Eval.GetValueFromExpression(node.Expression);
             if (value != null) {
                 // although technically legal, __init__ in a constructor should not have a not-none return value
-                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class 
-                    && !value.IsOfType(BuiltinTypeId.NoneType)) { 
+                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class
+                    && !value.IsOfType(BuiltinTypeId.NoneType)) {
 
                     Eval.ReportDiagnostics(Module.Uri, new Diagnostics.DiagnosticsEntry(
                             Resources.ReturnInInit,
