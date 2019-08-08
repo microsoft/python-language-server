@@ -40,13 +40,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public void DeclareVariable(string name, IMember value, VariableSource source)
             => DeclareVariable(name, value, source, default(Location));
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module)
-            => DeclareVariable(name, value, source, new Location(module));
-
         public void DeclareVariable(string name, IMember value, VariableSource source, Node location, bool overwrite = false)
             => DeclareVariable(name, value, source, GetLocationOfName(location), overwrite);
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, Location location, bool overwrite = false) {
+        private void DeclareVariable(string name, IMember value, VariableSource source, Location location, bool overwrite = false) {
             if (source == VariableSource.Import && value is IVariable v) {
                 CurrentScope.LinkVariable(name, v, location);
                 return;

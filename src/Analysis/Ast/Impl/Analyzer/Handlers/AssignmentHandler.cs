@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-                AssignVariable(ne, value ?? Module.Interpreter.UnknownType, source, assignmentAction);
+                Eval.AssignVariable(ne, value ?? Module.Interpreter.UnknownType, source, assignmentAction);
             }
         }
 
@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var instance = CreateInstance(variableType, value, expr);
 
             if (expr is NameExpression ne) {
-                AssignVariable(ne, instance, VariableSource.Declaration, assignmentAction);
+                Eval.AssignVariable(ne, instance, VariableSource.Declaration, assignmentAction);
                 return;
             }
 
@@ -120,16 +120,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (argType is PythonClassType cls && scope != null) {
                     cls.AddMember(m.Name, instance, true);
                 }
-            }
-        }
-
-        private void AssignVariable(NameExpression ne, IMember value, VariableSource source, Action<string, IMember> assignmentAction) {
-            if (assignmentAction != null) {
-                // class A:
-                //   x: int
-                assignmentAction(ne.Name, value);
-            } else {
-                Eval.DeclareVariable(ne.Name, value, source, Eval.GetLocationOfName(ne));
             }
         }
 

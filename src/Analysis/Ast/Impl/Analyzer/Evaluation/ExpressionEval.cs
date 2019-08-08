@@ -197,6 +197,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
+        public void AssignVariable(NameExpression ne, IMember value, VariableSource source, Action<string, IMember> assignmentAction)
+            => AssignVariable(ne.Name, value, source, ne, assignmentAction);
+
+        public void AssignVariable(string name, IMember value, VariableSource source, Node expression, Action<string, IMember> assignmentAction) {
+            if (assignmentAction != null) {
+                // class A:
+                //   x: int
+                assignmentAction(name, value);
+            } else {
+                DeclareVariable(name, value, source, GetLocationOfName(expression));
+            }
+        }
+
         internal void ClearCache() => _scopeLookupCache.Clear();
 
         private IMember GetValueFromFormatSpecifier(FormatSpecifier formatSpecifier)

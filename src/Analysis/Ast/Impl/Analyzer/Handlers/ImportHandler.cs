@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         public ImportHandler(AnalysisWalker walker) : base(walker) { }
 
-        public bool HandleImport(ImportStatement node) {
+        public bool HandleImport(ImportStatement node, Action<string, IMember> assignmentAction = null) {
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
@@ -43,13 +43,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             for (var i = 0; i < len; i++) {
                 var moduleImportExpression = node.Names[i];
                 var asNameExpression = node.AsNames[i];
-                HandleImport(moduleImportExpression, asNameExpression, forceAbsolute);
+                HandleImport(moduleImportExpression, asNameExpression, forceAbsolute, assignmentAction);
             }
 
             return false;
         }
 
-        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute) {
+        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute, Action<string, IMember> assignmentAction = null) {
             // "import fob.oar.baz" means
             // import_module('fob')
             // import_module('fob.oar')
@@ -73,10 +73,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
             if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
-                Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
+                Eval.AssignVariable(asNameExpression, lastModule, VariableSource.Import, assignmentAction);
             } else if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
                 var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
+                Eval.AssignVariable(importNames[0], firstModule, VariableSource.Import, firstName, assignmentAction);
             }
         }
 

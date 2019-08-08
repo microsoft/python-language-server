@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -73,12 +74,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 SymbolTable.Evaluate(b.ClassDefinition);
             }
 
+            var addMember = new Action<string,IMember>((n, m) => _class.AddMember(n, m, overwrite: true));
             // Process imports
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
-                ImportHandler.HandleFromImport(s);
+                ImportHandler.HandleFromImport(s, addMember);
             }
             foreach (var s in GetStatements<ImportStatement>(_classDef)) {
-                ImportHandler.HandleImport(s);
+                ImportHandler.HandleImport(s, addMember);
             }
 
             // Process assignments so we get class variables declared.
@@ -90,10 +92,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var s in GetStatements<Statement>(_classDef)) {
                 switch (s) {
                     case AssignmentStatement assignment:
-                        AssignmentHandler.HandleAssignment(assignment, (n, m) => _class.AddMember(n, m, overwrite: true));
+                        AssignmentHandler.HandleAssignment(assignment, addMember);
                         break;
                     case ExpressionStatement e:
-                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, (n, m) => _class.AddMember(n, m, overwrite: true));
+                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, addMember);
                         break;
                 }
             }

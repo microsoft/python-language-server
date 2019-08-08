@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -26,7 +27,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler {
-        public bool HandleFromImport(FromImportStatement node) {
+        public bool HandleFromImport(FromImportStatement node, Action<string, IMember> assignmentAction = null) {
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
@@ -47,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void AssignVariables(FromImportStatement node, IImportSearchResult imports, PythonVariableModule variableModule) {
+        private void AssignVariables(FromImportStatement node, IImportSearchResult imports, PythonVariableModule variableModule, Action<string, IMember> assignmentAction = null) {
             if (variableModule == null) {
                 return;
             }
@@ -59,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
-                HandleModuleImportStar(variableModule, imports is ImplicitPackageImport);
+                HandleModuleImportStar(variableModule, imports is ImplicitPackageImport, node, assignmentAction);
                 return;
             }
 
@@ -70,12 +71,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var variableName = nameExpression?.Name ?? memberName;
                     var exported = variableModule.Analysis?.GlobalScope.Variables[memberName] ?? variableModule.GetMember(memberName);
                     var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression);
+                    Eval.AssignVariable(variableName, value, VariableSource.Import, nameExpression, assignmentAction);
                 }
             }
         }
 
-        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage) {
+        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage, Node expression, Action<string, IMember> assignmentAction = null) {
             if (variableModule.Module == Module) {
                 // from self import * won't define any new members
                 return;
@@ -100,7 +101,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import);
+                Eval.AssignVariable(memberName, variable ?? member, VariableSource.Import, expression, assignmentAction);
             }
         }
 
