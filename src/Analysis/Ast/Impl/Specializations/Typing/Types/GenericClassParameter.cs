@@ -13,22 +13,31 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Disposables;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
     /// Represents Generic[T1, T2, ...] parameter. When class is instantiated
     /// or methods evaluated, class generic parameters are matched to
-    /// generic type parameters from TypeVar. <see cref="IGenericTypeDefinition"/>
+    /// generic type parameters from TypeVar. <see cref="IGenericTypeParameter"/>
     /// </summary>
     internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
-        internal GenericClassParameter(IReadOnlyList<IGenericTypeDefinition> typeArgs, IPythonModule declaringModule)
-        : base("GenericParameter", new Location(declaringModule)) {
-            TypeDefinitions = typeArgs;
+        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule)
+        : base("Generic", new Location(declaringModule)) {
+            TypeParameters = typeArgs ?? new List<IGenericTypeParameter>();
         }
 
-        public IReadOnlyList<IGenericTypeDefinition> TypeDefinitions { get; }
+        public override bool IsGeneric => true;
+
+        public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
+            => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+
+        public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
 
         public override PythonMemberType MemberType => PythonMemberType.Generic;
     }

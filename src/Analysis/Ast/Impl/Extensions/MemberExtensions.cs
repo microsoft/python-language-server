@@ -53,15 +53,15 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsGeneric(this IMember m) {
             var t = m.GetPythonType();
-            if (t is IGenericType || t is IGenericTypeDefinition) {
-                return true;
+
+            if (t is IPythonType pt) {
+                return pt.IsGeneric();
             }
-            if (t is IPythonClassType c && c.IsGeneric()) {
-                return true;
-            }
+
             if (m?.MemberType == PythonMemberType.Generic) {
                 return true;
             }
+
             return m is IVariable v && v.Value?.MemberType == PythonMemberType.Generic;
         }
 

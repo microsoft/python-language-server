@@ -22,11 +22,12 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed class TypeAnnotationConverter : TypeAnnotationConverter<IPythonType> {
         private readonly ExpressionEval _eval;
+        private readonly Expression _expr;
         private readonly LookupOptions _options;
 
-        public TypeAnnotationConverter(ExpressionEval eval, 
-            LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+        public TypeAnnotationConverter(ExpressionEval eval, Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
             _eval = eval ?? throw new ArgumentNullException(nameof(eval));
+            _expr = expr;
             _options = options;
         }
 
@@ -51,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         public override IPythonType MakeGeneric(IPythonType baseType, IReadOnlyList<IPythonType> args) {
             if (baseType is IGenericType gt) {
-                return gt.CreateSpecificType(args);
+                return gt.CreateSpecificType(new ArgumentSet(args, _expr, _eval));
             }
             if(baseType is IPythonClassType cls && cls.IsGeneric()) {
                 // Type is not yet known for generic classes. Resolution is delayed

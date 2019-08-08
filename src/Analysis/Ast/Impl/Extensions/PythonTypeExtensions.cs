@@ -23,10 +23,10 @@ namespace Microsoft.Python.Analysis {
             value == null || (value.TypeId == BuiltinTypeId.Unknown && value.MemberType == PythonMemberType.Unknown && value.Name.Equals("Unknown"));
 
         public static bool IsGenericParameter(this IPythonType value) 
-            => value is IGenericTypeDefinition;
+            => value is IGenericTypeParameter;
 
         public static bool IsGeneric(this IPythonType value)
-            => value is IGenericTypeDefinition || value is IGenericType || (value is IPythonClassType c && c.IsGeneric());
+            => value is IGenericTypeParameter || (value is IGenericType gt && gt.IsGeneric);
 
         public static void TransferDocumentationAndLocation(this IPythonType s, IPythonType d) {
             if (s != d && s is PythonType src && d is PythonType dst) {
