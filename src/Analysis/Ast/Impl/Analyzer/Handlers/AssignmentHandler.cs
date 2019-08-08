@@ -82,7 +82,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private bool IsValidAssignment(string name, Location loc) {
             if (Eval.GetInScope(name) is ILocatedMember m) {
-                // If assignment happens before class or function declaration then ignore
+                // Class and function definition are processed first, so only override
+                // if assignment happens after declaration
                 if(loc.IndexSpan.Start < m.Location.IndexSpan.Start) {
                     return false;
                 }
