@@ -17,7 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
@@ -49,6 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private int _version;
         private PythonAnalyzerSession _currentSession;
         private PythonAnalyzerSession _nextSession;
+        private bool _forceGCOnNextSession;
 
         public PythonAnalyzer(IServiceManager services, string cacheFolderPath = null) {
             _services = services;
@@ -196,9 +196,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
         }
 
-        public void ResetAnalyzer() {
+        public async Task ResetAnalyzer() {
+            var interpreter = _services.GetService<IPythonInterpreter>();
+            var builtins = interpreter.ModuleResolution.BuiltinsModule;
+            builtins.SetAst(builtins.Analysis.Ast);
+
+            await interpreter.TypeshedResolution.ReloadAsync();
+            await interpreter.ModuleResolution.ReloadAsync();
+
             lock (_syncObj) {
-                _analysisEntries.Split(kvp => kvp.Key.IsTypeshed || kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
+                _forceGCOnNextSession = true;
+
+                _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
                 _analysisEntries.Clear();
                 foreach (var (key, entry) in entriesToPreserve) {
                     _analysisEntries.Add(key, entry);
@@ -206,6 +215,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 _dependencyResolver.RemoveKeys(entriesToRemove.Select(e => e.Key));
             }
+
+            _services.GetService<IRunningDocumentTable>().ReloadAll();
         }
 
         public IReadOnlyList<IPythonModule> LoadedModules {
@@ -218,7 +229,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
 
-        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) 
+        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed)
             => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
@@ -241,7 +252,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 session.Start(true);
             }
         }
-        
+
         private bool TryCreateSession(in int graphVersion, in PythonAnalyzerEntry entry, out PythonAnalyzerSession session) {
             var analyzeUserModuleOutOfOrder = false;
             lock (_syncObj) {
@@ -276,7 +287,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     session = null;
                     return false;
                 }
-                
+
                 if (_currentSession.IsCompleted) {
                     _currentSession = session = CreateSession(walker, null);
                     return true;
@@ -301,14 +312,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             session.Start(false);
         }
 
-        private PythonAnalyzerSession CreateSession(in IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, in PythonAnalyzerEntry entry) 
-            => new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry);
+        private PythonAnalyzerSession CreateSession(in IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker, in PythonAnalyzerEntry entry) {
+            bool forceGC;
+            lock (_syncObj) {
+                forceGC = _forceGCOnNextSession;
+                _forceGCOnNextSession = false;
+            }
+
+            return new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
+        }
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             if (missingKeys.Count == 0) {
                 return;
             }
-            
+
             var foundKeys = ImmutableArray<AnalysisModuleKey>.Empty;
             foreach (var missingKey in missingKeys) {
                 lock (_syncObj) {
