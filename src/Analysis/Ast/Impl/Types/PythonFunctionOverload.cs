@@ -129,21 +129,21 @@ namespace Microsoft.Python.Analysis.Types {
         private IMember GetSpecificReturnType(IPythonClassType selfClassType, IArgumentSet args) {
             var returnValueType = StaticReturnValue.GetPythonType();
             switch (returnValueType) {
-                case PythonClassType cls when cls.IsGeneric():
+                case PythonClassType cls when cls.IsGeneric:
                     return CreateSpecificReturnFromClassType(selfClassType, cls, args); // -> A[_T1, _T2, ...]
 
-                case IGenericTypeDefinition gtd1 when selfClassType != null:
-                    return CreateSpecificReturnFromTypeVar(selfClassType, gtd1); // -> _T
-
-                case IGenericTypeDefinition gtd2 when args != null: // -> T on standalone function.
-                    return args.Arguments.FirstOrDefault(a => gtd2.Equals(a.Type))?.Value as IMember;
-
-                case IGenericType gt when args != null: // -> CLASS[T] on standalone function (i.e. -> List[T]).
+                case IGenericType gt when gt.IsGeneric && args != null: // -> CLASS[T] on standalone function (i.e. -> List[T]).
                     var typeArgs = ExpressionEval.GetTypeArgumentsFromParameters(this, args);
                     if (typeArgs != null) {
-                        return gt.CreateSpecificType(typeArgs);
+                        return gt.CreateSpecificType(new ArgumentSet(typeArgs, args.Expression, args.Eval));
                     }
                     break;
+
+                case IGenericTypeParameter gtd1 when selfClassType != null:
+                    return CreateSpecificReturnFromTypeVar(selfClassType, gtd1); // -> _T
+
+                case IGenericTypeParameter gtd2 when args != null: // -> T on standalone function.
+                    return args.Arguments.FirstOrDefault(a => gtd2.Equals(a.Type))?.Value as IMember;
             }
 
             return StaticReturnValue;
@@ -153,7 +153,7 @@ namespace Microsoft.Python.Analysis.Types {
             // -> A[_T1, _T2, ...]
             // Match arguments
             IReadOnlyList<IPythonType> typeArgs = null;
-            var classGenericParameters = selfClassType?.GenericParameters.Keys.ToArray() ?? Array.Empty<string>();
+            var classGenericParameters = selfClassType?.GenericParameters.Keys.ToArray() ?? Array.Empty<IGenericTypeParameter>();
             if (classGenericParameters.Length > 0 && selfClassType != null) {
                 // Declaring class is specific and provides definitions of generic parameters
                 typeArgs = classGenericParameters
@@ -172,8 +172,19 @@ namespace Microsoft.Python.Analysis.Types {
             return null;
         }
 
-        private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IGenericTypeDefinition returnType) {
-            if (selfClassType.GenericParameters.TryGetValue(returnType.Name, out var specificType)) {
+        private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IGenericTypeParameter returnType) {
+            if (selfClassType.GenericParameters.TryGetValue(returnType, out var specificType)) {
+                return new PythonInstance(specificType);
+            }
+
+            // Find first base class type in which function was declared
+            var baseType = selfClassType.Mro
+                .OfType<IPythonClassType>()
+                .Skip(1)
+                .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType));
+
+            // Try and infer return value from base class
+            if (baseType != null && baseType.GenericParameters.TryGetValue(returnType, out specificType)) {
                 return new PythonInstance(specificType);
             }
 
@@ -181,7 +192,7 @@ namespace Microsoft.Python.Analysis.Types {
             // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
             var name = StaticReturnValue.GetPythonType()?.Name;
             var typeDefVar = DeclaringModule.Analysis.GlobalScope.Variables[name];
-            if (typeDefVar?.Value is IGenericTypeDefinition gtp2) {
+            if (typeDefVar?.Value is IGenericTypeParameter gtp2) {
                 // See if the instance (self) type satisfies one of the constraints.
                 return selfClassType.Mro.Any(b => gtp2.Constraints.Any(c => c.Equals(b)))
                     ? selfClassType

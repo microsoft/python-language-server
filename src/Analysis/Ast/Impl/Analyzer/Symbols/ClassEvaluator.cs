@@ -13,13 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -53,12 +50,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 // Evaluate inner classes, if any
                 EvaluateInnerClasses(_classDef);
-
                 _class = classInfo;
 
-                var bases = ProcessBases(outerScope);
-
+                var bases = ProcessBases();
                 _class.SetBases(bases);
+                _class.DecideGeneric();
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
                 ProcessClassBody();
@@ -113,37 +109,47 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             UpdateClassMembers();
         }
 
-        private IEnumerable<IPythonType> ProcessBases(Scope outerScope) {
+        private IEnumerable<IPythonType> ProcessBases() {
             var bases = new List<IPythonType>();
             foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
-                var expr = a.Expression;
-                var m = Eval.GetValueFromExpression(expr);
-
-                switch (m) {
-                    // Allow any members from typing module
-                    // TODO handle typing module specialization better: https://github.com/microsoft/python-language-server/issues/1367
-                    case ILocatedMember l when l.DeclaringModule is TypingModule:
-                        TryAddBase(bases, a);
-                        break;
-                    default:
-                        switch (m?.MemberType) {
-                            case PythonMemberType.Method:
-                            case PythonMemberType.Function:
-                            case PythonMemberType.Property:
-                            case PythonMemberType.Instance:
-                            case PythonMemberType.Variable when m is IPythonConstant:
-                                // all invalid types to inherit from
-                                ReportInvalidBase(a.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
-                                break;
-                            default:
-                                TryAddBase(bases, a);
-                                break;
-                        }
-                        break;
+                if (IsValidBase(a)) {
+                    TryAddBase(bases, a);
+                } else {
+                    ReportInvalidBase(a.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
                 }
             }
 
             return bases;
+        }
+
+        private bool IsValidBase(Arg a) {
+            var expr = a.Expression;
+            var m = Eval.GetValueFromExpression(expr);
+
+            // Allow any unknown members
+            if (m.IsUnknown()) {
+                return true;
+            }
+
+            // Allow extensions from specialized functions 
+            // We specialized type to be a function even though it is a class, so this allows extension of type
+            // TODO handle module specialization better: https://github.com/microsoft/python-language-server/issues/1367
+            if (m is IPythonType t && t.IsSpecialized) {
+                return true;
+            }
+
+            switch (m.MemberType) {
+                // Inheriting from these members is invalid
+                case PythonMemberType.Method:
+                case PythonMemberType.Function:
+                case PythonMemberType.Property:
+                case PythonMemberType.Instance:
+                case PythonMemberType.Variable when m is IPythonConstant:
+                    return false;
+            }
+
+            // Optimistically say anything that passes these checks is a valid base 
+            return true;
         }
 
         private void TryAddBase(List<IPythonType> bases, Arg arg) {
@@ -190,13 +196,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             _class.AddMembers(members, false);
         }
 
-        private void ReportInvalidBase(object argVal) {
+        private void ReportInvalidBase(string argVal) {
             Eval.ReportDiagnostics(Eval.Module.Uri,
                 new DiagnosticsEntry(
                 Resources.InheritNonClass.FormatInvariant(argVal),
                 _classDef.NameExpression.GetLocation(Eval)?.Span ?? default,
                 Diagnostics.ErrorCodes.InheritNonClass,
-                Severity.Error,
+                Severity.Warning,
                 DiagnosticSource.Analysis
             ));
         }

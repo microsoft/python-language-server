@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 
@@ -20,7 +21,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
     /// Represents generic type definition. Typically value returned by TypeVar.
     /// </summary>
-    public interface IGenericTypeDefinition: IPythonType {
+    public interface IGenericTypeParameter: IPythonType, IEquatable<IGenericTypeParameter> {
         /// <summary>
         /// List of constraints for the type.
         /// </summary>

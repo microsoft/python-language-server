@@ -213,9 +213,6 @@
   <data name="InheritNonClass" xml:space="preserve">
     <value>Inheriting '{0}', which is not a class.</value>
   </data>
-  <data name="DuplicateArgumentName" xml:space="preserve">
-    <value>Duplicate argument name '{0}' in function definition.</value>
-  </data>
   <data name="NoClsArgument" xml:space="preserve">
     <value>Class method '{0}' should have 'cls' as first argument.</value>
   </data>
