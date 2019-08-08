@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // Process annotations, if any.
             foreach (var expr in node.Left.OfType<ExpressionWithAnnotation>()) {
                 // x: List[str] = [...]
-                HandleAnnotatedExpression(expr, value);
+                HandleAnnotatedExpression(expr, value, assignmentAction);
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
