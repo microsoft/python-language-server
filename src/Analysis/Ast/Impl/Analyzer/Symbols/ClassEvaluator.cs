@@ -194,6 +194,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Add members from this file
             var members = Eval.CurrentScope.Variables.Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Import);
             _class.AddMembers(members, false);
+            Eval.CurrentScope.VariableCollection.Clear();
         }
 
         private void ReportInvalidBase(string argVal) {

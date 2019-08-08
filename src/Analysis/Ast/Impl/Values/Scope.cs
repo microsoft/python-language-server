@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
 
-        private VariableCollection VariableCollection => _variables ?? (_variables = new VariableCollection());
+        internal VariableCollection VariableCollection => _variables ?? (_variables = new VariableCollection());
 
         private void DeclareBuiltinVariables() {
             if (Node == null || Module.ModuleType != ModuleType.User || this is IGlobalScope) {

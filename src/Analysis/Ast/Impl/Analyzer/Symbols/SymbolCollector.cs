@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// so the symbol table can resolve references on demand.
     /// </summary>
     internal sealed class SymbolCollector : PythonWalker {
-        private readonly Dictionary<ScopeStatement, IPythonType> _typeMap = new Dictionary<ScopeStatement, IPythonType>();
+        private readonly Dictionary<ScopeStatement, PythonType> _typeMap = new Dictionary<ScopeStatement, PythonType>();
         private readonly Stack<IDisposable> _scopes = new Stack<IDisposable>();
         private readonly ModuleSymbolTable _table;
         private readonly ExpressionEval _eval;
@@ -55,10 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
 
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
-                var classInfo = CreateClass(cd);
-                // The variable is transient (non-user declared) hence it does not have location.
-                // Class type is tracking locations for references and renaming.
-                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
+                DeclareOrAddMember(cd.Name, CreateClass(cd));
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
@@ -108,13 +105,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
-            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType existing)) {
-                existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
-                // The variable is transient (non-user declared) hence it does not have location.
-                // Function type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType ft)) {
+                ft = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
+                DeclareOrAddMember(fd.Name, ft);
             }
-            AddOverload(fd, existing, o => existing.AddOverload(o));
+            AddOverload(fd, ft, o => ft.AddOverload(o));
         }
 
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
@@ -154,7 +149,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType) {
             // We can't add a property to an unknown type. Fallback to a regular function for now.
-            // TOOD: Decouple declaring types from the property.
+            // TODO: Decouple declaring types from the property.
             if (declaringType.IsUnknown()) {
                 return false;
             }
@@ -176,13 +171,25 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
-            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
+            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType pt)) {
+                pt = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
+                DeclareOrAddMember(fd.Name, pt);
+            }
+            AddOverload(fd, pt, o => pt.AddOverload(o));
+        }
+
+        private void DeclareOrAddMember(string name, IMember member) {
+            // Classes and functions are only declared as scope variables
+            // in the global scope. Inside a class they are added as members
+            // since they cannot be accessed without the 'self' or other scoping prefix.
+            if (_eval.CurrentScope is IGlobalScope) {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+                _eval.DeclareVariable(name, member, VariableSource.Declaration);
+            } else {
+                var type = _typeMap[_eval.CurrentScope.Node];
+                type.AddMember(name, member, overwrite: true);
             }
-            AddOverload(fd, existing, o => existing.AddOverload(o));
         }
 
         private IMember GetMemberFromStub(string name) {
