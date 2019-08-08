@@ -55,8 +55,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 var bases = ProcessBases();
                 _class.SetBases(bases);
-                // Declare __class__ variable in the scope.
-                Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
+                
+                _class.AddMember("__class__", _class, overwrite: true);
                 ProcessClassBody();
             }
         }
@@ -80,7 +80,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var s in GetStatements<ImportStatement>(_classDef)) {
                 ImportHandler.HandleImport(s);
             }
-            UpdateClassMembers();
 
             // Process assignments so we get class variables declared.
             // Note that annotated definitions and assignments can be intermixed
@@ -91,22 +90,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var s in GetStatements<Statement>(_classDef)) {
                 switch (s) {
                     case AssignmentStatement assignment:
-                        AssignmentHandler.HandleAssignment(assignment);
+                        AssignmentHandler.HandleAssignment(assignment, (n, m) => _class.AddMember(n, m, overwrite: true));
                         break;
                     case ExpressionStatement e:
-                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null);
+                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, (n, m) => _class.AddMember(n, m, overwrite: true));
                         break;
                 }
             }
-            UpdateClassMembers();
 
             // Ensure constructors are processed so class members are initialized.
             EvaluateConstructors(_classDef);
-            UpdateClassMembers();
-
             // Process remaining methods.
             SymbolTable.EvaluateScope(_classDef);
-            UpdateClassMembers();
         }
 
         private IEnumerable<IPythonType> ProcessBases() {
@@ -188,13 +183,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var c in innerClasses) {
                 SymbolTable.Evaluate(c);
             }
-        }
-
-        private void UpdateClassMembers() {
-            // Add members from this file
-            var members = Eval.CurrentScope.Variables.Where(v => v.Source == VariableSource.Declaration || v.Source == VariableSource.Import);
-            _class.AddMembers(members, false);
-            Eval.CurrentScope.VariableCollection.Clear();
         }
 
         private void ReportInvalidBase(string argVal) {

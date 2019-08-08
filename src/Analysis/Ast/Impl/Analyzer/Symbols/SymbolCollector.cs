@@ -107,6 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType ft)) {
                 ft = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
+                _typeMap[fd] = ft;
                 DeclareOrAddMember(fd.Name, ft);
             }
             AddOverload(fd, ft, o => ft.AddOverload(o));
@@ -173,6 +174,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType pt)) {
                 pt = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
+                _typeMap[fd] = pt;
                 DeclareOrAddMember(fd.Name, pt);
             }
             AddOverload(fd, pt, o => pt.AddOverload(o));
@@ -182,13 +184,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Classes and functions are only declared as scope variables
             // in the global scope. Inside a class they are added as members
             // since they cannot be accessed without the 'self' or other scoping prefix.
-            if (_eval.CurrentScope is IGlobalScope) {
+            if (_eval.CurrentScope is IGlobalScope || !(_typeMap[_eval.CurrentScope.Node] is PythonClassType cls)) {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
                 _eval.DeclareVariable(name, member, VariableSource.Declaration);
             } else {
-                var type = _typeMap[_eval.CurrentScope.Node];
-                type.AddMember(name, member, overwrite: true);
+                cls.AddMember(name, member, overwrite: true);
             }
         }
 

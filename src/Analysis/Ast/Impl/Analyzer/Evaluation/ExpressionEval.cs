@@ -184,7 +184,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     m = GetValueFromExpression(namedExpr.Value);
                     break;
                 // indexing with nothing, e.g Generic[]
-                case ErrorExpression error:
+                case ErrorExpression _:
                     m = null;
                     break;
                 default:

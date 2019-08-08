@@ -20,15 +20,24 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Extensions {
     public static class PythonFunctionExtensions {
-        public static bool IsUnbound(this IPythonFunctionType f) 
+        public static bool IsUnbound(this IPythonFunctionType f)
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Function;
 
-        public static bool IsBound(this IPythonFunctionType f) 
+        public static bool IsBound(this IPythonFunctionType f)
             => f.DeclaringType != null && f.MemberType == PythonMemberType.Method;
 
-        public static bool HasClassFirstArgument(this IPythonClassMember m)
-            => (m is IPythonFunctionType f && !f.IsStatic && (f.IsClassMethod || f.IsBound())) ||
-               (m is IPythonPropertyType prop);
+        public static bool HasClassFirstArgument(this IPythonClassMember m) {
+            switch (m) {
+                case IPythonFunctionType f:
+                    if (!(f.DeclaringType is IPythonClassType)) {
+                        return false;
+                    }
+                    return !f.IsStatic && (f.IsClassMethod || f.IsBound());
+                case IPythonPropertyType _:
+                    return true;
+            }
+            return false;
+        }
 
         public static IScope GetScope(this IPythonFunctionType f) {
             IScope gs = f.DeclaringModule.GlobalScope;

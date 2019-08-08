@@ -64,10 +64,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (ctor || returnType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
-                    // For libraries remove declared local function variables to free up some memory.
-                    var optionsProvider = Eval.Services.GetService<IAnalysisOptionsProvider>();
-                    if (Module.ModuleType != ModuleType.User && optionsProvider?.Options.KeepLibraryLocalVariables != true) {
-                        ((VariableCollection)Eval.CurrentScope.Variables).Clear();
+                    var containsInnerTypes = Eval.CurrentScope.Variables.All(v => v.GetPythonType<IPythonClassType>() == null && v.GetPythonType<IPythonFunctionType>() == null);
+                    if (!containsInnerTypes) {
+                        // For libraries remove declared local function variables to free up some memory.
+                        var optionsProvider = Eval.Services.GetService<IAnalysisOptionsProvider>();
+                        if (Module.ModuleType != ModuleType.User && optionsProvider?.Options.KeepLibraryLocalVariables != true) {
+                            ((VariableCollection)Eval.CurrentScope.Variables).Clear();
+                        }
                     }
                 }
             }

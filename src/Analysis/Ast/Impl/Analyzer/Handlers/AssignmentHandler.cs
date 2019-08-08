@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -24,22 +25,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class AssignmentHandler : StatementHandler {
         public AssignmentHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleAssignment(AssignmentStatement node) {
+        public void HandleAssignment(AssignmentStatement node, Action<string, IMember> assignmentAction = null) {
             if (node.Right is ErrorExpression) {
                 return;
             }
 
+            // Get value of the right side of the assignment.
             var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             // Check PEP hint first
             var valueType = Eval.GetTypeFromPepHint(node.Right);
             if (valueType != null) {
-                HandleTypedVariable(valueType, value, node.Left.FirstOrDefault());
+                HandleTypedVariable(valueType, value, node.Left.FirstOrDefault(), assignmentAction);
                 return;
             }
 
             if (value.IsUnknown()) {
                 Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(Ast).Trim()}");
             }
+
             if (value?.GetPythonType().TypeId == BuiltinTypeId.Ellipsis) {
                 value = Eval.UnknownType;
             }
@@ -48,6 +51,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // Tuple = Tuple. Transfer values.
                 var seqHandler = new SequenceExpressionHandler(Walker);
                 seqHandler.HandleAssignment(seq.Items, node.Right, value);
+                return;
+            }
+
+            if (TryHandleClassVariable(node, value)) {
                 return;
             }
 
@@ -71,13 +78,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLocationOfName(ne));
+                AssignVariable(ne, value ?? Module.Interpreter.UnknownType, source, assignmentAction);
             }
-
-            TryHandleClassVariable(node, value);
         }
 
-        public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {
+        public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value, Action<string, IMember> assignmentAction = null) {
             if (expr?.Annotation == null) {
                 return;
             }
@@ -87,23 +92,48 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             //   x: List[str]
             // without a value. If value is provided, then this is
             //   x: List[str] = [...]
-            HandleTypedVariable(variableType, value, expr.Expression);
+            HandleTypedVariable(variableType, value, expr.Expression, assignmentAction);
         }
 
-        private void TryHandleClassVariable(AssignmentStatement node, IMember value) {
+        private bool TryHandleClassVariable(AssignmentStatement node, IMember value) {
             var mex = node.Left.OfType<MemberExpression>().FirstOrDefault();
             if (!string.IsNullOrEmpty(mex?.Name) && mex.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
-                var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Local);
-                var cls = m.GetPythonType<IPythonClassType>();
-                if (cls != null) {
-                    using (Eval.OpenScope(Eval.Module, cls.ClassDefinition, out _)) {
-                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Eval.GetLocationOfName(mex), true);
-                    }
+                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Local);
+                m.GetPythonType<PythonClassType>()?.AddMember(mex.Name, value, overwrite: true);
+                return true;
+            }
+            return false;
+        }
+
+        private void HandleTypedVariable(IPythonType variableType, IMember value, Expression expr, Action<string, IMember> assignmentAction) {
+            var instance = CreateInstance(variableType, value, expr);
+
+            if (expr is NameExpression ne) {
+                AssignVariable(ne, instance, VariableSource.Declaration, assignmentAction);
+                return;
+            }
+
+            if (expr is MemberExpression m) {
+                // self.x : int = 42
+                var self = Eval.LookupNameInScopes("self", out var scope);
+                var argType = self?.GetPythonType();
+                if (argType is PythonClassType cls && scope != null) {
+                    cls.AddMember(m.Name, instance, true);
                 }
             }
         }
 
-        private void HandleTypedVariable(IPythonType variableType, IMember value, Expression expr) {
+        private void AssignVariable(NameExpression ne, IMember value, VariableSource source, Action<string, IMember> assignmentAction) {
+            if (assignmentAction != null) {
+                // class A:
+                //   x: int
+                assignmentAction(ne.Name, value);
+            } else {
+                Eval.DeclareVariable(ne.Name, value, source, Eval.GetLocationOfName(ne));
+            }
+        }
+
+        private IMember CreateInstance(IPythonType variableType, IMember value, Expression expr) {
             // Check value type for compatibility
             IMember instance = null;
             if (value != null) {
@@ -116,21 +146,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     instance = value;
                 }
             }
-            instance = instance ?? variableType?.CreateInstance(variableType.Name, ArgumentSet.Empty(expr, Eval)) ?? Eval.UnknownType;
-
-            if (expr is NameExpression ne) {
-                Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, ne);
-                return;
-            }
-
-            if (expr is MemberExpression m) {
-                // self.x : int = 42
-                var self = Eval.LookupNameInScopes("self", out var scope);
-                var argType = self?.GetPythonType();
-                if (argType is PythonClassType cls && scope != null) {
-                    cls.AddMember(m.Name, instance, true);
-                }
-            }
+            return instance ?? variableType?.CreateInstance(variableType.Name, ArgumentSet.Empty(expr, Eval)) ?? Eval.UnknownType;
         }
     }
 }

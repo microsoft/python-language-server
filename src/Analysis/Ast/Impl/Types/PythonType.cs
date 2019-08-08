@@ -111,18 +111,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal virtual void SetDocumentation(string documentation) => Documentation = documentation;
 
-        internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
-            lock (_lock) {
-                if (!_readonly) {
-                    foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
-                        // If variable holds function or a class, use value as member. 
-                        // If it holds an instance, use the variable itself (i.e. it is a data member).
-                        WritableMembers[v.Name] = v.Value;
-                    }
-                }
-            }
-        }
-
         internal void AddMembers(IEnumerable<KeyValuePair<string, IMember>> members, bool overwrite) {
             lock (_lock) {
                 if (!_readonly) {
