@@ -68,6 +68,7 @@ namespace Microsoft.Python.Analysis.Tests {
             expected = expected.Concat(o.GetMemberNames()).Distinct().ToArray();
 
             var c2 = c.GetMember("C2").Should().BeAssignableTo<IPythonClassType>().Which;
+            c2.Should().NotBeNull();
             c2.GetMemberNames().Should().OnlyContain(expected);
             c2.GetMember("k").Should().BeAssignableTo<IPythonFunctionType>();
             c2.GetMember("__class__").Should().BeAssignableTo<IPythonClassType>();

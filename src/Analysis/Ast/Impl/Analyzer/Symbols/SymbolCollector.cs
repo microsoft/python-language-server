@@ -55,8 +55,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
 
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
-                DeclareOrAddMember(cd.Name, CreateClass(cd));
-                _table.Add(new ClassEvaluator(_eval, cd));
+                var cls = CreateClass(cd);
+                DeclareOrAddMember(cd.Name, cls);
+                _table.Add(new ClassEvaluator(_eval, cd, cls));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
             }
@@ -184,12 +185,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Classes and functions are only declared as scope variables
             // in the global scope. Inside a class they are added as members
             // since they cannot be accessed without the 'self' or other scoping prefix.
-            if (_eval.CurrentScope is IGlobalScope || !(_typeMap[_eval.CurrentScope.Node] is PythonClassType cls)) {
+            if (!(_eval.CurrentScope is IGlobalScope) && _typeMap[_eval.CurrentScope.Node] is PythonClassType cls) {
+                cls.AddMember(name, member, overwrite: true);
+            } else {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
                 _eval.DeclareVariable(name, member, VariableSource.Declaration);
-            } else {
-                cls.AddMember(name, member, overwrite: true);
             }
         }
 

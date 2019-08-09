@@ -30,8 +30,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private readonly ClassDefinition _classDef;
         private PythonClassType _class;
 
-        public ClassEvaluator(ExpressionEval eval, ClassDefinition classDef) : base(eval, classDef) {
+        public ClassEvaluator(ExpressionEval eval, ClassDefinition classDef, PythonClassType cls) : base(eval, classDef) {
             _classDef = classDef;
+            _class = cls;
         }
 
         public override void Evaluate() {
@@ -42,17 +43,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public void EvaluateClass() {
             // Open class scope chain
             using (Eval.OpenScope(Module, _classDef, out var outerScope)) {
-                var instance = Eval.GetInScope(_classDef.Name, outerScope);
-                if (!(instance?.GetPythonType() is PythonClassType classInfo)) {
-                    if (instance != null) {
-                        // TODO: warning that variable is already declared of a different type.
-                    }
-                    return;
-                }
-
                 // Evaluate inner classes, if any
-                EvaluateInnerClasses(_classDef);
-                _class = classInfo;
+                EvaluateInnerClasses();
 
                 var bases = ProcessBases();
                 _class.SetBases(bases);
@@ -89,18 +81,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             //    class A:
             //      x: int
             //      x = 1
-            var addMemberAndVariable = new Action<string, IMember>((n, m) => {
-                _class.AddMember(n, m, overwrite: true);
-                Eval.DeclareVariable(n, m, VariableSource.Declaration);
-            });
-
             foreach (var s in GetStatements<Statement>(_classDef)) {
                 switch (s) {
                     case AssignmentStatement assignment:
-                        AssignmentHandler.HandleAssignment(assignment, addMemberAndVariable);
+                        AssignmentHandler.HandleAssignment(assignment, addMember);
                         break;
                     case ExpressionStatement e:
-                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, addMemberAndVariable);
+                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, addMember);
                         break;
                 }
             }
@@ -178,17 +165,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
         }
 
-        private void EvaluateInnerClasses(ClassDefinition cd) {
+        private void EvaluateInnerClasses() {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             var innerClasses = SymbolTable.Evaluators
-                .Where(kvp => kvp.Key.Parent == cd && (kvp.Key is ClassDefinition))
+                .Where(kvp => kvp.Key.Parent == _classDef && (kvp.Key is ClassDefinition))
                 .Select(c => c.Value)
                 .ExcludeDefault()
                 .ToArray();
 
             foreach (var c in innerClasses) {
                 SymbolTable.Evaluate(c);
+                var name = ((ClassDefinition)c.Target).Name;
+                _class.AddMember(name, c.Result, overwrite: true);
             }
         }
 
