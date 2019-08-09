@@ -69,6 +69,8 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             return false;
         }
 
+        public override bool Walk(ExpressionWithAnnotation node) => false;
+
         public override bool Walk(NameExpression node) {
             if (_localNames?.Contains(node.Name) == true) {
                 return false;
