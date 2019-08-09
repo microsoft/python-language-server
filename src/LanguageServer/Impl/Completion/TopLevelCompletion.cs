@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -39,7 +40,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             IEnumerable<CompletionItem> items;
             using (eval.OpenScope(scope)) {
                 // Get variables declared in the module.
-                var variables = eval.CurrentScope.EnumerateTowardsGlobal.SelectMany(s => s.Variables).ToArray();
+                var variables = CollectVisibleVariables(scope);
                 items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v)).ToArray();
             }
 
@@ -78,6 +79,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
             items = items.Concat(keywords);
 
             return new CompletionResult(items, applicableSpan);
+        }
+
+        private static IReadOnlyList<IVariable> CollectVisibleVariables(IScope currentScope) {
+            var variables = new List<IVariable>();
+            foreach (var s in currentScope.EnumerateTowardsGlobal) {
+                variables.AddRange(s.Variables.Where(v => v.Source != VariableSource.ClassMember || s == currentScope));
+            }
+            return variables;
         }
 
         [Flags]
