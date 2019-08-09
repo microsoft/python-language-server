@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 var bases = ProcessBases();
                 _class.SetBases(bases);
-                
+
                 _class.AddMember("__class__", _class, overwrite: true);
                 ProcessClassBody();
             }
@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 SymbolTable.Evaluate(b.ClassDefinition);
             }
 
-            var addMember = new Action<string,IMember>((n, m) => _class.AddMember(n, m, overwrite: true));
+            var addMember = new Action<string, IMember>((n, m) => _class.AddMember(n, m, overwrite: true));
             // Process imports
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
                 ImportHandler.HandleFromImport(s, addMember);
@@ -89,13 +89,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             //    class A:
             //      x: int
             //      x = 1
+            var addMemberAndVariable = new Action<string, IMember>((n, m) => {
+                _class.AddMember(n, m, overwrite: true);
+                Eval.DeclareVariable(n, m, VariableSource.Declaration);
+            });
+
             foreach (var s in GetStatements<Statement>(_classDef)) {
                 switch (s) {
                     case AssignmentStatement assignment:
-                        AssignmentHandler.HandleAssignment(assignment, addMember);
+                        AssignmentHandler.HandleAssignment(assignment, addMemberAndVariable);
                         break;
                     case ExpressionStatement e:
-                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, addMember);
+                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, addMemberAndVariable);
                         break;
                 }
             }
