@@ -65,7 +65,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case LookupOptions.Normal:
                     // Regular lookup: all scopes and builtins.
                     for (var s = CurrentScope; s != null; s = (Scope)s.OuterScope) {
-                        if (s.Variables.Contains(name)) {
+                        if (ContainsVariable(s, name)) {
                             scope = s;
                             break;
                         }
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case LookupOptions.Nonlocal | LookupOptions.Builtins:
                     // All scopes but current and global ones.
                     for (var s = CurrentScope.OuterScope as Scope; s != null && s != GlobalScope; s = (Scope)s.OuterScope) {
-                        if (s.Variables.Contains(name)) {
+                        if (ContainsVariable(s, name)) {
                             scope = s;
                             break;
                         }
@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case LookupOptions.Local:
                 case LookupOptions.Local | LookupOptions.Builtins:
                     // Just the current scope
-                    if (CurrentScope.Variables.Contains(name)) {
+                    if (ContainsVariable(CurrentScope, name)) {
                         scope = CurrentScope;
                     }
                     break;
@@ -162,6 +162,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             return new ScopeTracker(this);
         }
+
+        /// <summary>
+        /// Determines if scope contains variable. For class scopes excludes
+        /// variables that are class members since they should be accessed
+        /// via member expression.
+        /// </summary>
+        private static bool ContainsVariable(Scope s, string name)
+            => s.Variables.TryGetVariable(name, out var v) && (v.Source != VariableSource.ClassMember || s.ScopeType == ScopeType.Class);
 
         private class ScopeTracker : IDisposable {
             private readonly ExpressionEval _eval;

@@ -650,5 +650,31 @@ a = x().func()
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task MemberCtorAssignment() {
+            const string code = @"
+class x:
+    y: int
+    z = y
+
+a = x().z
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AmbiguousMemberAssignment() {
+            const string code = @"
+class x:
+    x: int
+    y = x
+
+a = x().y
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
     }
 }

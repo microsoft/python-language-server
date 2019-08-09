@@ -185,7 +185,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Classes and functions are only declared as scope variables
             // in the global scope. Inside a class they are added as members
             // since they cannot be accessed without the 'self' or other scoping prefix.
-            if (!(_eval.CurrentScope is IGlobalScope) && _typeMap[_eval.CurrentScope.Node] is PythonClassType cls) {
+            if (_eval.CurrentScope.ScopeType != ScopeType.Global && _typeMap[_eval.CurrentScope.Node] is PythonClassType cls) {
                 cls.AddMember(name, member, overwrite: true);
             } else {
                 // The variable is transient (non-user declared) hence it does not have location.

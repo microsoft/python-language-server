@@ -81,13 +81,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             //    class A:
             //      x: int
             //      x = 1
+            // Here we both add class member and declare variables. 
+            // The problem is that in class scope member variables can be accessed
+            // without self prefix and hence analysis and linter must be able to locate 
+            // them without the prefix. Variables receive special source type
+            // so completion source can filter them out.
+            var addMemberAndVariable = new Action<string, IMember>((n, m) => {
+                _class.AddMember(n, m, overwrite: true);
+                Eval.DeclareVariable(n, m, VariableSource.ClassMember);
+            });
+
             foreach (var s in GetStatements<Statement>(_classDef)) {
                 switch (s) {
                     case AssignmentStatement assignment:
-                        AssignmentHandler.HandleAssignment(assignment, addMember);
+                        AssignmentHandler.HandleAssignment(assignment, addMemberAndVariable);
                         break;
                     case ExpressionStatement e:
-                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, addMember);
+                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, addMemberAndVariable);
                         break;
                 }
             }

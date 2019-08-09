@@ -18,6 +18,13 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Values {
+    public enum ScopeType {
+        Global,
+        Function,
+        Class,
+        Other
+    }
+
     /// <summary>
     /// Represents scope where variables can be declared.
     /// </summary>
@@ -26,6 +33,11 @@ namespace Microsoft.Python.Analysis.Values {
         /// Scope name. Typically name of the scope-defining <see cref="IScope.Node"/>
         /// </summary>
         string Name { get; }
+
+        /// <summary>
+        /// Type of the scope.
+        /// </summary>
+        ScopeType ScopeType { get; }
 
         /// <summary>
         /// Node defining the scope. Typically <see cref="ClassDefinition"/>

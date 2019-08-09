@@ -42,6 +42,11 @@ namespace Microsoft.Python.Analysis.Values {
         /// <summary>
         /// Variable is a built-in constant such as __debug__.
         /// </summary>
-        Builtin
+        Builtin,
+
+        /// <summary>
+        /// Variable is a class member.
+        /// </summary>
+        ClassMember
     }
 }

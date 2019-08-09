@@ -32,6 +32,7 @@ namespace Microsoft.Python.Analysis.Values {
         private List<Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
+            ScopeType = GetScopeType(node);
             OuterScope = outerScope;
             Module = module;
             if (node != null) {
@@ -42,6 +43,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         #region IScope
         public string Name => Node?.Name ?? "<global>";
+        public ScopeType ScopeType { get; }
         public virtual ScopeStatement Node => Module.GetAstNode<ScopeStatement>(this) ?? Module.GetAst();
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
@@ -102,7 +104,7 @@ namespace Microsoft.Python.Analysis.Values {
 
             VariableCollection.DeclareVariable("__name__", strType, VariableSource.Builtin, location);
 
-            if (Node is FunctionDefinition) {
+            if (ScopeType == ScopeType.Function) {
                 var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
                 var tupleType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Tuple);
 
@@ -113,8 +115,22 @@ namespace Microsoft.Python.Analysis.Values {
                 VariableCollection.DeclareVariable("__doc__", strType, VariableSource.Builtin, location);
                 VariableCollection.DeclareVariable("__func__", objType, VariableSource.Builtin, location);
                 VariableCollection.DeclareVariable("__globals__", dictType, VariableSource.Builtin, location);
-            } else if (Node is ClassDefinition) {
+            } else if (ScopeType == ScopeType.Class) {
                 VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin, location);
+            }
+        }
+
+        private ScopeType GetScopeType(Node node) {
+            switch (node) {
+                case ClassDefinition _:
+                    return ScopeType.Class;
+                case FunctionDefinition _:
+                    return ScopeType.Function;
+                case null:
+                case PythonAst _:
+                    return ScopeType.Global;
+                default:
+                    return ScopeType.Other;
             }
         }
     }
@@ -127,6 +143,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IPythonModule Module { get; }
         public string Name => string.Empty;
         public ScopeStatement Node => Module.Analysis.Ast;
+        public ScopeType ScopeType => ScopeType.Global;
         public IScope OuterScope => null;
         public IGlobalScope GlobalScope { get; }
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
