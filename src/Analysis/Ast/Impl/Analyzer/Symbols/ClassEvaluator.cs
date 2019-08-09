@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 SymbolTable.Evaluate(b.ClassDefinition);
             }
 
-            var addMember = new Action<string, IMember>((n, m) => _class.AddMember(n, m, overwrite: true));
+            var addMember = new AssignmentAction((n, m, l) => _class.AddMember(n, m, overwrite: true));
             // Process imports
             foreach (var s in GetStatements<FromImportStatement>(_classDef)) {
                 ImportHandler.HandleFromImport(s, addMember);
@@ -86,9 +86,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // without self prefix and hence analysis and linter must be able to locate 
             // them without the prefix. Variables receive special source type
             // so completion source can filter them out.
-            var addMemberAndVariable = new Action<string, IMember>((n, m) => {
+            var addMemberAndVariable = new AssignmentAction((n, m, l) => {
                 _class.AddMember(n, m, overwrite: true);
-                Eval.DeclareVariable(n, m, VariableSource.ClassMember);
+                Eval.DeclareVariable(n, m, VariableSource.ClassMember, l);
             });
 
             foreach (var s in GetStatements<Statement>(_classDef)) {

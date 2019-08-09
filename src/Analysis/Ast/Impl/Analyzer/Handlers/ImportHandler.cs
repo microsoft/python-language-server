@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -33,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         public ImportHandler(AnalysisWalker walker) : base(walker) { }
 
-        public bool HandleImport(ImportStatement node, Action<string, IMember> assignmentAction = null) {
+        public bool HandleImport(ImportStatement node, AssignmentAction assignmentAction = null) {
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
@@ -49,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute, Action<string, IMember> assignmentAction = null) {
+        private void HandleImport(ModuleName moduleImportExpression, NameExpression asNameExpression, bool forceAbsolute, AssignmentAction assignmentAction = null) {
             // "import fob.oar.baz" means
             // import_module('fob')
             // import_module('fob.oar')

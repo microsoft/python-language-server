@@ -254,7 +254,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     case null:
                         // Nothing in sources, but there is type in the stub. Declare it.
                         if (v.Source == VariableSource.Declaration) {
-                            Eval.DeclareVariable(v.Name, v.Value, v.Source);
+                            Eval.DeclareVariable(v.Name, v.Value, v.Source, null);
                         }
                         break;
 
@@ -303,7 +303,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             TransferDocumentationAndLocation(sourceType, stubType);
                             // TODO: choose best type between the scrape and the stub. Stub probably should always win.
                             var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? v.Source;
-                            Eval.DeclareVariable(v.Name, v.Value, source);
+                            Eval.DeclareVariable(v.Name, v.Value, source, v.Location);
                         }
                         break;
                 }

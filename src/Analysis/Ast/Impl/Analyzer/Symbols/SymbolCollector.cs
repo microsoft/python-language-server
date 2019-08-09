@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var cls = CreateClass(cd);
-                DeclareOrAddMember(cd.Name, cls);
+                DeclareOrAddMember(cd.Name, cls, _eval.GetLocationOfName(cd));
                 _table.Add(new ClassEvaluator(_eval, cd, cls));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
@@ -107,9 +107,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType ft)) {
-                ft = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
+                var location = _eval.GetLocationOfName(fd);
+                ft = new PythonFunctionType(fd, declaringType, location);
                 _typeMap[fd] = ft;
-                DeclareOrAddMember(fd.Name, ft);
+                DeclareOrAddMember(fd.Name, ft, location);
             }
             AddOverload(fd, ft, o => ft.AddOverload(o));
         }
@@ -174,14 +175,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType pt)) {
-                pt = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
+                var location = _eval.GetLocationOfName(fd);
+                pt = new PythonPropertyType(fd, location, declaringType, isAbstract);
                 _typeMap[fd] = pt;
-                DeclareOrAddMember(fd.Name, pt);
+                DeclareOrAddMember(fd.Name, pt, location);
             }
             AddOverload(fd, pt, o => pt.AddOverload(o));
         }
 
-        private void DeclareOrAddMember(string name, IMember member) {
+        private void DeclareOrAddMember(string name, IMember member, Location location) {
             // Classes and functions are only declared as scope variables
             // in the global scope. Inside a class they are added as members
             // since they cannot be accessed without the 'self' or other scoping prefix.
@@ -190,7 +192,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             } else {
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
-                _eval.DeclareVariable(name, member, VariableSource.Declaration);
+                _eval.DeclareVariable(name, member, VariableSource.Declaration, location);
             }
         }
 

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -27,7 +28,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler {
-        public bool HandleFromImport(FromImportStatement node, Action<string, IMember> assignmentAction = null) {
+        public bool HandleFromImport(FromImportStatement node, AssignmentAction assignmentAction = null) {
             if (Module.ModuleType == ModuleType.Specialized) {
                 return false;
             }
@@ -43,12 +44,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
             if (HandleImportSearchResult(imports, null, null, node.Root, out var variableModule)) {
-                AssignVariables(node, imports, variableModule);
+                AssignVariables(node, imports, variableModule, assignmentAction);
             }
             return false;
         }
 
-        private void AssignVariables(FromImportStatement node, IImportSearchResult imports, PythonVariableModule variableModule, Action<string, IMember> assignmentAction = null) {
+        private void AssignVariables(FromImportStatement node, IImportSearchResult imports, PythonVariableModule variableModule, AssignmentAction assignmentAction = null) {
             if (variableModule == null) {
                 return;
             }
@@ -76,7 +77,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage, Node expression, Action<string, IMember> assignmentAction = null) {
+        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage, Node expression, AssignmentAction assignmentAction = null) {
             if (variableModule.Module == Module) {
                 // from self import * won't define any new members
                 return;
@@ -101,7 +102,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-                Eval.AssignVariable(memberName, variable ?? member, VariableSource.Import, expression, assignmentAction);
+                // When assigning variable from * we do not provide location so code navigation
+                // will not be going to * and rather go straight to the member definition.
+                Eval.AssignVariable(memberName, variable ?? member, VariableSource.Import, null, assignmentAction);
             }
         }
 

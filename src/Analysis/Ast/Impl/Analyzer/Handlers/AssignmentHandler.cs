@@ -13,9 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class AssignmentHandler : StatementHandler {
         public AssignmentHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleAssignment(AssignmentStatement node, Action<string, IMember> assignmentAction = null) {
+        public void HandleAssignment(AssignmentStatement node, AssignmentAction assignmentAction = null) {
             if (node.Right is ErrorExpression) {
                 return;
             }
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value, Action<string, IMember> assignmentAction = null) {
+        public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value, AssignmentAction assignmentAction = null) {
             if (expr?.Annotation == null) {
                 return;
             }
@@ -105,7 +105,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return false;
         }
 
-        private void HandleTypedVariable(IPythonType variableType, IMember value, Expression expr, Action<string, IMember> assignmentAction) {
+        private void HandleTypedVariable(IPythonType variableType, IMember value, Expression expr, AssignmentAction assignmentAction) {
             var instance = CreateInstance(variableType, value, expr);
 
             if (expr is NameExpression ne) {

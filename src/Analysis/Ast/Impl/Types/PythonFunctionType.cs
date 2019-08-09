@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Types {
             Location location,
             IPythonType declaringType,
             string documentation
-        ) : base(name, location, documentation, declaringType is IPythonClassType ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+        ) : base(name, location, documentation, declaringType?.MemberType == PythonMemberType.Class ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
         }
 
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Types {
             Location location
         ) : base(fd.Name, location,
             fd.Name == "__init__" ? (declaringType?.Documentation ?? fd.GetDocumentation()) : fd.GetDocumentation(), 
-            declaringType is IPythonClassType ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
+            declaringType?.MemberType == PythonMemberType.Class ? BuiltinTypeId.Method : BuiltinTypeId.Function) {
             DeclaringType = declaringType;
 
             location.Module.AddAstNode(this, fd);

@@ -29,6 +29,12 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// <summary>
+    /// Callback for assignment of a value. Callback may decide to create
+    /// a variable or add a class member to the current class.
+    /// </summary>
+    internal delegate void AssignmentAction(string name, IMember value, Location location);
+
+    /// <summary>
     /// Helper class that provides methods for looking up variables
     /// and types in a chain of scopes during analysis.
     /// </summary>
@@ -197,14 +203,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return m;
         }
 
-        public void AssignVariable(NameExpression ne, IMember value, VariableSource source, Action<string, IMember> assignmentAction)
+        public void AssignVariable(NameExpression ne, IMember value, VariableSource source, AssignmentAction assignmentAction)
             => AssignVariable(ne.Name, value, source, ne, assignmentAction);
 
-        public void AssignVariable(string name, IMember value, VariableSource source, Node expression, Action<string, IMember> assignmentAction) {
+        public void AssignVariable(string name, IMember value, VariableSource source, Node expression, AssignmentAction assignmentAction) {
             if (assignmentAction != null) {
                 // class A:
                 //   x: int
-                assignmentAction(name, value);
+                assignmentAction(name, value, GetLocationOfName(expression));
             } else {
                 DeclareVariable(name, value, source, GetLocationOfName(expression));
             }
