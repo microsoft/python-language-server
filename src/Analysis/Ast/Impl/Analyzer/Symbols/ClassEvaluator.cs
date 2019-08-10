@@ -87,8 +87,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // them without the prefix. Variables receive special source type
             // so completion source can filter them out.
             var addMemberAndVariable = new AssignmentAction((n, m, l) => {
-                _class.AddMember(n, m, overwrite: true);
                 Eval.DeclareVariable(n, m, VariableSource.ClassMember, l);
+                _class.AddMember(n, new Variable(n, m, VariableSource.Declaration, l), overwrite: true);
             });
 
             foreach (var s in GetStatements<Statement>(_classDef)) {

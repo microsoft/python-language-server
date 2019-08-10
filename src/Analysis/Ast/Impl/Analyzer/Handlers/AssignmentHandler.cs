@@ -95,11 +95,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             HandleTypedVariable(variableType, value, expr.Expression, assignmentAction);
         }
 
-        private bool TryHandleClassVariable(AssignmentStatement node, IMember value) {
+        private bool TryHandleClassVariable(AssignmentStatement node, IMember value, AssignmentAction assignmentAction = null) {
             var mex = node.Left.OfType<MemberExpression>().FirstOrDefault();
             if (!string.IsNullOrEmpty(mex?.Name) && mex.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
-                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Local);
-                m.GetPythonType<PythonClassType>()?.AddMember(mex.Name, value, overwrite: true);
+                var cls = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Local)?.GetPythonType<PythonClassType>();
+                if (cls != null) {
+                    var member = cls.GetMember(mex.Name);
+                    var location = Eval.GetLocationOfName(mex);
+                    if (member == null) {
+                        // If class does not have the member, then add one.
+                        value = value is IPythonInstance inst ? new Variable(mex.Name, inst, VariableSource.ClassMember, location) : value;
+                        cls.AddMember(mex.Name, value, overwrite: false);
+                    } else {
+                        // If member is aready there, then add reference.
+                        cls.AddMemberReference(mex.Name, Eval, location);
+                    }
+                }
                 return true;
             }
             return false;

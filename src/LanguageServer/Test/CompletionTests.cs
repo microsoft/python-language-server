@@ -1243,13 +1243,13 @@ class A:
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var comps = cs.GetCompletions(analysis, new SourceLocation(14, 8));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(11, 21));
             var names = comps.Completions.Select(c => c.label);
-            names.Should().NotContain(new[] { "x1", "x2", "method1", "method2", "B" });
-
-            comps = cs.GetCompletions(analysis, new SourceLocation(11, 21));
-            names = comps.Completions.Select(c => c.label);
             names.Should().Contain(new[] { "x1", "x2", "method1", "method2", "B" });
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(14, 8));
+            names = comps.Completions.Select(c => c.label);
+            names.Should().NotContain(new[] { "x1", "x2", "method1", "method2", "B" });
         }
     }
 }

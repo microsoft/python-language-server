@@ -232,24 +232,11 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     }
                     break;
 
-                case IPythonClassType cls:
-                    // Data members may be instances that are not tracking locations.
-                    // In this case we'll try look up the respective variable instead.
-                    using (eval.OpenScope(cls)) {
-                        eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
-                        if (v2 != null) {
-                            definingMember = v2;
-                            return FromMember(v2);
-                        }
-                    }
-                    break;
-
                 default:
                     if (type?.GetMember(mex.Name) is ILocatedMember lm) {
                         definingMember = lm;
                         return FromMember(lm);
                     }
-
                     break;
             }
             return null;

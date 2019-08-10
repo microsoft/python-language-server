@@ -73,6 +73,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                         break;
                     }
+
+                case FunctionDefinition fd when node is NamedExpression && fd.Parent != fd.GlobalParent:
+                    using (eval.OpenScope(eval.Module, fd.Parent)) {
+                        eval.CurrentScope.
+                    }
+                    break;
+
             }
 
             IMember value;
