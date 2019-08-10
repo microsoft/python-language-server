@@ -53,11 +53,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     continue;
                 }
 
-                if (!_processing.Push(m)) {
-                    continue;
-                }
-
-                try {
+                using (_processing.Push(m, out var reentered)) {
+                    if (reentered) {
+                        continue;
+                    }
                     switch (m) {
                         case IPythonClassType ct when ct.Name == name:
                             if (!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
@@ -80,8 +79,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             fields.Add(VariableModel.FromType(name, t));
                             break;
                     }
-                } finally {
-                    _processing.Pop();
                 }
             }
 

@@ -34,8 +34,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IPythonInterpreter interpreter)
             : base(BuiltinTypeId.Tuple, declaringModule ?? interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
             ItemTypes = itemTypes.Count > 0 ? itemTypes : new[] { interpreter.UnknownType };
-            Name = CodeFormatter.FormatSequence("Tuple", '[', itemTypes);
-            QualifiedName = CodeFormatter.FormatSequence("typing:Tuple", '[', itemTypes.Select(t => t.QualifiedName));
+            Name = CodeFormatter.FormatSequence("Tuple", '[', ItemTypes);
+            QualifiedName = CodeFormatter.FormatSequence("typing:Tuple", '[', ItemTypes.Select(t => t.QualifiedName));
         }
 
         public IReadOnlyList<IPythonType> ItemTypes { get; }

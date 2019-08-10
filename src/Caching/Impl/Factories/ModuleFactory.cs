@@ -63,11 +63,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             // TODO: better resolve circular references.
-            if (!_typeReentrancy.Push(qualifiedName)) {
-                return null;
-            }
-
-            try {
+            using (_typeReentrancy.Push(qualifiedName, out var reentered)) {
+                if (reentered) {
+                    return null;
+                }
                 // See if member is a module first.
                 var module = GetModule(parts);
                 if (module == null) {
@@ -88,8 +87,6 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
                 var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
                 return new PythonInstance(t);
-            } finally {
-                _typeReentrancy.Pop();
             }
         }
 
@@ -97,11 +94,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             if (parts.ModuleName == Module.Name) {
                 return Module;
             }
-            if (!_moduleReentrancy.Push(parts.ModuleName)) {
-                return null;
-            }
-
-            try {
+            using (_moduleReentrancy.Push(parts.ModuleName, out var reentered)) {
+                if (reentered) {
+                    return null;
+                }
                 // Here we do not call GetOrLoad since modules references here must
                 // either be loaded already since they were required to create
                 // persistent state from analysis. Also, occasionally types come
@@ -116,12 +112,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 }
 
                 return null;
-            } finally {
-                _moduleReentrancy.Pop();
             }
         }
 
-        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames) 
+        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames)
             => memberNames.Count == 0 ? module : GetMember(module, memberNames);
 
         private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
@@ -158,7 +152,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 // Check if name has type arguments such as Union[int, str]
                 // Note that types can be nested like Union[int, Union[A, B]]
                 var typeArgs = GetTypeArguments(memberName, out var typeName);
-                if (typeArgs.Count > 0) {
+                if (!string.IsNullOrEmpty(typeName) && typeName != memberName) {
                     memberName = typeName;
                 }
 
@@ -178,8 +172,8 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     break;
                 }
 
-                member = typeArgs.Any() && member is IGenericType gt
-                    ? gt.CreateSpecificType(typeArgs)
+                member = typeArgs.Count > 0 && member is IGenericType gt
+                    ? gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null))
                     : member;
             }
 

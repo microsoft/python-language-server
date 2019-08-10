@@ -668,5 +668,30 @@ x = type(object.__init__)
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Method);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedProperty() {
+            const string code = @"
+class x(object):
+    def func(self):
+        @property
+        def foo(*args, **kwargs):
+            pass
+        return 42
+
+a = x().func()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task IOErrorBase() {
+            const string code = @"
+class A(IOError): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A").Which.Should().HaveBase("OSError");
+        }
     }
 }
