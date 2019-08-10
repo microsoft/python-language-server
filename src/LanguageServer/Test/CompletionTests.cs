@@ -508,10 +508,10 @@ class C(object):
             var completionInOar = cs.GetCompletions(analysis, new SourceLocation(5, 9));
             var completionForAbc = cs.GetCompletions(analysis, new SourceLocation(5, 13));
 
-            completionInD.Should().HaveLabels("C", "D", "oar")
+            completionInD.Should().HaveLabels("C", "D")
                 .And.NotContainLabels("a", "abc", "self", "x", "fob", "baz");
 
-            completionInOar.Should().HaveLabels("C", "D", "a", "oar", "abc", "self", "x")
+            completionInOar.Should().HaveLabels("C", "D", "a", "abc", "self", "x")
                 .And.NotContainLabels("fob", "baz");
 
             completionForAbc.Should().HaveLabels("baz", "fob");
