@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
-            return ann.GetValue(new TypeAnnotationConverter(this, options));
+            return ann.GetValue(new TypeAnnotationConverter(this, expr, options));
         }
     }
 }

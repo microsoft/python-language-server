@@ -205,7 +205,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 ActivityTracker.OnEnqueueModule(node.Value.Module.FilePath);
 
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || _walker.Remaining == 1) {
-                    Analyze(node, null, stopWatch);
+                    RunAnalysis(node, stopWatch);
                 } else {
                     StartAnalysis(node, ace, stopWatch).DoNotWait();
                 }
@@ -233,6 +233,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node)
             => !node.HasMissingDependencies && node.Value.IsAnalyzedLibrary(_walker.Version) && node.IsWalkedWithDependencies && node.IsValidVersion;
+
+        private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch) 
+            => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
 
         private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
             => Task.Run(() => Analyze(node, ace, stopWatch));

@@ -13,17 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -425,6 +419,25 @@ x = next(ia);
                 .And.HaveVariable("x").OfType(BuiltinTypeId.Str);
         }
 
+        // TODO handle when can make Union type generic, at the moment defining a h = Union[T,str]
+        // and trying to make it specific h[int] doesn't work
+        /// <returns></returns>
+        [Ignore, TestMethod, Priority(0)]
+        public async Task GenericUnionTypeAlias() {
+            const string code = @"
+from typing import TypeVar, Union, 
+S = TypeVar('S')
+UInt = Union[S, int]
+def response(query: str) -> UInt[str]:  
+    return UInt[str]
+
+x = response('test')
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").Which
+                .Should().HaveType("Union[str, int]");
+        }
+
         [TestMethod, Priority(0)]
         public async Task GenericTypeInstance() {
             const string code = @"
@@ -493,6 +506,124 @@ x = boxed.get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericClassSpecificTypeFillingMultipleTypeVariables() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+T = TypeVar('T')
+U = TypeVar('U')
+
+class A(Generic[T]):
+    a: T
+    def __init__(self, a: T):
+        self.a = a
+
+    def get(self) -> T:
+        return self.a
+
+class B(A[U]):
+    b: U
+    def __init__(self, b: U):
+        self.b = b
+        super().__init__(b)
+
+    def get1(self) -> U:
+        return self.b
+
+test = B(5)
+x = test.get()
+y = test.get1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            analysis.Should().HaveVariable("test").Which.Should().HaveMembers("get", "get1");
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericFunctionSequence() {
+            const string code = @"
+from typing import Typevar, Sequence
+
+T = TypeVar('T')
+
+def first(seq: Sequence[T]) -> T:
+    return seq[0]
+
+s = first('foo')
+n = first([1, 2, 3])
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("s").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("n").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericMultipleFunctionSequenceSameTypeVariable() {
+            const string code = @"
+from typing import Typevar, Sequence
+
+T = TypeVar('T')
+
+def first(seq: Sequence[T]) -> T:
+    return seq[0]
+
+def last(seq: Sequence[T]) -> T:
+    return seq[-1]
+
+s = first('foo')
+n = first([1, 2, 3])
+
+s_last = last('foo')
+n_last = last([1, 2, 3])
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("s").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("n").Which.Should().HaveType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("s_last").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("n_last").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassHalfFilledParameters() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+T = TypeVar('T')
+U = TypeVar('U')
+
+class A(Generic[T, U]):
+    a: U
+
+    def get(self) -> U:
+        return self.a
+
+    def get1(self) -> T:
+        return self.a
+
+
+class B(A[T, int], Generic[T]):
+    b: T
+
+    def get2(self) -> T:
+        return self.b
+
+
+b = B('a')
+x = b.get()
+y = b.get1()
+z = b.get2()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GenericClassRegularBase() {
             const string code = @"
 from typing import TypeVar, Generic
@@ -532,15 +663,335 @@ class Box(Generic[_T], List[_T]):
 boxed = Box(1)
 x = boxed.get()
 y = boxed[0]
+
+boxed_int = Box[int](1)
+z = boxed_int[0]
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
 
             var boxed = analysis.Should().HaveVariable("boxed").Which;
             boxed.Should().HaveMembers("append", "index");
             boxed.Should().NotHaveMember("bit_length");
 
+            var boxedInt = analysis.Should().HaveVariable("boxed_int").Which;
+            boxedInt.Should().HaveMembers("append", "index");
+            boxedInt.Should().NotHaveMember("bit_length");
+
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassGenericClassBase() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+_T = TypeVar('_T')
+
+class Box(Generic[_T]):
+    v: _T
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+class Cube(Box[int]):
+    def __init__(self, v: int):
+        super().__init__(v)
+
+    def tmp(self):
+        return self.get()
+
+c = Cube(5)
+x = c.tmp()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+
+            var cube = analysis.Should().HaveVariable("c").Which;
+            cube.Should().HaveMembers("get");
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassMultipleGenericClassBase() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+_T = TypeVar('_T')
+
+class A(Generic[_T]):
+    v: _T
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+class B(Generic[_T]):
+    y: _T
+    def __init__(self, y: _T):
+        self.y = y
+
+    def get(self) -> _T:
+        return self.y
+
+class C(A[int], B[str]):
+    def __init__(self, v: int):
+        super().__init__(v)
+
+    def tmp(self):
+        return self.get()
+
+c = C(5)
+x = c.tmp()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var c = analysis.Should().HaveVariable("c").Which;
+            c.Should().HaveMembers("get");
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NonGenericClassSubclassDict() {
+            const string code = @"
+from typing import Dict
+
+class StrDict(Dict[str, str]):  # Non-generic subclass 
+    def __str__(self) -> str:
+        return 'StrDict({})'.format(super().__str__())
+
+d: StrDict[int, int]  # StrDict is not generic, so should not update methods
+d = StrDict()
+h = d['t']
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("d").Which.Should().HaveType("StrDict");
+            analysis.Should().HaveVariable("h").Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassChainMiddleClassSpecific() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+_T = TypeVar('_T')
+
+class A(Generic[_T]):
+    v: _T
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+class B(A[str], Generic[_T]):
+    y: _T
+    def __init__(self, y: _T):
+        super.__init__(y)
+        self.y = y
+
+    def get1(self) -> _T:
+        return self.y
+
+class C(B[int]):
+    def __init__(self, v: int):
+        super().__init__(v)
+
+    def tmp(self):
+        return self.get()
+
+c = C(5)
+x = c.tmp()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var c = analysis.Should().HaveVariable("c").Which;
+            c.Should().HaveMembers("get", "get1");
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassTypeVariableOrderGenericBase() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+T = TypeVar('T')
+S = TypeVar('S')
+U = TypeVar('U')
+
+class One(Generic[T]): ...
+class Two(Generic[T]): ...
+
+class First(One[T], Two[S]): 
+    def getT(self) -> T:
+        pass
+
+    def getS(self) -> S:
+        pass
+
+class Second(One[T], Another[S], Generic[S, U, T]): 
+    def getS(self) -> S:
+        pass
+
+    def getU(self) -> U:
+        pass
+
+    def getT(self) -> T:
+        pass
+
+x: First[int, str]
+x = First(1, 'hi')
+x1 = x.getT()
+x2 = x.getS()
+
+y: Second[int, str, Any]
+y = Second(1, 'hi', 2.0)
+y1 = y.getS()
+y2 = y.getU()
+y3 = y.getT()
+
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveMembers("getS", "getT");
+            analysis.Should().HaveVariable("x1").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("x2").Which.Should().HaveType(BuiltinTypeId.Str);
+
+            analysis.Should().HaveVariable("y").Which.Should().HaveMembers("getS", "getU", "getT");
+            analysis.Should().HaveVariable("y1").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y2").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("y3").Which.Should().HaveType(BuiltinTypeId.Float);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassBaseChain() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+_T = TypeVar('_T')
+
+class A(Generic[_T]):
+    v: _T
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+class B(A[_T]):
+    y: _T
+    def __init__(self, y: _T):
+        self.y = y
+        super().__init__(y)
+
+    def get1(self) -> _T:
+        return self.y
+
+class C(B[int]):
+    def __init__(self, v: int):
+        super().__init__(v)
+
+c = C(5)
+x = c.get()
+y = c.get1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Diagnostics.Should().BeEmpty();
+            var c = analysis.Should().HaveVariable("c").Which;
+            c.Should().HaveMembers("get", "get1");
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassMultipleTypeVarsDefinedByOneTypeVar() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+T = TypeVar('T')
+K = TypeVar('K')
+
+class A(Generic[T, K]):
+    v: T
+    def __init__(self, v: T):
+        self.v = v
+
+    def getT(self) -> T:
+        return self.v
+
+    def getK(self) -> K:
+        return self.v
+
+class B(A[T, T]):
+    y: T
+    def __init__(self, y: T):
+        self.y = y
+        super().__init__(y)
+
+    def get1(self) -> T:
+        return self.y
+
+c = B(5)
+x = c.getT()
+y = c.getK()
+z = c.get1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Diagnostics.Should().BeEmpty();
+            var c = analysis.Should().HaveVariable("c").Which;
+            c.Should().HaveMembers("getT", "getK", "get1");
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("z").Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassMultipleGenericClassBaseDifferentOrder() {
+            const string code = @"
+from typing import TypeVar, Generic, List
+
+_T = TypeVar('_T')
+
+class A(Generic[_T]):
+    y: _T
+    def __init__(self, v: _T):
+        self.v = v
+
+    def get(self) -> _T:
+        return self.v
+
+class B(Generic[_T]):
+    y: _T
+    def __init__(self, y: _T):
+        self.y = y
+
+    def get(self) -> _T:
+        return self.y
+
+class C(A[str], B[str]):
+    def __init__(self, v: int):
+        super().__init__(v)
+
+    def tmp(self):
+        return self.get()
+
+c = C('str')
+x = c.tmp()
+y = c.get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var c = analysis.Should().HaveVariable("c").Which;
+            c.Should().HaveMembers("get");
+
+            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
@@ -559,13 +1010,42 @@ x = d.get()
 y = d[0]
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Str);
 
             var d = analysis.Should().HaveVariable("d").Which;
             d.Should().HaveMembers("get", "keys", "values");
 
             analysis.Should().HaveVariable("x").Which.Should().HaveType(BuiltinTypeId.Str);
             analysis.Should().HaveVariable("y").Which.Should().HaveType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassSelf() {
+            const string code = @"
+from typing import TypeVar
+
+T = TypeVar('T', bound='Shape')
+
+class Shape:
+    def set_scale(self: T, scale: float) -> T:
+        self.scale = scale
+        return self
+
+class Circle(Shape):
+    def set_radius(self, r: float) -> 'Circle':
+        self.radius = r
+        return self
+
+class Square(Shape):
+    def set_width(self, w: float) -> 'Square':
+        self.width = w
+        return self
+
+circle = Circle().set_scale(0.5).set_radius(2.7)  
+square = Square().set_scale(0.5).set_width(3.2)  
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("circle").Which.Should().HaveType("Circle");
+            analysis.Should().HaveVariable("square").Which.Should().HaveType("Square");
         }
 
         [TestMethod, Priority(0)]

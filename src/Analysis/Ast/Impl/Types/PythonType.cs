@@ -25,7 +25,6 @@ namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("{Name}")]
     internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
         private readonly object _lock = new object();
-        private readonly string _name;
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
         private bool _readonly;
@@ -41,12 +40,13 @@ namespace Microsoft.Python.Analysis.Types {
             string documentation,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown
         ) : this(name, location, typeId) {
+            BaseName = name ?? throw new ArgumentNullException(nameof(name));
             Documentation = documentation;
         }
 
         private PythonType(string name, Location location, BuiltinTypeId typeId) : base(location) {
             Check.ArgumentNotNull(nameof(location), location.Module);
-            _name = name ?? throw new ArgumentNullException(nameof(name));
+            BaseName = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
 
@@ -64,9 +64,10 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
 
-        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : _name;
+        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : BaseName;
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
+        public string BaseName { get; }
         public bool IsBuiltin => DeclaringModule == null || DeclaringModule is IBuiltinsPythonModule;
         public virtual bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
@@ -162,7 +163,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         internal bool IsHidden => ContainsMember("__hidden__");
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
-        protected IMember UnknownType => DeclaringModule.Interpreter.UnknownType;
+        protected IPythonType UnknownType => DeclaringModule.Interpreter.UnknownType;
 
         //public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
 

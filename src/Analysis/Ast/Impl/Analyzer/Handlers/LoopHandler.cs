@@ -40,6 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             node.Body?.Walk(Walker);
+            node.Else?.Walk(Walker);
             return false;
         }
 
