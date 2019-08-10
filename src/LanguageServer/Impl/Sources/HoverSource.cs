@@ -78,7 +78,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             IMember value;
             IPythonType type;
             using (eval.OpenScope(analysis.Document, scope)) {
-                value = analysis.ExpressionEvaluator.GetValueFromExpression(expr);
+                value = analysis.ExpressionEvaluator.GetValueFromExpression(expr, LookupOptions.All);
                 type = value?.GetPythonType();
                 if (type == null) {
                     return null;

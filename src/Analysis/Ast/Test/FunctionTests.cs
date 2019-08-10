@@ -606,5 +606,27 @@ x = test()
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("x").OfType("Foo");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task AmbiguousOptionalParameterType() {
+            const string code = @"
+from typing import Optional
+class A: ...
+
+class B:
+    def __init__(self, A: Optional[A]):
+        self.name = name
+
+    @property
+    def A(self) -> int:
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var a = analysis.Should().HaveClass("A").Which;
+            analysis.Should().HaveClass("B")
+                .Which.Should().HaveMethod("__init__")
+                .Which.Should().HaveParameterAt(1)
+                .Which.Should().HaveType("A")
+                .Which.Should().BeOfType(a.GetType());
+        }
     }
 }

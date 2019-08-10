@@ -1222,5 +1222,34 @@ def test(x: Foo = func()):
             print.Should().NotBeNull();
             print.insertText.Should().Be("print");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassMemberAccess() {
+            const string code = @"
+class A:
+    class B: ...
+
+    x1 = 1
+
+    def __init__(self):
+        self.x2 = 1
+
+    def method1(self):
+        return self.
+
+    def method2(self):
+        
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var comps = cs.GetCompletions(analysis, new SourceLocation(11, 21));
+            var names = comps.Completions.Select(c => c.label);
+            names.Should().Contain(new[] { "x1", "x2", "method1", "method2", "B" });
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(14, 8));
+            names = comps.Completions.Select(c => c.label);
+            names.Should().NotContain(new[] { "x1", "x2", "method1", "method2", "B" });
+        }
     }
 }
