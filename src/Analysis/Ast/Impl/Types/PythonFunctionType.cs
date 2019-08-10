@@ -145,7 +145,9 @@ namespace Microsoft.Python.Analysis.Types {
                         break;
                     case @"property":
                     case @"abstractproperty":
-                        Debug.Assert(false, "Found property attribute while processing function. Properties should be handled in the respective class.");
+                        // Ignore property decorators if the declaring type is unknown.
+                        // TODO: Restore this to a hard failure once property can handle not having a declaring type.
+                        Debug.Assert(DeclaringType.IsUnknown(), "Found property attribute while processing function. Properties should be handled in the respective class.");
                         break;
                 }
             }

@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// of a generic class.
         /// </summary>
         private IMember GetValueFromGeneric(IMember target, Expression expr) {
-            if (!(target is PythonClassType c && c.IsGeneric()) && !(target is IGenericType)) {
+            if (!(target is IGenericType t && t.IsGeneric())) {
                 return null;
             }
 
@@ -49,7 +49,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         // Generic[T1, T2, ...]
                         var indices = EvaluateIndex(indexExpr);
                         return CreateSpecificTypeFromIndex(gt, indices, expr);
-
                     case CallExpression callExpr when target is PythonClassType c1:
                         // Alternative instantiation:
                         //  class A(Generic[T]): ...
@@ -64,7 +63,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// <summary>
         /// Returns whether the arguments to Generic are valid
         /// </summary>
-        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeDefinition> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
+        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeParameter> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
             // All arguments to Generic must be type parameters
             // e.g. Generic[T, str] throws a runtime error
             if (genericTypeArgs.Count != args.Count) {
@@ -93,11 +92,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         /// <summary>
         /// Given generic type and list of arguments in the expression like
-        /// Generic[T1, T2, ...] or List[str] creates generic class base
+        /// Mapping[T1, int, ...] or Mapping[str, int] where Mapping inherits from Generic[K,T] creates generic class base
         /// (if the former) on specific type (if the latter).
         /// </summary>
         private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr) {
-            var genericTypeArgs = args.OfType<IGenericTypeDefinition>().ToArray();
+            var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
 
             if (gt.Name.EqualsOrdinal("Generic")) {
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {

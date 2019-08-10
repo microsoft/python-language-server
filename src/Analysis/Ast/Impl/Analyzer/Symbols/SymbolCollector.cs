@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
@@ -44,6 +45,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void Walk() => _eval.Ast.Walk(this);
+
+        public override bool Walk(IfStatement node)
+            => node.WalkIfWithSystemConditions(this, _eval.Ast.LanguageVersion, _eval.Services.GetService<IOSPlatform>().IsWindows);
 
         public override bool Walk(ClassDefinition cd) {
             if (IsDeprecated(cd)) {
@@ -149,6 +153,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType) {
+            // We can't add a property to an unknown type. Fallback to a regular function for now.
+            // TOOD: Decouple declaring types from the property.
+            if (declaringType.IsUnknown()) {
+                return false;
+            }
+
             var dec = node.Decorators?.Decorators;
             var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
 

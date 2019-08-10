@@ -90,5 +90,10 @@ namespace Microsoft.Python.Analysis.Documents {
         /// Fires when document is removed.
         /// </summary>
         event EventHandler<DocumentEventArgs> Removed;
+
+        /// <summary>
+        /// Gets the number of documents in the table.
+        /// </summary>
+        int DocumentCount { get; }
     }
 }
