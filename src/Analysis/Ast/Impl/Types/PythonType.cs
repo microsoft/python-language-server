@@ -120,10 +120,16 @@ namespace Microsoft.Python.Analysis.Types {
         internal void AddMembers(IEnumerable<IVariable> variables, bool overwrite) {
             lock (_lock) {
                 if (!_readonly) {
-                    foreach (var v in variables.Where(m => overwrite || !Members.ContainsKey(m.Name))) {
-                        // If variable holds function or a class, use value as member. 
-                        // If it holds an instance, use the variable itself (i.e. it is a data member).
-                        WritableMembers[v.Name] = v.Value;
+                    foreach (var v in variables.OfType<Variable>()) {
+                        var hasMember = Members.ContainsKey(v.Name);
+                        if (overwrite || !hasMember) {
+                            // If variable holds function or a class, use value as member. 
+                            // If it holds an instance, use the variable itself (i.e. it is a data member).
+                            WritableMembers[v.Name] = v.Value;
+                        }
+                        if (hasMember) {
+                            v.IsClassMember = true;
+                        }
                     }
                 }
             }
