@@ -13,20 +13,36 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using Microsoft.Python.Core.Disposables;
 
 namespace Microsoft.Python.Analysis.Utilities {
     public sealed class ReentrancyGuard<T> {
-        private readonly Stack<T> _processing = new Stack<T>();
+        private readonly AsyncLocal<Stack<T>> _stack = new AsyncLocal<Stack<T>>();
 
-        public bool Push(T t) {
-            if (_processing.Contains(t)) {
-                return false;
+        public IDisposable Push(T t, out bool reentered) {
+            var localStack = _stack.Value;
+            if (localStack != null) {
+                if (localStack.Contains(t)) {
+                    reentered = true;
+                    return Disposable.Empty;
+                }
+            } else {
+                _stack.Value = localStack = new Stack<T>();
             }
-            _processing.Push(t);
-            return true;
+
+            reentered = false;
+            localStack.Push(t);
+            return Disposable.Create(Pop);
         }
 
-        public void Pop() => _processing.Pop();
+        public void Pop() {
+            _stack.Value.Pop();
+            if (_stack.Value.Count == 0) {
+                _stack.Value = null;
+            }
+        }
     }
 }

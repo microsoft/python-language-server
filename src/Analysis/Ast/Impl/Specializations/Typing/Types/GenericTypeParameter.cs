@@ -24,7 +24,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
-    internal sealed class GenericTypeParameter : PythonType, IGenericTypeDefinition {
+    internal sealed class GenericTypeParameter : PythonType, IGenericTypeParameter {
         public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
             : base(name, new Location(declaringModule), documentation) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
@@ -106,5 +106,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
             return documentation;
         }
+
+        public bool Equals(IGenericTypeParameter other) => Name.Equals(other.Name);
     }
 }

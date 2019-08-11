@@ -698,6 +698,8 @@ class MemberInfo(object):
         self.signature = None
         self.documentation = getattr(value, '__doc__', None)
         self.alias = alias
+        self.instance = True
+
         if not isinstance(self.documentation, str):
             self.documentation = None
 
@@ -712,6 +714,7 @@ class MemberInfo(object):
 
         value_type = type(value)
         if issubclass(value_type, type):
+            self.instance = False
             self.need_imports, type_name = self._get_typename(value, module)
             if '.' in type_name:
                 m, s, n = type_name.rpartition('.')
@@ -797,7 +800,10 @@ class MemberInfo(object):
 
     def _str_from_typename(self, type_name):
         mod_name, sep, name = type_name.rpartition('.')
-        return self.name + ' = ' + safe_module_name(mod_name) + sep + name + '()'
+        s = self.name + ' = ' + safe_module_name(mod_name) + sep + name
+        if self.instance:
+            s = s + '()'
+        return s
 
     def _str_from_value(self, v):
         return self.name + ' = ' + repr(v)

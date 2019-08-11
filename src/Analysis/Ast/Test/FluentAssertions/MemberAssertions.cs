@@ -62,6 +62,22 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<MemberAssertions, IMember>(this, Subject);
         }
 
+        public AndWhichConstraint<MemberAssertions, IPythonClassType> HaveBase(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull();
+
+            var cls = Subject.GetPythonType<IPythonClassType>();
+            Execute.Assertion.ForCondition(cls != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName(cls)} to be a class{{reason}}.");
+
+            var classBase = cls.Bases.OfType<IPythonClassType>().FirstOrDefault(b => b.Name == name);
+            Execute.Assertion.ForCondition(classBase != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName(cls)} to have base class {name}{{reason}}.");
+
+            return new AndWhichConstraint<MemberAssertions, IPythonClassType>(this, classBase);
+        }
+
         public AndWhichConstraint<MemberAssertions, PythonFunctionType> HaveMethod(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonFunctionType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
 
