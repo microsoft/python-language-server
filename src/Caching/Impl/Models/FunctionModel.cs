@@ -18,12 +18,11 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
     [DebuggerDisplay("f:{Name}")]
-    internal sealed class FunctionModel: MemberModel {
+    internal sealed class FunctionModel : MemberModel {
         public string Documentation { get; set; }
         public OverloadModel[] Overloads { get; set; }
         public FunctionAttributes Attributes { get; set; }
@@ -56,11 +55,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 var m = func.GetMember(name);
 
                 // Only take members from this class, skip members from bases.
-                if (!_processing.Push(m)) {
-                    continue;
-                }
-
-                try {
+                using (_processing.Push(m, out var reentered)) {
+                    if (reentered) {
+                        continue;
+                    }
                     switch (m) {
                         case IPythonFunctionType ft when ft.IsLambda():
                             break;
@@ -71,8 +69,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             classes.Add(ClassModel.FromType(cls));
                             break;
                     }
-                } finally {
-                    _processing.Pop();
                 }
             }
 

@@ -63,11 +63,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             // TODO: better resolve circular references.
-            if (!_typeReentrancy.Push(qualifiedName)) {
-                return null;
-            }
-
-            try {
+            using (_typeReentrancy.Push(qualifiedName, out var reentered)) {
+                if (reentered) {
+                    return null;
+                }
                 // See if member is a module first.
                 var module = GetModule(parts);
                 if (module == null) {
@@ -88,8 +87,6 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
                 var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
                 return new PythonInstance(t);
-            } finally {
-                _typeReentrancy.Pop();
             }
         }
 
@@ -97,11 +94,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             if (parts.ModuleName == Module.Name) {
                 return Module;
             }
-            if (!_moduleReentrancy.Push(parts.ModuleName)) {
-                return null;
-            }
-
-            try {
+            using (_moduleReentrancy.Push(parts.ModuleName, out var reentered)) {
+                if (reentered) {
+                    return null;
+                }
                 // Here we do not call GetOrLoad since modules references here must
                 // either be loaded already since they were required to create
                 // persistent state from analysis. Also, occasionally types come
@@ -116,12 +112,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 }
 
                 return null;
-            } finally {
-                _moduleReentrancy.Pop();
             }
         }
 
-        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames) 
+        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames)
             => memberNames.Count == 0 ? module : GetMember(module, memberNames);
 
         private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
@@ -160,9 +154,6 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 var typeArgs = GetTypeArguments(memberName, out var typeName);
                 if (!string.IsNullOrEmpty(typeName) && typeName != memberName) {
                     memberName = typeName;
-                    if(typeArgs.Count == 0) {
-                        typeArgs = new[] { Module.Interpreter.UnknownType };
-                    }
                 }
 
                 var mc = member as IMemberContainer;
@@ -181,8 +172,8 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     break;
                 }
 
-                member = typeArgs.Any() && member is IGenericType gt
-                    ? gt.CreateSpecificType(typeArgs)
+                member = typeArgs.Count > 0 && member is IGenericType gt
+                    ? gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null))
                     : member;
             }
 
@@ -203,17 +194,12 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     var argumentString = memberName.Substring(openBracket + 1, closeBracket - openBracket - 1);
                     // Extract type names from argument string. Note that types themselves
                     // can have arguments: Union[int, Union[int, Union[str, bool]], ...].
-                    var qualifiedNames= TypeNames.GetTypeNames(argumentString, ',');
-                    foreach (var qn in qualifiedNames) {
-                        var t = ConstructType(qn);
-                        if (t == null) {
-                            // TODO: better handle generics type definitions from TypeVar.
-                            // https://github.com/microsoft/python-language-server/issues/1214
-                            TypeNames.DeconstructQualifiedName(qn, out var parts);
-                            typeName = string.Join(".", parts.MemberNames);
-                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
-                        }
-
+                    var arguments = TypeNames.GetTypeNames(argumentString, ',');
+                    foreach (var a in arguments) {
+                        var t = ConstructType(a);
+                        // TODO: better handle generics type definitions from TypeVar.
+                        // https://github.com/microsoft/python-language-server/issues/1214
+                        t = t ?? new GenericTypeParameter(a, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
                         typeArgs.Add(t);
                     }
                     typeName = memberName.Substring(0, openBracket);

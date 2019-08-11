@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Types {
             switch (name) {
                 case "__mro__":
                 case "mro":
-                    return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType as IMember;
+                    return is3x ? PythonCollectionType.CreateList(DeclaringModule, Mro) : UnknownType as IMember;
                 case "__dict__":
                     return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
                 case @"__weakref__":
