@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private string _genericName;
-        private List<IPythonType> _bases;
+        private List<IPythonType> _bases = new List<IPythonType>();
         private IReadOnlyList<IPythonType> _mro;
         private string _documentation;
 
@@ -189,7 +189,7 @@ namespace Microsoft.Python.Analysis.Types {
                 if (_mro != null) {
                     return _mro;
                 }
-                if (_bases == null) {
+                if (_bases.Count == 0) {
                     return new IPythonType[] { this };
                 }
                 _mro = new IPythonType[] { this };
@@ -213,7 +213,7 @@ namespace Microsoft.Python.Analysis.Types {
         internal override void SetDocumentation(string documentation) => _documentation = documentation;
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
-            if (_bases != null) {
+            if (_bases.Count > 0) {
                 return; // Already set
             }
 
