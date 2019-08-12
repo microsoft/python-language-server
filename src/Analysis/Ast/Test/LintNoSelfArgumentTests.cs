@@ -125,12 +125,12 @@ class Test:
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(4, 19, 4, 20);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("hello"));
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("hello"));
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
             diagnostic.SourceSpan.Should().Be(7, 14, 7, 15);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
+            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
 
         [TestMethod, Priority(0)]
@@ -173,6 +173,19 @@ class C:
             const string code = @"
 def test():
     pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AbstractClassMethod() {
+            const string code = @"
+from typing import abstractclassmethod
+class A:
+    @abstractclassmethod
+    def test(cls):
+        pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();

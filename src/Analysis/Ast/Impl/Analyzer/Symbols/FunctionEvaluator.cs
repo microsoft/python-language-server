@@ -126,7 +126,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     return;
                 }
 
-                // Otherwise, functions defined in classes must have 
+                // Otherwise, functions defined in classes must have at least one argument
                 if (parameters.IsNullOrEmpty()) {
                     var funcLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
                     ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument, funcLoc);

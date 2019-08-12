@@ -163,8 +163,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var dec = node.Decorators?.Decorators;
             var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
 
-            // TODO handle bad combinations such as 
-            // @classmethod + @property
             foreach (var d in decorators.OfType<NameExpression>()) {
                 switch (d.Name) {
                     case @"property":
