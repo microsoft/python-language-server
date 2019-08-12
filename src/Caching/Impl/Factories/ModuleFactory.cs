@@ -201,11 +201,9 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     foreach (var qn in qualifiedNames) {
                         var t = ConstructType(qn);
                         if (t == null) {
-                            // TODO: better handle generics type definitions from TypeVar.
-                            // https://github.com/microsoft/python-language-server/issues/1214
                             TypeNames.DeconstructQualifiedName(qn, out var parts);
                             typeName = string.Join(".", parts.MemberNames);
-                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
+                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), null, null, null, DefaultLocation);
                         }
                         typeArgs.Add(t);
                     }

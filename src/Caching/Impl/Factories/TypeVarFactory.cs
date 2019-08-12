@@ -18,7 +18,6 @@ using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
     internal sealed class TypeVarFactory : FactoryBase<TypeVarModel, IPythonType> {
@@ -27,9 +26,11 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         }
 
         public override IPythonType CreateMember(TypeVarModel tvm, IPythonType declaringType) {
-            var args = new List<IMember>() { new PythonUnicodeString(tvm.Name, ModuleFactory.Module.Interpreter) };
-            args.AddRange(tvm.Constraints.Select(c => ModuleFactory.ConstructType(c)));
-            return GenericTypeParameter.FromTypeVar(new ArgumentSet(args, null, null), ModuleFactory.Module);
+            var constraints = tvm.Constraints.Select(c => ModuleFactory.ConstructType(c)).ToArray();
+            var bound = ModuleFactory.ConstructType(tvm.Bound);
+            var covariant = ModuleFactory.ConstructType(tvm.Covariant);
+            var contravariant = ModuleFactory.ConstructType(tvm.Contravariant);
+            return new GenericTypeParameter(tvm.Name, ModuleFactory.Module, constraints, bound, covariant, contravariant, ModuleFactory.DefaultLocation);
         }
     }
 }

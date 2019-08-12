@@ -27,5 +27,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// </summary>
         /// <remarks>See 'https://docs.python.org/3/library/typing.html#typing.TypeVar'</remarks>
         IReadOnlyList<IPythonType> Constraints { get; }
+        IPythonType Bound { get; }
+        IPythonType Covariant { get; }
+        IPythonType Contravariant { get; }
     }
 }
