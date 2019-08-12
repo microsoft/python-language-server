@@ -30,10 +30,10 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
-    internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
+    internal partial class PythonClassType {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
-        private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
+        private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private string _genericName;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;

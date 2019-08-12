@@ -235,6 +235,61 @@ f'hey {some}'
             AssertHover(hs, analysis, new SourceLocation(2, 2), @"a: int", new SourceSpan(3, 1, 3, 2));
         }
 
+        [TestMethod, Priority(0)]
+        public async Task MissingSelf() {
+            const string code = @"
+class A:
+    def __init__(self):
+        self.instance_var = 1
+
+    def do(self):
+        y = instance_var
+        y = do()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            AssertNoHover(hs, analysis, new SourceLocation(7, 15));
+            AssertNoHover(hs, analysis, new SourceLocation(8, 14));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MemberWithSelf() {
+            const string code = @"
+class A:
+    def __init__(self):
+        self.instance_var = 1
+
+    def do(self):
+        y = self.instance_var
+        z1 = func()
+        z2 = self.func()
+
+    def func(self): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            AssertHover(hs, analysis, new SourceLocation(7, 19), @"instance_var: int", new SourceSpan(7, 17, 7, 30));
+            AssertNoHover(hs, analysis, new SourceLocation(8, 15));
+            AssertHover(hs, analysis, new SourceLocation(9, 20), @"A.func()", new SourceSpan(9, 18, 9, 23));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImmediateClassScopeVar() {
+            const string code = @"
+class A:
+  x = 1
+  y = x
+";
+            var analysis = await GetAnalysisAsync(code);
+            var hs = new HoverSource(new PlainTextDocumentationSource());
+            AssertHover(hs, analysis, new SourceLocation(4, 7), @"x: int", new SourceSpan(4, 7, 4, 8));
+        }
+
+        private static void AssertNoHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position) {
+            var hover = hs.GetHover(analysis, position);
+            hover.Should().BeNull();
+        }
+
         private static void AssertHover(HoverSource hs, IDocumentAnalysis analysis, SourceLocation position, string hoverText, SourceSpan? span = null) {
             var hover = hs.GetHover(analysis, position);
 
