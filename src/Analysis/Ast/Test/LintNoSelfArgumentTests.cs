@@ -47,7 +47,7 @@ class Test:
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
-            diagnostic.SourceSpan.Should().Be(3, 9, 3, 13);
+            diagnostic.SourceSpan.Should().Be(3, 14, 3, 15);
             diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
 
@@ -64,7 +64,7 @@ class Test:
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
-            diagnostic.SourceSpan.Should().Be(4, 9, 4, 13);
+            diagnostic.SourceSpan.Should().Be(4, 14, 4, 15);
             diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
 
@@ -81,7 +81,7 @@ class Test:
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
-            diagnostic.SourceSpan.Should().Be(4, 9, 4, 13);
+            diagnostic.SourceSpan.Should().Be(4, 14, 4, 15);
             diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
 
@@ -100,12 +100,12 @@ class Test:
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
-            diagnostic.SourceSpan.Should().Be(3, 9, 3, 13);
+            diagnostic.SourceSpan.Should().Be(3, 14, 3, 15);
             diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
-            diagnostic.SourceSpan.Should().Be(6, 9, 6, 14);
+            diagnostic.SourceSpan.Should().Be(6, 15, 6, 16);
             diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test2"));
         }
 
@@ -116,14 +116,21 @@ class Test:
     class Test2:
         def hello(x, y, z):
             pass
+
+    def test(x, y, z): ...
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(1);
+            analysis.Diagnostics.Should().HaveCount(2);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
-            diagnostic.SourceSpan.Should().Be(4, 13, 4, 18);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("hello"));
+            diagnostic.SourceSpan.Should().Be(4, 19, 4, 20);
+            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("hello"));
+
+            diagnostic = analysis.Diagnostics.ElementAt(1);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
+            diagnostic.SourceSpan.Should().Be(7, 14, 7, 15);
+            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
         }
 
         [TestMethod, Priority(0)]
@@ -160,24 +167,6 @@ class C:
             analysis.Diagnostics.Should().BeEmpty();
         }
 
-        [TestMethod, Priority(0)]
-        public async Task ClsMethodValidInMetaclass() {
-            const string code = @"
-class A(type):
-    def x(cls): pass
-
-class B(A):
-    def y(cls): pass
-
-class MyClass(metaclass=B):
-    pass
-
-MyClass.x()
-MyClass.y()
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
-        }
 
         [TestMethod, Priority(0)]
         public async Task NormalFunction() {

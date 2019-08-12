@@ -31,6 +31,16 @@ namespace Microsoft.Python.Analysis.Types {
         string Description { get; }
 
         /// <summary>
+        /// Property is a @classmethod.
+        /// </summary>
+        bool IsClassMethod { get; }
+
+        /// <summary>
+        /// Property is @staticmethod.
+        /// </summary>
+        bool IsStatic { get; }
+
+        /// <summary>
         /// True if the property is read-only.
         /// </summary>
         bool IsReadOnly { get; }

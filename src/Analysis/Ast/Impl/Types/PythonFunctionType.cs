@@ -129,7 +129,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         private void ProcessDecorators(FunctionDefinition fd) {
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
-                // TODO: warn about incompatible combinations.
                 switch (dec.Name) {
                     case @"staticmethod":
                         IsStatic = true;

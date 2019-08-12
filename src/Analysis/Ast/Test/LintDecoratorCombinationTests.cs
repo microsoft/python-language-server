@@ -25,7 +25,7 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class LintNoClsArgumentTests : AnalysisTestBase {
+    public class LintDecoratorCombinationTests : AnalysisTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -36,9 +36,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public async Task FirstArgumentClassMethodNotCls() {
+        public async Task ClassMethodAndProperty() {
             const string code = @"
 class Test:
+    @property
     @classmethod
     def test(x, y, z):
         pass
@@ -47,136 +48,130 @@ class Test:
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(4, 14, 4, 15);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InvalidDecoratorCombination);
+            diagnostic.SourceSpan.Should().Be(4, 6, 4, 17);
+            diagnostic.Message.Should().Be(Resources.InvalidDecoratorForProperty.FormatInvariant("Classmethods"));
         }
 
         [TestMethod, Priority(0)]
-        public async Task AbstractClassMethodNeedsClsFirstArg() {
+        public async Task ClassMethodStaticMethod() {
+            const string code = @"
+class Test:
+    @staticmethod
+    @classmethod
+    def test(x, y, z):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(2);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InvalidDecoratorCombination);
+            diagnostic.SourceSpan.Should().Be(3, 6, 3, 18);
+            diagnostic.Message.Should().Be(Resources.InvalidDecoratorForFunction.FormatInvariant("Staticmethod", "class"));
+
+            diagnostic = analysis.Diagnostics.ElementAt(1);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InvalidDecoratorCombination);
+            diagnostic.SourceSpan.Should().Be(4, 6, 4, 17);
+            diagnostic.Message.Should().Be(Resources.InvalidDecoratorForFunction.FormatInvariant("Classmethod", "static"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task StaticMethodAndProperty() {
+            const string code = @"
+class Test:
+    @property
+    @staticmethod
+    def test(x, y, z):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InvalidDecoratorCombination);
+            diagnostic.SourceSpan.Should().Be(4, 6, 4, 18);
+            diagnostic.Message.Should().Be(Resources.InvalidDecoratorForProperty.FormatInvariant("Staticmethods"));
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task StaticMethodClassMethodAndProperty() {
+            const string code = @"
+class Test:
+    @property
+    @staticmethod
+    @classmethod
+    def test(x, y, z):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(2);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InvalidDecoratorCombination);
+            diagnostic.SourceSpan.Should().Be(4, 6, 4, 18);
+            diagnostic.Message.Should().Be(Resources.InvalidDecoratorForProperty.FormatInvariant("Staticmethods"));
+
+            diagnostic = analysis.Diagnostics.ElementAt(1);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InvalidDecoratorCombination);
+            diagnostic.SourceSpan.Should().Be(5, 6, 5, 17);
+            diagnostic.Message.Should().Be(Resources.InvalidDecoratorForProperty.FormatInvariant("Classmethods"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnboundStaticMethodClassMethodAndProperty() {
+            const string code = @"
+@staticmethod
+@classmethod
+def test(x, y, z):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDecoratorMethods() {
+            const string code = @"
+def test(x, y, z):
+    pass
+
+class A:
+    def test(self, x):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AbstractClassPropertyNoErrors() {
             const string code = @"
 from abc import abstractmethod
 
 class A:
+    @property
     @classmethod
     @abstractmethod
     def test(self, x):
         pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(1);
-
-            var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(7, 14, 7, 18);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task ClsMethodValidInMetaclass() {
-            const string code = @"
-class A(type):
-    def x(cls): pass
-
-class B(A):
-    def y(cls): pass
-
-class MyClass(metaclass=B):
-    pass
-
-MyClass.x()
-MyClass.y()
-";
-            var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
-        public async Task FirstArgumentClassMethodSpecialCase() {
+        public async Task AbstractStaticClassMethodNoErrors() {
             const string code = @"
-class Test:
-    def __new__(x, y, z):
-        pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(1);
+from abc import abstractmethod
 
-            var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(3, 17, 3, 18);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("__new__"));
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task FirstArgumentNotClsMultiple() {
-            const string code = @"
-class Test:
+class A:
+    @property
+    @staticmethod
     @classmethod
-    def test(x, y, z):
-        pass
-
-    @classmethod
-    def test2(x, y, z):
-        pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(2);
-
-            var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(4, 14, 4, 15);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
-
-            diagnostic = analysis.Diagnostics.ElementAt(1);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(8, 15, 8, 16);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test2"));
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task NestedClassFuncNoClsArg() {
-            const string code = @"
-class Test:
-    class Test2:
-        @classmethod
-        def hello(x, y, z):
-            pass
-
-    @classmethod
-    def test(x, y, z): ...
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(2);
-
-            var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(5, 19, 5, 20);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("hello"));
-
-            diagnostic = analysis.Diagnostics.ElementAt(1);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoClsArgument);
-            diagnostic.SourceSpan.Should().Be(9, 14, 9, 15);
-            diagnostic.Message.Should().Be(Resources.NoClsArgument.FormatInvariant("test"));
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task FirstArgumentIsCls() {
-            const string code = @"
-class Test:
-    @classmethod
-    def test(cls):
-        pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task FirstArgumentIsClsManyParams() {
-            const string code = @"
-class Test:
-    @classmethod
-    def test(cls, a, b, c, d, e):
+    @abstractmethod
+    def test(self, x):
         pass
 ";
             var analysis = await GetAnalysisAsync(code);

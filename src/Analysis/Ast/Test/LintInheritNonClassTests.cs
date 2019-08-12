@@ -202,7 +202,7 @@ class B:
 from module1 import B
 
 class C(B):
-    def hello():
+    def hello(self):
         pass
 ";
 

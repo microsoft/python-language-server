@@ -33,5 +33,6 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string TypingNewTypeArguments = "typing-newtype-arguments";
         public const string TypingGenericArguments = "typing-generic-arguments";
         public const string InheritNonClass = "inherit-non-class";
+        public const string InvalidDecoratorCombination = "invalid-decorator-combination";
     }
 }

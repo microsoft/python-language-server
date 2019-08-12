@@ -163,22 +163,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var dec = node.Decorators?.Decorators;
             var decorators = dec != null ? dec.ExcludeDefault().ToArray() : Array.Empty<Expression>();
 
+            // TODO handle bad combinations such as 
+            // @classmethod + @property
             foreach (var d in decorators.OfType<NameExpression>()) {
                 switch (d.Name) {
                     case @"property":
-                        AddProperty(node, declaringType, false);
-                        return true;
                     case @"abstractproperty":
-                        AddProperty(node, declaringType, true);
+                        AddProperty(node, declaringType);
                         return true;
                 }
             }
             return false;
         }
 
-        private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
+        private void AddProperty(FunctionDefinition fd, IPythonType declaringType) {
             if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
+                existing = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
                 _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);

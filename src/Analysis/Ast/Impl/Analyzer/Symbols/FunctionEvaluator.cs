@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -101,40 +102,65 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void CheckValidOverload(IReadOnlyList<IParameterInfo> parameters) {
             if (_self?.MemberType == PythonMemberType.Class) {
+                switch (_function) {
+                    case IPythonFunctionType function:
+                        CheckValidFunction(function, parameters);
+                        break;
+                    case IPythonPropertyType property:
+                        CheckValidProperty(property, parameters);
+                        break;
+                }
+            }
+        }
+
+        private void CheckValidFunction(IPythonFunctionType function, IReadOnlyList<IParameterInfo> parameters) {
+            // Only give diagnostic errors on functions if the decorators are valid 
+            if (function.HasValidDecorators(Eval)) {
+                // Static methods don't need any diagnostics
+                if (function.IsStatic) {
+                    return;
+                }
+
+                // Don't give diagnostics on functions defined in metaclasses
+                if (SelfIsMetaclass()) {
+                    return;
+                }
+
+                // Otherwise, functions defined in classes must have 
                 if (parameters.IsNullOrEmpty()) {
-                    ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument);
+                    var funcLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
+                    ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument, funcLoc);
                     return;
                 }
 
                 var param = parameters[0].Name;
-                if (_function is IPythonFunctionType f) {
-                    // Don't give diagnostics on functions defined in metaclasses
-                    if (IsMetaclassFunction()) {
-                        return;
-                    }
+                var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
+                // If it is a class method check for cls
+                if (function.IsClassMethod && !param.Equals("cls")) {
+                    ReportFunctionParams(Resources.NoClsArgument, ErrorCodes.NoClsArgument, paramLoc);
+                }
 
-                    // Static methods don't need self or cls
-                    if (f.IsStatic) {
-                        return;
-                    }
+                // If it is a method check for self
+                if (!function.IsClassMethod && !param.Equals("self")) {
+                    ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
+                }
+            }
+        }
 
-                    // If it is a class method check for cls
-                    if (f.IsClassMethod) {
-                        if (!param.Equals("cls")) {
-                            ReportFunctionParams(Resources.NoClsArgument, ErrorCodes.NoClsArgument);
-                        }
-                    }
+        private void CheckValidProperty(IPythonPropertyType property, IReadOnlyList<IParameterInfo> parameters) {
+            // Only give diagnostic errors on properties if the decorators are valid 
+            if (property.HasValidDecorators(Eval)) {
+                if (SelfIsMetaclass()) {
+                    return;
+                }
 
-                    // If it is a method check for self
-                    if (!f.IsClassMethod) {
-                        if (!param.Equals("self")) {
-                            ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument);
-                        }
-                    }
+                var param = parameters[0].Name;
+                var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
 
-                    // If fn is a property, check for self
-                } else if (!param.Equals("self")) {
-                    ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument);
+                // @staticmethod and @classmethod are filtered out by property check above,
+                // so guaranteed we only need to check for self
+                if (!param.Equals("self")) {
+                    ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
                 }
             }
         }
@@ -147,17 +173,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         /// f is a metaclass function
         /// </summary>
         /// <returns></returns>
-        private bool IsMetaclassFunction() {
+        private bool SelfIsMetaclass() {
             // Just allow all specialized types in Mro to avoid false positives
             return _self.Mro.Any(b => b.IsSpecialized);
         }
 
-        private void ReportFunctionParams(string message, string errorCode) {
+        private void ReportFunctionParams(string message, string errorCode, LocationInfo location) {
             Eval.ReportDiagnostics(
                 Eval.Module.Uri,
                 new DiagnosticsEntry(
                     message.FormatInvariant(FunctionDefinition.Name),
-                    Eval.GetLocationInfo(FunctionDefinition.NameExpression).Span,
+                    location.Span,
                     errorCode,
                     Parsing.Severity.Warning,
                     DiagnosticSource.Analysis));
@@ -187,7 +213,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class
                     && !value.IsOfType(BuiltinTypeId.NoneType)) {
 
-                    Eval.ReportDiagnostics(Module.Uri, new Diagnostics.DiagnosticsEntry(
+                    Eval.ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                             Resources.ReturnInInit,
                             node.GetLocation(Eval).Span,
                             ErrorCodes.ReturnInInit,

@@ -259,6 +259,24 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} is not a valid decorator for {1} methods..
+        /// </summary>
+        internal static string InvalidDecoratorForFunction {
+            get {
+                return ResourceManager.GetString("InvalidDecoratorForFunction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} are not valid getters for the property decorator..
+        /// </summary>
+        internal static string InvalidDecoratorForProperty {
+            get {
+                return ResourceManager.GetString("InvalidDecoratorForProperty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The first argument to NewType must be a string, but it is of type &apos;{0}&apos;..
         /// </summary>
         internal static string NewTypeFirstArgNotString {
