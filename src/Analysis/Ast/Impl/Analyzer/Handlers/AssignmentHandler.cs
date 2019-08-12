@@ -58,16 +58,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
+                IScope scope;
                 if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
-                    Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
+                    Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Nonlocal);
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
+                    continue;
+                }
+                if (Eval.CurrentScope.Globals[ne.Name] != null) {
+                    Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Global);
                     scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
                     continue;
                 }
 
-                if (Eval.CurrentScope.Globals[ne.Name] != null) {
-                    Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
-                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
-                    continue;
+                var m = Eval.LookupNameInScopes(ne.Name, out scope);
+                if(m?.MemberType == PythonMemberType.Class) {
+                    // Ignore assignments to classes: enum.py does Enum = None
+                    // which prevents persistence from restoring proper type from enum:Enum.
+                    continue; 
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
