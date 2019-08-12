@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (Eval.GetInScope(name) is ILocatedMember m) {
                 // Class and function definition are processed first, so only override
                 // if assignment happens after declaration
-                if(loc.IndexSpan.Start < m.Location.IndexSpan.Start) {
+                if (loc.IndexSpan.Start < m.Location.IndexSpan.Start) {
                     return false;
                 }
             }

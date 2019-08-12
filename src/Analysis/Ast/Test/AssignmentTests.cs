@@ -315,7 +315,7 @@ D = 5
 class D: ...
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("D").OfType("D");
+            analysis.Should().HaveClass("D");
         }
 
         [TestMethod, Priority(0)]
@@ -336,7 +336,7 @@ def D():
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("D").OfType("D");
+            analysis.Should().HaveFunction("D");
         }
 
         [TestMethod, Priority(0)]
