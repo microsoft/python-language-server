@@ -37,6 +37,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         public FunctionFactory FunctionFactory { get; }
         public PropertyFactory PropertyFactory { get; }
         public VariableFactory VariableFactory { get; }
+        public TypeVarFactory TypeVarFactory { get; }
         public Location DefaultLocation { get; }
 
         public ModuleFactory(ModuleModel model, IPythonModule module) {
@@ -44,6 +45,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             ClassFactory = new ClassFactory(model.Classes, this);
             FunctionFactory = new FunctionFactory(model.Functions, this);
             VariableFactory = new VariableFactory(model.Variables, this);
+            TypeVarFactory = new TypeVarFactory(model.TypeVars, this);
             PropertyFactory = new PropertyFactory(this);
             DefaultLocation = new Location(Module);
         }
@@ -52,6 +54,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             ClassFactory.Dispose();
             FunctionFactory.Dispose();
             VariableFactory.Dispose();
+            TypeVarFactory.Dispose();
         }
 
         public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();

@@ -254,7 +254,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 switch (sourceType) {
                     case null:
                         // Nothing in sources, but there is type in the stub. Declare it.
-                        if (v.Source == VariableSource.Declaration) {
+                        if (v.Source == VariableSource.Declaration || v.Source == VariableSource.Generic) {
                             Eval.DeclareVariable(v.Name, v.Value, v.Source);
                         }
                         break;

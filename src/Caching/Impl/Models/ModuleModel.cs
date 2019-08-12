@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Caching.Factories;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -31,6 +32,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public FunctionModel[] Functions { get; set; }
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
+        public TypeVarModel[] TypeVars { get; set; }
 
         /// <summary>
         /// Collection of new line information for conversion of linear spans
@@ -43,18 +45,24 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public int FileSize { get; set; }
 
-        // TODO: TypeVars, ...
-
         public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services) {
             var variables = new Dictionary<string, VariableModel>();
             var functions = new Dictionary<string, FunctionModel>();
             var classes = new Dictionary<string, ClassModel>();
+            var typeVars = new Dictionary<string, TypeVarModel>();
 
             // Go directly through variables which names are listed in GetMemberNames
             // as well as variables that are declarations.
             var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
             foreach (var v in analysis.GlobalScope.Variables
-                .Where(v => exportedNames.Contains(v.Name) || v.Source == VariableSource.Declaration || v.Source == VariableSource.Builtin)) {
+                .Where(v => exportedNames.Contains(v.Name) || 
+                            v.Source == VariableSource.Declaration || 
+                            v.Source == VariableSource.Builtin || 
+                            v.Source == VariableSource.Generic)) {
+
+                if (v.Source == VariableSource.Generic && !typeVars.ContainsKey(v.Name)) {
+                    typeVars[v.Name] = TypeVarModel.FromGeneric(v);
+                }
 
                 switch (v.Value) {
                     case IPythonFunctionType ft when ft.IsLambda():
@@ -99,6 +107,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),
                 Classes = classes.Values.ToArray(),
+                TypeVars = typeVars.Values.ToArray(),
                 NewLines = analysis.Ast.NewLineLocations.Select(l => new NewLineModel {
                     EndIndex = l.EndIndex,
                     Kind = l.Kind

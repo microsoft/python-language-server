@@ -32,23 +32,26 @@ namespace Microsoft.Python.Analysis.Caching {
             Name = model.Name;
 
             using (var mf = new ModuleFactory(model, module)) {
-                // TODO: store real location in models
+                foreach (var tvm in model.TypeVars) {
+                    var t = mf.TypeVarFactory.Construct(tvm);
+                    _scopeVariables.DeclareVariable(tvm.Name, t, VariableSource.Generic, mf.DefaultLocation);
+                }
 
                 // Member creation may be non-linear. Consider function A returning instance
                 // of a class or type info of a function which hasn't been created yet.
                 // Thus check if member has already been created first.
                 foreach (var cm in model.Classes) {
-                    var cls = mf.ClassFactory.Construct(cm, null);
+                    var cls = mf.ClassFactory.Construct(cm);
                     _scopeVariables.DeclareVariable(cm.Name, cls, VariableSource.Declaration, mf.DefaultLocation);
                 }
 
                 foreach (var fm in model.Functions) {
-                    var ft = mf.FunctionFactory.Construct(fm, null);
+                    var ft = mf.FunctionFactory.Construct(fm);
                     _scopeVariables.DeclareVariable(fm.Name, ft, VariableSource.Declaration, mf.DefaultLocation);
                 }
 
                 foreach (var vm in model.Variables) {
-                    var v = mf.VariableFactory.Construct(vm, null);
+                    var v = mf.VariableFactory.Construct(vm);
                     _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
                 }
                 // TODO: re-declare __doc__, __name__, etc.

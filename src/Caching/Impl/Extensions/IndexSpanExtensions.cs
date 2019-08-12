@@ -14,11 +14,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class IndexSpanExtensions {
+        [DebuggerStepThrough]
         public static IndexSpanModel ToModel(this IndexSpan span) => new IndexSpanModel {
             Start = span.Start,
             Length = span.Length
