@@ -346,6 +346,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (sourceType.MemberType == PythonMemberType.Function && stubType.MemberType == PythonMemberType.Class) {
                 return true;
             }
+            // Random replaces method (variable) by a function.
+            if (sourceType.MemberType == PythonMemberType.Method && stubType.MemberType == PythonMemberType.Function) {
+                return true;
+            }
             return sourceType.MemberType == stubType.MemberType;
         }
 
