@@ -111,10 +111,31 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Filecmp() => TestModule("filecmp");
 
         [TestMethod, Priority(0)]
+        public Task Fileinput() => TestModule("fileinput");
+
+        [TestMethod, Priority(0)]
+        public Task Fractions() => TestModule("fractions");
+
+        [TestMethod, Priority(0)]
+        public Task Ftplib() => TestModule("ftplib");
+
+        [TestMethod, Priority(0)]
         public Task Functools() => TestModule("functools");
 
         [TestMethod, Priority(0)]
+        public Task Genericpath() => TestModule("genericpath");
+
+        [TestMethod, Priority(0)]
+        public Task Glob() => TestModule("glob");
+
+        [TestMethod, Priority(0)]
         public Task Gzip() => TestModule("gzip");
+
+        [TestMethod, Priority(0)]
+        public Task Hashlib() => TestModule("hashlib");
+
+        [TestMethod, Priority(0)]
+        public Task Heapq() => TestModule("heapq");
 
         [TestMethod, Priority(0)]
         public Task Html() => TestModule("html");
@@ -124,6 +145,12 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         [TestMethod, Priority(0)]
         public Task Importlib() => TestModule("importlib");
+
+        [TestMethod, Priority(0)]
+        public Task Imaplib() => TestModule("imaplib");
+
+        [TestMethod, Priority(0)]
+        public Task Imghdr() => TestModule("imghdr");
 
         [TestMethod, Priority(0)]
         public Task Inspect() => TestModule("inspect");
@@ -138,10 +165,22 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Logging() => TestModule("logging");
 
         [TestMethod, Priority(0)]
+        public Task Lzma() => TestModule("lzma");
+
+        [TestMethod, Priority(0)]
+        public Task Mailbox() => TestModule("mailbox");
+
+        [TestMethod, Priority(0)]
         public Task Multiprocessing() => TestModule("multiprocessing");
 
         [TestMethod, Priority(0)]
         public Task Os() => TestModule("os");
+
+        [TestMethod, Priority(0)]
+        public Task Pickle() => TestModule("pickle");
+        
+        [TestMethod, Priority(0)]
+        public Task Pipes() => TestModule("pipes");
 
         [TestMethod, Priority(0)]
         public Task Pydoc() => TestModule("pydoc");
