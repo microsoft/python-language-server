@@ -14,13 +14,14 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents Python class type definition.
     /// </summary>
-    public interface IPythonClassType : IPythonType, ILocatedMember {
+    public interface IPythonClassType : IPythonType, IGenericType, ILocatedMember {
         /// <summary>
         /// Class definition node in the AST.
         /// </summary>
@@ -37,9 +38,9 @@ namespace Microsoft.Python.Analysis.Types {
         IReadOnlyList<IPythonType> Bases { get; }
 
         /// <summary>
-        /// If class is created off generic template, name/type
-        /// pairs of the generic parameter name / actual supplied type.
+        /// If class is created off generic template, represents
+        /// pairs of the generic parameter / actual supplied type.
         /// </summary>
-        IReadOnlyDictionary<string, IPythonType> GenericParameters { get; }
+        IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters { get; }
     }
 }

@@ -23,18 +23,16 @@ namespace Microsoft.Python.Core.Text {
     /// It is closed on the left and open on the right: [Start .. End). 
     /// </summary>
     public struct IndexSpan : IEquatable<IndexSpan> {
-        private readonly int _start, _length;
-
         public IndexSpan(int start, int length) {
-            _start = start;
-            _length = length;
+            Start = start;
+            Length = length;
         }
 
-        public int Start => _start;
+        public int Start { get; }
 
-        public int End => _start + _length;
+        public int End => Start + Length;
 
-        public int Length => _length;
+        public int Length { get; }
 
         public override int GetHashCode() => Length.GetHashCode() ^ Start.GetHashCode();
 
@@ -49,7 +47,7 @@ namespace Microsoft.Python.Core.Text {
         }
 
         #region IEquatable<IndexSpan> Members
-        public bool Equals(IndexSpan other) => _length == other._length && _start == other._start;
+        public bool Equals(IndexSpan other) => Length == other.Length && Start == other.Start;
         #endregion
 
         public static IndexSpan FromBounds(int start, int end) => new IndexSpan(start, end - start);

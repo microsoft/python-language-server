@@ -39,7 +39,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             IEnumerable<CompletionItem> items;
             using (eval.OpenScope(scope)) {
                 // Get variables declared in the module.
-                var variables = eval.CurrentScope.EnumerateTowardsGlobal.SelectMany(s => s.Variables).ToArray();
+                var variables = eval.CurrentScope.EnumerateTowardsGlobal.SelectMany(s => s.Variables).Where(v => !v.IsClassMember).ToArray();
                 items = variables.Select(v => context.ItemSource.CreateCompletionItem(v.Name, v)).ToArray();
             }
 

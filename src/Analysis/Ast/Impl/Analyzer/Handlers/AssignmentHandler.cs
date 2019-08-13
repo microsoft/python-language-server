@@ -107,7 +107,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         private void TryHandleClassVariable(AssignmentStatement node, IMember value) {
             var mex = node.Left.OfType<MemberExpression>().FirstOrDefault();
             if (!string.IsNullOrEmpty(mex?.Name) && mex.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
-                var m = Eval.LookupNameInScopes(nex.Name, out var scope, LookupOptions.Local);
+                var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Local);
                 var cls = m.GetPythonType<IPythonClassType>();
                 if (cls != null) {
                     using (Eval.OpenScope(Eval.Module, cls.ClassDefinition, out _)) {

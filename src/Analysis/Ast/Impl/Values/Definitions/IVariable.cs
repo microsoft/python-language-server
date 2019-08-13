@@ -36,6 +36,11 @@ namespace Microsoft.Python.Analysis.Values {
         IMember Value { get; }
 
         /// <summary>
+        /// Variable represents class member.
+        /// </summary>
+        bool IsClassMember { get; }
+
+        /// <summary>
         /// Assigns value to the variable.
         /// </summary>
         void Assign(IMember value, Location location);

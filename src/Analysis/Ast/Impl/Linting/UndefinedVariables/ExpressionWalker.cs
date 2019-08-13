@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
 
             var analysis = _walker.Analysis;
-            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var variableDefinitionScope, out var v);
+            var m = analysis.ExpressionEvaluator.LookupNameInScopes(node.Name, out var variableDefinitionScope, out var v, LookupOptions.All);
             if (m == null) {
                 _walker.ReportUndefinedVariable(node);
             }

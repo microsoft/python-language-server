@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -55,6 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 var bases = ProcessBases();
                 _class.SetBases(bases);
+                _class.DecideGeneric();
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
                 ProcessClassBody();

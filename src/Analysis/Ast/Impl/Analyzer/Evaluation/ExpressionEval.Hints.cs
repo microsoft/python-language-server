@@ -106,7 +106,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
 
                 var ann = new TypeAnnotation(Ast.LanguageVersion, annExpr.Annotation);
-                var value = ann.GetValue(new TypeAnnotationConverter(this));
+                var value = ann.GetValue(new TypeAnnotationConverter(this, annExpr));
                 var t = value.GetPythonType();
                 if (!t.IsUnknown()) {
                     return t;
