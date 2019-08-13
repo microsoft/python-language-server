@@ -56,7 +56,6 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Ast() => TestModule("ast");
 
         [TestMethod, Priority(0)]
-        [Ignore("https://github.com/microsoft/python-language-server/issues/1214")]
         public Task Asyncio() => TestModule("asyncio");
 
         [TestMethod, Priority(0)]
