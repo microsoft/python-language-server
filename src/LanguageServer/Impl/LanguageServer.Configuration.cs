@@ -80,6 +80,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
             optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", false);
             optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
+            optionsProvider.Options.AnalysisCachingOptions = GetSetting(analysis, "cachingLevel", AnalysisCachingOptions.Library);
         }
 
         internal static void HandleLintingOnOff(IServiceContainer services, bool linterEnabled) {

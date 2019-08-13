@@ -45,7 +45,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public int FileSize { get; set; }
 
-        public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services) {
+        public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services, AnalysisCachingOptions options) {
+            var uniqueId = analysis.Document.GetUniqueId(services, options);
+            if(uniqueId == null) {
+                // Caching level setting does not permit this module to be persisted.
+                return null;
+            }
+
             var variables = new Dictionary<string, VariableModel>();
             var functions = new Dictionary<string, FunctionModel>();
             var classes = new Dictionary<string, ClassModel>();
@@ -98,7 +104,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
-            var uniqueId = analysis.Document.GetUniqueId(services);
             return new ModuleModel {
                 Id = uniqueId.GetStableHash(),
                 UniqueId = uniqueId,

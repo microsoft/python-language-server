@@ -25,19 +25,28 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class ModuleUniqueId {
-        public static string GetUniqueId(this IPythonModule module, IServiceContainer services)
-            => GetUniqueId(module.Name, module.FilePath, module.ModuleType, services);
+        public static string GetUniqueId(this IPythonModule module, IServiceContainer services, AnalysisCachingOptions options)
+            => GetUniqueId(module.Name, module.FilePath, module.ModuleType, services, options);
 
-        public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services) {
-            var interpreter = services.GetService<IPythonInterpreter>();
-            var fs = services.GetService<IFileSystem>();
-
+        public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services, AnalysisCachingOptions options) {
+            if(options == AnalysisCachingOptions.None) {
+                return null;
+            }
             if (moduleType == ModuleType.User) {
                 // Only for tests.
                 return $"{moduleName}";
             }
 
+            var interpreter = services.GetService<IPythonInterpreter>();
+            var fs = services.GetService<IFileSystem>();
+            
             var modulePathType = GetModulePathType(filePath, interpreter.ModuleResolution.LibraryPaths, fs);
+            switch(modulePathType) {
+                case PythonLibraryPathType.Site when options < AnalysisCachingOptions.Library:
+                    return null;
+                case PythonLibraryPathType.StdLib when options < AnalysisCachingOptions.System:
+                    return null;
+            }
 
             if (!string.IsNullOrEmpty(filePath) && modulePathType == PythonLibraryPathType.Site) {
                 // Module can be a submodule of a versioned package. In this case we want to use

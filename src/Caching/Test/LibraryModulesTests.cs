@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
-            var model = ModuleModel.FromAnalysis(builtins.Analysis, Services);
+            var model = ModuleModel.FromAnalysis(builtins.Analysis, Services, AnalysisCachingOptions.Library);
 
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
@@ -271,7 +271,7 @@ x = requests.get('microsoft.com')
             }
 
             var rq = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("requests");
-            var model = ModuleModel.FromAnalysis(rq.Analysis, Services);
+            var model = ModuleModel.FromAnalysis(rq.Analysis, Services, AnalysisCachingOptions.Library);
 
             var u = model.UniqueId;
             u.Should().Contain("(").And.EndWith(")");
@@ -285,7 +285,7 @@ x = requests.get('microsoft.com')
         private async Task TestModule(string name) {
             var analysis = await GetAnalysisAsync($"import {name}");
             var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
-            var model = ModuleModel.FromAnalysis(m.Analysis, Services);
+            var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingOptions.Library);
 
             CompareBaselineAndRestore(model, m);
         }

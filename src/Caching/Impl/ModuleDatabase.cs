@@ -33,12 +33,17 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
+        private readonly AnalysisCachingOptions _options;
         private readonly string _databaseFolder;
 
         public ModuleDatabase(IServiceContainer services) {
             _services = services;
             _log = services.GetService<ILogger>();
             _fs = services.GetService<IFileSystem>();
+            
+            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
+            _options = optionsProvider?.Options.AnalysisCachingOptions ?? AnalysisCachingOptions.None;
+
             var cfs = services.GetService<ICacheFolderService>();
             _databaseFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{_databaseFormatVersion}");
         }
@@ -54,6 +59,11 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <returns>Module storage state</returns>
         public ModuleStorageState TryCreateModule(string moduleName, string filePath, out IPythonModule module) {
             module = null;
+
+            if (_options == AnalysisCachingOptions.None) {
+                return ModuleStorageState.DoesNotExist;
+            }
+
             // We don't cache results here. Module resolution service decides when to call in here
             // and it is responsible of overall management of the loaded Python modules.
             for (var retries = 50; retries > 0; --retries) {
@@ -89,12 +99,18 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Writes module data to the database.
         /// </summary>
         public Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default)
-            => Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken));
+            => _options == AnalysisCachingOptions.None
+                    ? Task.CompletedTask
+                    : Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Determines if module analysis exists in the storage.
         /// </summary>
         public bool ModuleExistsInStorage(string moduleName, string filePath) {
+            if(_options == AnalysisCachingOptions.None) {
+                return false;
+            }
+
             for (var retries = 50; retries > 0; --retries) {
                 try {
                     var dbPath = FindDatabaseFile(moduleName, filePath);
@@ -107,7 +123,12 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
-            var model = ModuleModel.FromAnalysis(analysis, _services);
+            var model = ModuleModel.FromAnalysis(analysis, _services, _options);
+            if (model == null) {
+                // Caching level setting does not permit this module to be persisted.
+                return;
+            }
+
             Exception ex = null;
             for (var retries = 50; retries > 0; --retries) {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -146,7 +167,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// </summary>
         private string FindDatabaseFile(string moduleName, string filePath) {
             var interpreter = _services.GetService<IPythonInterpreter>();
-            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, ModuleType.Specialized, _services);
+            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, ModuleType.Specialized, _services, _options);
             if (string.IsNullOrEmpty(uniqueId)) {
                 return null;
             }
