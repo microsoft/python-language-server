@@ -74,10 +74,21 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Concurrent() => TestModule("concurrent");
 
         [TestMethod, Priority(0)]
+        public Task Crypt() => TestModule("crypt");
+
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public Task Csv() => TestModule("csv");
+
+        [TestMethod, Priority(0)]
         public Task CTypes() => TestModule("ctypes");
 
         [TestMethod, Priority(0)]
         public Task Curses() => TestModule("curses");
+
+        [TestMethod, Priority(0)]
+        [Ignore]
+        public Task Dataclasses() => TestModule("dataclasses");
 
         [TestMethod, Priority(0)]
         public Task Datetime() => TestModule("datetime");
@@ -165,6 +176,9 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         [TestMethod, Priority(0)]
         public Task Threading() => TestModule("threading");
+
+        [TestMethod, Priority(0)]
+        public Task Tkinter() => TestModule("tkinter");
 
         [TestMethod, Priority(0)]
         public Task Token() => TestModule("token");
