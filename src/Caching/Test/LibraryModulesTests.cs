@@ -87,7 +87,6 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Curses() => TestModule("curses");
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public Task Dataclasses() => TestModule("dataclasses");
 
         [TestMethod, Priority(0)]

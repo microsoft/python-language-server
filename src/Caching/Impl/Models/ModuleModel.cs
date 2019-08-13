@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             v.Source == VariableSource.Builtin || 
                             v.Source == VariableSource.Generic)) {
 
-                if (v.Source == VariableSource.Generic && !typeVars.ContainsKey(v.Name)) {
+                if (v.Value is IGenericTypeParameter && !typeVars.ContainsKey(v.Name)) {
                     typeVars[v.Name] = TypeVarModel.FromGeneric(v);
                 }
 
