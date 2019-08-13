@@ -123,15 +123,13 @@ class oar(list):
                 .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
-        [DataRow(PythonLanguageVersion.V37)]
-        [DataRow(PythonLanguageVersion.V36)]
-        [DataTestMethod]
-        public async Task OverrideInit3X(PythonLanguageVersion version) {
+        [TestMethod]
+        public async Task OverrideInit3X() {
             const string code = @"
 class Test():
     def __
 ";
-            var analysis = await GetAnalysisAsync(code, version);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 10));
 
@@ -158,11 +156,8 @@ class oar(list):
                 .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
-
-        [DataRow(PythonLanguageVersion.V26)]
-        [DataRow(PythonLanguageVersion.V27)]
-        [DataTestMethod]
-        public async Task OverrideInit2X(PythonLanguageVersion version) {
+        [TestMethod]
+        public async Task OverrideInit2X() {
             const string code = @"
 class A:
     def __init__(self):
@@ -171,7 +166,7 @@ class A:
 class Test(A):
     def __
 ";
-            var analysis = await GetAnalysisAsync(code, version);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
 
