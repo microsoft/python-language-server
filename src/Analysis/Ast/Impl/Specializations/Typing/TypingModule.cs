@@ -67,7 +67,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["TypeVar"] = fn;
 
             // NewType
-            _members["NewType"] = CreateNewType(location);
+            _members["NewType"] = SpecializeNewType(location);
 
             // Type
             fn = PythonFunctionType.Specialize("Type", this, GetMemberDocumentation("Type"));
@@ -147,7 +147,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         private string GetMemberDocumentation(string name)
         => base.GetMember(name)?.GetPythonType()?.Documentation;
 
-        private IPythonType CreateNewType(Location location) {
+        private IPythonType SpecializeNewType(Location location) {
             var fn = PythonFunctionType.Specialize("NewType", this, GetMemberDocumentation("NewType"));
             var o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
@@ -243,12 +243,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var args = argSet.Values<IMember>();
             var name = (args[0] as IPythonConstant)?.GetString();
 
-            if (!string.IsNullOrEmpty(name)) {
+            if (name != null) {
                 return new TypeAlias(name, args[1].GetPythonType() ?? Interpreter.UnknownType);
             }
 
-            // If first arg is not a string and not unknown, provide diagnostic
-            if (!args[0].IsUnknown() && args[0].GetPythonType() != Interpreter.GetBuiltinType(BuiltinTypeId.Str)) {
+            // If user provided first argument, give diagnostic
+            if (!args[0].IsUnknown()) {
                 var eval = argSet.Eval;
                 var expression = argSet.Expression;
                 eval.ReportDiagnostics(

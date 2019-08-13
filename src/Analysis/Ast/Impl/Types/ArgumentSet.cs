@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Types {
         public static ArgumentSet Empty(Expression expr, IExpressionEvaluator eval) {
             return new ArgumentSet(new List<IMember>(), expr, eval);
         }
-        
+
         /// <summary>
         /// Creates a set of arguments for a call
         ///
@@ -127,7 +127,7 @@ namespace Microsoft.Python.Analysis.Types {
                 return;
             }
 
-            var callLocation = callExpr.GetLocation(eval);
+            var callLocation = callExpr.Target?.GetLocation(eval);
 
             // https://www.python.org/dev/peps/pep-3102/#id5
             // For each formal parameter, there is a slot which will be used to contain
@@ -343,7 +343,7 @@ namespace Microsoft.Python.Analysis.Types {
                 return null;
             }
             using (var sr = new StringReader($"{paramName}={defaultValue}")) {
-                var parser = Parser.CreateParser(sr, Eval.Interpreter.LanguageVersion,ParserOptions.Default);
+                var parser = Parser.CreateParser(sr, Eval.Interpreter.LanguageVersion, ParserOptions.Default);
                 var ast = parser.ParseFile();
                 if (ast.Body is SuiteStatement ste && ste.Statements.Count > 0 && ste.Statements[0] is AssignmentStatement a) {
                     return a.Right;

@@ -182,17 +182,33 @@ Z = NewType('str', int, float)
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.ParameterMissing);
             diagnostic.Message.Should().Be(Resources.Analysis_ParameterMissing.FormatInvariant("name"));
-            diagnostic.SourceSpan.Should().Be(4, 5, 4, 14);
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 12);
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.ParameterMissing);
             diagnostic.Message.Should().Be(Resources.Analysis_ParameterMissing.FormatInvariant("tp"));
-            diagnostic.SourceSpan.Should().Be(4, 5, 4, 14);
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 12);
 
             diagnostic = analysis.Diagnostics.ElementAt(2);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.TooManyFunctionArguments);
             diagnostic.Message.Should().Be(Resources.Analysis_TooManyFunctionArguments);
-            diagnostic.SourceSpan.Should().Be(5, 5, 5, 31);
+            diagnostic.SourceSpan.Should().Be(5, 5, 5, 12);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NewTypeOneArg() {
+            string code = $@"
+from typing import NewType
+
+Y = NewType('str')
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.ParameterMissing);
+            diagnostic.Message.Should().Be(Resources.Analysis_ParameterMissing.FormatInvariant("tp"));
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 12);
         }
     }
 }
