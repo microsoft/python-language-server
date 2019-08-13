@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -235,7 +236,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         }
 
         private IPythonType CreateTypeAlias(IArgumentSet argSet) {
-            if (argSet.Errors.Count > 0) {
+            Check.Argument(nameof(argSet), () => argSet.Arguments.Count == 2);
+
+            if (!argSet.Errors.IsNullOrEmpty()) {
                 argSet.ReportErrors();
                 return Interpreter.UnknownType;
             }
