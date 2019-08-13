@@ -23,6 +23,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         Nonlocal = 2,
         Global = 4,
         Builtins = 8,
-        Normal = Local | Nonlocal | Global | Builtins
+        ClassMembers = 16,
+        Normal = Local | Nonlocal | Global | Builtins,
+        All = Normal | ClassMembers
     }
 }

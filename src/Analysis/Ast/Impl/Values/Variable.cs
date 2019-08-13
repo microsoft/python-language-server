@@ -32,6 +32,7 @@ namespace Microsoft.Python.Analysis.Values {
         public string Name { get; }
         public VariableSource Source { get; }
         public IMember Value { get; private set; }
+        public bool IsClassMember { get; internal set; }
 
         public void Assign(IMember value, Location location) {
             if (value is IVariable v) {

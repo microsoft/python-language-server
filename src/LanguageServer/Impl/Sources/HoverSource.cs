@@ -13,10 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
@@ -38,7 +40,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             ExpressionLocator.FindExpression(analysis.Ast, location,
-                FindExpressionOptions.Hover, out var node, out var statement, out var scope);
+                FindExpressionOptions.Hover, out var node, out var statement, out var hoverScopeStatement);
 
             if (!HasHover(node) || !(node is Expression expr)) {
                 return null;
@@ -52,7 +54,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var eval = analysis.ExpressionEvaluator;
             switch (statement) {
                 case FromImportStatement fi when node is NameExpression nex: {
-                        var contents = HandleFromImport(fi, location, scope, analysis);
+                        var contents = HandleFromImport(fi, location, hoverScopeStatement, analysis);
                         if (contents != null) {
                             return new Hover {
                                 contents = contents,
@@ -63,7 +65,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         break;
                     }
                 case ImportStatement imp: {
-                        var contents = HandleImport(imp, location, scope, analysis);
+                        var contents = HandleImport(imp, location, hoverScopeStatement, analysis);
                         if (contents != null) {
                             return new Hover {
                                 contents = contents,
@@ -77,8 +79,30 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             IMember value;
             IPythonType type;
-            using (eval.OpenScope(analysis.Document, scope)) {
-                value = analysis.ExpressionEvaluator.GetValueFromExpression(expr);
+            using (eval.OpenScope(analysis.Document, hoverScopeStatement)) {
+                // Here we can be hovering over a class member. Class members are declared
+                // as members as well as special variables in the class scope. If this is
+                // a name expression (rather than a member expression) and it is a class
+                // variable NOT in the immediate class scope, filter it out. Consider:
+                //   class A:
+                //     x = 1
+                //     y = x
+                // hover over 'x' in 'y = x' should produce proper tooltip. However, in
+                //   class A:
+                //     x = 1
+                //     def func(self):
+                //       y = x
+                // hover over 'x' in 'y = x' should not produce tooltip.
+
+                IVariable variable = null;
+                if (expr is NameExpression nex) {
+                    analysis.ExpressionEvaluator.LookupNameInScopes(nex.Name, out _, out variable, LookupOptions.All);
+                    if (IsInvalidClassMember(variable, hoverScopeStatement, location.ToIndex(analysis.Ast))) {
+                        return null;
+                    }
+                }
+
+                value = variable?.Value ?? analysis.ExpressionEvaluator.GetValueFromExpression(expr, LookupOptions.All);
                 type = value?.GetPythonType();
                 if (type == null) {
                     return null;
@@ -122,17 +146,34 @@ namespace Microsoft.Python.LanguageServer.Sources {
             };
         }
 
-        private bool HasHover(Node node) {
+        private static bool HasHover(Node node) {
             switch (node) {
                 // No hover for literals
-                case ConstantExpression constExpr:
+                case ConstantExpression _:
                 // node is FString only if it didn't save an f-string subexpression
-                case FString fStr:
-                case NamedExpression namedExpr:
+                case FString _:
+                case NamedExpression _:
                     return false;
                 default:
                     return true;
             }
+        }
+
+        private bool IsInvalidClassMember(IVariable v, ScopeStatement scope, int hoverPosition) {
+            if (v == null || !v.IsClassMember) {
+                return false;
+            }
+            switch (v.Value) {
+                case IPythonClassType cls when cls.ClassDefinition == scope:
+                    return hoverPosition  > cls.ClassDefinition.HeaderIndex;
+                case IPythonFunctionType ft when ft.FunctionDefinition == scope:
+                    return hoverPosition > ft.FunctionDefinition.HeaderIndex;
+                case IPythonPropertyType prop when prop.FunctionDefinition == scope:
+                    return hoverPosition > prop.FunctionDefinition.HeaderIndex;
+                case IPythonInstance _:
+                    return !(scope is ClassDefinition);
+            }
+            return true;
         }
 
         private MarkupContent HandleImport(ImportStatement imp, SourceLocation location, ScopeStatement scope, IDocumentAnalysis analysis) {
