@@ -123,6 +123,63 @@ class oar(list):
                 .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
 
+        [DataRow(PythonLanguageVersion.V37)]
+        [DataRow(PythonLanguageVersion.V36)]
+        [DataTestMethod]
+        public async Task OverrideInit3X(PythonLanguageVersion version) {
+            const string code = @"
+class Test():
+    def __
+";
+            var analysis = await GetAnalysisAsync(code, version);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(3, 10));
+
+            result.Should().HaveItem("__init__")
+                .Which.Should().HaveInsertText($"__init__(self, *args, **kwargs):{Environment.NewLine}    super().__init__(*args, **kwargs)")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+        }
+
+        [DataRow(PythonLanguageVersion.V26, "value")]
+        [DataRow(PythonLanguageVersion.V27, "value")]
+        [DataTestMethod]
+        public async Task OverrideCompletions2X(PythonLanguageVersion version, string parameterName) {
+            const string code = @"
+class oar(list):
+    def 
+    pass
+";
+            var analysis = await GetAnalysisAsync(code, version);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
+
+            result.Should().HaveItem("append")
+                .Which.Should().HaveInsertText($"append(self, {parameterName}):{Environment.NewLine}    return super(oar, self).append({parameterName})")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+        }
+
+
+        [DataRow(PythonLanguageVersion.V26)]
+        [DataRow(PythonLanguageVersion.V27)]
+        [DataTestMethod]
+        public async Task OverrideInit2X(PythonLanguageVersion version) {
+            const string code = @"
+class A:
+    def __init__(self):
+        pass
+
+class Test(A):
+    def __
+";
+            var analysis = await GetAnalysisAsync(code, version);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
+
+            result.Should().HaveItem("__init__")
+                .Which.Should().HaveInsertText($"__init__(self):{Environment.NewLine}    super(Test, self).__init__()")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+        }
+
         [TestMethod, Priority(0)]
         public async Task TypeAtEndOfMethod() {
             const string code = @"
@@ -851,7 +908,7 @@ pass";
         [DataTestMethod, Priority(0)]
         public async Task NoCompletionInEllipsis(bool is2x) {
             const string code = "...";
-            var analysis = await GetAnalysisAsync(code, is2x ? PythonVersions.LatestAvailable2X: PythonVersions.LatestAvailable3X);
+            var analysis = await GetAnalysisAsync(code, is2x ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 4));
