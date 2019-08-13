@@ -60,7 +60,7 @@ class B:
 c = B().methodB1()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingOptions.Library);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }

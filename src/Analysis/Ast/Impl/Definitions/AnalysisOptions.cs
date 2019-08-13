@@ -14,7 +14,7 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis {
-    public enum AnalysisCachingOptions {
+    public enum AnalysisCachingLevel {
         /// <summary>
         /// No caching of analysis.
         /// </summary>
@@ -52,6 +52,6 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// Defines level of caching analysis engine will maintain.
         /// </summary>
-        public AnalysisCachingOptions AnalysisCachingOptions { get; set; }
+        public AnalysisCachingLevel AnalysisCachingLevel { get; set; }
     }
 }

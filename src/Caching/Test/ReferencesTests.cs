@@ -62,7 +62,7 @@ class B:
         return 2
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingOptions.Library);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
 
@@ -101,7 +101,7 @@ logging.critical()
 ";
             var analysis = await GetAnalysisAsync(code);
             var logging = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("logging");
-            var model = ModuleModel.FromAnalysis(logging.Analysis, Services, AnalysisCachingOptions.Library);
+            var model = ModuleModel.FromAnalysis(logging.Analysis, Services, AnalysisCachingLevel.Library);
 
             var dbModule = new PythonDbModule(model, logging.FilePath, Services);
             analysis.Document.Interpreter.ModuleResolution.SpecializeModule("logging", x => dbModule, replaceExisting: true);

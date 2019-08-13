@@ -25,11 +25,11 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class ModuleUniqueId {
-        public static string GetUniqueId(this IPythonModule module, IServiceContainer services, AnalysisCachingOptions options)
-            => GetUniqueId(module.Name, module.FilePath, module.ModuleType, services, options);
+        public static string GetUniqueId(this IPythonModule module, IServiceContainer services, AnalysisCachingLevel cachingLevel)
+            => GetUniqueId(module.Name, module.FilePath, module.ModuleType, services, cachingLevel);
 
-        public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services, AnalysisCachingOptions options) {
-            if(options == AnalysisCachingOptions.None) {
+        public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services, AnalysisCachingLevel cachingLevel) {
+            if(cachingLevel == AnalysisCachingLevel.None) {
                 return null;
             }
             if (moduleType == ModuleType.User) {
@@ -42,9 +42,9 @@ namespace Microsoft.Python.Analysis.Caching {
             
             var modulePathType = GetModulePathType(filePath, interpreter.ModuleResolution.LibraryPaths, fs);
             switch(modulePathType) {
-                case PythonLibraryPathType.Site when options < AnalysisCachingOptions.Library:
+                case PythonLibraryPathType.Site when cachingLevel < AnalysisCachingLevel.Library:
                     return null;
-                case PythonLibraryPathType.StdLib when options < AnalysisCachingOptions.System:
+                case PythonLibraryPathType.StdLib when cachingLevel < AnalysisCachingLevel.System:
                     return null;
             }
 

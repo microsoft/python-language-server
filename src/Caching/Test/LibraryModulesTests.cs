@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
-            var model = ModuleModel.FromAnalysis(builtins.Analysis, Services, AnalysisCachingOptions.Library);
+            var model = ModuleModel.FromAnalysis(builtins.Analysis, Services, AnalysisCachingLevel.Library);
 
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
@@ -183,6 +183,16 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Pipes() => TestModule("pipes");
 
         [TestMethod, Priority(0)]
+        public Task Pkgutil() => TestModule("pkgutil");
+
+        [TestMethod, Priority(0)]
+        [Ignore("Specialize Enum. See PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)")]
+        public Task Plistlib() => TestModule("plistlib");
+
+        [TestMethod, Priority(0)]
+        public Task Pstats() => TestModule("pstats");
+
+        [TestMethod, Priority(0)]
         public Task Pydoc() => TestModule("pydoc");
 
         [TestMethod, Priority(0)]
@@ -193,6 +203,9 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         [TestMethod, Priority(0)]
         public Task Re() => TestModule("re");
+
+        [TestMethod, Priority(0)]
+        public Task Reprlib() => TestModule("reprlib");
 
         [TestMethod, Priority(0)]
         public Task Signal() => TestModule("signal");
@@ -271,7 +284,7 @@ x = requests.get('microsoft.com')
             }
 
             var rq = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("requests");
-            var model = ModuleModel.FromAnalysis(rq.Analysis, Services, AnalysisCachingOptions.Library);
+            var model = ModuleModel.FromAnalysis(rq.Analysis, Services, AnalysisCachingLevel.Library);
 
             var u = model.UniqueId;
             u.Should().Contain("(").And.EndWith(")");
@@ -285,7 +298,7 @@ x = requests.get('microsoft.com')
         private async Task TestModule(string name) {
             var analysis = await GetAnalysisAsync($"import {name}");
             var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
-            var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingOptions.Library);
+            var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingLevel.Library);
 
             CompareBaselineAndRestore(model, m);
         }

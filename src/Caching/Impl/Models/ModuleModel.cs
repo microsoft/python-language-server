@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public int FileSize { get; set; }
 
-        public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services, AnalysisCachingOptions options) {
+        public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services, AnalysisCachingLevel options) {
             var uniqueId = analysis.Document.GetUniqueId(services, options);
             if(uniqueId == null) {
                 // Caching level setting does not permit this module to be persisted.

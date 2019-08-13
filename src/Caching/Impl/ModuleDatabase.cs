@@ -33,7 +33,6 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
-        private readonly AnalysisCachingOptions _options;
         private readonly string _databaseFolder;
 
         public ModuleDatabase(IServiceContainer services) {
@@ -41,9 +40,6 @@ namespace Microsoft.Python.Analysis.Caching {
             _log = services.GetService<ILogger>();
             _fs = services.GetService<IFileSystem>();
             
-            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            _options = optionsProvider?.Options.AnalysisCachingOptions ?? AnalysisCachingOptions.None;
-
             var cfs = services.GetService<ICacheFolderService>();
             _databaseFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{_databaseFormatVersion}");
         }
@@ -60,7 +56,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public ModuleStorageState TryCreateModule(string moduleName, string filePath, out IPythonModule module) {
             module = null;
 
-            if (_options == AnalysisCachingOptions.None) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None) {
                 return ModuleStorageState.DoesNotExist;
             }
 
@@ -99,15 +95,13 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Writes module data to the database.
         /// </summary>
         public Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default)
-            => _options == AnalysisCachingOptions.None
-                    ? Task.CompletedTask
-                    : Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken), cancellationToken);
+            => Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Determines if module analysis exists in the storage.
         /// </summary>
         public bool ModuleExistsInStorage(string moduleName, string filePath) {
-            if(_options == AnalysisCachingOptions.None) {
+            if(GetCachingLevel() == AnalysisCachingLevel.None) {
                 return false;
             }
 
@@ -123,7 +117,12 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
-            var model = ModuleModel.FromAnalysis(analysis, _services, _options);
+            var cachingLevel = GetCachingLevel();
+            if(cachingLevel == AnalysisCachingLevel.None) {
+                return;
+            }
+
+            var model = ModuleModel.FromAnalysis(analysis, _services, cachingLevel);
             if (model == null) {
                 // Caching level setting does not permit this module to be persisted.
                 return;
@@ -167,7 +166,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// </summary>
         private string FindDatabaseFile(string moduleName, string filePath) {
             var interpreter = _services.GetService<IPythonInterpreter>();
-            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, ModuleType.Specialized, _services, _options);
+            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, ModuleType.Specialized, _services, GetCachingLevel());
             if (string.IsNullOrEmpty(uniqueId)) {
                 return null;
             }
@@ -191,5 +190,8 @@ namespace Microsoft.Python.Analysis.Caching {
             dbPath = Path.Combine(_databaseFolder, $"{uniqueId}({pythonVersion.Major}).db");
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
+
+        private AnalysisCachingLevel GetCachingLevel()
+            => _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel ?? AnalysisCachingLevel.None;
     }
 }
