@@ -115,51 +115,68 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private void CheckValidFunction(IPythonFunctionType function, IReadOnlyList<IParameterInfo> parameters) {
             // Only give diagnostic errors on functions if the decorators are valid 
-            if (function.HasValidDecorators(Eval)) {
-                // Static methods don't need any diagnostics
-                if (function.IsStatic) {
-                    return;
-                }
+            if (!function.HasValidDecorators(Eval)) {
+                return;
+            }
 
-                // Don't give diagnostics on functions defined in metaclasses
-                if (SelfIsMetaclass()) {
-                    return;
-                }
+            // Don't give diagnostics on functions defined in metaclasses
+            if (SelfIsMetaclass()) {
+                return;
+            }
 
-                // Otherwise, functions defined in classes must have at least one argument
-                if (parameters.IsNullOrEmpty()) {
-                    var funcLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
-                    ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument, funcLoc);
-                    return;
-                }
+            // Static methods don't need any diagnostics
+            if (function.IsStatic) {
+                return;
+            }
 
-                var param = parameters[0].Name;
-                var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
-                // If it is a class method check for cls
-                if (function.IsClassMethod && !param.Equals("cls")) {
-                    ReportFunctionParams(Resources.NoClsArgument, ErrorCodes.NoClsArgument, paramLoc);
-                }
+            // Otherwise, functions defined in classes must have at least one argument
+            if (parameters.IsNullOrEmpty()) {
+                var funcLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
+                ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument, funcLoc);
+                return;
+            }
 
-                // If it is a method check for self
-                if (!function.IsClassMethod && !param.Equals("self")) {
-                    ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
-                }
+            var param = parameters[0].Name;
+            var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
+            // If it is a class method check for cls
+            if (function.IsClassMethod && !param.Equals("cls")) {
+                ReportFunctionParams(Resources.NoClsArgument, ErrorCodes.NoClsArgument, paramLoc);
+            }
+
+            // If it is a method check for self
+            if (!function.IsClassMethod && !param.Equals("self")) {
+                ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
             }
         }
 
         private void CheckValidProperty(IPythonPropertyType property, IReadOnlyList<IParameterInfo> parameters) {
             // Only give diagnostic errors on properties if the decorators are valid 
-            if (property.HasValidDecorators(Eval)) {
-                if (SelfIsMetaclass()) {
-                    return;
-                }
+            if (!property.HasValidDecorators(Eval)) {
+                return;
+            }
 
-                var param = parameters[0].Name;
-                var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
-                // Only check for self on properties because static and class properties are invalid
-                if (!property.IsStatic && !property.IsClassMethod && !param.Equals("self")) {
-                    ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
-                }
+            // Don't give diagnostics on properties defined in metaclasses
+            if (SelfIsMetaclass()) {
+                return;
+            }
+
+            // No diagnostics on static and class properties 
+            if (property.IsStatic || property.IsClassMethod) {
+                return;
+            }
+
+            // Otherwise, properties defined in classes must have at least one argument
+            if (parameters.IsNullOrEmpty()) {
+                var propertyLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
+                ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument, propertyLoc);
+                return;
+            }
+
+            var param = parameters[0].Name;
+            var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
+            // Only check for self on properties because static and class properties are invalid
+            if (!param.Equals("self")) {
+                ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
             }
         }
 

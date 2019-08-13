@@ -51,8 +51,7 @@ class Test:
             diagnostic.Message.Should().Be(Resources.NoMethodArgument.FormatInvariant("test"));
         }
 
-        // Don't handle properties until can handle decorator combinations
-        [Ignore, TestMethod, Priority(0)]
+        [TestMethod, Priority(0)]
         public async Task PropertyNoArgs() {
             const string code = @"
 class Test:
@@ -67,6 +66,38 @@ class Test:
             diagnostic.ErrorCode.Should().Be(ErrorCodes.NoMethodArgument);
             diagnostic.SourceSpan.Should().Be(4, 9, 4, 13);
             diagnostic.Message.Should().Be(Resources.NoMethodArgument.FormatInvariant("test"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AbstractPropertyNoArgs() {
+            const string code = @"
+class Test:
+    @abstractmethod
+    @property
+    def test():
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoMethodArgument);
+            diagnostic.SourceSpan.Should().Be(5, 9, 5, 13);
+            diagnostic.Message.Should().Be(Resources.NoMethodArgument.FormatInvariant("test"));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AbstractClassPropertyNoArgs() {
+            const string code = @"
+class Test:
+    @classmethod
+    @abstractmethod
+    @property
+    def test():
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]

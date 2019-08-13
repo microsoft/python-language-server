@@ -167,12 +167,27 @@ class C:
             analysis.Diagnostics.Should().BeEmpty();
         }
 
-
         [TestMethod, Priority(0)]
         public async Task NormalFunction() {
             const string code = @"
 def test():
     pass
+
+class C:
+    def test1(self):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NormalProperty() {
+            const string code = @"
+class C:
+    @property
+    def test(self):
+        pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
