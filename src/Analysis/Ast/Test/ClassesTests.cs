@@ -632,7 +632,7 @@ class Test():
             sw.Stop();
             // Desktop: product time is typically less few seconds second.
             // Test run time: typically ~ 20 sec.
-            sw.ElapsedMilliseconds.Should().BeLessThan(60000); 
+            sw.ElapsedMilliseconds.Should().BeLessThan(60000);
         }
 
         [TestMethod, Priority(0)]
@@ -680,6 +680,32 @@ class x(object):
         return 42
 
 a = x().func()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MemberCtorAssignment() {
+            const string code = @"
+class x:
+    y: int
+    z = y
+
+a = x().z
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AmbiguousMemberAssignment() {
+            const string code = @"
+class x:
+    x: int
+    y = x
+
+a = x().y
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
