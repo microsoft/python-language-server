@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
-                HandleModuleImportStar(variableModule, imports is ImplicitPackageImport);
+                HandleModuleImportStar(variableModule, imports is ImplicitPackageImport, node.StartIndex);
                 return;
             }
 
@@ -68,15 +68,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (!string.IsNullOrEmpty(memberName)) {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
-                    var exported = variableModule.Analysis?.GlobalScope.Variables[memberName] ?? variableModule.GetMember(memberName);
+                    var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
+                    var exported = variable ?? variableModule.GetMember(memberName);
                     var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
                     // Do not allow imported variables to override local declarations
-                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, false);
+                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
                 }
             }
         }
 
-        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage) {
+        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage, int importPosition) {
             if (variableModule.Module == Module) {
                 // from self import * won't define any new members
                 return;
@@ -102,8 +103,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
                 var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
                 // Do not allow imported variables to override local declarations
-                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, Eval.DefaultLocation, false);
+                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, Eval.DefaultLocation, CanOverwriteVariable(memberName, importPosition));
             }
+        }
+
+        private bool CanOverwriteVariable(string name, int importPosition) {
+            var v = Eval.CurrentScope.Variables[name];
+            if(v == null) {
+                return true; // Variable does not exist
+            }
+            // Allow overwrite if import is below the variable. Consider
+            //   x = 1
+            //   x = 2
+            //   from A import * # brings another x
+            //   x = 3
+            var references = v.References.Where(r => r.DocumentUri == Module.Uri).ToArray();
+            if(references.Length == 0) {
+                // No references to the variable in this file - the variable 
+                // is imported from another module. OK to overwrite.
+                return true; 
+            }
+            var firstAssignmentPosition = references.Min(r => r.Span.ToIndexSpan(Ast).Start);
+            return firstAssignmentPosition < importPosition;
         }
 
         private IMember GetValueFromImports(PythonVariableModule parentModule, IImportChildrenSource childrenSource, string memberName) {
