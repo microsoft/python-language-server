@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Crypt() => TestModule("crypt");
 
         [TestMethod, Priority(0)]
-        [Ignore]
+        [Ignore("_DRMapping type issue. Consider merge of module to stub so OrderedDict resolves to generic from the collections stub.")]
         public Task Csv() => TestModule("csv");
 
         [TestMethod, Priority(0)]
@@ -111,6 +111,12 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Filecmp() => TestModule("filecmp");
 
         [TestMethod, Priority(0)]
+        public Task Functools() => TestModule("functools");
+
+        [TestMethod, Priority(0)]
+        public Task Gzip() => TestModule("gzip");
+
+        [TestMethod, Priority(0)]
         public Task Html() => TestModule("html");
 
         [TestMethod, Priority(0)]
@@ -118,6 +124,9 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         [TestMethod, Priority(0)]
         public Task Importlib() => TestModule("importlib");
+
+        [TestMethod, Priority(0)]
+        public Task Inspect() => TestModule("inspect");
 
         [TestMethod, Priority(0)]
         public Task Io() => TestModule("io");

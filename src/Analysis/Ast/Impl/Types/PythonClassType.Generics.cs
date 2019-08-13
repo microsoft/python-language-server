@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Utilities;
@@ -23,13 +24,14 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType {
+        private readonly object _genericParameterLock = new object();
+        private readonly ReentrancyGuard<IPythonClassType> _genericSpecializationGuard = new ReentrancyGuard<IPythonClassType>();
+        private readonly ReentrancyGuard<IPythonClassType> _genericResolutionGuard = new ReentrancyGuard<IPythonClassType>();
+
         private bool _isGeneric;
-        private object _genericParameterLock = new object();
         private Dictionary<string, PythonClassType> _specificTypeCache;
         private Dictionary<IGenericTypeParameter, IPythonType> _genericParameters;
         private IReadOnlyList<IGenericTypeParameter> _parameters = new List<IGenericTypeParameter>();
-        private ReentrancyGuard<IPythonClassType> _genericSpecializationGuard = new ReentrancyGuard<IPythonClassType>();
-        private ReentrancyGuard<IPythonClassType> _genericResolutionGuard = new ReentrancyGuard<IPythonClassType>();
 
         #region IGenericType
         /// <summary>
@@ -66,7 +68,7 @@ namespace Microsoft.Python.Analysis.Types {
                 // type parameter T -> int, U -> str, etc.
                 var genericTypeToSpecificType = GetSpecificTypes(args, genericTypeParameters, newBases);
 
-                PythonClassType classType = new PythonClassType(BaseName, new Location(DeclaringModule));
+                var classType = new PythonClassType(BaseName, new Location(DeclaringModule));
                 // Storing generic parameters allows methods returning generic types 
                 // to know what type parameter returns what specific type
                 StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
