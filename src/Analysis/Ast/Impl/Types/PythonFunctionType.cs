@@ -25,7 +25,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal sealed class PythonFunctionType : PythonType, IPythonFunctionType {
-        private readonly IReadOnlyList<string> DefaultClassMethods = new[] { "__new__", "__init_subclass__", "__class_getitem__" };
+        private static readonly HashSet<string> DefaultClassMethods = new HashSet<string> { "__new__", "__init_subclass__", "__class_getitem__" };
         private ImmutableArray<IPythonFunctionOverload> _overloads = ImmutableArray<IPythonFunctionOverload>.Empty;
         private bool _isAbstract;
         private bool _isSpecialized;
