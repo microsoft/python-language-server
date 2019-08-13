@@ -478,5 +478,16 @@ class Test3(FrozenSet):
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromEnum() {
+            const string code = @"
+from enum import Enum, EnumMeta
+
+class C(Enum): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }
