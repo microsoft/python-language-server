@@ -43,15 +43,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public void DeclareVariable(string name, IMember value, VariableSource source, IPythonModule module)
             => DeclareVariable(name, value, source, new Location(module));
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, Node location, bool overwrite = false)
+        public void DeclareVariable(string name, IMember value, VariableSource source, Node location, bool overwrite = true)
             => DeclareVariable(name, value, source, GetLocationOfName(location), overwrite);
 
-        public void DeclareVariable(string name, IMember value, VariableSource source, Location location, bool overwrite = false) {
+        public void DeclareVariable(string name, IMember value, VariableSource source, Location location, bool overwrite = true) {
+            var member = GetInScope(name);
+            if (member != null && !overwrite) {
+                return;
+            }
             if (source == VariableSource.Import && value is IVariable v) {
                 CurrentScope.LinkVariable(name, v, location);
                 return;
             }
-            var member = GetInScope(name);
             if (member != null) {
                 if (!value.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, value, source, location);
