@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
-        private ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
+        private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private string _genericName;
         private List<IPythonType> _bases = new List<IPythonType>();
         private IReadOnlyList<IPythonType> _mro;

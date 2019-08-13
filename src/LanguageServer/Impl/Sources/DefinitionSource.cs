@@ -192,7 +192,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
         private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement, out ILocatedMember definingMember) {
             definingMember = null;
 
-            var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope);
+            var m = analysis.ExpressionEvaluator.LookupNameInScopes(name, out var scope, LookupOptions.All);
             if (m == null || scope.Module.ModuleType == ModuleType.Builtins || !(scope.Variables[name] is IVariable v)) {
                 return null;
             }
