@@ -173,6 +173,19 @@ class A:
     @abstractmethod
     def test(self, x):
         pass
+
+    @staticmethod
+    @classmethod
+    @abstractmethod
+    def test1(cls, x):
+        pass
+
+    @property
+    @staticmethod
+    @classmethod
+    @abstractmethod
+    def test2(x, y):
+        pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();

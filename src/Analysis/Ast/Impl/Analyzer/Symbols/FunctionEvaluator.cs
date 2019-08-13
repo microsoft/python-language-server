@@ -156,10 +156,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 var param = parameters[0].Name;
                 var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
-
-                // @staticmethod and @classmethod are filtered out by property check above,
-                // so guaranteed we only need to check for self
-                if (!param.Equals("self")) {
+                // Only check for self on properties because static and class properties are invalid
+                if (!property.IsStatic && !property.IsClassMethod && !param.Equals("self")) {
                     ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
                 }
             }
