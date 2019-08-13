@@ -30,7 +30,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         #endregion
 
-        #region IPythonTemplateType
         /// <summary>
         /// Given an argument set with types, e.g int, float, str, look at the generic type parameters for the class
         /// and create a new class type with those parameters filled in. Additionally, transmit the specific class
@@ -122,8 +121,6 @@ namespace Microsoft.Python.Analysis.Types {
                 return classType;
             }
         }
-
-        #endregion
 
         /// <summary>
         /// Gets a list of distinct type parameters from bases and the class itself

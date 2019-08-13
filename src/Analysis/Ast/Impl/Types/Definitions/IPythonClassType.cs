@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents Python class type definition.
     /// </summary>
-    public interface IPythonClassType : IPythonClassMember {
+    public interface IPythonClassType : IPythonClassMember, IGenericType {
         /// <summary>
         /// Class definition node in the AST.
         /// </summary>

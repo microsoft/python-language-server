@@ -30,10 +30,8 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
-
-    internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
-        internal enum ClassDocumentationSource
-        {
+    internal partial class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
+        internal enum ClassDocumentationSource {
             Class,
             Init,
             Base
@@ -300,6 +298,5 @@ namespace Microsoft.Python.Analysis.Types {
 
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
-
     }
 }
