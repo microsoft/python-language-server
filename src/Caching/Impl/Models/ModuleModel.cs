@@ -13,15 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis.Caching.Factories;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [Serializable]
     internal sealed class ModuleModel : MemberModel {
         /// <summary>
         /// Module unique id that includes version.
@@ -92,7 +94,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     case IPythonClassType cls
                         when cls.DeclaringModule.Equals(analysis.Document) || cls.DeclaringModule.Equals(analysis.Document.Stub):
                         if (!classes.ContainsKey(cls.Name)) {
-                            classes[cls.Name] = ClassModel.FromType(cls);
+                            classes[cls.Name] = new ClassModel(cls);
                             continue;
                         }
                         break;
@@ -128,13 +130,15 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 // star import. Their stubs, however, come from 'os' stub. The function then have declaring
                 // module as 'nt' rather than 'os' and 'nt' does not have a stub. In this case use function
                 // model like if function was declared in 'os'.
-                return FunctionModel.FromType(f);
+                return new FunctionModel(f);
             }
 
             if (f.DeclaringModule.Equals(analysis.Document) || f.DeclaringModule.Equals(analysis.Document.Stub)) {
-                return FunctionModel.FromType(f);
+                return new FunctionModel(f);
             }
             return null;
         }
+
+        protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
     }
 }

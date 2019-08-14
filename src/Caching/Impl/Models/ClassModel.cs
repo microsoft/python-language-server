@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -20,9 +21,14 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
+
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [DebuggerDisplay("cls:{Name}")]
+    [Serializable]
+    [DebuggerDisplay("cls:{" + nameof(Name) + "}")]
     internal sealed class ClassModel : MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }
@@ -30,22 +36,21 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public PropertyModel[] Properties { get; set; }
         public VariableModel[] Fields { get; set; }
         public string[] GenericParameters { get; set; }
-        public ClassModel[] InnerClasses { get; set; }
+        public ClassModel[] Classes { get; set; }
 
+        [NonSerialized]
         private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
-
-        public static ClassModel FromType(IPythonClassType cls) => new ClassModel(cls);
 
         public ClassModel() { } // For de-serializer from JSON
 
-        private ClassModel(IPythonClassType cls) {
+        public ClassModel(IPythonClassType cls) {
             var methods = new List<FunctionModel>();
             var properties = new List<PropertyModel>();
             var fields = new List<VariableModel>();
             var innerClasses = new List<ClassModel>();
 
             // Skip certain members in order to avoid infinite recursion.
-            foreach (var name in cls.GetMemberNames().Except(new[] { "__base__", "__bases__", "__class__", "mro" })) {
+            foreach (var name in cls.GetMemberNames().Except(new[] {"__base__", "__bases__", "__class__", "mro"})) {
                 var m = cls.GetMember(name);
 
                 // Only take members from this class, skip members from bases.
@@ -57,20 +62,21 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     if (reentered) {
                         continue;
                     }
+
                     switch (m) {
                         case IPythonClassType ct when ct.Name == name:
                             if (!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
                                 continue;
                             }
-                            innerClasses.Add(FromType(ct));
+                            innerClasses.Add(new ClassModel(ct));
                             break;
                         case IPythonFunctionType ft when ft.IsLambda():
                             break;
                         case IPythonFunctionType ft when ft.Name == name:
-                            methods.Add(FunctionModel.FromType(ft));
+                            methods.Add(new FunctionModel(ft));
                             break;
                         case IPythonPropertyType prop when prop.Name == name:
-                            properties.Add(PropertyModel.FromType(prop));
+                            properties.Add(new PropertyModel(prop));
                             break;
                         case IPythonInstance inst:
                             fields.Add(VariableModel.FromInstance(name, inst));
@@ -82,8 +88,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
-            Name = cls.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : cls.Name;
             Id = Name.GetStableHash();
+            Name = cls.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : cls.Name;
+            QualifiedName = cls.QualifiedName;
             IndexSpan = cls.Location.IndexSpan.ToModel();
 
             Documentation = cls.Documentation;
@@ -91,7 +98,41 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();
-            InnerClasses = innerClasses.ToArray();
+            Classes = innerClasses.ToArray();
         }
+
+        protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) {
+            var cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
+            // In Python 3 exclude object since type creation will add it automatically.
+            var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
+            var bases = Bases.Select(b => is3x && b == "object" ? null : mf.ConstructType(b)).ExcludeDefault().ToArray();
+            cls.SetBases(bases);
+            cls.SetDocumentation(Documentation);
+
+            foreach (var f in Methods) {
+                var m = f.Construct(mf, cls);
+                cls.AddMember(f.Name, m, false);
+            }
+
+            foreach (var p in Properties) {
+                var m = p.Construct(mf, cls);
+                cls.AddMember(p.Name, m, false);
+            }
+
+            foreach (var c in Classes) {
+                var m = c.Construct(mf, cls);
+                cls.AddMember(c.Name, m, false);
+            }
+
+            foreach (var vm in Fields) {
+                var m = vm.Construct(mf, cls);
+                cls.AddMember(vm.Name, m, false);
+            }
+
+            return cls;
+        }
+
+        protected override IEnumerable<MemberModel> GetMemberModels() 
+            => Classes.Concat<MemberModel>(Methods).Concat(Properties).Concat(Fields);
     }
 }

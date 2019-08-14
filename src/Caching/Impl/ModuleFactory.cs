@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -26,35 +25,24 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Caching.Factories {
-    internal sealed class ModuleFactory : IDisposable {
+namespace Microsoft.Python.Analysis.Caching {
+    /// <summary>
+    /// Constructs module from its persistent model.
+    /// </summary>
+    internal sealed class ModuleFactory {
         // TODO: better resolve circular references.
         private readonly ReentrancyGuard<string> _typeReentrancy = new ReentrancyGuard<string>();
         private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
+        private readonly ModuleModel _model;
 
         public IPythonModule Module { get; }
-        public ClassFactory ClassFactory { get; }
-        public FunctionFactory FunctionFactory { get; }
-        public PropertyFactory PropertyFactory { get; }
-        public VariableFactory VariableFactory { get; }
-        public TypeVarFactory TypeVarFactory { get; }
         public Location DefaultLocation { get; }
 
         public ModuleFactory(ModuleModel model, IPythonModule module) {
-            Module = module;
-            ClassFactory = new ClassFactory(model.Classes, this);
-            FunctionFactory = new FunctionFactory(model.Functions, this);
-            VariableFactory = new VariableFactory(model.Variables, this);
-            TypeVarFactory = new TypeVarFactory(model.TypeVars, this);
-            PropertyFactory = new PropertyFactory(this);
-            DefaultLocation = new Location(Module);
-        }
+            _model = model;
 
-        public void Dispose() {
-            ClassFactory.Dispose();
-            FunctionFactory.Dispose();
-            VariableFactory.Dispose();
-            TypeVarFactory.Dispose();
+            Module = module;
+            DefaultLocation = new Location(Module);
         }
 
         public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();
@@ -93,23 +81,34 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
         }
 
-        public IMember Construct(MemberModel model, IPythonType declaringType) {
-            switch(model) {
-                case ClassModel cm:
-                    return ClassFactory.Construct(cm, declaringType);
-                case FunctionModel fm:
-                    return FunctionFactory.Construct(fm, declaringType);
-                case PropertyModel pm:
-                    return PropertyFactory.Construct(pm, declaringType as );
+        private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
+            if (memberNames.Count == 0) {
+                return null;
             }
+
+            // Try from cache first
+            MemberModel currentModel = _model;
+            IMember m = null;
+            IPythonType declaringType = null;
+
+            foreach (var name in memberNames) {
+                var nextModel = currentModel.GetModel(name);
+                Debug.Assert(nextModel != null);
+
+                m = nextModel.Construct(this, declaringType);
+                Debug.Assert(m != null);
+
+                currentModel = nextModel;
+                declaringType = m as IPythonType;
+                Debug.Assert(declaringType != null);
+            }
+
+            return m;
         }
 
-        public IMember CreateParts(MemberModel model, IMember m, IPythonType declaringType) {
-            switch (model) {
-                case ClassModel cm:
-                    return ClassFactory.Construct(cm, declaringType);
-            }
-        }
+        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames)
+            => memberNames.Count == 0 ? module : GetMember(module, memberNames);
+
 
         private IPythonModule GetModule(QualifiedNameParts parts) {
             if (parts.ModuleName == Module.Name) {
@@ -134,36 +133,6 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
 
                 return null;
             }
-        }
-
-        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames)
-            => memberNames.Count == 0 ? module : GetMember(module, memberNames);
-
-        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
-            if (memberName.StartsWithOrdinal("__")) {
-                memberName = memberName.Substring(2, memberName.Length - 4);
-            }
-
-            switch (memberName) {
-                case "NoneType":
-                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
-                case "Unknown":
-                    return builtins.Interpreter.UnknownType;
-            }
-            return builtins.GetMember(memberName);
-        }
-
-        private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
-            if (memberNames.Count == 0) {
-                return null;
-            }
-
-            var name = memberNames[0];
-            var root = ClassFactory.TryCreate(name)
-                   ?? (FunctionFactory.TryCreate(name)
-                       ?? (IMember)VariableFactory.TryCreate(name));
-
-            return GetMember(root, memberNames.Skip(1));
         }
 
         private IMember GetMember(IMember root, IEnumerable<string> memberNames) {
@@ -199,6 +168,20 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             return member;
+        }
+
+        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
+            if (memberName.StartsWithOrdinal("__")) {
+                memberName = memberName.Substring(2, memberName.Length - 4);
+            }
+
+            switch (memberName) {
+                case "NoneType":
+                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
+                case "Unknown":
+                    return builtins.Interpreter.UnknownType;
+            }
+            return builtins.GetMember(memberName);
         }
 
         private IReadOnlyList<IPythonType> GetTypeArguments(string memberName, out string typeName) {

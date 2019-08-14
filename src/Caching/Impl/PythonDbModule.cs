@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public PythonDbModule(ModuleModel model, string filePath, IServiceContainer services)
             : base(model.Name, filePath, services) {
-            GlobalScope = new GlobalScope(model, this, services);
+            GlobalScope = new GlobalScope(model, this);
             Documentation = model.Documentation;
 
             _newLines = model.NewLines.Select(nl => new NewLineLocation(nl.EndIndex, nl.Kind)).ToArray();

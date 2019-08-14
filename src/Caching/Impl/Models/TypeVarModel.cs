@@ -13,15 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [DebuggerDisplay("TypeVar:{Name}")]
-    internal sealed class TypeVarModel: MemberModel {
+    [Serializable]
+    [DebuggerDisplay("TypeVar:{" + nameof(Name) + "}")]
+    internal sealed class TypeVarModel : MemberModel {
         public string[] Constraints { get; set; }
         public string Bound { get; set; }
         public string Covariant { get; set; }
@@ -32,11 +37,20 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return new TypeVarModel {
                 Id = g.Name.GetStableHash(),
                 Name = g.Name,
+                QualifiedName = g.QualifiedName,
                 Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
                 Bound = g.Bound.GetPersistentQualifiedName(),
                 Covariant = g.Covariant.GetPersistentQualifiedName(),
                 Contravariant = g.Contravariant.GetPersistentQualifiedName()
             };
+        }
+
+        protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) {
+            var constraints = Constraints.Select(mf.ConstructType).ToArray();
+            var bound = mf.ConstructType(Bound);
+            var covariant = mf.ConstructType(Covariant);
+            var contravariant = mf.ConstructType(Contravariant);
+            return new GenericTypeParameter(Name, mf.Module, constraints, bound, covariant, contravariant, mf.DefaultLocation);
         }
     }
 }
