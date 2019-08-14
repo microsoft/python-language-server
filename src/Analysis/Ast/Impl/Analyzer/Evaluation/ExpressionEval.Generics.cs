@@ -141,8 +141,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// 
         /// List['str'] => List[str]
         /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
         private IMember GetValueFromForwardRef(IMember index) {
             index.TryGetConstant(out string memberName);
             if (string.IsNullOrEmpty(memberName)) {

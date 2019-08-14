@@ -101,7 +101,6 @@ namespace Microsoft.Python.Analysis.Types {
         public string Documentation { get; private set; }
 
         public string GetReturnDocumentation(IPythonType self = null) {
-            // If inside a class, 
             if (self != null) {
                 var returnType = GetSpecificReturnType(self as IPythonClassType, null);
                 if (!returnType.IsUnknown()) {
