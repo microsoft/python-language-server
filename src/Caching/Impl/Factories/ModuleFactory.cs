@@ -93,6 +93,24 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
         }
 
+        public IMember Construct(MemberModel model, IPythonType declaringType) {
+            switch(model) {
+                case ClassModel cm:
+                    return ClassFactory.Construct(cm, declaringType);
+                case FunctionModel fm:
+                    return FunctionFactory.Construct(fm, declaringType);
+                case PropertyModel pm:
+                    return PropertyFactory.Construct(pm, declaringType as );
+            }
+        }
+
+        public IMember CreateParts(MemberModel model, IMember m, IPythonType declaringType) {
+            switch (model) {
+                case ClassModel cm:
+                    return ClassFactory.Construct(cm, declaringType);
+            }
+        }
+
         private IPythonModule GetModule(QualifiedNameParts parts) {
             if (parts.ModuleName == Module.Name) {
                 return Module;
@@ -149,7 +167,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         }
 
         private IMember GetMember(IMember root, IEnumerable<string> memberNames) {
-            IMember member = root;
+            var member = root;
             foreach (var n in memberNames) {
                 var memberName = n;
                 // Check if name has type arguments such as Union[int, str]

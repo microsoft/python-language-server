@@ -49,6 +49,10 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 var v = ModuleFactory.VariableFactory.Construct(vm, cls, false);
                 cls.AddMember(v.Name, v, false);
             }
+            
+            foreach(var m in cls.GetMembers()) {
+                ModuleFactory.CreateMemberParts()
+            }
         }
     }
 }

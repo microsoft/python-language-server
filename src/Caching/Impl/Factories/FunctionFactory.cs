@@ -19,23 +19,18 @@ using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching.Factories {
-    internal sealed class FunctionFactory: FactoryBase<FunctionModel, IPythonFunctionType> {
+    internal sealed class FunctionFactory: FactoryBase<FunctionModel, PythonFunctionType> {
         public FunctionFactory(IEnumerable<FunctionModel> classes, ModuleFactory mf)
             : base(classes, mf) {
         }
 
-        public override IPythonFunctionType CreateMember(FunctionModel fm, IPythonType declaringType) {
-            var ft = new PythonFunctionType(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()), declaringType, fm.Documentation);
+        public override PythonFunctionType CreateMember(FunctionModel fm, IPythonType declaringType)
+            => new PythonFunctionType(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()), declaringType, fm.Documentation);
 
-            foreach (var om in fm.Overloads) {
-                var o = new PythonFunctionOverload(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()));
-                o.SetDocumentation(fm.Documentation);
-                o.SetReturnValue(ModuleFactory.ConstructMember(om.ReturnType), true);
-                o.SetParameters(om.Parameters.Select(ConstructParameter).ToArray());
-                ft.AddOverload(o);
-            }
-
-            foreach(var model in fm.Functions) {
+        protected override void CreateMemberParts(FunctionModel fm, PythonFunctionType ft) { 
+            // Create inner functions and classes first since function
+            // may be returning one of them.
+            foreach (var model in fm.Functions) {
                 var f = CreateMember(model, ft);
                 if (f != null) {
                     ft.AddMember(f.Name, f, overwrite: true);
@@ -49,7 +44,13 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 }
             }
 
-            return ft;
+            foreach (var om in fm.Overloads) {
+                var o = new PythonFunctionOverload(fm.Name, new Location(ModuleFactory.Module, fm.IndexSpan.ToSpan()));
+                o.SetDocumentation(fm.Documentation);
+                o.SetReturnValue(ModuleFactory.ConstructMember(om.ReturnType), true);
+                o.SetParameters(om.Parameters.Select(ConstructParameter).ToArray());
+                ft.AddOverload(o);
+            }
         }
 
         private IParameterInfo ConstructParameter(ParameterModel pm)

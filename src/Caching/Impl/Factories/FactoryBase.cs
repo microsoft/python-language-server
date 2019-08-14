@@ -49,25 +49,22 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         /// Constructs member from its persistent model.
         /// </summary>
         public TMember Construct(TModel cm, IPythonType declaringType = null, bool cached = true) {
-            TMember m;
-
             if (!cached) {
-                m = CreateMember(cm, declaringType);
-                CreateMemberParts(cm, m);
+                var m = CreateMember(cm, declaringType);
                 return m;
             }
 
             var data = _data[cm.Name];
             if (data.Member == null) {
                 data.Member = CreateMember(data.Model, declaringType);
-                CreateMemberParts(cm, data.Member);
             }
             return data.Member;
         }
 
+
         public virtual void Dispose() => _data.Clear();
 
         public abstract TMember CreateMember(TModel model, IPythonType declaringType);
-        protected virtual void CreateMemberParts(TModel model, TMember member) { }
+        public virtual void CreateMemberParts(TModel model, TMember member) { }
     }
 }
