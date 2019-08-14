@@ -1116,6 +1116,30 @@ d = Dict['float', 'str']
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericListForwardRef() {
+            const string code = @"
+from typing import List, Dict
+class A: ...
+class B: ...
+
+def test() -> 'List[A]':
+    pass
+
+def test1() -> 'Dict[A, B]':
+    pass
+
+x = test()
+y = test1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("List[A]");
+            analysis.Should().HaveVariable("y")
+                        .Which.Should().HaveType("Dict[A, B]");
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task GenericClassForwardRef() {
             const string code = @"
 from typing import Generic, TypeVar

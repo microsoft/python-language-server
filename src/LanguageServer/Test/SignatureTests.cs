@@ -154,6 +154,23 @@ y = boxedstr.get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericUnboundForwardRefFunction() {
+            const string code = @"
+from typing import Dict
+def tmp(v: 'Dict[str, int]') -> 'Dict[str, int]':
+    pass
+h = tmp()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(5, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("tmp(v: Dict[str, int]) -> Dict[str, int]");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ForwardRefUnboundFunction() {
             const string code = @"
 def get() -> 'int':
@@ -196,7 +213,49 @@ y = get()
         }
 
         [TestMethod, Priority(0)]
-        public async Task GenericForwardRef() {
+        public async Task ForwardRefQuotedGeneric() {
+            const string code = @"
+from typing import List
+
+class Box():
+    def get(self, x: 'List[int]') -> 'int':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get(5)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(9, 19));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get(x: List[int]) -> int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefNestedQuotedGeneric() {
+            const string code = @"
+from typing import List, Sequence
+
+class Box():
+    def get(self, x: 'Sequence[List[int]]') -> 'int':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get(5)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(9, 19));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get(x: Sequence[List[int]]) -> int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefQuotedGenericTypeParameter() {
             const string code = @"
 from typing import List
 
