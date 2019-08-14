@@ -1075,6 +1075,85 @@ y = boxedstr.get()
                 .Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task GenericForwardRef() {
+            const string code = @"
+from typing import List, Dict
+class A:
+    def test(self) -> int:
+        pass
+class B:
+    def test(self) -> int:
+        pass
+l = List['A']
+d = Dict['A', 'B']
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("l")
+                .Which.Should().HaveType("List[A]");
+            analysis.Should().HaveVariable("d")
+                           .Which.Should().HaveType("Dict[A, B]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericBuiltinTypeForwardRef() {
+            const string code = @"
+from typing import List, Dict
+class A:
+    def test(self) -> int:
+        pass
+class B:
+    def test(self) -> int:
+        pass
+l = List['int']
+d = Dict['float', 'str']
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("l")
+                .Which.Should().HaveType("List[int]");
+            analysis.Should().HaveVariable("d")
+                           .Which.Should().HaveType("Dict[float, str]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassForwardRef() {
+            const string code = @"
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+K = TypeVar('K')
+
+class A(Generic[T]):
+    def test(self) -> T:
+        pass
+
+class B(Generic[T, K]):
+    def test(self) -> T:
+        pass
+
+    def test1(self) -> K:
+        pass
+
+a = A['B']()
+x = a.test()
+
+b = B['A', 'A']()
+y = b.test()
+z = b.test1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("a")
+                .Which.Should().HaveType("A[B]");
+            analysis.Should().HaveVariable("x")
+                           .Which.Should().HaveType("B");
+
+            analysis.Should().HaveVariable("b")
+                          .Which.Should().HaveType("B[A, A]");
+            analysis.Should().HaveVariable("y")
+                           .Which.Should().HaveType("A");
+            analysis.Should().HaveVariable("z")
+                                      .Which.Should().HaveType("A");
+        }
 
         [TestMethod, Priority(0)]
         public async Task GenericFunctionArguments() {

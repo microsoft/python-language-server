@@ -96,9 +96,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// (if the former) on specific type (if the latter).
         /// </summary>
         private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr) {
-            var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
-
             if (gt.Name.EqualsOrdinal("Generic")) {
+                var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
                     return UnknownType;
                 }
@@ -120,16 +119,37 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (expr.Index is TupleExpression tex) {
                 foreach (var item in tex.Items) {
                     var e = GetValueFromExpression(item);
-                    indices.Add(e);
+                    var forwardRef = GetValueFromForwardRef(e);
+                    indices.Add(forwardRef ?? e);
                 }
             } else {
                 var index = GetValueFromExpression(expr.Index);
-                // Don't count null indexes as arguments
-                if (index != null) {
+                var forwardRef = GetValueFromForwardRef(index);
+
+                if (forwardRef != null) {
+                    indices.Add(forwardRef);
+                } else if (index != null) {
+                    // Don't count null indexes as arguments
                     indices.Add(index);
                 }
             }
             return indices;
+        }
+
+        /// <summary>
+        /// Given an index argument, will try and resolve it to a forward reference, e.g
+        /// 
+        /// List['str'] => List[str]
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        private IMember GetValueFromForwardRef(IMember index) {
+            index.TryGetConstant(out string memberName);
+            if (string.IsNullOrEmpty(memberName)) {
+                return null;
+            }
+
+            return LookupNameInScopes(memberName, out var _, out var _, LookupOptions.Normal);
         }
 
         private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
