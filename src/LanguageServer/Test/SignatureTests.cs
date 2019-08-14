@@ -151,7 +151,71 @@ y = boxedstr.get()
             sig.signatures.Should().NotBeNull();
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("get() -> str");
+        }
 
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefUnboundFunction() {
+            const string code = @"
+def get() -> 'int':
+    pass
+
+y = get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(5, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> int");
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefMethod() {
+            const string code = @"
+class Box():
+    def get(self) -> 'int':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get()
+
+def get() -> 'int':
+    pass
+
+y = get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(7, 18));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericForwardRef() {
+            const string code = @"
+from typing import List
+
+class X: ...
+
+class Box():
+    def get(self) -> List['X']:
+        return self.v
+
+boxedint = Box()
+x = boxedint.get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(11, 18));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> List[X]");
         }
     }
 }
