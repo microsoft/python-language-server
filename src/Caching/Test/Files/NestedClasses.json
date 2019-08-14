@@ -80,7 +80,7 @@
       "Id": 812,
       "Name": "c",
       "IndexSpan": {
-        "Start": 323,
+        "Start": 333,
         "Length": 1
       }
     }
@@ -181,7 +181,7 @@
           "Id": 935009768,
           "Name": "methodB2",
           "IndexSpan": {
-            "Start": 282,
+            "Start": 287,
             "Length": 8
           }
         }
@@ -281,6 +281,7 @@
       }
     }
   ],
+  "TypeVars": [],
   "NewLines": [
     {
       "EndIndex": 2,
@@ -351,31 +352,31 @@
       "Kind": 3
     },
     {
-      "EndIndex": 272,
+      "EndIndex": 277,
       "Kind": 3
     },
     {
-      "EndIndex": 274,
+      "EndIndex": 279,
       "Kind": 3
     },
     {
-      "EndIndex": 299,
+      "EndIndex": 304,
       "Kind": 3
     },
     {
-      "EndIndex": 321,
+      "EndIndex": 331,
       "Kind": 3
     },
     {
-      "EndIndex": 323,
+      "EndIndex": 333,
       "Kind": 3
     },
     {
-      "EndIndex": 343,
+      "EndIndex": 353,
       "Kind": 3
     }
   ],
-  "FileSize": 343,
+  "FileSize": 353,
   "Id": -2131035837,
   "Name": "module",
   "IndexSpan": null
