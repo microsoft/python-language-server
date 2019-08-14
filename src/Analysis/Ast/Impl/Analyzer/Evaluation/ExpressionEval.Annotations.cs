@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return ann.GetValue(new TypeAnnotationConverter(this, expr, options));
         }
 
-        public Expression TryCreateExpression(string expression) {
+        private Expression TryCreateExpression(string expression) {
             using (var sr = new StringReader($"{expression}")) {
                 var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, ParserOptions.Default);
                 var ast = parser.ParseFile();
