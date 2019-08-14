@@ -88,8 +88,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
-            Id = Name.GetStableHash();
             Name = cls.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : cls.Name;
+            Id = Name.GetStableHash();
             QualifiedName = cls.QualifiedName;
             IndexSpan = cls.Location.IndexSpan.ToModel();
 
