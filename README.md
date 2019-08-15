@@ -24,14 +24,21 @@ The following diagnostics are supported:
 
 | Code | Description |
 | - | - |
+| `inherit-non-class` | Attempted to inherit something that is not a class. |
 | `too-many-function-arguments` | Too many arguments have been provided to a function call. |
 | `too-many-positional-arguments-before-star` | Too many arguments have been provided before a starred argument. |
-| `positional-argument-after-keyword` | A positional argument has been provided after a keyword argument. |
-| `unknown-parameter-name` | The keyword argument name provided is unknown. |
 | `parameter-already-specified` | A argument with this name has already been specified. |
 | `parameter-missing` | A required positional argument is missing. |
+| `positional-argument-after-keyword` | A positional argument has been provided after a keyword argument. |
+| `return-in-init` | Encountered an explicit return in `__init__` function. |
+| `typing-generic-arguments` | An error occurred while constructing `Generic`. |
+| `typing-typevar-arguments` | An error occurred while constructing `TypeVar`. |
+| `typing-newtype-arguments` | An error occurred while constructing `NewType`. |
+| `unknown-parameter-name` | The keyword argument name provided is unknown. |
 | `unresolved-import` | An import cannot be resolved, and may be missing. |
 | `undefined-variable` | A variable has used that has not yet been defined. |
+| `variable-not-defined-globally` | A variable is not defined in the global scope. |
+| `variable-not-defined-nonlocal` | A variable is not defined in non-local scopes. |
 
 [A full list can be seen in the source code.](src/Analysis/Ast/Impl/Diagnostics/ErrorCodes.cs)
 
@@ -60,4 +67,12 @@ An example of a user configuration which sets these options:
     "python.analysis.information": ["unresolved-import"],
     "python.analysis.disabled": ["too-many-function-arguments", "parameter-missing"],
 }
+```
+
+Linting can also be controlled on an invidual line basis with a generalized `#noqa`. Lines with `#noqa` will have their diagnostic output suppressed.
+
+An example usage:
+
+```python
+from python import language_server  # noqa will suppress the linting message for this line
 ```
