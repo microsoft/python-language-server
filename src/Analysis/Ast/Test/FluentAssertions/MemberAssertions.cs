@@ -138,6 +138,17 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
                 subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
 
+                if(subjectMemberType is IPythonClassType subjectClass) {
+                    var otherClass = otherMemberType as IPythonClassType;
+                    otherClass.Should().NotBeNull();
+                    subjectClass.Bases.Count.Should().Be(otherClass.Bases.Count);
+                    foreach (var subjectBase in subjectClass.Bases) {
+                        var otherBase = otherClass.Bases.FirstOrDefault(b => b.Name == subjectBase.Name);
+                        otherBase.Should().NotBeNull();
+                        subjectBase.Should().HaveSameMembersAs(otherBase);
+                    }
+                } 
+
                 if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
                     otherMemberType.Documentation.Should().BeNullOrEmpty();
                 } else {

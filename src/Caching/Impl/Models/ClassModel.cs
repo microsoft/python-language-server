@@ -33,11 +33,20 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class ClassModel : MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }
+
         public FunctionModel[] Methods { get; set; }
         public PropertyModel[] Properties { get; set; }
         public VariableModel[] Fields { get; set; }
-        public string[] GenericParameters { get; set; }
         public ClassModel[] Classes { get; set; }
+
+        /// <summary>
+        /// Parameters of the Generic[...] base class, if any.
+        /// </summary>
+        public string[] GenericBaseParameters { get; set; }
+        /// <summary>
+        /// Values assigned to the generic parameters, if any.
+        /// </summary>
+        public GenericParameterValueModel[] GenericParameterValues { get; set; }
 
         [NonSerialized]
         private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
@@ -104,44 +113,35 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Classes = innerClasses.ToArray();
 
             if (cls.IsGeneric) {
+                // Only check immediate bases, i.e. when class itself has Generic[T] base.
                 var gcp = cls.Bases.OfType<IGenericClassBase>().FirstOrDefault();
-                if (gcp != null) {
-                    GenericParameters = gcp.TypeParameters.Select(p => p.Name).ToArray();
-                } else {
-                    Debug.Fail("Generic class does not have Generic[] base.");
-                }
+                GenericBaseParameters = gcp?.TypeParameters.Select(p => p.Name).ToArray();
             }
             // If class is generic, we must save its generic base definition
             // so on restore we'll be able to re-create the class as generic.
-            GenericParameters = GenericParameters ?? Array.Empty<string>();
+            GenericBaseParameters = GenericBaseParameters ?? Array.Empty<string>();
+
+            GenericParameterValues = cls.GenericParameters
+                .Select(p => new GenericParameterValueModel { Name = p.Key.Name, Type = p.Value.GetPersistentQualifiedName() })
+                .ToArray();
         }
 
         protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
             var cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
-            // In Python 3 exclude object since type creation will add it automatically.
-            var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
-            var bases = Bases.Select(b => is3x && b == "object" ? null : mf.ConstructType(b)).ExcludeDefault().ToArray();
-
-            if (GenericParameters.Length > 0) {
-                // Generic class. Need to reconstruct generic base so code can then
-                // create specific types off the generic class.
-                var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
-                if (genericBase != null) {
-                    var typeVars = GenericParameters.Select(n => mf.Module.GlobalScope.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
-                    Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
-                    if (typeVars.Length > 0) {
-                        var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));
-                        if (genericWithParameters != null) {
-                            bases = bases.Except(Enumerable.Repeat(genericBase, 1)).Concat(Enumerable.Repeat(genericWithParameters, 1)).ToArray();
-                        }
-                    }
-                } else {
-                    Debug.Fail("Generic class does not have generic base.");
-                }
-            }
+            var bases = CreateBases(mf);
 
             cls.SetBases(bases);
             cls.SetDocumentation(Documentation);
+
+            if (GenericParameterValues.Length > 0) {
+                cls.StoreGenericParameters(cls,
+                    cls.GenericParameters.Keys.ToArray(),
+                    GenericParameterValues.ToDictionary(
+                        k => cls.GenericParameters.Keys.First(x => x.Name == k.Name), 
+                        v => mf.ConstructType(v.Type)
+                    )
+                );
+            }
 
             foreach (var f in Methods) {
                 var m = f.Construct(mf, cls);
@@ -164,6 +164,30 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
 
             return cls;
+        }
+
+        private IPythonType[] CreateBases(ModuleFactory mf) {
+            var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
+            var bases = Bases.Select(b => is3x && b == "object" ? null : mf.ConstructType(b)).ExcludeDefault().ToArray();
+
+            if (GenericBaseParameters.Length > 0) {
+                // Generic class. Need to reconstruct generic base so code can then
+                // create specific types off the generic class. 
+                var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
+                if (genericBase != null) {
+                    var typeVars = GenericBaseParameters.Select(n => mf.Module.GlobalScope.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
+                    Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
+                    if (typeVars.Length > 0) {
+                        var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));
+                        if (genericWithParameters != null) {
+                            bases = bases.Except(Enumerable.Repeat(genericBase, 1)).Concat(Enumerable.Repeat(genericWithParameters, 1)).ToArray();
+                        }
+                    }
+                } else {
+                    Debug.Fail("Generic class does not have generic base.");
+                }
+            }
+            return bases;
         }
 
         protected override IEnumerable<MemberModel> GetMemberModels()

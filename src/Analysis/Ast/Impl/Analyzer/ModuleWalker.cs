@@ -254,6 +254,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 // If types are the classes, take class from the stub, then add missing members.
                 // Otherwise, replace type from one from the stub.
                 switch (sourceType) {
+                    case null:
+                        // Nothing in sources, but there is type in the stub. Declare it.
+                        if (v.Source == VariableSource.Declaration || v.Source == VariableSource.Generic) {
+                            Eval.DeclareVariable(v.Name, v.Value, v.Source);
+                        }
+                        break;
+
                     case PythonClassType sourceClass when Module.Equals(sourceClass.DeclaringModule):
                         // Transfer documentation first so we get class documentation
                         // that came from class definition win over one that may
@@ -329,7 +336,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private static void TransferDocumentationAndLocation(IPythonType s, IPythonType d) {
-            if (s.IsUnknown() || d.IsBuiltin || s.IsBuiltin) {
+            if (s.IsUnknown() || s.IsBuiltin || d == null || d.IsBuiltin) {
                 return; // Do not transfer location of unknowns or builtins
             }
             // Documentation and location are always get transferred from module type
