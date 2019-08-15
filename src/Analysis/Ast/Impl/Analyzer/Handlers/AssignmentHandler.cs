@@ -58,16 +58,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             foreach (var ne in node.Left.OfType<NameExpression>()) {
+                IScope scope;
                 if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
-                    Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
+                    Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Nonlocal);
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
+                    continue;
+                }
+                if (Eval.CurrentScope.Globals[ne.Name] != null) {
+                    Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Global);
                     scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
                     continue;
                 }
 
-                if (Eval.CurrentScope.Globals[ne.Name] != null) {
-                    Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
-                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
-                    continue;
+                var m = Eval.LookupNameInScopes(ne.Name, out scope);
+                if(m?.MemberType == PythonMemberType.Class) {
+                    // Ignore assignments to classes: enum.py does Enum = None
+                    // which prevents persistence from restoring proper type from enum:Enum.
+                    continue; 
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
@@ -97,7 +104,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var cls = m.GetPythonType<IPythonClassType>();
                 if (cls != null) {
                     using (Eval.OpenScope(Eval.Module, cls.ClassDefinition, out _)) {
-                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Eval.GetLocationOfName(mex), true);
+                        Eval.DeclareVariable(mex.Name, value, VariableSource.Declaration, Eval.GetLocationOfName(mex));
                     }
                 }
             }

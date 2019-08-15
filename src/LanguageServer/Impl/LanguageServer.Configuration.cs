@@ -80,6 +80,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
             optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", false);
             optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
+            optionsProvider.Options.AnalysisCachingLevel = GetAnalysisCachingLevel(analysis);
         }
 
         internal static void HandleLintingOnOff(IServiceContainer services, bool linterEnabled) {
@@ -99,6 +100,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
                 ds.Replace(m.Uri, entries, DiagnosticSource.Linter);
             }
+        }
+
+        private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
+            var s = GetSetting(analysisKey, "cachingLevel", "None");
+            if (s.EqualsIgnoreCase("System")) {
+                return AnalysisCachingLevel.System;
+            }
+            return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
         }
     }
 }

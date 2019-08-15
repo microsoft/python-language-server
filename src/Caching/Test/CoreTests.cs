@@ -59,7 +59,7 @@ def func():
 c = C()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
@@ -106,7 +106,7 @@ else:
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveParameters(is3x ? new[] { "a", "b", "c" } : new[] { "a" });
 
-            var model = ModuleModel.FromAnalysis(analysis, Services);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
             var json = ToJson(model);
             Baseline.CompareToFile(GetBaselineFileNameWithSuffix(is3x ? "3" : "2"), json);
         }

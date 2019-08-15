@@ -103,6 +103,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["ValuesView"] = new SpecializedGenericType("ValuesView", CreateValuesViewType, this);
             _members["ItemsView"] = new SpecializedGenericType("ItemsView", CreateItemsViewType, this);
 
+            _members["AbstractSet"] = new SpecializedGenericType("AbstractSet",
+                typeArgs => CreateListType("AbstractSet", BuiltinTypeId.Set, typeArgs, true), this);
             _members["Set"] = new SpecializedGenericType("Set",
                 typeArgs => CreateListType("Set", BuiltinTypeId.Set, typeArgs, true), this);
             _members["MutableSet"] = new SpecializedGenericType("MutableSet",

@@ -64,13 +64,12 @@ namespace Microsoft.Python.Analysis.Types {
 
         #region IPythonType
 
-        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : BaseName;
-
         public virtual string QualifiedName
             => DeclaringModule.ModuleType == ModuleType.Builtins
                        ? TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : Name
                        : this.GetQualifiedName();
 
+        public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : BaseName;
         public virtual string Documentation { get; private set; }
         public virtual BuiltinTypeId TypeId => _typeId;
         public string BaseName { get; }

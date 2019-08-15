@@ -303,6 +303,7 @@ namespace Microsoft.Python.Core {
             return string.Join(lineEnding, s.SplitLines());
         }
 
+        [DebuggerStepThrough]
         public static int GetStableHash(this string s) {
             unchecked {
                 var hash = 23;

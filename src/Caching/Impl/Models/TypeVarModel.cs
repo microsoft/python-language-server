@@ -14,11 +14,29 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
+using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [DebuggerDisplay("t:{Name}")]
-    internal sealed class TypeVarModel {
-        public string Name { get; set; }
+    [DebuggerDisplay("TypeVar:{Name}")]
+    internal sealed class TypeVarModel: MemberModel {
         public string[] Constraints { get; set; }
+        public string Bound { get; set; }
+        public string Covariant { get; set; }
+        public string Contravariant { get; set; }
+
+        public static TypeVarModel FromGeneric(IVariable v) {
+            var g = (IGenericTypeParameter)v.Value;
+            return new TypeVarModel {
+                Id = g.Name.GetStableHash(),
+                Name = g.Name,
+                Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
+                Bound = g.Bound.GetPersistentQualifiedName(),
+                Covariant = g.Covariant.GetPersistentQualifiedName(),
+                Contravariant = g.Contravariant.GetPersistentQualifiedName()
+            };
+        }
     }
 }

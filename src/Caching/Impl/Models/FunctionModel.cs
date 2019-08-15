@@ -18,7 +18,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {

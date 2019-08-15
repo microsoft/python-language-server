@@ -52,15 +52,15 @@ class B:
             return False
         
     def methodB1(self):
-        return C()
+        return self.C()
 
     def methodB2(self):
-        return C().y
+        return self.C().y
 
 c = B().methodB1()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }

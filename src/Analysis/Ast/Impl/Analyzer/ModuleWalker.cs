@@ -255,7 +255,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 switch (sourceType) {
                     case null:
                         // Nothing in sources, but there is type in the stub. Declare it.
-                        if (v.Source == VariableSource.Declaration) {
+                        if (v.Source == VariableSource.Declaration || v.Source == VariableSource.Generic) {
                             Eval.DeclareVariable(v.Name, v.Value, v.Source);
                         }
                         break;
@@ -345,6 +345,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Consider stub of threading that replaces def RLock(): by class RLock().
             // Similarly, in _json, make_scanner function is replaced by a class.
             if (sourceType.MemberType == PythonMemberType.Function && stubType.MemberType == PythonMemberType.Class) {
+                return true;
+            }
+            // Random replaces method (variable) by a function.
+            if (sourceType.MemberType == PythonMemberType.Method && stubType.MemberType == PythonMemberType.Function) {
                 return true;
             }
             return sourceType.MemberType == stubType.MemberType;

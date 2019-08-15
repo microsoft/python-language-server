@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public async Task Builtins() {
             var analysis = await GetAnalysisAsync(string.Empty);
             var builtins = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
-            var model = ModuleModel.FromAnalysis(builtins.Analysis, Services);
+            var model = ModuleModel.FromAnalysis(builtins.Analysis, Services, AnalysisCachingLevel.Library);
 
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
@@ -52,24 +52,223 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             dbModule.Should().HaveSameMembersAs(builtins);
         }
 
+        [TestMethod, Priority(0)]
+        public Task Ast() => TestModule("ast");
 
         [TestMethod, Priority(0)]
-        public Task Sys() => TestModule("sys");
+        public Task Asyncio() => TestModule("asyncio");
+
+        [TestMethod, Priority(0)]
+        public Task Base64() => TestModule("base64");
+
+        [TestMethod, Priority(0)]
+        public Task Bisect() => TestModule("bisect");
+
+        [TestMethod, Priority(0)]
+        public Task Calendar() => TestModule("calendar");
+
+        [TestMethod, Priority(0)]
+        public Task Collections() => TestModule("collections");
+
+        [TestMethod, Priority(0)]
+        public Task Concurrent() => TestModule("concurrent");
+
+        [TestMethod, Priority(0)]
+        public Task Crypt() => TestModule("crypt");
+
+        [TestMethod, Priority(0)]
+        [Ignore("_DRMapping type issue. Consider merge of module to stub so OrderedDict resolves to generic from the collections stub.")]
+        public Task Csv() => TestModule("csv");
+
+        [TestMethod, Priority(0)]
+        public Task CTypes() => TestModule("ctypes");
+
+        [TestMethod, Priority(0)]
+        public Task Curses() => TestModule("curses");
+
+        [TestMethod, Priority(0)]
+        public Task Dataclasses() => TestModule("dataclasses");
+
+        [TestMethod, Priority(0)]
+        public Task Datetime() => TestModule("datetime");
+
+        [TestMethod, Priority(0)]
+        public Task Dbm() => TestModule("dbm");
+
+        [TestMethod, Priority(0)]
+        public Task Distutils() => TestModule("distutils");
+
+        [TestMethod, Priority(0)]
+        public Task Email() => TestModule("email");
+
+        [TestMethod, Priority(0)]
+        public Task Encodings() => TestModule("encodings");
+
+        [TestMethod, Priority(0)]
+        public Task Enum() => TestModule("enum");
+
+        [TestMethod, Priority(0)]
+        public Task Filecmp() => TestModule("filecmp");
+
+        [TestMethod, Priority(0)]
+        public Task Fileinput() => TestModule("fileinput");
+
+        [TestMethod, Priority(0)]
+        public Task Fractions() => TestModule("fractions");
+
+        [TestMethod, Priority(0)]
+        public Task Ftplib() => TestModule("ftplib");
+
+        [TestMethod, Priority(0)]
+        public Task Functools() => TestModule("functools");
+
+        [TestMethod, Priority(0)]
+        public Task Genericpath() => TestModule("genericpath");
+
+        [TestMethod, Priority(0)]
+        public Task Glob() => TestModule("glob");
+
+        [TestMethod, Priority(0)]
+        public Task Gzip() => TestModule("gzip");
+
+        [TestMethod, Priority(0)]
+        public Task Hashlib() => TestModule("hashlib");
+
+        [TestMethod, Priority(0)]
+        public Task Heapq() => TestModule("heapq");
+
+        [TestMethod, Priority(0)]
+        public Task Html() => TestModule("html");
+
+        [TestMethod, Priority(0)]
+        public Task Http() => TestModule("http");
+
+        [TestMethod, Priority(0)]
+        public Task Importlib() => TestModule("importlib");
+
+        [TestMethod, Priority(0)]
+        public Task Imaplib() => TestModule("imaplib");
+
+        [TestMethod, Priority(0)]
+        public Task Imghdr() => TestModule("imghdr");
+
+        [TestMethod, Priority(0)]
+        public Task Inspect() => TestModule("inspect");
 
         [TestMethod, Priority(0)]
         public Task Io() => TestModule("io");
 
         [TestMethod, Priority(0)]
-        public Task Re() => TestModule("re");
-
-        [TestMethod, Priority(0)]
-        public Task Os() => TestModule("os");
+        public Task Json() => TestModule("json");
 
         [TestMethod, Priority(0)]
         public Task Logging() => TestModule("logging");
 
         [TestMethod, Priority(0)]
+        public Task Lzma() => TestModule("lzma");
+
+        [TestMethod, Priority(0)]
+        public Task Mailbox() => TestModule("mailbox");
+
+        [TestMethod, Priority(0)]
+        public Task Multiprocessing() => TestModule("multiprocessing");
+
+        [TestMethod, Priority(0)]
+        public Task Os() => TestModule("os");
+
+        [TestMethod, Priority(0)]
+        public Task Pickle() => TestModule("pickle");
+        
+        [TestMethod, Priority(0)]
+        public Task Pipes() => TestModule("pipes");
+
+        [TestMethod, Priority(0)]
+        public Task Pkgutil() => TestModule("pkgutil");
+
+        [TestMethod, Priority(0)]
+        [Ignore("Specialize Enum. See PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)")]
+        public Task Plistlib() => TestModule("plistlib");
+
+        [TestMethod, Priority(0)]
+        public Task Pstats() => TestModule("pstats");
+
+        [TestMethod, Priority(0)]
+        public Task Pydoc() => TestModule("pydoc");
+
+        [TestMethod, Priority(0)]
+        public Task Queue() => TestModule("queue");
+
+        [TestMethod, Priority(0)]
+        public Task Random() => TestModule("random");
+
+        [TestMethod, Priority(0)]
+        public Task Re() => TestModule("re");
+
+        [TestMethod, Priority(0)]
+        public Task Reprlib() => TestModule("reprlib");
+
+        [TestMethod, Priority(0)]
+        public Task Signal() => TestModule("signal");
+
+        [TestMethod, Priority(0)]
+        public Task Site() => TestModule("site");
+
+        [TestMethod, Priority(0)]
+        public Task Socket() => TestModule("socket");
+
+        [TestMethod, Priority(0)]
+        public Task Sqlite3() => TestModule("sqlite3");
+
+        [TestMethod, Priority(0)]
+        public Task Statistics() => TestModule("statistics");
+
+        [TestMethod, Priority(0)]
+        public Task String() => TestModule("string");
+
+        [TestMethod, Priority(0)]
+        public Task Ssl() => TestModule("ssl");
+
+        [TestMethod, Priority(0)]
+        public Task Sys() => TestModule("sys");
+
+        [TestMethod, Priority(0)]
+        public Task Time() => TestModule("time");
+
+        [TestMethod, Priority(0)]
+        public Task Threading() => TestModule("threading");
+
+        [TestMethod, Priority(0)]
+        public Task Tkinter() => TestModule("tkinter");
+
+        [TestMethod, Priority(0)]
+        public Task Token() => TestModule("token");
+
+        [TestMethod, Priority(0)]
+        public Task Trace() => TestModule("trace");
+
+        [TestMethod, Priority(0)]
         public Task Types() => TestModule("types");
+
+        [TestMethod, Priority(0)]
+        public Task Unittest() => TestModule("unittest");
+
+        [TestMethod, Priority(0)]
+        public Task Urllib() => TestModule("urllib");
+
+        [TestMethod, Priority(0)]
+        public Task Uuid() => TestModule("uuid");
+
+        [TestMethod, Priority(0)]
+        public Task Weakref() => TestModule("weakref");
+
+        [TestMethod, Priority(0)]
+        public Task Xml() => TestModule("xml");
+
+        [TestMethod, Priority(0)]
+        public Task XmlRpc() => TestModule("xmlrpc");
+
+        [TestMethod, Priority(0)]
+        public Task Zipfile() => TestModule("zipfile");
 
         [TestMethod, Priority(0)]
         public async Task Requests() {
@@ -85,7 +284,7 @@ x = requests.get('microsoft.com')
             }
 
             var rq = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("requests");
-            var model = ModuleModel.FromAnalysis(rq.Analysis, Services);
+            var model = ModuleModel.FromAnalysis(rq.Analysis, Services, AnalysisCachingLevel.Library);
 
             var u = model.UniqueId;
             u.Should().Contain("(").And.EndWith(")");
@@ -99,7 +298,7 @@ x = requests.get('microsoft.com')
         private async Task TestModule(string name) {
             var analysis = await GetAnalysisAsync($"import {name}");
             var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
-            var model = ModuleModel.FromAnalysis(m.Analysis, Services);
+            var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingLevel.Library);
 
             CompareBaselineAndRestore(model, m);
         }

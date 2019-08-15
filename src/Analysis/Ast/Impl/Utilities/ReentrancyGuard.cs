@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Utilities {
 
         public void Pop() {
             _stack.Value.Pop();
-            if(_stack.Value.Count == 0) {
+            if (_stack.Value.Count == 0) {
                 _stack.Value = null;
             }
         }

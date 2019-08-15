@@ -37,6 +37,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
         public FunctionFactory FunctionFactory { get; }
         public PropertyFactory PropertyFactory { get; }
         public VariableFactory VariableFactory { get; }
+        public TypeVarFactory TypeVarFactory { get; }
         public Location DefaultLocation { get; }
 
         public ModuleFactory(ModuleModel model, IPythonModule module) {
@@ -44,6 +45,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             ClassFactory = new ClassFactory(model.Classes, this);
             FunctionFactory = new FunctionFactory(model.Functions, this);
             VariableFactory = new VariableFactory(model.Variables, this);
+            TypeVarFactory = new TypeVarFactory(model.TypeVars, this);
             PropertyFactory = new PropertyFactory(this);
             DefaultLocation = new Location(Module);
         }
@@ -52,6 +54,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             ClassFactory.Dispose();
             FunctionFactory.Dispose();
             VariableFactory.Dispose();
+            TypeVarFactory.Dispose();
         }
 
         public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();
@@ -194,12 +197,14 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     var argumentString = memberName.Substring(openBracket + 1, closeBracket - openBracket - 1);
                     // Extract type names from argument string. Note that types themselves
                     // can have arguments: Union[int, Union[int, Union[str, bool]], ...].
-                    var arguments = TypeNames.GetTypeNames(argumentString, ',');
-                    foreach (var a in arguments) {
-                        var t = ConstructType(a);
-                        // TODO: better handle generics type definitions from TypeVar.
-                        // https://github.com/microsoft/python-language-server/issues/1214
-                        t = t ?? new GenericTypeParameter(a, Module, Array.Empty<IPythonType>(), string.Empty, DefaultLocation.IndexSpan);
+                    var qualifiedNames = TypeNames.GetTypeNames(argumentString, ',');
+                    foreach (var qn in qualifiedNames) {
+                        var t = ConstructType(qn);
+                        if (t == null) {
+                            TypeNames.DeconstructQualifiedName(qn, out var parts);
+                            typeName = string.Join(".", parts.MemberNames);
+                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), null, null, null, DefaultLocation);
+                        }
                         typeArgs.Add(t);
                     }
                     typeName = memberName.Substring(0, openBracket);
