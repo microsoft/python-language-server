@@ -638,9 +638,7 @@ def py_repro():
 
         [TestMethod, Priority(0)]
         public async Task SpecNotUndefined() {
-            const string code = @"
-__spec__
-";
+            const string code = "__spec__";
             var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
