@@ -138,16 +138,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
         /// <summary>
         /// Given an index argument, will try and resolve it to a forward reference, e.g
+        /// Forward references are types declared in quotes, e.g 'int' is equivalent to type int
         /// 
         /// List['str'] => List[str]
+        /// 'A[int]' => A[int]
         /// </summary>
         private IMember GetValueFromForwardRef(IMember index) {
-            index.TryGetConstant(out string memberName);
-            if (string.IsNullOrEmpty(memberName)) {
+            index.TryGetConstant(out string forwardRefStr);
+            if (string.IsNullOrEmpty(forwardRefStr)) {
                 return null;
             }
 
-            return LookupNameInScopes(memberName, out var _, out var _, LookupOptions.Normal);
+            var forwardRefExpr = TryCreateExpression(forwardRefStr);
+            return GetValueFromExpression(forwardRefExpr);
         }
 
         private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
