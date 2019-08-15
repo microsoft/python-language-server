@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using FluentAssertions;
@@ -140,6 +141,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
                     otherMemberType.Documentation.Should().BeNullOrEmpty();
                 } else {
+                    Debug.Assert(subjectMemberType.Documentation == otherMemberType.Documentation);
                     subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
                 }
 

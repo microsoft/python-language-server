@@ -140,5 +140,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         }
 
         protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
+        protected override IEnumerable<MemberModel> GetMemberModels()
+            => TypeVars.Concat<MemberModel>(Classes).Concat(Functions).Concat(Variables);
     }
 }

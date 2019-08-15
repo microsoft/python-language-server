@@ -22,7 +22,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("{Name}")]
+    [DebuggerDisplay("{" + nameof(Name) + "}")]
     internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
         private readonly object _lock = new object();
         private Dictionary<string, IMember> _members;

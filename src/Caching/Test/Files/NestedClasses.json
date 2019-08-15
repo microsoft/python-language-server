@@ -7,6 +7,7 @@
       "Value": "t:bool",
       "Id": -529376420,
       "Name": "__debug__",
+      "QualifiedName": "__debug__",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -16,6 +17,7 @@
       "Value": "t:str",
       "Id": -1636005055,
       "Name": "__doc__",
+      "QualifiedName": "__doc__",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -25,6 +27,7 @@
       "Value": "t:str",
       "Id": 875442003,
       "Name": "__file__",
+      "QualifiedName": "__file__",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -34,6 +37,7 @@
       "Value": "t:str",
       "Id": 1097116834,
       "Name": "__name__",
+      "QualifiedName": "__name__",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -43,6 +47,7 @@
       "Value": "t:str",
       "Id": 75395663,
       "Name": "__package__",
+      "QualifiedName": "__package__",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -52,6 +57,7 @@
       "Value": "t:list",
       "Id": 1154586556,
       "Name": "__path__",
+      "QualifiedName": "__path__",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -61,6 +67,7 @@
       "Value": "t:dict",
       "Id": 817929997,
       "Name": "__dict__",
+      "QualifiedName": "__dict__",
       "IndexSpan": {
         "Start": 0,
         "Length": 0
@@ -70,6 +77,7 @@
       "Value": "i:str",
       "Id": 833,
       "Name": "x",
+      "QualifiedName": "x",
       "IndexSpan": {
         "Start": 2,
         "Length": 1
@@ -79,6 +87,7 @@
       "Value": "i:module:C",
       "Id": 812,
       "Name": "c",
+      "QualifiedName": "c",
       "IndexSpan": {
         "Start": 333,
         "Length": 1
@@ -93,7 +102,6 @@
       ],
       "Methods": [
         {
-          "Documentation": null,
           "Overloads": [
             {
               "Parameters": [
@@ -107,11 +115,13 @@
               "ReturnType": "i:bool"
             }
           ],
+          "Documentation": null,
           "Attributes": 0,
           "Classes": [],
           "Functions": [],
           "Id": -1909501047,
           "Name": "methodA",
+          "QualifiedName": "module:A.methodA",
           "IndexSpan": {
             "Start": 33,
             "Length": 7
@@ -121,9 +131,10 @@
       "Properties": [],
       "Fields": [],
       "GenericParameters": null,
-      "InnerClasses": [],
+      "Classes": [],
       "Id": 778,
       "Name": "A",
+      "QualifiedName": "module:A",
       "IndexSpan": {
         "Start": 21,
         "Length": 1
@@ -136,7 +147,6 @@
       ],
       "Methods": [
         {
-          "Documentation": null,
           "Overloads": [
             {
               "Parameters": [
@@ -150,18 +160,19 @@
               "ReturnType": "i:module:C"
             }
           ],
+          "Documentation": null,
           "Attributes": 0,
           "Classes": [],
           "Functions": [],
           "Id": 935009767,
           "Name": "methodB1",
+          "QualifiedName": "module:B.methodB1",
           "IndexSpan": {
             "Start": 235,
             "Length": 8
           }
         },
         {
-          "Documentation": null,
           "Overloads": [
             {
               "Parameters": [
@@ -175,11 +186,13 @@
               "ReturnType": "i:int"
             }
           ],
+          "Documentation": null,
           "Attributes": 0,
           "Classes": [],
           "Functions": [],
           "Id": 935009768,
           "Name": "methodB2",
+          "QualifiedName": "module:B.methodB2",
           "IndexSpan": {
             "Start": 287,
             "Length": 8
@@ -192,11 +205,12 @@
           "Value": "i:int",
           "Id": 833,
           "Name": "x",
+          "QualifiedName": "x",
           "IndexSpan": null
         }
       ],
       "GenericParameters": null,
-      "InnerClasses": [
+      "Classes": [
         {
           "Documentation": null,
           "Bases": [
@@ -204,7 +218,6 @@
           ],
           "Methods": [
             {
-              "Documentation": null,
               "Overloads": [
                 {
                   "Parameters": [
@@ -218,18 +231,19 @@
                   "ReturnType": null
                 }
               ],
+              "Documentation": null,
               "Attributes": 0,
               "Classes": [],
               "Functions": [],
               "Id": 965872103,
               "Name": "__init__",
+              "QualifiedName": "module:B.C.__init__",
               "IndexSpan": {
                 "Start": 122,
                 "Length": 8
               }
             },
             {
-              "Documentation": null,
               "Overloads": [
                 {
                   "Parameters": [
@@ -243,11 +257,13 @@
                   "ReturnType": "i:bool"
                 }
               ],
+              "Documentation": null,
               "Attributes": 0,
               "Classes": [],
               "Functions": [],
               "Id": -1909501045,
               "Name": "methodC",
+              "QualifiedName": "module:B.C.methodC",
               "IndexSpan": {
                 "Start": 175,
                 "Length": 7
@@ -260,13 +276,15 @@
               "Value": "i:int",
               "Id": 834,
               "Name": "y",
+              "QualifiedName": "y",
               "IndexSpan": null
             }
           ],
           "GenericParameters": null,
-          "InnerClasses": [],
+          "Classes": [],
           "Id": 780,
           "Name": "C",
+          "QualifiedName": "module:C",
           "IndexSpan": {
             "Start": 106,
             "Length": 1
@@ -275,6 +293,7 @@
       ],
       "Id": 779,
       "Name": "B",
+      "QualifiedName": "module:B",
       "IndexSpan": {
         "Start": 78,
         "Length": 1
@@ -379,5 +398,6 @@
   "FileSize": 353,
   "Id": -2131035837,
   "Name": "module",
+  "QualifiedName": null,
   "IndexSpan": null
 }

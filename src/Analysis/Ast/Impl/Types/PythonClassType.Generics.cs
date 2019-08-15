@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// B[int] defines the type parameter T to be of type int and type parameter U to be type str. 
         /// B[int] inherits from A[int, str] 
         /// </summary>
-        public IPythonType CreateSpecificType(IArgumentSet args) {
+        public virtual IPythonType CreateSpecificType(IArgumentSet args) {
             lock (_genericParameterLock) {
                 var genericTypeParameters = GetTypeParameters();
                 var newBases = new List<IPythonType>();

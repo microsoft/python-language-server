@@ -17,8 +17,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
-using Microsoft.Python.Core.Disposables;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
@@ -27,18 +25,25 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// generic type parameters from TypeVar. <see cref="IGenericTypeParameter"/>
     /// </summary>
     internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
-        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule)
-        : base("Generic", new Location(declaringModule)) {
-            TypeParameters = typeArgs ?? new List<IGenericTypeParameter>();
+        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonInterpreter interpreter)
+            : base("Generic", new Location(interpreter.ModuleResolution.GetSpecializedModule("typing"))) {
+            TypeParameters = typeArgs ?? Array.Empty<IGenericTypeParameter>();
         }
 
-        public override bool IsGeneric => true;
+        #region IPythonType
+        public override PythonMemberType MemberType => PythonMemberType.Generic;
+        public override string Documentation => Name;
+        #endregion
 
+        #region IPythonClassType
+        public override bool IsGeneric => true;
         public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
-            => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+            => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType);
+        public override IPythonType CreateSpecificType(IArgumentSet args)
+            => new GenericClassParameter(args.Arguments.Select(a => a.Value).OfType<IGenericTypeParameter>().ToArray(), DeclaringModule.Interpreter);
+        #endregion
 
         public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
 
-        public override PythonMemberType MemberType => PythonMemberType.Generic;
     }
 }

@@ -29,7 +29,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("Class {Name}")]
+    [DebuggerDisplay("Class {" + nameof(Name) + "}")]
     internal partial class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
         internal enum ClassDocumentationSource {
             Class,
@@ -61,12 +61,12 @@ namespace Microsoft.Python.Analysis.Types {
             DeclaringType = declaringType;
         }
 
+        #region IPythonType
         /// <summary>
         /// If class has generic type parameters, returns that form, e.g 'A[T1, int, ...]', otherwise returns base, e.g 'A'
         /// </summary>
         public override string Name => _genericName ?? base.Name;
-
-        #region IPythonType
+        public override string QualifiedName => this.GetQualifiedName();
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public IPythonType DeclaringType { get; }
 

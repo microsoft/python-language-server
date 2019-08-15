@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
@@ -26,7 +25,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
     /// Base class for generic types and type declarations.
     /// </summary>
-    internal class SpecializedGenericType : LocatedMember, IGenericType {
+    internal sealed class SpecializedGenericType : LocatedMember, IGenericType {
         internal SpecificTypeConstructor SpecificTypeConstructor { get; }
 
         /// <summary>
@@ -53,15 +52,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             SpecificTypeConstructor specificTypeConstructor,
             IPythonModule declaringModule,
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
-            IReadOnlyList<IGenericTypeParameter> parameters = null
+            IReadOnlyList<IGenericTypeParameter> parameters = null,
+            string documentation = null
             ) : this(name, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
             Parameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            Documentation = documentation ?? name;
         }
 
         private SpecializedGenericType(string name, IPythonModule declaringModule) : base(declaringModule) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
+            Documentation = Name;
         }
 
         public override PythonMemberType MemberType => PythonMemberType.Generic;
@@ -78,7 +80,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
         public BuiltinTypeId TypeId { get; } = BuiltinTypeId.Unknown;
-        public virtual string Documentation => Name;
+        public string Documentation { get; }
         public bool IsBuiltin => false;
         public bool IsAbstract => true;
         public bool IsSpecialized => true;
@@ -96,8 +98,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 : specific.CreateInstance(typeName);
         }
 
-        public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
-        public virtual IMember Index(IPythonInstance instance, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
+        public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
+        public IMember Index(IPythonInstance instance, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
 
         /// <summary>
         /// Creates instance of a type information with the specific

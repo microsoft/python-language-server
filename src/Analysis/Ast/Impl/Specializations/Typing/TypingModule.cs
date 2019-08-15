@@ -344,7 +344,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             if (typeArgs.Count > 0) {
                 var typeDefs = typeArgs.OfType<IGenericTypeParameter>().ToArray();
                 if (typeDefs.Length == typeArgs.Count) {
-                    return new GenericClassParameter(typeDefs, this);
+                    return new GenericClassParameter(typeDefs, Interpreter);
                 } else {
                     // TODO: report argument mismatch
                 }

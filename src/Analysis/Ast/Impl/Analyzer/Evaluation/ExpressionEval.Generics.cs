@@ -102,17 +102,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
                     return UnknownType;
                 }
-
-                // Generic[T1, T2, ...] expression. Create generic base for the class.
-                return new GenericClassParameter(genericTypeArgs, Module);
             }
 
             // For other types just use supplied arguments
-            if (args.Count > 0) {
-                return gt.CreateSpecificType(new ArgumentSet(args, expr, this));
-            }
-
-            return UnknownType;
+            return args.Count > 0 ? gt.CreateSpecificType(new ArgumentSet(args, expr, this)) : UnknownType;
         }
 
         private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {

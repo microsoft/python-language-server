@@ -92,7 +92,16 @@ namespace Microsoft.Python.Analysis.Caching {
             IPythonType declaringType = null;
 
             foreach (var name in memberNames) {
-                var nextModel = currentModel.GetModel(name);
+                // Check if name has type arguments such as Union[int, str]
+                // Note that types can be nested like Union[int, Union[A, B]]
+                var memberName = name;
+                // TODO: handle type args?
+                var typeArgs = GetTypeArguments(memberName, out var typeName);
+                if (!string.IsNullOrEmpty(typeName) && typeName != name) {
+                    memberName = typeName;
+                }
+
+                var nextModel = currentModel.GetModel(memberName);
                 Debug.Assert(nextModel != null);
 
                 m = nextModel.Construct(this, declaringType);
@@ -204,7 +213,7 @@ namespace Microsoft.Python.Analysis.Caching {
                         if (t == null) {
                             TypeNames.DeconstructQualifiedName(qn, out var parts);
                             typeName = string.Join(".", parts.MemberNames);
-                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), null, null, null, DefaultLocation);
+                            t = new GenericTypeParameter(typeName, Array.Empty<IPythonType>(), null, null, null, DefaultLocation);
                         }
                         typeArgs.Add(t);
                     }

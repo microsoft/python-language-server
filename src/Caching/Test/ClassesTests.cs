@@ -64,5 +64,47 @@ c = B().methodB1()
             var json = ToJson(model);
             Baseline.CompareToFile(BaselineFileName, json);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardDeclarations() {
+            const string code = @"
+x = 'str'
+
+class A:
+    def methodA1(self):
+        return B()
+
+    def methodA2(self):
+        return func()
+
+class B:
+    class C:
+        def methodC(self):
+            return func()
+        
+    def methodB1(self):
+        def a():
+            return 1
+        return a
+
+def func():
+    return 1
+
+a = B().methodB1()
+b = A().methodA1()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").Which.Should().HaveType("a");
+            analysis.Should().HaveVariable("b").Which.Should().HaveType("B");
+
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            //var json = ToJson(model);
+            //Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = new PythonDbModule(model, analysis.Document.FilePath, Services)) {
+                dbModule.Should().HaveSameMembersAs(analysis.Document);
+            }
+
+        }
     }
 }

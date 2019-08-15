@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var bound = mf.ConstructType(Bound);
             var covariant = mf.ConstructType(Covariant);
             var contravariant = mf.ConstructType(Contravariant);
-            return new GenericTypeParameter(Name, mf.Module, constraints, bound, covariant, contravariant, mf.DefaultLocation);
+            return new GenericTypeParameter(Name, constraints, bound, covariant, contravariant, mf.DefaultLocation);
         }
     }
 }
