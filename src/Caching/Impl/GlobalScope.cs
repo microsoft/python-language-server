@@ -24,34 +24,38 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class GlobalScope : IGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
+        private ModuleModel _model;
 
         public GlobalScope(ModuleModel model, IPythonModule module) {
+            _model = model;
             Module = module;
             Name = model.Name;
+        }
 
+        public void ReconstructVariables() {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
-
-            var mf = new ModuleFactory(model, module);
-            foreach (var tvm in model.TypeVars) {
+            var mf = new ModuleFactory(_model, Module);
+            foreach (var tvm in _model.TypeVars) {
                 var t = tvm.Construct(mf, null);
                 _scopeVariables.DeclareVariable(tvm.Name, t, VariableSource.Generic, mf.DefaultLocation);
             }
-            foreach (var cm in model.Classes) {
+            foreach (var cm in _model.Classes) {
                 var cls = cm.Construct(mf, null);
                 _scopeVariables.DeclareVariable(cm.Name, cls, VariableSource.Declaration, mf.DefaultLocation);
             }
-            foreach (var fm in model.Functions) {
+            foreach (var fm in _model.Functions) {
                 var ft = fm.Construct(mf, null);
                 _scopeVariables.DeclareVariable(fm.Name, ft, VariableSource.Declaration, mf.DefaultLocation);
             }
-            foreach (var vm in model.Variables) {
+            foreach (var vm in _model.Variables) {
                 var v = (IVariable)vm.Construct(mf, null);
                 _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
             }
 
             // TODO: re-declare __doc__, __name__, etc.
+            _model = null;
         }
 
         #region IScope

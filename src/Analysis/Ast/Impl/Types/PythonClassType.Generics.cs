@@ -101,7 +101,7 @@ namespace Microsoft.Python.Analysis.Types {
                     // Bases can be null when not set
                     var bases = Bases ?? Array.Empty<IPythonType>();
                     // Get declared generic class parameters, i.e. Generic[T1, T2, ...], Optional[Generic[T1, ...]]
-                    var genericClassParameters = bases.OfType<IGenericClassParameter>().ToArray();
+                    var genericClassParameters = bases.OfType<IGenericClassBase>().ToArray();
 
                     // Get list of bases that are generic but not generic class parameters, e.g A[T], B[T] but not Generic[T1, T2]
                     var genericTypeBases = bases.Except(genericClassParameters).OfType<IGenericType>().Where(g => g.IsGeneric).ToArray();
@@ -150,7 +150,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             var bases = Bases ?? Array.Empty<IPythonType>();
             var fromBases = new HashSet<IGenericTypeParameter>();
-            var genericClassParameter = bases.OfType<IGenericClassParameter>().FirstOrDefault();
+            var genericClassParameter = bases.OfType<IGenericClassBase>().FirstOrDefault();
 
             // If Generic[...] is present, ordering of type variables is determined from that
             if (genericClassParameter != null && genericClassParameter.TypeParameters != null) {

@@ -575,6 +575,27 @@ class C(B):
         }
 
         [TestMethod, Priority(0)]
+        public async Task NoDocFromObject() {
+            const string code = @"
+class A(object): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A").Which.Documentation.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDocFromGeneric() {
+            const string code = @"
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+class A(Generic[T]): ...
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveClass("A").Which.Documentation.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GetAttr() {
             const string code = @"
 class A:

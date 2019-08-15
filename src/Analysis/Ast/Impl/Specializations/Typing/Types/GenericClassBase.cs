@@ -20,12 +20,12 @@ using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
-    /// Represents Generic[T1, T2, ...] parameter. When class is instantiated
+    /// Represents Generic[T1, T2, ...] base. When class is instantiated
     /// or methods evaluated, class generic parameters are matched to
     /// generic type parameters from TypeVar. <see cref="IGenericTypeParameter"/>
     /// </summary>
-    internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
-        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonInterpreter interpreter)
+    internal sealed class GenericClassBase : PythonClassType, IGenericClassBase {
+        internal GenericClassBase(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonInterpreter interpreter)
             : base("Generic", new Location(interpreter.ModuleResolution.GetSpecializedModule("typing"))) {
             TypeParameters = typeArgs ?? Array.Empty<IGenericTypeParameter>();
         }
@@ -40,10 +40,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
             => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType);
         public override IPythonType CreateSpecificType(IArgumentSet args)
-            => new GenericClassParameter(args.Arguments.Select(a => a.Value).OfType<IGenericTypeParameter>().ToArray(), DeclaringModule.Interpreter);
+            => new GenericClassBase(args.Arguments.Select(a => a.Value).OfType<IGenericTypeParameter>().ToArray(), DeclaringModule.Interpreter);
         #endregion
 
         public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
-
     }
 }

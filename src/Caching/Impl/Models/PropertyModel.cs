@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             ReturnType = prop.ReturnType.GetPersistentQualifiedName();
         }
 
-        protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) {
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
             var prop = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0);
             prop.SetDocumentation(Documentation);
 

@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Overloads = func.Overloads.Select(FromOverload).ToArray();
         }
 
-        protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) {
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
             var ft = new PythonFunctionType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, Documentation);
 
             // Create inner functions and classes first since function

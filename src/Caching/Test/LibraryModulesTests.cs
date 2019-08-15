@@ -77,7 +77,6 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Crypt() => TestModule("crypt");
 
         [TestMethod, Priority(0)]
-        [Ignore("_DRMapping type issue. Consider merge of module to stub so OrderedDict resolves to generic from the collections stub.")]
         public Task Csv() => TestModule("csv");
 
         [TestMethod, Priority(0)]

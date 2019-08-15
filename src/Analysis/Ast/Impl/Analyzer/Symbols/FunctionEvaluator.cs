@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                             v => v.GetPythonType<IPythonClassType>() == null &&
                                  v.GetPythonType<IPythonFunctionType>() == null)
                         ) {
-                        ((VariableCollection)Eval.CurrentScope.Variables).Clear();
+                            ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
                 }
             }
@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class
                     && !value.IsOfType(BuiltinTypeId.NoneType)) {
 
-                    Eval.ReportDiagnostics(Module.Uri, new Diagnostics.DiagnosticsEntry(
+                    Eval.ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                             Resources.ReturnInInit,
                             node.GetLocation(Eval).Span,
                             ErrorCodes.ReturnInInit,

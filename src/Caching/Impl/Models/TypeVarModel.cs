@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             };
         }
 
-        protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) {
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
             var constraints = Constraints.Select(mf.ConstructType).ToArray();
             var bound = mf.ConstructType(Bound);
             var covariant = mf.ConstructType(Covariant);

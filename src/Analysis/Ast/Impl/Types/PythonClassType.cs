@@ -136,8 +136,9 @@ namespace Microsoft.Python.Analysis.Types {
                     if (string.IsNullOrEmpty(_documentation) && Bases != null) {
                         // If still not found, try bases. 
                         var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
-                            ?.Documentation;
+                        _documentation = Bases
+                            .FirstOrDefault(b => b != o && !(b is IGenericClassBase) && !string.IsNullOrEmpty(b?.Documentation))?
+                            .Documentation;
                         DocumentationSource = ClassDocumentationSource.Base;
                     }
                 }

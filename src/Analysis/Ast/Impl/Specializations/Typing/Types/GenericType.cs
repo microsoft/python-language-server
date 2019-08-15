@@ -47,6 +47,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="typeId">Type id. Used in type comparisons such as when matching
         /// function arguments. For example, Iterator[T] normally has type id of ListIterator.</param>
         /// <param name="parameters">Optional type parameters as declared by TypeVar.</param>
+        /// <param name="documentation">Optional documentation. Defaults to <see cref="name"/>.</param>
         public SpecializedGenericType(
             string name,
             SpecificTypeConstructor specificTypeConstructor,

@@ -246,42 +246,43 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var sourceType = sourceVar?.Value.GetPythonType();
 
                 // If stub says 'Any' but we have better type, keep the current type.
-                if (!IsStubBetterType(sourceType, stubType)) {
+                if (stubType.IsUnknown() || (stubType.DeclaringModule is TypingModule && stubType.Name == "Any")) {
                     continue;
                 }
 
                 // If type does not exist in module, but exists in stub, declare it unless it is an import.
-                // If types are the classes, merge members. Otherwise, replace type from one from the stub.
+                // If types are the classes, take class from the stub, then add missing members.
+                // Otherwise, replace type from one from the stub.
                 switch (sourceType) {
-                    case null:
-                        // Nothing in sources, but there is type in the stub. Declare it.
-                        if (v.Source == VariableSource.Declaration || v.Source == VariableSource.Generic) {
-                            Eval.DeclareVariable(v.Name, v.Value, v.Source);
-                        }
-                        break;
-
-                    case PythonClassType cls when Module.Equals(cls.DeclaringModule):
+                    case PythonClassType sourceClass when Module.Equals(sourceClass.DeclaringModule):
                         // Transfer documentation first so we get class documentation
                         // that came from class definition win over one that may
                         // come from __init__ during the member merge below.
-                        TransferDocumentationAndLocation(sourceType, stubType);
+                        TransferDocumentationAndLocation(sourceClass, stubType);
 
-                        // If class exists and belongs to this module, add or replace
-                        // its members with ones from the stub, preserving documentation.
-                        // Don't augment types that do not come from this module.
-                        // Do not replace __class__ since it has to match class type and we are not
-                        // replacing class type, we are only merging members.
-                        foreach (var name in stubType.GetMemberNames().Except(new[] { "__class__", "__base__", "__bases__", "__mro__", "mro" })) {
+                        // Replace the class entirely since stub members may use generic types
+                        // and the class definition is important. We transfer missing members
+                        // from the original class to the stub.
+                        Eval.DeclareVariable(v.Name, v.Value, v.Source);
+
+                        // Go through source class members and pick those that are
+                        // not present in the stub class.
+                        foreach (var name in sourceClass.GetMemberNames()) {
+                            
+                            var sourceMember = sourceClass.GetMember(name);
+                            if(sourceMember.IsUnknown()) {
+                                continue; // Anything is better than unknowns.
+                            }
+                            var sourceMemberType = sourceMember?.GetPythonType();
+
                             var stubMember = stubType.GetMember(name);
-                            var member = cls.GetMember(name);
-
-                            var memberType = member?.GetPythonType();
                             var stubMemberType = stubMember.GetPythonType();
 
+                            // Don't augment types that do not come from this module.
                             if (sourceType.IsBuiltin || stubType.IsBuiltin) {
-                                // If stub type does not have an immediate member such as __init__() and
+                                // If source type does not have an immediate member such as __init__() and
                                 // rather have it inherited from object, we do not want to use the inherited
-                                // since current class may either have its own of inherits it from the object.
+                                // since stub class may either have its own of inherits it from the object.
                                 continue;
                             }
 
@@ -289,14 +290,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                                 // Leave methods coming from object at the object and don't copy them into the derived class.
                             }
 
-                            if (!IsStubBetterType(memberType, stubMemberType)) {
-                                continue;
-                            }
-
                             // Get documentation from the current type, if any, since stubs
                             // typically do not contain documentation while scraped code does.
-                            TransferDocumentationAndLocation(memberType, stubMemberType);
-                            cls.AddMember(name, stubMember, overwrite: true);
+                            TransferDocumentationAndLocation(sourceMemberType, stubMemberType);
+
+                            // If stub says 'Any' but we have better type, use member from the original class.
+                            if (stubMember != null && !(stubType.DeclaringModule is TypingModule && stubType.Name == "Any")) {
+                                continue; // Stub already have the member, don't replace.
+                            }
+
+                            (stubType as PythonType)?.AddMember(name, stubMember, overwrite: true);
                         }
                         break;
 
@@ -323,35 +326,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         break;
                 }
             }
-        }
-
-        private static bool IsStubBetterType(IPythonType sourceType, IPythonType stubType) {
-            if (stubType.IsUnknown()) {
-                // Do not use worse types than what is in the module.
-                return false;
-            }
-            if (sourceType.IsUnknown()) {
-                return true; // Anything is better than unknowns.
-            }
-            if (sourceType.DeclaringModule.ModuleType == ModuleType.Specialized) {
-                // Types in specialized modules should never be touched.
-                return false;
-            }
-            if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
-                // If stub says 'Any' but we have better type, keep the current type.
-                return false;
-            }
-            // Types should be compatible except it is allowed to replace function by a class.
-            // Consider stub of threading that replaces def RLock(): by class RLock().
-            // Similarly, in _json, make_scanner function is replaced by a class.
-            if (sourceType.MemberType == PythonMemberType.Function && stubType.MemberType == PythonMemberType.Class) {
-                return true;
-            }
-            // Random replaces method (variable) by a function.
-            if (sourceType.MemberType == PythonMemberType.Method && stubType.MemberType == PythonMemberType.Function) {
-                return true;
-            }
-            return sourceType.MemberType == stubType.MemberType;
         }
 
         private static void TransferDocumentationAndLocation(IPythonType s, IPythonType d) {

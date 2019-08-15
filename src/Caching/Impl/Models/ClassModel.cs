@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
@@ -50,7 +51,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var innerClasses = new List<ClassModel>();
 
             // Skip certain members in order to avoid infinite recursion.
-            foreach (var name in cls.GetMemberNames().Except(new[] {"__base__", "__bases__", "__class__", "mro"})) {
+            foreach (var name in cls.GetMemberNames().Except(new[] { "__base__", "__bases__", "__class__", "mro" })) {
                 var m = cls.GetMember(name);
 
                 // Only take members from this class, skip members from bases.
@@ -93,19 +94,52 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             QualifiedName = cls.QualifiedName;
             IndexSpan = cls.Location.IndexSpan.ToModel();
 
-            Documentation = cls.Documentation;
-            Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetPersistentQualifiedName()).ToArray();
+            // Only persist documentation from this class, leave bases or __init__ alone.
+            Documentation = (cls as PythonClassType)?.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ? cls.Documentation : null;
+
+            Bases = cls.Bases.Select(t => t.GetPersistentQualifiedName()).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();
             Classes = innerClasses.ToArray();
+
+            if (cls.IsGeneric) {
+                var gcp = cls.Bases.OfType<IGenericClassBase>().FirstOrDefault();
+                if (gcp != null) {
+                    GenericParameters = gcp.TypeParameters.Select(p => p.Name).ToArray();
+                } else {
+                    Debug.Fail("Generic class does not have Generic[] base.");
+                }
+            }
+            // If class is generic, we must save its generic base definition
+            // so on restore we'll be able to re-create the class as generic.
+            GenericParameters = GenericParameters ?? Array.Empty<string>();
         }
 
-        protected override IMember DoConstruct(ModuleFactory mf, IPythonType declaringType) {
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
             var cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
             // In Python 3 exclude object since type creation will add it automatically.
             var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
             var bases = Bases.Select(b => is3x && b == "object" ? null : mf.ConstructType(b)).ExcludeDefault().ToArray();
+
+            if (GenericParameters.Length > 0) {
+                // Generic class. Need to reconstruct generic base so code can then
+                // create specific types off the generic class.
+                var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
+                if (genericBase != null) {
+                    var typeVars = GenericParameters.Select(n => mf.Module.GlobalScope.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
+                    Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
+                    if (typeVars.Length > 0) {
+                        var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));
+                        if (genericWithParameters != null) {
+                            bases = bases.Except(Enumerable.Repeat(genericBase, 1)).Concat(Enumerable.Repeat(genericWithParameters, 1)).ToArray();
+                        }
+                    }
+                } else {
+                    Debug.Fail("Generic class does not have generic base.");
+                }
+            }
+
             cls.SetBases(bases);
             cls.SetDocumentation(Documentation);
 
@@ -132,7 +166,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return cls;
         }
 
-        protected override IEnumerable<MemberModel> GetMemberModels() 
+        protected override IEnumerable<MemberModel> GetMemberModels()
             => Classes.Concat<MemberModel>(Methods).Concat(Properties).Concat(Fields);
     }
 }
