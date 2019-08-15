@@ -60,6 +60,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     _log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", moduleImport.FullName, moduleImport.ModulePath);
                     return null;
                 }
+
                 return new StubPythonModule(moduleImport.FullName, moduleImport.ModulePath, true, _services);
             }
 
