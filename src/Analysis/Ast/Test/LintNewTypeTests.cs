@@ -46,7 +46,7 @@ T = NewType(5, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(4, 5, 4, 20);
+            diagnostic.SourceSpan.Should().Be(4, 13, 4, 14);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgument);
         }
@@ -111,7 +111,7 @@ T = NewType(h, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(10, 5, 10, 20);
+            diagnostic.SourceSpan.Should().Be(10, 13, 10, 14);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgument);
         }
@@ -127,7 +127,7 @@ T = NewType(float, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(4, 5, 4, 24);
+            diagnostic.SourceSpan.Should().Be(4, 13, 4, 18);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgument);
         }
@@ -150,7 +150,7 @@ T = NewType(h, int)
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(11, 5, 11, 20);
+            diagnostic.SourceSpan.Should().Be(11, 13, 11, 14);
             diagnostic.ErrorCode.Should().Be(ErrorCodes.TypingNewTypeArguments);
             diagnostic.Message.Should().Be(Resources.NewTypeFirstArgument);
         }

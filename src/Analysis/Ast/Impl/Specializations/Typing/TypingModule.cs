@@ -243,21 +243,25 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 return Interpreter.UnknownType;
             }
 
-            var args = argSet.Values<IMember>();
-            var name = (args[0] as IPythonConstant)?.GetString();
+            // Get name argument and make sure it is a string
+            string name = null;
+            var nameArg = argSet.Argument<IMember>(0);
+            nameArg?.TryGetConstant(out name);
 
             if (name != null) {
-                return new TypeAlias(name, args[1].GetPythonType() ?? Interpreter.UnknownType);
+                // Get type argument and create alias
+                var tpArg = argSet.Argument<IMember>(1);
+                return new TypeAlias(name, tpArg?.GetPythonType() ?? Interpreter.UnknownType);
             }
 
-            // If user provided first argument, give diagnostic
-            if (!args[0].IsUnknown()) {
+            // If user provided first argument that is not a string, give diagnostic
+            if (!nameArg.IsUnknown()) {
                 var eval = argSet.Eval;
-                var expression = argSet.Expression;
+                var argExpr = argSet.Arguments[0].ValueExpression;
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.NewTypeFirstArgument,
-                        expression?.GetLocation(eval)?.Span ?? default,
+                        eval?.GetLocation(argExpr).Span ?? default,
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Warning, DiagnosticSource.Analysis)
                 );
