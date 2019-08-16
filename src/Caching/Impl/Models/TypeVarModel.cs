@@ -23,9 +23,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     [DebuggerDisplay("TypeVar:{Name}")]
     internal sealed class TypeVarModel: MemberModel {
         public string[] Constraints { get; set; }
-        public string Bound { get; set; }
-        public string Covariant { get; set; }
-        public string Contravariant { get; set; }
+        public object Bound { get; set; }
+        public object Covariant { get; set; }
+        public object Contravariant { get; set; }
 
         public static TypeVarModel FromGeneric(IVariable v) {
             var g = (IGenericTypeParameter)v.Value;
@@ -33,9 +33,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Id = g.Name.GetStableHash(),
                 Name = g.Name,
                 Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
-                Bound = g.Bound.GetPersistentQualifiedName(),
-                Covariant = g.Covariant.GetPersistentQualifiedName(),
-                Contravariant = g.Contravariant.GetPersistentQualifiedName()
+                Bound = g.Bound,
+                Covariant = g.Covariant,
+                Contravariant = g.Contravariant
             };
         }
     }
