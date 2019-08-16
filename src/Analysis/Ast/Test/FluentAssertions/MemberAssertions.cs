@@ -21,6 +21,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
@@ -125,7 +126,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
             extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
 
-            foreach (var n in subjectMemberNames) {
+            foreach (var n in subjectMemberNames.Except(Enumerable.Repeat("__base__", 1))) {
                 var subjectMember = subjectType.GetMember(n);
                 var otherMember = otherContainer.GetMember(n);
                 var subjectMemberType = subjectMember.GetPythonType();
@@ -141,11 +142,16 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 if(subjectMemberType is IPythonClassType subjectClass) {
                     var otherClass = otherMemberType as IPythonClassType;
                     otherClass.Should().NotBeNull();
+
+                    if(subjectClass is IGenericType gt) {
+                        otherClass.Should().BeAssignableTo<IGenericType>();
+                        otherClass.IsGeneric.Should().Be(gt.IsGeneric);
+                    }
+
                     subjectClass.Bases.Count.Should().Be(otherClass.Bases.Count);
                     foreach (var subjectBase in subjectClass.Bases) {
                         var otherBase = otherClass.Bases.FirstOrDefault(b => b.Name == subjectBase.Name);
                         otherBase.Should().NotBeNull();
-                        subjectBase.Should().HaveSameMembersAs(otherBase);
                     }
                 } 
 

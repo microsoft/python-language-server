@@ -209,7 +209,11 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         internal ClassDocumentationSource DocumentationSource { get; private set; }
-        internal override void SetDocumentation(string documentation) => _documentation = documentation;
+
+        internal override void SetDocumentation(string documentation) {
+            _documentation = documentation;
+            DocumentationSource = ClassDocumentationSource.Class;
+        }
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
             if (_bases.Count > 0) {
@@ -235,6 +239,8 @@ namespace Microsoft.Python.Analysis.Types {
             }
             // Invalidate MRO
             _mro = null;
+            DecideGeneric();
+
             if (DeclaringModule is BuiltinsPythonModule) {
                 // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
                 return;

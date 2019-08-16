@@ -95,7 +95,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 // Check if name has type arguments such as Union[int, str]
                 // Note that types can be nested like Union[int, Union[A, B]]
                 var memberName = name;
-                // TODO: handle type args?
                 var typeArgs = GetTypeArguments(memberName, out var typeName);
                 if (!string.IsNullOrEmpty(typeName) && typeName != name) {
                     memberName = typeName;
@@ -106,6 +105,9 @@ namespace Microsoft.Python.Analysis.Caching {
 
                 m = nextModel.Construct(this, declaringType);
                 Debug.Assert(m != null);
+                if(m is IGenericType gt && typeArgs.Count > 0) {
+                    m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));
+                }
 
                 currentModel = nextModel;
                 declaringType = m as IPythonType;

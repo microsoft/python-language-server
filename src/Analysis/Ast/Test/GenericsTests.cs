@@ -869,6 +869,20 @@ y3 = y.getT()
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericBit() {
+            const string code = @"
+from typing import TypeVar, Generic
+
+_T = TypeVar('_T')
+
+class A(Generic[_T]): ...
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Diagnostics.Should().BeEmpty();
+            var c = analysis.Should().HaveVariable("A").Which.Value.GetPythonType<IPythonClassType>();
+            c.IsGeneric.Should().BeTrue();
+        }
+
         public async Task GenericClassBaseChain() {
             const string code = @"
 from typing import TypeVar, Generic, List

@@ -16,9 +16,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
@@ -63,8 +65,23 @@ namespace Microsoft.Python.Analysis.Types.Collections {
 
         public override IMember Index(IPythonInstance instance, IArgumentSet args)
             => (instance as IPythonCollection)?.Index(args) ?? UnknownType;
+
+        public IPythonType CreateSpecificType(IArgumentSet typeArguments) {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
+        #region IPythonClassType
+        public IPythonType DeclaringType => (InnerType as IPythonClassType)?.DeclaringType;
+        public IReadOnlyList<IGenericTypeParameter> Parameters => (InnerType as IPythonClassType)?.Parameters ?? Array.Empty<IGenericTypeParameter>();
+        public bool IsGeneric => (InnerType as IPythonClassType)?.IsGeneric == true;
+        public ClassDefinition ClassDefinition => (InnerType as IPythonClassType)?.ClassDefinition;
+        public IReadOnlyList<IPythonType> Mro => (InnerType as IPythonClassType)?.Mro ?? Array.Empty<IPythonType>();
+        public IReadOnlyList<IPythonType> Bases => (InnerType as IPythonClassType)?.Bases ?? Array.Empty<IPythonType>();
+        public IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters 
+            => (InnerType as IPythonClassType)?.GenericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        #endregion
 
         public static IPythonCollection CreateList(IPythonModule declaringModule, IArgumentSet args) {
             var exact = true;
@@ -107,7 +124,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             return new PythonCollection(collectionType, contents, flatten, exact: exact);
         }
 
-        public override bool Equals(object obj) 
+        public override bool Equals(object obj)
             => obj is IPythonType pt && (PythonTypeComparer.Instance.Equals(pt, this) || PythonTypeComparer.Instance.Equals(pt, InnerType));
         public override int GetHashCode() => PythonTypeComparer.Instance.GetHashCode(this);
     }

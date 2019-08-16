@@ -66,6 +66,8 @@ namespace Microsoft.Python.Analysis.Types {
                 var genericTypeToSpecificType = GetSpecificTypes(args, genericTypeParameters, newBases);
 
                 var classType = new PythonClassType(BaseName, new Location(DeclaringModule));
+                classType.SetDocumentation(Documentation);
+
                 // Storing generic parameters allows methods returning generic types 
                 // to know what type parameter returns what specific type
                 StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
@@ -370,7 +372,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Determines if the class is generic.
         /// A class is generic if it has at least one unfilled generic type parameters or one of its bases is generic
         /// </summary>
-        internal void DecideGeneric() {
+        private void DecideGeneric() {
             using (_genericResolutionGuard.Push(this, out var reentered)) {
                 if (!reentered) {
                     IsGeneric = !Parameters.IsNullOrEmpty() || (Bases?.OfType<IGenericType>().Any(g => g.IsGeneric) ?? false);
