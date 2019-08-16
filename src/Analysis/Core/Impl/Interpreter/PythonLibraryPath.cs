@@ -137,24 +137,14 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 }
             }
 
-            var standardLibraryPath = GetStandardLibraryPath(fs, config);
+            var ospy = PathUtils.FindFile(fs, config.LibraryPath, "os.py");
+            var standardLibraryPath = !string.IsNullOrEmpty(ospy) ? IOPath.GetDirectoryName(ospy) : string.Empty;
             if (!string.IsNullOrEmpty(standardLibraryPath)) {
                 return GetDefaultSearchPaths(fs, standardLibraryPath);
             }
 
             return Array.Empty<PythonLibraryPath>();
         }
-
-        public static string GetStandardLibraryPath(IFileSystem fs, InterpreterConfiguration config) {
-            var ospy = PathUtils.FindFile(fs, config.LibraryPath, "os.py");
-            return !string.IsNullOrEmpty(ospy) ? IOPath.GetDirectoryName(ospy) : string.Empty;
-        }
-
-        public static string GetSitePackagesPath(IFileSystem fs, InterpreterConfiguration config)
-            => GetSitePackagesPath(GetStandardLibraryPath(fs, config));
-
-        public static string GetSitePackagesPath(string standardLibraryPath)
-            => !string.IsNullOrEmpty(standardLibraryPath) ? IOPath.Combine(standardLibraryPath, "site-packages") : string.Empty;
 
         /// <summary>
         /// Gets the set of search paths by running the interpreter.
