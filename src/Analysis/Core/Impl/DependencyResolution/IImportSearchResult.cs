@@ -18,7 +18,7 @@ using Microsoft.Python.Core.Collections;
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
     public interface IImportSearchResult {}
 
-    public interface IImportChildrenSource {
+    public interface IImportChildrenSource : IImportSearchResult {
         ImmutableArray<string> GetChildrenNames();
         bool TryGetChildImport(string name, out IImportSearchResult child);
     }

@@ -78,10 +78,24 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, Eval.GetLocationOfName(ne));
+                var location = Eval.GetLocationOfName(ne);
+                if (IsValidAssignment(ne.Name, location)) {
+                    Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, location);
+                }
             }
 
             TryHandleClassVariable(node, value);
+        }
+
+        private bool IsValidAssignment(string name, Location loc) {
+            if (Eval.GetInScope(name) is ILocatedMember m) {
+                // Class and function definition are processed first, so only override
+                // if assignment happens after declaration
+                if (loc.IndexSpan.Start < m.Location.IndexSpan.Start) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {

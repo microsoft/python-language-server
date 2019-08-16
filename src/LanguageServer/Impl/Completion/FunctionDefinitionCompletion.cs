@@ -76,14 +76,18 @@ namespace Microsoft.Python.LanguageServer.Completion {
             sb.Append(indentation);
 
             if (overload.Parameters.Count > 0) {
-                var parameterString = string.Join(", ", skipFirstParameters.Select(p => MakeOverrideParameter(p, p.Name)));
+                // Return in __init__ not good practice, only add return statement if overload is not __init__
+                if (!overload.Name.Equals("__init__")) {
+                    sb.Append("return ");
+                }
 
+                var parameterString = string.Join(", ", skipFirstParameters.Select(p => MakeOverrideParameter(p, p.Name)));
                 if (context.Ast.LanguageVersion.Is3x()) {
-                    sb.AppendFormat("return super().{0}({1})",
+                    sb.AppendFormat("super().{0}({1})",
                         overload.Name,
                         parameterString);
                 } else if (!string.IsNullOrEmpty(className)) {
-                    sb.AppendFormat("return super({0}, {1}).{2}({3})",
+                    sb.AppendFormat("super({0}, {1}).{2}({3})",
                         className,
                         first?.Name ?? string.Empty,
                         overload.Name,

@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
@@ -54,7 +55,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public string Root { get; protected set; }
-        public IEnumerable<string> InterpreterPaths { get; protected set; } = Enumerable.Empty<string>();
+        public ImmutableArray<string> InterpreterPaths { get; protected set; } = ImmutableArray<string>.Empty;
 
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
 
@@ -69,15 +70,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public IBuiltinsPythonModule BuiltinsModule { get; protected set; }
 
         protected abstract IPythonModule CreateModule(string name);
-
-        public IReadOnlyCollection<string> GetPackagesFromDirectory(string searchPath, CancellationToken cancellationToken) {
-            return ModulePath.GetModulesInPath(
-                searchPath,
-                recurse: false,
-                includePackages: true,
-                requireInitPy: _requireInitPy
-            ).Select(mp => mp.ModuleName).Where(n => !string.IsNullOrEmpty(n)).TakeWhile(_ => !cancellationToken.IsCancellationRequested).ToList();
-        }
 
         public IStubCache StubCache { get; protected set; }
 
@@ -107,10 +99,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             moduleRef = Modules.GetOrAdd(name, new ModuleRef());
             return moduleRef.GetOrCreate(name, this);
         }
-
-        public bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullModuleName)
-            => PathResolver.TryAddModulePath(path, allowNonRooted, out fullModuleName);
-
+        
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
 
@@ -125,8 +114,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
-            foreach (var modulePath in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(p))) {
-                PathResolver.TryAddModulePath(modulePath, false, out _);
+            foreach (var moduleFile in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(_fs, p))) {
+                PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
             }
         }
 
