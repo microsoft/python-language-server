@@ -319,13 +319,13 @@ class D: ...
         }
 
         [TestMethod, Priority(0)]
-        public async Task AssignAfterClassDef() {
+        public async Task NoClassAssign() {
             const string code = @"
 class D: ...
 D = 5
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("D").OfType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("D").OfType(BuiltinTypeId.Type);
         }
 
         [TestMethod, Priority(0)]
