@@ -268,7 +268,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 throw new InvalidOperationException("Can't create document with no file path or URI specified");
             }
 
-            if (!ModuleManagement.TryAddModulePath(filePath, true, out var fullName)) {
+            if (!ModuleManagement.TryAddModulePath(filePath, 0, true, out var fullName)) {
                 return false;
             }
 

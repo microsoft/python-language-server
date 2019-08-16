@@ -114,7 +114,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (IsValidBase(a)) {
                     TryAddBase(bases, a);
                 } else {
-                    ReportInvalidBase(a.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional));
+                    ReportInvalidBase(a);
                 }
             }
 
@@ -195,11 +195,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             _class.AddMembers(members, false);
         }
 
-        private void ReportInvalidBase(string argVal) {
+        private void ReportInvalidBase(Arg arg) {
             Eval.ReportDiagnostics(Eval.Module.Uri,
                 new DiagnosticsEntry(
-                Resources.InheritNonClass.FormatInvariant(argVal),
-                _classDef.NameExpression.GetLocation(Eval)?.Span ?? default,
+                Resources.InheritNonClass.FormatInvariant(arg.ToCodeString(Eval.Ast, CodeFormattingOptions.Traditional)), 
+                Eval.GetLocation(arg)?.Span ?? default,
                 Diagnostics.ErrorCodes.InheritNonClass,
                 Severity.Warning,
                 DiagnosticSource.Analysis

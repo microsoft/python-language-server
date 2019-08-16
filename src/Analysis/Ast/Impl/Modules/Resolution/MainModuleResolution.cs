@@ -29,6 +29,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
@@ -39,7 +40,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
-        private IEnumerable<string> _userPaths = Enumerable.Empty<string>();
+        private ImmutableArray<string> _userPaths = ImmutableArray<string>.Empty;
 
         public MainModuleResolution(string root, IServiceContainer services)
             : base(root, services) { }
@@ -226,21 +227,23 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             // Preserve builtins, they don't need to be reloaded since interpreter does not change.
-            var builtins = Modules[BuiltinModuleName];
-            Modules.Clear();
-            Modules[BuiltinModuleName] = builtins;
-
-            PathResolver = new PathResolver(_interpreter.LanguageVersion);
-
-            var addedRoots = new HashSet<string>();
-            addedRoots.UnionWith(PathResolver.SetRoot(Root));
+            if (Modules.TryGetValue(BuiltinModuleName, out var builtins)) {
+                Modules.Clear();
+                Modules[BuiltinModuleName] = builtins;
+            }
 
             await ReloadSearchPaths(cancellationToken);
 
-            addedRoots.UnionWith(PathResolver.SetInterpreterSearchPaths(InterpreterPaths));
-            addedRoots.UnionWith(PathResolver.SetUserSearchPaths(_userPaths));
+            PathResolver = new PathResolver(_interpreter.LanguageVersion, Root, InterpreterPaths, _userPaths);
+
+            var addedRoots = new HashSet<string> { Root };
+            addedRoots.UnionWith(InterpreterPaths);
+            addedRoots.UnionWith(_userPaths);
             ReloadModulePaths(addedRoots);
         }
+
+        public bool TryAddModulePath(in string path, in long fileSize, in bool allowNonRooted, out string fullModuleName)
+            => PathResolver.TryAddModulePath(path, fileSize, allowNonRooted, out fullModuleName);
 
         // For tests
         internal void AddUnimportableModule(string moduleName)

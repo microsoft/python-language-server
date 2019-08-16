@@ -370,7 +370,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void LogException(IPythonModule module, Exception exception) {
             if (_log != null) {
-                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. Exception message: {exception.Message}.");
+                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. {exception}");
             }
         }
 

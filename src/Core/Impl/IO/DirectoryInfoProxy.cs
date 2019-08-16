@@ -43,6 +43,14 @@ namespace Microsoft.Python.Core.IO {
                 .EnumerateFileSystemInfos()
                 .Select(CreateFileSystemInfoProxy);
 
+        public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(SearchOption searchOption) => _directoryInfo
+            .EnumerateFileSystemInfos("*", searchOption)
+            .Select(CreateFileSystemInfoProxy);
+
+        public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string searchPattern, SearchOption searchOption) => _directoryInfo
+            .EnumerateFileSystemInfos(searchPattern, searchOption)
+            .Select(CreateFileSystemInfoProxy);
+
         public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includePatterns, string[] excludePatterns) {
             var matcher = GetMatcher(includePatterns, excludePatterns);
             PatternMatchingResult matchResult = SafeExecuteMatcher(matcher);

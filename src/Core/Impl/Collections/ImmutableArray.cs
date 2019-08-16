@@ -53,7 +53,7 @@ namespace Microsoft.Python.Core.Collections {
             return new ImmutableArray<T>(items, 1);
         }
 
-        public static ImmutableArray<T> Create(T[] array) {
+        public static ImmutableArray<T> Create(params T[] array) {
             var items = new T[array.Length];
             Array.Copy(array, items, array.Length);
             return new ImmutableArray<T>(items, items.Length);

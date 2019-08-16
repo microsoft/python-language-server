@@ -18,12 +18,13 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
     /// Represents module resolution and search subsystem.
     /// </summary>
-    public interface IModuleManagement: IModuleResolution {
+    public interface IModuleManagement : IModuleResolution {
         /// <summary>
         /// Locates module by path.
         /// </summary>
@@ -36,7 +37,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         IStubCache StubCache { get; }
 
-        bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullName);
+        bool TryAddModulePath(in string path, in long fileSize, in bool allowNonRooted, out string fullName);
 
         /// <summary>
         /// Provides ability to specialize module by replacing module import by
@@ -68,7 +69,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Set of interpreter paths.
         /// </summary>
-        IEnumerable<string> InterpreterPaths { get; }
+        ImmutableArray<string> InterpreterPaths { get; }
 
         /// <summary>
         /// Interpreter paths with additional classification.

@@ -91,7 +91,7 @@ class C(5):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(2, 7, 2, 8);
+            diagnostic.SourceSpan.Should().Be(2, 9, 2, 10);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("5"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -116,12 +116,12 @@ class D(x):
             analysis.Diagnostics.Should().HaveCount(2);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(4, 7, 4, 8);
+            diagnostic.SourceSpan.Should().Be(4, 9, 4, 10);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("x"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
 
             diagnostic = analysis.Diagnostics.ElementAt(1);
-            diagnostic.SourceSpan.Should().Be(10, 7, 10, 8);
+            diagnostic.SourceSpan.Should().Be(10, 9, 10, 10);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("x"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -243,7 +243,7 @@ class C(b.test):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(12, 7, 12, 8);
+            diagnostic.SourceSpan.Should().Be(12, 9, 12, 15);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b.test"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -270,7 +270,7 @@ class C(b.test):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(12, 7, 12, 8);
+            diagnostic.SourceSpan.Should().Be(12, 9, 12, 15);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b.test"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -293,7 +293,7 @@ class C(b.test):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(9, 7, 9, 8);
+            diagnostic.SourceSpan.Should().Be(9, 9, 9, 15);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b.test"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -333,7 +333,7 @@ class C(b.test):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(8, 7, 8, 8);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 15);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b.test"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -355,7 +355,7 @@ class C(b):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(8, 7, 8, 8);
+            diagnostic.SourceSpan.Should().Be(8, 9, 8, 10);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("b"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -374,7 +374,7 @@ class C(test):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(5, 7, 5, 8);
+            diagnostic.SourceSpan.Should().Be(5, 9, 5, 13);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("test"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -409,7 +409,7 @@ class Bar(Foo):
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.SourceSpan.Should().Be(4, 7, 4, 10);
+            diagnostic.SourceSpan.Should().Be(4, 11, 4, 12);
             diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("X"));
             diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
         }
@@ -474,6 +474,17 @@ class Test3(SupportsInt):
 
 class Test3(FrozenSet):
     mystr = 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromEnum() {
+            const string code = @"
+from enum import Enum, EnumMeta
+
+class C(Enum): ...
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
