@@ -145,6 +145,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
                     if(subjectClass is IGenericType gt) {
                         otherClass.Should().BeAssignableTo<IGenericType>();
+                        Debug.Assert(otherClass.IsGeneric == gt.IsGeneric);
                         otherClass.IsGeneric.Should().Be(gt.IsGeneric);
                     }
 

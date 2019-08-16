@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
-        //  Parameters: declaring module, overload for the return value, list of arguments.
+        //  GenericParameters: declaring module, overload for the return value, list of arguments.
         private ReturnValueProvider _returnValueProvider;
 
         // Return value can be an instance or a type info. Consider type(C()) returning
@@ -153,11 +153,11 @@ namespace Microsoft.Python.Analysis.Types {
             // -> A[_T1, _T2, ...]
             // Match arguments
             IReadOnlyList<IPythonType> typeArgs = null;
-            var classGenericParameters = selfClassType?.GenericParameters.Keys.ToArray() ?? Array.Empty<IGenericTypeParameter>();
+            var classGenericParameters = selfClassType?.ActualGenericParameters.Keys.ToArray() ?? Array.Empty<IGenericTypeParameter>();
             if (classGenericParameters.Length > 0 && selfClassType != null) {
                 // Declaring class is specific and provides definitions of generic parameters
                 typeArgs = classGenericParameters
-                    .Select(n => selfClassType.GenericParameters.TryGetValue(n, out var t) ? t : null)
+                    .Select(n => selfClassType.ActualGenericParameters.TryGetValue(n, out var t) ? t : null)
                     .ExcludeDefault()
                     .ToArray();
             } else if (args != null) {
@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IGenericTypeParameter returnType) {
-            if (selfClassType.GenericParameters.TryGetValue(returnType, out var specificType)) {
+            if (selfClassType.ActualGenericParameters.TryGetValue(returnType, out var specificType)) {
                 return new PythonInstance(specificType);
             }
 
@@ -181,10 +181,10 @@ namespace Microsoft.Python.Analysis.Types {
             var baseType = selfClassType.Mro
                 .OfType<IPythonClassType>()
                 .Skip(1)
-                .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType));
+                .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.ActualGenericParameters.ContainsKey(returnType));
 
             // Try and infer return value from base class
-            if (baseType != null && baseType.GenericParameters.TryGetValue(returnType, out specificType)) {
+            if (baseType != null && baseType.ActualGenericParameters.TryGetValue(returnType, out specificType)) {
                 return new PythonInstance(specificType);
             }
 

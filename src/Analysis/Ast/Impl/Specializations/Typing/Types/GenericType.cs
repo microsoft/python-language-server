@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         public SpecializedGenericType(string name, IReadOnlyList<IGenericTypeParameter> parameters, IPythonModule declaringModule)
             : this(name, declaringModule) {
-            Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+            GenericParameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             ) : this(name, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
-            Parameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            GenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
             Documentation = documentation ?? name;
         }
 
@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Type parameters such as in Tuple[T1, T2. ...] or
         /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
-        public IReadOnlyList<IGenericTypeParameter> Parameters { get; }
+        public IReadOnlyList<IGenericTypeParameter> GenericParameters { get; }
 
         #region IPythonType
         public string Name { get; }

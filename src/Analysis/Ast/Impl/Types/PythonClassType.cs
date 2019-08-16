@@ -39,7 +39,6 @@ namespace Microsoft.Python.Analysis.Types {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
-        private string _genericName;
         private List<IPythonType> _bases = new List<IPythonType>();
         private IReadOnlyList<IPythonType> _mro;
         private string _documentation;
@@ -65,10 +64,9 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// If class has generic type parameters, returns that form, e.g 'A[T1, int, ...]', otherwise returns base, e.g 'A'
         /// </summary>
-        public override string Name => _genericName ?? base.Name;
-        public override string QualifiedName => this.GetQualifiedName();
+        public override string Name => _nameWithParameters ?? base.Name;
+        public override string QualifiedName => this.GetQualifiedName(_qualifiedNameWithParameters);
         public override PythonMemberType MemberType => PythonMemberType.Class;
-        public IPythonType DeclaringType { get; }
 
         public override IEnumerable<string> GetMemberNames() {
             var names = new HashSet<string>();
@@ -176,7 +174,10 @@ namespace Microsoft.Python.Analysis.Types {
 
             return fromBases ?? defaultReturn;
         }
+        #endregion
 
+        #region IPythonClassMember
+        public IPythonType DeclaringType { get; }
         #endregion
 
         #region IPythonClass
@@ -203,8 +204,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// class B(A[int, str]): ...
         /// Has the map {T: int, K: str}
         /// </summary>
-        public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters =>
-                _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> ActualGenericParameters =>
+                _genericActualParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 
         #endregion
 

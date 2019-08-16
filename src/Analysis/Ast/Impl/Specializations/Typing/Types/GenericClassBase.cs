@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         #region IPythonClassType
         public override bool IsGeneric => true;
-        public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
+        public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> ActualGenericParameters
             => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType);
         public override IPythonType CreateSpecificType(IArgumentSet args)
             => new GenericClassBase(args.Arguments.Select(a => a.Value).OfType<IGenericTypeParameter>().ToArray(), DeclaringModule.Interpreter);
