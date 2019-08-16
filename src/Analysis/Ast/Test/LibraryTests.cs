@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             foreach (var fnName in new[] { @"seed", @"randrange", @"gauss" }) {
                 analysis.Should().HaveVariable(fnName).Which
-                    .Should().HaveType(BuiltinTypeId.Method)
+                    .Should().HaveType(BuiltinTypeId.Function)
                     .And.Value.GetPythonType().Documentation.Should().NotBeNullOrEmpty();
             }
         }
