@@ -14,11 +14,14 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
 
 namespace Microsoft.Python.Core.IO {
     public interface IDirectoryInfo : IFileSystemInfo {
         IDirectoryInfo Parent { get; }
         IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos();
+        IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(SearchOption searchOption);
+        IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string searchPattern, SearchOption searchOption);
         IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includeFiles, string[] excludeFiles);
         bool Match(string path, string[] includePatterns = default, string[] excludePatterns = default);
     }

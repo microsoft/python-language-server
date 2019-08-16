@@ -104,42 +104,5 @@ namespace Microsoft.Python.Core.Tests {
                 Assert.AreEqual(test.Expected, new ModulePath("abc", test.SourceFile, null).IsDebug, test.SourceFile);
             }
         }
-
-        /// <summary>
-        /// Verify that the analyzer has the proper algorithm for turning a filename into a package name
-        /// </summary>
-        [TestMethod, Priority(0)]
-        public void ModulePathFromFullPath() {
-            var basePath = @"/Not/A/Real/Path/";
-
-            // Replace the usual File.Exists(p + '__init__.py') check so we can
-            // test without real files.
-            var packagePaths = new HashSet<string>(PathEqualityComparer.Instance) {
-                basePath + @"A/",
-                basePath + @"A/B/"
-            };
-
-            Func<string, bool> isPackage = p => {
-                Console.WriteLine("isPackage({0})", p);
-                return packagePaths.Contains(p);
-            };
-
-            // __init__ files appear in the full name but not the module name.
-            var mp = ModulePath.FromFullPath(Path.Combine(basePath, "A", "B", "__init__.py"), isPackage: isPackage);
-            Assert.AreEqual("A.B", mp.ModuleName);
-            Assert.AreEqual("A.B.__init__", mp.FullName);
-            Assert.AreEqual("__init__", mp.Name);
-
-            mp = ModulePath.FromFullPath(Path.Combine(basePath, "A", "B", "Module.py"), isPackage: isPackage);
-            Assert.AreEqual("A.B.Module", mp.ModuleName);
-
-            // Ensure we don't go back past the top-level directory if specified
-            mp = ModulePath.FromFullPath(
-                Path.Combine(basePath, "A", "B", "Module.py"),
-                Path.Combine(basePath, "A"),
-                isPackage
-            );
-            Assert.AreEqual("B.Module", mp.ModuleName);
-        }
     }
 }

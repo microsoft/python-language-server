@@ -18,7 +18,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -1570,16 +1573,27 @@ def f(): pass");
             Console.WriteLine("Testing version {0} {1}", configuration.Version, configuration.InterpreterPath);
 
             int ran = 0, succeeded = 0;
-            foreach(var file in ModulePath.GetModulesInLib(configuration)) {
+            var pathResolver = new PathResolver(configuration.Version.ToLanguageVersion(),
+                string.Empty,
+                ImmutableArray<string>.Create(configuration.SitePackagesPath, configuration.LibraryPath),
+                ImmutableArray<string>.Empty);
+            var pathResolverSnapshot = pathResolver.CurrentSnapshot;
+
+            var modules = pathResolverSnapshot.GetAllModuleNames()
+                .Select(n => pathResolverSnapshot.GetModuleImportFromModuleName(n))
+                .Where(i => i.RootPath.PathEquals(configuration.SitePackagesPath))
+                .ToList();
+
+            foreach (var module in modules) {
                 try {
-                    if (!file.IsCompiled && !file.IsNativeExtension) {
+                    if (!module.IsCompiled) {
                         ran++;
-                        TestOneFile(file.SourceFile, configuration.Version.ToLanguageVersion());
+                        TestOneFile(module.ModulePath, configuration.Version.ToLanguageVersion());
                         succeeded++;
                     }
                 } catch (Exception e) {
                     Console.WriteLine(e);
-                    Console.WriteLine("Failed: {0}", file);
+                    Console.WriteLine("Failed: {0}", module);
                     break;
                 }
             }

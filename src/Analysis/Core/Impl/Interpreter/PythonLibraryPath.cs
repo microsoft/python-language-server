@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using IOPath = System.IO.Path;
@@ -104,10 +105,11 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// Gets the default set of search paths based on the path to the root
         /// of the standard library.
         /// </summary>
+        /// <param name="fs">File system</param>
         /// <param name="library">Root of the standard library.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
         /// <remarks>New in 2.2, moved in 3.3</remarks>
-        public static List<PythonLibraryPath> GetDefaultSearchPaths(string library) {
+        private static List<PythonLibraryPath> GetDefaultSearchPaths(IFileSystem fs, string library) {
             var result = new List<PythonLibraryPath>();
             if (!Directory.Exists(library)) {
                 return result;
@@ -121,7 +123,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
 
             result.Add(new PythonLibraryPath(sitePackages));
-            result.AddRange(ModulePath.ExpandPathFiles(sitePackages)
+            result.AddRange(ModulePath.ExpandPathFiles(fs, sitePackages)
                 .Select(p => new PythonLibraryPath(p))
             );
 
@@ -144,9 +146,10 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 }
             }
 
-            var ospy = PathUtils.FindFile(config.LibraryPath, "os.py");
-            if (!string.IsNullOrEmpty(ospy)) {
-                return GetDefaultSearchPaths(IOPath.GetDirectoryName(ospy));
+            var ospy = PathUtils.FindFile(fs, config.LibraryPath, "os.py");
+            var standardLibraryPath = !string.IsNullOrEmpty(ospy) ? IOPath.GetDirectoryName(ospy) : string.Empty;
+            if (!string.IsNullOrEmpty(standardLibraryPath)) {
+                return GetDefaultSearchPaths(fs, standardLibraryPath);
             }
 
             return Array.Empty<PythonLibraryPath>();
@@ -207,7 +210,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
         }
 
-        public static (IReadOnlyList<PythonLibraryPath> interpreterPaths, IReadOnlyList<PythonLibraryPath> userPaths) ClassifyPaths(
+        public static (ImmutableArray<PythonLibraryPath> interpreterPaths, ImmutableArray<PythonLibraryPath> userPaths) ClassifyPaths(
             string root,
             IFileSystem fs,
             IEnumerable<PythonLibraryPath> fromInterpreter,
@@ -238,9 +241,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 .Split(p => p.Type == PythonLibraryPathType.StdLib, out var stdlib, out var withoutStdlib);
 
             // Pull out stdlib paths, and make them always be interpreter paths.
-            var interpreterPaths = new List<PythonLibraryPath>(stdlib);
-
-            var userPaths = new List<PythonLibraryPath>();
+            var interpreterPaths = stdlib;
+            var userPaths = ImmutableArray<PythonLibraryPath>.Empty;
 
             var allPaths = fromUserList.Select(p => new PythonLibraryPath(p))
                 .Concat(withoutStdlib.Where(p => !p.Path.PathEquals(root)));
@@ -248,26 +250,26 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             foreach (var p in allPaths) {
                 // If path is within a stdlib path, then treat it as interpreter.
                 if (stdlib.Any(s => fs.IsPathUnderRoot(s.Path, p.Path))) {
-                    interpreterPaths.Add(p);
+                    interpreterPaths = interpreterPaths.Add(p);
                     continue;
                 }
 
                 // If Python says it's site, then treat is as interpreter.
                 if (p.Type == PythonLibraryPathType.Site) {
-                    interpreterPaths.Add(p);
+                    interpreterPaths = interpreterPaths.Add(p);
                     continue;
                 }
 
                 // If path is outside the workspace, then treat it as interpreter.
                 if (root == null || !fs.IsPathUnderRoot(root, p.Path)) {
-                    interpreterPaths.Add(p);
+                    interpreterPaths = interpreterPaths.Add(p);
                     continue;
                 }
 
-                userPaths.Add(p);
+                userPaths = userPaths.Add(p);
             }
 
-            return (interpreterPaths, userPaths.ToList());
+            return (interpreterPaths, userPaths);
         }
 
         public override bool Equals(object obj) => obj is PythonLibraryPath other && Equals(other);

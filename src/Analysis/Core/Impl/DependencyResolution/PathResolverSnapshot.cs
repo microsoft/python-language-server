@@ -44,16 +44,32 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private readonly Node _builtins;
         private readonly PythonLanguageVersion _pythonLanguageVersion;
         private readonly string _workDirectory;
-        private readonly string[] _interpreterSearchPaths;
-        private readonly string[] _userSearchPaths;
+        private readonly ImmutableArray<string> _interpreterSearchPaths;
+        private readonly ImmutableArray<string> _userSearchPaths;
         private readonly ImmutableArray<Node> _roots;
         private readonly int _userRootsCount;
         public int Version { get; }
 
-        public PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion)
-            : this(pythonLanguageVersion, string.Empty, Array.Empty<string>(), Array.Empty<string>(), ImmutableArray<Node>.Empty, 0, Node.CreateDefaultRoot(), Node.CreateBuiltinRoot(), default) { }
+        public PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, string workDirectory, ImmutableArray<string> interpreterSearchPaths, ImmutableArray<string> userSearchPaths)
+            : this(pythonLanguageVersion, workDirectory, userSearchPaths, interpreterSearchPaths, ImmutableArray<Node>.Empty, 0, Node.CreateDefaultRoot(), Node.CreateBuiltinRoot(), default) {
 
-        private PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, string workDirectory, string[] userSearchPaths, string[] interpreterSearchPaths, ImmutableArray<Node> roots, int userRootsCount, Node nonRooted, Node builtins, int version) {
+            _pythonLanguageVersion = pythonLanguageVersion;
+            _workDirectory = workDirectory;
+            _userSearchPaths = userSearchPaths;
+            _interpreterSearchPaths = interpreterSearchPaths;
+
+            if (workDirectory != string.Empty) {
+                CreateRootsWithDefault(workDirectory, userSearchPaths, interpreterSearchPaths, out _roots, out _userRootsCount);
+            } else {
+                CreateRootsWithoutDefault(userSearchPaths, interpreterSearchPaths, out _roots, out _userRootsCount);
+            }
+
+            _nonRooted = Node.CreateDefaultRoot();
+            _builtins = Node.CreateDefaultRoot();
+            Version = default;
+        }
+
+        private PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, string workDirectory, ImmutableArray<string> userSearchPaths, ImmutableArray<string> interpreterSearchPaths, ImmutableArray<Node> roots, int userRootsCount, Node nonRooted, Node builtins, int version) {
             _pythonLanguageVersion = pythonLanguageVersion;
             _workDirectory = workDirectory;
             _userSearchPaths = userSearchPaths;
@@ -90,7 +106,35 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             }
 
             if (_builtins.TryGetChild(fullModuleName, out var builtin)) {
-                return new ModuleImport(ChildrenSource.Empty, builtin.Name, builtin.FullModuleName, null, null, true, true);
+                return new ModuleImport(ChildrenSource.Empty, builtin.Name, builtin.FullModuleName, null, null, -1, true, true);
+            }
+
+            return default;
+        }
+
+        public IImportChildrenSource GetModuleParentFromModuleName(in string fullModuleName) {
+            for (var rootIndex = 0; rootIndex < _roots.Count; rootIndex++) {
+                if (TryFindModuleByName(rootIndex, fullModuleName, out var lastEdge)) {
+                    var parentEdge = lastEdge.Previous;
+                    if (TryGetSearchResults(parentEdge, out var searchResult)) {
+                        return searchResult;
+                    }
+
+                    if (parentEdge.IsFirst) {
+                        return new ImportRoot(new ChildrenSource(this, parentEdge), parentEdge.End.Name);
+                    }
+                }
+            }
+
+            if (fullModuleName.IndexOf('.') != -1) {
+                return default;
+            }
+
+            for (var i = 0; i < _nonRooted.Children.Count; i++) {
+                var directoryNode = _nonRooted.Children[i];
+                if (directoryNode.GetChildIndex(fullModuleName) != -1) {
+                    return new ChildrenSource(this, new Edge(i, directoryNode));
+                }
             }
 
             return default;
@@ -146,11 +190,15 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             }
 
             if (TryFindImport(rootEdges, fullNameList, out var matchedEdges, out var shortestPath)) {
-                return TryGetSearchResults(matchedEdges, out var searchResult) ? searchResult : new ImportNotFound(string.Join(".", fullNameList));
+                if (TryGetSearchResults(matchedEdges, out var searchResult)) {
+                    return searchResult;
+                }
+
+                return new ImportNotFound(string.Join(".", fullNameList));
             }
 
             if (fullNameList.Count == 1 && _builtins.TryGetChild(fullNameList[0], out var builtin)) {
-                return new ModuleImport(ChildrenSource.Empty, builtin.Name, builtin.FullModuleName, null, null, true, true);
+                return new ModuleImport(ChildrenSource.Empty, builtin.Name, builtin.FullModuleName, null, null, -1, true, true);
             }
 
             // Special case for sys.modules
@@ -203,7 +251,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 }
 
                 if (parentCount == 1 && fullNameList.Count == 1 && lastEdge.Start.TryGetChild(fullNameList[0], out var nameNode)) {
-                    return new ModuleImport(ChildrenSource.Empty, fullNameList[0], fullNameList[0], lastEdge.Start.Name, nameNode.ModulePath, IsPythonCompiled(nameNode.ModulePath), false);
+                    return new ModuleImport(ChildrenSource.Empty, fullNameList[0], fullNameList[0], lastEdge.Start.Name, nameNode.ModulePath, nameNode.ModuleFileSize, IsPythonCompiled(nameNode.ModulePath), false);
                 }
 
                 return new ImportNotFound(new StringBuilder(lastEdge.Start.Name)
@@ -240,7 +288,10 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         public bool IsLibraryFile(string filePath)
             => TryFindModule(filePath, out var edge, out _) && IsLibraryPath(edge.FirstEdge.End.Name);
 
-        private bool TryGetSearchResults(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
+        private bool TryGetSearchResults(in Edge matchedEdge, out IImportChildrenSource searchResult)
+            => TryGetSearchResults(ImmutableArray<Edge>.Create(matchedEdge), out searchResult);
+
+        private bool TryGetSearchResults(in ImmutableArray<Edge> matchedEdges, out IImportChildrenSource searchResult) {
             foreach (var edge in matchedEdges) {
                 if (TryCreateModuleImport(edge, out var moduleImport)) {
                     searchResult = moduleImport;
@@ -267,6 +318,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                     initPyNode.FullModuleName,
                     rootNode.Name,
                     initPyNode.ModulePath,
+                    initPyNode.ModuleFileSize,
                     false,
                     IsLibraryPath(rootNode.Name));
 
@@ -280,6 +332,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                     moduleNode.FullModuleName,
                     rootNode.Name,
                     moduleNode.ModulePath,
+                    moduleNode.ModuleFileSize,
                     IsPythonCompiled(moduleNode.ModulePath),
                     IsLibraryPath(rootNode.Name));
 
@@ -293,7 +346,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private bool TryFindNonRootedModule(string moduleName, out ModuleImport moduleImport) {
             foreach (var directoryNode in _nonRooted.Children) {
                 if (directoryNode.TryGetChild(moduleName, out var nameNode)) {
-                    moduleImport = new ModuleImport(ChildrenSource.Empty, moduleName, moduleName, directoryNode.Name, nameNode.ModulePath, IsPythonCompiled(nameNode.ModulePath), false);
+                    moduleImport = new ModuleImport(ChildrenSource.Empty, moduleName, moduleName, directoryNode.Name, nameNode.ModulePath, nameNode.ModuleFileSize, IsPythonCompiled(nameNode.ModulePath), false);
                     return true;
                 }
             }
@@ -302,7 +355,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return false;
         }
 
-        private bool TryCreateNamespacePackageImports(in ImmutableArray<Edge> matchedEdges, out IImportSearchResult searchResult) {
+        private bool TryCreateNamespacePackageImports(in ImmutableArray<Edge> matchedEdges, out IImportChildrenSource searchResult) {
             foreach (var edge in matchedEdges) {
                 if (edge.IsFirst) {
                     continue;
@@ -315,35 +368,6 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
             searchResult = default;
             return false;
-        }
-
-        public PathResolverSnapshot SetWorkDirectory(in string workDirectory, out IEnumerable<string> addedRoots) {
-            var normalizedRootDirectory = !string.IsNullOrEmpty(workDirectory) && Path.IsPathRooted(workDirectory)
-                ? PathUtils.NormalizePath(workDirectory)
-                : string.Empty;
-
-            if (_workDirectory.PathEquals(normalizedRootDirectory)) {
-                addedRoots = Enumerable.Empty<string>();
-                return this;
-            }
-
-            CreateRoots(normalizedRootDirectory, _userSearchPaths, _interpreterSearchPaths, out var newRoots, out var userRootsCount);
-            addedRoots = newRoots.Select(r => r.Name).Except(_roots.Select(n => n.Name));
-            return new PathResolverSnapshot(_pythonLanguageVersion, normalizedRootDirectory, _userSearchPaths, _interpreterSearchPaths, newRoots, userRootsCount, _nonRooted, _builtins, Version + 1);
-        }
-
-        public PathResolverSnapshot SetUserSearchPaths(in IEnumerable<string> searchPaths, out IEnumerable<string> addedRoots) {
-            var userSearchPaths = searchPaths.ToArray();
-            CreateRoots(_workDirectory, userSearchPaths, _interpreterSearchPaths, out var newRoots, out var userRootsCount);
-            addedRoots = newRoots.Select(r => r.Name).Except(_roots.Select(n => n.Name));
-            return new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, userSearchPaths, _interpreterSearchPaths, newRoots, userRootsCount, _nonRooted, _builtins, Version + 1);
-        }
-
-        public PathResolverSnapshot SetInterpreterPaths(in IEnumerable<string> searchPaths, out IEnumerable<string> addedRoots) {
-            var interpreterSearchPaths = searchPaths.ToArray();
-            CreateRoots(_workDirectory, _userSearchPaths, interpreterSearchPaths, out var newRoots, out var userRootsCount);
-            addedRoots = newRoots.Select(r => r.Name).Except(_roots.Select(n => n.Name));
-            return new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, interpreterSearchPaths, newRoots, userRootsCount, _nonRooted, _builtins, Version + 1);
         }
 
         public PathResolverSnapshot SetBuiltins(in IEnumerable<string> builtinModuleNames) {
@@ -362,15 +386,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 Version + 1);
         }
 
-        private void CreateRoots(string rootDirectory, string[] userSearchPaths, string[] interpreterSearchPaths, out ImmutableArray<Node> nodes, out int userRootsCount) {
-            if (rootDirectory != string.Empty) {
-                CreateRootsWithDefault(rootDirectory, userSearchPaths, interpreterSearchPaths, out nodes, out userRootsCount);
-            } else {
-                CreateRootsWithoutDefault(userSearchPaths, interpreterSearchPaths, out nodes, out userRootsCount);
-            }
-        }
-
-        private void CreateRootsWithDefault(string rootDirectory, string[] userSearchPaths, string[] interpreterSearchPaths, out ImmutableArray<Node> nodes, out int userRootsCount) {
+        private void CreateRootsWithDefault(string rootDirectory, ImmutableArray<string> userSearchPaths, ImmutableArray<string> interpreterSearchPaths, out ImmutableArray<Node> nodes, out int userRootsCount) {
             var filteredUserSearchPaths = userSearchPaths.Select(FixPath)
                 .Except(new[] { rootDirectory })
                 .ToArray();
@@ -385,7 +401,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             string FixPath(string p) => Path.IsPathRooted(p) ? PathUtils.NormalizePath(p) : PathUtils.NormalizePath(Path.Combine(rootDirectory, p));
         }
 
-        private void CreateRootsWithoutDefault(string[] userSearchPaths, string[] interpreterSearchPaths, out ImmutableArray<Node> nodes, out int userRootsCount) {
+        private void CreateRootsWithoutDefault(ImmutableArray<string> userSearchPaths, ImmutableArray<string> interpreterSearchPaths, out ImmutableArray<Node> nodes, out int userRootsCount) {
             var filteredUserSearchPaths = userSearchPaths
                 .Where(Path.IsPathRooted)
                 .Select(PathUtils.NormalizePath)
@@ -417,7 +433,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private Node GetOrCreateRoot(string path)
             => _roots.FirstOrDefault(r => r.Name.PathEquals(path)) ?? Node.CreateRoot(path);
 
-        public PathResolverSnapshot AddModulePath(in string modulePath, in bool allowNonRooted, out string fullModuleName) {
+        public PathResolverSnapshot AddModulePath(in string modulePath, long moduleFileSize, in bool allowNonRooted, out string fullModuleName) {
             var isFound = TryFindModule(modulePath, out var lastEdge, out var unmatchedPathSpan);
             if (unmatchedPathSpan.Source == default || !allowNonRooted && lastEdge.IsNonRooted) {
                 // Not a module
@@ -432,14 +448,10 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             }
 
             if (lastEdge.IsNonRooted) {
-                return ReplaceNonRooted(AddToNonRooted(lastEdge, unmatchedPathSpan, out fullModuleName));
+                return ReplaceNonRooted(AddToNonRooted(lastEdge, unmatchedPathSpan, moduleFileSize, out fullModuleName));
             }
 
-            if (unmatchedPathSpan.Length == 0) {
-                
-            }
-
-            var newEnd = CreateNewNodes(lastEdge, unmatchedPathSpan, out fullModuleName);
+            var newEnd = CreateNewNodes(lastEdge, unmatchedPathSpan, moduleFileSize, out fullModuleName);
             var newRoot = UpdateNodesFromEnd(lastEdge, newEnd);
             return ImmutableReplaceRoot(newRoot, lastEdge.FirstEdge.EndIndex);
         }
@@ -568,7 +580,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return true;
         }
 
-        private Node AddToNonRooted(in Edge lastEdge, in StringSpan unmatchedPathSpan, out string fullModuleName) {
+        private Node AddToNonRooted(in Edge lastEdge, in StringSpan unmatchedPathSpan, in long moduleFileSize, out string fullModuleName) {
             var (modulePath, unmatchedPathStart, unmatchedPathLength) = unmatchedPathSpan;
             var moduleNameStart = GetModuleNameStart(modulePath);
             var directoryIsKnown = unmatchedPathStart == moduleNameStart;
@@ -577,7 +589,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 ? modulePath.Substring(moduleNameStart, unmatchedPathLength)
                 : modulePath.Substring(moduleNameStart, unmatchedPathLength - moduleNameStart);
 
-            var moduleNode = Node.CreateModule(fullModuleName, modulePath, fullModuleName);
+            var moduleNode = Node.CreateModule(fullModuleName, modulePath, moduleFileSize, fullModuleName);
 
             if (!directoryIsKnown) {
                 var directory = modulePath.Substring(0, moduleNameStart - 1);
@@ -589,25 +601,25 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             return _nonRooted.ReplaceChildAt(directoryNode, directoryIndex);
         }
 
-        private static Node CreateNewNodes(in Edge lastEdge, in StringSpan unmatchedPathSpan, out string fullModuleName) {
+        private static Node CreateNewNodes(in Edge lastEdge, in StringSpan unmatchedPathSpan, in long moduleFileSize, out string fullModuleName) {
             var (modulePath, unmatchedPathStart, unmatchedPathLength) = unmatchedPathSpan;
             if (unmatchedPathLength == 0) {
                 // Module name matches name of existing package
                 fullModuleName = GetFullModuleName(lastEdge);
-                return lastEdge.End.ToModuleNode(modulePath, fullModuleName);
+                return lastEdge.End.ToModuleNode(modulePath, moduleFileSize, fullModuleName);
             }
 
             if (unmatchedPathStart == GetModuleNameStart(modulePath)) {
                 // Module is added to existing package
                 var name = modulePath.Substring(unmatchedPathStart, unmatchedPathLength);
                 fullModuleName = GetFullModuleName(lastEdge, name);
-                var newChildNode = Node.CreateModule(name, modulePath, fullModuleName);
+                var newChildNode = Node.CreateModule(name, modulePath, moduleFileSize, fullModuleName);
                 return lastEdge.End.AddChild(newChildNode);
             }
 
             var names = modulePath.Split(Path.DirectorySeparatorChar, unmatchedPathStart, unmatchedPathLength);
             fullModuleName = GetFullModuleName(lastEdge, names, names.Length - 1);
-            var newNode = Node.CreateModule(names.Last(), modulePath, fullModuleName);
+            var newNode = Node.CreateModule(names.Last(), modulePath, moduleFileSize, fullModuleName);
 
             for (var i = names.Length - 2; i >= 0; i--) {
                 newNode = Node.CreatePackage(names[i], GetFullModuleName(lastEdge, names, i), newNode);

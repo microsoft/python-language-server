@@ -14,38 +14,22 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
     public sealed class PathResolver {
-        private PathResolverSnapshot _currentSnapshot;
-
-        public PathResolver(PythonLanguageVersion pythonLanguageVersion) {
-            _currentSnapshot = new PathResolverSnapshot(pythonLanguageVersion);
+        public PathResolver(in PythonLanguageVersion pythonLanguageVersion, in string root, in ImmutableArray<string> interpreterSearchPaths, in ImmutableArray<string> userSearchPaths) {
+            CurrentSnapshot = new PathResolverSnapshot(pythonLanguageVersion, root, interpreterSearchPaths, userSearchPaths);
         }
 
-        public IEnumerable<string> SetRoot(in string root) {
-            _currentSnapshot = _currentSnapshot.SetWorkDirectory(root, out var addedRoots);
-            return addedRoots;
-        }
-
-        public IEnumerable<string> SetUserSearchPaths(in IEnumerable<string> searchPaths) {
-            _currentSnapshot = _currentSnapshot.SetUserSearchPaths(searchPaths, out var addedRoots);
-            return addedRoots;
-        }
-
-        public IEnumerable<string> SetInterpreterSearchPaths(in IEnumerable<string> searchPaths) {
-            _currentSnapshot = _currentSnapshot.SetInterpreterPaths(searchPaths, out var addedRoots);
-            return addedRoots;
-        }
-
-        public void SetBuiltins(in IEnumerable<string> builtinModuleNames) => _currentSnapshot = _currentSnapshot.SetBuiltins(builtinModuleNames);
-        public void RemoveModulePath(in string path) => _currentSnapshot = _currentSnapshot.RemoveModulePath(path);
-        public bool TryAddModulePath(in string path, in bool allowNonRooted, out string fullModuleName) {
-            _currentSnapshot = _currentSnapshot.AddModulePath(path, allowNonRooted, out fullModuleName);
+        public void SetBuiltins(in IEnumerable<string> builtinModuleNames) => CurrentSnapshot = CurrentSnapshot.SetBuiltins(builtinModuleNames);
+        public void RemoveModulePath(in string path) => CurrentSnapshot = CurrentSnapshot.RemoveModulePath(path);
+        public bool TryAddModulePath(in string path, long fileSize, in bool allowNonRooted, out string fullModuleName) {
+            CurrentSnapshot = CurrentSnapshot.AddModulePath(path, fileSize, allowNonRooted, out fullModuleName);
             return fullModuleName != null;
         }
 
-        public PathResolverSnapshot CurrentSnapshot => _currentSnapshot;
+        public PathResolverSnapshot CurrentSnapshot { get; private set; }
     }
 }

@@ -28,41 +28,34 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             public readonly string Name;
             public readonly string ModulePath;
             public readonly string FullModuleName;
+            public readonly long ModuleFileSize;
             public bool IsModule => ModulePath != null;
 
-            private Node(string name, ImmutableArray<Node> children, string modulePath, string fullModuleName) {
+            private Node(string name, ImmutableArray<Node> children, string modulePath, long moduleFileSize, string fullModuleName) {
                 Name = name;
                 Children = children;
                 ModulePath = modulePath;
+                ModuleFileSize = moduleFileSize;
                 FullModuleName = fullModuleName;
             }
 
-            public static Node CreateDefaultRoot()
-                => new Node("*", ImmutableArray<Node>.Empty, null, null);
+            public static Node CreateDefaultRoot() => new Node("*", ImmutableArray<Node>.Empty, null, -1, null);
+            public static Node CreateBuiltinRoot() => new Node(":", ImmutableArray<Node>.Empty, null, -1, null);
+            public static Node CreateBuiltinRoot(ImmutableArray<Node> builtins) => new Node(":", builtins, null, -1, null);
+            public static Node CreateRoot(string path) => new Node(PathUtils.NormalizePath(path), ImmutableArray<Node>.Empty, null, -1, null);
 
-            public static Node CreateBuiltinRoot()
-                => new Node(":", ImmutableArray<Node>.Empty, null, null);
-
-            public static Node CreateBuiltinRoot(ImmutableArray<Node> builtins)
-                => new Node(":", builtins, null, null);
-
-            public static Node CreateRoot(string path) 
-                => new Node(PathUtils.NormalizePath(path), ImmutableArray<Node>.Empty, null, null);
-
-            public static Node CreateModule(string name, string modulePath, string fullModuleName)
-                => new Node(name, ImmutableArray<Node>.Empty, modulePath, fullModuleName);
+            public static Node CreateModule(string name, string modulePath, long moduleFileSize, string fullModuleName)
+                => new Node(name, ImmutableArray<Node>.Empty, modulePath, moduleFileSize, fullModuleName);
 
             public static Node CreatePackage(string name, string fullModuleName, Node child)
-                => new Node(name, ImmutableArray<Node>.Empty.Add(child), null, fullModuleName);
+                => new Node(name, ImmutableArray<Node>.Empty.Add(child), null, -1, fullModuleName);
 
-            public static Node CreateBuiltinModule(string name)
-                => new Node(name, ImmutableArray<Node>.Empty, null, name);
-            
-            public Node ToModuleNode(string modulePath, string fullModuleName) => new Node(Name, Children, modulePath, fullModuleName);
-            public Node ToPackage() => new Node(Name, Children, null, FullModuleName);
-            public Node AddChild(Node child) => new Node(Name, Children.Add(child), ModulePath, FullModuleName);
-            public Node ReplaceChildAt(Node child, int index) => new Node(Name, Children.ReplaceAt(index, child), ModulePath, FullModuleName);
-            public Node RemoveChildAt(int index) => new Node(Name, Children.RemoveAt(index), ModulePath, FullModuleName);
+            public static Node CreateBuiltinModule(string name) => new Node(name, ImmutableArray<Node>.Empty, null, 0, name);
+            public Node ToModuleNode(string modulePath, long moduleFileSize, string fullModuleName) => new Node(Name, Children, modulePath, moduleFileSize, fullModuleName);
+            public Node ToPackage() => new Node(Name, Children, null, 0, FullModuleName);
+            public Node AddChild(Node child) => new Node(Name, Children.Add(child), ModulePath, ModuleFileSize, FullModuleName);
+            public Node ReplaceChildAt(Node child, int index) => new Node(Name, Children.ReplaceAt(index, child), ModulePath, ModuleFileSize, FullModuleName);
+            public Node RemoveChildAt(int index) => new Node(Name, Children.RemoveAt(index), ModulePath, ModuleFileSize, FullModuleName);
 
             public bool TryGetChild(string childName, out Node child) {
                 var index = GetChildIndex(childName);
@@ -95,7 +88,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
             private static bool NameEquals(Node n, string name) => n.Name.EqualsOrdinal(name);
 
-            private static bool NameEquals(Node n, StringSpan span) 
+            private static bool NameEquals(Node n, StringSpan span)
                     => n.Name.Length == span.Length && n.Name.EqualsOrdinal(0, span.Source, span.Start, span.Length);
         }
 
@@ -105,7 +98,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             private readonly PathResolverSnapshot _snapshot;
             private readonly ImmutableArray<Edge> _edges;
 
-            public ChildrenSource(PathResolverSnapshot snapshot, Edge edge) 
+            public ChildrenSource(PathResolverSnapshot snapshot, Edge edge)
                 : this(snapshot, ImmutableArray<Edge>.Create(edge)) {}
 
             public ChildrenSource(PathResolverSnapshot snapshot, ImmutableArray<Edge> edges) {

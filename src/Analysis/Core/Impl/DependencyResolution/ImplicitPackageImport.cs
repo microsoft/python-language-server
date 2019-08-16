@@ -13,11 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
-    public class ImplicitPackageImport : IImportSearchResult, IImportChildrenSource {
+    public class ImplicitPackageImport : IImportChildrenSource {
         private readonly IImportChildrenSource _childrenSource;
 
         public string Name { get; }

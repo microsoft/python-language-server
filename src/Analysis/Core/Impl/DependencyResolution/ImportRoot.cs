@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -16,27 +17,13 @@
 using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
-    public class ModuleImport : IImportChildrenSource {
+    public class ImportRoot : IImportChildrenSource {
         private readonly IImportChildrenSource _childrenSource;
+        public string Path { get; }
 
-        public string Name { get; }
-        public string FullName { get; }
-        public string RootPath { get; }
-        public string ModulePath { get; }
-        public long ModuleFileSize { get; }
-        public bool IsCompiled { get; }
-        public bool IsLibrary { get; }
-        public bool IsBuiltin => IsCompiled && ModulePath == null;
-
-        public ModuleImport(IImportChildrenSource childrenSource, string name, string fullName, string rootPath, string modulePath, long moduleFileSize, bool isCompiled, bool isLibrary) {
+        public ImportRoot(IImportChildrenSource childrenSource, string path) {
+            Path = path;
             _childrenSource = childrenSource;
-            Name = name;
-            FullName = fullName;
-            RootPath = rootPath;
-            ModulePath = modulePath;
-            ModuleFileSize = moduleFileSize;
-            IsCompiled = isCompiled;
-            IsLibrary = isLibrary;
         }
 
         public ImmutableArray<string> GetChildrenNames() => _childrenSource.GetChildrenNames();
