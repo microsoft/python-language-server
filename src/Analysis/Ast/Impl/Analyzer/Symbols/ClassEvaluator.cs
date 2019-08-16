@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -56,7 +55,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
                 var bases = ProcessBases();
                 _class.SetBases(bases);
-                //ProcessBaseScopes();
                 // Declare __class__ variable in the scope.
                 Eval.DeclareVariable("__class__", _class, VariableSource.Declaration);
                 ProcessClassBody();
@@ -162,18 +160,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 t.AddReference(Eval.GetLocationOfName(arg.Expression));
             }
         }
-
-        private void ProcessBaseScopes() {
-            foreach (var b in _class.Bases.OfType<IPythonClassType>()) {
-                var scope = b.GetScope(Eval);
-                if (scope != null) {
-                    foreach (var v in scope.Variables) {
-                        Eval.CurrentScope.DeclareVariable(v.Name, v, v.Source, v.Location);
-                    }
-                }
-            }
-        }
-
 
         private void EvaluateConstructors(ClassDefinition cd) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed

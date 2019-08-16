@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Values {
         private VariableCollection _variables;
         private VariableCollection _nonLocals;
         private VariableCollection _globals;
-        private List<IScope> _childScopes;
+        private List<Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
             OuterScope = outerScope;
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         #endregion
 
-        internal void AddChildScope(IScope s) => (_childScopes ?? (_childScopes = new List<IScope>())).Add(s);
+        internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
 
         private VariableCollection VariableCollection => _variables ?? (_variables = new VariableCollection());
 

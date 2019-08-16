@@ -243,15 +243,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         }
                     }
                     break;
-
-                default:
-                    if (type?.GetMember(mex.Name) is ILocatedMember lm) {
-                        definingMember = lm;
-                        return FromMember(lm);
-                    }
-
-                    break;
             }
+
+            if (type?.GetMember(mex.Name) is ILocatedMember lm) {
+                definingMember = lm;
+                return FromMember(lm);
+            }
+
             return null;
         }
 
