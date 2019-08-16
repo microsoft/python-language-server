@@ -47,6 +47,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             sm.AddService(this);
             _moduleResolution = new MainModuleResolution(root, sm);
+            _stubResolution = new TypeshedResolution(sm);
+
+            await _moduleResolution.InitializeAsync(cancellationToken);
+            await _stubResolution.InitializeAsync(cancellationToken);
+
             lock (_lock) {
                 var builtinModule = _moduleResolution.CreateBuiltinsModule();
                 _builtinTypes[BuiltinTypeId.NoneType]
@@ -54,10 +59,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _builtinTypes[BuiltinTypeId.Unknown]
                     = UnknownType = new PythonType("Unknown", new Location(builtinModule), string.Empty);
             }
-            await _moduleResolution.InitializeAsync(cancellationToken);
-
-            _stubResolution = new TypeshedResolution(sm);
-            await _stubResolution.InitializeAsync(cancellationToken);
 
             await _moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
         }
