@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -39,8 +40,9 @@ namespace Microsoft.Python.Analysis.Caching {
 
             var interpreter = services.GetService<IPythonInterpreter>();
             var fs = services.GetService<IFileSystem>();
-            
-            var modulePathType = GetModulePathType(filePath, interpreter.ModuleResolution.LibraryPaths, fs);
+
+            var moduleResolution = interpreter.ModuleResolution;
+            var modulePathType = GetModulePathType(filePath, moduleResolution.LibraryPaths, fs);
             switch(modulePathType) {
                 case PythonLibraryPathType.Site when cachingLevel < AnalysisCachingLevel.Library:
                     return null;
@@ -82,19 +84,28 @@ namespace Microsoft.Python.Analysis.Caching {
                 return $"{moduleName}({config.Version.Major}.{config.Version.Minor})";
             }
 
-            // If all else fails, hash module data.
-            return $"{moduleName}.{HashModuleContent(Path.GetDirectoryName(filePath), fs)}";
+            var parent = moduleResolution.CurrentPathResolver.GetModuleParentFromModuleName(moduleName);
+            var hash = HashModuleFileSizes(parent);
+            // If all else fails, hash modules file sizes.
+            return $"{moduleName}.{(ulong)hash}";
         }
 
-        private static string HashModuleContent(string moduleFolder, IFileSystem fs) {
-            // Hash file sizes 
-            var total = fs
-                .GetFileSystemEntries(moduleFolder, "*.*", SearchOption.AllDirectories)
-                .Where(fs.FileExists)
-                .Select(fs.FileSize)
-                .Aggregate((hash, e) => unchecked(hash * 31 ^ e.GetHashCode()));
+        private static long HashModuleFileSizes(IImportChildrenSource source) {
+            var hash = 0L;
+            var names = source.GetChildrenNames();
+            foreach (var name in names) {
+                if (source.TryGetChildImport(name, out var child)) {
+                    if (child is ModuleImport moduleImport) {
+                        hash = unchecked(hash * 31 ^ moduleImport.ModuleFileSize);
+                    }
 
-            return ((uint)total).ToString();
+                    if (child is IImportChildrenSource childSource) {
+                        hash = unchecked(hash * 31 ^ HashModuleFileSizes(childSource));
+                    }
+                }
+            }
+
+            return hash;
         }
 
         private static PythonLibraryPathType GetModulePathType(string modulePath, IEnumerable<PythonLibraryPath> libraryPaths, IFileSystem fs) {

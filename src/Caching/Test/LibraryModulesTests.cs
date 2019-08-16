@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -120,6 +121,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Ftplib() => TestModule("ftplib");
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public Task Functools() => TestModule("functools");
 
         [TestMethod, Priority(0)]
@@ -172,6 +174,9 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         [TestMethod, Priority(0)]
         public Task Multiprocessing() => TestModule("multiprocessing");
+
+        [TestMethod, Priority(0)]
+        public Task Numpy() => TestModule("numpy");
 
         [TestMethod, Priority(0)]
         public Task Os() => TestModule("os");
@@ -296,7 +301,7 @@ x = requests.get('microsoft.com')
         }
 
         private async Task TestModule(string name) {
-            var analysis = await GetAnalysisAsync($"import {name}");
+            var analysis = await GetAnalysisAsync($"import {name}", PythonVersions.Python37_x64);
             var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
             var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingLevel.Library);
 
