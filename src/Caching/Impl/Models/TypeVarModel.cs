@@ -45,12 +45,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             };
         }
 
-        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
-            var constraints = Constraints.Select(mf.ConstructType).ToArray();
-            var bound = mf.ConstructType(Bound);
-            var covariant = mf.ConstructType(Covariant);
-            var contravariant = mf.ConstructType(Contravariant);
-            return new GenericTypeParameter(Name, constraints, bound, covariant, contravariant, mf.DefaultLocation);
-        }
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) 
+            => new GenericTypeParameter(Name, 
+                Constraints.Select(mf.ConstructType).ToArray(), 
+                Bound, Covariant, Contravariant, mf.DefaultLocation);
     }
 }
