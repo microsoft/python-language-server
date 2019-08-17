@@ -53,32 +53,26 @@ namespace Microsoft.Python.Analysis.Caching {
                 return null;
             }
 
-            // TODO: better resolve circular references.
-            using (_typeReentrancy.Push(qualifiedName, out var reentered)) {
-                if (reentered) {
-                    return null;
-                }
-                // See if member is a module first.
-                var module = GetModule(parts);
-                if (module == null) {
-                    return null;
-                }
-
-                if (parts.ObjectType == ObjectType.NamedTuple) {
-                    return ConstructNamedTuple(parts.MemberNames[0], module);
-                }
-
-                var member = parts.ModuleName == Module.Name
-                        ? GetMemberFromThisModule(parts.MemberNames)
-                        : GetMemberFromModule(module, parts.MemberNames);
-
-                if (parts.ObjectType != ObjectType.Instance) {
-                    return member;
-                }
-
-                var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
-                return new PythonInstance(t);
+            // See if member is a module first.
+            var module = GetModule(parts);
+            if (module == null) {
+                return null;
             }
+
+            if (parts.ObjectType == ObjectType.NamedTuple) {
+                return ConstructNamedTuple(parts.MemberNames[0], module);
+            }
+
+            var member = parts.ModuleName == Module.Name
+                    ? GetMemberFromThisModule(parts.MemberNames)
+                    : GetMemberFromModule(module, parts.MemberNames);
+
+            if (parts.ObjectType != ObjectType.Instance) {
+                return member;
+            }
+
+            var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
+            return new PythonInstance(t);
         }
 
         private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
@@ -105,7 +99,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
                 m = nextModel.Construct(this, declaringType);
                 Debug.Assert(m != null);
-                if(m is IGenericType gt && typeArgs.Count > 0) {
+                if (m is IGenericType gt && typeArgs.Count > 0) {
                     m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));
                 }
 

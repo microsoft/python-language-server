@@ -25,26 +25,30 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     [DebuggerDisplay("f:{" + nameof(Name) + "}")]
     internal sealed class FunctionModel : CallableModel {
         public OverloadModel[] Overloads { get; set; }
-
         public FunctionModel() { } // For de-serializer from JSON
+
+        [NonSerialized] private PythonFunctionType _function;
 
         public FunctionModel(IPythonFunctionType func) : base(func) {
             Overloads = func.Overloads.Select(FromOverload).ToArray();
         }
 
         protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
-            var ft = new PythonFunctionType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, Documentation);
+            if (_function != null) {
+                return _function;
+            }
+            _function = new PythonFunctionType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, Documentation);
 
             // Create inner functions and classes first since function
             // may be returning one of them.
             foreach (var model in Functions) {
-                var f = model.Construct(mf, ft);
-                ft.AddMember(Name, f, overwrite: true);
+                var f = model.Construct(mf, _function);
+                _function.AddMember(Name, f, overwrite: true);
             }
 
             foreach (var cm in Classes) {
-                var c = cm.Construct(mf, ft);
-                ft.AddMember(cm.Name, c, overwrite: true);
+                var c = cm.Construct(mf, _function);
+                _function.AddMember(cm.Name, c, overwrite: true);
             }
 
             foreach (var om in Overloads) {
@@ -52,10 +56,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 o.SetDocumentation(Documentation);
                 o.SetReturnValue(mf.ConstructMember(om.ReturnType), true);
                 o.SetParameters(om.Parameters.Select(p => ConstructParameter(mf, p)).ToArray());
-                ft.AddOverload(o);
+                _function.AddOverload(o);
             }
 
-            return ft;
+            return _function;
         }
         private IParameterInfo ConstructParameter(ModuleFactory mf, ParameterModel pm)
             => new ParameterInfo(pm.Name, mf.ConstructType(pm.Type), pm.Kind, mf.ConstructMember(pm.DefaultValue));

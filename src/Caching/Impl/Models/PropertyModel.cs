@@ -22,23 +22,27 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     [Serializable]
     internal sealed class PropertyModel : CallableModel {
         public string ReturnType { get; set; }
-
         public PropertyModel() { } // For de-serializer from JSON
+
+        [NonSerialized] private PythonPropertyType _property;
 
         public PropertyModel(IPythonPropertyType prop) : base(prop) {
             ReturnType = prop.ReturnType.GetPersistentQualifiedName();
         }
 
         protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
-            var prop = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0);
-            prop.SetDocumentation(Documentation);
+            if (_property != null) {
+                return _property;
+            }
+            _property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0);
+            _property.SetDocumentation(Documentation);
 
             var o = new PythonFunctionOverload(Name, mf.DefaultLocation);
             o.SetDocumentation(Documentation);
             o.SetReturnValue(mf.ConstructMember(ReturnType), true);
-            prop.AddOverload(o);
+            _property.AddOverload(o);
 
-            return prop;
+            return _property;
         }
     }
 }

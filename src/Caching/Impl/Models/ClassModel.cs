@@ -48,8 +48,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public GenericParameterValueModel[] GenericParameterValues { get; set; }
 
-        [NonSerialized]
-        private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
+        [NonSerialized] private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
+        [NonSerialized] private PythonClassType _cls;
 
         public ClassModel() { } // For de-serializer from JSON
 
@@ -127,43 +127,47 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         }
 
         protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
-            var cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
+            if (_cls != null) {
+                return _cls;
+            }
+            _cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
+
             var bases = CreateBases(mf);
 
-            cls.SetBases(bases);
-            cls.SetDocumentation(Documentation);
+            _cls.SetBases(bases);
+            _cls.SetDocumentation(Documentation);
 
             if (GenericParameterValues.Length > 0) {
-                cls.StoreGenericParameters(cls,
-                    cls.ActualGenericParameters.Keys.ToArray(),
+                _cls.StoreGenericParameters(_cls,
+                    _cls.ActualGenericParameters.Keys.ToArray(),
                     GenericParameterValues.ToDictionary(
-                        k => cls.ActualGenericParameters.Keys.First(x => x.Name == k.Name), 
+                        k => _cls.ActualGenericParameters.Keys.First(x => x.Name == k.Name), 
                         v => mf.ConstructType(v.Type)
                     )
                 );
             }
 
             foreach (var f in Methods) {
-                var m = f.Construct(mf, cls);
-                cls.AddMember(f.Name, m, false);
+                var m = f.Construct(mf, _cls);
+                _cls.AddMember(f.Name, m, false);
             }
 
             foreach (var p in Properties) {
-                var m = p.Construct(mf, cls);
-                cls.AddMember(p.Name, m, false);
+                var m = p.Construct(mf, _cls);
+                _cls.AddMember(p.Name, m, false);
             }
 
             foreach (var c in Classes) {
-                var m = c.Construct(mf, cls);
-                cls.AddMember(c.Name, m, false);
+                var m = c.Construct(mf, _cls);
+                _cls.AddMember(c.Name, m, false);
             }
 
             foreach (var vm in Fields) {
-                var m = vm.Construct(mf, cls);
-                cls.AddMember(vm.Name, m, false);
+                var m = vm.Construct(mf, _cls);
+                _cls.AddMember(vm.Name, m, false);
             }
 
-            return cls;
+            return _cls;
         }
 
         private IPythonType[] CreateBases(ModuleFactory mf) {
