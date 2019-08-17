@@ -243,6 +243,11 @@ y = get()
             sig.signatures.Should().NotBeNull();
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("get() -> int");
+
+            sig = src.GetSignature(analysis, new SourceLocation(12, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> int");
         }
 
         [TestMethod, Priority(0)]
@@ -286,6 +291,28 @@ x = boxedint.get(5)
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("get(x: Sequence[List[int]]) -> int");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefNestedQuotedGenericReturnValue() {
+            const string code = @"
+from typing import List, Sequence
+
+class Box():
+    def get(self, x: 'Sequence[List[int]]') -> 'Sequence[List[int]]':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get(5)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(9, 19));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get(x: Sequence[List[int]]) -> Sequence[List[int]]");
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task ForwardRefQuotedGenericTypeParameter() {

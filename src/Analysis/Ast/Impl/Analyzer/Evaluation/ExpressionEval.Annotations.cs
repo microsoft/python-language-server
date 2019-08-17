@@ -40,11 +40,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         return result.GetPythonType();
                     }
                     break;
-                // Handle forward references e.g x: 'int' or x: 'Dict[int, str]'
-                // Try to get type from string 
-                case ConstantExpression constExpr when !string.IsNullOrEmpty(constExpr.GetStringValue()):
-                    Expression forwardRefExpr = TryCreateExpression(constExpr.GetStringValue());
-                    return GetTypeFromAnnotation(forwardRefExpr, out isGeneric, options);
             }
 
             // Look at specialization and typing first
