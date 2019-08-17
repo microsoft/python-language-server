@@ -25,12 +25,9 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             : base(models, mf) {
         }
 
-        public override IPythonType CreateMember(TypeVarModel tvm, IPythonType declaringType) {
-            var constraints = tvm.Constraints.Select(c => ModuleFactory.ConstructType(c)).ToArray();
-            var bound = ModuleFactory.ConstructType(tvm.Bound);
-            var covariant = ModuleFactory.ConstructType(tvm.Covariant);
-            var contravariant = ModuleFactory.ConstructType(tvm.Contravariant);
-            return new GenericTypeParameter(tvm.Name, ModuleFactory.Module, constraints, bound, covariant, contravariant, ModuleFactory.DefaultLocation);
-        }
+        public override IPythonType CreateMember(TypeVarModel tvm, IPythonType declaringType)
+            => new GenericTypeParameter(tvm.Name, ModuleFactory.Module,
+                tvm.Constraints.Select(c => ModuleFactory.ConstructType(c)).ToArray(),
+                tvm.Bound, tvm.Covariant, tvm.Contravariant, ModuleFactory.DefaultLocation);
     }
 }
