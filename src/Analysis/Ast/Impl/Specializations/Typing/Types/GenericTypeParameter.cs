@@ -92,6 +92,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray() ?? Array.Empty<IPythonType>();
 
+            // TODO get bound here might have to parse string and look at it
+
             var documentation = GetDocumentation(args, constraints);
             return new GenericTypeParameter(name, declaringModule, constraints, documentation, location);
         }
