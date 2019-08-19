@@ -94,7 +94,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         private SpecializedGenericType(string name, string qualifiedName, IPythonModule declaringModule) 
             : base(declaringModule) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            QualifiedName = qualifiedName ?? name;
+            QualifiedName = qualifiedName ?? $"{declaringModule.Name}:{name}";
             Documentation = Name;
         }
 
