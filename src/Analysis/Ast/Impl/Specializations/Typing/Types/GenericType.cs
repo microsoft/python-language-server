@@ -32,14 +32,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Constructs generic type with generic type parameters. Typically used
         /// in generic classes such as when handling Generic[_T] base.
         /// </summary>
-        public SpecializedGenericType(string name, IReadOnlyList<IGenericTypeParameter> parameters, IPythonModule declaringModule)
-            : this(name, declaringModule) {
+        public SpecializedGenericType(string name, string qualifiedName, IReadOnlyList<IGenericTypeParameter> parameters, IPythonModule declaringModule)
+            : this(name, qualifiedName, declaringModule) {
             GenericParameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
 
         /// <summary>
         /// Constructs generic type with dynamic type constructor.
         /// Typically used in type specialization scenarios.
+        /// Type created with this constructor cannot be persisted
+        /// since it does not have qualified name.
         /// </summary>
         /// <param name="name">Type name including parameters, such as Iterator[T]</param>
         /// <param name="specificTypeConstructor">Constructor of specific types.</param>
@@ -55,15 +57,44 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             BuiltinTypeId typeId = BuiltinTypeId.Unknown,
             IReadOnlyList<IGenericTypeParameter> parameters = null,
             string documentation = null
-            ) : this(name, declaringModule) {
+        ) : this(name, null, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
             GenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
             Documentation = documentation ?? name;
         }
 
-        private SpecializedGenericType(string name, IPythonModule declaringModule) : base(declaringModule) {
+        /// <summary>
+        /// Constructs generic type with dynamic type constructor.
+        /// Typically used in type specialization scenarios.
+        /// </summary>
+        /// <param name="name">Type name including parameters, such as Iterator[T]</param>
+        /// <param name="qualifiedName">Qualified type name including parameters, such as typing:Iterator[module:T]</param>
+        /// <param name="specificTypeConstructor">Constructor of specific types.</param>
+        /// <param name="declaringModule">Declaring module.</param>
+        /// <param name="typeId">Type id. Used in type comparisons such as when matching
+        /// function arguments. For example, Iterator[T] normally has type id of ListIterator.</param>
+        /// <param name="parameters">Optional type parameters as declared by TypeVar.</param>
+        /// <param name="documentation">Optional documentation. Defaults to <see cref="name"/>.</param>
+        public SpecializedGenericType(
+            string name,
+            string qualifiedName,
+            SpecificTypeConstructor specificTypeConstructor,
+            IPythonModule declaringModule,
+            BuiltinTypeId typeId = BuiltinTypeId.Unknown,
+            IReadOnlyList<IGenericTypeParameter> parameters = null,
+            string documentation = null
+            ) : this(name, qualifiedName, declaringModule) {
+            SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
+            TypeId = typeId;
+            GenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            Documentation = documentation ?? name;
+        }
+
+        private SpecializedGenericType(string name, string qualifiedName, IPythonModule declaringModule) 
+            : base(declaringModule) {
             Name = name ?? throw new ArgumentNullException(nameof(name));
+            QualifiedName = qualifiedName ?? name;
             Documentation = Name;
         }
 
@@ -77,7 +108,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         #region IPythonType
         public string Name { get; }
-        public string QualifiedName => this.GetQualifiedName();
+        public string QualifiedName { get; }
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Enumerable.Empty<string>();
         public BuiltinTypeId TypeId { get; } = BuiltinTypeId.Unknown;

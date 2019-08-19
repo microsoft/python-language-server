@@ -145,11 +145,12 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
                     if(subjectClass is IGenericType gt) {
                         otherClass.Should().BeAssignableTo<IGenericType>();
-                        Debug.Assert(otherClass.IsGeneric == gt.IsGeneric);
                         otherClass.IsGeneric.Should().Be(gt.IsGeneric);
                     }
 
+                    Debug.Assert(subjectClass.Bases.Count == otherClass.Bases.Count);
                     subjectClass.Bases.Count.Should().Be(otherClass.Bases.Count);
+
                     foreach (var subjectBase in subjectClass.Bases) {
                         var otherBase = otherClass.Bases.FirstOrDefault(b => b.Name == subjectBase.Name);
                         otherBase.Should().NotBeNull();

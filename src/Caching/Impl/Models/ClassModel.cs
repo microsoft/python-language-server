@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
@@ -172,7 +173,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         private IPythonType[] CreateBases(ModuleFactory mf) {
             var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
-            var bases = Bases.Select(b => is3x && b == "object" ? null : mf.ConstructType(b)).ExcludeDefault().ToArray();
+            var basesNames = Bases.Select(b => is3x && b == "object" ? null : b).ExcludeDefault().ToArray();
+            var bases = basesNames.Select(mf.ConstructType).ExcludeDefault().ToArray();
 
             if (GenericBaseParameters.Length > 0) {
                 // Generic class. Need to reconstruct generic base so code can then

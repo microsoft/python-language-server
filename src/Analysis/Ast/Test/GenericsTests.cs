@@ -390,6 +390,22 @@ y = x['a']
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/microsoft/python-language-server/issues/1454")]
+        public async Task DictPartialParams() {
+            const string code = @"
+from typing import Dict, Generic, TypeVar
+
+T = TypeVar('T')
+class A(Genetic[T], Dict[T, int]) : ...
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A")
+                .Which.Should().HaveBase("Dict[T, int]");
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task GenericDictArg() {
             const string code = @"
 from typing import Dict

@@ -16,7 +16,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Xml.Serialization;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -369,6 +368,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (s.IsUnknown() || s.IsBuiltin || d == null || d.IsBuiltin) {
                 return; // Do not transfer location of unknowns or builtins
             }
+
+            if (d.DeclaringModule != s.DeclaringModule.Stub) {
+                return; // Do not change unrelated types.
+            }
+
             // Documentation and location are always get transferred from module type
             // to the stub type and never the other way around. This makes sure that
             // we show documentation from the original module and goto definition

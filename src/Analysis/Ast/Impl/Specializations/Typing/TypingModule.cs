@@ -130,10 +130,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["Counter"] = Specialized.Function("Counter", this, GetMemberDocumentation("Counter"),
                 new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
 
-            _members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
-            _members["SupportsFloat"] = Interpreter.GetBuiltinType(BuiltinTypeId.Float);
-            _members["SupportsComplex"] = Interpreter.GetBuiltinType(BuiltinTypeId.Complex);
-            _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
+            // TODO: make these classes that support __float__, etc per spec.
+            //_members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
+            //_members["SupportsFloat"] = Interpreter.GetBuiltinType(BuiltinTypeId.Float);
+            //_members["SupportsComplex"] = Interpreter.GetBuiltinType(BuiltinTypeId.Complex);
+            //_members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
 
             fn = PythonFunctionType.Specialize("NamedTuple", this, GetMemberDocumentation("NamedTuple"));
@@ -353,9 +354,13 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType ToGenericTemplate(string typeName, IGenericTypeParameter[] typeArgs, BuiltinTypeId typeId)
-            => _members[typeName] is SpecializedGenericType gt
-                ? new SpecializedGenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId, typeArgs)
-                : Interpreter.UnknownType;
+        private IPythonType ToGenericTemplate(string typeName, IGenericTypeParameter[] typeArgs, BuiltinTypeId typeId) {
+            if (_members[typeName] is SpecializedGenericType gt) {
+                var name = CodeFormatter.FormatSequence(typeName, '[', typeArgs);
+                var qualifiedName = CodeFormatter.FormatSequence($"typing:{typeName}", '[', typeArgs.Select(t => t.QualifiedName));
+                return new SpecializedGenericType(name, qualifiedName, gt.SpecificTypeConstructor, this, typeId, typeArgs);
+            }
+            return Interpreter.UnknownType;
+        }
     }
 }
