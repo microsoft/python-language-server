@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class ClassModel : MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }
-
+        public NamedTupleModel[] NamedTupleBases { get; set; }
         public FunctionModel[] Methods { get; set; }
         public PropertyModel[] Properties { get; set; }
         public VariableModel[] Fields { get; set; }
@@ -106,7 +106,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             // Only persist documentation from this class, leave bases or __init__ alone.
             Documentation = (cls as PythonClassType)?.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ? cls.Documentation : null;
 
-            Bases = cls.Bases.Select(t => t.GetPersistentQualifiedName()).ToArray();
+
+            var ntBases = cls.Bases.OfType<ITypingNamedTupleType>().ToArray();
+            NamedTupleBases = ntBases.Select(b => new NamedTupleModel(b)).ToArray();
+
+            Bases = cls.Bases.Except(ntBases).Select(t => t.GetPersistentQualifiedName()).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();
@@ -171,9 +175,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         }
 
         private IPythonType[] CreateBases(ModuleFactory mf) {
+            var ntBases = NamedTupleBases.Select(ntb => ntb.Construct(mf, _cls)).OfType<IPythonType>().ToArray();
+
             var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
             var basesNames = Bases.Select(b => is3x && b == "object" ? null : b).ExcludeDefault().ToArray();
-            var bases = basesNames.Select(mf.ConstructType).ExcludeDefault().ToArray();
+            var bases = basesNames.Select(mf.ConstructType).ExcludeDefault().Concat(ntBases).ToArray();
 
             if (GenericBaseParameters.Length > 0) {
                 // Generic class. Need to reconstruct generic base so code can then
