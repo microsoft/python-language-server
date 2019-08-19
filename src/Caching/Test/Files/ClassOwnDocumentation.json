@@ -80,11 +80,13 @@
       "Bases": [
         "t:object"
       ],
+      "NamedTupleBases": [],
       "Methods": [],
       "Properties": [],
       "Fields": [],
-      "GenericParameters": [],
       "Classes": [],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
       "Id": 778,
       "Name": "A",
       "QualifiedName": "module:A",
@@ -99,6 +101,7 @@
         "t:module:A",
         "t:object"
       ],
+      "NamedTupleBases": [],
       "Methods": [
         {
           "Overloads": [
@@ -129,8 +132,9 @@
       ],
       "Properties": [],
       "Fields": [],
-      "GenericParameters": [],
       "Classes": [],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
       "Id": 779,
       "Name": "B",
       "QualifiedName": "module:B",
@@ -141,6 +145,7 @@
     }
   ],
   "TypeVars": [],
+  "NamedTuples": [],
   "NewLines": [
     {
       "EndIndex": 2,

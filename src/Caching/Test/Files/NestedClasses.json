@@ -84,7 +84,7 @@
       }
     },
     {
-      "Value": "i:module:C",
+      "Value": "i:module:B.C",
       "Id": 812,
       "Name": "c",
       "QualifiedName": "c",
@@ -100,6 +100,7 @@
       "Bases": [
         "t:object"
       ],
+      "NamedTupleBases": [],
       "Methods": [
         {
           "Overloads": [
@@ -130,8 +131,9 @@
       ],
       "Properties": [],
       "Fields": [],
-      "GenericParameters": null,
       "Classes": [],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
       "Id": 778,
       "Name": "A",
       "QualifiedName": "module:A",
@@ -145,6 +147,7 @@
       "Bases": [
         "t:object"
       ],
+      "NamedTupleBases": [],
       "Methods": [
         {
           "Overloads": [
@@ -157,7 +160,7 @@
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:module:C"
+              "ReturnType": "i:module:B.C"
             }
           ],
           "Documentation": null,
@@ -209,13 +212,13 @@
           "IndexSpan": null
         }
       ],
-      "GenericParameters": null,
       "Classes": [
         {
           "Documentation": null,
           "Bases": [
             "t:object"
           ],
+          "NamedTupleBases": [],
           "Methods": [
             {
               "Overloads": [
@@ -223,7 +226,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "t:module:C",
+                      "Type": "t:module:B.C",
                       "DefaultValue": null,
                       "Kind": 0
                     }
@@ -249,7 +252,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "t:module:C",
+                      "Type": "t:module:B.C",
                       "DefaultValue": null,
                       "Kind": 0
                     }
@@ -280,17 +283,20 @@
               "IndexSpan": null
             }
           ],
-          "GenericParameters": null,
           "Classes": [],
+          "GenericBaseParameters": [],
+          "GenericParameterValues": [],
           "Id": 780,
           "Name": "C",
-          "QualifiedName": "module:C",
+          "QualifiedName": "module:B.C",
           "IndexSpan": {
             "Start": 106,
             "Length": 1
           }
         }
       ],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
       "Id": 779,
       "Name": "B",
       "QualifiedName": "module:B",
@@ -301,6 +307,7 @@
     }
   ],
   "TypeVars": [],
+  "NamedTuples": [],
   "NewLines": [
     {
       "EndIndex": 2,

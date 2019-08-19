@@ -120,6 +120,7 @@
       "Bases": [
         "t:object"
       ],
+      "NamedTupleBases": [],
       "Methods": [
         {
           "Overloads": [
@@ -206,8 +207,9 @@
           "IndexSpan": null
         }
       ],
-      "GenericParameters": null,
       "Classes": [],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
       "Id": 780,
       "Name": "C",
       "QualifiedName": "module:C",
@@ -218,6 +220,7 @@
     }
   ],
   "TypeVars": [],
+  "NamedTuples": [],
   "NewLines": [
     {
       "EndIndex": 2,
