@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             => _member ?? (_member = ReConstruct(mf, declaringType));
         protected abstract IMember ReConstruct(ModuleFactory mf, IPythonType declaringType);
 
-        public MemberModel GetModel(string name) => GetMemberModels().FirstOrDefault(m => m.Name == name);
+        public virtual MemberModel GetModel(string name) => GetMemberModels().FirstOrDefault(m => m.Name == name);
         protected virtual IEnumerable<MemberModel> GetMemberModels() => Enumerable.Empty<MemberModel>();
     }
 }

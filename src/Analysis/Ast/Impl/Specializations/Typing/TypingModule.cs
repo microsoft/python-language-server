@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -60,8 +61,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((declaringModule, overload, args)
-                => GenericTypeParameter.FromTypeVar(args, declaringModule));
+            o.SetReturnValueProvider((declaringModule, overload, args, indexSpan)
+                => GenericTypeParameter.FromTypeVar(args, declaringModule, indexSpan));
 
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
@@ -71,7 +72,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((declaringModule, overload, args) => CreateTypeAlias(args));
+            o.SetReturnValueProvider((declaringModule, overload, args, indexSpan) => CreateTypeAlias(args));
             fn.AddOverload(o);
             _members["NewType"] = fn;
 
@@ -80,7 +81,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((declaringModule, overload, args) => {
+            o.SetReturnValueProvider((declaringModule, overload, args, indexSpan) => {
                 var a = args.Values<IMember>();
                 return a.Count == 1 ? a[0] : Interpreter.UnknownType;
             });
@@ -139,7 +140,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             fn = PythonFunctionType.Specialize("NamedTuple", this, GetMemberDocumentation("NamedTuple"));
             o = new PythonFunctionOverload(fn.Name, location);
-            o.SetReturnValueProvider((declaringModule, overload, args) => CreateNamedTuple(args.Values<IMember>(), declaringModule));
+            o.SetReturnValueProvider((declaringModule, overload, args, indexSpan) 
+                => CreateNamedTuple(args.Values<IMember>(), declaringModule, indexSpan));
             fn.AddOverload(o);
             _members["NamedTuple"] = fn;
 
@@ -261,7 +263,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs, IPythonModule declaringModule) {
+        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs, IPythonModule declaringModule, IndexSpan indexSpan) {
             if (typeArgs.Count != 2) {
                 // TODO: report wrong number of arguments
                 return Interpreter.UnknownType;
@@ -306,7 +308,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 itemNames.Add(itemName2);
                 itemTypes.Add(c.Contents[1].GetPythonType());
             }
-            return TypingTypeFactory.CreateNamedTupleType(Interpreter, tupleName, itemNames, itemTypes, declaringModule);
+            return TypingTypeFactory.CreateNamedTupleType(tupleName, itemNames, itemTypes, declaringModule, indexSpan);
         }
 
         private IPythonType CreateOptional(IReadOnlyList<IPythonType> typeArgs) {

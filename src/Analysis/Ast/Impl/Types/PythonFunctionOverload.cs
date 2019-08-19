@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -30,11 +31,12 @@ namespace Microsoft.Python.Analysis.Types {
     /// <param name="declaringModule">Module making the call.</param>
     /// <param name="overload">Function overload the return value is requested for.</param>
     /// <param name="args">Call arguments.</param>
-    /// <returns></returns>
+    /// <param name="indexSpan">Location of the call expression.</param>
     public delegate IMember ReturnValueProvider(
         IPythonModule declaringModule,
         IPythonFunctionOverload overload,
-        IArgumentSet args);
+        IArgumentSet args,
+        IndexSpan indexSpan);
 
     internal sealed class PythonFunctionOverload : LocatedMember, IPythonFunctionOverload {
         private readonly string _returnDocumentation;
@@ -116,7 +118,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember Call(IArgumentSet args, IPythonType self) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(args.Eval.Module, this, args);
+                var rt = _returnValueProvider?.Invoke(args.Eval.Module, this, args, default);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }

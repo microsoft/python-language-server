@@ -59,10 +59,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 return null;
             }
 
-            if (parts.ObjectType == ObjectType.NamedTuple) {
-                return ConstructNamedTuple(parts.MemberNames[0], module);
-            }
-
             var member = parts.ModuleName == Module.Name
                     ? GetMemberFromThisModule(parts.MemberNames)
                     : GetMemberFromModule(module, parts.MemberNames);
@@ -96,6 +92,9 @@ namespace Microsoft.Python.Analysis.Caching {
 
                 var nextModel = currentModel.GetModel(memberName);
                 Debug.Assert(nextModel != null);
+                if(nextModel == null) {
+                    return null;
+                }
 
                 m = nextModel.Construct(this, declaringType);
                 Debug.Assert(m != null);
@@ -106,6 +105,9 @@ namespace Microsoft.Python.Analysis.Caching {
                 currentModel = nextModel;
                 declaringType = m as IPythonType;
                 Debug.Assert(declaringType != null);
+                if (declaringType == null) {
+                    return null;
+                }
             }
 
             return m;
@@ -217,33 +219,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
             }
             return typeArgs;
-        }
-
-        private ITypingNamedTupleType ConstructNamedTuple(string tupleString, IPythonModule module) {
-            // tuple_name(name: type, name: type, ...)
-            // time_result(columns: int, lines: int)
-            var openBraceIndex = tupleString.IndexOf('(');
-            var closeBraceIndex = tupleString.IndexOf(')');
-            var name = tupleString.Substring(0, openBraceIndex);
-            var argString = tupleString.Substring(openBraceIndex + 1, closeBraceIndex - openBraceIndex - 1);
-
-            var itemNames = new List<string>();
-            var itemTypes = new List<IPythonType>();
-            var start = 0;
-
-            for (var i = 0; i < argString.Length; i++) {
-                var ch = argString[i];
-                if (ch == ':') {
-                    itemNames.Add(argString.Substring(start, i - start).Trim());
-                    i++;
-                    var paramType = TypeNames.GetTypeName(argString, ref i, ',');
-                    var t = ConstructType(paramType);
-                    itemTypes.Add(t ?? module.Interpreter.UnknownType);
-                    start = i + 1;
-                }
-            }
-
-            return new NamedTupleType(name, itemNames, itemTypes, module, module.Interpreter);
         }
     }
 }

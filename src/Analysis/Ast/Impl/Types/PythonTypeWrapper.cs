@@ -80,11 +80,11 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
-        public Location Location => InnerType?.Location ?? default;
-        public LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
-        public IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
-        public void AddReference(Location location) => InnerType?.AddReference(location);
-        public void RemoveReferences(IPythonModule module) => InnerType?.RemoveReferences(module);
+        public virtual Location Location => InnerType?.Location ?? default;
+        public virtual LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
+        public virtual IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
+        public virtual void AddReference(Location location) => InnerType?.AddReference(location);
+        public virtual void RemoveReferences(IPythonModule module) => InnerType?.RemoveReferences(module);
         #endregion
 
         #region IMemberContainer

@@ -19,6 +19,7 @@ using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing {
     internal static class TypingTypeFactory {
@@ -55,11 +56,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         public static IPythonType CreateUnionType(IPythonInterpreter interpreter, IReadOnlyList<IMember> types, IPythonModule declaringModule)
             => new PythonUnionType(types.Select(a => a.GetPythonType()), declaringModule);
 
-        public static ITypingNamedTupleType CreateNamedTupleType(IPythonInterpreter interpreter, string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule)
-            => new NamedTupleType(tupleName, itemNames, itemTypes, declaringModule, interpreter);
-
-        public static IPythonType CreateOptionalType(IPythonModule declaringModule, IPythonType type)
-            => new OptionalType(declaringModule, type);
+        public static ITypingNamedTupleType CreateNamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IndexSpan indexSpan)
+            => new NamedTupleType(tupleName, itemNames, itemTypes, declaringModule, indexSpan);
 
         public static IPythonType CreateType(IPythonModule declaringModule, IPythonType type)
             => new TypingType(declaringModule, type);

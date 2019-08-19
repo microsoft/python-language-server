@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
@@ -35,6 +36,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public VariableModel[] Variables { get; set; }
         public ClassModel[] Classes { get; set; }
         public TypeVarModel[] TypeVars { get; set; }
+        public NamedTupleModel[] NamedTuples { get; set; }
 
         /// <summary>
         /// Collection of new line information for conversion of linear spans
@@ -47,6 +49,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public int FileSize { get; set; }
 
+        [NonSerialized] private Dictionary<string, MemberModel> _modelCache;
+
         public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services, AnalysisCachingLevel options) {
             var uniqueId = analysis.Document.GetUniqueId(services, options);
             if(uniqueId == null) {
@@ -58,6 +62,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var functions = new Dictionary<string, FunctionModel>();
             var classes = new Dictionary<string, ClassModel>();
             var typeVars = new Dictionary<string, TypeVarModel>();
+            var namedTuples = new Dictionary<string, NamedTupleModel>();
 
             // Go directly through variables which names are listed in GetMemberNames
             // as well as variables that are declarations.
@@ -70,9 +75,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
                 if (v.Value is IGenericTypeParameter && !typeVars.ContainsKey(v.Name)) {
                     typeVars[v.Name] = TypeVarModel.FromGeneric(v);
+                    continue;
                 }
 
                 switch (v.Value) {
+                    case ITypingNamedTupleType nt:
+                        namedTuples[nt.Name] = new NamedTupleModel(nt);
+                        continue;
                     case IPythonFunctionType ft when ft.IsLambda():
                         // No need to persist lambdas.
                         continue;
@@ -115,6 +124,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Variables = variables.Values.ToArray(),
                 Classes = classes.Values.ToArray(),
                 TypeVars = typeVars.Values.ToArray(),
+                NamedTuples = namedTuples.Values.ToArray(),
                 NewLines = analysis.Ast.NewLineLocations.Select(l => new NewLineModel {
                     EndIndex = l.EndIndex,
                     Kind = l.Kind
@@ -140,7 +150,18 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         }
 
         protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
-        protected override IEnumerable<MemberModel> GetMemberModels()
-            => TypeVars.Concat<MemberModel>(Classes).Concat(Functions).Concat(Variables);
+
+        public override MemberModel GetModel(string name) {
+            if (_modelCache == null) {
+                var models = TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions).Concat(Variables);
+                _modelCache = new Dictionary<string, MemberModel>();
+                foreach (var m in models) {
+                    Debug.Assert(!_modelCache.ContainsKey(m.Name));
+                    _modelCache[m.Name] = m;
+                }
+            }
+
+            return _modelCache.TryGetValue(name, out var model) ? model : null;
+        }
     }
 }

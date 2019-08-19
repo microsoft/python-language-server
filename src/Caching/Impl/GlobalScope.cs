@@ -41,6 +41,10 @@ namespace Microsoft.Python.Analysis.Caching {
                 var t = tvm.Construct(mf, null);
                 _scopeVariables.DeclareVariable(tvm.Name, t, VariableSource.Generic, mf.DefaultLocation);
             }
+            foreach (var ntm in _model.NamedTuples) {
+                var nt = ntm.Construct(mf, null);
+                _scopeVariables.DeclareVariable(ntm.Name, nt, VariableSource.Declaration, mf.DefaultLocation);
+            }
             foreach (var cm in _model.Classes) {
                 var cls = cm.Construct(mf, null);
                 _scopeVariables.DeclareVariable(cm.Name, cls, VariableSource.Declaration, mf.DefaultLocation);

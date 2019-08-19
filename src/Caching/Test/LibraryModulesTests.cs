@@ -69,6 +69,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Calendar() => TestModule("calendar");
 
         [TestMethod, Priority(0)]
+        [Ignore("https://github.com/microsoft/python-language-server/issues/1454")]
         public Task Collections() => TestModule("collections");
 
         [TestMethod, Priority(0)]

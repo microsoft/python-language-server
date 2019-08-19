@@ -39,8 +39,6 @@ namespace Microsoft.Python.Analysis.Caching {
                         return $"p:{vm.QualifiedName}";
                     case IPythonModule mod:
                         return $"m:{mod.QualifiedName}";
-                    case ITypingNamedTupleType nt2:
-                        return $"n:{nt2.QualifiedName}";
                     case IPythonType pt when pt.DeclaringModule.ModuleType == ModuleType.Builtins:
                         return $"t:{(pt.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : pt.QualifiedName)}";
                     case IPythonType pt:
@@ -82,8 +80,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 parts.ObjectType = ObjectType.BuiltinModule;
             } else if (qualifiedName.StartsWith("t:")) {
                 parts.ObjectType = ObjectType.Type;
-            } else if (qualifiedName.StartsWith("n:")) {
-                parts.ObjectType = ObjectType.NamedTuple;
             } else {
                 // Unprefixed name is typically an argument to another type like Union[int, typing:Any]
                 parts.ObjectType = ObjectType.Type;
@@ -111,7 +107,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
                 return;
             }
-            
+
             // Extract module name and member names, of any.
             parts.ModuleName = typeName.Substring(0, moduleSeparatorIndex);
             var memberNamesOffset = parts.ModuleName.Length + 1;
