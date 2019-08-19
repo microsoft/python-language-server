@@ -91,6 +91,10 @@ namespace Microsoft.Python.Analysis.Caching {
                     memberName = typeName;
                 }
 
+                if(memberName == "<lambda>") {
+                    return null;
+                }
+
                 var nextModel = currentModel.GetModel(memberName);
                 Debug.Assert(nextModel != null);
                 if (nextModel == null) {
