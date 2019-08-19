@@ -32,7 +32,7 @@ namespace Microsoft.Python.Analysis.Caching {
             if (!t.IsUnknown()) {
                 switch (m) {
                     case IPythonInstance _: // constants and strings map here.
-                        return t is ITypingNamedTupleType nt1 ? $"n:{nt1.QualifiedName}" : $"i:{t.QualifiedName}";
+                        return $"i:{t.QualifiedName}";
                     case IBuiltinsPythonModule b:
                         return $"b:{b.QualifiedName}";
                     case PythonVariableModule vm:

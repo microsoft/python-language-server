@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -92,7 +93,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
                 var nextModel = currentModel.GetModel(memberName);
                 Debug.Assert(nextModel != null);
-                if(nextModel == null) {
+                if (nextModel == null) {
                     return null;
                 }
 
@@ -162,6 +163,11 @@ namespace Microsoft.Python.Analysis.Caching {
                     member = GetBuiltinMember(builtins, memberName) ?? builtins.Interpreter.UnknownType;
                 } else {
                     member = mc?.GetMember(memberName);
+                    // Work around problem that some stubs have incorrectly named tuples.
+                    // For example, in posix.pyi variable for the named tuple is not named as the tuple:
+                    // sched_param = NamedTuple('sched_priority', [('sched_priority', int),])
+                    member = member ?? (mc as PythonModule)?.GlobalScope.Variables
+                             .FirstOrDefault(v => v.Value is ITypingNamedTupleType nt && nt.Name == memberName);
                 }
 
                 if (member == null) {
