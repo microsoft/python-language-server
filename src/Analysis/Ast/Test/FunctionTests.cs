@@ -88,8 +88,8 @@ pt = f(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var pt = analysis.Should().HaveVariable("pt").Which;
-            pt.Should().HaveType("Point(x, y)").And.HaveMember("x");
-            pt.Should().HaveType("Point(x, y)").And.HaveMember("y");
+            pt.Should().HaveType("Point").And.HaveMember("x");
+            pt.Should().HaveType("Point").And.HaveMember("y");
         }
 
         [TestMethod, Priority(0)]
