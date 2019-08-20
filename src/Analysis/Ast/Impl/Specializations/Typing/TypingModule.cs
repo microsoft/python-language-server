@@ -168,7 +168,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 // except instead of 'List' as in 'from typing import List' it is a template
                 // like in 'class A(Generic[T], List[T])
                 return typeArgs[0] is IGenericTypeParameter
-                    ? ToGenericTemplate(typeName, typeArgs.OfType<IGenericTypeParameter>().ToArray(), BuiltinTypeId.List)
+                    ? ToGenericTemplate(typeName, typeArgs, BuiltinTypeId.List)
                     : TypingTypeFactory.CreateListType(Interpreter, typeName, typeId, typeArgs[0], isMutable);
             }
             // TODO: report wrong number of arguments
@@ -177,14 +177,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private IPythonType CreateTupleType(IReadOnlyList<IPythonType> typeArgs)
             => typeArgs.Any(a => a is IGenericTypeParameter)
-                ? ToGenericTemplate("Tuple", typeArgs.OfType<IGenericTypeParameter>().ToArray(), BuiltinTypeId.Tuple)
+                ? ToGenericTemplate("Tuple", typeArgs, BuiltinTypeId.Tuple)
                 : TypingTypeFactory.CreateTupleType(Interpreter, typeArgs);
 
         private IPythonType CreateIteratorType(IReadOnlyList<IPythonType> typeArgs) {
             if (typeArgs.Count == 1) {
                 // If argument is generic type parameter then this is still a generic specification
                 return typeArgs[0] is IGenericTypeParameter
-                    ? ToGenericTemplate("Iterator", typeArgs.OfType<IGenericTypeParameter>().ToArray(), BuiltinTypeId.ListIterator)
+                    ? ToGenericTemplate("Iterator", typeArgs, BuiltinTypeId.ListIterator)
                     : TypingTypeFactory.CreateIteratorType(Interpreter, typeArgs[0]);
             }
             // TODO: report wrong number of arguments
@@ -195,7 +195,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             if (typeArgs.Count == 2) {
                 // If argument is generic type parameter then this is still a generic specification
                 return typeArgs.Any(a => a is IGenericTypeParameter)
-                    ? ToGenericTemplate(typeName, typeArgs.OfType<IGenericTypeParameter>().ToArray(), BuiltinTypeId.Dict)
+                    ? ToGenericTemplate(typeName, typeArgs, BuiltinTypeId.Dict)
                     : TypingTypeFactory.CreateDictionary(Interpreter, typeName, typeArgs[0], typeArgs[1], isMutable);
             }
             // TODO: report wrong number of arguments
@@ -206,7 +206,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             if (typeArgs.Count == 1) {
                 // If argument is generic type parameter then this is still a generic specification
                 return typeArgs[0] is IGenericTypeParameter
-                    ? ToGenericTemplate("KeysView", typeArgs.OfType<IGenericTypeParameter>().ToArray(), BuiltinTypeId.ListIterator)
+                    ? ToGenericTemplate("KeysView", typeArgs, BuiltinTypeId.ListIterator)
                     : TypingTypeFactory.CreateKeysViewType(Interpreter, typeArgs[0]);
             }
             // TODO: report wrong number of arguments
@@ -217,7 +217,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             if (typeArgs.Count == 1) {
                 // If argument is generic type parameter then this is still a generic specification
                 return typeArgs[0] is IGenericTypeParameter
-                    ? ToGenericTemplate("ValuesView", typeArgs.OfType<IGenericTypeParameter>().ToArray(), BuiltinTypeId.ListIterator)
+                    ? ToGenericTemplate("ValuesView", typeArgs, BuiltinTypeId.ListIterator)
                     : TypingTypeFactory.CreateValuesViewType(Interpreter, typeArgs[0]);
             }
             // TODO: report wrong number of arguments
@@ -372,9 +372,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType ToGenericTemplate(string typeName, IGenericTypeParameter[] typeArgs, BuiltinTypeId typeId)
+        private IPythonType ToGenericTemplate(string typeName, IReadOnlyList<IPythonType> typeArgs, BuiltinTypeId typeId)
             => _members[typeName] is SpecializedGenericType gt
-                ? new SpecializedGenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId, typeArgs)
+                ? new SpecializedGenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId,
+                    typeArgs.OfType<IGenericTypeParameter>().ToList())
                 : Interpreter.UnknownType;
     }
 }
