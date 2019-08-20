@@ -636,6 +636,12 @@ def py_repro():
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task SpecNotUndefined() {
+            const string code = "__spec__";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
 
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);

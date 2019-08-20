@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<MemberAssertions, IMember>(this, Subject);
         }
 
-        public AndWhichConstraint<MemberAssertions, IPythonClassType> HaveBase(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<MemberAssertions, IPythonType> HaveBase(string name, string because = "", params object[] reasonArgs) {
             NotBeNull();
 
             var cls = Subject.GetPythonType<IPythonClassType>();
@@ -70,12 +70,12 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {GetName(cls)} to be a class{{reason}}.");
 
-            var classBase = cls.Bases.OfType<IPythonClassType>().FirstOrDefault(b => b.Name == name);
-            Execute.Assertion.ForCondition(classBase != null)
+            var baseType = cls.Bases.OfType<IPythonType>().FirstOrDefault(b => b.Name == name);
+            Execute.Assertion.ForCondition(baseType != null)
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected {GetName(cls)} to have base class {name}{{reason}}.");
+                .FailWith($"Expected {GetName(cls)} to have base {name}{{reason}}.");
 
-            return new AndWhichConstraint<MemberAssertions, IPythonClassType>(this, classBase);
+            return new AndWhichConstraint<MemberAssertions, IPythonType>(this, baseType);
         }
 
         public AndWhichConstraint<MemberAssertions, PythonFunctionType> HaveMethod(string name, string because = "", params object[] reasonArgs)
