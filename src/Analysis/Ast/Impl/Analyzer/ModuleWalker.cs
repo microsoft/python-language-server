@@ -245,10 +245,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var sourceType = sourceVar?.Value.GetPythonType();
 
                 // If stub says 'Any' but we have better type, keep the current type.
-                if (stubType.IsUnknown() || (stubType.DeclaringModule is TypingModule && stubType.Name == "Any")) {
+                if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
                     continue;
                 }
-
                 TryReplaceMember(v, sourceType, stubType);
             }
 
