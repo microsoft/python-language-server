@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
@@ -233,25 +234,26 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     break;
 
                 case IPythonClassType cls:
-                    // Data members may be instances that are not tracking locations.
-                    // In this case we'll try look up the respective variable instead.
-                    using (eval.OpenScope(cls)) {
-                        eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
-                        if (v2 != null) {
-                            definingMember = v2;
-                            return FromMember(v2);
+                    // Data members may be PythonInstances which do not track their declaration location.
+                    // In this case we'll try looking up the respective variable instead according to Mro.
+                    foreach (var b in cls.Mro.OfType<IPythonClassType>()) {
+                        using (eval.OpenScope(b)) {
+                            eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
+                            if (v2 != null) {
+                                definingMember = v2;
+                                return FromMember(v2);
+                            }
                         }
                     }
                     break;
-
-                default:
-                    if (type?.GetMember(mex.Name) is ILocatedMember lm) {
-                        definingMember = lm;
-                        return FromMember(lm);
-                    }
-
-                    break;
             }
+
+            // If we cannot find anything, just look up from GetMember
+            if (type?.GetMember(mex.Name) is ILocatedMember lm) {
+                definingMember = lm;
+                return FromMember(lm);
+            }
+
             return null;
         }
 
