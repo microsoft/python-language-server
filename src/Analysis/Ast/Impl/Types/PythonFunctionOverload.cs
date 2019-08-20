@@ -188,6 +188,11 @@ namespace Microsoft.Python.Analysis.Types {
                 return new PythonInstance(specificType);
             }
 
+            // Try getting the type from the type parameter bound
+            if(returnType.Bound != null) {
+                return new PythonInstance(returnType.Bound);
+            }
+
             // Try returning the constraint
             // TODO: improve this, the heuristic is pretty basic and tailored to simple func(_T) -> _T
             var name = StaticReturnValue.GetPythonType()?.Name;

@@ -25,11 +25,17 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeParameter {
-        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints, string documentation, IndexSpan location)
+        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints,
+            IPythonType bound, string documentation, IndexSpan location)
             : base(name, new Location(declaringModule), documentation) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
+            Bound = bound;
         }
+
+        #region IGenericTypeParameter
         public IReadOnlyList<IPythonType> Constraints { get; }
+        public IPythonType Bound { get; }
+        #endregion
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public override PythonMemberType MemberType => PythonMemberType.Generic;
@@ -77,6 +83,22 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return true;
         }
 
+        /// <summary>
+        /// Given arguments to TypeVar, finds the bound type
+        /// </summary>
+        private static IPythonType GetBound(IArgumentSet argSet) {
+            var eval = argSet.Eval;
+            var rawBound = argSet.GetArgumentValue<object>("bound");
+            switch (rawBound) {
+                case IPythonType t:
+                    return t;
+                case IPythonConstant c when c.GetString() != null:
+                    return eval.GetTypeFromString(c.GetString());
+                default:
+                    return null;
+            }
+        }
+
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
             if (!TypeVarArgumentsValid(argSet)) {
                 return declaringModule.Interpreter.UnknownType;
@@ -85,17 +107,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var args = argSet.Arguments;
             var constraintArgs = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
 
-            var name = (args[0].Value as IPythonConstant)?.GetString();
+            var name = argSet.GetArgumentValue<IPythonConstant>("name")?.GetString();
             var constraints = constraintArgs.Select(a => {
                 // Type constraints may be specified as type name strings.
                 var typeString = (a as IPythonConstant)?.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray() ?? Array.Empty<IPythonType>();
-
-            // TODO get bound here might have to parse string and look at it
-
+            var bound = GetBound(argSet);
             var documentation = GetDocumentation(args, constraints);
-            return new GenericTypeParameter(name, declaringModule, constraints, documentation, location);
+
+            return new GenericTypeParameter(name, declaringModule, constraints, bound, documentation, location);
         }
 
         private static string GetDocumentation(IReadOnlyList<IArgument> args, IReadOnlyList<IPythonType> constraints) {
