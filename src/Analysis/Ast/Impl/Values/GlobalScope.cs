@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Values {
             var strType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Str);
             var listType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.List);
             var dictType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Dict);
+            var objectType = Module.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
 
             DeclareVariable("__debug__", boolType, VariableSource.Builtin, location);
             DeclareVariable("__doc__", strType, VariableSource.Builtin, location);
@@ -47,6 +48,7 @@ namespace Microsoft.Python.Analysis.Values {
             DeclareVariable("__package__", strType, VariableSource.Builtin, location);
             DeclareVariable("__path__", listType, VariableSource.Builtin, location);
             DeclareVariable("__dict__", dictType, VariableSource.Builtin, location);
+            DeclareVariable("__spec__", objectType, VariableSource.Builtin, location);
         }
     }
 }

@@ -103,6 +103,70 @@ c.method(1, 2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromParent() {
+            const string code = @"
+class base:
+    test: int
+    def foo(self):
+        pass
+
+class child(base):
+    def tmp(self):
+        self.foo()
+        self.test
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(9, 15), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(3, 8, 3, 11);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(10, 15), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(2, 4, 2, 8);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromParentOtherModule() {
+            var otherModPath = TestData.GetTestSpecificUri("other.py");
+            var testModPath = TestData.GetTestSpecificUri("test.py");
+            const string otherModCode = @"
+class C:
+    v: int
+    def test(self):
+        pass
+";
+            const string testModCode = @"
+from other import C
+
+class D(C):
+    def hello(self):
+        self.test();
+        self.v
+";
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(otherModPath, otherModCode);
+            var testMod = rdt.OpenDocument(testModPath, testModCode);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await testMod.GetAnalysisAsync();
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(6, 14), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(3, 8, 3, 12);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(7, 15), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(2, 4, 2, 5);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GotoModuleSource() {
             const string code = @"
 import sys

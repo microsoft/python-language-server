@@ -95,7 +95,7 @@ T = TypeVar()
             var diagnostic = analysis.Diagnostics.ElementAt(0);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.ParameterMissing);
             diagnostic.Message.Should().Be(Resources.Analysis_ParameterMissing.FormatInvariant("name"));
-            diagnostic.SourceSpan.Should().Be(4, 5, 4, 14);
+            diagnostic.SourceSpan.Should().Be(4, 5, 4, 12);
         }
 
         [DataRow("T = TypeVar('T', 'test_constraint')")]
