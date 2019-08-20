@@ -37,8 +37,5 @@ namespace Microsoft.Python.Analysis {
                 dst.Location = src.Location;
             }
         }
-
-        public static bool IsConstructor(this IPythonClassMember m)
-            => m.Name.EqualsOrdinal("__init__") ||  m.Name.EqualsOrdinal("__new__");
     }
 }
