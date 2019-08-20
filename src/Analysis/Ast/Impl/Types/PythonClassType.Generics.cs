@@ -253,8 +253,6 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
 
-            // TODO resolve bound constraints here by looping over the values in genericTypeToSpecificType
-
             return genericTypeToSpecificType;
         }
 
