@@ -36,7 +36,7 @@ The following diagnostics are supported:
 | `typing-newtype-arguments` | An error occurred while constructing `NewType`. |
 | `unknown-parameter-name` | The keyword argument name provided is unknown. |
 | `unresolved-import` | An import cannot be resolved, and may be missing. |
-| `undefined-variable` | A variable has used that has not yet been defined. |
+| `undefined-variable` | A variable has been used that has not yet been defined. |
 | `variable-not-defined-globally` | A variable is not defined in the global scope. |
 | `variable-not-defined-nonlocal` | A variable is not defined in non-local scopes. |
 

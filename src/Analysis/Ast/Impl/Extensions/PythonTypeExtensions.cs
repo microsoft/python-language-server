@@ -27,13 +27,5 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsGeneric(this IPythonType value)
             => value is IGenericTypeParameter || (value is IGenericType gt && gt.IsGeneric);
-
-        public static bool IsConstructor(this IPythonClassMember m)
-            => m.Name.EqualsOrdinal("__init__") || m.Name.EqualsOrdinal("__new__");
-
-        public static string GetQualifiedName(this IPythonType t) => $"{t.DeclaringModule.Name}:{t.Name}";
-
-        internal static IPythonType ToBound(this IPythonType t) => t is PythonFunctionType.PythonUnboundMethod m ? m.Function : t;
-
     }
 }
