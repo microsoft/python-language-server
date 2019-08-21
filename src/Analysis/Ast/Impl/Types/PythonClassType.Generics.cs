@@ -356,7 +356,7 @@ namespace Microsoft.Python.Analysis.Types {
                                     specificType = tt.CreateSpecificType(args);
                                     break;
                                 case IGenericTypeParameter gtd:
-                                    classType.ActualGenericParameters.TryGetValue(gtd, out specificType);
+                                    classType.GenericParameters.TryGetValue(gtd, out specificType);
                                     break;
                             }
 
