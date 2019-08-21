@@ -141,31 +141,11 @@ namespace Microsoft.Python.Analysis.Caching {
                 // happens with io which has member with mmap type coming from mmap
                 // stub rather than the primary mmap module.
                 var m = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
-                
-                // If module is not found, it may be that it is cached and hence dependency walker
-                // did not detect the dependency and did not load the module. Try loading. The result
-                // should be specialized (cached).
-                if (m == null) {
-                    m = Module.Interpreter.ModuleResolution.GetOrLoadModule(parts.ModuleName);
-                    Debug.Assert(m == null || m.ModuleType == ModuleType.Specialized);
-                }
-
                 // Try stub-only case (ex _importlib_modulespec).
                 m = m ?? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
                 if (m != null) {
                     return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
                 }
-
-                // Sometimes module has not been analyzed yet. This happens when module was not loaded
-                // as cached - GetOrLoadModule returned 'real' module which was not loaded up front.
-                // TODO: make waiting better.
-                if (m is IDocument doc) {
-                    var a = doc.GetAnyAnalysis();
-                    for (var i = 0; i < 50 && !(a is EmptyAnalysis); i++) {
-                        Thread.Sleep(100);
-                    }
-                }
-
                 return null;
             }
         }

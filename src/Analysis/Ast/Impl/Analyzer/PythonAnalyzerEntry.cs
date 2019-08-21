@@ -20,6 +20,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -256,10 +257,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return new HashSet<AnalysisModuleKey>();
             }
 
-            var walker = new DependencyWalker(module);
-            ast.Walk(walker);
+            var walker = new DependencyWalker(module, ast);
             var dependencies = walker.Dependencies;
             dependencies.Remove(new AnalysisModuleKey(module));
+
             return dependencies;
         }
 
@@ -285,7 +286,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             public HashSet<AnalysisModuleKey> Dependencies { get; }
 
-            public DependencyWalker(IPythonModule module) {
+            public DependencyWalker(IPythonModule module, PythonAst ast) {
                 _module = module;
                 _isTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
                 _moduleResolution = module.Interpreter.ModuleResolution;
@@ -298,7 +299,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (module.Stub != null) {
                     Dependencies.Add(new AnalysisModuleKey(module.Stub));
                 }
+
+                if(ast != null) {
+                    ast.Walk(this);
+                } else if(module is IDependencyProvider dp) {
+                    HandleDependencies(dp);
+                } else {
+                    Debug.Fail("Neither AST nor dependency provider supplied.");
+                }
             }
+
 
             public override bool Walk(ImportStatement import) {
                 var forceAbsolute = import.ForceAbsolute;
@@ -306,26 +316,43 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     var importNames = ImmutableArray<string>.Empty;
                     foreach (var nameExpression in moduleName.Names) {
                         importNames = importNames.Add(nameExpression.Name);
-                        var imports = _pathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, forceAbsolute);
-                        HandleSearchResults(imports);
+                        HandleImport(importNames, forceAbsolute);
                     }
                 }
-
                 return false;
             }
 
             public override bool Walk(FromImportStatement fromImport) {
-                var imports = _pathResolver.FindImports(_module.FilePath, fromImport);
+                var rootNames = fromImport.Root.Names.Select(n => n.Name).ToArray();
+                var dotCount = fromImport.Root is RelativeModuleName relativeName ? relativeName.DotCount : 0;
+                HandleFromImport(rootNames, dotCount, fromImport.ForceAbsolute);
+                return false;
+            }
+
+            private void HandleDependencies(IDependencyProvider dp) {
+                foreach(var import in dp.Imports) {
+                    HandleImport(import.ModuleNames, import.ForceAbsolute);
+                }
+                foreach (var fi in dp.FromImports) {
+                    HandleFromImport(fi.RootNames, fi.DotCount, fi.ForceAbsolute);
+                }
+            }
+
+            private void HandleImport(IReadOnlyList<string> importNames, bool forceAbsolute) {
+                var imports = _pathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, forceAbsolute);
+                HandleSearchResults(imports);
+            }
+
+            private void HandleFromImport(IReadOnlyList<string> importNames, int dotCount, bool forceAbsolute) {
+                var imports = _pathResolver.FindImports(_module.FilePath, importNames, dotCount, forceAbsolute);
                 HandleSearchResults(imports);
                 if (imports is IImportChildrenSource childrenSource) {
-                    foreach (var name in fromImport.Names) {
-                        if (childrenSource.TryGetChildImport(name.Name, out var childImport)) {
+                    foreach (var name in importNames) {
+                        if (childrenSource.TryGetChildImport(name, out var childImport)) {
                             HandleSearchResults(childImport);
                         }
                     }
                 }
-
-                return false;
             }
 
             private void HandleSearchResults(IImportSearchResult searchResult) {
