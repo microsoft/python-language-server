@@ -37,25 +37,19 @@ namespace Microsoft.Python.Analysis.Caching {
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
             var mf = new ModuleFactory(_model, Module);
-            foreach (var tvm in _model.TypeVars) {
-                var t = tvm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(tvm.Name, t, VariableSource.Generic, mf.DefaultLocation);
-            }
-            foreach (var ntm in _model.NamedTuples) {
-                var nt = ntm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(ntm.Name, nt, VariableSource.Declaration, mf.DefaultLocation);
-            }
-            foreach (var cm in _model.Classes) {
-                var cls = cm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(cm.Name, cls, VariableSource.Declaration, mf.DefaultLocation);
-            }
-            foreach (var fm in _model.Functions) {
-                var ft = fm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(fm.Name, ft, VariableSource.Declaration, mf.DefaultLocation);
+            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions).ToArray();
+
+            foreach (var m in models) {
+                _scopeVariables.DeclareVariable(m.Name, m.Create(mf, null), VariableSource.Generic, mf.DefaultLocation);
             }
             foreach (var vm in _model.Variables) {
-                var v = (IVariable)vm.Construct(mf, null);
+                var v = (IVariable)vm.Create(mf, null);
                 _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
+            }
+
+
+            foreach (var m in models.Concat(_model.Variables)) {
+                m.Populate(mf, null);
             }
 
             // TODO: re-declare __doc__, __name__, etc.

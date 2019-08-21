@@ -43,13 +43,17 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public IndexSpanModel IndexSpan { get; set; }
 
-        [NonSerialized]
-        private IMember _member;
+        /// <summary>
+        /// Create member for declaration but does not construct its parts just yet.
+        /// Used as a first pass in two-pass handling of forward declarations.
+        /// </summary>
+        public abstract IMember Create(ModuleFactory mf, IPythonType declaringType);
 
-        public IMember Construct(ModuleFactory mf, IPythonType declaringType) 
-            => _member ?? (_member = ReConstruct(mf, declaringType));
-        protected abstract IMember ReConstruct(ModuleFactory mf, IPythonType declaringType);
-
+        /// <summary>
+        /// Populate member with content, such as create class methods, etc.
+        /// </summary>
+        public abstract void Populate(ModuleFactory mf, IPythonType declaringType);
+            
         public virtual MemberModel GetModel(string name) => GetMemberModels().FirstOrDefault(m => m.Name == name);
         protected virtual IEnumerable<MemberModel> GetMemberModels() => Enumerable.Empty<MemberModel>();
     }

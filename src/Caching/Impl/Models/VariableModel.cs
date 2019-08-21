@@ -23,7 +23,7 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Analysis.Caching.Models {
     [Serializable]
     [DebuggerDisplay("v:{Name} = {Value}")]
-    internal sealed class VariableModel: MemberModel {
+    internal sealed class VariableModel : MemberModel {
         public string Value { get; set; }
 
         public static VariableModel FromVariable(IVariable v) => new VariableModel {
@@ -49,9 +49,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Value = t.GetPersistentQualifiedName()
         };
 
-        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType) {
             var m = mf.ConstructMember(Value) ?? mf.Module.Interpreter.UnknownType;
             return new Variable(Name, m, VariableSource.Declaration, new Location(mf.Module, IndexSpan?.ToSpan() ?? default));
         }
+
+        public override void Populate(ModuleFactory mf, IPythonType declaringType) { }
     }
 }

@@ -130,12 +130,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .ToArray();
         }
 
-        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
-            if (_cls != null) {
-                return _cls;
-            }
-            _cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType) 
+            => _cls ?? (_cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan())));
 
+        public override void Populate(ModuleFactory mf, IPythonType declaringType) {
             var bases = CreateBases(mf);
 
             _cls.SetBases(bases);
@@ -145,37 +143,27 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 _cls.StoreGenericParameters(_cls,
                     _cls.ActualGenericParameters.Keys.ToArray(),
                     GenericParameterValues.ToDictionary(
-                        k => _cls.ActualGenericParameters.Keys.First(x => x.Name == k.Name), 
+                        k => _cls.ActualGenericParameters.Keys.First(x => x.Name == k.Name),
                         v => mf.ConstructType(v.Type)
                     )
                 );
             }
 
-            foreach (var f in Methods) {
-                var m = f.Construct(mf, _cls);
-                _cls.AddMember(f.Name, m, false);
+            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields).ToArray();
+            foreach (var m in all) {
+                _cls.AddMember(m.Name, m.Create(mf, _cls), false);
             }
-
-            foreach (var p in Properties) {
-                var m = p.Construct(mf, _cls);
-                _cls.AddMember(p.Name, m, false);
+            foreach (var m in all) {
+                m.Populate(mf, _cls);
             }
-
-            foreach (var c in Classes) {
-                var m = c.Construct(mf, _cls);
-                _cls.AddMember(c.Name, m, false);
-            }
-
-            foreach (var vm in Fields) {
-                var m = vm.Construct(mf, _cls);
-                _cls.AddMember(vm.Name, m, false);
-            }
-
-            return _cls;
         }
 
-        private IPythonType[] CreateBases(ModuleFactory mf) {
-            var ntBases = NamedTupleBases.Select(ntb => ntb.Construct(mf, _cls)).OfType<IPythonType>().ToArray();
+        private IEnumerable<IPythonType> CreateBases(ModuleFactory mf) {
+            var ntBases = NamedTupleBases.Select(ntb => {
+                var n = ntb.Create(mf, _cls);
+                ntb.Populate(mf, _cls);
+                return n;
+            }).OfType<IPythonType>().ToArray();
 
             var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
             var basesNames = Bases.Select(b => is3x && b == "object" ? null : b).ExcludeDefault().ToArray();

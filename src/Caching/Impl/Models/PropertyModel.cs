@@ -30,19 +30,16 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             ReturnType = prop.ReturnType.GetPersistentQualifiedName();
         }
 
-        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
-            if (_property != null) {
-                return _property;
-            }
-            _property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0);
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType) 
+            => _property ?? (_property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0));
+
+        public override void Populate(ModuleFactory mf, IPythonType declaringType) {
             _property.SetDocumentation(Documentation);
 
             var o = new PythonFunctionOverload(Name, mf.DefaultLocation);
             o.SetDocumentation(Documentation);
             o.SetReturnValue(mf.ConstructMember(ReturnType), true);
             _property.AddOverload(o);
-
-            return _property;
         }
     }
 }

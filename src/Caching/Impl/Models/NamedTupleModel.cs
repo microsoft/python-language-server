@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             ItemTypes = nt.ItemTypes.Select(t => t.QualifiedName).ToArray();
         }
 
-        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType) {
             if (_namedTuple != null) {
                 return _namedTuple;
             }
@@ -50,5 +50,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             _namedTuple = new NamedTupleType(Name, ItemNames, itemTypes, mf.Module, IndexSpan.ToSpan());
             return _namedTuple;
         }
+
+        public override void Populate(ModuleFactory mf, IPythonType declaringType) { }
     }
 }

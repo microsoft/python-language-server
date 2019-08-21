@@ -17,7 +17,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
@@ -32,7 +35,6 @@ namespace Microsoft.Python.Analysis.Caching {
     /// </summary>
     internal sealed class ModuleFactory {
         // TODO: better resolve circular references.
-        private readonly ReentrancyGuard<string> _typeReentrancy = new ReentrancyGuard<string>();
         private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
         private readonly ModuleModel _model;
 
@@ -101,8 +103,10 @@ namespace Microsoft.Python.Analysis.Caching {
                     return null;
                 }
 
-                m = nextModel.Construct(this, declaringType);
+                m = nextModel.Create(this, declaringType);
                 Debug.Assert(m != null);
+
+                nextModel.Populate(this, declaringType);
                 if (m is IGenericType gt && typeArgs.Count > 0) {
                     m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));
                 }
@@ -137,10 +141,29 @@ namespace Microsoft.Python.Analysis.Caching {
                 // happens with io which has member with mmap type coming from mmap
                 // stub rather than the primary mmap module.
                 var m = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
+                
+                // If module is not found, it may be that it is cached and hence dependency walker
+                // did not detect the dependency and did not load the module. Try loading. The result
+                // should be specialized (cached).
+                if (m == null) {
+                    m = Module.Interpreter.ModuleResolution.GetOrLoadModule(parts.ModuleName);
+                    Debug.Assert(m == null || m.ModuleType == ModuleType.Specialized);
+                }
+
                 // Try stub-only case (ex _importlib_modulespec).
                 m = m ?? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
                 if (m != null) {
                     return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
+                }
+
+                // Sometimes module has not been analyzed yet. This happens when module was not loaded
+                // as cached - GetOrLoadModule returned 'real' module which was not loaded up front.
+                // TODO: make waiting better.
+                if (m is IDocument doc) {
+                    var a = doc.GetAnyAnalysis();
+                    for (var i = 0; i < 50 && !(a is EmptyAnalysis); i++) {
+                        Thread.Sleep(100);
+                    }
                 }
 
                 return null;

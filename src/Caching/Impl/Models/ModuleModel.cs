@@ -149,8 +149,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return null;
         }
 
-        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
-
         public override MemberModel GetModel(string name) {
             if (_modelCache == null) {
                 var models = TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions).Concat(Variables);
@@ -163,5 +161,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             return _modelCache.TryGetValue(name, out var model) ? model : null;
         }
+
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
+        public override void Populate(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
     }
 }

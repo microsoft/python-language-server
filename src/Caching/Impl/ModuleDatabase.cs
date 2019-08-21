@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -30,6 +31,7 @@ namespace Microsoft.Python.Analysis.Caching {
     public sealed class ModuleDatabase : IModuleDatabaseService {
         private const int _databaseFormatVersion = 1;
 
+        private readonly Dictionary<string, PythonDbModule> _modules = new Dictionary<string, PythonDbModule>();
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
@@ -60,6 +62,11 @@ namespace Microsoft.Python.Analysis.Caching {
                 return ModuleStorageState.DoesNotExist;
             }
 
+            if(_modules.TryGetValue(moduleName, out var dbModule)) {
+                module = dbModule;
+                return ModuleStorageState.Complete;
+            }
+
             // We don't cache results here. Module resolution service decides when to call in here
             // and it is responsible of overall management of the loaded Python modules.
             for (var retries = 50; retries > 0; --retries) {
@@ -81,7 +88,11 @@ namespace Microsoft.Python.Analysis.Caching {
                             return ModuleStorageState.DoesNotExist;
                         }
 
-                        module = new PythonDbModule(model, filePath, _services);
+                        dbModule = new PythonDbModule(model, filePath, _services);
+                        _modules[moduleName] = dbModule;
+                        dbModule.Construct(model);
+                        
+                        module = dbModule;
                         return ModuleStorageState.Complete;
                     }
                 } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
