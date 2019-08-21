@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         public SpecializedGenericType(string name, string qualifiedName, IReadOnlyList<IGenericTypeParameter> parameters, IPythonModule declaringModule)
             : this(name, qualifiedName, declaringModule) {
-            GenericParameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+            FormalGenericParameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         ) : this(name, null, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
-            GenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            FormalGenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
             Documentation = documentation ?? name;
         }
 
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             ) : this(name, qualifiedName, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
-            GenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            FormalGenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
             Documentation = documentation ?? name;
         }
 
@@ -104,7 +104,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Type parameters such as in Tuple[T1, T2. ...] or
         /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
-        public IReadOnlyList<IGenericTypeParameter> GenericParameters { get; }
+        public IReadOnlyList<IGenericTypeParameter> FormalGenericParameters { get; }
 
         #region IPythonType
         public string Name { get; }

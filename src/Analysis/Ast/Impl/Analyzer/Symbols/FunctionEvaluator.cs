@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Do process body of constructors since they may be declaring
                 // variables that are later used to determine return type of other
                 // methods and properties.
-                var ctor = _function.Name.EqualsOrdinal("__init__") || _function.Name.EqualsOrdinal("__new__");
+                var ctor = _function.IsDunderInit() || _function.IsDunderNew();
                 if (ctor || returnType.IsUnknown() || Module.ModuleType == ModuleType.User) {
                     // Return type from the annotation is sufficient for libraries and stubs, no need to walk the body.
                     FunctionDefinition.Body?.Walk(this);
@@ -126,9 +126,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var value = Eval.GetValueFromExpression(node.Expression);
             if (value != null) {
                 // although technically legal, __init__ in a constructor should not have a not-none return value
-                if (FunctionDefinition.Name.EqualsOrdinal("__init__") && _function.DeclaringType.MemberType == PythonMemberType.Class
-                    && !value.IsOfType(BuiltinTypeId.NoneType)) {
-
+                if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.NoneType)) {
                     Eval.ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                             Resources.ReturnInInit,
                             node.GetLocation(Eval).Span,

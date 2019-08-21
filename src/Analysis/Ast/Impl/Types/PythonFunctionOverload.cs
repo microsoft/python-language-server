@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
-        //  GenericParameters: declaring module, overload for the return value, list of arguments.
+        //  FormalGenericParameters: declaring module, overload for the return value, list of arguments.
         private ReturnValueProvider _returnValueProvider;
 
         // Return value can be an instance or a type info. Consider type(C()) returning
