@@ -13,32 +13,47 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing;
+
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [DebuggerDisplay("cls:{Name}")]
+    [Serializable]
+    [DebuggerDisplay("cls:{" + nameof(Name) + "}")]
     internal sealed class ClassModel : MemberModel {
         public string Documentation { get; set; }
         public string[] Bases { get; set; }
+        public NamedTupleModel[] NamedTupleBases { get; set; }
         public FunctionModel[] Methods { get; set; }
         public PropertyModel[] Properties { get; set; }
         public VariableModel[] Fields { get; set; }
-        public string[] GenericParameters { get; set; }
-        public ClassModel[] InnerClasses { get; set; }
+        public ClassModel[] Classes { get; set; }
 
-        private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
+        /// <summary>
+        /// FormalGenericParameters of the Generic[...] base class, if any.
+        /// </summary>
+        public string[] GenericBaseParameters { get; set; }
+        /// <summary>
+        /// Values assigned to the generic parameters, if any.
+        /// </summary>
+        public GenericParameterValueModel[] GenericParameterValues { get; set; }
 
-        public static ClassModel FromType(IPythonClassType cls) => new ClassModel(cls);
+        [NonSerialized] private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
+        [NonSerialized] private PythonClassType _cls;
 
         public ClassModel() { } // For de-serializer from JSON
 
-        private ClassModel(IPythonClassType cls) {
+        public ClassModel(IPythonClassType cls) {
             var methods = new List<FunctionModel>();
             var properties = new List<PropertyModel>();
             var fields = new List<VariableModel>();
@@ -57,20 +72,21 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     if (reentered) {
                         continue;
                     }
+
                     switch (m) {
                         case IPythonClassType ct when ct.Name == name:
                             if (!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
                                 continue;
                             }
-                            innerClasses.Add(FromType(ct));
+                            innerClasses.Add(new ClassModel(ct));
                             break;
                         case IPythonFunctionType ft when ft.IsLambda():
                             break;
                         case IPythonFunctionType ft when ft.Name == name:
-                            methods.Add(FunctionModel.FromType(ft));
+                            methods.Add(new FunctionModel(ft));
                             break;
                         case IPythonPropertyType prop when prop.Name == name:
-                            properties.Add(PropertyModel.FromType(prop));
+                            properties.Add(new PropertyModel(prop));
                             break;
                         case IPythonInstance inst:
                             fields.Add(VariableModel.FromInstance(name, inst));
@@ -84,14 +100,108 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             Name = cls.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : cls.Name;
             Id = Name.GetStableHash();
+            QualifiedName = cls.QualifiedName;
             IndexSpan = cls.Location.IndexSpan.ToModel();
 
-            Documentation = cls.Documentation;
-            Bases = cls.Bases.OfType<IPythonClassType>().Select(t => t.GetPersistentQualifiedName()).ToArray();
+            // Only persist documentation from this class, leave bases or __init__ alone.
+            Documentation = (cls as PythonClassType)?.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ? cls.Documentation : null;
+
+
+            var ntBases = cls.Bases.OfType<ITypingNamedTupleType>().ToArray();
+            NamedTupleBases = ntBases.Select(b => new NamedTupleModel(b)).ToArray();
+
+            Bases = cls.Bases.Except(ntBases).Select(t => t.GetPersistentQualifiedName()).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();
-            InnerClasses = innerClasses.ToArray();
+            Classes = innerClasses.ToArray();
+
+            if (cls.IsGeneric) {
+                // Only check immediate bases, i.e. when class itself has Generic[T] base.
+                var gcp = cls.Bases.OfType<IGenericClassBase>().FirstOrDefault();
+                GenericBaseParameters = gcp?.TypeParameters.Select(p => p.Name).ToArray();
+            }
+            // If class is generic, we must save its generic base definition
+            // so on restore we'll be able to re-create the class as generic.
+            GenericBaseParameters = GenericBaseParameters ?? Array.Empty<string>();
+
+            GenericParameterValues = cls.GenericParameters
+                .Select(p => new GenericParameterValueModel { Name = p.Key.Name, Type = p.Value.GetPersistentQualifiedName() })
+                .ToArray();
         }
+
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
+            if (_cls != null) {
+                return _cls;
+            }
+            _cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
+
+            var bases = CreateBases(mf);
+
+            _cls.SetBases(bases);
+            _cls.SetDocumentation(Documentation);
+
+            if (GenericParameterValues.Length > 0) {
+                _cls.StoreGenericParameters(_cls,
+                    _cls.GenericParameters.Keys.ToArray(),
+                    GenericParameterValues.ToDictionary(
+                        k => _cls.GenericParameters.Keys.First(x => x.Name == k.Name), 
+                        v => mf.ConstructType(v.Type)
+                    )
+                );
+            }
+
+            foreach (var f in Methods) {
+                var m = f.Construct(mf, _cls);
+                _cls.AddMember(f.Name, m, false);
+            }
+
+            foreach (var p in Properties) {
+                var m = p.Construct(mf, _cls);
+                _cls.AddMember(p.Name, m, false);
+            }
+
+            foreach (var c in Classes) {
+                var m = c.Construct(mf, _cls);
+                _cls.AddMember(c.Name, m, false);
+            }
+
+            foreach (var vm in Fields) {
+                var m = vm.Construct(mf, _cls);
+                _cls.AddMember(vm.Name, m, false);
+            }
+
+            return _cls;
+        }
+
+        private IPythonType[] CreateBases(ModuleFactory mf) {
+            var ntBases = NamedTupleBases.Select(ntb => ntb.Construct(mf, _cls)).OfType<IPythonType>().ToArray();
+
+            var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
+            var basesNames = Bases.Select(b => is3x && b == "object" ? null : b).ExcludeDefault().ToArray();
+            var bases = basesNames.Select(mf.ConstructType).ExcludeDefault().Concat(ntBases).ToArray();
+
+            if (GenericBaseParameters.Length > 0) {
+                // Generic class. Need to reconstruct generic base so code can then
+                // create specific types off the generic class. 
+                var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
+                if (genericBase != null) {
+                    var typeVars = GenericBaseParameters.Select(n => mf.Module.GlobalScope.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
+                    Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
+                    if (typeVars.Length > 0) {
+                        var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));
+                        if (genericWithParameters != null) {
+                            bases = bases.Except(Enumerable.Repeat(genericBase, 1)).Concat(Enumerable.Repeat(genericWithParameters, 1)).ToArray();
+                        }
+                    }
+                } else {
+                    Debug.Fail("Generic class does not have generic base.");
+                }
+            }
+            return bases;
+        }
+
+        protected override IEnumerable<MemberModel> GetMemberModels()
+            => Classes.Concat<MemberModel>(Methods).Concat(Properties).Concat(Fields);
     }
 }

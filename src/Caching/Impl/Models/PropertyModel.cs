@@ -13,24 +13,36 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
+// ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    internal sealed class PropertyModel: MemberModel {
-        public string Documentation { get; set; }
+    [Serializable]
+    internal sealed class PropertyModel : CallableModel {
         public string ReturnType { get; set; }
-        public FunctionAttributes Attributes { get; set; }
+        public PropertyModel() { } // For de-serializer from JSON
 
-        public static PropertyModel FromType(IPythonPropertyType prop) {
-            return new PropertyModel {
-                Id = prop.Name.GetStableHash(),
-                Name = prop.Name,
-                IndexSpan = prop.Location.IndexSpan.ToModel(),
-                Documentation = prop.Documentation,
-                ReturnType = prop.ReturnType.GetPersistentQualifiedName()
-                // TODO: attributes.
-            };
+        [NonSerialized] private PythonPropertyType _property;
+
+        public PropertyModel(IPythonPropertyType prop) : base(prop) {
+            ReturnType = prop.ReturnType.GetPersistentQualifiedName();
+        }
+
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) {
+            if (_property != null) {
+                return _property;
+            }
+            _property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0);
+            _property.SetDocumentation(Documentation);
+
+            var o = new PythonFunctionOverload(Name, mf.DefaultLocation);
+            o.SetDocumentation(Documentation);
+            o.SetReturnValue(mf.ConstructMember(ReturnType), true);
+            _property.AddOverload(o);
+
+            return _property;
         }
     }
 }

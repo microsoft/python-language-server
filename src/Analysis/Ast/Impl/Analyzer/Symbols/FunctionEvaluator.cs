@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                             v => v.GetPythonType<IPythonClassType>() == null &&
                                  v.GetPythonType<IPythonFunctionType>() == null)
                         ) {
-                        ((VariableCollection)Eval.CurrentScope.Variables).Clear();
+                            ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
                 }
             }

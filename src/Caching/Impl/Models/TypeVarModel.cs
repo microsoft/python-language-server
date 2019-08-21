@@ -13,15 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
-    [DebuggerDisplay("TypeVar:{Name}")]
-    internal sealed class TypeVarModel: MemberModel {
+    [Serializable]
+    [DebuggerDisplay("TypeVar:{" + nameof(Name) + "}")]
+    internal sealed class TypeVarModel : MemberModel {
         public string[] Constraints { get; set; }
         public object Bound { get; set; }
         public object Covariant { get; set; }
@@ -32,11 +37,17 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return new TypeVarModel {
                 Id = g.Name.GetStableHash(),
                 Name = g.Name,
+                QualifiedName = g.QualifiedName,
                 Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
                 Bound = g.Bound,
                 Covariant = g.Covariant,
                 Contravariant = g.Contravariant
             };
         }
+
+        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) 
+            => new GenericTypeParameter(Name, 
+                Constraints.Select(mf.ConstructType).ToArray(), 
+                Bound, Covariant, Contravariant, mf.DefaultLocation);
     }
 }

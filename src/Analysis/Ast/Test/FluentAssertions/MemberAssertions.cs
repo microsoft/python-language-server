@@ -15,11 +15,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
@@ -124,7 +126,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
             extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
 
-            foreach (var n in subjectMemberNames) {
+            foreach (var n in subjectMemberNames.Except(Enumerable.Repeat("__base__", 1))) {
                 var subjectMember = subjectType.GetMember(n);
                 var otherMember = otherContainer.GetMember(n);
                 var subjectMemberType = subjectMember.GetPythonType();
@@ -137,9 +139,23 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
                 subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
 
+                if(subjectMemberType is IPythonClassType subjectClass) {
+                    var otherClass = otherMemberType as IPythonClassType;
+                    otherClass.Should().NotBeNull();
+
+                    if(subjectClass is IGenericType gt) {
+                        otherClass.Should().BeAssignableTo<IGenericType>();
+                        otherClass.IsGeneric.Should().Be(gt.IsGeneric);
+                    }
+
+                    //Debug.Assert(subjectClass.Bases.Count == otherClass.Bases.Count);
+                    subjectClass.Bases.Count.Should().BeGreaterOrEqualTo(otherClass.Bases.Count);
+                } 
+
                 if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
                     otherMemberType.Documentation.Should().BeNullOrEmpty();
                 } else {
+                    //Debug.Assert(subjectMemberType.Documentation == otherMemberType.Documentation);
                     subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
                 }
 

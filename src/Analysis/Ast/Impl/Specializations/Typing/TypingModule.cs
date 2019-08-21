@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -61,8 +62,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((declaringModule, overload, args)
-                => GenericTypeParameter.FromTypeVar(args, declaringModule));
+            o.SetReturnValueProvider((declaringModule, overload, args, indexSpan)
+                => GenericTypeParameter.FromTypeVar(args, declaringModule, indexSpan));
 
             fn.AddOverload(o);
             _members["TypeVar"] = fn;
@@ -75,7 +76,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((declaringModule, overload, args) => {
+            o.SetReturnValueProvider((declaringModule, overload, args, indexSpan) => {
                 var a = args.Values<IMember>();
                 return a.Count == 1 ? a[0] : Interpreter.UnknownType;
             });
@@ -125,15 +126,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["Counter"] = Specialized.Function("Counter", this, GetMemberDocumentation("Counter"),
                 new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
 
-            _members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
-            _members["SupportsFloat"] = Interpreter.GetBuiltinType(BuiltinTypeId.Float);
-            _members["SupportsComplex"] = Interpreter.GetBuiltinType(BuiltinTypeId.Complex);
-            _members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
+            // TODO: make these classes that support __float__, etc per spec.
+            //_members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
+            //_members["SupportsFloat"] = Interpreter.GetBuiltinType(BuiltinTypeId.Float);
+            //_members["SupportsComplex"] = Interpreter.GetBuiltinType(BuiltinTypeId.Complex);
+            //_members["SupportsBytes"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
 
             fn = PythonFunctionType.Specialize("NamedTuple", this, GetMemberDocumentation("NamedTuple"));
             o = new PythonFunctionOverload(fn.Name, location);
-            o.SetReturnValueProvider((declaringModule, overload, args) => CreateNamedTuple(args.Values<IMember>(), declaringModule));
+            o.SetReturnValueProvider((declaringModule, overload, args, indexSpan) 
+                => CreateNamedTuple(args.Values<IMember>(), declaringModule, indexSpan));
             fn.AddOverload(o);
             _members["NamedTuple"] = fn;
 
@@ -154,7 +157,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var o = new PythonFunctionOverload(fn.Name, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
-            o.SetReturnValueProvider((interpreter, overload, args) => CreateTypeAlias(args));
+            o.SetReturnValueProvider((interpreter, overload, args, indexSpan) => CreateTypeAlias(args));
             o.SetParameters(new[] {
                     new ParameterInfo("name", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
                     new ParameterInfo("tp", Interpreter.GetBuiltinType(BuiltinTypeId.Type), ParameterKind.Normal, null),
@@ -279,7 +282,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs, IPythonModule declaringModule) {
+        private IPythonType CreateNamedTuple(IReadOnlyList<IMember> typeArgs, IPythonModule declaringModule, IndexSpan indexSpan) {
             if (typeArgs.Count != 2) {
                 // TODO: report wrong number of arguments
                 return Interpreter.UnknownType;
@@ -324,7 +327,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 itemNames.Add(itemName2);
                 itemTypes.Add(c.Contents[1].GetPythonType());
             }
-            return TypingTypeFactory.CreateNamedTupleType(Interpreter, tupleName, itemNames, itemTypes, declaringModule);
+            return TypingTypeFactory.CreateNamedTupleType(tupleName, itemNames, itemTypes, declaringModule, indexSpan);
         }
 
         private IPythonType CreateOptional(IReadOnlyList<IPythonType> typeArgs) {
@@ -363,7 +366,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             if (typeArgs.Count > 0) {
                 var typeDefs = typeArgs.OfType<IGenericTypeParameter>().ToArray();
                 if (typeDefs.Length == typeArgs.Count) {
-                    return new GenericClassParameter(typeDefs, this);
+                    return new GenericClassBase(typeDefs, Interpreter);
                 } else {
                     // TODO: report argument mismatch
                 }
@@ -372,10 +375,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return Interpreter.UnknownType;
         }
 
-        private IPythonType ToGenericTemplate(string typeName, IReadOnlyList<IPythonType> typeArgs, BuiltinTypeId typeId)
-            => _members[typeName] is SpecializedGenericType gt
-                ? new SpecializedGenericType(CodeFormatter.FormatSequence(typeName, '[', typeArgs), gt.SpecificTypeConstructor, this, typeId,
-                    typeArgs.OfType<IGenericTypeParameter>().ToList())
-                : Interpreter.UnknownType;
+        private IPythonType ToGenericTemplate(string typeName, IReadOnlyList<IPythonType> typeArgs, BuiltinTypeId typeId) {
+            if (_members[typeName] is SpecializedGenericType gt) {
+                var name = CodeFormatter.FormatSequence(typeName, '[', typeArgs);
+                var qualifiedName = CodeFormatter.FormatSequence($"typing:{typeName}", '[', typeArgs.Select(t => t.QualifiedName));
+                var args = typeArgs.OfType<IGenericTypeParameter>().ToList();
+                return new SpecializedGenericType(name, qualifiedName, gt.SpecificTypeConstructor, this, typeId, args);
+            }
+            return Interpreter.UnknownType;
+        }
     }
 }

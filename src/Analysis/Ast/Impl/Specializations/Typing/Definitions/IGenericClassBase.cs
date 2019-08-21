@@ -14,20 +14,16 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 
-namespace Microsoft.Python.Analysis.Caching.Factories {
-    internal sealed class TypeVarFactory : FactoryBase<TypeVarModel, IPythonType> {
-        public TypeVarFactory(IEnumerable<TypeVarModel> models, ModuleFactory mf)
-            : base(models, mf) {
-        }
-
-        public override IPythonType CreateMember(TypeVarModel tvm, IPythonType declaringType)
-            => new GenericTypeParameter(tvm.Name, ModuleFactory.Module,
-                tvm.Constraints.Select(c => ModuleFactory.ConstructType(c)).ToArray(),
-                tvm.Bound, tvm.Covariant, tvm.Contravariant, ModuleFactory.DefaultLocation);
+namespace Microsoft.Python.Analysis.Specializations.Typing {
+    /// <summary>
+    /// Represents Generic[T1, T2, ...]. Used as a base class to generic classes.
+    /// </summary>
+    public interface IGenericClassBase: IPythonType {
+        /// <summary>
+        /// List of T1, T2, ... generic type parameters
+        /// </summary>
+        IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
     }
 }

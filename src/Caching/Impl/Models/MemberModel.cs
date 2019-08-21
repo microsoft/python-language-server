@@ -13,10 +13,44 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Python.Analysis.Types;
+// ReSharper disable MemberCanBeProtected.Global
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [Serializable]
     internal abstract class MemberModel {
+        /// <summary>
+        /// Member unique id in the database.
+        /// </summary>
         public int Id { get; set; }
+
+        /// <summary>
+        /// Member name, such as name of a class.
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Member qualified name within the module, such as A.B.C.
+        /// </summary>
+        public string QualifiedName { get; set; }
+
+        /// <summary>
+        /// Member location in the module original source code.
+        /// </summary>
         public IndexSpanModel IndexSpan { get; set; }
+
+        [NonSerialized]
+        private IMember _member;
+
+        public IMember Construct(ModuleFactory mf, IPythonType declaringType) 
+            => _member ?? (_member = ReConstruct(mf, declaringType));
+        protected abstract IMember ReConstruct(ModuleFactory mf, IPythonType declaringType);
+
+        public virtual MemberModel GetModel(string name) => GetMemberModels().FirstOrDefault(m => m.Name == name);
+        protected virtual IEnumerable<MemberModel> GetMemberModels() => Enumerable.Empty<MemberModel>();
     }
 }

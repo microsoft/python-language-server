@@ -17,7 +17,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -35,7 +34,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected readonly IFileSystem _fs;
         protected readonly ILogger _log;
         protected readonly IUIService _ui;
-        protected readonly bool _requireInitPy;
 
         protected ConcurrentDictionary<string, ModuleRef> Modules { get; } = new ConcurrentDictionary<string, ModuleRef>();
         protected PathResolver PathResolver { get; set; }
@@ -50,9 +48,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
             _ui = services.GetService<IUIService>();
-
-            _requireInitPy = ModulePath.PythonVersionRequiresInitPyFiles(_interpreter.Configuration.Version);
-        }
+       }
 
         public string Root { get; protected set; }
         public ImmutableArray<string> InterpreterPaths { get; protected set; } = ImmutableArray<string>.Empty;

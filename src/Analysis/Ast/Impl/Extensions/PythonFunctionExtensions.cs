@@ -39,9 +39,9 @@ namespace Microsoft.Python.Analysis {
             return gs?.TraverseBreadthFirst(s => s.Children).FirstOrDefault(s => s.Node == f.FunctionDefinition);
         }
 
-        public static string GetQualifiedName(this IPythonClassMember cm) {
+        public static string GetQualifiedName(this IPythonClassMember cm, string baseName = null) {
             var s = new Stack<string>();
-            s.Push(cm.Name);
+            s.Push(baseName ?? cm.Name);
             for (var p = cm.DeclaringType as IPythonClassMember; p != null; p = p.DeclaringType as IPythonClassMember) {
                 s.Push(p.Name);
             }

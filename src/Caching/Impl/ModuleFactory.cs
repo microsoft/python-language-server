@@ -26,35 +26,24 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Caching.Factories {
-    internal sealed class ModuleFactory : IDisposable {
+namespace Microsoft.Python.Analysis.Caching {
+    /// <summary>
+    /// Constructs module from its persistent model.
+    /// </summary>
+    internal sealed class ModuleFactory {
         // TODO: better resolve circular references.
         private readonly ReentrancyGuard<string> _typeReentrancy = new ReentrancyGuard<string>();
         private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
+        private readonly ModuleModel _model;
 
         public IPythonModule Module { get; }
-        public ClassFactory ClassFactory { get; }
-        public FunctionFactory FunctionFactory { get; }
-        public PropertyFactory PropertyFactory { get; }
-        public VariableFactory VariableFactory { get; }
-        public TypeVarFactory TypeVarFactory { get; }
         public Location DefaultLocation { get; }
 
         public ModuleFactory(ModuleModel model, IPythonModule module) {
-            Module = module;
-            ClassFactory = new ClassFactory(model.Classes, this);
-            FunctionFactory = new FunctionFactory(model.Functions, this);
-            VariableFactory = new VariableFactory(model.Variables, this);
-            TypeVarFactory = new TypeVarFactory(model.TypeVars, this);
-            PropertyFactory = new PropertyFactory(this);
-            DefaultLocation = new Location(Module);
-        }
+            _model = model;
 
-        public void Dispose() {
-            ClassFactory.Dispose();
-            FunctionFactory.Dispose();
-            VariableFactory.Dispose();
-            TypeVarFactory.Dispose();
+            Module = module;
+            DefaultLocation = new Location(Module);
         }
 
         public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();
@@ -65,33 +54,73 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 return null;
             }
 
-            // TODO: better resolve circular references.
-            using (_typeReentrancy.Push(qualifiedName, out var reentered)) {
-                if (reentered) {
-                    return null;
-                }
-                // See if member is a module first.
-                var module = GetModule(parts);
-                if (module == null) {
-                    return null;
-                }
-
-                if (parts.ObjectType == ObjectType.NamedTuple) {
-                    return ConstructNamedTuple(parts.MemberNames[0], module);
-                }
-
-                var member = parts.ModuleName == Module.Name
-                        ? GetMemberFromThisModule(parts.MemberNames)
-                        : GetMemberFromModule(module, parts.MemberNames);
-
-                if (parts.ObjectType != ObjectType.Instance) {
-                    return member;
-                }
-
-                var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
-                return new PythonInstance(t);
+            // See if member is a module first.
+            var module = GetModule(parts);
+            if (module == null) {
+                return null;
             }
+
+            var member = parts.ModuleName == Module.Name
+                    ? GetMemberFromThisModule(parts.MemberNames)
+                    : GetMemberFromModule(module, parts.MemberNames);
+
+            if (parts.ObjectType != ObjectType.Instance) {
+                return member;
+            }
+
+            var t = member.GetPythonType() ?? module.Interpreter.UnknownType;
+            return new PythonInstance(t);
         }
+
+        private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
+            if (memberNames.Count == 0) {
+                return null;
+            }
+
+            // Try from cache first
+            MemberModel currentModel = _model;
+            IMember m = null;
+            IPythonType declaringType = null;
+
+            foreach (var name in memberNames) {
+                // Check if name has type arguments such as Union[int, str]
+                // Note that types can be nested like Union[int, Union[A, B]]
+                var memberName = name;
+                var typeArgs = GetTypeArguments(memberName, out var typeName);
+                if (!string.IsNullOrEmpty(typeName) && typeName != name) {
+                    memberName = typeName;
+                }
+
+                if(memberName == "<lambda>") {
+                    return null;
+                }
+
+                var nextModel = currentModel.GetModel(memberName);
+                Debug.Assert(nextModel != null);
+                if (nextModel == null) {
+                    return null;
+                }
+
+                m = nextModel.Construct(this, declaringType);
+                Debug.Assert(m != null);
+                if (m is IGenericType gt && typeArgs.Count > 0) {
+                    m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));
+                }
+
+                currentModel = nextModel;
+                declaringType = m as IPythonType;
+                Debug.Assert(declaringType != null);
+                if (declaringType == null) {
+                    return null;
+                }
+            }
+
+            return m;
+        }
+
+        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames)
+            => memberNames.Count == 0 ? module : GetMember(module, memberNames);
+
 
         private IPythonModule GetModule(QualifiedNameParts parts) {
             if (parts.ModuleName == Module.Name) {
@@ -118,38 +147,8 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
         }
 
-        private IMember GetMemberFromModule(IPythonModule module, IReadOnlyList<string> memberNames)
-            => memberNames.Count == 0 ? module : GetMember(module, memberNames);
-
-        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
-            if (memberName.StartsWithOrdinal("__")) {
-                memberName = memberName.Substring(2, memberName.Length - 4);
-            }
-
-            switch (memberName) {
-                case "NoneType":
-                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
-                case "Unknown":
-                    return builtins.Interpreter.UnknownType;
-            }
-            return builtins.GetMember(memberName);
-        }
-
-        private IMember GetMemberFromThisModule(IReadOnlyList<string> memberNames) {
-            if (memberNames.Count == 0) {
-                return null;
-            }
-
-            var name = memberNames[0];
-            var root = ClassFactory.TryCreate(name)
-                   ?? (FunctionFactory.TryCreate(name)
-                       ?? (IMember)VariableFactory.TryCreate(name));
-
-            return GetMember(root, memberNames.Skip(1));
-        }
-
         private IMember GetMember(IMember root, IEnumerable<string> memberNames) {
-            IMember member = root;
+            var member = root;
             foreach (var n in memberNames) {
                 var memberName = n;
                 // Check if name has type arguments such as Union[int, str]
@@ -168,6 +167,11 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                     member = GetBuiltinMember(builtins, memberName) ?? builtins.Interpreter.UnknownType;
                 } else {
                     member = mc?.GetMember(memberName);
+                    // Work around problem that some stubs have incorrectly named tuples.
+                    // For example, in posix.pyi variable for the named tuple is not named as the tuple:
+                    // sched_param = NamedTuple('sched_priority', [('sched_priority', int),])
+                    member = member ?? (mc as PythonModule)?.GlobalScope.Variables
+                             .FirstOrDefault(v => v.Value is ITypingNamedTupleType nt && nt.Name == memberName);
                 }
 
                 if (member == null) {
@@ -181,6 +185,20 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
             }
 
             return member;
+        }
+
+        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
+            if (memberName.StartsWithOrdinal("__")) {
+                memberName = memberName.Substring(2, memberName.Length - 4);
+            }
+
+            switch (memberName) {
+                case "NoneType":
+                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
+                case "Unknown":
+                    return builtins.Interpreter.UnknownType;
+            }
+            return builtins.GetMember(memberName);
         }
 
         private IReadOnlyList<IPythonType> GetTypeArguments(string memberName, out string typeName) {
@@ -203,7 +221,7 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                         if (t == null) {
                             TypeNames.DeconstructQualifiedName(qn, out var parts);
                             typeName = string.Join(".", parts.MemberNames);
-                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), null, null, null, DefaultLocation);
+                            t = new GenericTypeParameter(typeName, Array.Empty<IPythonType>(), null, null, null, DefaultLocation);
                         }
                         typeArgs.Add(t);
                     }
@@ -211,33 +229,6 @@ namespace Microsoft.Python.Analysis.Caching.Factories {
                 }
             }
             return typeArgs;
-        }
-
-        private ITypingNamedTupleType ConstructNamedTuple(string tupleString, IPythonModule module) {
-            // tuple_name(name: type, name: type, ...)
-            // time_result(columns: int, lines: int)
-            var openBraceIndex = tupleString.IndexOf('(');
-            var closeBraceIndex = tupleString.IndexOf(')');
-            var name = tupleString.Substring(0, openBraceIndex);
-            var argString = tupleString.Substring(openBraceIndex + 1, closeBraceIndex - openBraceIndex - 1);
-
-            var itemNames = new List<string>();
-            var itemTypes = new List<IPythonType>();
-            var start = 0;
-
-            for (var i = 0; i < argString.Length; i++) {
-                var ch = argString[i];
-                if (ch == ':') {
-                    itemNames.Add(argString.Substring(start, i - start).Trim());
-                    i++;
-                    var paramType = TypeNames.GetTypeName(argString, ref i, ',');
-                    var t = ConstructType(paramType);
-                    itemTypes.Add(t ?? module.Interpreter.UnknownType);
-                    start = i + 1;
-                }
-            }
-
-            return new NamedTupleType(name, itemNames, itemTypes, module, module.Interpreter);
         }
     }
 }

@@ -29,7 +29,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("Class {Name}")]
+    [DebuggerDisplay("Class {" + nameof(Name) + "}")]
     internal partial class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
         internal enum ClassDocumentationSource {
             Class,
@@ -39,7 +39,6 @@ namespace Microsoft.Python.Analysis.Types {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
-        private string _genericName;
         private List<IPythonType> _bases = new List<IPythonType>();
         private IReadOnlyList<IPythonType> _mro;
         private string _documentation;
@@ -61,14 +60,13 @@ namespace Microsoft.Python.Analysis.Types {
             DeclaringType = declaringType;
         }
 
+        #region IPythonType
         /// <summary>
         /// If class has generic type parameters, returns that form, e.g 'A[T1, int, ...]', otherwise returns base, e.g 'A'
         /// </summary>
-        public override string Name => _genericName ?? base.Name;
-
-        #region IPythonType
+        public override string Name => _nameWithParameters ?? base.Name;
+        public override string QualifiedName => this.GetQualifiedName(_qualifiedNameWithParameters);
         public override PythonMemberType MemberType => PythonMemberType.Class;
-        public IPythonType DeclaringType { get; }
 
         public override IEnumerable<string> GetMemberNames() {
             var names = new HashSet<string>();
@@ -136,8 +134,9 @@ namespace Microsoft.Python.Analysis.Types {
                     if (string.IsNullOrEmpty(_documentation) && Bases != null) {
                         // If still not found, try bases. 
                         var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
-                            ?.Documentation;
+                        _documentation = Bases
+                            .FirstOrDefault(b => b != o && !(b is IGenericClassBase) && !string.IsNullOrEmpty(b?.Documentation))?
+                            .Documentation;
                         DocumentationSource = ClassDocumentationSource.Base;
                     }
                 }
@@ -175,7 +174,10 @@ namespace Microsoft.Python.Analysis.Types {
 
             return fromBases ?? defaultReturn;
         }
+        #endregion
 
+        #region IPythonClassMember
+        public IPythonType DeclaringType { get; }
         #endregion
 
         #region IPythonClass
@@ -203,12 +205,16 @@ namespace Microsoft.Python.Analysis.Types {
         /// Has the map {T: int, K: str}
         /// </summary>
         public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters =>
-                _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+                _genericActualParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 
         #endregion
 
         internal ClassDocumentationSource DocumentationSource { get; private set; }
-        internal override void SetDocumentation(string documentation) => _documentation = documentation;
+
+        internal override void SetDocumentation(string documentation) {
+            _documentation = documentation;
+            DocumentationSource = ClassDocumentationSource.Class;
+        }
 
         internal void SetBases(IEnumerable<IPythonType> bases) {
             if (_bases.Count > 0) {
@@ -234,6 +240,8 @@ namespace Microsoft.Python.Analysis.Types {
             }
             // Invalidate MRO
             _mro = null;
+            DecideGeneric();
+
             if (DeclaringModule is BuiltinsPythonModule) {
                 // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
                 return;

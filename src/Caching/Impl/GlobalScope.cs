@@ -16,48 +16,53 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis.Caching.Factories;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class GlobalScope : IGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
+        private ModuleModel _model;
 
-        public GlobalScope(ModuleModel model, IPythonModule module, IServiceContainer services) {
+        public GlobalScope(ModuleModel model, IPythonModule module) {
+            _model = model;
             Module = module;
             Name = model.Name;
-
-            using (var mf = new ModuleFactory(model, module)) {
-                foreach (var tvm in model.TypeVars) {
-                    var t = mf.TypeVarFactory.Construct(tvm);
-                    _scopeVariables.DeclareVariable(tvm.Name, t, VariableSource.Generic, mf.DefaultLocation);
-                }
-
-                // Member creation may be non-linear. Consider function A returning instance
-                // of a class or type info of a function which hasn't been created yet.
-                // Thus check if member has already been created first.
-                foreach (var cm in model.Classes) {
-                    var cls = mf.ClassFactory.Construct(cm);
-                    _scopeVariables.DeclareVariable(cm.Name, cls, VariableSource.Declaration, mf.DefaultLocation);
-                }
-
-                foreach (var fm in model.Functions) {
-                    var ft = mf.FunctionFactory.Construct(fm);
-                    _scopeVariables.DeclareVariable(fm.Name, ft, VariableSource.Declaration, mf.DefaultLocation);
-                }
-
-                foreach (var vm in model.Variables) {
-                    var v = mf.VariableFactory.Construct(vm);
-                    _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
-                }
-                // TODO: re-declare __doc__, __name__, etc.
-            }
         }
 
+        public void ReconstructVariables() {
+            // Member creation may be non-linear. Consider function A returning instance
+            // of a class or type info of a function which hasn't been created yet.
+            // Thus first create members so we can find then, then populate them with content.
+            var mf = new ModuleFactory(_model, Module);
+            foreach (var tvm in _model.TypeVars) {
+                var t = tvm.Construct(mf, null);
+                _scopeVariables.DeclareVariable(tvm.Name, t, VariableSource.Generic, mf.DefaultLocation);
+            }
+            foreach (var ntm in _model.NamedTuples) {
+                var nt = ntm.Construct(mf, null);
+                _scopeVariables.DeclareVariable(ntm.Name, nt, VariableSource.Declaration, mf.DefaultLocation);
+            }
+            foreach (var cm in _model.Classes) {
+                var cls = cm.Construct(mf, null);
+                _scopeVariables.DeclareVariable(cm.Name, cls, VariableSource.Declaration, mf.DefaultLocation);
+            }
+            foreach (var fm in _model.Functions) {
+                var ft = fm.Construct(mf, null);
+                _scopeVariables.DeclareVariable(fm.Name, ft, VariableSource.Declaration, mf.DefaultLocation);
+            }
+            foreach (var vm in _model.Variables) {
+                var v = (IVariable)vm.Construct(mf, null);
+                _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
+            }
+
+            // TODO: re-declare __doc__, __name__, etc.
+            _model = null;
+        }
+
+        #region IScope
         public string Name { get; }
         public ScopeStatement Node => null;
         public IScope OuterScope => null;
@@ -72,5 +77,6 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public void DeclareVariable(string name, IMember value, VariableSource source, Location location = default) { }
         public void LinkVariable(string name, IVariable v, Location location) => throw new NotImplementedException() { };
+        #endregion
     }
 }

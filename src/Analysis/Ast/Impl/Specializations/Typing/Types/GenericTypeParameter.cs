@@ -27,7 +27,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeParameter {
         public GenericTypeParameter(
             string name,
-            IPythonModule declaringModule,
             IReadOnlyList<IPythonType> constraints,
             object bound,
             object covariant,
@@ -118,7 +117,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var covariant = argSet.GetArgumentValue<IPythonConstant>("covariant")?.Value;
             var contravariant = argSet.GetArgumentValue<IPythonConstant>("contravariant")?.Value;
 
-            return new GenericTypeParameter(name, declaringModule, constraints, bound, covariant, contravariant, new Location(declaringModule, location));
+            return new GenericTypeParameter(name, constraints, bound, covariant, contravariant, new Location(declaringModule, location));
         }
 
         private static string GetDocumentation(string name, IReadOnlyList<IPythonType> constraints, object bound, object covariant, object contravariant) {

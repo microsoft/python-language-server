@@ -78,7 +78,6 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Crypt() => TestModule("crypt");
 
         [TestMethod, Priority(0)]
-        [Ignore("_DRMapping type issue. Consider merge of module to stub so OrderedDict resolves to generic from the collections stub.")]
         public Task Csv() => TestModule("csv");
 
         [TestMethod, Priority(0)]
@@ -121,7 +120,6 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Ftplib() => TestModule("ftplib");
 
         [TestMethod, Priority(0)]
-        [Ignore]
         public Task Functools() => TestModule("functools");
 
         [TestMethod, Priority(0)]
@@ -191,7 +189,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Pkgutil() => TestModule("pkgutil");
 
         [TestMethod, Priority(0)]
-        [Ignore("Specialize Enum. See PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)")]
+        [Ignore("https://github.com/microsoft/python-language-server/issues/1434")]
         public Task Plistlib() => TestModule("plistlib");
 
         [TestMethod, Priority(0)]
