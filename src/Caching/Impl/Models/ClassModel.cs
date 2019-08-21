@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public ClassModel[] Classes { get; set; }
 
         /// <summary>
-        /// GenericParameters of the Generic[...] base class, if any.
+        /// FormalGenericParameters of the Generic[...] base class, if any.
         /// </summary>
         public string[] GenericBaseParameters { get; set; }
         /// <summary>
@@ -125,7 +125,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             // so on restore we'll be able to re-create the class as generic.
             GenericBaseParameters = GenericBaseParameters ?? Array.Empty<string>();
 
-            GenericParameterValues = cls.ActualGenericParameters
+            GenericParameterValues = cls.GenericParameters
                 .Select(p => new GenericParameterValueModel { Name = p.Key.Name, Type = p.Value.GetPersistentQualifiedName() })
                 .ToArray();
         }
@@ -143,9 +143,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             if (GenericParameterValues.Length > 0) {
                 _cls.StoreGenericParameters(_cls,
-                    _cls.ActualGenericParameters.Keys.ToArray(),
+                    _cls.GenericParameters.Keys.ToArray(),
                     GenericParameterValues.ToDictionary(
-                        k => _cls.ActualGenericParameters.Keys.First(x => x.Name == k.Name), 
+                        k => _cls.GenericParameters.Keys.First(x => x.Name == k.Name), 
                         v => mf.ConstructType(v.Type)
                     )
                 );
