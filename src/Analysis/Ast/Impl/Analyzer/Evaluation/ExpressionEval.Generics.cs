@@ -63,50 +63,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// <summary>
         /// Returns whether the arguments to Generic are valid
         /// </summary>
-        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeParameter> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
-            // All arguments to Generic must be type parameters
-            // e.g. Generic[T, str] throws a runtime error
-            if (genericTypeArgs.Count != args.Count) {
-                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                    Resources.GenericNotAllTypeParameters,
-                    GetLocation(expr).Span,
-                    ErrorCodes.TypingGenericArguments,
-                    Severity.Warning,
-                    DiagnosticSource.Analysis));
-                return false;
-            }
-
-            // All arguments to Generic must be distinct
-            if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Count) {
-                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                   Resources.GenericNotAllUnique,
-                   GetLocation(expr).Span,
-                   ErrorCodes.TypingGenericArguments,
-                   Severity.Warning,
-                   DiagnosticSource.Analysis));
-                return false;
-            }
-
-            return true;
-        }
 
         /// <summary>
         /// Given generic type and list of arguments in the expression like
         /// Mapping[T1, int, ...] or Mapping[str, int] where Mapping inherits from Generic[K,T] creates generic class base
         /// (if the former) on specific type (if the latter).
         /// </summary>
-        private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr) {
-            var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
-
-            if (gt.Name.EqualsOrdinal("Generic")) {
-                if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
-                    return UnknownType;
-                }
-            }
-
-            // For other types just use supplied arguments
-            return args.Count > 0 ? gt.CreateSpecificType(new ArgumentSet(args, expr, this)) : UnknownType;
-        }
+        private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr)
+            => args.Count > 0 ? gt.CreateSpecificType(new ArgumentSet(args, expr, this)) : UnknownType;
 
         private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
             var indices = new List<IMember>();

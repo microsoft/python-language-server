@@ -16,7 +16,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
+using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
@@ -39,10 +42,46 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsGeneric => true;
         public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> ActualGenericParameters
             => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType);
-        public override IPythonType CreateSpecificType(IArgumentSet args)
-            => new GenericClassBase(args.Arguments.Select(a => a.Value).OfType<IGenericTypeParameter>().ToArray(), DeclaringModule.Interpreter);
+
+        public override IPythonType CreateSpecificType(IArgumentSet args) {
+            if (!GenericClassParameterValid(args)) {
+                return UnknownType;
+            }
+            return new GenericClassBase(args.Arguments.Select(a => a.Value).OfType<IGenericTypeParameter>().ToArray(), DeclaringModule.Interpreter);
+        }
+
         #endregion
 
         public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
+
+        private bool GenericClassParameterValid(IArgumentSet args) {
+            var genericTypeArgs = args.Values<IGenericTypeParameter>().ToArray();
+            var allArgs = args.Values<IMember>().ToArray();
+            // All arguments to Generic must be type parameters
+            // e.g. Generic[T, str] throws a runtime error
+            var e = args.Eval;
+            if (genericTypeArgs.Length != allArgs.Length) {
+               e.ReportDiagnostics(args.Eval.Module.Uri, new DiagnosticsEntry(
+                    Resources.GenericNotAllTypeParameters,
+                    e.GetLocation(args.Expression).Span,
+                    ErrorCodes.TypingGenericArguments,
+                    Severity.Warning,
+                    DiagnosticSource.Analysis));
+                return false;
+            }
+
+            // All arguments to Generic must be distinct
+            if (genericTypeArgs.Distinct().ToArray().Length != genericTypeArgs.Length) {
+                e.ReportDiagnostics(args.Eval.Module.Uri, new DiagnosticsEntry(
+                    Resources.GenericNotAllUnique,
+                    e.GetLocation(args.Expression).Span,
+                    ErrorCodes.TypingGenericArguments,
+                    Severity.Warning,
+                    DiagnosticSource.Analysis));
+                return false;
+            }
+
+            return true;
+        }
     }
 }
