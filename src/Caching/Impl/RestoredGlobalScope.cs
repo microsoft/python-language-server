@@ -22,17 +22,32 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class RestoredGlobalScope : IGlobalScope {
+    internal sealed class RestoredGlobalScope : IRestoredGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
-        private ModuleModel _model;
+        private ModuleModel _model; // Non-readonly b/c of DEBUG conditional.
+        private ModuleFactory _factory; // Non-readonly b/c of DEBUG conditional.
 
         public RestoredGlobalScope(ModuleModel model, IPythonModule module) {
-            _model = model;
-            Module = module;
+            _model = model ?? throw new ArgumentNullException(nameof(model));
+            Module = module ?? throw new ArgumentNullException(nameof(module));
             Name = model.Name;
+            _factory = new ModuleFactory(_model, Module);
+            DeclareVariables();
         }
 
         public void ReconstructVariables() {
+            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions).ToArray();
+            foreach (var m in models.Concat(_model.Variables)) {
+                m.Populate(_factory, null);
+            }
+            // TODO: re-declare __doc__, __name__, etc.
+#if !DEBUG
+            _model = null;
+            _factory = null;
+#endif
+        }
+
+        private void DeclareVariables() {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
@@ -46,14 +61,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 var v = (IVariable)vm.Create(mf, null);
                 _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
             }
-
-
-            foreach (var m in models.Concat(_model.Variables)) {
-                m.Populate(mf, null);
-            }
-
-            // TODO: re-declare __doc__, __name__, etc.
-            _model = null;
         }
 
         #region IScope

@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </remarks>
     internal abstract class SpecializedModule : PythonModule {
         protected SpecializedModule(string name, string modulePath, IServiceContainer services)
-            : base(name, modulePath, ModuleType.Specialized, null, services) { }
+            : base(name, modulePath, ModuleType.Specialized, null, false, services) { }
 
         protected override string LoadContent() {
             // Exceptions are handled in the base

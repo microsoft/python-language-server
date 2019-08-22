@@ -119,8 +119,15 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
-            var dw = new DependencyWalker(analysis.Ast);
-            
+            // Take dependencies from imports. If module has stub we should also take
+            // dependencies from there since persistent state is based on types that
+            // are combination of stub and the module. Sometimes stub may import more
+            // and we must make sure dependencies are restored before the module.
+            var primaryDependencyWalker = new DependencyWalker(analysis.Ast);
+            var stubDependencyWalker = analysis.Document.Stub != null ? new DependencyWalker(analysis.Document.Stub.Analysis.Ast) : null;
+            var stubImports = stubDependencyWalker?.Imports ?? Enumerable.Empty<ImportModel>();
+            var stubFromImports = stubDependencyWalker?.FromImports ?? Enumerable.Empty<FromImportModel>();
+
             return new ModuleModel {
                 Id = uniqueId.GetStableHash(),
                 UniqueId = uniqueId,
@@ -136,8 +143,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     Kind = l.Kind
                 }).ToArray(),
                 FileSize = analysis.Ast.EndIndex,
-                Imports = dw.Imports.ToArray(),
-                FromImports = dw.FromImports.ToArray()
+                Imports = primaryDependencyWalker.Imports.Concat(stubImports).ToArray(),
+                FromImports = primaryDependencyWalker.FromImports.Concat(stubFromImports).ToArray()
             };
         }
 
@@ -174,7 +181,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         private sealed class DependencyWalker : PythonWalker {
             public List<ImportModel> Imports { get; } = new List<ImportModel>();
-            public List<FromImportModel> FromImports { get;} = new List<FromImportModel>();
+            public List<FromImportModel> FromImports { get; } = new List<FromImportModel>();
 
             public DependencyWalker(PythonAst ast) {
                 ast.Walk(this);

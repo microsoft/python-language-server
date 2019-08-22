@@ -20,6 +20,16 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching {
+    /// <summary>
+    /// Represents global scope that has been restored from
+    /// the database but has not been fully populated yet.
+    /// Used to attach to analysis so variables can be
+    /// accessed during classes and methods restoration.
+    /// </summary>
+    internal interface IRestoredGlobalScope : IGlobalScope {
+        void ReconstructVariables();
+    }
+
     internal interface IModuleDatabaseService {
         /// <summary>
         /// Creates global scope from module persistent state.
@@ -27,7 +37,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// </summary>
         /// <param name="module">Python module to restore analysis for.</param>
         /// <param name="gs">Python module global scope.</param>
-        bool TryRestoreGlobalScope(IPythonModule module, out IGlobalScope gs);
+        bool TryRestoreGlobalScope(IPythonModule module, out IRestoredGlobalScope gs);
 
         /// <summary>
         /// Retrieves dependencies from the module persistent state.

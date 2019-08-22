@@ -89,12 +89,13 @@ namespace Microsoft.Python.Analysis.Modules {
             SetDeclaringModule(this);
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
                 ModuleType = moduleType,
-                Stub = stub
+                Stub = stub,
+                IsPersistent = isPersistent
             }, services) { }
 
         internal PythonModule(ModuleCreationOptions creationOptions, IServiceContainer services)
@@ -172,7 +173,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (valueType is PythonModule) {
                         return false; // Do not re-export modules.
                     }
-                    if(valueType is IPythonFunctionType f && f.IsLambda()) {
+                    if (valueType is IPythonFunctionType f && f.IsLambda()) {
                         return false;
                     }
                     if (this is TypingModule) {
@@ -182,7 +183,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     // assigned with types from typing. Example:
                     //    from typing import Any # do NOT export Any
                     //    x = Union[int, str] # DO export x
-                    if(valueType?.DeclaringModule is TypingModule && v.Name == valueType.Name) {
+                    if (valueType?.DeclaringModule is TypingModule && v.Name == valueType.Name) {
                         return false;
                     }
                     return true;
@@ -266,7 +267,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     return _buffer.Text;
                 }
             }
-        } 
+        }
         #endregion
 
         #region Parsing
@@ -414,15 +415,18 @@ namespace Microsoft.Python.Analysis.Modules {
             if (dbs != null && dbs.TryRestoreGlobalScope(this, out var gs)) {
                 Log?.Log(TraceEventType.Verbose, "Restored from database: ", Name);
                 analysis = new DocumentAnalysis(this, 1, gs, new ExpressionEval(Services, this, this.GetAst()), Array.Empty<string>());
-            } else {
-                var walker = new ModuleWalker(Services, this, ast);
-                ast.Walk(walker);
-                cancellationToken.ThrowIfCancellationRequested();
-
-                walker.Complete();
-                cancellationToken.ThrowIfCancellationRequested();
-                analysis = CreateAnalysis(node, ast, version, walker, isCanceled);
+                AnalysisComplete(analysis);
+                gs.ReconstructVariables();
+                return;
             }
+
+            var walker = new ModuleWalker(Services, this, ast);
+            ast.Walk(walker);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            walker.Complete();
+            cancellationToken.ThrowIfCancellationRequested();
+            analysis = CreateAnalysis(node, ast, version, walker, isCanceled);
             AnalysisComplete(analysis);
         }
 
@@ -590,7 +594,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private void LoadContent(string content, int version) {
             if (ContentState < State.Loading) {
                 try {
-                    if(IsPersistent) {
+                    if (IsPersistent) {
                         content = string.Empty;
                     } else {
                         content = content ?? LoadContent();

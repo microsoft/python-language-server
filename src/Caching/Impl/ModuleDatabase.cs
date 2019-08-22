@@ -54,36 +54,6 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         /// <summary>
-        /// Creates module representation from module persistent state.
-        /// </summary>
-        /// <param name="moduleName">Module name. If the name is not qualified
-        /// the module will ge resolved against active Python version.</param>
-        /// <param name="filePath">Module file path.</param>
-        /// <param name="module">Python module.</param>
-        public bool TryCreateModule(string moduleName, string filePath, out IPythonModule module) {
-            module = null;
-
-            if (GetCachingLevel() == AnalysisCachingLevel.None) {
-                return false;
-            }
-
-            lock (_lock) {
-                if (_modules.TryGetValue(moduleName, out var dbModule)) {
-                    module = dbModule;
-                    return true;
-                }
-                if (FindModuleModel(moduleName, filePath, out var model)) {
-                    dbModule = new PythonDbModule(model, filePath, _services);
-                    _modules[moduleName] = dbModule;
-                    dbModule.Construct(model);
-                    module = dbModule;
-                }
-            }
-
-            return module != null;
-        }
-
-        /// <summary>
         /// Retrieves dependencies from the module persistent state.
         /// </summary>
         /// <param name="module">Python module to restore analysis for.</param>
@@ -114,7 +84,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// </summary>
         /// <param name="module">Python module to restore analysis for.</param>
         /// <param name="gs">Python module global scope.</param>
-        public bool TryRestoreGlobalScope(IPythonModule module, out IGlobalScope gs) {
+        public bool TryRestoreGlobalScope(IPythonModule module, out IRestoredGlobalScope gs) {
             gs = null;
 
             if (GetCachingLevel() == AnalysisCachingLevel.None || !CanBeCached(module)) {
@@ -128,8 +98,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
                 if (FindModuleModel(module.Name, module.FilePath, out var model)) {
                     var restoredScope = new RestoredGlobalScope(model, module);
-                    restoredScope.ReconstructVariables();
-
                     _scopes[module.Name] = restoredScope;
                     gs = restoredScope;
                 }

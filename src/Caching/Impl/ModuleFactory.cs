@@ -17,10 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
@@ -43,7 +40,6 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public ModuleFactory(ModuleModel model, IPythonModule module) {
             _model = model;
-
             Module = module;
             DefaultLocation = new Location(Module);
         }
