@@ -22,7 +22,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Caching;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -61,6 +63,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly Dictionary<object, Node> _astMap = new Dictionary<object, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
 
+        private IModuleDatabaseService _dbService;
         private string _documentation; // Must be null initially.
         private CancellationTokenSource _parseCts;
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
@@ -191,12 +194,10 @@ namespace Microsoft.Python.Analysis.Modules {
         public override LocationInfo Definition => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
         #endregion
 
+        #region IPythonModule
         public virtual string FilePath { get; protected set; }
         public virtual Uri Uri { get; }
-
-        #region IPythonModule
         public IDocumentAnalysis Analysis { get; private set; }
-
         public IPythonInterpreter Interpreter { get; }
 
         /// <summary>
@@ -399,8 +400,27 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
+        public void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAst ast, int version, bool isCanceled, CancellationToken cancellationToken) {
+            AnalysisBegins();
 
-        public void NotifyAnalysisBegins() {
+            IDocumentAnalysis analysis;
+            var dbs = GetDbService();
+            if (dbs != null && dbs.TryRestoreGlobalScope(this, out var gs)) {
+                Log?.Log(TraceEventType.Verbose, "Restored from database: ", Name);
+                analysis = new DocumentAnalysis(this, 1, gs, new ExpressionEval(Services, this, this.GetAst()), Array.Empty<string>());
+            } else {
+                var walker = new ModuleWalker(Services, this, ast);
+                ast.Walk(walker);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                walker.Complete();
+                cancellationToken.ThrowIfCancellationRequested();
+                analysis = CreateAnalysis(node, ast, version, walker, isCanceled);
+            }
+            AnalysisComplete(analysis);
+        }
+
+        private void AnalysisBegins() {
             lock (_syncObj) {
                 if (_updated) {
                     _updated = false;
@@ -428,7 +448,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
+        private void AnalysisComplete(IDocumentAnalysis analysis) {
             lock (_syncObj) {
                 if (analysis.Version < Analysis.Version) {
                     return;
@@ -456,6 +476,48 @@ namespace Microsoft.Python.Analysis.Modules {
             NewAnalysis?.Invoke(this, EventArgs.Empty);
         }
 
+        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
+            var canHaveLibraryAnalysis = false;
+            var saveAnalysis = false;
+            // Don't try to drop builtins; it causes issues elsewhere.
+            // We probably want the builtin module's AST and other info for evaluation.
+            switch (ModuleType) {
+                case ModuleType.Library:
+                case ModuleType.Compiled:
+                case ModuleType.CompiledBuiltin:
+                    canHaveLibraryAnalysis = true;
+                    saveAnalysis = true;
+                    break;
+                case ModuleType.Stub:
+                    canHaveLibraryAnalysis = true;
+                    break;
+            }
+
+            var createLibraryAnalysis = !isCanceled &&
+                                        node != null &&
+                                        !node.HasMissingDependencies &&
+                                        canHaveLibraryAnalysis &&
+                                        !IsOpen &&
+                                        node.HasOnlyWalkedDependencies &&
+                                        node.IsValidVersion;
+
+            if (!createLibraryAnalysis) {
+                return new DocumentAnalysis(this, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
+            }
+
+            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
+            this.SetAst(ast);
+
+            var eval = new ExpressionEval(walker.Eval.Services, this, ast);
+            var analysis = new LibraryAnalysis(this, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
+
+            if (saveAnalysis) {
+                var dbs = Services.GetService<IModuleDatabaseService>();
+                dbs?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            }
+
+            return analysis;
+        }
         protected virtual void OnAnalysisComplete() { }
         #endregion
 
@@ -585,6 +647,17 @@ namespace Microsoft.Python.Analysis.Modules {
         public virtual int LocationToIndex(SourceLocation location) => this.GetAst()?.LocationToIndex(location) ?? default;
         #endregion
 
+        #region IDependencyProvider
+        public virtual HashSet<AnalysisModuleKey> GetDependencies() {
+            var dbs = GetDbService();
+            if (dbs != null && dbs.TryRestoreDependencies(this, out var dp)) {
+                return dp.GetDependencies();
+            }
+            var dw = new DependencyWalker(this, Analysis.Ast);
+            return dw.Dependencies;
+        }
+        #endregion
+
         private void RemoveReferencesInModule(IPythonModule module) {
             if (module.GlobalScope?.Variables != null) {
                 foreach (var v in module.GlobalScope.Variables) {
@@ -592,5 +665,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 }
             }
         }
+        private IModuleDatabaseService GetDbService()
+            => _dbService ?? (_dbService = Services.GetService<IModuleDatabaseService>());
     }
 }

@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -37,5 +39,9 @@ namespace Microsoft.Python.Analysis.Modules {
             // Exceptions are handled in the base
             return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;
         }
+
+        #region IDependencyProvider
+        public override HashSet<AnalysisModuleKey> GetDependencies() => new HashSet<AnalysisModuleKey>();
+        #endregion
     }
 }

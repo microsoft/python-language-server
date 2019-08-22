@@ -37,8 +37,8 @@ using Microsoft.Python.Core.OS;
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
-        private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
+        private IModuleDatabaseService _dbService;
 
         private ImmutableArray<string> _userPaths = ImmutableArray<string>.Empty;
 
@@ -74,9 +74,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
-            IPythonModule module;
             if (moduleImport.ModulePath != null) {
-                module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
+                var module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
                 if (module != null) {
                     GetRdt().LockDocument(module.Uri);
                     return module;
@@ -84,21 +83,21 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             var dbs = GetDbService();
-            if (dbs != null && dbs.TryCreateModule(name, moduleImport.ModulePath, out module) != ModuleStorageState.DoesNotExist && module != null) {
-                SpecializeModule(name, s => module);
-                return module;
-            }
+            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath);
 
-            // If there is a stub, make sure it is loaded and attached
-            // First check stub next to the module.
-            if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
-                // If nothing found, try Typeshed.
-                stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
-            }
+            IPythonModule stub = null;
+            if (!moduleImport.IsPersistent) {
+                // If there is a stub, make sure it is loaded and attached
+                // First check stub next to the module.
+                if (!TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
+                    // If nothing found, try Typeshed.
+                    stub = _interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
+                }
 
-            // If stub is created and its path equals to module, return that stub as module
-            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
-                return stub;
+                // If stub is created and its path equals to module, return that stub as module
+                if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                    return stub;
+                }
             }
 
             if (moduleImport.IsBuiltin) {
@@ -175,15 +174,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// <summary>
         /// Determines of module is specialized or exists in the database.
         /// </summary>
-        public bool IsSpecializedModule(string fullName, string modulePath = null) {
-            if (_specialized.ContainsKey(fullName)) {
-                return true;
-            }
-            if (modulePath != null && Path.GetExtension(modulePath) == ".pyi") {
-                return false;
-            }
-            return GetDbService()?.ModuleExistsInStorage(fullName, modulePath) == true;
-        }
+        public bool IsSpecializedModule(string fullName, string modulePath = null)
+            => _specialized.ContainsKey(fullName);
 
         internal async Task LoadBuiltinTypesAsync(CancellationToken cancellationToken = default) {
             var analyzer = _services.GetService<IPythonAnalyzer>();
@@ -267,7 +259,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private IRunningDocumentTable GetRdt()
             => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
-
         private IModuleDatabaseService GetDbService()
             => _dbService ?? (_dbService = _services.GetService<IModuleDatabaseService>());
     }

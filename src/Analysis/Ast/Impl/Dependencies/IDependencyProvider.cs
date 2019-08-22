@@ -14,30 +14,15 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Analyzer;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     /// <summary>
-    /// Represents an equivalent of import statement in the AST.
-    /// </summary>
-    internal interface IImportDependency {
-        IReadOnlyList<string> ModuleNames { get; }
-        bool ForceAbsolute { get; }
-    }
-
-    /// <summary>
-    /// Represents an equivalent of from import statement in the AST.
-    /// </summary>
-    internal interface IFromImportDependency {
-        IReadOnlyList<string> RootNames { get; }
-        int DotCount { get; }
-        bool ForceAbsolute { get; }
-    }
-
-    /// <summary>
     /// Implemented by a module that can provide list of imports to the dependency analysis.
+    /// Regular modules provide dependency from the AST, persistent/database modules
+    /// provide dependencies from their models.
     /// </summary>
     internal interface IDependencyProvider {
-        IReadOnlyList<IImportDependency> Imports { get; }
-        IReadOnlyList<IFromImportDependency> FromImports { get; }
+        HashSet<AnalysisModuleKey> GetDependencies();
     }
 }

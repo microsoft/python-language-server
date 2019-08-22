@@ -15,19 +15,26 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal interface IModuleDatabaseService {
         /// <summary>
-        /// Creates module representation from module persistent state.
+        /// Creates global scope from module persistent state.
+        /// Global scope is then can be used to construct module analysis.
         /// </summary>
-        /// <param name="moduleName">Module name. If the name is not qualified
-        /// the module will ge resolved against active Python version.</param>
-        /// <param name="filePath">Module file path.</param>
-        /// <param name="module">Python module.</param>
-        /// <returns>Module storage state</returns>
-        ModuleStorageState TryCreateModule(string moduleName, string filePath, out IPythonModule module);
+        /// <param name="module">Python module to restore analysis for.</param>
+        /// <param name="gs">Python module global scope.</param>
+        bool TryRestoreGlobalScope(IPythonModule module, out IGlobalScope gs);
+
+        /// <summary>
+        /// Retrieves dependencies from the module persistent state.
+        /// </summary>
+        /// <param name="module">Python module to restore analysis for.</param>
+        /// <param name="dp">Python module dependency provider.</param>
+        bool TryRestoreDependencies(IPythonModule module, out IDependencyProvider dp);
 
         /// <summary>
         /// Writes module data to the database.
@@ -38,5 +45,10 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Determines if module analysis exists in the storage.
         /// </summary>
         bool ModuleExistsInStorage(string moduleName, string filePath);
+
+        /// <summary>
+        /// Clear cached data.
+        /// </summary>
+        void Clear();
     }
 }

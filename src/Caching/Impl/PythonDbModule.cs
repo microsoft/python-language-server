@@ -16,14 +16,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class PythonDbModule : SpecializedModule, IDependencyProvider {
+    internal sealed class PythonDbModule : SpecializedModule {
         private readonly NewLineLocation[] _newLines;
         private readonly int _fileSize;
 
@@ -32,12 +31,10 @@ namespace Microsoft.Python.Analysis.Caching {
             Documentation = model.Documentation;
             _newLines = model.NewLines.Select(nl => new NewLineLocation(nl.EndIndex, nl.Kind)).ToArray();
             _fileSize = model.FileSize;
-            Imports = model.Imports.Select(m => new ImportDependency(m)).ToArray();
-            FromImports = model.FromImports.Select(m => new FromImportDependency(m)).ToArray();
         }
 
         public void Construct(ModuleModel model) {
-            var gs = new GlobalScope(model, this);
+            var gs = new RestoredGlobalScope(model, this);
             GlobalScope = gs;
             gs.ReconstructVariables();
         }
@@ -51,28 +48,5 @@ namespace Microsoft.Python.Analysis.Caching {
         public override SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(_newLines, index);
         public override int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(_newLines, location, _fileSize);
         #endregion
-
-        public IReadOnlyList<IImportDependency> Imports { get; }
-        public IReadOnlyList<IFromImportDependency> FromImports { get; }
-
-        private class ImportDependency: IImportDependency {
-            public ImportDependency(ImportModel im) {
-                ModuleNames = im.ModuleNames;
-                ForceAbsolute = im.ForceAbsolute;
-            }
-            public IReadOnlyList<string> ModuleNames { get; }
-            public bool ForceAbsolute { get; }
-        }
-
-        private class FromImportDependency : IFromImportDependency {
-            public FromImportDependency(FromImportModel im) {
-                RootNames = im.RootNames;
-                DotCount = im.DotCount;
-                ForceAbsolute = im.ForceAbsolute;
-            }
-            public IReadOnlyList<string> RootNames { get; }
-            public int DotCount { get; }
-            public bool ForceAbsolute { get; }
-        }
     }
 }

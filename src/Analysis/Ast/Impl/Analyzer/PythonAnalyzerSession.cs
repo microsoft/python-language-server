@@ -322,15 +322,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void AnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version) {
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
-            analyzable?.NotifyAnalysisBegins();
-
-            var walker = new ModuleWalker(_services, module, ast);
-            ast.Walk(walker);
-
-            _analyzerCancellationToken.ThrowIfCancellationRequested();
-
-            walker.Complete();
-            _analyzerCancellationToken.ThrowIfCancellationRequested();
 
             bool isCanceled;
             lock (_syncObj) {
@@ -341,9 +332,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 node?.MarkWalked();
             }
 
-            var analysis = CreateAnalysis(node, (IDocument)module, ast, version, walker, isCanceled);
-
-            analyzable?.NotifyAnalysisComplete(analysis);
+            analyzable?.Analyze(node, ast, version, isCanceled, _analyzerCancellationToken);
             entry.TrySetAnalysis(module.Analysis, version);
 
             if (module.ModuleType == ModuleType.User) {
@@ -372,48 +361,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (_log != null) {
                 _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. {exception}");
             }
-        }
-
-        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
-            var canHaveLibraryAnalysis = false;
-            var saveAnalysis = false;
-            // Don't try to drop builtins; it causes issues elsewhere.
-            // We probably want the builtin module's AST and other info for evaluation.
-            switch (document.ModuleType) {
-                case ModuleType.Library:
-                case ModuleType.Compiled:
-                case ModuleType.CompiledBuiltin:
-                    canHaveLibraryAnalysis = true;
-                    saveAnalysis = true;
-                    break;
-                case ModuleType.Stub:
-                    canHaveLibraryAnalysis = true;
-                    break;
-            }
-
-            var createLibraryAnalysis = !isCanceled &&
-                node != null &&
-                !node.HasMissingDependencies &&
-                canHaveLibraryAnalysis &&
-                !document.IsOpen &&
-                node.HasOnlyWalkedDependencies &&
-                node.IsValidVersion;
-
-            if (!createLibraryAnalysis) {
-                return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
-            }
-
-            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
-            document.SetAst(ast);
-
-            var eval = new ExpressionEval(walker.Eval.Services, document, ast);
-            var analysis  = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
-
-            if (saveAnalysis) {
-                _moduleDatabaseService?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
-            }
-
-            return analysis;
         }
 
         private enum State {

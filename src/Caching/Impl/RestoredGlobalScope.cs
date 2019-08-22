@@ -22,11 +22,11 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class GlobalScope : IGlobalScope {
+    internal sealed class RestoredGlobalScope : IGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
         private ModuleModel _model;
 
-        public GlobalScope(ModuleModel model, IPythonModule module) {
+        public RestoredGlobalScope(ModuleModel model, IPythonModule module) {
             _model = model;
             Module = module;
             Name = model.Name;

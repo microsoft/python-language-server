@@ -16,9 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -79,6 +78,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #region ILocationConverter
         public SourceLocation IndexToLocation(int index) => (Module as ILocationConverter)?.IndexToLocation(index) ?? default;
         public int LocationToIndex(SourceLocation location) => (Module as ILocationConverter)?.LocationToIndex(location) ?? default;
+        #endregion
+
+        #region IDependencyProvider
+        public HashSet<AnalysisModuleKey> GetDependencies() => (Module as IDependencyProvider)?.GetDependencies() ?? new HashSet<AnalysisModuleKey>();
         #endregion
     }
 }
