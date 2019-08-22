@@ -18,12 +18,36 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace TestUtilities {
     public class TestEnvironmentImpl {
+        private static readonly FieldInfo _stackTraceStringField = typeof(Exception).GetField("_stackTraceString", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly FieldInfo _showDialogField = typeof(Debug).GetField("s_ShowDialog", BindingFlags.Static | BindingFlags.NonPublic);
+
         protected internal static TestEnvironmentImpl Instance { get; protected set; }
+
+        protected TestEnvironmentImpl() {
+            TryOverrideShowDialog();
+        }
+
+        private static void TryOverrideShowDialog() {
+            if (_showDialogField != null) {
+                _showDialogField.SetValue(null, new Action<string, string, string, string>(ThrowAssertException));
+            }
+        }
+
+        private static void ThrowAssertException(string stackTrace, string message, string detailMessage, string errorSource) {
+            var exception = new Exception(message);
+            if (_stackTraceStringField != null) {
+                _stackTraceStringField.SetValue(exception, stackTrace);
+            }
+            throw exception;
+        }
 
         public static TimeSpan Elapsed() => Instance?._stopwatch.Value?.Elapsed ?? new TimeSpan();
         public static void TestInitialize(string testFullName, int secondsTimeout = 10) => Instance?.BeforeTestRun(testFullName, secondsTimeout);
@@ -44,11 +68,7 @@ namespace TestUtilities {
 
         public bool TryAddTaskToWait(Task task) {
             var taskObserver = _taskObserver.Value;
-            if (taskObserver == null) {
-                return false;
-            }
-            taskObserver.Add(task);
-            return true;
+            return taskObserver != null && taskObserver.TryAdd(task);
         }
         
         protected virtual void BeforeTestRun(string testFullName, int secondsTimeout) {
@@ -95,9 +115,10 @@ namespace TestUtilities {
                 }
 
                 _taskObserver.Value?.WaitForObservedTask();
+            } finally {
                 _stopwatch.Value?.Stop();
                 TestData.ClearTestRunScope();
-            } finally {
+
                 _stopwatch.Value = null;
                 _taskObserver.Value = null;
             }

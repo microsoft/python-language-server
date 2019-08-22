@@ -67,5 +67,8 @@ namespace Microsoft.Python.Analysis {
 
             return line.Substring(commentPos + 1).Trim('\t', ' ');
         }
+
+        internal static bool IsNonUserFile(this IPythonModule module) => module.ModuleType.IsNonUserFile();
+        internal static bool IsCompiled(this IPythonModule module) => module.ModuleType.IsCompiled();
     }
 }

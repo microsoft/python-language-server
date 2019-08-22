@@ -17,6 +17,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -28,6 +29,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
+using Microsoft.Python.Core.Testing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -207,6 +209,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || _walker.Remaining == 1) {
                     RunAnalysis(node, stopWatch);
                 } else {
+                    ace.AddOne();
                     StartAnalysis(node, ace, stopWatch).DoNotWait();
                 }
             }
@@ -247,7 +250,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
             try {
-                ace?.AddOne();
                 var entry = node.Value;
 
                 if (!entry.IsValidVersion(_walker.Version, out var module, out var ast)) {
@@ -369,6 +371,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void LogException(IPythonModule module, Exception exception) {
             if (_log != null) {
                 _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. {exception}");
+            }
+
+            if (TestEnvironment.Current != null) {
+                ExceptionDispatchInfo.Capture(exception).Throw();
             }
         }
 

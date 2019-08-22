@@ -37,7 +37,6 @@ namespace Microsoft.Python.Core.Tests {
         public TraceEventType LogLevel { get; set; } = TraceEventType.Verbose;
         public void Log(TraceEventType eventType, IFormattable message) => Log(eventType, message.ToString());
         public void Log(TraceEventType eventType, string message) {
-
             var m = $"[{TestEnvironmentImpl.Elapsed()}]: {message}";
             switch (eventType) {
                 case TraceEventType.Error:
