@@ -125,6 +125,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public override bool Walk(ReturnStatement node) {
             var value = Eval.GetValueFromExpression(node.Expression);
             if (value != null) {
+
                 // although technically legal, __init__ in a constructor should not have a not-none return value
                 if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.NoneType)) {
                     Eval.ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
