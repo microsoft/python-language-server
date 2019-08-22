@@ -120,6 +120,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzed;
             }
 
+            IsPersistent = creationOptions.IsPersistent;
             InitializeContent(creationOptions.Content, 0);
         }
 
@@ -217,6 +218,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
+
+        /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        public bool IsPersistent { get; }
         #endregion
 
         #region IDisposable
@@ -584,7 +590,11 @@ namespace Microsoft.Python.Analysis.Modules {
         private void LoadContent(string content, int version) {
             if (ContentState < State.Loading) {
                 try {
-                    content = content ?? LoadContent();
+                    if(IsPersistent) {
+                        content = string.Empty;
+                    } else {
+                        content = content ?? LoadContent();
+                    }
                     _buffer.Reset(version, content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }

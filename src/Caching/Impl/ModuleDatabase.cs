@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public bool TryRestoreDependencies(IPythonModule module, out IDependencyProvider dp) {
             dp = null;
 
-            if (GetCachingLevel() == AnalysisCachingLevel.None) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None || !CanBeCached(module)) {
                 return false;
             }
 
@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public bool TryRestoreGlobalScope(IPythonModule module, out IGlobalScope gs) {
             gs = null;
 
-            if (GetCachingLevel() == AnalysisCachingLevel.None) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None || !CanBeCached(module)) {
                 return false;
             }
 
@@ -297,5 +297,8 @@ namespace Microsoft.Python.Analysis.Caching {
 
             public HashSet<AnalysisModuleKey> GetDependencies() => _dependencies;
         }
+
+        private bool CanBeCached(IPythonModule module)
+            => module.ModuleType == ModuleType.Library || module.ModuleType == ModuleType.Compiled || module.ModuleType == ModuleType.CompiledBuiltin;
     }
 }

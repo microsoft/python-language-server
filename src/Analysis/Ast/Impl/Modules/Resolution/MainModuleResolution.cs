@@ -102,12 +102,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             if (moduleImport.IsBuiltin) {
                 _log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
-                return new CompiledBuiltinPythonModule(name, stub, _services);
+                return new CompiledBuiltinPythonModule(name, stub, moduleImport.IsPersistent, _services);
             }
 
             if (moduleImport.IsCompiled) {
                 _log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, _services);
+                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, moduleImport.IsPersistent, _services);
             }
 
             _log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
@@ -117,7 +117,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                 FilePath = moduleImport.ModulePath,
-                Stub = stub
+                Stub = stub,
+                IsPersistent = moduleImport.IsPersistent
             };
 
             return GetRdt().AddModule(mco);
