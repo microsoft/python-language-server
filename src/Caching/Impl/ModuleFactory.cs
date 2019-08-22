@@ -106,7 +106,6 @@ namespace Microsoft.Python.Analysis.Caching {
                 m = nextModel.Create(this, declaringType);
                 Debug.Assert(m != null);
 
-                nextModel.Populate(this, declaringType);
                 if (m is IGenericType gt && typeArgs.Count > 0) {
                     m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));
                 }

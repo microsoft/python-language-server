@@ -130,10 +130,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .ToArray();
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType) 
-            => _cls ?? (_cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan())));
-
-        public override void Populate(ModuleFactory mf, IPythonType declaringType) {
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType) {
+            if(_cls != null) {
+                return _cls;
+            }
+            _cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
             var bases = CreateBases(mf);
 
             _cls.SetBases(bases);
@@ -149,10 +150,15 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 );
             }
 
-            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields).ToArray();
+            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields);
             foreach (var m in all) {
                 _cls.AddMember(m.Name, m.Create(mf, _cls), false);
             }
+            return _cls;
+        }
+
+        public override void Populate(ModuleFactory mf, IPythonType declaringType) {
+            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields);
             foreach (var m in all) {
                 m.Populate(mf, _cls);
             }
@@ -171,7 +177,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             if (GenericBaseParameters.Length > 0) {
                 // Generic class. Need to reconstruct generic base so code can then
-                // create specific types off the generic class. 
+                // create specific types off the generic class.
                 var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
                 if (genericBase != null) {
                     var typeVars = GenericBaseParameters.Select(n => mf.Module.GlobalScope.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
