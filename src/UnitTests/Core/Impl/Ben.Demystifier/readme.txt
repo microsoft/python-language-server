@@ -1,1 +1,0 @@
-﻿The folder contains modified version of the Ben.Demystifier (https://github.com/benaadams/Ben.Demystifier) which makes it easier to read modern .net stack traces
