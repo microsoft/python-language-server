@@ -4,7 +4,7 @@ import sys
 
 #print(sys.path)
 
-import zipped.zipped as zipped
+import zipped
 
 
 

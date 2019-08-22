@@ -436,5 +436,9 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static string NormalizePathAndTrim(string path) => TrimEndSeparator(NormalizePath(path));
+
+        public static string GetZipPath(string zipPath, string cacheFolder) {
+            return Path.Combine(cacheFolder, Path.GetFileNameWithoutExtension(zipPath));
+        }
     }
 }

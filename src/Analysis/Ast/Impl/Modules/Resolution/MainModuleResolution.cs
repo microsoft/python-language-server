@@ -174,15 +174,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
             var ps = _services.GetService<IProcessServices>();
+            var sc = _services.GetService<IStubCache>();
+            var cacheFolder = sc.StubCacheFolder;
 
             var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
-
-            var stubCache = new StubCache(_services);
-            var cacheFolder = stubCache.StubCacheFolder;
+            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
-            _userPaths = userPaths.Select(p => p.Path).Add(Path.Combine(cacheFolder, "Zip"));
+            _userPaths = userPaths.Select(p => p.Path);
 
             _log?.Log(TraceEventType.Information, "Interpreter search paths:");
             foreach (var s in InterpreterPaths) {
@@ -192,6 +191,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             _log?.Log(TraceEventType.Information, "User search paths:");
             foreach (var s in _userPaths) {
                 _log?.Log(TraceEventType.Information, $"    {s}");
+            }
+
+            var zipFolder = Path.Combine(sc.StubCacheFolder, "ZipEgg");
+            foreach (var s in zipPaths) {
+                var aliasedPath = PathUtils.GetZipPath(s.Path, zipFolder);
+                _fs.ExtractZip(s.Path, aliasedPath);
+                _userPaths = _userPaths.Add(aliasedPath);
+                _log?.Log(TraceEventType.Information, $"    Aliased {s} => {aliasedPath}");
             }
         }
 

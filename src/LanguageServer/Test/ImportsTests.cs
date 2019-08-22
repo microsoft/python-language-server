@@ -836,11 +836,28 @@ module2.";
         [TestMethod, Priority(0)]
         public async Task ZipFiles() {
             var root = GetAnalysisTestDataFilesPath();
-            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X, searchPaths: new[] { root, Path.Combine(root, "ZipEgg", "zipped.zip") });
             var rdt = Services.GetService<IRunningDocumentTable>();
             var analyzer = Services.GetService<IPythonAnalyzer>();
 
-            var uriPath = Path.Combine(root, "Zip", "zip_user.py");
+            var uriPath = Path.Combine(root, "ZipEgg", "zip_user.py");
+            var code = await File.ReadAllTextAsync(uriPath);
+            var moduleUri = TestData.GetTestSpecificUri(uriPath);
+            var module = rdt.OpenDocument(moduleUri, code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task EggFiles() {
+            var root = GetAnalysisTestDataFilesPath();
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X, searchPaths: new[] { root, Path.Combine(root, "ZipEgg", "test.egg") });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            var uriPath = Path.Combine(root, "ZipEgg", "egg_user.py");
             var code = await File.ReadAllTextAsync(uriPath);
             var moduleUri = TestData.GetTestSpecificUri(uriPath);
             var module = rdt.OpenDocument(moduleUri, code);

@@ -210,11 +210,12 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
         }
 
-        public static (ImmutableArray<PythonLibraryPath> interpreterPaths, ImmutableArray<PythonLibraryPath> userPaths) ClassifyPaths(
-            string root,
-            IFileSystem fs,
-            IEnumerable<PythonLibraryPath> fromInterpreter,
-            IEnumerable<string> fromUser
+        public static (ImmutableArray<PythonLibraryPath> interpreterPaths, ImmutableArray<PythonLibraryPath> userPaths, ImmutableArray<PythonLibraryPath> zipPaths) 
+            ClassifyPaths(
+                string root,
+                IFileSystem fs,
+                IEnumerable<PythonLibraryPath> fromInterpreter,
+                IEnumerable<string> fromUser
         ) {
 #if DEBUG
             Debug.Assert(root == null || root.PathEquals(PathUtils.NormalizePathAndTrim(root)));
@@ -245,6 +246,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             // Pull out stdlib paths, and make them always be interpreter paths.
             var interpreterPaths = stdlib;
             var userPaths = ImmutableArray<PythonLibraryPath>.Empty;
+            var zipEggPaths = ImmutableArray<PythonLibraryPath>.Empty;
 
             var allPaths = fromUserList.Select(p => new PythonLibraryPath(p))
                 .Concat(withoutStdlib.Where(p => !p.Path.PathEquals(root)));
@@ -268,10 +270,16 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                     continue;
                 }
 
+                // If path is a zip file, add to zip paths and handle separately 
+                if(IOPath.GetExtension(p.Path).Equals(".zip") || IOPath.GetExtension(p.Path).Equals(".egg")) {
+                    zipEggPaths = zipEggPaths.Add(p);
+                    continue;
+                }
+
                 userPaths = userPaths.Add(p);
             }
 
-            return (interpreterPaths, userPaths);
+            return (interpreterPaths, userPaths, zipEggPaths);
         }
 
         public override bool Equals(object obj) => obj is PythonLibraryPath other && Equals(other);
