@@ -1153,7 +1153,7 @@ subdir = root / 'subdir'
 child = subdir / 'file.txt'
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.Python37);
-            analysis.Should().HaveVariable("root").OfType("Path").Which;
+            analysis.Should().HaveVariable("root").OfType("Path");
             analysis.Should().HaveVariable("subdir").OfType("PurePath");
             analysis.Should().HaveVariable("child").OfType("PurePath");
         }
