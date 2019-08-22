@@ -16,6 +16,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Caching;
@@ -74,7 +75,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IStubCache StubCache { get; protected set; }
 
-        public IPythonModule GetImportedModule(string name) 
+        public IPythonModule GetImportedModule(string name)
             => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
@@ -90,7 +91,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             moduleRef = Modules.GetOrAdd(name, new ModuleRef());
             return moduleRef.GetOrCreate(name, this);
         }
-        
+
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
 
@@ -105,8 +106,29 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
+            var stubCache = new StubCache(_services);
+            var cacheFolder = stubCache.StubCacheFolder;
+
             foreach (var moduleFile in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(_fs, p))) {
+                // check if zip file and then call PathUtils.GetFromZip which is also a generator
+                if (Path.GetExtension(moduleFile.FullName).Equals(".zip")) {
+                    CreateZippedModulePath(cacheFolder, moduleFile);
+                    continue;
+                }
+
                 PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
+            }
+
+            foreach (var moduleFile in new[] { Path.Combine(cacheFolder, "Zip") }.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(_fs, p))) {
+                PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
+            }
+        }
+
+        private void CreateZippedModulePath(string cacheFolder, IFileSystemInfo file) {
+            var dest = Path.Combine(cacheFolder, "Zip", Path.GetFileNameWithoutExtension(file.FullName));
+            if (!Directory.Exists(dest)) {
+                // Extract zip folder to stub directory
+                ZipFile.ExtractToDirectory(file.FullName, dest);
             }
         }
 

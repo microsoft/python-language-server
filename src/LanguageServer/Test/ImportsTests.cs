@@ -19,6 +19,8 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Sources;
@@ -829,6 +831,23 @@ module2.";
 
             comps = cs.GetCompletions(analysis, new SourceLocation(4, 9));
             comps.Should().HaveLabels("Y");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ZipFiles() {
+            var root = GetAnalysisTestDataFilesPath();
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            var uriPath = Path.Combine(root, "Zip", "zip_user.py");
+            var code = await File.ReadAllTextAsync(uriPath);
+            var moduleUri = TestData.GetTestSpecificUri(uriPath);
+            var module = rdt.OpenDocument(moduleUri, code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
         }
     }
 }

@@ -221,6 +221,8 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             Debug.Assert(!fromInterpreter.Any(p => !p.Path.PathEquals(PathUtils.NormalizePathAndTrim(p.Path))));
 #endif
 
+            // TODO convert zip to regular folder
+
             // Clean up user configured paths.
             // 1) Normalize paths.
             // 2) If a path isn't rooted, then root it relative to the workspace root. If there is no root, just continue.

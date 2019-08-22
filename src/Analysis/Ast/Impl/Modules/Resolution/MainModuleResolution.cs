@@ -178,8 +178,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
             var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
 
+            var stubCache = new StubCache(_services);
+            var cacheFolder = stubCache.StubCacheFolder;
+
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
-            _userPaths = userPaths.Select(p => p.Path);
+            _userPaths = userPaths.Select(p => p.Path).Add(Path.Combine(cacheFolder, "Zip"));
 
             _log?.Log(TraceEventType.Information, "Interpreter search paths:");
             foreach (var s in InterpreterPaths) {
