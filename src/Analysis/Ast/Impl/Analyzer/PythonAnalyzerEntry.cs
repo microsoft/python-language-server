@@ -112,7 +112,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 if (ast == null) {
-                    Debug.Assert(!(_previousAnalysis is LibraryAnalysis), $"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                    Debug.Assert(!(_analysisVersion <= version && _previousAnalysis is LibraryAnalysis), $"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
                     return false;
                 }
 

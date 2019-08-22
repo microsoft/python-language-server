@@ -23,48 +23,41 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Name} : {FilePath}")]
     internal readonly struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
-        private enum KeyType { Default, Typeshed, LibraryAsDocument }
-
-        private readonly KeyType _type;
         public string Name { get; }
         public string FilePath { get; }
-        public bool IsTypeshed => _type == KeyType.Typeshed;
-        public bool IsLibraryAsDocument => _type == KeyType.LibraryAsDocument;
+        public bool IsTypeshed { get; }
+        public bool IsNonUserAsDocument { get; }
 
         public AnalysisModuleKey(IPythonModule module) {
             Name = module.Name;
             FilePath = module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath;
-            _type = module is StubPythonModule stub && stub.IsTypeshed              
-                ? KeyType.Typeshed
-                : module.ModuleType == ModuleType.Library && module is IDocument document && document.IsOpen
-                    ? KeyType.LibraryAsDocument
-                    : KeyType.Default;
+            IsTypeshed = module is StubPythonModule stub && stub.IsTypeshed;
+            IsNonUserAsDocument = (module.IsNonUserFile() || module.IsCompiled()) && module is IDocument document && document.IsOpen;
         }
 
-        public AnalysisModuleKey(string name, string filePath, bool isTypeshed) {
+        public AnalysisModuleKey(string name, string filePath, bool isTypeshed) 
+            : this(name, filePath, isTypeshed, false) { }
+
+        private AnalysisModuleKey(string name, string filePath, bool isTypeshed, bool isNonUserAsDocument) {
             Name = name;
             FilePath = filePath;
-            _type = isTypeshed ? KeyType.Typeshed : KeyType.Default;
+            IsTypeshed = isTypeshed;
+            IsNonUserAsDocument = isNonUserAsDocument;
         }
 
-        private AnalysisModuleKey(string name, string filePath, KeyType type) {
-            Name = name;
-            FilePath = filePath;
-            _type = type;
-        }
-
-        public AnalysisModuleKey GetLibraryAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, KeyType.LibraryAsDocument);
+        public AnalysisModuleKey GetNonUserAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, IsTypeshed, true);
 
         public bool Equals(AnalysisModuleKey other)
-            => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && _type == other._type;
+            => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed && IsNonUserAsDocument == other.IsNonUserAsDocument;
 
         public override bool Equals(object obj) => obj is AnalysisModuleKey other && Equals(other);
 
         public override int GetHashCode() {
             unchecked {
-                var hashCode = (Name != null ? Name.GetHashCode() : 0);
+                var hashCode = Name != null ? Name.GetHashCode() : 0;
                 hashCode = (hashCode * 397) ^ (FilePath != null ? FilePath.GetPathHashCode() : 0);
-                hashCode = (hashCode * 397) ^ _type.GetHashCode();
+                hashCode = (hashCode * 397) ^ IsTypeshed.GetHashCode();
+                hashCode = (hashCode * 397) ^ IsNonUserAsDocument.GetHashCode();
                 return hashCode;
             }
         }

@@ -17,7 +17,7 @@ using System;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core.Threading;
+using Microsoft.Python.Core.Testing;
 
 namespace Microsoft.Python.Core {
     public static class TaskExtensions {
@@ -52,6 +52,12 @@ namespace Microsoft.Python.Core {
         /// <see cref="OperationCanceledException"/> is always ignored.
         /// </remarks>
         public static void DoNotWait(this Task task) {
+            if (TestEnvironment.Current != null && TestEnvironment.Current.TryAddTaskToWait(task)) {
+                if (!task.IsCompleted) {
+                    return;
+                }
+            }
+
             if (task.IsCompleted) {
                 ReThrowTaskException(task);
                 return;
