@@ -253,14 +253,17 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module, PythonAst ast, int bufferVersion) {
+            var dependencies = new HashSet<AnalysisModuleKey>();
             if (_bufferVersion > bufferVersion) {
-                return new HashSet<AnalysisModuleKey>();
+                return dependencies;
             }
 
-            var walker = new DependencyWalker(module, ast);
-            var dependencies = walker.Dependencies;
-            dependencies.Remove(new AnalysisModuleKey(module));
+            var moduleDeps = (module as IDependencyProvider)?.GetDependencies(ast).ToArray();
+            if (moduleDeps != null) {
+                dependencies.UnionWith(moduleDeps);
+            }
 
+            dependencies.Remove(new AnalysisModuleKey(module));
             return dependencies;
         }
 

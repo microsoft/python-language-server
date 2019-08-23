@@ -18,6 +18,7 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -41,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         #region IDependencyProvider
-        public override HashSet<AnalysisModuleKey> GetDependencies() => new HashSet<AnalysisModuleKey>();
+        public override HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => new HashSet<AnalysisModuleKey>();
         #endregion
     }
 }

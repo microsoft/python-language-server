@@ -331,9 +331,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void LoadMissingDocuments(IPythonModule module, ImmutableArray<AnalysisModuleKey> missingKeys) {
-            var dependencies = (module as IDependencyProvider)?.GetDependencies().ToArray() ?? Array.Empty<AnalysisModuleKey>();
-            missingKeys.AddRange(dependencies);
-
             if (missingKeys.Count == 0) {
                 return;
             }

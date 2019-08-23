@@ -662,12 +662,12 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IDependencyProvider
-        public virtual HashSet<AnalysisModuleKey> GetDependencies() {
+        public virtual HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) {
             var dbs = GetDbService();
             if (dbs != null && dbs.TryRestoreDependencies(this, out var dp)) {
-                return dp.GetDependencies();
+                return dp.GetDependencies(ast);
             }
-            var dw = new DependencyWalker(this, Analysis.Ast);
+            var dw = new DependencyWalker(this, ast);
             return dw.Dependencies;
         }
         #endregion
