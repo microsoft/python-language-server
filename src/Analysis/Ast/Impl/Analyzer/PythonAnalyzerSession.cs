@@ -131,10 +131,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var stopWatch = Stopwatch.StartNew();
-            foreach (var affectedEntry in _walker.AffectedValues) {
-                affectedEntry.Invalidate(Version);
-            }
-
             var originalRemaining = _walker.Remaining;
             var remaining = originalRemaining;
             try {

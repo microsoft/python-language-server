@@ -121,6 +121,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public void TrySetAnalysis(IDocumentAnalysis analysis, int version) {
+            TaskCompletionSource<IDocumentAnalysis> tcs;
             lock (_syncObj) {
                 if (_previousAnalysis is EmptyAnalysis) {
                     _previousAnalysis = analysis;
@@ -138,9 +139,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _analysisDependencies = null;
                 UpdateAnalysisTcs(version);
                 _previousAnalysis = analysis;
+                tcs = _analysisTcs;
             }
 
-            _analysisTcs.TrySetResult(analysis);
+            tcs.TrySetResult(analysis);
         }
 
         public void TrySetException(Exception ex, int version) {
