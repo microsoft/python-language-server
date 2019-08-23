@@ -131,10 +131,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var stopWatch = Stopwatch.StartNew();
-            foreach (var affectedEntry in _walker.AffectedValues) {
-                affectedEntry.Invalidate(Version);
-            }
-
             var originalRemaining = _walker.Remaining;
             var remaining = originalRemaining;
             try {
@@ -344,9 +340,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var analysis = CreateAnalysis(node, (IDocument)module, ast, version, walker, isCanceled);
-
             analyzable?.NotifyAnalysisComplete(analysis);
-            entry.TrySetAnalysis(module.Analysis, version);
+            entry.TrySetAnalysis(analysis, version);
 
             if (module.ModuleType == ModuleType.User) {
                 var linterDiagnostics = _analyzer.LintModule(module);
