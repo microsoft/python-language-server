@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 
@@ -55,6 +56,18 @@ namespace Microsoft.Python.Analysis {
         public static bool IsPrivateMember(this IPythonClassType cls, string memberName) {
             var unmangledName = cls.UnmangleMemberName(memberName);
             return unmangledName.StartsWithOrdinal("__") && memberName.EqualsOrdinal($"_{cls.Name}{unmangledName}");
+        }
+
+        /// <summary>
+        /// Gets specific type for the given generic type parameter, resolving bounds as well
+        /// </summary>
+        public static bool GetSpecificType(this IPythonClassType cls, IGenericTypeParameter param, out IPythonType specificType) {
+            cls.GenericParameters.TryGetValue(param, out specificType);
+            // If type has not been found, check if the type parameter has an upper bound and use that
+            if (specificType is IGenericTypeParameter gtp && gtp.Bound != null) {
+                specificType = gtp.Bound;
+            }
+            return specificType != null;
         }
     }
 }

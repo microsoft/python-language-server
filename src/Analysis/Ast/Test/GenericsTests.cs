@@ -1049,6 +1049,25 @@ square = Square().set_scale(0.5).set_width(3.2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericSelf() {
+            const string code = @"
+from typing import TypeVar
+
+T = TypeVar('T')
+
+class C:
+    def test(self: T) -> T:
+        pass
+
+class D(C): ...
+
+x = D().test()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType("D");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GenericClassToDifferentTypes() {
             const string code = @"
 from typing import TypeVar, Generic

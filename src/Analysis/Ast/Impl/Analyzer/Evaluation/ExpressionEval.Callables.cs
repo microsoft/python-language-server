@@ -325,6 +325,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (self != null && function.HasClassFirstArgument()) {
                 var p0 = fd.Parameters.FirstOrDefault();
                 if (p0 != null && !string.IsNullOrEmpty(p0.Name)) {
+                    var annType = GetTypeFromAnnotation(p0.Annotation, out var isGeneric);
                     // Actual parameter type will be determined when method is invoked.
                     // The reason is that if method might be called on a derived class.
                     // Declare self or cls in this scope.
@@ -332,7 +333,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         DeclareVariable(p0.Name, new PythonInstance(self), VariableSource.Declaration, p0.NameExpression);
                     }
                     // Set parameter info.
-                    var pi = new ParameterInfo(Ast, p0, self, null, false);
+                    var pi = new ParameterInfo(Ast, p0, isGeneric ? annType : self, null, false);
                     parameters.Add(pi);
                     skip++;
                 }

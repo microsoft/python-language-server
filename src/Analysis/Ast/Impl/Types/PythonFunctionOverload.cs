@@ -140,7 +140,7 @@ namespace Microsoft.Python.Analysis.Types {
                     break;
 
                 case IGenericTypeParameter gtd1 when selfClassType != null:
-                    return CreateSpecificReturnFromTypeVar(selfClassType, gtd1); // -> _T
+                    return CreateSpecificReturnFromTypeVar(selfClassType, args, gtd1); // -> _T
 
                 case IGenericTypeParameter gtd2 when args != null: // -> T on standalone function.
                     return args.Arguments.FirstOrDefault(a => gtd2.Equals(a.Type))?.Value as IMember;
@@ -172,8 +172,8 @@ namespace Microsoft.Python.Analysis.Types {
             return null;
         }
 
-        private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IGenericTypeParameter returnType) {
-            if (selfClassType.GenericParameters.TryGetValue(returnType, out var specificType)) {
+        private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IArgumentSet args, IGenericTypeParameter returnType) {
+            if (selfClassType.GetSpecificType(returnType, out var specificType)) {
                 return new PythonInstance(specificType);
             }
 
@@ -184,12 +184,18 @@ namespace Microsoft.Python.Analysis.Types {
                 .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType));
 
             // Try and infer return value from base class
-            if (baseType != null && baseType.GenericParameters.TryGetValue(returnType, out specificType)) {
+            if (baseType != null && baseType.GetSpecificType(returnType, out specificType)) {
                 return new PythonInstance(specificType);
             }
 
+            // Try getting type from passed in arguments
+            var typeFromArgs = args?.Arguments.FirstOrDefault(a => returnType.Equals(a.Type))?.Value as IMember;
+            if (typeFromArgs != null) {
+                return typeFromArgs;
+            }
+
             // Try getting the type from the type parameter bound
-            if(returnType.Bound != null) {
+            if (returnType.Bound != null) {
                 return new PythonInstance(returnType.Bound);
             }
 

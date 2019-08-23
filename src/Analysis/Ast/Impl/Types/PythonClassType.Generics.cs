@@ -71,7 +71,6 @@ namespace Microsoft.Python.Analysis.Types {
                 // Storing generic parameters allows methods returning generic types 
                 // to know what type parameter returns what specific type
                 StoreGenericParameters(classType, genericTypeParameters, genericTypeToSpecificType);
-                ResolveBounds(classType);
 
                 // Set generic name
                 if (!classType._genericParameters.IsNullOrEmpty()) {
@@ -286,19 +285,7 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
         }
-
-        /// <summary>
-        /// Resolves bounds for generic type parameters
-        /// </summary>
-        private void ResolveBounds(PythonClassType classType) {
-            foreach(var key in classType._genericParameters.Keys.ToList()) {
-                var parameterType = classType._genericParameters[key];
-                if(parameterType is IGenericTypeParameter gtp && gtp.Bound != null) {
-                    classType._genericParameters[key] = gtp.Bound;
-                }
-            }
-        }
-
+ 
         /// <summary>
         /// Given generic type such as Generic[T1, T2, ...] attempts to extract specific types
         /// for its parameters from an argument value. Handles common cases such as dictionary,
