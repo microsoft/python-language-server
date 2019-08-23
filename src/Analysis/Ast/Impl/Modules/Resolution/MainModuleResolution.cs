@@ -195,7 +195,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             var zipFolder = Path.Combine(sc.StubCacheFolder, "ZipEgg");
             foreach (var s in zipPaths) {
-                var aliasedPath = PathUtils.GetZipPath(s.Path, zipFolder);
+                var aliasedPath = Path.Combine(zipFolder, Path.GetFileNameWithoutExtension(s.Path));
                 _fs.ExtractZip(s.Path, aliasedPath);
                 _userPaths = _userPaths.Add(aliasedPath);
                 _log?.Log(TraceEventType.Information, $"    Aliased {s} => {aliasedPath}");

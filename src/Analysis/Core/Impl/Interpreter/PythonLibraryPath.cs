@@ -222,8 +222,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             Debug.Assert(!fromInterpreter.Any(p => !p.Path.PathEquals(PathUtils.NormalizePathAndTrim(p.Path))));
 #endif
 
-            // TODO convert zip to regular folder
-
             // Clean up user configured paths.
             // 1) Normalize paths.
             // 2) If a path isn't rooted, then root it relative to the workspace root. If there is no root, just continue.
@@ -246,7 +244,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             // Pull out stdlib paths, and make them always be interpreter paths.
             var interpreterPaths = stdlib;
             var userPaths = ImmutableArray<PythonLibraryPath>.Empty;
-            var zipEggPaths = ImmutableArray<PythonLibraryPath>.Empty;
+            var zipPaths = ImmutableArray<PythonLibraryPath>.Empty;
 
             var allPaths = fromUserList.Select(p => new PythonLibraryPath(p))
                 .Concat(withoutStdlib.Where(p => !p.Path.PathEquals(root)));
@@ -271,15 +269,16 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 }
 
                 // If path is a zip file, add to zip paths and handle separately 
+                // Egg file counts as a zip
                 if(IOPath.GetExtension(p.Path).Equals(".zip") || IOPath.GetExtension(p.Path).Equals(".egg")) {
-                    zipEggPaths = zipEggPaths.Add(p);
+                    zipPaths = zipPaths.Add(p);
                     continue;
                 }
 
                 userPaths = userPaths.Add(p);
             }
 
-            return (interpreterPaths, userPaths, zipEggPaths);
+            return (interpreterPaths, userPaths, zipPaths);
         }
 
         public override bool Equals(object obj) => obj is PythonLibraryPath other && Equals(other);
