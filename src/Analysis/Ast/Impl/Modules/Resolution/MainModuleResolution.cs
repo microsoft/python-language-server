@@ -193,12 +193,17 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 _log?.Log(TraceEventType.Information, $"    {s}");
             }
 
-            var zipFolder = Path.Combine(sc.StubCacheFolder, "ZipEgg");
+            _log?.Log(TraceEventType.Information, "Aliased search paths:");
+            var zipRoot = CacheFolders.GetZipCacheRoot(_services.GetService<IOSPlatform>());
             foreach (var s in zipPaths) {
-                var aliasedPath = Path.Combine(zipFolder, Path.GetFileNameWithoutExtension(s.Path));
-                _fs.ExtractZip(s.Path, aliasedPath);
+                // Alias ../test.zip => ../test folder
+                var aliasedPath = Path.Combine(zipRoot, Path.GetFileNameWithoutExtension(s.Path));
+                if(!Directory.Exists(aliasedPath)) {
+                    _fs.ExtractZip(s.Path, aliasedPath);
+                }
+                // User path has the .egg or .zip path, redirect it to have the new alias path
                 _userPaths = _userPaths.Add(aliasedPath);
-                _log?.Log(TraceEventType.Information, $"    Aliased {s} => {aliasedPath}");
+                _log?.Log(TraceEventType.Information, $"    {s.Path} => {aliasedPath}");
             }
         }
 

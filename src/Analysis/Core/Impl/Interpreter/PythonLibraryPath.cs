@@ -210,7 +210,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
         }
 
-        public static (ImmutableArray<PythonLibraryPath> interpreterPaths, ImmutableArray<PythonLibraryPath> userPaths, ImmutableArray<PythonLibraryPath> zipPaths) 
+        public static (ImmutableArray<PythonLibraryPath> interpreterPaths, ImmutableArray<PythonLibraryPath> userPaths, ImmutableArray<PythonLibraryPath> zipPaths)
             ClassifyPaths(
                 string root,
                 IFileSystem fs,
@@ -250,6 +250,11 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 .Concat(withoutStdlib.Where(p => !p.Path.PathEquals(root)));
 
             foreach (var p in allPaths) {
+                // If path is a zip file, handle separately but still classify as user or interpreter
+                if (IOPath.GetExtension(p.Path).Equals(".zip") || IOPath.GetExtension(p.Path).Equals(".egg")) {
+                    zipPaths = zipPaths.Add(p);
+                }
+
                 // If path is within a stdlib path, then treat it as interpreter.
                 if (stdlib.Any(s => fs.IsPathUnderRoot(s.Path, p.Path))) {
                     interpreterPaths = interpreterPaths.Add(p);
@@ -265,13 +270,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 // If path is outside the workspace, then treat it as interpreter.
                 if (root == null || !fs.IsPathUnderRoot(root, p.Path)) {
                     interpreterPaths = interpreterPaths.Add(p);
-                    continue;
-                }
-
-                // If path is a zip file, add to zip paths and handle separately 
-                // Egg file counts as a zip
-                if(IOPath.GetExtension(p.Path).Equals(".zip") || IOPath.GetExtension(p.Path).Equals(".egg")) {
-                    zipPaths = zipPaths.Add(p);
                     continue;
                 }
 

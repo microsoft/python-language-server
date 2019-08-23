@@ -283,7 +283,6 @@ namespace Microsoft.Python.Core.IO {
                 dirs = dirs.Concat(EnumerateDirectories(fileSystem, root, true, false));
             }
 
-            // TODO convert here from zip to regular file
             foreach (var dir in dirs) {
                 var fullDir = Path.IsPathRooted(dir) ? dir : root + dir;
                 IFileInfo[] files = null;
@@ -436,9 +435,5 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static string NormalizePathAndTrim(string path) => TrimEndSeparator(NormalizePath(path));
-
-        public static string GetZipPath(string zipPath, string cacheFolder) {
-            return Path.Combine(cacheFolder, Path.GetFileNameWithoutExtension(zipPath));
-        }
     }
 }

@@ -68,13 +68,18 @@ for prefix in [
 BEFORE_SITE.discard(None)
 AFTER_SITE.discard(None)
 
+import zipfile
+
 for p in sys.path:
     p = clean(p)
-    if os.path.isdir(p):
-        if p in BEFORE_SITE:
-            print("%s|stdlib|" % p)
-        elif p in AFTER_SITE:
-            if p in SITE_PKGS:
-                print("%s|site|" % p)
-            else:
-                print("%s|pth|" % p)
+
+    if not os.path.isdir(p) and not (os.path.isfile(p) and zipfile.is_zipfile(p)):
+	    continue
+
+    if p in BEFORE_SITE:
+        print("%s|stdlib|" % p)
+    elif p in AFTER_SITE:
+        if p in SITE_PKGS:
+            print("%s|site|" % p)
+        else:
+            print("%s|pth|" % p)

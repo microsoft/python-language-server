@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class StubCache : IStubCache {
@@ -32,7 +33,7 @@ namespace Microsoft.Python.Analysis.Caching {
             _fs = services.GetService<IFileSystem>();
             _log = services.GetService<ILogger>();
 
-            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(services);
+            cacheRootFolder = cacheRootFolder ?? CacheFolders.GetCacheFolder(services.GetService<IOSPlatform>(), _log);
             StubCacheFolder = Path.Combine(cacheRootFolder, $"stubs.v{_stubCacheFormatVersion}");
         }
 

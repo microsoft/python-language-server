@@ -38,10 +38,7 @@ namespace Microsoft.Python.Analysis.Caching {
             return filePath;
         }
 
-        public static string GetCacheFolder(IServiceContainer services) {
-            var platform = services.GetService<IOSPlatform>();
-            var logger = services.GetService<ILogger>();
-
+        public static string GetCacheFolder(IOSPlatform platform, ILogger logger = null) {
             // Default. Not ideal on all platforms, but used as a fall back.
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var plsSubfolder = $"Microsoft{Path.DirectorySeparatorChar}Python Language Server";
@@ -102,6 +99,12 @@ namespace Microsoft.Python.Analysis.Caching {
                 .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
                 .Replace('/', '_').Replace('+', '-');
         }
+
+        /// <summary>
+        /// Given a path to a zip file, extracts it to a cache directory and returns the file path to that directory
+        /// </summary>
+        public static string GetZipCacheRoot(IOSPlatform platform)
+            => Path.Combine(GetCacheFolder(platform), "Zips/Eggs");
 
         public static string GetAnalysisCacheFilePath(string analysisRootFolder, string moduleName, string content, IFileSystem fs)
             => GetCacheFilePath(analysisRootFolder, moduleName, content, fs);
