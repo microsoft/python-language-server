@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         IReadOnlyList<IPythonType> Constraints { get; }
 
         /// <summary>
-        /// Bounded type, i.e upper bound this type parameter can represent
+        /// Bound type, i.e upper bound this type parameter can represent
         /// </summary>
         IPythonType Bound { get; }
     }

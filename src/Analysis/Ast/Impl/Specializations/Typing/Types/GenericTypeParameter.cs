@@ -86,16 +86,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <summary>
         /// Given arguments to TypeVar, finds the bound type
         /// </summary>
-        private static IPythonType GetBound(IArgumentSet argSet) {
+        private static IPythonType GetBoundType(IArgumentSet argSet) {
             var eval = argSet.Eval;
-            var rawBound = argSet.GetArgumentValue<object>("bound");
+            var rawBound = argSet.GetArgumentValue<IMember>("bound");
             switch (rawBound) {
                 case IPythonType t:
                     return t;
                 case IPythonConstant c when c.GetString() != null:
                     return eval.GetTypeFromString(c.GetString());
                 default:
-                    return null;
+                    return rawBound.GetPythonType();
             }
         }
 
@@ -110,10 +110,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var name = argSet.GetArgumentValue<IPythonConstant>("name")?.GetString();
             var constraints = constraintArgs.Select(a => {
                 // Type constraints may be specified as type name strings.
-                var typeString = (a as IPythonConstant)?.GetString();
+                var typeString = a.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray() ?? Array.Empty<IPythonType>();
-            var bound = GetBound(argSet);
+            var bound = GetBoundType(argSet);
             var documentation = GetDocumentation(args, constraints);
 
             return new GenericTypeParameter(name, declaringModule, constraints, bound, documentation, location);
