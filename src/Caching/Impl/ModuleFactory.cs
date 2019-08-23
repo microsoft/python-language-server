@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (member == null) {
-                    Debug.Assert(member != null);
+                    //Debug.Assert(member != null);
                     break;
                 }
 

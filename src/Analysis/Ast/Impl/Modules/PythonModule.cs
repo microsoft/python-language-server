@@ -407,30 +407,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
-        public void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAst ast, int version, bool isCanceled, CancellationToken cancellationToken) {
-            AnalysisBegins();
-
-            IDocumentAnalysis analysis;
-            var dbs = GetDbService();
-            if (dbs != null && dbs.TryRestoreGlobalScope(this, out var gs)) {
-                Log?.Log(TraceEventType.Verbose, "Restored from database: ", Name);
-                analysis = new DocumentAnalysis(this, 1, gs, new ExpressionEval(Services, this, this.GetAst()), Array.Empty<string>());
-                AnalysisComplete(analysis);
-                gs.ReconstructVariables();
-                return;
-            }
-
-            var walker = new ModuleWalker(Services, this, ast);
-            ast.Walk(walker);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            walker.Complete();
-            cancellationToken.ThrowIfCancellationRequested();
-            analysis = CreateAnalysis(node, ast, version, walker, isCanceled);
-            AnalysisComplete(analysis);
-        }
-
-        private void AnalysisBegins() {
+        public void NotifyAnalysisBegins() {
             lock (_syncObj) {
                 if (_updated) {
                     _updated = false;
@@ -458,7 +435,30 @@ namespace Microsoft.Python.Analysis.Modules {
             }
         }
 
-        private void AnalysisComplete(IDocumentAnalysis analysis) {
+        public IDocumentAnalysis Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAst ast, int version, Func<bool> isCanceled, CancellationToken cancellationToken) {
+            var dbs = GetDbService();
+            var moduleType = node.Value.Module.ModuleType;
+
+            if (moduleType.CanBeCached() && dbs.ModuleExistsInStorage(Name, FilePath)) {
+                if (!isCanceled() && dbs.TryRestoreGlobalScope(this, out var gs)) {
+                    Log?.Log(TraceEventType.Verbose, "Restored from database: ", Name);
+                    var analysis = new DocumentAnalysis(this, 1, gs, new ExpressionEval(Services, this, this.GetAst()), Array.Empty<string>());
+                    gs.ReconstructVariables();
+                    return analysis;
+                }
+                return null;
+            }
+
+            var walker = new ModuleWalker(Services, this, ast);
+            ast.Walk(walker);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            walker.Complete();
+            cancellationToken.ThrowIfCancellationRequested();
+            return CreateAnalysis(node, ast, version, walker, isCanceled());
+        }
+
+        public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
             lock (_syncObj) {
                 if (analysis.Version < Analysis.Version) {
                     return;
@@ -497,9 +497,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 case ModuleType.CompiledBuiltin:
                     canHaveLibraryAnalysis = true;
                     saveAnalysis = true;
-                    break;
-                case ModuleType.Stub:
-                    canHaveLibraryAnalysis = true;
                     break;
             }
 

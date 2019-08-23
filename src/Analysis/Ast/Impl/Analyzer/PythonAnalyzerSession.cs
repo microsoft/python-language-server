@@ -320,22 +320,31 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void AnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version) {
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
+            analyzable?.NotifyAnalysisBegins();
+            
+            var analysis = analyzable?.Analyze(node, ast, version, () =>{
+                lock (_syncObj) {
+                    return _isCanceled;
+                }
+            }, _analyzerCancellationToken);
+
 
             bool isCanceled;
             lock (_syncObj) {
                 isCanceled = _isCanceled;
             }
-
             if (!isCanceled) {
                 node?.MarkWalked();
             }
 
-            analyzable?.Analyze(node, ast, version, isCanceled, _analyzerCancellationToken);
-            entry.TrySetAnalysis(module.Analysis, version);
+            if (analysis != null) {
+                analyzable.NotifyAnalysisComplete(analysis);
+                entry.TrySetAnalysis(analysis, version);
 
-            if (module.ModuleType == ModuleType.User) {
-                var linterDiagnostics = _analyzer.LintModule(module);
-                _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+                if (module.ModuleType == ModuleType.User) {
+                    var linterDiagnostics = _analyzer.LintModule(module);
+                    _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+                }
             }
         }
 

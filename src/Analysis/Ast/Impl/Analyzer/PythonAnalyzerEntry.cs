@@ -26,7 +26,7 @@ using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
-    [DebuggerDisplay("{_module.Name}({_module.ModuleType})")]
+    [DebuggerDisplay("{_module.Name} : {_module.ModuleType}")]
     internal sealed class PythonAnalyzerEntry {
         private readonly object _syncObj = new object();
         private TaskCompletionSource<IDocumentAnalysis> _analysisTcs;
@@ -275,36 +275,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (_analysisTcs.Task.IsCompleted) {
                 _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
-            }
-        }
-
-        private class DependencyWalker : PythonWalker {
-            private readonly DependencyCollector _dependencyCollector;
-
-            public HashSet<AnalysisModuleKey> Dependencies => _dependencyCollector.Dependencies;
-
-            public DependencyWalker(IPythonModule module, PythonAst ast) {
-                _dependencyCollector = new DependencyCollector(module);
-                ast.Walk(this);
-            }
-
-            public override bool Walk(ImportStatement import) {
-                var forceAbsolute = import.ForceAbsolute;
-                foreach (var moduleName in import.Names) {
-                    var importNames = ImmutableArray<string>.Empty;
-                    foreach (var nameExpression in moduleName.Names) {
-                        importNames = importNames.Add(nameExpression.Name);
-                        _dependencyCollector.AddImport(importNames, forceAbsolute);
-                    }
-                }
-                return false;
-            }
-
-            public override bool Walk(FromImportStatement fromImport) {
-                var rootNames = fromImport.Root.Names.Select(n => n.Name).ToArray();
-                var dotCount = fromImport.Root is RelativeModuleName relativeName ? relativeName.DotCount : 0;
-                _dependencyCollector.AddFromImport(rootNames, dotCount, fromImport.ForceAbsolute);
-                return false;
             }
         }
     }

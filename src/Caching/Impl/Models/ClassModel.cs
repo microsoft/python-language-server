@@ -181,7 +181,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
                 if (genericBase != null) {
                     var typeVars = GenericBaseParameters.Select(n => mf.Module.GlobalScope.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
-                    Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
+                    //Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
                     if (typeVars.Length > 0) {
                         var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));
                         if (genericWithParameters != null) {

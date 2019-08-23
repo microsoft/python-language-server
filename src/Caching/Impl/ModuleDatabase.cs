@@ -25,7 +25,6 @@ using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
@@ -35,8 +34,6 @@ namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
         private const int _databaseFormatVersion = 1;
 
-        private readonly Dictionary<string, RestoredGlobalScope> _scopes = new Dictionary<string, RestoredGlobalScope>();
-        private readonly Dictionary<string, PythonDbModule> _modules = new Dictionary<string, PythonDbModule>();
         private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
         private readonly object _lock = new object();
 
@@ -62,7 +59,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public bool TryRestoreDependencies(IPythonModule module, out IDependencyProvider dp) {
             dp = null;
 
-            if (GetCachingLevel() == AnalysisCachingLevel.None || !CanBeCached(module)) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None || !module.ModuleType.CanBeCached()) {
                 return false;
             }
 
@@ -88,19 +85,13 @@ namespace Microsoft.Python.Analysis.Caching {
         public bool TryRestoreGlobalScope(IPythonModule module, out IRestoredGlobalScope gs) {
             gs = null;
 
-            if (GetCachingLevel() == AnalysisCachingLevel.None || !CanBeCached(module)) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None || !module.ModuleType.CanBeCached()) {
                 return false;
             }
 
             lock (_lock) {
-                if (_scopes.TryGetValue(module.Name, out var scope)) {
-                    gs = scope;
-                    return true;
-                }
                 if (FindModuleModel(module.Name, module.FilePath, out var model)) {
-                    var restoredScope = new RestoredGlobalScope(model, module);
-                    _scopes[module.Name] = restoredScope;
-                    gs = restoredScope;
+                    gs =  new RestoredGlobalScope(model, module);
                 }
             }
 
@@ -136,8 +127,6 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public void Clear() {
             lock (_lock) {
-                _scopes.Clear();
-                _modules.Clear();
                 _dependencies.Clear();
             }
         }
@@ -266,8 +255,5 @@ namespace Microsoft.Python.Analysis.Caching {
 
             public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
         }
-
-        private bool CanBeCached(IPythonModule module)
-            => module.ModuleType == ModuleType.Library || module.ModuleType == ModuleType.Compiled || module.ModuleType == ModuleType.CompiledBuiltin;
     }
 }
