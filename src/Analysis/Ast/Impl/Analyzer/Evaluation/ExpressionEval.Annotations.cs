@@ -13,9 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -45,17 +43,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
             return ann.GetValue(new TypeAnnotationConverter(this, expr, options));
-        }
-
-        private Expression TryCreateExpression(string expression) {
-            using (var sr = new StringReader($"{expression}")) {
-                var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, ParserOptions.Default);
-                var ast = parser.ParseFile();
-                if (ast.Body is SuiteStatement ste && ste.Statements.Count > 0 && ste.Statements[0] is ExpressionStatement es) {
-                    return es.Expression;
-                }
-            }
-            return null;
         }
     }
 }

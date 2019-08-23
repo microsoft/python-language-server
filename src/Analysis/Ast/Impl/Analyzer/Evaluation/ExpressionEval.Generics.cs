@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -151,6 +152,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var forwardRefExpr = TryCreateExpression(forwardRefStr);
             return GetValueFromExpression(forwardRefExpr);
+        }
+
+        private Expression TryCreateExpression(string expression) {
+            using (var sr = new StringReader($"{expression}")) {
+                var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, ParserOptions.Default);
+                var ast = parser.ParseFile();
+                if (ast.Body is SuiteStatement ste && ste.Statements.Count > 0 && ste.Statements[0] is ExpressionStatement es) {
+                    return es.Expression;
+                }
+            }
+            return null;
         }
 
         private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
