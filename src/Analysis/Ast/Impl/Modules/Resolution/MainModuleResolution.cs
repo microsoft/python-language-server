@@ -193,6 +193,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 _log?.Log(TraceEventType.Information, $"    {s}");
             }
 
+            /*
             _log?.Log(TraceEventType.Information, "Aliased search paths:");
             var zipRoot = CacheFolders.GetZipCacheRoot(_services.GetService<IOSPlatform>());
             foreach (var s in zipPaths) {
@@ -205,6 +206,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 _userPaths = _userPaths.Add(aliasedPath);
                 _log?.Log(TraceEventType.Information, $"    {s.Path} => {aliasedPath}");
             }
+            */
         }
 
         public async Task ReloadAsync(CancellationToken cancellationToken = default) {

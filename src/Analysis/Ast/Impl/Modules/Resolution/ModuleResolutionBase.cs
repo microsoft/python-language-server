@@ -103,11 +103,22 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
-            foreach (var moduleFile in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(_fs, p))) {
-                PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
+            foreach (var root in rootPaths) {
+                if (Directory.Exists(root)) {
+                    foreach (var moduleFile in PathUtils.EnumerateFiles(_fs, root)) {
+                        PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
+                    }
+                }
+
+                if (PathUtils.IsZipFile(root) && File.Exists(root)) {
+                    foreach (var moduleFile in PathUtils.EnumerateZip(root)) {
+                        if (!PathUtils.PathStartsWith(moduleFile.FullName, "EGG-INFO")) {
+                            PathResolver.TryAddModulePath(Path.Combine(root, PathUtils.NormalizePath(moduleFile.FullName)), moduleFile.Length, false, out _);
+                        }
+                    }
+                }
             }
         }
-
         protected class ModuleRef {
             private readonly object _syncObj = new object();
             private IPythonModule _module;

@@ -25,7 +25,29 @@ namespace Microsoft.Python.Core.IO {
             return fileInfo.Length;
         }
 
-        public string ReadAllText(string path) => File.ReadAllText(path);
+        public string ReadAllText(string path) {
+            try {
+                return File.ReadAllText(path);
+            } catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException || ex is ObjectDisposedException) {
+                return HandleZip(path);
+            }
+        }
+
+        private string HandleZip(string path) {
+            var eggIndex = path.IndexOf(".egg\\");
+            var zipIndex = path.IndexOf(".zip\\");
+
+            var endIndex = (eggIndex == -1 ? zipIndex : eggIndex);
+            if (endIndex >= 0) {
+                endIndex += 4;
+                var zipPath = path.Substring(0, endIndex);
+                var zipFilePath = path.Substring(endIndex + 1).Replace("\\", "/");
+
+                return PathUtils.GetZipEntryContent(zipPath, zipFilePath);
+            }
+            return null;
+        }
+
         public void WriteAllText(string path, string content) => File.WriteAllText(path, content);
         public IEnumerable<string> FileReadAllLines(string path) => File.ReadLines(path);
         public void FileWriteAllLines(string path, IEnumerable<string> contents) => File.WriteAllLines(path, contents);

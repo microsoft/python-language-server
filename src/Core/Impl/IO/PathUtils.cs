@@ -14,8 +14,10 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -308,6 +310,20 @@ namespace Microsoft.Python.Core.IO {
             }
         }
 
+        public static string GetZipEntryContent(string root, string filePath) {
+            using (var zip = ZipFile.OpenRead(root)) {
+                var zipFile = zip.GetEntry(filePath);
+                var reader = new StreamReader(zipFile.Open());
+                return reader.ReadToEnd();
+            }
+        }
+
+        public static IEnumerable<ZipArchiveEntry> EnumerateZip(string root) {
+            using (var zip = ZipFile.OpenRead(root)) {
+                return zip.Entries.ToList();
+            }
+        }
+
         /// <summary>
         /// Deletes a file, making multiple attempts and suppressing any
         /// IO-related errors.
@@ -435,5 +451,10 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static string NormalizePathAndTrim(string path) => TrimEndSeparator(NormalizePath(path));
+
+        public static bool IsZipFile(string file) {
+            var extension = Path.GetExtension(file);
+            return extension.Equals(".zip") || extension.Equals(".egg");
+        }
     }
 }
