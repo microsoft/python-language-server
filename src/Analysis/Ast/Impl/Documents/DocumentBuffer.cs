@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Documents {
             get {
                 lock (_lock) {
                     if (_content == null) {
-                        _content = _sb.ToString();
+                        _content = _sb?.ToString() ?? string.Empty;
                         _sb = null;
                     }
                     return _content;
@@ -48,40 +48,36 @@ namespace Microsoft.Python.Analysis.Documents {
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {
-            StringBuilder sb;
             lock (_lock) {
-                sb = new StringBuilder(_content);
-            }
+                _sb = _sb ?? new StringBuilder(_content);
 
-            var lastStart = int.MaxValue;
-            var lineLoc = SplitLines(sb).ToArray();
+                var lastStart = int.MaxValue;
+                var lineLoc = SplitLines(_sb).ToArray();
 
-            foreach (var change in changes) {
-                if (change.ReplaceAllText) {
-                    sb = new StringBuilder(change.InsertedText);
-                    lastStart = int.MaxValue;
-                    lineLoc = SplitLines(_sb).ToArray();
-                    continue;
+                foreach (var change in changes) {
+                    if (change.ReplaceAllText) {
+                        _sb = new StringBuilder(change.InsertedText);
+                        lastStart = int.MaxValue;
+                        lineLoc = SplitLines(_sb).ToArray();
+                        continue;
+                    }
+
+                    var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, sb.Length);
+                    if (start > lastStart) {
+                        throw new InvalidOperationException("changes must be in reverse order of start location");
+                    }
+                    lastStart = start;
+
+                    var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
+                    if (end > start) {
+                        _sb.Remove(start, end - start);
+                    }
+                    if (!string.IsNullOrEmpty(change.InsertedText)) {
+                        _sb.Insert(start, change.InsertedText);
+                    }
                 }
 
-                var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, sb.Length);
-                if (start > lastStart) {
-                    throw new InvalidOperationException("changes must be in reverse order of start location");
-                }
-                lastStart = start;
-
-                var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
-                if (end > start) {
-                    sb.Remove(start, end - start);
-                }
-                if (!string.IsNullOrEmpty(change.InsertedText)) {
-                    sb.Insert(start, change.InsertedText);
-                }
-            }
-
-            lock (_lock) {
                 Version++;
-                _sb = sb;
                 _content = null;
             }
         }
