@@ -278,7 +278,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return false;
             }
 
-            LoadMissingDocuments(entry.Module, walker.MissingKeys);
+            LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
 
             lock (_syncObj) {
                 if (_currentSession == null) {
@@ -330,7 +330,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
         }
 
-        private void LoadMissingDocuments(IPythonModule module, ImmutableArray<AnalysisModuleKey> missingKeys) {
+        private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
             if (missingKeys.Count == 0) {
                 return;
             }
@@ -344,9 +344,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 var (moduleName, _, isTypeshed) = missingKey;
-                var moduleResolution = isTypeshed ? module.Interpreter.TypeshedResolution : module.Interpreter.ModuleResolution;
+                var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
                 var m = moduleResolution.GetOrLoadModule(moduleName);
-                if (m != null && module.ModuleType != ModuleType.Unresolved) {
+                if (m != null && m.ModuleType != ModuleType.Unresolved) {
                     foundKeys = foundKeys.Add(missingKey);
                 }
             }
