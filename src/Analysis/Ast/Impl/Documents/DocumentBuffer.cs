@@ -30,10 +30,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public string Text {
             get {
                 lock (_lock) {
-                    if (_content == null) {
-                        _content = _sb?.ToString() ?? string.Empty;
-                    }
-                    return _content;
+                    return _content ?? (_content = _sb?.ToString() ?? string.Empty);
                 }
             }
         }
