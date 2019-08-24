@@ -58,7 +58,7 @@ namespace Microsoft.Python.Analysis.Documents {
                         continue;
                     }
 
-                    var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, sb.Length);
+                    var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
                     if (start > lastStart) {
                         throw new InvalidOperationException("changes must be in reverse order of start location");
                     }
