@@ -32,7 +32,6 @@ namespace Microsoft.Python.Analysis.Documents {
                 lock (_lock) {
                     if (_content == null) {
                         _content = _sb?.ToString() ?? string.Empty;
-                        _sb = null;
                     }
                     return _content;
                 }
