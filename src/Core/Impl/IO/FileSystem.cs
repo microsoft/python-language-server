@@ -29,15 +29,16 @@ namespace Microsoft.Python.Core.IO {
             try {
                 return File.ReadAllText(path);
             } catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException || ex is ObjectDisposedException) {
+                if(PathUtils.IsContainedInZipFile(path) == -1) {
+                    throw ex;
+                }
+
                 return HandleZip(path);
             }
         }
 
         private string HandleZip(string path) {
-            var eggIndex = path.IndexOf(".egg\\");
-            var zipIndex = path.IndexOf(".zip\\");
-
-            var endIndex = (eggIndex == -1 ? zipIndex : eggIndex);
+            var endIndex = PathUtils.IsContainedInZipFile(path);
             if (endIndex >= 0) {
                 endIndex += 4;
                 var zipPath = path.Substring(0, endIndex);

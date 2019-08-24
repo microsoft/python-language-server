@@ -456,5 +456,16 @@ namespace Microsoft.Python.Core.IO {
             var extension = Path.GetExtension(file);
             return extension.Equals(".zip") || extension.Equals(".egg");
         }
+
+        /// <summary>
+        /// Returns index of zip file ending if file is contained inside a zip file or -1 if not
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public static int IsContainedInZipFile(string path) {
+            var eggIndex = path.IndexOf(".egg\\");
+            var zipIndex = path.IndexOf(".zip\\");
+            return (eggIndex == -1 ? zipIndex : eggIndex);
+        }
     }
 }
