@@ -345,8 +345,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var (moduleName, _, isTypeshed) = missingKey;
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
-                var m = moduleResolution.GetOrLoadModule(moduleName);
-                if (m != null && m.ModuleType != ModuleType.Unresolved) {
+                var module = moduleResolution.GetOrLoadModule(moduleName);
+                if (module != null && module.ModuleType != ModuleType.Unresolved) {
                     foundKeys = foundKeys.Add(missingKey);
                 }
             }
