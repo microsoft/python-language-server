@@ -27,7 +27,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal sealed class ImportCompletion {
-        public static async Task<CompletionResult> TryGetCompletionsAsync(ImportStatement import, CompletionContext context, CancellationToken cancellationToken) {
+        public static async Task<CompletionResult> TryGetCompletionsAsync(ImportStatement import, CompletionContext context, CancellationToken cancellationToken = default) {
             // No names, so if we are at the end. Return available modules
             if (import.Names.Count == 0 && context.Position > import.KeywordEndIndex) {
                 return new CompletionResult(await GetAllImportableModulesAsync(context, cancellationToken));

@@ -94,14 +94,15 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             if (_moduleNamesFetchingTask == null) {
                 lock (_moduleNamesLock) {
                     _moduleNamesFetchingTask = Task.Run(() => {
-                        return ImmutableArray<string>.Create(roots
+                        return roots
                             .SelectMany(r => {
                                 cancellationToken.ThrowIfCancellationRequested();
                                 return r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children);
                             })
                             .Where(n => n.IsModule)
                             .Concat(_builtins.Children)
-                            .Select(n => n.FullModuleName));
+                            .Select(n => n.FullModuleName)
+                            .ToImmutableArray();
                     }, cancellationToken);
                 }
             }
