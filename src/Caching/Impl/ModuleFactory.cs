@@ -221,7 +221,7 @@ namespace Microsoft.Python.Analysis.Caching {
                         if (t == null) {
                             TypeNames.DeconstructQualifiedName(qn, out var parts);
                             typeName = string.Join(".", parts.MemberNames);
-                            t = new GenericTypeParameter(typeName, Array.Empty<IPythonType>(), null, null, null, DefaultLocation);
+                            t = new GenericTypeParameter(typeName, Module, Array.Empty<IPythonType>(), null, null, null, default);
                         }
                         typeArgs.Add(t);
                     }

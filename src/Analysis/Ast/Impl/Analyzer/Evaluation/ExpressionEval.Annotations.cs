@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
 
@@ -26,6 +27,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             switch (expr) {
                 case null:
                     return null;
+                case NameExpression nameExpr:
+                    // x: T
+                    var name = GetValueFromExpression(nameExpr);
+                    if(name is IGenericTypeParameter gtp) {
+                        isGeneric = true;
+                        return gtp;
+                    }
+                    break;
                 case CallExpression callExpr:
                     // x: NamedTuple(...)
                     return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;

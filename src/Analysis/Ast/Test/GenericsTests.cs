@@ -1079,6 +1079,25 @@ square = Square().set_scale(0.5).set_width(3.2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericSelf() {
+            const string code = @"
+from typing import TypeVar
+
+T = TypeVar('T')
+
+class C:
+    def test(self: T) -> T:
+        pass
+
+class D(C): ...
+
+x = D().test()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x").Which.Should().HaveType("D");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GenericClassToDifferentTypes() {
             const string code = @"
 from typing import TypeVar, Generic
@@ -1181,6 +1200,41 @@ x = v.get()
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericBound() {
+            const string code = @"
+from typing import TypeVar, Generic
+from logging import Logger, getLogger
+
+T = TypeVar('T', bound='A')
+
+class A: ...
+
+class Test(Generic[T]):
+    def get(self) -> T: ...
+
+x = Test().get()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType("A");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericPath() {
+            const string code = @"
+import pathlib
+
+h = pathlib._PurePathBase
+root = pathlib.Path('/some/directory')
+subdir = root / 'subdir'
+child = subdir / 'file.txt'
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Python37);
+            analysis.Should().HaveVariable("root").OfType("Path");
+            analysis.Should().HaveVariable("subdir").OfType("PurePath");
+            analysis.Should().HaveVariable("child").OfType("PurePath");
         }
     }
 }

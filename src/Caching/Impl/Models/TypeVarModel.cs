@@ -28,7 +28,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     [DebuggerDisplay("TypeVar:{" + nameof(Name) + "}")]
     internal sealed class TypeVarModel : MemberModel {
         public string[] Constraints { get; set; }
-        public object Bound { get; set; }
+        public string Bound { get; set; }
         public object Covariant { get; set; }
         public object Contravariant { get; set; }
 
@@ -39,15 +39,15 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Name = g.Name,
                 QualifiedName = g.QualifiedName,
                 Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
-                Bound = g.Bound,
+                Bound = g.Bound.QualifiedName,
                 Covariant = g.Covariant,
                 Contravariant = g.Contravariant
             };
         }
 
         protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) 
-            => new GenericTypeParameter(Name, 
+            => new GenericTypeParameter(Name, mf.Module,
                 Constraints.Select(mf.ConstructType).ToArray(), 
-                Bound, Covariant, Contravariant, mf.DefaultLocation);
+                mf.ConstructType(Bound), Covariant, Contravariant, default);
     }
 }

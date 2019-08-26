@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// (if the former) on specific type (if the latter).
         /// </summary>
         private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr)
-            => args.Count > 0 ? gt.CreateSpecificType(new ArgumentSet(args, expr, this)) : UnknownType;
+            => gt.CreateSpecificType(new ArgumentSet(args, expr, this));
 
         private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
             var indices = new List<IMember>();

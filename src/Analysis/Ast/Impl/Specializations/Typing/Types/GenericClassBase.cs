@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
 
-        private bool GenericClassParameterValid(IArgumentSet args) {
+        private static bool GenericClassParameterValid(IArgumentSet args) {
             var genericTypeArgs = args.Values<IGenericTypeParameter>().ToArray();
             var allArgs = args.Values<IMember>().ToArray();
             // All arguments to Generic must be type parameters
