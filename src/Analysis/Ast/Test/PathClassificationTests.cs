@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 new PythonLibraryPath(venvSitePackages, PythonLibraryPathType.Site),
             };
 
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, Array.Empty<string>());
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, Array.Empty<string>());
 
             interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 "./src",
             };
 
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
 
             interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
@@ -108,7 +108,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 "./src/",
             };
 
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
 
             interpreterPaths.Should().BeEmpty();
 
@@ -134,7 +134,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 "./src/foo",
             };
 
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
 
             interpreterPaths.Should().BeEmpty();
 
@@ -163,7 +163,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 "./src/something",
             };
 
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, Array.Empty<PythonLibraryPath>(), fromUser);
 
             interpreterPaths.Should().BeEmpty();
 
@@ -200,7 +200,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 "./venv/Lib/site-packages/what",
             };
 
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
 
             interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),
@@ -236,7 +236,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 "./src",
             };
 
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(root, _fs, fromInterpreter, fromUser);
 
             interpreterPaths.Should().BeEquivalentToWithStrictOrdering(new[] {
                 new PythonLibraryPath(venvLib, PythonLibraryPathType.StdLib),

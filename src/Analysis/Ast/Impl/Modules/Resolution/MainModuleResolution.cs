@@ -179,7 +179,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var cacheFolder = sc.StubCacheFolder;
 
             var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths, zipPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
             _userPaths = userPaths.Select(p => p.Path);
