@@ -14,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Modules;
@@ -34,7 +36,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             set => _itemSource.Options = value;
         }
 
-        public CompletionResult GetCompletions(IDocumentAnalysis analysis, SourceLocation location) {
+        public async Task<CompletionResult> GetCompletionsAsync(IDocumentAnalysis analysis, SourceLocation location, CancellationToken cancellationToken = default) {
             if(analysis.Document.ModuleType != ModuleType.User) {
                 return CompletionResult.Empty;
             }
@@ -61,13 +63,13 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
 
             if (statement is ImportStatement import) {
-                var result = ImportCompletion.TryGetCompletions(import, context);
+                var result = await ImportCompletion.TryGetCompletionsAsync(import, context, cancellationToken);
                 if (result != null) {
                     return result;
                 }
             }
             if (statement is FromImportStatement fromImport) {
-                var result = ImportCompletion.GetCompletionsInFromImport(fromImport, context);
+                var result = await ImportCompletion.GetCompletionsInFromImportAsync(fromImport, context, cancellationToken);
                 if (result != null) {
                     return result;
                 }

@@ -19,6 +19,7 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
@@ -81,11 +82,15 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = version;
         }
 
-        public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted));
-        public IEnumerable<string> GetInterpreterModuleNames() => GetModuleNames(_roots.Skip(_userRootsCount).Append(_builtins));
+        public IEnumerable<string> GetAllModuleNames(CancellationToken cancellationToken = default) 
+            => GetModuleNames(_roots.Prepend(_nonRooted), cancellationToken);
 
-        private IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
-            .SelectMany(r => r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children))
+        private IEnumerable<string> GetModuleNames(IEnumerable<Node> roots, CancellationToken cancellationToken) 
+            => roots
+            .SelectMany(r => {
+                cancellationToken.ThrowIfCancellationRequested();
+                return r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children);
+            })
             .Where(n => n.IsModule)
             .Concat(_builtins.Children)
             .Select(n => n.FullModuleName);

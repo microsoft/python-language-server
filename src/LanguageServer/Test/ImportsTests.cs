@@ -71,16 +71,16 @@ projectB.foo.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(7, 10));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 10));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(8, 14));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 14));
             comps.Should().HaveLabels("bar");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(9, 10));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(9, 10));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(10, 14));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(10, 14));
             comps.Should().HaveLabels("baz");
         }
 
@@ -117,16 +117,16 @@ projectB.foo.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(8, 10));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 10));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(9, 14));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(9, 14));
             comps.Should().HaveLabels("bar");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(10, 10));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(10, 10));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(11, 14));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(11, 14));
             comps.Should().HaveLabels("baz");
         }
 
@@ -154,7 +154,7 @@ VALUE = 42";
             var analysis = await doc1.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 5));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
             comps.Should().HaveLabels("VALUE");
         }
 
@@ -176,7 +176,7 @@ VALUE = 42");
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 5));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 5));
             comps.Should().HaveLabels("VALUE");
         }
 
@@ -202,7 +202,7 @@ module2.";
 
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(1, 21));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 21));
             comps.Should().HaveLabels("module1", "module2");
 
             doc.Update(new[] {
@@ -215,10 +215,10 @@ module2.";
             await doc.GetAstAsync();
             analysis = await doc.GetAnalysisAsync(-1);
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(2, 9));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 9));
             comps.Should().HaveLabels("X").And.NotContainLabels("Y");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(3, 9));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
         }
 
@@ -257,16 +257,16 @@ mod2.B.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 6));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 6));
             comps.Should().HaveLabels("A").And.NotContainLabels("B");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(3, 6));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 6));
             comps.Should().HaveLabels("B").And.NotContainLabels("A");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
             comps.Should().HaveLabels("method1");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(5, 8));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 8));
             comps.Should().HaveLabels("method2");
         }
 
@@ -296,16 +296,16 @@ package.sub_package.module2.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(5, 9));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 9));
             comps.Should().OnlyHaveLabels("sub_package");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(6, 21));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 21));
             comps.Should().OnlyHaveLabels("module1", "module2");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(7, 29));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 29));
             comps.Should().HaveLabels("X").And.NotContainLabels("Y");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(8, 29));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(8, 29));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
         }
 
@@ -333,10 +333,10 @@ submodule.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(5, 11));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 11));
             comps.Should().HaveLabels("Z");
         }
 
@@ -364,10 +364,10 @@ submodule.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(5, 11));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 11));
             comps.Should().HaveLabels("Z");
         }
 
@@ -395,10 +395,10 @@ submodule.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 8));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 8));
             comps.Should().HaveLabels("Y").And.NotContainLabels("X");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(5, 11));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 11));
             comps.Should().HaveLabels("Z");
         }
 
@@ -464,13 +464,13 @@ a3.";
             var analysis = await app.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(10, 4));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(10, 4));
             comps.Should().HaveLabels("M2");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(11, 4));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(11, 4));
             comps.Should().HaveLabels("M3");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(12, 4));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(12, 4));
             comps.Should().HaveLabels("M1");
         }
 
@@ -478,7 +478,7 @@ a3.";
         public async Task TypingModule() {
             var analysis = await GetAnalysisAsync(@"from typing import ");
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(1, 20));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(1, 20));
             comps.Should().HaveLabels("TypeVar", "List", "Dict", "Union");
         }
 
@@ -503,7 +503,7 @@ module1.";
             var analysis = await module2.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 9));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 9));
             comps.Should().HaveLabels("X");
         }
 
@@ -528,7 +528,7 @@ module1.";
             var analysis = await doc.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 13));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 13));
             comps.Should().OnlyHaveLabels("module");
 
             doc.Update(new[] {
@@ -539,7 +539,7 @@ module1.";
             });
 
             analysis = await doc.GetAnalysisAsync(-1);
-            comps = cs.GetCompletions(analysis, new SourceLocation(2, 21));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 21));
             comps.Should().HaveLabels("X");
         }
 
@@ -581,10 +581,10 @@ B().
             var analysis = await app.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 5));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 5));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 5));
             comps.Should().NotContainLabels("bar");
         }
 
@@ -644,13 +644,13 @@ C().
             var analysis = await app.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 5));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 5));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 5));
             comps.Should().HaveLabels("bar");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(6, 5));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 5));
             comps.Should().NotContainLabels("baz");
         }
 
@@ -707,10 +707,10 @@ B().
             var analysis = await app.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(4, 5));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 5));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 5));
             comps.Should().HaveLabels("bar");
         }
 
@@ -751,13 +751,13 @@ B().
             var analysis = await app.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(5, 5));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(5, 5));
             comps.Should().HaveLabels("foo");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(6, 6));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(6, 6));
             comps.Should().NotContainLabels("bar");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(7, 5));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(7, 5));
             comps.Should().HaveLabels("bar");
         }
 
@@ -790,10 +790,10 @@ module.";
             var analysisInPackage = await appInPackage.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(2, 8));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(2, 8));
             comps.Should().HaveLabels("X");
 
-            comps = cs.GetCompletions(analysisInPackage, new SourceLocation(2, 8));
+            comps = await cs.GetCompletionsAsync(analysisInPackage, new SourceLocation(2, 8));
             comps.Should().HaveLabels("Y");
         }
 
@@ -824,10 +824,10 @@ module2.";
             var analysis = await app.GetAnalysisAsync(-1);
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var comps = cs.GetCompletions(analysis, new SourceLocation(3, 9));
+            var comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(3, 9));
             comps.Should().HaveLabels("X");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(4, 9));
+            comps = await cs.GetCompletionsAsync(analysis, new SourceLocation(4, 9));
             comps.Should().HaveLabels("Y");
         }
     }
