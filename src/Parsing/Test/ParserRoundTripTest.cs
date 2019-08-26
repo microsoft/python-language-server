@@ -1,4 +1,4 @@
-// Python Tools for Visual Studio
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -18,6 +18,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Core;
@@ -1567,7 +1568,7 @@ def f(): pass");
         }
 
 
-        private static void RoundTripStdLibTest(InterpreterConfiguration configuration) {
+        private static async Task RoundTripStdLibTest(InterpreterConfiguration configuration) {
             configuration.AssertInstalled();
 
             Console.WriteLine("Testing version {0} {1}", configuration.Version, configuration.InterpreterPath);
@@ -1579,7 +1580,7 @@ def f(): pass");
                 ImmutableArray<string>.Empty);
             var pathResolverSnapshot = pathResolver.CurrentSnapshot;
 
-            var modules = pathResolverSnapshot.GetAllModuleNames()
+            var modules = (await pathResolverSnapshot.GetAllModuleNamesAsync())
                 .Select(n => pathResolverSnapshot.GetModuleImportFromModuleName(n))
                 .Where(i => i.RootPath.PathEquals(configuration.SitePackagesPath))
                 .ToList();
@@ -1602,16 +1603,16 @@ def f(): pass");
         }
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib27() => RoundTripStdLibTest(PythonVersions.Python27 ?? PythonVersions.Python27_x64);
+        public Task RoundTripStdLib27() => RoundTripStdLibTest(PythonVersions.Python27 ?? PythonVersions.Python27_x64);
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib35() => RoundTripStdLibTest(PythonVersions.Python35 ?? PythonVersions.Python35_x64);
+        public Task RoundTripStdLib35() => RoundTripStdLibTest(PythonVersions.Python35 ?? PythonVersions.Python35_x64);
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib36() => RoundTripStdLibTest(PythonVersions.Python36 ?? PythonVersions.Python36_x64);
+        public Task RoundTripStdLib36() => RoundTripStdLibTest(PythonVersions.Python36 ?? PythonVersions.Python36_x64);
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib37() => RoundTripStdLibTest(PythonVersions.Python37 ?? PythonVersions.Python37_x64);
+        public Task RoundTripStdLib37() => RoundTripStdLibTest(PythonVersions.Python37 ?? PythonVersions.Python37_x64);
 
         [TestMethod, Priority(0)]
         public void GroupingRecovery() {

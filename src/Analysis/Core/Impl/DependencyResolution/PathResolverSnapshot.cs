@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
@@ -49,6 +50,10 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private readonly ImmutableArray<string> _userSearchPaths;
         private readonly ImmutableArray<Node> _roots;
         private readonly int _userRootsCount;
+
+        private readonly object _moduleNamesLock = new object();
+        private Task<ImmutableArray<string>> _moduleNamesFetchingTask;
+
         public int Version { get; }
 
         public PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, string workDirectory, ImmutableArray<string> interpreterSearchPaths, ImmutableArray<string> userSearchPaths)
@@ -82,18 +87,26 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = version;
         }
 
-        public IEnumerable<string> GetAllModuleNames(CancellationToken cancellationToken = default) 
-            => GetModuleNames(_roots.Prepend(_nonRooted), cancellationToken);
+        public Task<ImmutableArray<string>> GetAllModuleNamesAsync(CancellationToken cancellationToken = default)
+            => GetModuleNamesAsync(_roots.Prepend(_nonRooted), cancellationToken);
 
-        private IEnumerable<string> GetModuleNames(IEnumerable<Node> roots, CancellationToken cancellationToken) 
-            => roots
-            .SelectMany(r => {
-                cancellationToken.ThrowIfCancellationRequested();
-                return r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children);
-            })
-            .Where(n => n.IsModule)
-            .Concat(_builtins.Children)
-            .Select(n => n.FullModuleName);
+        private async Task<ImmutableArray<string>> GetModuleNamesAsync(IEnumerable<Node> roots, CancellationToken cancellationToken) {
+            if (_moduleNamesFetchingTask == null) {
+                lock (_moduleNamesLock) {
+                    _moduleNamesFetchingTask = Task.Run(() => {
+                        return ImmutableArray<string>.Create(roots
+                            .SelectMany(r => {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                return r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children);
+                            })
+                            .Where(n => n.IsModule)
+                            .Concat(_builtins.Children)
+                            .Select(n => n.FullModuleName));
+                    }, cancellationToken);
+                }
+            }
+            return await _moduleNamesFetchingTask;
+        }
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
             for (var rootIndex = 0; rootIndex < _roots.Count; rootIndex++) {

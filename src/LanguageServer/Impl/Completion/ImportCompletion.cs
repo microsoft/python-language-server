@@ -27,10 +27,6 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal sealed class ImportCompletion {
-        private static int _lastPathResolverHash;
-        private static Task<string[]> _moduleNamesFetchingTask;
-        private static CancellationTokenSource _pathResolvedChangedCts;
-
         public static async Task<CompletionResult> TryGetCompletionsAsync(ImportStatement import, CompletionContext context, CancellationToken cancellationToken) {
             // No names, so if we are at the end. Return available modules
             if (import.Names.Count == 0 && context.Position > import.KeywordEndIndex) {
@@ -140,19 +136,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         private static async Task<IEnumerable<CompletionItem>> GetAllImportableModulesAsync(CompletionContext context, CancellationToken cancellationToken) {
             var pathResolver = context.Analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver;
-            // If path resolver changed since, re-retrieve module names.
-            // Cancel previous task, if any running.
-            if (pathResolver.GetHashCode() != _lastPathResolverHash || _moduleNamesFetchingTask == null) {
-                _pathResolvedChangedCts?.Cancel();
-                _pathResolvedChangedCts?.Dispose();
-                _pathResolvedChangedCts = new CancellationTokenSource();
-                _moduleNamesFetchingTask = Task.Run(() => pathResolver.GetAllModuleNames(cancellationToken)
-                        .Where(n => !string.IsNullOrEmpty(n)).Distinct().ToArray(), cancellationToken);
-                _lastPathResolverHash = pathResolver.GetHashCode();
-            }
-            // If task is still running, wait for completions.
-            var allModuleNames = await _moduleNamesFetchingTask;
-            return allModuleNames.Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
+            return (await pathResolver.GetAllModuleNamesAsync(cancellationToken))
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
         }
 
         private static CompletionResult GetResultFromImportSearch(IImportSearchResult importSearchResult, CompletionContext context, bool prependStar, SourceSpan? applicableSpan = null) {
