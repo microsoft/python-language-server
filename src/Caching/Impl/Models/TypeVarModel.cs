@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Name = g.Name,
                 QualifiedName = g.QualifiedName,
                 Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
-                Bound = g.Bound.QualifiedName,
+                Bound = g.Bound?.QualifiedName,
                 Covariant = g.Covariant,
                 Contravariant = g.Contravariant
             };
