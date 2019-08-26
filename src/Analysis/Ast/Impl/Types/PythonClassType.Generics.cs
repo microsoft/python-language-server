@@ -250,6 +250,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
                 }
             }
+
             return genericTypeToSpecificType;
         }
 
@@ -282,7 +283,7 @@ namespace Microsoft.Python.Analysis.Types {
                 }
             }
         }
-
+ 
         /// <summary>
         /// Given generic type such as Generic[T1, T2, ...] attempts to extract specific types
         /// for its parameters from an argument value. Handles common cases such as dictionary,

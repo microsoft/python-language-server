@@ -62,21 +62,16 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         /// <summary>
-        /// Creates a set of arguments for a call
-        ///
-        /// Use in the cases a corresponding function is unknown, but it is still convenient to have the context
-        /// of the expression which the arguments are needed for and the evaluator that is analyzing
-        /// that expression.
-        /// 
+        /// Creates a set of arguments for a call.
         /// </summary>
         /// <param name="args">Arguments for the call.</param>
         /// <param name="expr">Expression for the call.</param>
-        /// <param name="eval">Evaluator of the current analysis.</param>
+        /// <param name="eval">Evaluator of the current analysis of arguments are to be evaluated.
+        /// Can be null if arguments are already known.</param>
         public ArgumentSet(IReadOnlyList<IMember> args, Expression expr, IExpressionEvaluator eval) {
             _arguments = args.Select(t => new Argument(t)).ToList();
             Expression = expr;
             Eval = eval;
-
             _evaluated = true;
         }
 

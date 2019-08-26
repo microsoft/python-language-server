@@ -146,7 +146,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["Optional"] = new SpecializedGenericType("Optional", CreateOptional, this);
             _members["Type"] = new SpecializedGenericType("Type", CreateType, this);
 
-            _members["Generic"] = new SpecializedGenericType("Generic", CreateGenericClassParameter, this);
+            _members["Generic"] = new SpecializedGenericType("Generic", CreateGenericClassBase, this);
         }
 
         private string GetMemberDocumentation(string name)
@@ -265,7 +265,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
                 eval.ReportDiagnostics(
                     eval.Module?.Uri,
                     new DiagnosticsEntry(Resources.NewTypeFirstArgument,
-                        eval?.GetLocation(argExpr).Span ?? default,
+                        eval.GetLocation(argExpr).Span,
                         Diagnostics.ErrorCodes.TypingNewTypeArguments,
                         Severity.Warning, DiagnosticSource.Analysis)
                 );
@@ -360,7 +360,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             return new PythonTypeWrapper("AnyStr", documentation, this, Interpreter.GetBuiltinType(BuiltinTypeId.Str));
         }
 
-        private IPythonType CreateGenericClassParameter(IReadOnlyList<IPythonType> typeArgs) {
+        private IPythonType CreateGenericClassBase(IReadOnlyList<IPythonType> typeArgs) {
             // Handle Generic[_T1, _T2, ...]. _T1, et al are IGenericTypeParameter from TypeVar.
             // Hold the parameter until concrete type is provided at the time of the class instantiation.
             if (typeArgs.Count > 0) {

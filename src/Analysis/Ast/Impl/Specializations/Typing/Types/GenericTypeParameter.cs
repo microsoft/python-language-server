@@ -27,12 +27,13 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeParameter {
         public GenericTypeParameter(
             string name,
+            IPythonModule declaringModule,
             IReadOnlyList<IPythonType> constraints,
-            object bound,
+            IPythonType bound,
             object covariant,
             object contravariant,
-            Location location)
-            : base(name, location, GetDocumentation(name, constraints, bound, covariant, contravariant)) {
+            IndexSpan indexSpan)
+            : base(name, new Location(declaringModule, indexSpan), GetDocumentation(name, constraints, bound, covariant, contravariant)) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
             Bound = bound;
             Covariant = covariant;
@@ -40,12 +41,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         }
 
         #region IGenericTypeParameter
-
         public IReadOnlyList<IPythonType> Constraints { get; }
-        public object Bound { get; }
+        public IPythonType Bound { get; }
         public object Covariant { get; }
         public object Contravariant { get; }
-
         #endregion
 
         #region IPythonType
@@ -98,7 +97,23 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return true;
         }
 
-        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
+        /// <summary>
+        /// Given arguments to TypeVar, finds the bound type
+        /// </summary>
+        private static IPythonType GetBoundType(IArgumentSet argSet) {
+            var eval = argSet.Eval;
+            var rawBound = argSet.GetArgumentValue<IMember>("bound");
+            switch (rawBound) {
+                case IPythonType t:
+                    return t;
+                case IPythonConstant c when c.GetString() != null:
+                    return eval.GetTypeFromString(c.GetString());
+                default:
+                    return rawBound.GetPythonType();
+            }
+        }
+
+        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan indexSpan = default) {
             if (!TypeVarArgumentsValid(argSet)) {
                 return declaringModule.Interpreter.UnknownType;
             }
@@ -106,18 +121,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var args = argSet.Arguments;
             var constraintArgs = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
 
-            var name = (args[0].Value as IPythonConstant)?.GetString();
+            var name = argSet.GetArgumentValue<IPythonConstant>("name")?.GetString();
             var constraints = constraintArgs.Select(a => {
                 // Type constraints may be specified as type name strings.
-                var typeString = (a as IPythonConstant)?.GetString();
+                var typeString = a.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
             }).ToArray();
 
-            var bound = argSet.GetArgumentValue<IPythonConstant>("bound")?.Value;
+            var bound = GetBoundType(argSet);
             var covariant = argSet.GetArgumentValue<IPythonConstant>("covariant")?.Value;
             var contravariant = argSet.GetArgumentValue<IPythonConstant>("contravariant")?.Value;
 
-            return new GenericTypeParameter(name, constraints, bound, covariant, contravariant, new Location(declaringModule, location));
+            return new GenericTypeParameter(name, declaringModule, constraints, bound, covariant, contravariant, indexSpan);
         }
 
         private static string GetDocumentation(string name, IReadOnlyList<IPythonType> constraints, object bound, object covariant, object contravariant) {

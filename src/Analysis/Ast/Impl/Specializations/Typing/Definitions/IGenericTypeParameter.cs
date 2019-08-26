@@ -21,13 +21,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// <summary>
     /// Represents generic type definition. Typically value returned by TypeVar.
     /// </summary>
-    public interface IGenericTypeParameter: IPythonType, IEquatable<IGenericTypeParameter> {
+    /// <remarks>See 'https://docs.python.org/3/library/typing.html#typing.TypeVar'</remarks>
+    public interface IGenericTypeParameter : IPythonType, IEquatable<IGenericTypeParameter> {
         /// <summary>
         /// List of constraints for the type.
         /// </summary>
-        /// <remarks>See 'https://docs.python.org/3/library/typing.html#typing.TypeVar'</remarks>
         IReadOnlyList<IPythonType> Constraints { get; }
-        object Bound { get; }
+
+        /// <summary>
+        /// Bound type, i.e upper bound this type parameter can represent
+        /// </summary>
+        IPythonType Bound { get; }
+
         object Covariant { get; }
         object Contravariant { get; }
     }

@@ -18,6 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace TestUtilities {
     [ExcludeFromCodeCoverage]
@@ -112,13 +113,12 @@ namespace TestUtilities {
             actual = actual.Trim();
             var expected = File.ReadAllText(baselineFile).Trim();
             var line = CompareLines(expected, actual, out var baseLine, out var actualLine, out var index, ignoreCase);
-            line.Should().Be(0,
-                $@"there should be no difference at line {line}
+            Execute.Assertion.ForCondition(line == 0)
+                .FailWith($@"there should be no difference at line {line}
   Expected:{baseLine.Trim()}
   Actual:{actualLine.Trim()}
   BaselineFile:{Path.GetFileName(baselineFile)}
-  Difference at column {index}{Environment.NewLine}"
-            );
+  Difference at column {index}{Environment.NewLine}");
         }
     }
 }
