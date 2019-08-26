@@ -332,7 +332,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (declareVariables) {
                         DeclareVariable(p0.Name, new PythonInstance(self), VariableSource.Declaration, p0.NameExpression);
                     }
-                    // Set parameter info.
+                    // Set parameter info, declare type as annotation type for generic self 
+                    // e.g def test(self: T)
                     var pi = new ParameterInfo(Ast, p0, isGeneric ? annType : self, null, false);
                     parameters.Add(pi);
                     skip++;
