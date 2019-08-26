@@ -136,7 +136,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         private static async Task<IEnumerable<CompletionItem>> GetAllImportableModulesAsync(CompletionContext context, CancellationToken cancellationToken) {
             var pathResolver = context.Analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver;
-            return (await pathResolver.GetAllModuleNamesAsync(cancellationToken))
+            // We want task to continue even if client cancels the request such as when user
+            // continues typing. We want path resolver to still populate the cache. We could
+            // pass global cancellation here, but tasks get terminated anyway when server closes.
+            return (await pathResolver.GetAllModuleNamesAsync(CancellationToken.None))
                 .Where(n => !string.IsNullOrEmpty(n))
                 .Distinct()
                 .Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
