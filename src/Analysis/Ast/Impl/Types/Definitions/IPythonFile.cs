@@ -23,6 +23,11 @@ namespace Microsoft.Python.Analysis.Types {
         string FilePath { get; }
 
         /// <summary>
+        /// Interpreter/user search path used to find the module.
+        /// </summary>
+        string RootPath { get; }
+
+        /// <summary>
         /// Module URI.
         /// </summary>
         Uri Uri { get; }

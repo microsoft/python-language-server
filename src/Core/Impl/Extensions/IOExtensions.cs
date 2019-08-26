@@ -109,11 +109,11 @@ namespace Microsoft.Python.Core.IO {
             return null;
         }
 
-        public static string ReadTextWithRetry(this IFileSystem fs, string file) {
+        public static string ReadTextWithRetry(this IFileSystem fs, string file, string zipPath = null) {
             // Retry for up to one second
             for (var retries = 100; retries > 0; --retries) {
                 try {
-                    return fs.ReadAllText(file);
+                    return fs.ReadAllText(file, zipPath);
                 } catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException || ex is ObjectDisposedException) {
                     Thread.Sleep(10);
                 }

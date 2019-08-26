@@ -108,6 +108,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                 FilePath = moduleImport.ModulePath,
+                RootPath = moduleImport.RootPath,
                 Stub = stub
             };
 

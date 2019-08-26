@@ -25,28 +25,13 @@ namespace Microsoft.Python.Core.IO {
             return fileInfo.Length;
         }
 
-        public string ReadAllText(string path) {
-            try {
-                return File.ReadAllText(path);
-            } catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException || ex is ObjectDisposedException) {
-                if(PathUtils.IsContainedInZipFile(path) == -1) {
-                    throw ex;
-                }
-
-                return HandleZip(path);
+        public string ReadAllText(string filePath, string zipPath = null) {
+            if (PathUtils.IsZipFile(zipPath) && filePath.StartsWith(zipPath)) {
+                // According to https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT, zip files must have forward slashes
+                var relativeZipPath = filePath.Substring(zipPath.Length + 1).Replace("\\", "/");
+                return PathUtils.GetZipEntryContent(relativeZipPath, zipPath);
             }
-        }
-
-        private string HandleZip(string path) {
-            var endIndex = PathUtils.IsContainedInZipFile(path);
-            if (endIndex >= 0) {
-                endIndex += 4;
-                var zipPath = path.Substring(0, endIndex);
-                var zipFilePath = path.Substring(endIndex + 1).Replace("\\", "/");
-
-                return PathUtils.GetZipEntryContent(zipPath, zipFilePath);
-            }
-            return null;
+            return File.ReadAllText(filePath);
         }
 
         public void WriteAllText(string path, string content) => File.WriteAllText(path, content);

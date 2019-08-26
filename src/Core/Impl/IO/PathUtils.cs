@@ -310,9 +310,24 @@ namespace Microsoft.Python.Core.IO {
             }
         }
 
-        public static string GetZipEntryContent(string root, string filePath) {
-            using (var zip = ZipFile.OpenRead(root)) {
+        public static bool IsZipFile(string zipFile) {
+            var extension = Path.GetExtension(zipFile);
+            switch (extension) {
+                case ".zip":
+                case ".egg":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static string GetZipEntryContent(string filePath, string zipFilePath) {
+            using (var zip = ZipFile.OpenRead(zipFilePath)) {
                 var zipFile = zip.GetEntry(filePath);
+                // Could not open zip, bail
+                if(zipFile == null) {
+                    return null;
+                }
                 var reader = new StreamReader(zipFile.Open());
                 return reader.ReadToEnd();
             }
@@ -451,11 +466,6 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static string NormalizePathAndTrim(string path) => TrimEndSeparator(NormalizePath(path));
-
-        public static bool IsZipFile(string file) {
-            var extension = Path.GetExtension(file);
-            return extension.Equals(".zip") || extension.Equals(".egg");
-        }
 
         /// <summary>
         /// Returns index of zip file ending if file is contained inside a zip file or -1 if not

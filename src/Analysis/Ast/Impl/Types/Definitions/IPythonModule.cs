@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Global cope of the module.
         /// </summary>
         IGlobalScope GlobalScope { get; }
-        
+
         /// <summary>
         /// If module is a stub points to the primary module.
         /// Typically used in code navigation scenarios when user

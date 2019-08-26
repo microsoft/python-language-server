@@ -30,7 +30,7 @@ namespace Microsoft.Python.Core.IO {
         void SetFileAttributes(string fullPath, FileAttributes attributes);
         DateTime GetLastWriteTimeUtc(string fullPath);
 
-        string ReadAllText(string path);
+        string ReadAllText(string path, string zipPath = null);
         void WriteAllText(string path, string content);
 
         IEnumerable<string> FileReadAllLines(string path);

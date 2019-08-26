@@ -34,6 +34,11 @@ namespace Microsoft.Python.Analysis.Modules {
         public string FilePath { get; set; }
 
         /// <summary>
+        /// The interpreter/user path used to the find FilePath. Can be null if URI is provided.
+        /// </summary>
+        public string RootPath { get; set; }
+
+        /// <summary>
         /// Document URI. Can be null if file path is provided.
         /// </summary>
         public Uri Uri { get; set; }
