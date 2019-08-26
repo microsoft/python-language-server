@@ -21,48 +21,61 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Documents {
     internal sealed class DocumentBuffer {
-        private StringBuilder _sb;
+        private readonly object _lock = new object();
+        private StringBuilder _sb = new StringBuilder();
         private string _content;
 
         public int Version { get; private set; }
-        public string Text => _content ?? (_content = _sb.ToString());
+
+        public string Text {
+            get {
+                lock (_lock) {
+                    return _content ?? (_content = _sb.ToString());
+                }
+            }
+        }
 
         public void Reset(int version, string content) {
-            Version = version;
-            _content = content ?? string.Empty;
-            _sb = null;
+            lock (_lock) {
+                Version = version;
+                _content = content ?? string.Empty;
+                _sb = null;
+            }
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {
-            _sb = _sb ?? new StringBuilder(_content);
-            _content = null;
+            lock (_lock) {
+                _sb = _sb ?? new StringBuilder(_content);
 
-            var lastStart = int.MaxValue;
-            var lineLoc = SplitLines(_sb).ToArray();
+                var lastStart = int.MaxValue;
+                var lineLoc = SplitLines(_sb).ToArray();
 
-            foreach (var change in changes) {
-                if (change.ReplaceAllText) {
-                    _sb = new StringBuilder(change.InsertedText);
-                    lastStart = int.MaxValue;
-                    lineLoc = SplitLines(_sb).ToArray();
-                    continue;
+                foreach (var change in changes) {
+                    if (change.ReplaceAllText) {
+                        _sb = new StringBuilder(change.InsertedText);
+                        lastStart = int.MaxValue;
+                        lineLoc = SplitLines(_sb).ToArray();
+                        continue;
+                    }
+
+                    var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
+                    if (start > lastStart) {
+                        throw new InvalidOperationException("changes must be in reverse order of start location");
+                    }
+                    lastStart = start;
+
+                    var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
+                    if (end > start) {
+                        _sb.Remove(start, end - start);
+                    }
+                    if (!string.IsNullOrEmpty(change.InsertedText)) {
+                        _sb.Insert(start, change.InsertedText);
+                    }
                 }
 
-                var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
-                if (start > lastStart) {
-                    throw new InvalidOperationException("changes must be in reverse order of start location");
-                }
-                lastStart = start;
-
-                var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
-                if (end > start) {
-                    _sb.Remove(start, end - start);
-                }
-                if (!string.IsNullOrEmpty(change.InsertedText)) {
-                    _sb.Insert(start, change.InsertedText);
-                }
+                Version++;
+                _content = null;
             }
-            Version++;
         }
 
         private static IEnumerable<NewLineLocation> SplitLines(StringBuilder text) {
