@@ -191,8 +191,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // Try getting type from passed in arguments
-            var typeFromArgs = args?.Arguments.FirstOrDefault(a => returnType.Equals(a.Type))?.Value as IMember;
-            if (typeFromArgs != null) {
+            if (args?.Arguments.FirstOrDefault(a => returnType.Equals(a.Type))?.Value is IMember typeFromArgs) {
                 return typeFromArgs;
             }
 
