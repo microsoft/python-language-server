@@ -99,6 +99,16 @@
         "Start": 0,
         "Length": 0
       }
+    },
+    {
+      "Value": "t:object",
+      "Id": 1253875154,
+      "Name": "__spec__",
+      "QualifiedName": "__spec__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
     }
   ],
   "Classes": [],
