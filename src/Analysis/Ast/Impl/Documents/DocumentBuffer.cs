@@ -22,7 +22,7 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.Analysis.Documents {
     internal sealed class DocumentBuffer {
         private readonly object _lock = new object();
-        private StringBuilder _sb;
+        private StringBuilder _sb = new StringBuilder();
         private string _content;
 
         public int Version { get; private set; }
@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public string Text {
             get {
                 lock (_lock) {
-                    return _content ?? (_content = _sb?.ToString() ?? string.Empty);
+                    return _content ?? (_content = _sb.ToString());
                 }
             }
         }
