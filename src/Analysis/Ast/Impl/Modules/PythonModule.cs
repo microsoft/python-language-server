@@ -484,7 +484,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ContentState < State.Loading) {
                 ContentState = State.Loading;
                 try {
-                    var code = FileSystem.ReadTextWithRetry(FilePath, RootPath);
+                    var code = FileSystem.ReadTextWithRetry(FilePath);
                     ContentState = State.Loaded;
                     return code;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }

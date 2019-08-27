@@ -49,12 +49,21 @@ namespace Microsoft.Python.Core.IO {
         public static bool HasEndSeparator(string path)
             => !string.IsNullOrEmpty(path) && IsDirectorySeparator(path[path.Length - 1]);
 
+        public static bool HasStartSeparator(string path)
+            => !string.IsNullOrEmpty(path) && IsDirectorySeparator(path[0]);
 
         public static bool IsDirectorySeparator(char c) => Array.IndexOf(DirectorySeparators, c) != -1;
 
         public static bool PathStartsWith(string s, string prefix)
             => s != null && s.StartsWith(prefix, StringExtensions.PathsStringComparison) &&
                (s.Length == prefix.Length || IsDirectorySeparator(s[prefix.Length]));
+
+        public static string TrimStartSeparator(string path) {
+            if(HasStartSeparator(path)) {
+                return path.Substring(1);
+            }
+            return path;
+        }
 
         /// <summary>
         /// Removes up to one directory separator character from the end of path.
@@ -310,22 +319,49 @@ namespace Microsoft.Python.Core.IO {
             }
         }
 
-        public static bool IsZipFile(string zipFile) {
-            var extension = Path.GetExtension(zipFile);
+        public static bool TryGetZipFile(string filePath, out string zipPath, out string relativeZipPath) {
+            zipPath = string.Empty;
+            relativeZipPath = string.Empty;
+            var workingPath = filePath;
+
+            // Filepath doesn't have zip or egg in it, bail 
+            if(!filePath.Contains(".zip") && !filePath.Contains(".egg")) {
+                return false;
+            }
+
+            while (!string.IsNullOrEmpty(workingPath)) {
+                if (IsZipFile(workingPath, out zipPath)) {
+                    // According to https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT, zip files must have forward slashes
+                    relativeZipPath = filePath.Substring(workingPath.Length).Replace("\\", "/");
+                    return true;
+                }
+                workingPath = GetParent(workingPath);
+            }
+
+            // Filepath had .zip or .egg in it but no zip or egg files
+            // e.g /tmp/tmp.zip.txt
+            return false;
+        }
+
+        public static bool IsZipFile(string rawZipPath, out string zipPath) {
+            var path = NormalizePathAndTrim(rawZipPath);
+            var extension = Path.GetExtension(path);
             switch (extension) {
                 case ".zip":
                 case ".egg":
+                    zipPath = path;
                     return true;
                 default:
+                    zipPath = string.Empty;
                     return false;
             }
         }
 
-        public static string GetZipEntryContent(string filePath, string zipFilePath) {
-            using (var zip = ZipFile.OpenRead(zipFilePath)) {
-                var zipFile = zip.GetEntry(filePath);
+        public static string GetZipEntryContent(string zipPath, string relativeZipPath) {
+            using (var zip = ZipFile.OpenRead(zipPath)) {
+                var zipFile = zip.GetEntry(relativeZipPath);
                 // Could not open zip, bail
-                if(zipFile == null) {
+                if (zipFile == null) {
                     return null;
                 }
                 var reader = new StreamReader(zipFile.Open());

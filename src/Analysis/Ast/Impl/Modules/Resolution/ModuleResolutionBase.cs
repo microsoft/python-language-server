@@ -110,10 +110,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     }
                 }
 
-                if (PathUtils.IsZipFile(root) && File.Exists(root)) {
-                    foreach (var moduleFile in PathUtils.EnumerateZip(root)) {
+                if (PathUtils.TryGetZipFile(root, out var zipPath, out var _) && File.Exists(zipPath)) {
+                    foreach (var moduleFile in PathUtils.EnumerateZip(zipPath)) {
                         if (!PathUtils.PathStartsWith(moduleFile.FullName, "EGG-INFO")) {
-                            PathResolver.TryAddModulePath(Path.Combine(root, PathUtils.NormalizePath(moduleFile.FullName)), moduleFile.Length, false, out _);
+                            PathResolver.TryAddModulePath(Path.Combine(zipPath, PathUtils.NormalizePath(moduleFile.FullName)), moduleFile.Length, false, out _);
                         }
                     }
                 }
