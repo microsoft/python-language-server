@@ -310,7 +310,7 @@ x = requests.get('microsoft.com')
             //var json = ToJson(model);
             //Baseline.CompareToFile(BaselineFileName, json);
 
-            using (var dbModule = new PythonDbModule(model, m.FilePath, Services)) {
+            using (var dbModule = CreateDbModule(model, m.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(m);
             }
         }

@@ -16,6 +16,7 @@
 using System.IO;
 using System.Reflection;
 using System.Text;
+using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Tests;
 using Newtonsoft.Json;
 using TestUtilities;
@@ -45,5 +46,11 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             => Path.ChangeExtension(suffix == null 
                 ? Path.Combine(BaselineFilesFolder, testName)
                 : Path.Combine(BaselineFilesFolder, testName + suffix), "json");
+
+        internal PythonDbModule CreateDbModule(ModuleModel model, string modulePath) {
+            var dbModule = new PythonDbModule(model, modulePath, Services);
+            dbModule.Construct(model);
+            return dbModule;
+        }
     }
 }
