@@ -108,7 +108,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                 FilePath = moduleImport.ModulePath,
-                RootPath = moduleImport.RootPath,
                 Stub = stub
             };
 
@@ -175,8 +174,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
             var ps = _services.GetService<IProcessServices>();
-            var sc = _services.GetService<IStubCache>();
-            var cacheFolder = sc.StubCacheFolder;
 
             var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
             var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);

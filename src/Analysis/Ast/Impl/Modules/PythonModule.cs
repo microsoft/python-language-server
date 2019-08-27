@@ -104,7 +104,6 @@ namespace Microsoft.Python.Analysis.Modules {
             }
             Uri = uri;
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
-            RootPath = creationOptions.RootPath;
             Stub = creationOptions.Stub;
             if (Stub is PythonModule stub && ModuleType != ModuleType.Stub) {
                 stub.PrimaryModule = this;
@@ -175,7 +174,6 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IPythonFile
-        public virtual string RootPath { get; }
         public virtual string FilePath { get; }
         public virtual Uri Uri { get; }
         #endregion
@@ -564,7 +562,6 @@ namespace Microsoft.Python.Analysis.Modules {
         }
         #endregion
 
-      
         private void RemoveReferencesInModule(IPythonModule module) {
             if (module.GlobalScope?.Variables != null) {
                 foreach (var v in module.GlobalScope.Variables) {

@@ -210,12 +210,11 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
         }
 
-        public static (ImmutableArray<PythonLibraryPath> interpreterPaths, ImmutableArray<PythonLibraryPath> userPaths)
-            ClassifyPaths(
-                string root,
-                IFileSystem fs,
-                IEnumerable<PythonLibraryPath> fromInterpreter,
-                IEnumerable<string> fromUser
+        public static (ImmutableArray<PythonLibraryPath> interpreterPaths, ImmutableArray<PythonLibraryPath> userPaths) ClassifyPaths(
+            string root,
+            IFileSystem fs,
+            IEnumerable<PythonLibraryPath> fromInterpreter,
+            IEnumerable<string> fromUser
         ) {
 #if DEBUG
             Debug.Assert(root == null || root.PathEquals(PathUtils.NormalizePathAndTrim(root)));
