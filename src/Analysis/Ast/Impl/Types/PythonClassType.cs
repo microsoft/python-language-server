@@ -34,6 +34,8 @@ namespace Microsoft.Python.Analysis.Types {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
+        private readonly object _membersLock = new object();
+
         private string _genericName;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -63,18 +65,22 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
         public override IEnumerable<string> GetMemberNames() {
-            var names = new HashSet<string>();
-            names.UnionWith(Members.Keys);
-            foreach (var m in Mro.Skip(1)) {
-                names.UnionWith(m.GetMemberNames());
+            lock (_membersLock) {
+                var names = new HashSet<string>(Members.Keys);
+                foreach (var m in Mro.Skip(1)) {
+                    names.UnionWith(m.GetMemberNames());
+                }
+                return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods).Distinct() : names;
             }
-            return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods).Distinct() : names;
         }
 
         public override IMember GetMember(string name) {
-            // Push/Pop should be lock protected.
-            if (Members.TryGetValue(name, out var member)) {
-                return member;
+            IMember member;
+
+            lock (_membersLock) {
+                if (Members.TryGetValue(name, out member)) {
+                    return member;
+                }
             }
 
             // Special case names that we want to add to our own Members dict
@@ -162,12 +168,17 @@ namespace Microsoft.Python.Analysis.Types {
 
             return fromBases ?? defaultReturn;
         }
-
         #endregion
 
         #region IPythonClass
         public ClassDefinition ClassDefinition => DeclaringModule.GetAstNode<ClassDefinition>(this);
-        public IReadOnlyList<IPythonType> Bases => _bases;
+        public IReadOnlyList<IPythonType> Bases {
+            get {
+                lock(_membersLock) {
+                    return _bases.ToArray();
+                }
+            }
+        }
 
         public IReadOnlyList<IPythonType> Mro {
             get {
@@ -282,6 +293,5 @@ namespace Microsoft.Python.Analysis.Types {
 
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
-
     }
 }
