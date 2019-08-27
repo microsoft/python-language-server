@@ -439,7 +439,7 @@ namespace Microsoft.Python.Analysis.Modules {
             var dbs = GetDbService();
             var moduleType = node.Value.Module.ModuleType;
 
-            if (moduleType.CanBeCached() && dbs.ModuleExistsInStorage(Name, FilePath)) {
+            if (moduleType.CanBeCached() && dbs?.ModuleExistsInStorage(Name, FilePath) == true) {
                 if (!isCanceled() && dbs.TryRestoreGlobalScope(this, out var gs)) {
                     Log?.Log(TraceEventType.Verbose, "Restored from database: ", Name);
                     var analysis = new DocumentAnalysis(this, 1, gs, new ExpressionEval(Services, this, this.GetAst()), Array.Empty<string>());
