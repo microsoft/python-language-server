@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Core.IO {
@@ -26,8 +25,8 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public string ReadAllText(string filePath) {
-            if (PathUtils.TryGetZipFile(filePath, out var zipPath, out var relativeZipPath)) {
-                return PathUtils.GetZipEntryContent(zipPath, relativeZipPath);
+            if (PathUtils.TryGetZipFilePath(filePath, out var zipPath, out var relativeZipPath)) {
+                return PathUtils.GetZipContent(zipPath, relativeZipPath);
             }
             return File.ReadAllText(filePath);
         }
@@ -54,7 +53,6 @@ namespace Microsoft.Python.Core.IO {
         public void DeleteDirectory(string path, bool recursive) => Directory.Delete(path, recursive);
         public string[] GetFileSystemEntries(string path, string searchPattern, SearchOption options) => Directory.GetFileSystemEntries(path, searchPattern, options);
         public void CreateDirectory(string path) => Directory.CreateDirectory(path);
-        public void ExtractZip(string source, string dest) => ZipFile.ExtractToDirectory(source, dest);
         public string[] GetFiles(string path) => Directory.GetFiles(path);
         public string[] GetFiles(string path, string pattern) => Directory.GetFiles(path, pattern);
         public string[] GetFiles(string path, string pattern, SearchOption option) => Directory.GetFiles(path, pattern, option);

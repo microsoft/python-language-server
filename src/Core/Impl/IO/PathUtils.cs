@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -49,21 +48,11 @@ namespace Microsoft.Python.Core.IO {
         public static bool HasEndSeparator(string path)
             => !string.IsNullOrEmpty(path) && IsDirectorySeparator(path[path.Length - 1]);
 
-        public static bool HasStartSeparator(string path)
-            => !string.IsNullOrEmpty(path) && IsDirectorySeparator(path[0]);
-
         public static bool IsDirectorySeparator(char c) => Array.IndexOf(DirectorySeparators, c) != -1;
 
         public static bool PathStartsWith(string s, string prefix)
             => s != null && s.StartsWith(prefix, StringExtensions.PathsStringComparison) &&
                (s.Length == prefix.Length || IsDirectorySeparator(s[prefix.Length]));
-
-        public static string TrimStartSeparator(string path) {
-            if(HasStartSeparator(path)) {
-                return path.Substring(1);
-            }
-            return path;
-        }
 
         /// <summary>
         /// Removes up to one directory separator character from the end of path.
@@ -319,22 +308,26 @@ namespace Microsoft.Python.Core.IO {
             }
         }
 
-        public static bool TryGetZipFile(string filePath, out string zipPath, out string relativeZipPath) {
+        public static bool TryGetZipFilePath(string filePath, out string zipPath, out string relativeZipPath) {
             zipPath = string.Empty;
             relativeZipPath = string.Empty;
             var workingPath = filePath;
 
             // Filepath doesn't have zip or egg in it, bail 
-            if(!filePath.Contains(".zip") && !filePath.Contains(".egg")) {
+            if (!filePath.Contains(".zip") && !filePath.Contains(".egg")) {
                 return false;
             }
 
             while (!string.IsNullOrEmpty(workingPath)) {
                 if (IsZipFile(workingPath, out zipPath)) {
+                    // File path is '..\\test\\test.zip\\test\\a.py'
+                    // Working path is '..\\test\\test.zip'
+                    // Relative path in zip file becomes 'test/a.py'
                     // According to https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT, zip files must have forward slashes
                     relativeZipPath = filePath.Substring(workingPath.Length).Replace("\\", "/");
                     return true;
                 }
+                // \\test\\test.zip => \\test\\
                 workingPath = GetParent(workingPath);
             }
 
@@ -343,6 +336,10 @@ namespace Microsoft.Python.Core.IO {
             return false;
         }
 
+        /// <summary>
+        /// Returns whether the given file path is a path to a zip (or egg) file
+        /// The path can be of the form ..\\test.zip or ..\\test.zip\\
+        /// </summary>
         public static bool IsZipFile(string rawZipPath, out string zipPath) {
             var path = NormalizePathAndTrim(rawZipPath);
             var extension = Path.GetExtension(path);
@@ -357,7 +354,16 @@ namespace Microsoft.Python.Core.IO {
             }
         }
 
-        public static string GetZipEntryContent(string zipPath, string relativeZipPath) {
+        /// <summary>
+        /// Given the path to the zip file and the relative path to a file inside the zip,
+        /// returns the contents of the zip entry
+        /// e.g
+        /// test.zip
+        ///     a.py
+        ///     b.py
+        /// Can get the contents of a.py by passing in "test.zip" and "a.py"
+        /// </summary>
+        public static string GetZipContent(string zipPath, string relativeZipPath) {
             using (var zip = ZipFile.OpenRead(zipPath)) {
                 var zipFile = zip.GetEntry(relativeZipPath);
                 // Could not open zip, bail
@@ -502,16 +508,5 @@ namespace Microsoft.Python.Core.IO {
         }
 
         public static string NormalizePathAndTrim(string path) => TrimEndSeparator(NormalizePath(path));
-
-        /// <summary>
-        /// Returns index of zip file ending if file is contained inside a zip file or -1 if not
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
-        public static int IsContainedInZipFile(string path) {
-            var eggIndex = path.IndexOf(".egg\\");
-            var zipIndex = path.IndexOf(".zip\\");
-            return (eggIndex == -1 ? zipIndex : eggIndex);
-        }
     }
 }

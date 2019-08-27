@@ -48,7 +48,6 @@ namespace Microsoft.Python.Core.IO {
         void DeleteDirectory(string path, bool recursive);
         string[] GetFileSystemEntries(string path, string searchPattern, SearchOption options);
         void CreateDirectory(string path);
-        void ExtractZip(string source, string dest);
 
         string[] GetFiles(string path);
         string[] GetFiles(string path, string pattern);
