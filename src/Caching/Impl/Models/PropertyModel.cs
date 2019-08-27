@@ -15,6 +15,8 @@
 
 using System;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -30,10 +32,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             ReturnType = prop.ReturnType.GetPersistentQualifiedName();
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType) 
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
             => _property ?? (_property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0));
 
-        public override void Populate(ModuleFactory mf, IPythonType declaringType) {
+        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
             _property.SetDocumentation(Documentation);
 
             var o = new PythonFunctionOverload(Name, mf.DefaultLocation);

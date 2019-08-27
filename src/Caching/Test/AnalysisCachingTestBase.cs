@@ -23,6 +23,10 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
     public abstract class AnalysisCachingTestBase: AnalysisTestBase {
+        protected AnalysisCachingTestBase() {
+            ModuleFactory.EnableMissingMemberAssertions = true;
+        }
+
         protected string ToJson(object model) {
             var sb = new StringBuilder();
             using (var sw = new StringWriter(sb))

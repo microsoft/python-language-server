@@ -17,6 +17,8 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -33,18 +35,18 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Overloads = func.Overloads.Select(FromOverload).ToArray();
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType) 
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
             => _function ?? (_function = new PythonFunctionType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, Documentation));
 
-        public override void Populate(ModuleFactory mf, IPythonType declaringType) {
+        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
             // Create inner functions and classes first since function may be returning one of them.
             var all = Classes.Concat<MemberModel>(Functions).ToArray();
 
             foreach (var model in all) {
-                _function.AddMember(Name, model.Create(mf, _function), overwrite: true);
+                _function.AddMember(Name, model.Create(mf, _function, gs), overwrite: true);
             }
             foreach (var model in all) {
-                model.Populate(mf, _function);
+                model.Populate(mf, _function, gs);
             }
 
             foreach (var om in Overloads) {

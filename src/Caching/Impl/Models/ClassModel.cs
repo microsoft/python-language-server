@@ -106,7 +106,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             // Only persist documentation from this class, leave bases or __init__ alone.
             Documentation = (cls as PythonClassType)?.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ? cls.Documentation : null;
 
-
             var ntBases = cls.Bases.OfType<ITypingNamedTupleType>().ToArray();
             NamedTupleBases = ntBases.Select(b => new NamedTupleModel(b)).ToArray();
 
@@ -130,12 +129,12 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .ToArray();
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType) {
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
             if(_cls != null) {
                 return _cls;
             }
             _cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
-            var bases = CreateBases(mf);
+            var bases = CreateBases(mf, gs);
 
             _cls.SetBases(bases);
             _cls.SetDocumentation(Documentation);
@@ -152,22 +151,22 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields);
             foreach (var m in all) {
-                _cls.AddMember(m.Name, m.Create(mf, _cls), false);
+                _cls.AddMember(m.Name, m.Create(mf, _cls, gs), false);
             }
             return _cls;
         }
 
-        public override void Populate(ModuleFactory mf, IPythonType declaringType) {
+        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
             var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields);
             foreach (var m in all) {
-                m.Populate(mf, _cls);
+                m.Populate(mf, _cls, gs);
             }
         }
 
-        private IEnumerable<IPythonType> CreateBases(ModuleFactory mf) {
+        private IEnumerable<IPythonType> CreateBases(ModuleFactory mf, IGlobalScope gs) {
             var ntBases = NamedTupleBases.Select(ntb => {
-                var n = ntb.Create(mf, _cls);
-                ntb.Populate(mf, _cls);
+                var n = ntb.Create(mf, _cls, gs);
+                ntb.Populate(mf, _cls, gs);
                 return n;
             }).OfType<IPythonType>().ToArray();
 
@@ -180,7 +179,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 // create specific types off the generic class.
                 var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
                 if (genericBase != null) {
-                    var typeVars = GenericBaseParameters.Select(n => mf.Module.GlobalScope.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
+                    var typeVars = GenericBaseParameters.Select(n => gs.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
                     //Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
                     if (typeVars.Length > 0) {
                         var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));

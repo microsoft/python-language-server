@@ -20,7 +20,6 @@ using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;

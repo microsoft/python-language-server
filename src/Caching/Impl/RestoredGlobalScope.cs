@@ -31,14 +31,14 @@ namespace Microsoft.Python.Analysis.Caching {
             _model = model ?? throw new ArgumentNullException(nameof(model));
             Module = module ?? throw new ArgumentNullException(nameof(module));
             Name = model.Name;
-            _factory = new ModuleFactory(_model, Module);
+            _factory = new ModuleFactory(_model, Module, this);
             DeclareVariables();
         }
 
         public void ReconstructVariables() {
             var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions).ToArray();
             foreach (var m in models.Concat(_model.Variables)) {
-                m.Populate(_factory, null);
+                m.Populate(_factory, null, this);
             }
             // TODO: re-declare __doc__, __name__, etc.
 #if !DEBUG
@@ -51,14 +51,14 @@ namespace Microsoft.Python.Analysis.Caching {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
-            var mf = new ModuleFactory(_model, Module);
+            var mf = new ModuleFactory(_model, Module, this);
             var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions).ToArray();
 
             foreach (var m in models) {
-                _scopeVariables.DeclareVariable(m.Name, m.Create(mf, null), VariableSource.Generic, mf.DefaultLocation);
+                _scopeVariables.DeclareVariable(m.Name, m.Create(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
             }
             foreach (var vm in _model.Variables) {
-                var v = (IVariable)vm.Create(mf, null);
+                var v = (IVariable)vm.Create(mf, null, this);
                 _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
             }
         }

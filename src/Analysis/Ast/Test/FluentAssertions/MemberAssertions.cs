@@ -138,8 +138,9 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 }
 
                 subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
+                Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
 
-                if(subjectMemberType is IPythonClassType subjectClass) {
+                if (subjectMemberType is IPythonClassType subjectClass) {
                     var otherClass = otherMemberType as IPythonClassType;
                     otherClass.Should().NotBeNull();
 

@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 // ReSharper disable MemberCanBeProtected.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
@@ -47,12 +48,12 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// Create member for declaration but does not construct its parts just yet.
         /// Used as a first pass in two-pass handling of forward declarations.
         /// </summary>
-        public abstract IMember Create(ModuleFactory mf, IPythonType declaringType);
+        public abstract IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs);
 
         /// <summary>
         /// Populate member with content, such as create class methods, etc.
         /// </summary>
-        public abstract void Populate(ModuleFactory mf, IPythonType declaringType);
+        public abstract void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs);
             
         public virtual MemberModel GetModel(string name) => GetMemberModels().FirstOrDefault(m => m.Name == name);
         protected virtual IEnumerable<MemberModel> GetMemberModels() => Enumerable.Empty<MemberModel>();

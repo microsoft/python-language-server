@@ -176,8 +176,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return _modelCache.TryGetValue(name, out var model) ? model : null;
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
-        public override void Populate(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
+        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
 
         private sealed class DependencyWalker : PythonWalker {
             public List<ImportModel> Imports { get; } = new List<ImportModel>();
