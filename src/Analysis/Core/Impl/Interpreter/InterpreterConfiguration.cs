@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 } else if (o is IEnumerable<string> ss) {
                     sp.AddRange(ss);
                 }
-
+                SearchPaths = sp.ToArray();
             }
         }
 

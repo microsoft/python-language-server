@@ -16,7 +16,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
