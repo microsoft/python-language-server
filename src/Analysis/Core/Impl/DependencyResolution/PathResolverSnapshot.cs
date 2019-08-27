@@ -81,14 +81,29 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = version;
         }
 
-        public IEnumerable<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted));
+        public ImmutableArray<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted));
         public IEnumerable<string> GetInterpreterModuleNames() => GetModuleNames(_roots.Skip(_userRootsCount).Append(_builtins));
 
-        private IEnumerable<string> GetModuleNames(IEnumerable<Node> roots) => roots
-            .SelectMany(r => r.TraverseBreadthFirst(n => n.IsModule ? Enumerable.Empty<Node>() : n.Children))
-            .Where(n => n.IsModule)
-            .Concat(_builtins.Children)
-            .Select(n => n.FullModuleName);
+        private ImmutableArray<string> GetModuleNames(IEnumerable<Node> roots) {
+            var items = new Queue<Node>(roots);
+            var names = ImmutableArray<string>.Empty;
+            while (items.Count > 0) {
+                var item = items.Dequeue();
+                if (item.IsModule) {
+                    names = names.Add(item.FullModuleName);
+                } else {
+                    foreach (var child in item.Children) {
+                        items.Enqueue(child);
+                    }
+                }
+            }
+
+            foreach (var builtin in _builtins.Children) {
+                names = names.Add(builtin.FullModuleName);
+            }
+
+            return names;
+        }
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
             for (var rootIndex = 0; rootIndex < _roots.Count; rootIndex++) {

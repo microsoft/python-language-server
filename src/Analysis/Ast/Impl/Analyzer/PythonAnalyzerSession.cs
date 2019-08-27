@@ -197,7 +197,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     isCanceled = _isCanceled;
                 }
 
-                if (isCanceled && !node.Value.NotAnalyzed || IsAnalyzedLibraryInLoop(node)) {
+                if (isCanceled && !node.Value.NotAnalyzed) {
                     remaining++;
                     node.MoveNext();
                     continue;
@@ -233,8 +233,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node)
-            => !node.HasMissingDependencies && node.Value.IsAnalyzedLibrary(_walker.Version) && node.IsWalkedWithDependencies && node.IsValidVersion;
+        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node, IDocumentAnalysis currentAnalysis)
+            => !node.HasMissingDependencies && currentAnalysis is LibraryAnalysis && node.IsWalkedWithDependencies && node.IsValidVersion;
 
         private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch) 
             => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
@@ -251,10 +251,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             try {
                 var entry = node.Value;
 
-                if (!entry.IsValidVersion(_walker.Version, out var module, out var ast)) {
-                    if (ast == null) {
-                        // Entry doesn't have ast yet. There should be at least one more session.
-                        Cancel();
+                if (!entry.CanUpdateAnalysis(_walker.Version, out var module, out var ast, out var currentAnalysis)) {
+                    if (IsAnalyzedLibraryInLoop(node, currentAnalysis)) {
+                        return;
+                    } else if (ast == default) {
+                        if (currentAnalysis == default) {
+                            // Entry doesn't have ast yet. There should be at least one more session.
+                            Cancel();
+                        } else {
+                            Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                        }
                     }
 
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
@@ -292,11 +298,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void AnalyzeEntry() {
             var stopWatch = _log != null ? Stopwatch.StartNew() : null;
             try {
-                if (!_entry.IsValidVersion(Version, out var module, out var ast)) {
-                    if (ast == null) {
-                        // Entry doesn't have ast yet. There should be at least one more session.
-                        Cancel();
+                if (!_entry.CanUpdateAnalysis(Version, out var module, out var ast, out var currentAnalysis)) {
+                    if (currentAnalysis is LibraryAnalysis) {
+                        return;
+                    } else if (ast == default) {
+                        if (currentAnalysis == default) {
+                            // Entry doesn't have ast yet. There should be at least one more session.
+                            Cancel();
+                        } else {
+                            Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                        }
                     }
+
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     return;
                 }
@@ -313,7 +326,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 LogException(_entry.Module, exception);
             } finally {
                 stopWatch?.Stop();
-                Interlocked.Decrement(ref _runningTasks);
             }
         }
 
