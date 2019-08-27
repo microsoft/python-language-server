@@ -84,12 +84,12 @@ It may also produce database files holding module analysis for faster retrieval 
 
 **Windows**
 
-"%LOCALAPPDATA%\Microsoft\Python Language Server" (which is Environment.SpecialFolder.LocalApplicationData). Typically `C:\Users\\%USER_NAME%\AppData\Local\Microsoft\Python Language Server
+`"%LOCALAPPDATA%\Microsoft\Python Language Server"` (which is `Environment.SpecialFolder.LocalApplicationData`). Typically `"C:\Users\\%USER_NAME%\AppData\Local\Microsoft\Python Language Server"`
 
 **Linux**
 
-"$XDG_CACHE_HOME/Microsoft/Python Language Server", or if XDG_CACHE_HOME is not set, "$HOME/.cache/Microsoft/Python Language Server"
+`"$XDG_CACHE_HOME/Microsoft/Python Language Server"`, or if `XDG_CACHE_HOME` is not set, `"$HOME/.cache/Microsoft/Python Language Server"`
 
 **macOS**
 
-"$HOME/Library/Caches/Microsoft/Python Language Server"
+`"$HOME/Library/Caches/Microsoft/Python Language Server"`
