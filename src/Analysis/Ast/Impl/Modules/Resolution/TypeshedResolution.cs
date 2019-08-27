@@ -32,12 +32,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class TypeshedResolution : ModuleResolutionBase, IModuleResolution {
         private readonly ImmutableArray<string> _typeStubPaths;
 
-        public TypeshedResolution(IServiceContainer services) : base(null, services) {
+        public TypeshedResolution(IServiceContainer services, string root = null) : base(null, services) {
             BuiltinsModule = _interpreter.ModuleResolution.BuiltinsModule;
             Modules[BuiltinModuleName] = new ModuleRef(BuiltinsModule);
 
             var stubs = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Stubs");
-            Root = _interpreter.Configuration?.TypeshedPath;
+            Root = root;
             // TODO: merge with user-provided stub paths
             _typeStubPaths = GetTypeShedPaths(Root)
                 .Concat(GetTypeShedPaths(stubs))

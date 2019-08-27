@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -39,10 +40,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
         private IRunningDocumentTable _rdt;
 
-        private ImmutableArray<string> _userPaths = ImmutableArray<string>.Empty;
+        private IReadOnlyList<string> _userConfiguredSearchPaths;
 
-        public MainModuleResolution(string root, IServiceContainer services)
-            : base(root, services) { }
+        public MainModuleResolution(string root, IServiceContainer services, IReadOnlyList<string> userConfiguredSearchPaths = null)
+            : base(root, services) {
+            _userConfiguredSearchPaths = userConfiguredSearchPaths ?? Array.Empty<string>();
+        }
 
         internal IBuiltinsPythonModule CreateBuiltinsModule() {
             if (BuiltinsModule == null) {
@@ -176,10 +179,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var ps = _services.GetService<IProcessServices>();
 
             var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, Configuration.SearchPaths);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, _userConfiguredSearchPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
-            _userPaths = userPaths.Select(p => p.Path);
+            UserPaths = userPaths.Select(p => p.Path);
 
             _log?.Log(TraceEventType.Information, "Interpreter search paths:");
             foreach (var s in InterpreterPaths) {
@@ -187,7 +190,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             _log?.Log(TraceEventType.Information, "User search paths:");
-            foreach (var s in _userPaths) {
+            foreach (var s in UserPaths) {
                 _log?.Log(TraceEventType.Information, $"    {s}");
             }
         }
@@ -208,12 +211,21 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             await ReloadSearchPaths(cancellationToken);
 
-            PathResolver = new PathResolver(_interpreter.LanguageVersion, Root, InterpreterPaths, _userPaths);
+            PathResolver = new PathResolver(_interpreter.LanguageVersion, Root, InterpreterPaths, UserPaths);
 
             var addedRoots = new HashSet<string> { Root };
             addedRoots.UnionWith(InterpreterPaths);
-            addedRoots.UnionWith(_userPaths);
+            addedRoots.UnionWith(UserPaths);
             ReloadModulePaths(addedRoots);
+        }
+
+        public async Task SetUserConfiguredSearchPathsAsync(IReadOnlyList<string> searchPaths) {
+            if (searchPaths.SequenceEqual(_userConfiguredSearchPaths)) {
+                return;
+            }
+
+            _userConfiguredSearchPaths = searchPaths;
+            await ReloadAsync();
         }
 
         public bool TryAddModulePath(in string path, in long fileSize, in bool allowNonRooted, out string fullModuleName)

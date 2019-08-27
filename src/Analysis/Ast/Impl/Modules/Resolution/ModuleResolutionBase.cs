@@ -57,6 +57,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public string Root { get; protected set; }
         public ImmutableArray<string> InterpreterPaths { get; protected set; } = ImmutableArray<string>.Empty;
+        public ImmutableArray<string> UserPaths { get; protected set; } = ImmutableArray<string>.Empty;
 
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
 
@@ -94,7 +95,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
 
-            foreach (var p in Configuration.SearchPaths) {
+            foreach (var p in InterpreterPaths.Concat(UserPaths)) {
                 if (PathEqualityComparer.Instance.StartsWith(filePath, p)) {
                     if (p.Length > bestLibraryPath.Length) {
                         bestLibraryPath = p;

@@ -42,12 +42,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             LanguageVersion = Configuration.Version.ToLanguageVersion();
         }
 
-        private async Task LoadBuiltinTypesAsync(string root, IServiceManager sm, CancellationToken cancellationToken = default) {
+        private async Task LoadBuiltinTypesAsync(
+            string root,
+            IServiceManager sm,
+            CancellationToken cancellationToken = default,
+            string typeshedPath = null,
+            IReadOnlyList<string> userConfiguredSearchPaths = null
+        ) {
             cancellationToken.ThrowIfCancellationRequested();
 
             sm.AddService(this);
-            _moduleResolution = new MainModuleResolution(root, sm);
-            _stubResolution = new TypeshedResolution(sm);
+            _moduleResolution = new MainModuleResolution(root, sm, userConfiguredSearchPaths);
+            _stubResolution = new TypeshedResolution(sm, root: typeshedPath);
 
             await _moduleResolution.InitializeAsync(cancellationToken);
             await _stubResolution.InitializeAsync(cancellationToken);
@@ -63,9 +69,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             await _moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
         }
 
-        public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
+        public static async Task<IPythonInterpreter> CreateAsync(
+            InterpreterConfiguration configuration,
+            string root,
+            IServiceManager sm,
+            CancellationToken cancellationToken = default,
+            string typeshedPath = null,
+            IReadOnlyList<string> userConfiguredSearchPaths = null
+        ) {
             var pi = new PythonInterpreter(configuration);
-            await pi.LoadBuiltinTypesAsync(root, sm, cancellationToken);
+            await pi.LoadBuiltinTypesAsync(root, sm, cancellationToken, typeshedPath, userConfiguredSearchPaths);
 
             // Specialize typing
             TypingModule.Create(sm);

@@ -128,16 +128,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var configuration = new InterpreterConfiguration(null, null,
                 interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
                 version: version
-            ) {
-                // Split on ';' to support older VS Code extension versions which send paths as a single entry separated by ';'. TODO: Eventually remove.
-                // Note that the actual classification of these paths as user/library is done later in MainModuleResolution.ReloadAsync.
-                SearchPaths = @params.initializationOptions.searchPaths
-                    .Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany()
-                    .ToList(),
-                TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
-            };
+            );
 
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken);
+            var typeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault();
+            var userConfiguredSearchPaths = @params.initializationOptions.searchPaths.Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany().ToList();
+
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken, typeshedPath, userConfiguredSearchPaths);
             _services.AddService(_interpreter);
 
             var fileSystem = _services.GetService<IFileSystem>();

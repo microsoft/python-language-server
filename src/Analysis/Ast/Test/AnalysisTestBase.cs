@@ -66,8 +66,9 @@ namespace Microsoft.Python.Analysis.Tests {
             configuration.AssertInstalled();
             stubCacheFolderPath = stubCacheFolderPath ?? TestData.GetAstAnalysisCachePath(configuration.Version, true);
             Trace.TraceInformation("Cache Path: " + stubCacheFolderPath);
-            configuration.SearchPaths = searchPaths ?? new[] { GetAnalysisTestDataFilesPath() };
-            configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
+
+            searchPaths = searchPaths ?? new[] { GetAnalysisTestDataFilesPath() };
+            var typeshedPath = TestData.GetDefaultTypeshedPath();
 
             sm = sm ?? CreateServiceManager();
 
@@ -84,7 +85,7 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");
-            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm);
+            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm, typeshedPath: typeshedPath, userConfiguredSearchPaths: searchPaths);
             sm.AddService(interpreter);
 
             TestLogger.Log(TraceEventType.Information, "Create RunningDocumentTable");
