@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
@@ -150,19 +151,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return null;
             }
 
-            var forwardRefExpr = TryCreateExpression(forwardRefStr);
+            var forwardRefExpr = AstUtilities.TryCreateExpression(forwardRefStr, Interpreter.LanguageVersion);
             return GetValueFromExpression(forwardRefExpr);
-        }
-
-        private Expression TryCreateExpression(string expression) {
-            using (var sr = new StringReader($"{expression}")) {
-                var parser = Parser.CreateParser(sr, Interpreter.LanguageVersion, ParserOptions.Default);
-                var ast = parser.ParseFile();
-                if (ast.Body is SuiteStatement ste && ste.Statements.Count > 0 && ste.Statements[0] is ExpressionStatement es) {
-                    return es.Expression;
-                }
-            }
-            return null;
         }
 
         private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
