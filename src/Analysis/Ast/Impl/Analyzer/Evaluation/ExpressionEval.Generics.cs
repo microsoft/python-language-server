@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
@@ -97,10 +98,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// (if the former) on specific type (if the latter).
         /// </summary>
         private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr) {
-            var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
-
             // TODO: move check to GenericClassBase. This requires extensive changes to SpecificTypeConstructor.
             if (gt.Name.EqualsOrdinal("Generic")) {
+                var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
                     return UnknownType;
                 }
@@ -116,16 +116,38 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (expr.Index is TupleExpression tex) {
                 foreach (var item in tex.Items) {
                     var e = GetValueFromExpression(item);
-                    indices.Add(e);
+                    var forwardRef = GetValueFromForwardRef(e);
+                    indices.Add(forwardRef ?? e);
                 }
             } else {
                 var index = GetValueFromExpression(expr.Index);
-                // Don't count null indexes as arguments
-                if (index != null) {
+                var forwardRef = GetValueFromForwardRef(index);
+
+                if (forwardRef != null) {
+                    indices.Add(forwardRef);
+                } else if (index != null) {
+                    // Don't count null indexes as arguments
                     indices.Add(index);
                 }
             }
             return indices;
+        }
+
+        /// <summary>
+        /// Given an index argument, will try and resolve it to a forward reference, e.g
+        /// Forward references are types declared in quotes, e.g 'int' is equivalent to type int
+        /// 
+        /// List['str'] => List[str]
+        /// 'A[int]' => A[int]
+        /// </summary>
+        private IMember GetValueFromForwardRef(IMember index) {
+            index.TryGetConstant(out string forwardRefStr);
+            if (string.IsNullOrEmpty(forwardRefStr)) {
+                return null;
+            }
+
+            var forwardRefExpr = AstUtilities.TryCreateExpression(forwardRefStr, Interpreter.LanguageVersion);
+            return GetValueFromExpression(forwardRefExpr);
         }
 
         private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
