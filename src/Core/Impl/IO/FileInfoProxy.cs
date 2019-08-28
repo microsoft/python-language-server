@@ -23,6 +23,7 @@ namespace Microsoft.Python.Core.IO {
             _fileInfo = fileInfo;
         }
 
+        public long Length => _fileInfo.Length;
         public bool Exists => _fileInfo.Exists;
         public string FullName => _fileInfo.FullName;
         public FileAttributes Attributes => _fileInfo.Attributes;

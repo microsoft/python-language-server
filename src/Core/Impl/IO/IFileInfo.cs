@@ -17,6 +17,7 @@ using System.IO;
 
 namespace Microsoft.Python.Core.IO {
     public interface IFileInfo : IFileSystemInfo {
+        long Length { get; }
         IDirectoryInfo Directory { get; }
         StreamWriter CreateText();
     }

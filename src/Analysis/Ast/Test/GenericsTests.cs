@@ -1214,7 +1214,6 @@ class B(Generic[T, K]):
                                       .Which.Should().HaveType("A[str]");
         }
 
-
         [TestMethod, Priority(0)]
         public async Task GenericFunctionArguments() {
             const string code = @"
@@ -1228,6 +1227,37 @@ x = Simple().test_exception();
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             analysis.Should().HaveVariable("x").Which.Should().HaveType("TypeError");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SpecializedGenericPartialParams() {
+            const string code = @"
+from typing import Dict, List, Tuple, Iterator, KeysView, ValuesView, ItemsViews, Sequence, Generic, TypeVar
+
+T = TypeVar('T')
+class A(Generic[T], Dict[T, int]) : ...
+class B(Generic[T], List[T]) : ...
+class C(Generic[T], Tuple[T, int]) : ...
+class D(Generic[T], Iterator[T]) : ...
+class E(Generic[T], KeysView[T]) : ...
+class F(Generic[T], Sequence[T]) : ...
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A")
+                .Which.Should().HaveBase("Dict[T, int]");
+            analysis.Should().HaveClass("B")
+                .Which.Should().HaveBase("List[T]");
+            analysis.Should().HaveClass("C")
+                .Which.Should().HaveBase("Tuple[T, int]");
+            analysis.Should().HaveClass("D")
+                .Which.Should().HaveBase("Iterator[T]");
+            analysis.Should().HaveClass("D")
+                .Which.Should().HaveBase("Iterator[T]");
+            analysis.Should().HaveClass("E")
+                .Which.Should().HaveBase("KeysView[T]");
+            analysis.Should().HaveClass("F")
+                .Which.Should().HaveBase("Sequence[T]");
         }
 
         [TestMethod, Priority(0)]

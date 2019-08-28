@@ -231,5 +231,19 @@ x = f()
             var a = analysis.Should().HaveClass("A").Which;
             a.GetMember("x").Should().HaveType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task StarImportDoesNotOverwriteFunction() {
+            const string code = @"
+from sys import *
+
+def exit():
+    return 1234
+
+x = exit()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
     }
 }

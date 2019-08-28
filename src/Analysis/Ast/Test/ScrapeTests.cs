@@ -28,6 +28,7 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -78,6 +79,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var services = await CreateServicesAsync(moduleDirectory, configuration);
             var interpreter = services.GetService<IPythonInterpreter>();
+            var fs = services.GetService<IFileSystem>();
 
             // TODO: this is Windows only
             var dllsDir = Path.Combine(Path.GetDirectoryName(interpreter.Configuration.LibraryPath), "DLLs");
@@ -92,7 +94,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var modules = new List<IPythonModule>();
 
-            foreach (var pyd in PathUtils.EnumerateFiles(dllsDir, "*", recurse: false).Where(ModulePath.IsPythonFile)) {
+            foreach (var pyd in PathUtils.EnumerateFiles(fs, dllsDir, "*", recurse: false).Select(f => f.FullName).Where(ModulePath.IsPythonFile)) {
                 var mp = ModulePath.FromFullPath(pyd);
                 if (mp.IsDebug) {
                     continue;
@@ -270,7 +272,11 @@ namespace Microsoft.Python.Analysis.Tests {
             var services = await CreateServicesAsync(moduleDirectory, configuration);
             var interpreter = services.GetService<IPythonInterpreter>();
 
-            var modules = ModulePath.GetModulesInLib(configuration.LibraryPath, configuration.SitePackagesPath).ToList();
+            var pathResolver = interpreter.ModuleResolution.CurrentPathResolver;
+            var modules = pathResolver.GetAllModuleNames()
+                .Select(n => pathResolver.GetModuleImportFromModuleName(n))
+                .Where(i => i.RootPath.PathEquals(configuration.SitePackagesPath) || i.RootPath.PathEquals(configuration.LibraryPath))
+                .ToList();
 
             var skip = new HashSet<string>(skipModules);
             skip.UnionWith(new[] {
@@ -294,12 +300,12 @@ namespace Microsoft.Python.Analysis.Tests {
             }
 
             var set = modules
-                .Where(m => !skip.Contains(m.ModuleName))
+                .Where(m => !skip.Contains(m.FullName))
                 .GroupBy(m => {
                     var i = m.FullName.IndexOf('.');
                     return i <= 0 ? m.FullName : m.FullName.Remove(i);
                 })
-                .SelectMany(g => g.Select(m => Tuple.Create(m, m.ModuleName)))
+                .SelectMany(g => g.Select(m => Tuple.Create(m, m.FullName)))
                 .ToArray();
             set = set.Where(x => x.Item2 != null && x.Item2.Contains("grammar")).ToArray();
 
@@ -317,22 +323,22 @@ namespace Microsoft.Python.Analysis.Tests {
                 var modName = r.Item1;
                 var mod = interpreter.ModuleResolution.GetOrLoadModule(r.Item2);
 
-                anyExtensionSeen |= modName.IsNativeExtension;
+                anyExtensionSeen |= modName.IsCompiled;
                 switch (mod) {
                     case null:
-                        Trace.TraceWarning("failed to import {0} from {1}", modName.ModuleName, modName.SourceFile);
+                        Trace.TraceWarning("failed to import {0} from {1}", modName.FullName, modName.ModulePath);
                         break;
                     case CompiledPythonModule compiledPythonModule:
                         var errors = compiledPythonModule.GetParseErrors().ToArray();
                         if (errors.Any()) {
                             anyParseError = true;
-                            Trace.TraceError("Parse errors in {0}", modName.SourceFile);
+                            Trace.TraceError("Parse errors in {0}", modName.ModulePath);
                             foreach (var e in errors) {
                                 Trace.TraceError(e.Message);
                             }
                         } else {
                             anySuccess = true;
-                            anyExtensionSuccess |= modName.IsNativeExtension;
+                            anyExtensionSuccess |= modName.IsCompiled;
                         }
 
                         break;
@@ -343,13 +349,13 @@ namespace Microsoft.Python.Analysis.Tests {
                                 if (!mod.FilePath.Contains("site-packages")) {
                                     anyParseError = true;
                                 }
-                                Trace.TraceError("Parse errors in {0}", modName.SourceFile);
+                                Trace.TraceError("Parse errors in {0}", modName.ModulePath);
                                 foreach (var e in filteredErrors) {
                                     Trace.TraceError(e.Message);
                                 }
                             } else {
                                 anySuccess = true;
-                                anyExtensionSuccess |= modName.IsNativeExtension;
+                                anyExtensionSuccess |= modName.IsCompiled;
                             }
 
                             break;

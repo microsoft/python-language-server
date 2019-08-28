@@ -20,7 +20,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -91,18 +90,18 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 .ToArray();
         }
 
-        private List<Uri> ScanClosedFiles(string name, CancellationToken cancellationToken) {
+        private List<(Uri path, long fileSize)> ScanClosedFiles(string name, CancellationToken cancellationToken) {
             var fs = _services.GetService<IFileSystem>();
             var rdt = _services.GetService<IRunningDocumentTable>();
             var interpreter = _services.GetService<IPythonInterpreter>();
 
             var root = interpreter.ModuleResolution.Root;
             if (root == null) {
-                return new List<Uri>();
+                return new List<(Uri, long)>();
             }
 
             var interpreterPaths = interpreter.ModuleResolution.InterpreterPaths.ToArray();
-            var files = new List<Uri>();
+            var files = new List<(Uri, long)>();
 
             foreach (var filePath in fs.GetFiles(root, "*.py", SearchOption.AllDirectories).Select(Path.GetFullPath)) {
                 try {
@@ -126,7 +125,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     }
 
                     if (content.Contains(name)) {
-                        files.Add(uri);
+                        files.Add((uri, fs.FileSize(filePath)));
                     }
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
@@ -134,10 +133,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return files;
         }
 
-        private async Task<bool> AnalyzeFiles(IModuleManagement moduleManagement, IEnumerable<Uri> files, CancellationToken cancellationToken) {
+        private async Task<bool> AnalyzeFiles(IModuleManagement moduleManagement, IEnumerable<(Uri path, long fileSize)> files, CancellationToken cancellationToken) {
             var analysisTasks = new List<Task>();
-            foreach (var f in files) {
-                if (moduleManagement.TryAddModulePath(f.ToAbsolutePath(), false, out var fullName)) {
+            foreach (var (path, fileSize) in files) {
+                if (moduleManagement.TryAddModulePath(path.ToAbsolutePath(), fileSize, false, out var fullName)) {
                     var module = moduleManagement.GetOrLoadModule(fullName);
                     if (module is IDocument document) {
                         analysisTasks.Add(document.GetAnalysisAsync(cancellationToken: cancellationToken));
