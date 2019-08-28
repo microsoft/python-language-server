@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -48,15 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         internal static void Assign(IEnumerable<Expression> lhs, IMember value, ExpressionEval eval) {
-            // Tuple = 'tuple value' (such as from callable). Transfer values.
-            IMember[] values;
-            if (value is IPythonCollection seq) {
-                values = seq.Contents.ToArray();
-            } else {
-                values = new[] { value };
-            }
-
-            var typeEnum = new ValueEnumerator(values, eval.UnknownType);
+            var typeEnum = new ValueEnumerator(value, eval.UnknownType);
             Assign(lhs, typeEnum, eval);
         }
 
@@ -69,8 +62,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
-                    case TupleExpression te:
-                        Assign(te.Items, valueEnum, eval);
+                    case SequenceExpression se:
+                        Assign(se.Items, valueEnum, eval);
                         break;
                 }
             }
@@ -109,13 +102,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         private class ValueEnumerator {
+            private readonly IMember _value;
+            private readonly IMember _unknown;
             private readonly IMember[] _values;
-            private readonly IMember _filler;
             private int _index;
 
-            public ValueEnumerator(IMember[] values, IMember filler) {
-                _values = values;
-                _filler = filler;
+            /// <summary>
+            /// Constructs an enumerator over the values of the given collection type
+            /// </summary>
+            /// <param name="value">Collection to iterate over</param>
+            /// <param name="unknown">Default type when we cannot find type from collection</param>
+            public ValueEnumerator(IMember value, IMember unknown) {
+                _value = value;
+                _unknown = unknown;
+                switch (value) {
+                    // Tuple = 'tuple value' (such as from callable). Transfer values.
+                    case IPythonCollection seq:
+                        _values = seq.Contents.ToArray();
+                        break;
+                    // Create singleton list of value when cannot identify tuple
+                    default:
+                        _values = new[] { value };
+                        break;
+                }
             }
 
             public IMember Next {
@@ -124,11 +133,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     if (_values.Length > 0) {
                         t = _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
                     } else {
-                        t = _filler;
+                        t = Filler;
                     }
 
                     _index++;
                     return t;
+                }
+            }
+
+            private IMember Filler {
+                get {
+                    switch (_value?.GetPythonType()) {
+                        case ITypingListType tlt:
+                            return tlt.ItemType;
+                        case ITypingTupleType tt when tt.ItemTypes?.Count > 0:
+                            var itemTypes = tt.ItemTypes;
+                            if (itemTypes.Count > 0) {
+                                // If mismatch between enumerator index and actual types, duplicate last type
+                                return _index < itemTypes.Count ? itemTypes[_index] : itemTypes[itemTypes.Count - 1];
+                            }
+                            break;
+                    }
+                    return _unknown;
                 }
             }
         }

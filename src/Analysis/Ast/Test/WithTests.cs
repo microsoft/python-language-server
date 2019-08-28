@@ -48,9 +48,74 @@ with Test() as (hi, hello):
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("hi").Which.Should().HaveType(BuiltinTypeId.Int);
-            analysis.Should().HaveVariable("hello").Which.Should().HaveType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("hi").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("hello").OfType(BuiltinTypeId.Int);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task WithList() {
+            const string code = @"
+from typing import Tuple
+
+class Test:
+    def __enter__(self) -> List[int]:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as [hi, hello]:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("hi").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("hello").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithListNoReturnValue() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> List[int]:
+        pass
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as [hi, hello]:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("hi").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("hello").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithTupleNoReturnValue() {
+            const string code = @"
+from typing import Tuple
+
+class Test:
+    def __enter__(self) -> Tuple[int, str, float]:
+        pass
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as [i, s, f]:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int)
+                    .And.HaveVariable("s").OfType(BuiltinTypeId.Str)
+                    .And.HaveVariable("f").OfType(BuiltinTypeId.Float);
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task WithName() {
@@ -69,7 +134,7 @@ with Test() as test:
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("test").Which.Should().HaveType(BuiltinTypeId.Str);
+            analysis.Should().HaveVariable("test").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
@@ -85,16 +150,12 @@ class Test:
         pass
 
 
-with Test() as (a, b, c, d):
+with Test() as (a):
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
             // Uses context manager type when return type of __enter__ is unknown
-            analysis.Should().HaveVariable("a").Which.Should().HaveType("Test");
-            analysis.Should().HaveVariable("b").Which.Should().HaveType("Test");
-            analysis.Should().HaveVariable("c").Which.Should().HaveType("Test");
-            analysis.Should().HaveVariable("d").Which.Should().HaveType("Test");
+            analysis.Should().HaveVariable("a").OfType("Test");
         }
-
     }
 }
