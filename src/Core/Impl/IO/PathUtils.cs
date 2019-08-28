@@ -117,7 +117,7 @@ namespace Microsoft.Python.Core.IO {
             int depthLimit = 2,
             IEnumerable<string> firstCheck = null
         ) {
-            if (!Directory.Exists(root)) {
+            if (!fileSystem.DirectoryExists(root)) {
                 return null;
             }
 
@@ -185,12 +185,17 @@ namespace Microsoft.Python.Core.IO {
                 var path = queue.Dequeue();
                 path = EnsureEndSeparator(path);
 
+                if (!fileSystem.DirectoryExists(path)) {
+                    continue;
+                }
+
                 IEnumerable<string> dirs = null;
                 try {
                     dirs = fileSystem.GetDirectories(path);
                 } catch (UnauthorizedAccessException) {
                 } catch (IOException) {
                 }
+
                 if (dirs == null) {
                     continue;
                 }
@@ -323,8 +328,12 @@ namespace Microsoft.Python.Core.IO {
                     // File path is '..\\test\\test.zip\\test\\a.py'
                     // Working path is '..\\test\\test.zip'
                     // Relative path in zip file becomes 'test/a.py'
+                    relativeZipPath = filePath.Substring(workingPath.Length);
+
                     // According to https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT, zip files must have forward slashes
-                    relativeZipPath = filePath.Substring(workingPath.Length).Replace("\\", "/");
+                    foreach(var separator in DirectorySeparators) {
+                        relativeZipPath = relativeZipPath.Replace(separator, '/');
+                    }
                     return true;
                 }
                 // \\test\\test.zip => \\test\\
@@ -370,8 +379,9 @@ namespace Microsoft.Python.Core.IO {
                 if (zipFile == null) {
                     return null;
                 }
-                var reader = new StreamReader(zipFile.Open());
-                return reader.ReadToEnd();
+                using (var reader = new StreamReader(zipFile.Open())) {
+                    return reader.ReadToEnd();
+                }
             }
         }
 

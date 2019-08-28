@@ -104,10 +104,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
             foreach (var root in rootPaths) {
-                if (Directory.Exists(root)) {
-                    foreach (var moduleFile in PathUtils.EnumerateFiles(_fs, root)) {
-                        PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
-                    }
+                foreach (var moduleFile in PathUtils.EnumerateFiles(_fs, root)) {
+                    PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
                 }
 
                 if (PathUtils.TryGetZipFilePath(root, out var zipFilePath, out var _) && File.Exists(zipFilePath)) {
