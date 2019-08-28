@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public MainModuleResolution(string root, IServiceContainer services, IReadOnlyList<string> userConfiguredPaths = null)
             : base(root, services) {
-            _userConfiguredPaths = userConfiguredPaths;
+            _userConfiguredPaths = userConfiguredPaths ?? Array.Empty<string>();
         }
 
         internal IBuiltinsPythonModule CreateBuiltinsModule() {
@@ -174,8 +174,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
-            _userConfiguredPaths = _userConfiguredPaths ?? Array.Empty<string>();
-
             var ps = _services.GetService<IProcessServices>();
 
             var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
@@ -220,17 +218,13 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public bool SetUserConfiguredPaths(IReadOnlyList<string> paths) {
-            var old = _userConfiguredPaths;
-            _userConfiguredPaths = paths ?? Array.Empty<string>();
+            paths = paths ?? Array.Empty<string>();
 
-            if (old == null) {
+            if (paths.SequenceEqual(_userConfiguredPaths)) {
                 return false;
             }
 
-            if (_userConfiguredPaths.SequenceEqual(old)) {
-                return false;
-            }
-
+            _userConfiguredPaths = paths;
             return true;
         }
 
