@@ -40,11 +40,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
         private IRunningDocumentTable _rdt;
 
-        private IReadOnlyList<string> _userConfiguredSearchPaths;
+        private IReadOnlyList<string> _userConfiguredPaths;
 
-        public MainModuleResolution(string root, IServiceContainer services, IReadOnlyList<string> userConfiguredSearchPaths = null)
+        public MainModuleResolution(string root, IServiceContainer services, IReadOnlyList<string> userConfiguredPaths = null)
             : base(root, services) {
-            _userConfiguredSearchPaths = userConfiguredSearchPaths ?? Array.Empty<string>();
+            _userConfiguredPaths = userConfiguredPaths;
         }
 
         internal IBuiltinsPythonModule CreateBuiltinsModule() {
@@ -176,10 +176,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         internal async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
+            _userConfiguredPaths = _userConfiguredPaths ?? Array.Empty<string>();
+
             var ps = _services.GetService<IProcessServices>();
 
             var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, _userConfiguredSearchPaths);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, _fs, paths, _userConfiguredPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
             UserPaths = userPaths.Select(p => p.Path);
@@ -219,13 +221,19 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             ReloadModulePaths(addedRoots);
         }
 
-        public async Task SetUserConfiguredSearchPathsAsync(IReadOnlyList<string> searchPaths) {
-            if (searchPaths.SequenceEqual(_userConfiguredSearchPaths)) {
-                return;
+        public bool SetUserConfiguredPaths(IReadOnlyList<string> paths) {
+            var old = _userConfiguredPaths;
+            _userConfiguredPaths = paths ?? Array.Empty<string>();
+
+            if (old == null) {
+                return false;
             }
 
-            _userConfiguredSearchPaths = searchPaths;
-            await ReloadAsync();
+            if (_userConfiguredPaths.SequenceEqual(old)) {
+                return false;
+            }
+
+            return true;
         }
 
         public bool TryAddModulePath(in string path, in long fileSize, in bool allowNonRooted, out string fullModuleName)

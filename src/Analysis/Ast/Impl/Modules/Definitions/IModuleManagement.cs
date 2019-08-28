@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
@@ -65,5 +65,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Set of interpreter paths.
         /// </summary>
         ImmutableArray<string> InterpreterPaths { get; }
+
+        bool SetUserConfiguredPaths(IReadOnlyList<string> paths);
     }
 }

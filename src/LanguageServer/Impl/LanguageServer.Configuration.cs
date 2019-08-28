@@ -25,6 +25,8 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -51,7 +53,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
-                HandlePathWatchChanges(token);
+
+                var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", Array.Empty<string>());
+                var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
+                var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
+
+                var userConfiguredPaths = analysisSearchPaths ?? autoCompleteExtraPaths;
+                if (analysisUsePYTHONPATH) {
+                    var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
+                    if (pythonpath != null) {
+                        var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
+                        var paths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        userConfiguredPaths = userConfiguredPaths.Concat(paths).ToList();
+                    }
+                }
+
+                HandleUserConfiguredPathsChanges(userConfiguredPaths);
+                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
                 HandleDiagnosticsChanges(pythonSection, settings);
 
                 _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
@@ -98,5 +116,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 ds.Replace(m.Uri, entries, DiagnosticSource.Linter);
             }
         }
+
+        private void HandlePathWatchChanges(bool watchSearchPaths) => _server.HandleWatchPathsChange(watchSearchPaths);
+
+        private void HandleUserConfiguredPathsChanges(IReadOnlyList<string> paths) => _server.HandleUserConfiguredPathsChange(paths);
     }
 }

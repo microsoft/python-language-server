@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -131,9 +132,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             );
 
             var typeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault();
-            var userConfiguredSearchPaths = @params.initializationOptions.searchPaths.Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany().ToList();
 
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken, typeshedPath, userConfiguredSearchPaths);
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken, typeshedPath);
             _services.AddService(_interpreter);
 
             var fileSystem = _services.GetService<IFileSystem>();
@@ -236,13 +236,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (_searchPaths == null || !_searchPaths.SequenceEqual(paths)) {
                 _searchPaths = paths;
                 _pathsWatcher?.Dispose();
-                _pathsWatcher = new PathsWatcher(_searchPaths, NotifyPackagesChanged, _log);
+                _pathsWatcher = new PathsWatcher(_searchPaths, ResetAnalyzer, _log);
             }
         }
 
-        private void NotifyPackagesChanged() {
+        private void ResetAnalyzer() {
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
-
             _services.GetService<PythonAnalyzer>().ResetAnalyzer().ContinueWith(t => {
                 if (_watchSearchPaths) {
                     ResetPathWatcher();
@@ -251,6 +250,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _log?.Log(TraceEventType.Information, Resources.Done);
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
             }).DoNotWait();
+        }
+
+        public void HandleUserConfiguredPathsChange(IReadOnlyList<string> paths) {
+            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths);
+            if (changed) {
+                ResetAnalyzer();
+            }
         }
     }
 }
