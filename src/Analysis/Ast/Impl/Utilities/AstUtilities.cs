@@ -25,5 +25,16 @@ namespace Microsoft.Python.Analysis.Utilities {
                 return Parser.CreateParser(sr, PythonLanguageVersion.None).ParseFile(documentUri);
             }
         }
+
+        public static Expression TryCreateExpression(string expression, PythonLanguageVersion version) {
+            using (var sr = new StringReader(expression)) {
+                var parser = Parser.CreateParser(sr, version, ParserOptions.Default);
+                var ast = parser.ParseFile();
+                if (ast.Body is SuiteStatement ste && ste.Statements.Count > 0 && ste.Statements[0] is ExpressionStatement es) {
+                    return es.Expression;
+                }
+            }
+            return null;
+        }
     }
 }

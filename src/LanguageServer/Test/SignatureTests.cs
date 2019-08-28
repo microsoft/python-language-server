@@ -151,7 +151,190 @@ y = boxedstr.get()
             sig.signatures.Should().NotBeNull();
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("get() -> str");
+        }
 
+        [TestMethod, Priority(0)]
+        public async Task GenericUnboundForwardRefFunction() {
+            const string code = @"
+from typing import Dict
+def tmp(v: 'Dict[str, int]') -> 'Dict[str, int]':
+    pass
+h = tmp()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(5, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("tmp(v: Dict[str, int]) -> Dict[str, int]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefUnboundFunction() {
+            const string code = @"
+def get() -> 'int':
+    pass
+
+y = get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(5, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnknownForwardRefUnboundFunction() {
+            const string code = @"
+def get() -> 'unknown_type':
+    pass
+
+y = get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(5, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> 'unknown_type'");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnknownForwardRefParam() {
+            const string code = @"
+def get(v: 'tmp[unknown_type]') -> 'unknown_type':
+    pass
+
+y = get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(5, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get(v) -> 'unknown_type'");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefMethod() {
+            const string code = @"
+class Box():
+    def get(self) -> 'int':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get()
+
+def get() -> 'int':
+    pass
+
+y = get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(7, 18));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> int");
+
+            sig = src.GetSignature(analysis, new SourceLocation(12, 9));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefQuotedGeneric() {
+            const string code = @"
+from typing import List
+
+class Box():
+    def get(self, x: 'List[int]') -> 'int':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get(5)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(9, 19));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get(x: List[int]) -> int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefNestedQuotedGeneric() {
+            const string code = @"
+from typing import List, Sequence
+
+class Box():
+    def get(self, x: 'Sequence[List[int]]') -> 'int':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get(5)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(9, 19));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get(x: Sequence[List[int]]) -> int");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefNestedQuotedGenericReturnValue() {
+            const string code = @"
+from typing import List, Sequence
+
+class Box():
+    def get(self, x: 'Sequence[List[int]]') -> 'Sequence[List[int]]':
+        return self.v
+
+boxedint = Box()
+x = boxedint.get(5)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(9, 19));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get(x: Sequence[List[int]]) -> Sequence[List[int]]");
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task ForwardRefQuotedGenericTypeParameter() {
+            const string code = @"
+from typing import List
+
+class X: ...
+
+class Box():
+    def get(self) -> List['X']:
+        return self.v
+
+boxedint = Box()
+x = boxedint.get()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(11, 18));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("get() -> List[X]");
         }
     }
 }
