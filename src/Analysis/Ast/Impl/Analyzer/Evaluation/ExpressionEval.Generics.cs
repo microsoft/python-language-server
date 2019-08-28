@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Specializations.Typing;
