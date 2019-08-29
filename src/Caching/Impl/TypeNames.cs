@@ -100,7 +100,12 @@ namespace Microsoft.Python.Analysis.Caching {
                         parts.MemberNames = typeName == "..." ? new[] { "ellipsis" } : typeName.Split('.').ToArray();
                         break;
                     default:
-                        parts.ModuleName = typeName;
+                        if (typeName.EndsWith("(stub)")) {
+                            parts.ModuleName = typeName.Substring(0, typeName.Length-6);
+                            parts.IsStub = true;
+                        } else {
+                            parts.ModuleName = typeName;
+                        }
                         parts.MemberNames = Array.Empty<string>();
                         break;
                 }

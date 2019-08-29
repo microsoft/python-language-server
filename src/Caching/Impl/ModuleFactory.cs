@@ -141,9 +141,10 @@ namespace Microsoft.Python.Analysis.Caching {
                 // from the stub and the main module was never loaded. This, for example,
                 // happens with io which has member with mmap type coming from mmap
                 // stub rather than the primary mmap module.
-                var m = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
-                // Try stub-only case (ex _importlib_modulespec).
-                m = m ?? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
+                var m = parts.IsStub 
+                    ? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName) 
+                    : Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
+
                 if (m != null) {
                     return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
                 }

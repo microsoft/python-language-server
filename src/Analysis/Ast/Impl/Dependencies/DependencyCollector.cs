@@ -42,13 +42,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
         
-        public void AddImport(IReadOnlyList<string> importNames, bool forceAbsolute) {
-            var imports = _pathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, forceAbsolute);
+        public void AddImport(IReadOnlyList<string> importNames, bool forceAbsolute, bool? isStub = null) {
+            var imports = GetPathResolver(isStub).GetImportsFromAbsoluteName(_module.FilePath, importNames, forceAbsolute);
             HandleSearchResults(imports);
         }
 
-        public void AddFromImport(IReadOnlyList<string> importNames, int dotCount, bool forceAbsolute) {
-            var imports = _pathResolver.FindImports(_module.FilePath, importNames, dotCount, forceAbsolute);
+        public void AddFromImport(IReadOnlyList<string> importNames, int dotCount, bool forceAbsolute, bool? isStub = null) {
+            var imports = GetPathResolver(isStub).FindImports(_module.FilePath, importNames, dotCount, forceAbsolute);
             HandleSearchResults(imports);
             if (imports is IImportChildrenSource childrenSource) {
                 foreach (var name in importNames) {
@@ -73,5 +73,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
         }
         private static bool Ignore(IModuleManagement moduleResolution, string fullName, string modulePath)
             => moduleResolution.BuiltinModuleName.EqualsOrdinal(fullName) || moduleResolution.IsSpecializedModule(fullName, modulePath);
+
+        private PathResolverSnapshot GetPathResolver(bool? isStub)
+            => isStub == true
+                ? _module.Interpreter.TypeshedResolution.CurrentPathResolver 
+                : _moduleResolution.CurrentPathResolver;
     }
 }

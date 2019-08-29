@@ -52,6 +52,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public ImportModel[] Imports { get; set; }
         public FromImportModel[] FromImports { get; set; }
+        public ImportModel[] StubImports { get; set; }
+        public FromImportModel[] StubFromImports { get; set; }
 
         [NonSerialized] private Dictionary<string, MemberModel> _modelCache;
 
@@ -143,8 +145,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     Kind = l.Kind
                 }).ToArray(),
                 FileSize = analysis.Ast.EndIndex,
-                Imports = primaryDependencyWalker.Imports.Concat(stubImports).ToArray(),
-                FromImports = primaryDependencyWalker.FromImports.Concat(stubFromImports).ToArray()
+                Imports = primaryDependencyWalker.Imports.ToArray(),
+                FromImports = primaryDependencyWalker.FromImports.ToArray(),
+                StubImports = stubImports.ToArray(),
+                StubFromImports = stubFromImports.ToArray()
             };
         }
 

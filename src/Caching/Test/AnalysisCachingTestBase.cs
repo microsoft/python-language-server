@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             ModuleFactory.EnableMissingMemberAssertions = true;
         }
 
-        protected string ToJson(object model) {
+        protected static string ToJson(object model) {
             var sb = new StringBuilder();
             using (var sw = new StringWriter(sb))
             using (var jw = new JsonTextWriter(sw)) {
