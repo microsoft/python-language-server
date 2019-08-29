@@ -220,11 +220,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of the definitions. Stub may contains those so we need to merge it in.
         /// </remarks>
         private void MergeStub() {
-            if (Module.ModuleType == ModuleType.User) {
+            if (Module.ModuleType == ModuleType.User || Module.ModuleType == ModuleType.Stub) {
                 return;
             }
             // No stub, no merge.
-            if (_stubAnalysis == null) {
+            if (_stubAnalysis.IsEmpty()) {
                 return;
             }
             // TODO: figure out why module is getting analyzed before stub.
