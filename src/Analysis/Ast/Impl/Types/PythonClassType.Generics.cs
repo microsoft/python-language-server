@@ -75,7 +75,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                 // Storing generic parameters allows methods returning generic types 
                 // to know what type parameter returns what specific type
-                StoreGenericParameters(classType, genericTypeParameters.Select(p => p.QualifiedName).ToArray(), genericTypeToSpecificType);
+                StoreGenericParameters(classType, genericTypeParameters.Select(p => p.Name).ToArray(), genericTypeToSpecificType);
 
                 // Set generic name
                 classType.SetNames();
@@ -83,10 +83,10 @@ namespace Microsoft.Python.Analysis.Types {
                 // Locking so threads can only access class after it's been initialized
                 // Store generic parameters first so name updates correctly, then check if class type has been cached
                 _specificTypeCache = _specificTypeCache ?? new Dictionary<string, PythonClassType>();
-                if (_specificTypeCache.TryGetValue(classType.QualifiedName, out var cachedType)) {
+                if (_specificTypeCache.TryGetValue(classType.Name, out var cachedType)) {
                     return cachedType;
                 }
-                _specificTypeCache[classType.QualifiedName] = classType;
+                _specificTypeCache[classType.Name] = classType;
 
                 // Prevent re-entrancy when resolving generic class where method may be returning instance of type of the same class.
                 // e.g
@@ -118,7 +118,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // Look through generic type bases and see if any of their required type parameters
                         // have received a specific type, and if so create specific type
                         var st = gt.FormalGenericParameters
-                            .Select(p => classType.GenericParameters.TryGetValue(p.QualifiedName, out var t) ? t : null)
+                            .Select(p => classType.GenericParameters.TryGetValue(p.Name, out var t) ? t : null)
                             .Where(p => !p.IsUnknown())
                             .ToArray();
                         if (st.Length > 0) {
@@ -177,7 +177,7 @@ namespace Microsoft.Python.Analysis.Types {
             List<IPythonType> newBases) {
 
             // For now, map each type parameter to itself, and we can fill in the value as we go 
-            var genericTypeToSpecificType = genericTypeParameters.ToDictionary(gtp => gtp.QualifiedName, gtp => gtp as IPythonType);
+            var genericTypeToSpecificType = genericTypeParameters.ToDictionary(gtp => gtp.Name, gtp => gtp as IPythonType);
 
             // Arguments passed are those of __init__ or copy constructor or index expression A[int, str, ...].
             // The arguments do not necessarily match all of the declared generic parameters.
@@ -193,11 +193,11 @@ namespace Microsoft.Python.Analysis.Types {
                     // __init__(self, v: _T), v is annotated as a generic type definition
                     // Check if its generic type name matches any of the generic class parameters i.e. if there is
                     // an argument like 'v: _T' we need to check if class has matching Generic[_T] or A[_T] in bases.
-                    if (genericTypeToSpecificType.ContainsKey(argTypeDefinition.QualifiedName)) {
+                    if (genericTypeToSpecificType.ContainsKey(argTypeDefinition.Name)) {
                         // TODO: Check if specific type matches generic type parameter constraints and report mismatches.
                         // Assign specific type.
                         if (arg.Value is IMember m && m.GetPythonType() is IPythonType pt) {
-                            genericTypeToSpecificType[argTypeDefinition.QualifiedName] = pt;
+                            genericTypeToSpecificType[argTypeDefinition.Name] = pt;
                         } else {
                             // TODO: report supplied parameter is not a type.
                         }
@@ -244,8 +244,8 @@ namespace Microsoft.Python.Analysis.Types {
                     var type = member.GetPythonType();
                     if (!type.IsUnknown()) {
                         var gtd = gtIndex < genericTypeParameters.Length ? genericTypeParameters[gtIndex] : null;
-                        if (gtd != null && genericTypeToSpecificType.TryGetValue(gtd.QualifiedName, out var s) && s is IGenericTypeParameter) {
-                            genericTypeToSpecificType[gtd.QualifiedName] = type;
+                        if (gtd != null && genericTypeToSpecificType.TryGetValue(gtd.Name, out var s) && s is IGenericTypeParameter) {
+                            genericTypeToSpecificType[gtd.Name] = type;
                         }
                         gtIndex++;
                     }
@@ -281,7 +281,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // class B(A[U])
                         // A has T => U
                         specificClassType._genericActualParameters[gp] = 
-                            genericToSpecificTypes.TryGetValue(specificType.QualifiedName, out var v) ? v : null;
+                            genericToSpecificTypes.TryGetValue(specificType.Name, out var v) ? v : null;
                     }
                 }
             }
@@ -307,22 +307,22 @@ namespace Microsoft.Python.Analysis.Types {
                     var keyType = dict.Keys.FirstOrDefault()?.GetPythonType();
                     var valueType = dict.Values.FirstOrDefault()?.GetPythonType();
                     if (!keyType.IsUnknown()) {
-                        specificTypes[gt.FormalGenericParameters[0].QualifiedName] = keyType;
+                        specificTypes[gt.FormalGenericParameters[0].Name] = keyType;
                     }
                     if (!valueType.IsUnknown()) {
-                        specificTypes[gt.FormalGenericParameters[1].QualifiedName] = valueType;
+                        specificTypes[gt.FormalGenericParameters[1].Name] = valueType;
                     }
                     break;
                 case IPythonIterable iter when gt.TypeId == BuiltinTypeId.List && gt.FormalGenericParameters.Count == 1:
                     var itemType = iter.GetIterator().Next.GetPythonType();
                     if (!itemType.IsUnknown()) {
-                        specificTypes[gt.FormalGenericParameters[0].QualifiedName] = itemType;
+                        specificTypes[gt.FormalGenericParameters[0].Name] = itemType;
                     }
                     break;
                 case IPythonCollection coll when gt.TypeId == BuiltinTypeId.Tuple && gt.FormalGenericParameters.Count >= 1:
                     var itemTypes = coll.Contents.Select(m => m.GetPythonType()).ToArray();
                     for (var i = 0; i < Math.Min(itemTypes.Length, gt.FormalGenericParameters.Count); i++) {
-                        specificTypes[gt.FormalGenericParameters[i].QualifiedName] = itemTypes[i];
+                        specificTypes[gt.FormalGenericParameters[i].Name] = itemTypes[i];
                     }
                     break;
             }
@@ -360,7 +360,7 @@ namespace Microsoft.Python.Analysis.Types {
                                     specificType = tt.CreateSpecificType(args);
                                     break;
                                 case IGenericTypeParameter gtd:
-                                    classType.GenericParameters.TryGetValue(gtd.QualifiedName, out specificType);
+                                    classType.GenericParameters.TryGetValue(gtd.Name, out specificType);
                                     break;
                             }
 
@@ -390,7 +390,7 @@ namespace Microsoft.Python.Analysis.Types {
             // as well as qualified name.
             if (!_genericActualParameters.IsNullOrEmpty()) {
                 _nameWithParameters = CodeFormatter.FormatSequence(BaseName, '[', _genericActualParameters.Values);
-                _qualifiedNameWithParameters = CodeFormatter.FormatSequence(BaseName, '[', _genericActualParameters.Values.Select(v => v.QualifiedName));
+                _qualifiedNameWithParameters = CodeFormatter.FormatSequence(BaseName, '[', _genericActualParameters.Values.Select(v => v.Name));
             }
         }
 
