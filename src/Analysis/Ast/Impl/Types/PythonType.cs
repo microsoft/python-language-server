@@ -34,18 +34,13 @@ namespace Microsoft.Python.Analysis.Types {
         private Dictionary<string, IMember> WritableMembers =>
             _members ?? (_members = new Dictionary<string, IMember>());
 
-        public PythonType(
-            string name,
-            Location location,
-            string documentation,
-            BuiltinTypeId typeId = BuiltinTypeId.Unknown
-        ) : this(name, location, typeId) {
+        public PythonType(string name, Location location, string documentation, BuiltinTypeId typeId = BuiltinTypeId.Unknown) 
+            : this(name, location, typeId) {
             BaseName = name ?? throw new ArgumentNullException(nameof(name));
             Documentation = documentation;
         }
 
         private PythonType(string name, Location location, BuiltinTypeId typeId) : base(location) {
-            Check.ArgumentNotNull(nameof(location), location.Module);
             BaseName = name ?? throw new ArgumentNullException(nameof(name));
             _typeId = typeId;
         }
