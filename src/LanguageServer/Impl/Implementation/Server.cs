@@ -108,7 +108,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public async Task InitializedAsync(InitializedParams @params, CancellationToken cancellationToken = default, IReadOnlyList<string> userConfiguredPaths = null) {
-            var initializationOptions = _initParams.initializationOptions;
+            var initializationOptions = _initParams?.initializationOptions;
 
             _services.AddService(new DiagnosticsService(_services));
 
@@ -128,7 +128,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
-            _rootDir = _initParams.rootUri != null ? _initParams.rootUri.ToAbsolutePath() : _initParams.rootPath;
+            _rootDir = _initParams?.rootUri != null ? _initParams.rootUri.ToAbsolutePath() : _initParams?.rootPath;
             if (_rootDir != null) {
                 _rootDir = PathUtils.NormalizePathAndTrim(_rootDir);
             }
@@ -216,7 +216,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         public void HandleUserConfiguredPathsChange(IReadOnlyList<string> paths) {
-            paths = paths ?? _initParams.initializationOptions?.searchPaths;
+            paths = paths ?? _initParams?.initializationOptions?.searchPaths;
 
             var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths);
             if (changed) {
