@@ -49,6 +49,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IIndexManager _indexManager;
         private string _rootDir;
 
+        private InitializeParams _initParams;
+
         private bool _watchSearchPaths;
         private PathsWatcher _pathsWatcher;
         private string[] _searchPaths;
@@ -96,14 +98,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         };
 
-        public async Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken) {
+        public Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken = default) {
             _disposableBag.ThrowIfDisposed();
+            _initParams = @params;
             _clientCaps = @params.capabilities;
             _log = _services.GetService<ILogger>();
 
+            _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
+
+            return Task.FromResult(GetInitializeResult());
+        }
+
+        public async Task InitializedAsync(InitializedParams @params, CancellationToken cancellationToken = default, IReadOnlyList<string> userConfiguredPaths = null) {
+            var initializationOptions = _initParams.initializationOptions;
+
             _services.AddService(new DiagnosticsService(_services));
 
-            var cacheFolderPath = @params.initializationOptions.cacheFolderPath;
+            var cacheFolderPath = initializationOptions?.cacheFolderPath;
             var fs = _services.GetService<IFileSystem>();
             if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
                 _log?.Log(TraceEventType.Warning, Resources.Error_InvalidCachePath);
@@ -119,33 +130,38 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
-            _rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : @params.rootPath;
+            _rootDir = _initParams.rootUri != null ? _initParams.rootUri.ToAbsolutePath() : _initParams.rootPath;
             if (_rootDir != null) {
                 _rootDir = PathUtils.NormalizePathAndTrim(_rootDir);
             }
 
-            Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);
+            Version.TryParse(initializationOptions?.interpreter.properties?.Version, out var version);
 
             var configuration = new InterpreterConfiguration(null, null,
-                interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
+                interpreterPath: initializationOptions?.interpreter.properties?.InterpreterPath,
                 version: version
             );
 
-            var typeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault();
+            var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
 
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken, typeshedPath);
+            userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
+
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken, typeshedPath, userConfiguredPaths);
             _services.AddService(_interpreter);
+
+            _log?.Log(TraceEventType.Information,
+                string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
+                ? Resources.InitializingForGenericInterpreter
+                : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
 
             var fileSystem = _services.GetService<IFileSystem>();
             _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, _rootDir,
-                                            @params.initializationOptions.includeFiles,
-                                            @params.initializationOptions.excludeFiles,
+                                            initializationOptions?.includeFiles,
+                                            initializationOptions?.excludeFiles,
                                             _services.GetService<IIdleTimeService>());
             _indexManager.IndexWorkspace().DoNotWait();
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
-
-            DisplayStartupInfo();
 
             _completionSource = new CompletionSource(
                 ChooseDocumentationSource(_clientCaps?.textDocument?.completion?.completionItem?.documentationFormat),
@@ -161,8 +177,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 ChooseDocumentationSource(sigInfo?.documentationFormat),
                 sigInfo?.parameterInformation?.labelOffsetSupport == true
             );
-
-            return GetInitializeResult();
         }
 
         public Task Shutdown() {
@@ -186,33 +200,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
         #endregion
 
-        #region Private Helpers
-        private void DisplayStartupInfo() {
-            _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
-            _log?.Log(TraceEventType.Information,
-                string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
-                ? Resources.InitializingForGenericInterpreter
-                : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
-        }
-
-        private IDocumentationSource ChooseDocumentationSource(string[] kinds) {
-            if (kinds == null) {
-                return new PlainTextDocumentationSource();
-            }
-
-            foreach (var k in kinds) {
-                switch (k) {
-                    case MarkupKind.Markdown:
-                        return new MarkdownDocumentationSource();
-                    case MarkupKind.PlainText:
-                        return new PlainTextDocumentationSource();
-                }
-            }
-
-            return new PlainTextDocumentationSource();
-        }
-        #endregion
-
         public void HandleWatchPathsChange(bool watchSearchPaths) {
             if (watchSearchPaths == _watchSearchPaths) {
                 return;
@@ -228,6 +215,33 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             ResetPathWatcher();
+        }
+
+        public void HandleUserConfiguredPathsChange(IReadOnlyList<string> paths) {
+            paths = paths ?? _initParams.initializationOptions?.searchPaths;
+
+            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths);
+            if (changed) {
+                ResetAnalyzer();
+            }
+        }
+
+        #region Private Helpers
+        private IDocumentationSource ChooseDocumentationSource(string[] kinds) {
+            if (kinds == null) {
+                return new PlainTextDocumentationSource();
+            }
+
+            foreach (var k in kinds) {
+                switch (k) {
+                    case MarkupKind.Markdown:
+                        return new MarkdownDocumentationSource();
+                    case MarkupKind.PlainText:
+                        return new PlainTextDocumentationSource();
+                }
+            }
+
+            return new PlainTextDocumentationSource();
         }
 
         private void ResetPathWatcher() {
@@ -251,12 +265,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
             }).DoNotWait();
         }
-
-        public void HandleUserConfiguredPathsChange(IReadOnlyList<string> paths) {
-            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths);
-            if (changed) {
-                ResetAnalyzer();
-            }
-        }
+        #endregion
     }
 }

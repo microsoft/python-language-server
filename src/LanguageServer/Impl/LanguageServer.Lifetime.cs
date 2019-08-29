@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,22 +27,50 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public partial class LanguageServer {
         private InitializeParams _initParams;
         private bool _shutdown;
-        private Action<Task, object> DisposeStateContinuation { get; } = (t, o) => ((IDisposable)o).Dispose();
+
+        private Task<IDisposable> _initializedPriorityTask;
 
         [JsonRpcMethod("initialize")]
         public async Task<InitializeResult> Initialize(JToken token, CancellationToken cancellationToken) {
             _initParams = token.ToObject<InitializeParams>();
             MonitorParentProcess(_initParams);
             using (await _prioritizer.InitializePriorityAsync(cancellationToken)) {
+                // Force the next handled request to be "initialized", where the work actually happens.
+                _initializedPriorityTask = _prioritizer.InitializePriorityAsync(default);
                 return await _server.InitializeAsync(_initParams, cancellationToken);
             }
         }
 
         [JsonRpcMethod("initialized")]
-        public Task Initialized(JToken token, CancellationToken cancellationToken) {
-            //await _server.Initialized(ToObject<InitializedParams>(token), cancellationToken);
-            _rpc.NotifyAsync("python/languageServerStarted").DoNotWait();
-            return Task.CompletedTask;
+        public async Task Initialized(JToken token, CancellationToken cancellationToken) {
+            using (await _initializedPriorityTask) {
+                var pythonSection = await GetPythonConfigurationAsync(cancellationToken, 500);
+                var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
+
+                await _server.InitializedAsync(ToObject<InitializedParams>(token), cancellationToken, userConfiguredPaths);
+                await _rpc.NotifyAsync("python/languageServerStarted");
+            }
+        }
+
+        private async Task<JToken> GetPythonConfigurationAsync(CancellationToken cancellationToken = default, int? cancelAfterMilli = null) {
+            try {
+                using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) {
+                    if (cancelAfterMilli.HasValue) {
+                        cts.CancelAfter(cancelAfterMilli.Value);
+                    }
+                    var args = new ConfigurationParams {
+                        items = new[] {
+                            new ConfigurationItem { section = "python" }
+                        }
+                    };
+                    var configs = await _rpc.InvokeWithParameterObjectAsync<JToken>("workspace/configuration", args, cancellationToken);
+                    return configs?[0];
+                }
+            } catch (OperationCanceledException) { }
+
+            // The cancellation of this token could have been caught above instead of the timeout, so rethrow it.
+            cancellationToken.ThrowIfCancellationRequested();
+            return null;
         }
 
         [JsonRpcMethod("shutdown")]

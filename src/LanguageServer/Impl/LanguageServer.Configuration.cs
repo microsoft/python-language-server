@@ -53,19 +53,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
 
-                var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", Array.Empty<string>());
-                var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
-                var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
-
-                var userConfiguredPaths = analysisSearchPaths ?? autoCompleteExtraPaths;
-                if (analysisUsePYTHONPATH) {
-                    var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
-                    if (pythonpath != null) {
-                        var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
-                        var paths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
-                        userConfiguredPaths = userConfiguredPaths.Concat(paths).ToList();
-                    }
-                }
+                var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 HandleUserConfiguredPathsChanges(userConfiguredPaths);
                 HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
@@ -117,6 +105,40 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void HandlePathWatchChanges(bool watchSearchPaths) => _server.HandleWatchPathsChange(watchSearchPaths);
+
+        /// <summary>
+        /// Returns the user configured paths based on the python section of the configuration. If nothing is set,
+        /// then it will return null.
+        /// </summary>
+        /// <param name="pythonSection">The python section of the user configuration.</param>
+        /// <returns>A list of paths, or null if nothing is set.</returns>
+        private IReadOnlyList<string> GetUserConfiguredPaths(JToken pythonSection) {
+            if (pythonSection == null) {
+                return null;
+            }
+
+            var autoComplete = pythonSection["autoComplete"];
+            var analysis = pythonSection["analysis"];
+
+            var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
+            var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
+            var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
+
+            var userConfiguredPaths = analysisSearchPaths ?? autoCompleteExtraPaths;
+            if (analysisUsePYTHONPATH) {
+                var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
+                if (pythonpath != null) {
+                    var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
+                    var paths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                    if (paths.Length > 0) {
+                        userConfiguredPaths = userConfiguredPaths ?? Array.Empty<string>();
+                        userConfiguredPaths = userConfiguredPaths.Concat(paths).ToList();
+                    }
+                }
+            }
+
+            return userConfiguredPaths;
+        }
 
         private void HandleUserConfiguredPathsChanges(IReadOnlyList<string> paths) => _server.HandleUserConfiguredPathsChange(paths);
     }

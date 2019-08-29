@@ -133,6 +133,11 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public Interpreter interpreter;
 
         /// <summary>
+        /// Paths to search when attempting to resolve module imports.
+        /// </summary>
+        public string[] searchPaths = Array.Empty<string>();
+
+        /// <summary>
         /// Paths to search for module stubs.
         /// </summary>
         public string[] typeStubSearchPaths = Array.Empty<string>();
@@ -278,7 +283,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
                 /// property.The order describes the preferred format of the client.
                 /// </summary>
                 public string[] documentationFormat;
-                
+
                 /// <summary>
                 /// Client capabilities specific to parameter information.
                 /// </summary>

@@ -75,10 +75,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IServiceManager sm,
             CancellationToken cancellationToken = default,
             string typeshedPath = null,
-            IReadOnlyList<string> userConfiguredSearchPaths = null
+            IReadOnlyList<string> userConfiguredPaths = null
         ) {
             var pi = new PythonInterpreter(configuration);
-            await pi.LoadBuiltinTypesAsync(root, sm, cancellationToken, typeshedPath, userConfiguredSearchPaths);
+            await pi.LoadBuiltinTypesAsync(root, sm, cancellationToken, typeshedPath, userConfiguredPaths);
 
             // Specialize typing
             TypingModule.Create(sm);
