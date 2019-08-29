@@ -61,8 +61,8 @@ namespace Microsoft.Python.Analysis {
         /// <summary>
         /// Gets specific type for the given generic type parameter, resolving bounds as well
         /// </summary>
-        public static bool GetSpecificType(this IPythonClassType cls, IGenericTypeParameter param, out IPythonType specificType) {
-            cls.GenericParameters.TryGetValue(param, out specificType);
+        public static bool GetSpecificType(this IPythonClassType cls, string paramName, out IPythonType specificType) {
+            cls.GenericParameters.TryGetValue(paramName, out specificType);
             // If type has not been found, check if the type parameter has an upper bound and use that
             if (specificType is IGenericTypeParameter gtp && gtp.Bound != null) {
                 specificType = gtp.Bound;

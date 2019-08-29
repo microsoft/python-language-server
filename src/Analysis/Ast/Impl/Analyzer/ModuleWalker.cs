@@ -248,6 +248,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
                     continue;
                 }
+
+                if (sourceVar?.Source == VariableSource.Import &&
+                   sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
+                    // Keep imported types as they are defined in the library. For example,
+                    // 'requests' imports NullHandler as 'from logging import NullHandler'.
+                    // But 'requests' also declares NullHandler in its stub (but not in the main code)
+                    // and that declaration does not have documentation or location. Therefore avoid
+                    // taking types that are stub-only when similar type is imported from another
+                    // module that also has a stub.
+                    continue;
+                }
+
                 TryReplaceMember(v, sourceType, stubType);
             }
 
@@ -257,7 +269,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void TryReplaceMember(IVariable v, IPythonType sourceType, IPythonType stubType) {
             // If type does not exist in module, but exists in stub, declare it unless it is an import.
             // If types are the classes, take class from the stub, then add missing members.
-            // Otherwise, replace type from one from the stub.
+            // Otherwise, replace type by one from the stub.
             switch (sourceType) {
                 case null:
                     // Nothing in sources, but there is type in the stub. Declare it.
@@ -379,28 +391,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (s != d && s is PythonType src && d is PythonType dst) {
                 // If type is a class, then doc can either come from class definition node of from __init__.
                 // If class has doc from the class definition, don't stomp on it.
-                var transferDoc = true;
                 if (src is PythonClassType srcClass && dst is PythonClassType dstClass) {
                     // Higher lever source wins
                     if (srcClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ||
                        (srcClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Init && dstClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Base)) {
                         dstClass.SetDocumentation(srcClass.Documentation);
-                        transferDoc = false;
                     }
-                }
-
-                // Sometimes destination (stub type) already has documentation. This happens when stub type 
-                // is used to augment more than one type. For example, in threading module RLock stub class
-                // replaces both  RLock function and _RLock class making 'factory' function RLock to look 
-                // like a class constructor. Effectively a single  stub type is used for more than one type
-                // in the source and two source types may have different documentation. Thus transferring doc
-                // from one source type affects documentation of another type. It may be better to clone stub
-                // type and separate instances for separate source type, but for now we'll just avoid stomping
-                // on the existing documentation. 
-                if (transferDoc && string.IsNullOrEmpty(dst.Documentation)) {
-                    var srcDocumentation = src.Documentation;
-                    if (!string.IsNullOrEmpty(srcDocumentation)) {
-                        dst.SetDocumentation(srcDocumentation);
+                } else {
+                    // Sometimes destination (stub type) already has documentation. This happens when stub type 
+                    // is used to augment more than one type. For example, in threading module RLock stub class
+                    // replaces both  RLock function and _RLock class making 'factory' function RLock to look 
+                    // like a class constructor. Effectively a single  stub type is used for more than one type
+                    // in the source and two source types may have different documentation. Thus transferring doc
+                    // from one source type affects documentation of another type. It may be better to clone stub
+                    // type and separate instances for separate source type, but for now we'll just avoid stomping
+                    // on the existing documentation. 
+                    if (string.IsNullOrEmpty(dst.Documentation)) {
+                        var srcDocumentation = src.Documentation;
+                        if (!string.IsNullOrEmpty(srcDocumentation)) {
+                            dst.SetDocumentation(srcDocumentation);
+                        }
                     }
                 }
 

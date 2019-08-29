@@ -204,8 +204,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// class B(A[int, str]): ...
         /// Has the map {T: int, K: str}
         /// </summary>
-        public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters =>
-                _genericActualParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        public virtual IReadOnlyDictionary<string, IPythonType> GenericParameters =>
+                _genericActualParameters ?? EmptyDictionary<string, IPythonType>.Instance;
 
         #endregion
 

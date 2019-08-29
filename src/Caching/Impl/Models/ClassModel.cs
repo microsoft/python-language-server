@@ -125,7 +125,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             GenericBaseParameters = GenericBaseParameters ?? Array.Empty<string>();
 
             GenericParameterValues = cls.GenericParameters
-                .Select(p => new GenericParameterValueModel { Name = p.Key.Name, Type = p.Value.GetPersistentQualifiedName() })
+                .Select(p => new GenericParameterValueModel { Name = p.Key, Type = p.Value.GetPersistentQualifiedName() })
                 .ToArray();
         }
 
@@ -143,7 +143,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 _cls.StoreGenericParameters(_cls,
                     _cls.GenericParameters.Keys.ToArray(),
                     GenericParameterValues.ToDictionary(
-                        k => _cls.GenericParameters.Keys.First(x => x.Name == k.Name),
+                        k => _cls.GenericParameters.Keys.First(x => x == k.Name),
                         v => mf.ConstructType(v.Type)
                     )
                 );

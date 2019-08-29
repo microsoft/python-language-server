@@ -79,8 +79,8 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public ClassDefinition ClassDefinition => (InnerType as IPythonClassType)?.ClassDefinition;
         public IReadOnlyList<IPythonType> Mro => (InnerType as IPythonClassType)?.Mro ?? Array.Empty<IPythonType>();
         public IReadOnlyList<IPythonType> Bases => (InnerType as IPythonClassType)?.Bases ?? Array.Empty<IPythonType>();
-        public IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters 
-            => (InnerType as IPythonClassType)?.GenericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        public IReadOnlyDictionary<string, IPythonType> GenericParameters 
+            => (InnerType as IPythonClassType)?.GenericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
         #endregion
 
         public static IPythonCollection CreateList(IPythonModule declaringModule, IArgumentSet args) {
