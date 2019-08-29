@@ -4,7 +4,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Utilities {
-    public sealed class ValueEnumerator {
+    internal sealed class ValueEnumerator {
         private readonly IMember _value;
         private readonly IMember _unknown;
         private readonly IMember[] _values;

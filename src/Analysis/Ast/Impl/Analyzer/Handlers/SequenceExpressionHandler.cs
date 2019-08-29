@@ -59,6 +59,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     case StarredExpression stx when stx.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
+                    case ParenthesisExpression pex when pex.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
+                        break;
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;

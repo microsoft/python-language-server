@@ -42,6 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     case NameExpression nameExpr when !string.IsNullOrEmpty(nameExpr.Name):
                         Eval.DeclareVariable(nameExpr.Name, context, VariableSource.Declaration, item);
                         break;
+                    case ParenthesisExpression parExpr:
                     case SequenceExpression seqExpr:
                         var sequenceHandler = new SequenceExpressionHandler(Walker);
                         SequenceExpressionHandler.Assign(new[] { item.Variable }, context, Eval);

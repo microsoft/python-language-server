@@ -150,12 +150,55 @@ class Test:
         pass
 
 
-with Test() as (a):
+with Test() as a:
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
             // Uses context manager type when return type of __enter__ is unknown
             analysis.Should().HaveVariable("a").OfType("Test");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task WithSingleElementTuple() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> int:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as (a):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            // Uses context manager type when return type of __enter__ is unknown
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithSingleElementList() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> int:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as [a]:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            // Uses context manager type when return type of __enter__ is unknown
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
+        }
+
     }
 }

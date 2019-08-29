@@ -717,6 +717,46 @@ with Test() as [hi, hello]:
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task WithSingleElementTuple() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> int:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as (a):
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithSingleElementList() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> int:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as [a]:
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();
