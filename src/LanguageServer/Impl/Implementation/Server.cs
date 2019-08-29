@@ -44,7 +44,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IPythonInterpreter _interpreter;
         private IRunningDocumentTable _rdt;
-        private ClientCapabilities _clientCaps;
         private ILogger _log;
         private IIndexManager _indexManager;
         private string _rootDir;
@@ -101,7 +100,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken = default) {
             _disposableBag.ThrowIfDisposed();
             _initParams = @params;
-            _clientCaps = @params.capabilities;
             _log = _services.GetService<ILogger>();
 
             _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
@@ -143,9 +141,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             );
 
             var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
-
             userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
-
             _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken, typeshedPath, userConfiguredPaths);
             _services.AddService(_interpreter);
 
@@ -163,16 +159,18 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
 
+            var textDocCaps = _initParams?.capabilities?.textDocument;
+
             _completionSource = new CompletionSource(
-                ChooseDocumentationSource(_clientCaps?.textDocument?.completion?.completionItem?.documentationFormat),
+                ChooseDocumentationSource(textDocCaps?.completion?.completionItem?.documentationFormat),
                 Settings.completion
             );
 
             _hoverSource = new HoverSource(
-                ChooseDocumentationSource(_clientCaps?.textDocument?.hover?.contentFormat)
+                ChooseDocumentationSource(textDocCaps?.hover?.contentFormat)
             );
 
-            var sigInfo = _clientCaps?.textDocument?.signatureHelp?.signatureInformation;
+            var sigInfo = textDocCaps?.signatureHelp?.signatureInformation;
             _signatureSource = new SignatureSource(
                 ChooseDocumentationSource(sigInfo?.documentationFormat),
                 sigInfo?.parameterInformation?.labelOffsetSupport == true
