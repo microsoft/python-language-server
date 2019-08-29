@@ -109,6 +109,12 @@ namespace Microsoft.Python.Analysis.Types {
                     return returnType.GetPythonType().Name;
                 }
             }
+            
+            // Use annotation value if it is there
+            if(_fromAnnotation && !StaticReturnValue.IsUnknown()) {
+                return StaticReturnValue.GetPythonType().Name;
+            }
+
             return _returnDocumentation;
         }
 
