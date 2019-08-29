@@ -56,15 +56,15 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             using (var fileStream = MakeStream("x = 1")) {
                 SetFileOpen(_fileSystem, testFilePath, fileStream);
-                IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion);
-                var ast = await indexParser.ParseAsync(testFilePath);
+                using (IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion)) {
+                    var ast = await indexParser.ParseAsync(testFilePath);
 
-                var symbols = GetIndexSymbols(ast);
-                symbols.Should().HaveCount(1);
-                symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
-                symbols.First().Name.Should().BeEquivalentTo("x");
+                    var symbols = GetIndexSymbols(ast);
+                    symbols.Should().HaveCount(1);
+                    symbols.First().Kind.Should().BeEquivalentTo(SymbolKind.Variable);
+                    symbols.First().Name.Should().BeEquivalentTo("x");
+                }
             }
-
         }
 
         private IReadOnlyList<HierarchicalSymbol> GetIndexSymbols(PythonAst ast) {
@@ -81,8 +81,9 @@ namespace Microsoft.Python.LanguageServer.Tests {
             _fileSystem.FileExists(testFilePath).Returns(true);
             SetFileOpen(_fileSystem, testFilePath, _ => throw new FileNotFoundException());
 
-            IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion);
-            var ast = await indexParser.ParseAsync(testFilePath);
+            using (IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion)) {
+                await indexParser.ParseAsync(testFilePath);
+            }
         }
 
         [TestMethod, Priority(0)]
@@ -94,14 +95,15 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 SetFileOpen(_fileSystem, testFilePath, fileStream);
             }
 
-            IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion);
-            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-            cancellationTokenSource.Cancel();
+            using (IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion))
+            using (var cancellationTokenSource = new CancellationTokenSource()) {
+                cancellationTokenSource.Cancel();
 
-            Func<Task> parse = async () => {
-                await indexParser.ParseAsync(testFilePath, cancellationTokenSource.Token);
-            };
-            parse.Should().Throw<TaskCanceledException>();
+                Func<Task> parse = async () => {
+                    await indexParser.ParseAsync(testFilePath, cancellationTokenSource.Token);
+                };
+                parse.Should().Throw<TaskCanceledException>();
+            }
         }
 
         private void SetFileOpen(IFileSystem fileSystem, string path, Stream stream) {
