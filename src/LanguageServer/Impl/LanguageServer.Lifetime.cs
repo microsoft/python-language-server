@@ -44,7 +44,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("initialized")]
         public async Task Initialized(JToken token, CancellationToken cancellationToken) {
             using (await _initializedPriorityTask) {
-                var pythonSection = await GetPythonConfigurationAsync(cancellationToken, 500);
+                var pythonSection = await GetPythonConfigurationAsync(cancellationToken, 200);
                 var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 await _server.InitializedAsync(ToObject<InitializedParams>(token), cancellationToken, userConfiguredPaths);
@@ -66,7 +66,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     var configs = await _rpc.InvokeWithParameterObjectAsync<JToken>("workspace/configuration", args, cancellationToken);
                     return configs?[0];
                 }
-            } catch (OperationCanceledException) { }
+            } catch (Exception) { }
 
             // The cancellation of this token could have been caught above instead of the timeout, so rethrow it.
             cancellationToken.ThrowIfCancellationRequested();
