@@ -302,7 +302,7 @@ namespace Microsoft.Python.Analysis.Types {
                     var declared = eval.LookupNameInScopes(b.Name, out var scope);
                     if (declared != null && scope != null) {
                         var v = scope.Variables[b.Name];
-                        if (v.Source != VariableSource.Import && v.Value is IPythonClassType cls && cls.Location.IndexSpan.Start >= Location.IndexSpan.Start) {
+                        if (v.Source != VariableSource.Import && v.Value is IPythonClassType cls && cls.IsDeclaredAfter(Location)) {
                             // There is a declaration with the same name, but it appears later in the module. Use the import.
                             if (!importedType.IsUnknown()) {
                                 newBases.Add(importedType);
