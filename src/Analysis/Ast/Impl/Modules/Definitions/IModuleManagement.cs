@@ -27,6 +27,16 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </summary>
     public interface IModuleManagement: IModuleResolution {
         /// <summary>
+        /// Builtins module name.
+        /// </summary>
+        string BuiltinModuleName { get; }
+
+        /// <summary>
+        /// Builtins module.
+        /// </summary>
+        IBuiltinsPythonModule BuiltinsModule { get; }
+
+        /// <summary>
         /// Locates module by path.
         /// </summary>
         /// <param name="filePath"></param>
