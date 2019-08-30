@@ -175,7 +175,6 @@ with Test() as (a):
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            // Uses context manager type when return type of __enter__ is unknown
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
 
@@ -196,9 +195,7 @@ with Test() as [a]:
     pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            // Uses context manager type when return type of __enter__ is unknown
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int);
         }
-
     }
 }
