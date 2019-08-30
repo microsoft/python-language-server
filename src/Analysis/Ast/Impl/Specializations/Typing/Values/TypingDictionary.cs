@@ -19,23 +19,18 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Values
-{
+namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     /// <summary>
     /// Represents instance of typing.Dict[TK, TV]
     /// </summary>
-    internal class TypingDictionary : PythonDictionary
-    {
+    internal class TypingDictionary : PythonDictionary {
         private readonly TypingDictionaryType _dictType;
 
-        public TypingDictionary(TypingDictionaryType dictType)
-            : base(dictType, EmptyDictionary<IMember, IMember>.Instance)
-        {
+        public TypingDictionary(TypingDictionaryType dictType) : base(dictType, EmptyDictionary<IMember, IMember>.Instance) {
             _dictType = dictType;
         }
 
-        public override IPythonIterator GetIterator()
-        {
+        public override IPythonIterator GetIterator() {
             var iteratorTypeId = _dictType.TypeId.GetIteratorTypeId();
             var iteratorType = new TypingIteratorType(_dictType.ItemType, iteratorTypeId, Type.DeclaringModule.Interpreter);
             return new TypingIterator(iteratorType, this);
@@ -44,13 +39,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values
         public override IMember Index(IArgumentSet args) =>
             _dictType.ValueType.CreateInstance(args);
 
-        public override IMember Call(string memberName, IArgumentSet args)
-        {
+        public override IMember Call(string memberName, IArgumentSet args) {
             var itemType = _dictType.ItemType;
             var valueType = _dictType.ValueType;
             // Specializations
-            switch (memberName)
-            {
+            switch (memberName) {
                 case @"get":
                     return valueType.CreateInstance(args);
                 case @"items":

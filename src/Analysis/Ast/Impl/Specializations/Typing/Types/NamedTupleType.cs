@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override IMember GetMember(string name) {
             var index = ItemNames.IndexOf(n => n == name);
             if (index >= 0 && index < ItemTypes.Count) {
-                return ItemTypes[index]?.CreateInstance();
+                return ItemTypes[index].CreateInstance();
             }
             return base.GetMember(name);
         }
