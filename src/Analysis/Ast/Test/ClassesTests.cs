@@ -698,6 +698,18 @@ x = A(1)[0]
         }
 
         [TestMethod, Priority(0)]
+        public async Task CircularBase() {
+            const string code = @"
+class A(B): ...
+class B(A): ...
+
+x = A(1)[0]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ImportedBaseSameName() {
             const string code = @"
 from Base import A, B

@@ -200,7 +200,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Consider
             //    from X import A
             //    class A(A): ...
-            bases = DisambiguateBases(bases, eval);
+            bases = DisambiguateBases(bases, eval).ToArray();
 
             // For Python 3+ attach object as a base class by default except for the object class itself.
             if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
@@ -291,7 +291,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             if (eval == null) {
-                return bases.Where(b => !(b.IsUnknown() || Equals(b)));
+                return FilterCircularBases(bases).Where(b => !b.IsUnknown());
             }
 
             var newBases = new List<IPythonType>();
@@ -313,11 +313,27 @@ namespace Microsoft.Python.Analysis.Types {
                     }
                 }
 
-                if (!(b.IsUnknown() || Equals(b))) {
+                if (!b.IsUnknown()) {
                     newBases.Add(b);
                 }
             }
-            return newBases;
+            return FilterCircularBases(newBases);
+        }
+
+        private IEnumerable<IPythonType> FilterCircularBases(IEnumerable<IPythonType> bases) {
+            // Inspect each base chain and exclude bases that chains to this class.
+            foreach(var b in bases.Where(x => !Equals(x))) {
+                if (b is IPythonClassType cls) {
+                    var chain = cls.Bases
+                        .MaybeEnumerate()
+                        .OfType<IPythonClassType>()
+                        .SelectMany(x => x.TraverseDepthFirst(c => c.Bases.MaybeEnumerate().OfType<IPythonClassType>()));
+                    if (chain.Any(Equals)) {
+                        continue;
+                    }
+                }
+                yield return b;
+            }
         }
     }
 }
