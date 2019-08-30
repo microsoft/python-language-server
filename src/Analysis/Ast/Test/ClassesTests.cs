@@ -685,5 +685,47 @@ class A(IOError): ...
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveClass("A").Which.Should().HaveBase("OSError");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task SelfBase() {
+            const string code = @"
+class A(A): ...
+
+x = A(1)[0]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportedBaseSameName() {
+            const string code = @"
+from Base import A, B
+
+class A(A, B):
+    def methodA(self, x):
+        return x
+
+class C(B): ...
+
+class B(A):
+    def methodB(self, x):
+        return x
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A").Which
+                .Should().HaveMethod("methodABase")
+                .And.HaveMethod("methodBBase");
+
+            analysis.Should().HaveClass("B").Which
+                .Should().HaveMethod("methodA")
+                .And.HaveMethod("methodB")
+                .And.HaveMethod("methodABase")
+                .And.HaveMethod("methodBBase");
+
+            analysis.Should().HaveClass("C").Which
+                .Should().HaveMethod("methodBBase")
+                .And.NotHaveMembers("methodB");
+        }
     }
 }

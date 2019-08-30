@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -30,7 +31,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
-    internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
+    internal partial class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
@@ -45,11 +46,8 @@ namespace Microsoft.Python.Analysis.Types {
             Check.ArgumentNotNull(nameof(location), location.Module);
         }
 
-        public PythonClassType(
-            ClassDefinition classDefinition,
-            Location location,
-            BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+        public PythonClassType(ClassDefinition classDefinition, Location location, BuiltinTypeId builtinTypeId = BuiltinTypeId.Type)
+            : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             Check.ArgumentNotNull(nameof(location), location.Module);
             location.Module.AddAstNode(this, classDefinition);
         }
@@ -194,12 +192,15 @@ namespace Microsoft.Python.Analysis.Types {
 
         #endregion
 
-        internal void SetBases(IEnumerable<IPythonType> bases) {
+        internal void SetBases(IEnumerable<IPythonType> bases, IExpressionEvaluator eval = null) {
             if (_bases != null) {
                 return; // Already set
             }
 
-            bases = bases != null ? bases.Where(b => !b.GetPythonType().IsUnknown()).ToArray() : Array.Empty<IPythonType>();
+            // Consider
+            //    from X import A
+            //    class A(A): ...
+            bases = DisambiguateBases(bases, eval);
 
             // For Python 3+ attach object as a base class by default except for the object class itself.
             if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
@@ -233,6 +234,7 @@ namespace Microsoft.Python.Analysis.Types {
             if (type == null) {
                 return Array.Empty<IPythonType>();
             }
+
             recursionProtection = recursionProtection ?? new HashSet<IPythonType>();
             if (!recursionProtection.Add(type)) {
                 return Array.Empty<IPythonType>();
@@ -283,5 +285,39 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
+        private IEnumerable<IPythonType> DisambiguateBases(IEnumerable<IPythonType> bases, IExpressionEvaluator eval) {
+            if (bases == null) {
+                return Array.Empty<IPythonType>();
+            }
+
+            if (eval == null) {
+                return bases.Where(b => !(b.IsUnknown() || Equals(b)));
+            }
+
+            var newBases = new List<IPythonType>();
+            foreach (var b in bases) {
+                var imported = eval.LookupImportedNameInScopes(b.Name, out _);
+                if (imported is IPythonType importedType) {
+                    // Variable with same name as the base was imported.
+                    // If there is also a local declaration, we need to figure out which one wins.
+                    var declared = eval.LookupNameInScopes(b.Name, out var scope);
+                    if (declared != null && scope != null) {
+                        var v = scope.Variables[b.Name];
+                        if (v.Source != VariableSource.Import && v.Value is IPythonClassType cls && cls.Location.IndexSpan.Start >= Location.IndexSpan.Start) {
+                            // There is a declaration with the same name, but it appears later in the module. Use the import.
+                            if (!importedType.IsUnknown()) {
+                                newBases.Add(importedType);
+                            }
+                            continue;
+                        }
+                    }
+                }
+
+                if (!(b.IsUnknown() || Equals(b))) {
+                    newBases.Add(b);
+                }
+            }
+            return newBases;
+        }
     }
 }

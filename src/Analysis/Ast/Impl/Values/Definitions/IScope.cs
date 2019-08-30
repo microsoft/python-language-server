@@ -74,6 +74,11 @@ namespace Microsoft.Python.Analysis.Values {
         IVariableCollection Globals { get; }
 
         /// <summary>
+        /// Collection of variables imported from other modules.
+        /// </summary>
+        IVariableCollection Imported { get; }
+
+        /// <summary>
         /// Module the scope belongs to.
         /// </summary>
         IPythonModule Module { get; }

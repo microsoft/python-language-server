@@ -29,6 +29,7 @@ namespace Microsoft.Python.Analysis.Values {
         private VariableCollection _variables;
         private VariableCollection _nonLocals;
         private VariableCollection _globals;
+        private VariableCollection _imported;
         private List<Scope> _childScopes;
 
         public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
@@ -50,6 +51,7 @@ namespace Microsoft.Python.Analysis.Values {
         public IVariableCollection Variables => _variables ?? VariableCollection.Empty;
         public IVariableCollection NonLocals => _nonLocals ?? VariableCollection.Empty;
         public IVariableCollection Globals => _globals ?? VariableCollection.Empty;
+        public IVariableCollection Imported => _imported ?? VariableCollection.Empty;
 
         public IGlobalScope GlobalScope {
             get {
@@ -85,6 +87,8 @@ namespace Microsoft.Python.Analysis.Values {
         public void DeclareGlobal(string name, Location location)
             => (_globals ?? (_globals = new VariableCollection())).DeclareVariable(name, null, VariableSource.Locality, location);
 
+        public void DeclareImported(string name, IMember value, Location location = default)
+            => (_imported ?? (_imported = new VariableCollection())).DeclareVariable(name, value, VariableSource.Import, location);
         #endregion
 
         internal void AddChildScope(Scope s) => (_childScopes ?? (_childScopes = new List<Scope>())).Add(s);
@@ -117,26 +121,5 @@ namespace Microsoft.Python.Analysis.Values {
                 VariableCollection.DeclareVariable("__self__", objType, VariableSource.Builtin, location);
             }
         }
-    }
-
-    internal class EmptyGlobalScope : IGlobalScope {
-        public EmptyGlobalScope(IPythonModule module) {
-            GlobalScope = this;
-            Module = module;
-        }
-        public IPythonModule Module { get; }
-        public string Name => string.Empty;
-        public ScopeStatement Node => Module.Analysis.Ast;
-        public IScope OuterScope => null;
-        public IGlobalScope GlobalScope { get; }
-        public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
-        public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Repeat(this, 1);
-        public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Repeat(this, 1);
-        public IVariableCollection Variables => VariableCollection.Empty;
-        public IVariableCollection NonLocals => VariableCollection.Empty;
-        public IVariableCollection Globals => VariableCollection.Empty;
-
-        public void DeclareVariable(string name, IMember value, VariableSource source, Location location) { }
-        public void LinkVariable(string name, IVariable v, Location location) { }
     }
 }

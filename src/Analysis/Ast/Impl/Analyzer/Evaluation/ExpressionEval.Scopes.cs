@@ -49,6 +49,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public void DeclareVariable(string name, IMember value, VariableSource source, Location location, bool overwrite = true) {
             var member = GetInScope(name);
             if (member != null && !overwrite) {
+                if (source == VariableSource.Import) {
+                    // Duplicate declaration so if variable gets overwritten it can still be retrieved. Consider:
+                    //    from X import A
+                    //    class A(A): ...
+                    CurrentScope.DeclareImported(name, value, location);
+                }
                 return;
             }
             if (source == VariableSource.Import && value is IVariable v) {
