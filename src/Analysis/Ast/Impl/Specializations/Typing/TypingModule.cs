@@ -121,7 +121,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["Union"] = new SpecializedGenericType("Union", CreateUnion, this);
 
             _members["Counter"] = Specialized.Function("Counter", this, GetMemberDocumentation("Counter"),
-                new PythonInstance(Interpreter.GetBuiltinType(BuiltinTypeId.Int)));
+                Interpreter.GetBuiltinType(BuiltinTypeId.Int)).CreateInstance();
 
             _members["SupportsInt"] = Interpreter.GetBuiltinType(BuiltinTypeId.Int);
             _members["SupportsFloat"] = Interpreter.GetBuiltinType(BuiltinTypeId.Float);

@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
@@ -23,7 +24,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             : base(null, BuiltinTypeId.Dict, interpreter, isMutable) {
         }
 
-        public override IMember CreateInstance(string typeName, IArgumentSet args) {
+        public override IPythonInstance CreateInstance(IArgumentSet args) {
             var contents = args.Arguments.Count == 1
                 ? args.Arguments[0].Value as IReadOnlyDictionary<IMember, IMember>
                 : EmptyDictionary<IMember, IMember>.Instance;

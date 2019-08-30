@@ -16,6 +16,9 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
+using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values.Collections;
 

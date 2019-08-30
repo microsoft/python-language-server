@@ -364,7 +364,7 @@ namespace Microsoft.Python.Analysis.Types {
                             }
 
                             if (specificType != null) {
-                                classType.AddMember(m.Key, new PythonInstance(specificType), true);
+                                classType.AddMember(m.Key, specificType.CreateInstance(args), true);
                             }
                             break;
                         }

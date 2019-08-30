@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName = null, IArgumentSet args = null) => this;
+        public IPythonInstance CreateInstance(IArgumentSet args = null) => new PythonInstance(this);
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
     }

@@ -83,15 +83,15 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public bool IsGeneric => true;
 
-        public IMember CreateInstance(string typeName, IArgumentSet args) {
+        public IPythonInstance CreateInstance(IArgumentSet args) {
             var types = args.Values<IPythonType>();
             if (types.Count != args.Arguments.Count) {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));
             }
             var specific = CreateSpecificType(args);
             return specific == null
-                ? DeclaringModule.Interpreter.UnknownType
-                : specific.CreateInstance(typeName);
+                ? DeclaringModule.Interpreter.UnknownType.CreateInstance(args)
+                : specific.CreateInstance(args);
         }
 
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;

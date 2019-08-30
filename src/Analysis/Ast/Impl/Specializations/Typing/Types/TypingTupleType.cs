@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 
-        public override IMember CreateInstance(string typeName, IArgumentSet args)
+        public override IPythonInstance CreateInstance(IArgumentSet args)
             => new TypingTuple(this);
 
         public override IMember Index(IPythonInstance instance, IArgumentSet args) {
@@ -50,7 +50,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 n = ItemTypes.Count + n; // -1 means last, etc.
             }
             if (n >= 0 && n < ItemTypes.Count) {
-                return ItemTypes[n];
+                var t = ItemTypes[n];
+                return t.CreateInstance(args);
             }
             return UnknownType;
         }

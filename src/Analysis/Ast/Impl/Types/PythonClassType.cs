@@ -132,9 +132,9 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IMember CreateInstance(string typeName, IArgumentSet args) {
+        public override IPythonInstance CreateInstance(IArgumentSet args) {
             // Specializations
-            switch (typeName) {
+            switch (Name) {
                 case "list":
                     return PythonCollectionType.CreateList(DeclaringModule.Interpreter, args);
                 case "dict": {

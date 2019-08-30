@@ -176,12 +176,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var initOverload = initFunc?.DeclaringType == cls ? initFunc.Overloads.FirstOrDefault() : null;
 
             var argSet = initOverload != null
-                    ? new ArgumentSet(initFunc, 0, null, callExpr, this)
+                    ? new ArgumentSet(initFunc, 0, cls, callExpr, this)
                     : new ArgumentSet(constructorArguments, callExpr, this);
 
             argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet);
-            return new PythonInstance(specificType);
+            return specificType.CreateInstance(argSet);
         }
 
         private ScopeStatement GetScope(IMember m) {

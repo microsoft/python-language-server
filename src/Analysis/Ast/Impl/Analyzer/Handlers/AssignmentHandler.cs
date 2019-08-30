@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (node.Left.FirstOrDefault() is SequenceExpression seq) {
                 // Tuple = Tuple. Transfer values.
                 var seqHandler = new SequenceExpressionHandler(Walker);
-                seqHandler.HandleAssignment(seq.Items, node.Right, value);
+                seqHandler.HandleAssignment(new[] { seq }, node.Right, value);
                 return;
             }
 
@@ -130,7 +130,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     instance = value;
                 }
             }
-            instance = instance ?? variableType?.CreateInstance(variableType.Name, ArgumentSet.Empty(expr, Eval)) ?? Eval.UnknownType;
+            var args = ArgumentSet.Empty(expr, Eval);
+            instance = instance ?? variableType?.CreateInstance(args) ?? Eval.UnknownType.CreateInstance(args);
 
             if (expr is NameExpression ne) {
                 Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, ne);

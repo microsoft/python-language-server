@@ -19,31 +19,40 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
 
-namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
+namespace Microsoft.Python.Analysis.Specializations.Typing.Values
+{
     /// <summary>
     /// Represents instance of typing.Dict[TK, TV]
     /// </summary>
-    internal class TypingDictionary : PythonDictionary {
+    internal class TypingDictionary : PythonDictionary
+    {
         private readonly TypingDictionaryType _dictType;
-        
+
         public TypingDictionary(TypingDictionaryType dictType)
-            : base(dictType, EmptyDictionary<IMember, IMember>.Instance) {
+            : base(dictType, EmptyDictionary<IMember, IMember>.Instance)
+        {
             _dictType = dictType;
         }
 
-        public override IPythonIterator GetIterator() {
+        public override IPythonIterator GetIterator()
+        {
             var iteratorTypeId = _dictType.TypeId.GetIteratorTypeId();
             var iteratorType = new TypingIteratorType(_dictType.ItemType, iteratorTypeId, Type.DeclaringModule.Interpreter);
             return new TypingIterator(iteratorType, this);
         }
 
-        public override IMember Index(IArgumentSet args) => new PythonInstance(_dictType.ValueType);
+        public override IMember Index(IArgumentSet args) =>
+            _dictType.ValueType.CreateInstance(args);
 
-        public override IMember Call(string memberName, IArgumentSet args) {
+        public override IMember Call(string memberName, IArgumentSet args)
+        {
+            var itemType = _dictType.ItemType;
+            var valueType = _dictType.ValueType;
             // Specializations
-            switch (memberName) {
+            switch (memberName)
+            {
                 case @"get":
-                    return new PythonInstance(_dictType.ValueType);
+                    return valueType.CreateInstance(args);
                 case @"items":
                     return GetItems();
                 case @"keys":
@@ -57,9 +66,9 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
                 case @"iteritems":
                     return GetItems().GetIterator();
                 case @"pop":
-                    return new PythonInstance(_dictType.ValueType);
+                    return valueType.CreateInstance(args);
                 case @"popitem":
-                    return new PythonInstance(_dictType.ItemType);
+                    return itemType.CreateInstance(args);
             }
             return base.Call(memberName, args);
         }
@@ -74,6 +83,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         private TypingList _items;
         private TypingList GetItems()
-            =>_items ?? (_items = new TypingList(TypingTypeFactory.CreateItemsViewType(_dictType.DeclaringModule.Interpreter, _dictType)));
+            => _items ?? (_items = new TypingList(TypingTypeFactory.CreateItemsViewType(_dictType.DeclaringModule.Interpreter, _dictType)));
     }
 }

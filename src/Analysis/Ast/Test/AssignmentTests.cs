@@ -371,6 +371,112 @@ a, b = 1
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnpackListToTuple() {
+            const string code = @"
+(a, b) = [1, 2]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingTypingTuple() {
+            const string code = @"
+from typing import Tuple
+
+def foo() -> Tuple[int, int]:
+    return (1, -1)
+
+result = foo()
+(a, b) = result
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingTypingTupleFromList() {
+            const string code = @"
+from typing import Tuple, List
+
+def foo() -> List[Tuple[int, int]]:
+    return [(1, -1)]
+
+def bar() -> List[Tuple[int, str, float]]:
+    return [(1, 'str', float(2)), (1,'test',float(5))]
+
+(a, b) = foo()[0]
+(c,d,e) = bar()[1]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("e").OfType(BuiltinTypeId.Float);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingTypingListFromTuple() {
+            const string code = @"
+from typing import Tuple, List
+
+def foo() -> Tuple[List[int]]:
+    return ([1,2,3])
+
+def bar() -> Tuple[Tuple[int, str, float], List[str]]:
+    return ((1, 'str', float(2)), ['hello', 'world'])
+
+a = foo()
+a1 = a[0]
+[b, c, d] = a1
+
+e = bar()
+f = bar()[0]
+g = bar()[1]
+
+(h, j, k) = f
+[l, m] = g
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("a1").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("e").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.List);
+
+            analysis.Should().HaveVariable("h").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("j").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("k").OfType(BuiltinTypeId.Float);
+
+            analysis.Should().HaveVariable("l").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("m").OfType(BuiltinTypeId.Str);
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingTypingList() {
+            const string code = @"
+from typing import List
+
+def foo() -> List[int]:
+    return [1, -1]
+
+result = foo()
+[a, b] = result
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Uts46dataModule() {
             const string code = @"from idna.uts46data import *";
             await GetAnalysisAsync(code);

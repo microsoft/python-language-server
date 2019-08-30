@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? IteratorType : base.GetMember(name);
 
-        public override IMember CreateInstance(string typeName, IArgumentSet args)
+        public override IPythonInstance CreateInstance(IArgumentSet args)
             => new PythonCollection(this, args.Arguments.Select(a => a.Value).OfType<IMember>().ToArray());
 
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)

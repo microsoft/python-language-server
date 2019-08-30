@@ -456,7 +456,7 @@ def func(a = A()): ...
             var cls = analysis.Should().HaveClass(className).Which;
             var f = cls.Should().HaveMethod(funcName).Which;
             var call = GetCall(analysis.Ast);
-            return new ArgumentSet(f, 0, new PythonInstance(cls), call, analysis.ExpressionEvaluator);
+            return new ArgumentSet(f, 0, cls, call, analysis.ExpressionEvaluator);
         }
 
         private CallExpression GetCall(PythonAst ast) {
