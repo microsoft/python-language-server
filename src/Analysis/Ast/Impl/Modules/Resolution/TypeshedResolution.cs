@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -22,7 +21,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
@@ -32,36 +30,28 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class TypeshedResolution : ModuleResolutionBase, IModuleResolution {
         private readonly ImmutableArray<string> _typeStubPaths;
 
-        public TypeshedResolution(IServiceContainer services) : base(null, services) {
-            BuiltinsModule = _interpreter.ModuleResolution.BuiltinsModule;
-            Modules[BuiltinModuleName] = new ModuleRef(BuiltinsModule);
-
-            var stubs = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Stubs");
-            Root = _interpreter.Configuration?.TypeshedPath;
+        public TypeshedResolution(string root, IServiceContainer services) : base(root, services) {
             // TODO: merge with user-provided stub paths
+            var stubs = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Stubs");
             _typeStubPaths = GetTypeShedPaths(Root)
                 .Concat(GetTypeShedPaths(stubs))
                 .Where(services.GetService<IFileSystem>().DirectoryExists)
                 .ToImmutableArray();
 
-            _log?.Log(TraceEventType.Verbose, @"Typeshed paths:");
+            Log?.Log(TraceEventType.Verbose, @"Typeshed paths:");
             foreach (var p in _typeStubPaths) {
-                _log?.Log(TraceEventType.Verbose, $"    {p}");
+                Log?.Log(TraceEventType.Verbose, $"    {p}");
             }
         }
-
-        internal Task InitializeAsync(CancellationToken cancellationToken = default)
-            => ReloadAsync(cancellationToken);
 
         protected override IPythonModule CreateModule(string name) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport != default) {
                 if (moduleImport.IsCompiled) {
-                    _log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", moduleImport.FullName, moduleImport.ModulePath);
+                    Log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", moduleImport.FullName, moduleImport.ModulePath);
                     return null;
                 }
-
-                return new StubPythonModule(moduleImport.FullName, moduleImport.ModulePath, true, _services);
+                return new StubPythonModule(moduleImport.FullName, moduleImport.ModulePath, true, Services);
             }
 
             var i = name.IndexOf('.');
@@ -70,13 +60,13 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
-            var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => _fs.FileExists(p));
-            return stubPath != null ? new StubPythonModule(name, stubPath, true, _services) : null;
+            var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => FileSystem.FileExists(p));
+            return stubPath != null ? new StubPythonModule(name, stubPath, true, Services) : null;
         }
 
         public Task ReloadAsync(CancellationToken cancellationToken = default) {
             Modules.Clear();
-            PathResolver = new PathResolver(_interpreter.LanguageVersion, Root, _typeStubPaths, ImmutableArray<string>.Empty);
+            PathResolver = new PathResolver(Interpreter.LanguageVersion, Root, _typeStubPaths, ImmutableArray<string>.Empty);
             ReloadModulePaths(_typeStubPaths.Prepend(Root));
             cancellationToken.ThrowIfCancellationRequested();
             return Task.CompletedTask;

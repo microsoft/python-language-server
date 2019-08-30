@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
@@ -502,7 +501,7 @@ print(f'Hello, {name}. You are {age}.')
             var d = await LintAsync(code, PythonVersions.LatestAvailable3X);
             d.Should().HaveCount(2);
         }
-        
+
         [TestMethod, Priority(0)]
         public async Task ClassMemberAssignment() {
             const string code = @"
@@ -639,6 +638,121 @@ def py_repro():
         [TestMethod, Priority(0)]
         public async Task SpecNotUndefined() {
             const string code = "__spec__";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithAsTuple() {
+            const string code = @"
+class Test:
+    def __enter__(self) -> Tuple[int, int]:
+        return (1, 2)
+    
+    def __exit__(x, y, z, w):
+        pass
+
+with Test() as (hi, hello):
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithAsTupleEnterReturnTypeMismatch() {
+            const string code = @"
+from typing import Tuple
+
+class Test:
+    def __enter__(self) -> str:
+        return (1, 2)
+    
+    def __exit__(x, y, z, w):
+        pass
+
+with Test() as (test, test1):
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithAsTupleEnterNoReturnType() {
+            const string code = @"
+from typing import Tuple
+
+class Test:
+    def __enter__(self):
+        return (1, 2)
+    
+    def __exit__(x, y, z, w):
+        pass
+
+with Test() as (test, test1):
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithList() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> List[int]:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as [hi, hello]:
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithSingleElementTuple() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> int:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as (a):
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task WithSingleElementList() {
+            const string code = @"
+from typing import List
+
+class Test:
+    def __enter__(self) -> int:
+        return [1, 2]
+    
+    def __exit__(x, y, z, w):
+        pass
+
+
+with Test() as [a]:
+    pass
+";
             var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
