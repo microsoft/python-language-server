@@ -191,7 +191,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         #endregion
 
-        internal void SetBases(IEnumerable<IPythonType> bases, IExpressionEvaluator eval = null) {
+        internal void SetBases(IEnumerable<IPythonType> bases, IScope currentScope = null) {
             if (_bases != null) {
                 return; // Already set
             }
@@ -199,7 +199,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Consider
             //    from X import A
             //    class A(A): ...
-            bases = DisambiguateBases(bases, eval).ToArray();
+            bases = DisambiguateBases(bases, currentScope).ToArray();
 
             // For Python 3+ attach object as a base class by default except for the object class itself.
             if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
@@ -284,22 +284,22 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
-        private IEnumerable<IPythonType> DisambiguateBases(IEnumerable<IPythonType> bases, IExpressionEvaluator eval) {
+        private IEnumerable<IPythonType> DisambiguateBases(IEnumerable<IPythonType> bases, IScope currentScope) {
             if (bases == null) {
                 return Enumerable.Empty<IPythonType>();
             }
 
-            if (eval == null) {
+            if (currentScope == null) {
                 return FilterCircularBases(bases).Where(b => !b.IsUnknown());
             }
 
             var newBases = new List<IPythonType>();
             foreach (var b in bases) {
-                var imported = eval.LookupImportedNameInScopes(b.Name, out _);
+                var imported = currentScope.LookupImportedNameInScopes(b.Name, out _);
                 if (imported is IPythonType importedType) {
                     // Variable with same name as the base was imported.
                     // If there is also a local declaration, we need to figure out which one wins.
-                    var declared = eval.LookupNameInScopes(b.Name, out var scope);
+                    var declared = currentScope.LookupNameInScopes(b.Name, out var scope);
                     if (declared != null && scope != null) {
                         var v = scope.Variables[b.Name];
                         if (v.Source != VariableSource.Import && v.Value is IPythonClassType cls && cls.IsDeclaredAfter(Location)) {

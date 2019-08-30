@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Types {
                     }
 
                     // Set specific class bases 
-                    classType.SetBases(specificBases.Concat(newBases), args.Eval);
+                    classType.SetBases(specificBases.Concat(newBases), args.Eval.CurrentScope);
                     // Now that parameters are set, check if class is generic
                     classType._parameters = classType._genericParameters.Values.Distinct().OfType<IGenericTypeParameter>().ToList();
                     classType.DecideGeneric();
