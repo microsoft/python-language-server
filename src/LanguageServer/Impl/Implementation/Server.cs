@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
@@ -215,10 +216,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             ResetPathWatcher();
         }
 
-        public void HandleUserConfiguredPathsChange(IReadOnlyList<string> paths) {
-            paths = paths ?? _initParams?.initializationOptions?.searchPaths;
-
-            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths.ToImmutableArray());
+        public void HandleUserConfiguredPathsChange(ImmutableArray<string> paths) {
+            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths);
             if (changed) {
                 ResetAnalyzer();
             }

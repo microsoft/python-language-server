@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
@@ -106,40 +107,60 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private void HandlePathWatchChanges(bool watchSearchPaths) => _server.HandleWatchPathsChange(watchSearchPaths);
 
+        private void HandleUserConfiguredPathsChanges(ImmutableArray<string> paths) => _server.HandleUserConfiguredPathsChange(paths);
+
         /// <summary>
-        /// Returns the user configured paths based on the python section of the configuration. If nothing is set,
-        /// then it will return null.
+        /// Gets the user's configured search paths, by python.analysis.searchPaths,
+        /// python.autoComplete.extraPaths, PYTHONPATH, or _initParam's searchPaths.
         /// </summary>
-        /// <param name="pythonSection">The python section of the user configuration.</param>
-        /// <returns>A list of paths, or null if nothing is set.</returns>
-        private IReadOnlyList<string> GetUserConfiguredPaths(JToken pythonSection) {
-            if (pythonSection == null) {
-                return null;
-            }
+        /// <param name="pythonSection">The python section of the user config.</param>
+        /// <returns>An array of search paths.</returns>
+        private ImmutableArray<string> GetUserConfiguredPaths(JToken pythonSection) {
+            var paths = ImmutableArray<string>.Empty;
+            var set = false;
 
-            var autoComplete = pythonSection["autoComplete"];
-            var analysis = pythonSection["analysis"];
+            if (pythonSection != null) {
+                var autoComplete = pythonSection["autoComplete"];
+                var analysis = pythonSection["analysis"];
 
-            var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
-            var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
-            var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
+                // The values of these may not be null even if the value is "unset", depending on
+                // what the client uses as a default. Use null as a default anyway until the
+                // extension uses a null default (and/or extraPaths is dropped entirely).
+                var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
+                var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
+                var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
 
-            var userConfiguredPaths = analysisSearchPaths ?? autoCompleteExtraPaths;
-            if (analysisUsePYTHONPATH) {
-                var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
-                if (pythonpath != null) {
-                    var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
-                    var paths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
-                    if (paths.Length > 0) {
-                        userConfiguredPaths = userConfiguredPaths ?? Array.Empty<string>();
-                        userConfiguredPaths = userConfiguredPaths.Concat(paths).ToList();
+                if (analysisSearchPaths != null) {
+                    set = true;
+                    paths = analysisSearchPaths.ToImmutableArray();
+                } else if (autoCompleteExtraPaths != null) {
+                    set = true;
+                    paths = autoCompleteExtraPaths.ToImmutableArray();
+                }
+
+                if (analysisUsePYTHONPATH) {
+                    var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
+                    if (pythonpath != null) {
+                        var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
+                        var pythonpathPaths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        if (pythonpathPaths.Length > 0) {
+                            paths = paths.AddRange(pythonpathPaths);
+                            set = true;
+                        }
                     }
                 }
             }
 
-            return userConfiguredPaths;
-        }
+            if (set) {
+                return paths;
+            }
 
-        private void HandleUserConfiguredPathsChanges(IReadOnlyList<string> paths) => _server.HandleUserConfiguredPathsChange(paths);
+            var initPaths = _initParams?.initializationOptions?.searchPaths;
+            if (initPaths != null) {
+                return initPaths.ToImmutableArray();
+            }
+
+            return ImmutableArray<string>.Empty;
+        }
     }
 }
