@@ -80,18 +80,17 @@ x = requests.get('microsoft.com')
             r.Should().HaveMember("encoding").Which.Should().HaveType(BuiltinTypeId.Str);
         }
 
-//        [TestMethod, Priority(0)]
-//        public async Task GPy() {
-//            const string code = @"
-//import GPy.models
-//";
-//            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-//            var v = analysis.GlobalScope.Variables["GPy"];
-//            v.Should().NotBeNull();
-//            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
-//                Assert.Inconclusive("'GPy' package is not installed.");
-//            }
-//        }
+        [TestMethod, Priority(0)]
+        [Ignore("Very long")]
+        public async Task GPy() {
+            const string code = @"import GPy.models";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var v = analysis.GlobalScope.Variables["GPy"];
+            v.Should().NotBeNull();
+            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
+                Assert.Inconclusive("'GPy' package is not installed.");
+            }
+        }
 
         [TestMethod, Priority(0)]
         public async Task OpenBinaryFile() {
