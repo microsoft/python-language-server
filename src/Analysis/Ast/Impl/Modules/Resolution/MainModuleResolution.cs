@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private ImmutableArray<string> _userConfiguredPaths;
 
-        public MainModuleResolution(string root, IServiceContainer services, ImmutableArray<string> userConfiguredPaths = default)
+        public MainModuleResolution(string root, IServiceContainer services, ImmutableArray<string> userConfiguredPaths)
             : base(root, services) {
             _ui = services.GetService<IUIService>();
             _userConfiguredPaths = userConfiguredPaths;
