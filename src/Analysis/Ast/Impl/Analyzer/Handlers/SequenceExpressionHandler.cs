@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
@@ -48,15 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         internal static void Assign(IEnumerable<Expression> lhs, IMember value, ExpressionEval eval) {
-            // Tuple = 'tuple value' (such as from callable). Transfer values.
-            IMember[] values;
-            if (value is IPythonCollection seq) {
-                values = seq.Contents.ToArray();
-            } else {
-                values = new[] { value };
-            }
-
-            var typeEnum = new ValueEnumerator(values, eval.UnknownType);
+            var typeEnum = new ValueEnumerator(value, eval.UnknownType);
             Assign(lhs, typeEnum, eval);
         }
 
@@ -66,11 +59,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     case StarredExpression stx when stx.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
+                    case ParenthesisExpression pex when pex.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
+                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
+                        break;
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
-                    case TupleExpression te:
-                        Assign(te.Items, valueEnum, eval);
+                    case SequenceExpression se:
+                        Assign(se.Items, valueEnum, eval);
                         break;
                 }
             }
@@ -106,31 +102,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
             return members;
-        }
-
-        private class ValueEnumerator {
-            private readonly IMember[] _values;
-            private readonly IMember _filler;
-            private int _index;
-
-            public ValueEnumerator(IMember[] values, IMember filler) {
-                _values = values;
-                _filler = filler;
-            }
-
-            public IMember Next {
-                get {
-                    IMember t;
-                    if (_values.Length > 0) {
-                        t = _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
-                    } else {
-                        t = _filler;
-                    }
-
-                    _index++;
-                    return t;
-                }
-            }
         }
     }
 }

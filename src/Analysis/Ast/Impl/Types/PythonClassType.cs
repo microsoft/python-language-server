@@ -43,7 +43,6 @@ namespace Microsoft.Python.Analysis.Types {
         // For tests
         internal PythonClassType(string name, Location location)
             : base(name, location, string.Empty, BuiltinTypeId.Type) {
-            Check.ArgumentNotNull(nameof(location), location.Module);
         }
 
         public PythonClassType(ClassDefinition classDefinition, Location location, BuiltinTypeId builtinTypeId = BuiltinTypeId.Type)
