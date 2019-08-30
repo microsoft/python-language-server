@@ -739,5 +739,30 @@ class B(A):
                 .Should().HaveMethod("methodBBase")
                 .And.NotHaveMembers("methodB");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportedVariableSameName() {
+            const string code = @"
+from Base import a, b
+
+class a(a, b):
+    def methodA(self, x):
+        return x
+
+class b(a):
+    def methodB(self, x):
+        return x
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("a").Which
+                .Should().HaveMethod("methodABase")
+                .And.HaveMethod("methodBBase");
+
+            analysis.Should().HaveClass("b").Which
+                .Should().HaveMethod("methodA")
+                .And.HaveMethod("methodB")
+                .And.HaveMethod("methodABase")
+                .And.HaveMethod("methodBBase");
+        }
     }
 }

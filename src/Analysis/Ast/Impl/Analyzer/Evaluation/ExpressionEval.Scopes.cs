@@ -47,20 +47,23 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             => DeclareVariable(name, value, source, GetLocationOfName(location), overwrite);
 
         public void DeclareVariable(string name, IMember value, VariableSource source, Location location, bool overwrite = true) {
+            if (source == VariableSource.Import) {
+                // Duplicate declaration so if variable gets overwritten it can still be retrieved. Consider:
+                //    from X import A
+                //    class A(A): ...
+                CurrentScope.DeclareImported(name, value, location);
+            }
+
             var member = GetInScope(name);
             if (member != null && !overwrite) {
-                if (source == VariableSource.Import) {
-                    // Duplicate declaration so if variable gets overwritten it can still be retrieved. Consider:
-                    //    from X import A
-                    //    class A(A): ...
-                    CurrentScope.DeclareImported(name, value, location);
-                }
                 return;
             }
+            
             if (source == VariableSource.Import && value is IVariable v) {
                 CurrentScope.LinkVariable(name, v, location);
                 return;
             }
+            
             if (member != null) {
                 if (!value.IsUnknown()) {
                     CurrentScope.DeclareVariable(name, value, source, location);
