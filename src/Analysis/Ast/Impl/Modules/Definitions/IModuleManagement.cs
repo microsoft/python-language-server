@@ -75,6 +75,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// </summary>
         ImmutableArray<string> InterpreterPaths { get; }
 
-        bool SetUserConfiguredPaths(IReadOnlyList<string> paths);
+        bool SetUserConfiguredPaths(ImmutableArray<string> paths);
     }
 }

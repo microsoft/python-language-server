@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");
-            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm, typeshedPath: typeshedPath, userConfiguredPaths: searchPaths);
+            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm, typeshedPath, searchPaths.ToImmutableArray());
             sm.AddService(interpreter);
 
             TestLogger.Log(TraceEventType.Information, "Create RunningDocumentTable");

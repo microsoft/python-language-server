@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Parsing;
 
@@ -47,8 +48,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             string root,
             IServiceManager sm,
             string typeshedPath,
-            IReadOnlyList<string> userConfiguredPaths,
-            CancellationToken cancellationToken = default
+            ImmutableArray<string> userConfiguredPaths,
+            CancellationToken cancellationToken
         ) {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -64,9 +65,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             InterpreterConfiguration configuration,
             string root,
             IServiceManager sm,
-            CancellationToken cancellationToken = default,
             string typeshedPath = null,
-            IReadOnlyList<string> userConfiguredPaths = null
+            ImmutableArray<string> userConfiguredPaths = default,
+            CancellationToken cancellationToken = default
         ) {
             var pi = new PythonInterpreter(configuration);
             await pi.InitializeAsync(root, sm, typeshedPath, userConfiguredPaths, cancellationToken);

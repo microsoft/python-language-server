@@ -142,7 +142,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
             userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken, typeshedPath, userConfiguredPaths);
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
             _services.AddService(_interpreter);
 
             _log?.Log(TraceEventType.Information,
@@ -218,7 +218,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void HandleUserConfiguredPathsChange(IReadOnlyList<string> paths) {
             paths = paths ?? _initParams?.initializationOptions?.searchPaths;
 
-            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths);
+            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths.ToImmutableArray());
             if (changed) {
                 ResetAnalyzer();
             }

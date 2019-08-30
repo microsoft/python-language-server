@@ -41,12 +41,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private readonly IUIService _ui;
         private IRunningDocumentTable _rdt;
 
-        private IReadOnlyList<string> _userConfiguredPaths;
+        private ImmutableArray<string> _userConfiguredPaths;
 
-        public MainModuleResolution(string root, IServiceContainer services, IReadOnlyList<string> userConfiguredPaths = null)
+        public MainModuleResolution(string root, IServiceContainer services, ImmutableArray<string> userConfiguredPaths = default)
             : base(root, services) {
             _ui = services.GetService<IUIService>();
-            _userConfiguredPaths = userConfiguredPaths ?? Array.Empty<string>();
+            _userConfiguredPaths = userConfiguredPaths;
         }
 
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(Interpreter.LanguageVersion);
@@ -216,10 +216,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
         }
 
-        public bool SetUserConfiguredPaths(IReadOnlyList<string> paths) {
-            paths = paths ?? Array.Empty<string>();
-
-            if (paths.SequenceEqual(_userConfiguredPaths)) {
+        public bool SetUserConfiguredPaths(ImmutableArray<string> paths) {
+            if (paths.SequentiallyEquals(_userConfiguredPaths)) {
                 return false;
             }
 
