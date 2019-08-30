@@ -115,12 +115,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             lock (_lock) {
-                if (_builtinTypes.TryGetValue(id, out var type) && type != null) {
-                    return type;
-                }
-
                 if (id == BuiltinTypeId.Unknown) {
                     return UnknownType;
+                }
+
+                if (_builtinTypes.TryGetValue(id, out var type) && type != null) {
+                    return type;
                 }
 
                 if (id == BuiltinTypeId.NoneType) {
