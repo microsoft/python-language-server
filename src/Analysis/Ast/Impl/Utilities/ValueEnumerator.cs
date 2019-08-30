@@ -32,15 +32,19 @@ namespace Microsoft.Python.Analysis.Utilities {
 
         public IMember Next {
             get {
-                IMember t;
-                if (_values.Length > 0) {
-                    t = _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
-                } else {
-                    t = Filler;
-                }
-
+                IMember t = Peek;
                 _index++;
                 return t;
+            }
+        }
+
+        public IMember Peek {
+            get {
+                if (_values.Length > 0) {
+                    return _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
+                } else {
+                    return Filler;
+                }
             }
         }
 

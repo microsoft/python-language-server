@@ -65,6 +65,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
+                    // Nested sequence expression in sequence, Tuple[Tuple[int, str], int], List[Tuple[int], str]
+                    case SequenceExpression se when valueEnum.Peek is IPythonCollectionType:
+                        var pc = valueEnum.Next as IPythonCollectionType;
+                        Assign(se, pc.CreateInstance(ArgumentSet.Empty(null, eval)), eval);
+                        break;
                     case SequenceExpression se:
                         Assign(se, valueEnum, eval);
                         break;

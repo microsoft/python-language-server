@@ -477,6 +477,64 @@ result = foo()
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnpackingNestedTypingListInTuple() {
+            const string code = @"
+from typing import List, Tuple
+def foo() -> List[Tuple[str, int]]:
+    return [('hi', 1)]
+
+[var1, var2] = foo()
+[(a, b), (c, d)] = foo()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("var1").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("var2").OfType(BuiltinTypeId.Tuple);
+
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Str)
+                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                 .And.HaveVariable("c").OfType(BuiltinTypeId.Str)
+                 .And.HaveVariable("d").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingNestedTypingTupleInList() {
+            const string code = @"
+from typing import List, Tuple
+def foo() -> List[List[int], int]:
+    return [1,2], 3
+
+[var1, var2], var3 = foo()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("var1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("var2").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("var3").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingComplexNestedExpressions() {
+            const string code = @"
+from typing import List, Tuple
+def foo() -> Tuple[List[Tuple[List[str], int]], int]:
+    return [(['hi'], 1), (['test'], 5)], 2
+
+[var1, var2], var3 = foo()
+[(a, b), (c, d)], f = foo()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("var1").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("var2").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("var3").OfType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Uts46dataModule() {
             const string code = @"from idna.uts46data import *";
             await GetAnalysisAsync(code);
