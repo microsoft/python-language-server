@@ -43,13 +43,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
             LanguageVersion = Configuration.Version.ToLanguageVersion();
         }
 
-        private async Task InitializeAsync(string root,IServiceManager sm, string typeshedPath, IReadOnlyList<string> userConfiguredPaths, CancellationToken cancellationToken = default) {
+        private async Task InitializeAsync(
+            string root,
+            IServiceManager sm,
+            string typeshedPath,
+            IReadOnlyList<string> userConfiguredPaths,
+            CancellationToken cancellationToken = default
+        ) {
             cancellationToken.ThrowIfCancellationRequested();
 
             sm.AddService(this);
             _moduleResolution = new MainModuleResolution(root, sm, userConfiguredPaths);
             _stubResolution = new TypeshedResolution(typeshedPath, sm);
-            
+
             await _stubResolution.ReloadAsync(cancellationToken);
             await _moduleResolution.ReloadAsync(cancellationToken);
         }

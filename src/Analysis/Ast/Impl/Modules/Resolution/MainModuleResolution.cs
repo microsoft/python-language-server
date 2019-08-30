@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             _ui = services.GetService<IUIService>();
             _userConfiguredPaths = userConfiguredPaths ?? Array.Empty<string>();
         }
-        
+
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(Interpreter.LanguageVersion);
 
         public IBuiltinsPythonModule BuiltinsModule { get; private set; }
