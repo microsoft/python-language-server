@@ -764,5 +764,20 @@ class b(a):
                 .And.HaveMethod("methodABase")
                 .And.HaveMethod("methodBBase");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task CircularBaseImportLater() {
+            const string code = @"
+class A(A): ...
+
+def func():
+    from Base import A
+    return A()
+
+x = func()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType("A").Which.Should().HaveMember("methodABase");
+        }
     }
 }
