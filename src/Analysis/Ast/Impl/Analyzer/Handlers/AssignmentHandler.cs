@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (node.Left.FirstOrDefault() is SequenceExpression seq) {
                 // Tuple = Tuple. Transfer values.
                 var seqHandler = new SequenceExpressionHandler(Walker);
-                seqHandler.HandleAssignment(new[] { seq }, node.Right, value);
+                seqHandler.HandleAssignment(seq, node.Right, value);
                 return;
             }
 

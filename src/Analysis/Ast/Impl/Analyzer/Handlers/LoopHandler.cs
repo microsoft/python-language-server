@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     // x = [('abc', 42, True), ('abc', 23, False)]
                     // for some_str, (some_int, some_bool) in x:
                     var h = new SequenceExpressionHandler(Walker);
-                    h.HandleAssignment(seq.Items, node.List, value);
+                    h.HandleAssignment(seq, node.List, value);
                     break;
             }
 
