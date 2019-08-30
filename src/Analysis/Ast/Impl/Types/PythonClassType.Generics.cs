@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Types {
                     classType._parameters = classType._genericParameters.Values.Distinct().OfType<IGenericTypeParameter>().ToList();
                     classType.DecideGeneric();
                     // Transfer members from generic to specific type.
-                    classType.SetClassMembers(args);
+                    classType.SetClassMembers(this, args);
                 }
                 return classType;
             }
@@ -335,11 +335,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Transfers members from generic class to the specific class type
         /// while instantiating specific types for the members.
         /// </summary>
-        private void SetClassMembers(IArgumentSet args) {
-            // Add members from the template class (this one).
+        private void SetClassMembers(IPythonClassType templateClass, IArgumentSet args) {
+            // Add members from the template class.
             // Members must be clones rather than references since
             // we are going to set specific types on them.
-            AddMembers(this, true);
+            AddMembers(templateClass, true);
 
             // Resolve return types of methods, if any were annotated as generics
             var members = GetMemberNames()
