@@ -38,7 +38,6 @@ namespace Microsoft.Python.Analysis.Types {
 
         private PythonFunctionType(string name, Location location, string documentation, bool isSpecialized = false) :
             base(name, location, documentation ?? string.Empty, BuiltinTypeId.Function) {
-            Check.ArgumentNotNull(nameof(location), location.Module);
             _isSpecialized = isSpecialized;
         }
 

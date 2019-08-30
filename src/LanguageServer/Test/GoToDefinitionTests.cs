@@ -381,8 +381,8 @@ def X(): ...
 
             reference = ds.FindDefinition(analysis, new SourceLocation(1, 16), out _);
             reference.Should().NotBeNull();
-            reference.range.Should().Be(2, 4, 2, 5);
             reference.uri.AbsolutePath.Should().Contain("b.py");
+            reference.range.Should().Be(2, 4, 2, 5);
         }
 
 

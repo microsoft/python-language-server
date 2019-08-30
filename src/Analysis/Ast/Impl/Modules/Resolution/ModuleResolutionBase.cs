@@ -29,48 +29,40 @@ using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal abstract class ModuleResolutionBase {
-        protected readonly IServiceContainer _services;
-        protected readonly IPythonInterpreter _interpreter;
-        protected readonly IFileSystem _fs;
-        protected readonly ILogger _log;
-        protected readonly IUIService _ui;
+        protected IServiceContainer Services { get; }
+        protected IFileSystem FileSystem { get; }
+        protected IPythonInterpreter Interpreter { get; }
+        protected ILogger Log { get; }
 
         protected ConcurrentDictionary<string, ModuleRef> Modules { get; } = new ConcurrentDictionary<string, ModuleRef>();
         protected PathResolver PathResolver { get; set; }
 
-        protected InterpreterConfiguration Configuration => _interpreter.Configuration;
+        protected InterpreterConfiguration Configuration => Interpreter.Configuration;
+
+        public string Root { get; }
+        public IStubCache StubCache { get; }
 
         protected ModuleResolutionBase(string root, IServiceContainer services) {
             Root = root;
+            Services = services;
+            FileSystem = services.GetService<IFileSystem>();
 
-            _services = services;
-            _interpreter = services.GetService<IPythonInterpreter>();
-            _fs = services.GetService<IFileSystem>();
-            _log = services.GetService<ILogger>();
-            _ui = services.GetService<IUIService>();
-       }
+            Interpreter = services.GetService<IPythonInterpreter>();
+            StubCache = services.GetService<IStubCache>();
+            Log = services.GetService<ILogger>();
+        }
 
-        public string Root { get; protected set; }
         public ImmutableArray<string> InterpreterPaths { get; protected set; } = ImmutableArray<string>.Empty;
-
-        public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(_interpreter.LanguageVersion);
 
         /// <summary>
         /// Path resolver providing file resolution in module imports.
         /// </summary>
         public PathResolverSnapshot CurrentPathResolver => PathResolver.CurrentSnapshot;
 
-        /// <summary>
-        /// Builtins module.
-        /// </summary>
-        public IBuiltinsPythonModule BuiltinsModule { get; protected set; }
-
         protected abstract IPythonModule CreateModule(string name);
 
-        public IStubCache StubCache { get; protected set; }
-
-        public IPythonModule GetImportedModule(string name)
-            => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : _interpreter.ModuleResolution.GetSpecializedModule(name);
+        public IPythonModule GetImportedModule(string name) 
+            => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : Interpreter.ModuleResolution.GetSpecializedModule(name);
 
         public IPythonModule GetOrLoadModule(string name) {
             // Specialized should always win. However, we don't want
@@ -81,8 +73,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return module;
             }
 
-            // Now try restoring from the database.
-            module = _interpreter.ModuleResolution.GetSpecializedModule(name, true);
+            module = Interpreter.ModuleResolution.GetSpecializedModule(name);
             if (module != null) {
                 return module;
             }
@@ -110,7 +101,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
-            foreach (var moduleFile in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(_fs, p))) {
+            foreach (var moduleFile in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(FileSystem, p))) {
                 PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
             }
         }
