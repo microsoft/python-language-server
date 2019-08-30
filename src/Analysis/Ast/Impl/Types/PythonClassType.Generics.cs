@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Types {
                 var classType = new PythonClassType(BaseName, new Location(DeclaringModule));
                 // Storing generic parameters allows methods returning generic types 
                 // to know what type parameter returns what specific type
-                classType.StoreGenericParameters(GenericParameters, newGenericTypeParameters, genericTypeToSpecificType);
+                classType.StoreGenericParameters(this, newGenericTypeParameters, genericTypeToSpecificType);
 
                 // Set generic name
                 // Locking so threads can only access class after it's been initialized
@@ -257,23 +257,23 @@ namespace Microsoft.Python.Analysis.Types {
         /// type parameter if no specific type was provided)
         /// </summary>
         private void StoreGenericParameters(
-            IReadOnlyDictionary<IGenericTypeParameter, IPythonType> currentGenericParameters,
+            IPythonClassType templateClass,
             IEnumerable<IGenericTypeParameter> newGenericParameters,
             IReadOnlyDictionary<IGenericTypeParameter, IPythonType> genericToSpecificTypes) {
 
             // copy original generic parameters over and try to fill them in
-            _genericParameters = currentGenericParameters.ToDictionary(k => k.Key, k => k.Value);
+            _genericParameters = templateClass.GenericParameters.ToDictionary(k => k.Key, k => k.Value);
 
             // Case when creating a new specific class type
-            if (Parameters.Count == 0) {
+            if (templateClass.Parameters.Count == 0) {
                 // Assign class type generic type parameters to specific types 
                 foreach (var gb in newGenericParameters) {
                     _genericParameters[gb] = genericToSpecificTypes.TryGetValue(gb, out var v) ? v : null;
                 }
             } else {
                 // When Parameters field is not empty then need to update generic parameters field
-                foreach (var gp in currentGenericParameters.Keys) {
-                    if (currentGenericParameters[gp] is IGenericTypeParameter specificType) {
+                foreach (var gp in templateClass.GenericParameters.Keys) {
+                    if (templateClass.GenericParameters[gp] is IGenericTypeParameter specificType) {
                         // Get unfilled type parameter or type parameter that was filled with another type parameter
                         // and try to fill it in
                         // e.g 
