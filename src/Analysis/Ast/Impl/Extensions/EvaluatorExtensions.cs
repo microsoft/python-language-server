@@ -27,9 +27,9 @@ namespace Microsoft.Python.Analysis {
 
         public static IMember LookupImportedNameInScopes(this IExpressionEvaluator eval, string name, out IScope scope) {
             scope = null;
-            foreach(var s in eval.CurrentScope.EnumerateTowardsGlobal) {
+            foreach (var s in eval.CurrentScope.EnumerateTowardsGlobal) {
                 var v = s.Imported[name];
-                if(v != null) {
+                if (v != null) {
                     scope = s;
                     return v.Value;
                 }

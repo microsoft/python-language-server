@@ -286,7 +286,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private IEnumerable<IPythonType> DisambiguateBases(IEnumerable<IPythonType> bases, IExpressionEvaluator eval) {
             if (bases == null) {
-                return Array.Empty<IPythonType>();
+                return Enumerable.Empty<IPythonType>();
             }
 
             if (eval == null) {
