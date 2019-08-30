@@ -17,11 +17,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
@@ -55,6 +53,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public ImmutableArray<string> InterpreterPaths { get; protected set; } = ImmutableArray<string>.Empty;
+        public ImmutableArray<string> UserPaths { get; protected set; } = ImmutableArray<string>.Empty;
 
         /// <summary>
         /// Path resolver providing file resolution in module imports.
@@ -83,7 +82,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
 
-            foreach (var p in Configuration.SearchPaths) {
+            foreach (var p in InterpreterPaths.Concat(UserPaths)) {
                 if (PathEqualityComparer.Instance.StartsWith(filePath, p)) {
                     if (p.Length > bestLibraryPath.Length) {
                         bestLibraryPath = p;

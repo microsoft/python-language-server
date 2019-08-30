@@ -360,9 +360,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return MessageType.Error;
         }
 
-        private void HandlePathWatchChanges(JToken section)
-            => _server.HandleWatchPathsChange(GetSetting(section, "watchSearchPaths", true));
-
         private static CancellationToken GetToken(CancellationToken original)
                 => Debugger.IsAttached ? CancellationToken.None : original;
 

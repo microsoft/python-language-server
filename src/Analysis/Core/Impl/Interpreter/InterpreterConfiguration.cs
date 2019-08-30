@@ -62,15 +62,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             } catch (Exception ex) when (ex is ArgumentException || ex is FormatException) {
                 Version = new Version();
             }
-            if (properties.TryGetValue(nameof(SearchPaths), out object o)) {
-                var sp = new List<string>();
-                if (o is string s) {
-                    sp.AddRange(s.Split(';'));
-                } else if (o is IEnumerable<string> ss) {
-                    sp.AddRange(ss);
-                }
-                SearchPaths = sp.ToArray();
-            }
         }
 
         public void WriteToDictionary(IDictionary<string, object> properties) {
@@ -83,7 +74,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             if (Version != null) {
                 properties[nameof(Version)] = Version.ToString();
             }
-            properties[nameof(SearchPaths)] = SearchPaths.ToArray();
         }
 
         /// <summary>
@@ -162,16 +152,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// Returns path to Python site packages from 'import site; print(site.getsitepackages())'
         /// </summary>
         public string SitePackagesPath { get; }
-
-        /// <summary>
-        /// The fixed search paths of the interpreter.
-        /// </summary>
-        public IReadOnlyList<string> SearchPaths { get; set; } = Array.Empty<string>();
-
-        /// <summary>
-        /// Typeshed root folder.
-        /// </summary>
-        public string TypeshedPath { get; set; }
 
         public static bool operator ==(InterpreterConfiguration x, InterpreterConfiguration y)
             => x?.Equals(y) ?? ReferenceEquals(y, null);

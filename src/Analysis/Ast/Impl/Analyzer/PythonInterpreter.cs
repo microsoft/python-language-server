@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Parsing;
 
@@ -43,20 +44,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
             LanguageVersion = Configuration.Version.ToLanguageVersion();
         }
 
-        private async Task InitializeAsync(string root, IServiceManager sm, CancellationToken cancellationToken = default) {
+        private async Task InitializeAsync(
+            string root,
+            IServiceManager sm,
+            string typeshedPath,
+            ImmutableArray<string> userConfiguredPaths,
+            CancellationToken cancellationToken
+        ) {
             cancellationToken.ThrowIfCancellationRequested();
 
             sm.AddService(this);
-            _moduleResolution = new MainModuleResolution(root, sm);
-            _stubResolution = new TypeshedResolution(Configuration.TypeshedPath, sm);
-            
+            _moduleResolution = new MainModuleResolution(root, sm, userConfiguredPaths);
+            _stubResolution = new TypeshedResolution(typeshedPath, sm);
+
             await _stubResolution.ReloadAsync(cancellationToken);
             await _moduleResolution.ReloadAsync(cancellationToken);
         }
 
-        public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
+        public static async Task<IPythonInterpreter> CreateAsync(
+            InterpreterConfiguration configuration,
+            string root,
+            IServiceManager sm,
+            string typeshedPath = null,
+            ImmutableArray<string> userConfiguredPaths = default,
+            CancellationToken cancellationToken = default
+        ) {
             var pi = new PythonInterpreter(configuration);
-            await pi.InitializeAsync(root, sm, cancellationToken);
+            await pi.InitializeAsync(root, sm, typeshedPath, userConfiguredPaths, cancellationToken);
 
             // Specialize typing
             TypingModule.Create(sm);

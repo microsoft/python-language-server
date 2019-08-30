@@ -238,4 +238,15 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public MessageType type;
         public string message;
     }
+
+    [Serializable]
+    public sealed class ConfigurationItem {
+        public Uri scopeUri;
+        public string section;
+    }
+
+    [Serializable]
+    public sealed class ConfigurationParams {
+        public ConfigurationItem[] items;
+    }
 }
