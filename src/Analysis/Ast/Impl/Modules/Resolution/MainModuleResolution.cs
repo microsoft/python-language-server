@@ -42,11 +42,12 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
-        private ImmutableArray<string> _userPaths = ImmutableArray<string>.Empty;
+        private ImmutableArray<string> _userConfiguredPaths;
 
-        public MainModuleResolution(string root, IServiceContainer services)
+        public MainModuleResolution(string root, IServiceContainer services, ImmutableArray<string> userConfiguredPaths)
             : base(root, services) {
             _ui = services.GetService<IUIService>();
+            _userConfiguredPaths = userConfiguredPaths;
         }
 
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(Interpreter.LanguageVersion);
@@ -199,11 +200,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             await ReloadSearchPaths(cancellationToken);
 
-            PathResolver = new PathResolver(Interpreter.LanguageVersion, Root, InterpreterPaths, _userPaths);
+            PathResolver = new PathResolver(Interpreter.LanguageVersion, Root, InterpreterPaths, UserPaths);
 
             var addedRoots = new HashSet<string> { Root };
             addedRoots.UnionWith(InterpreterPaths);
-            addedRoots.UnionWith(_userPaths);
+            addedRoots.UnionWith(UserPaths);
             ReloadModulePaths(addedRoots);
 
             if (!builtinsIsCreated) {
@@ -224,10 +225,10 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
             LibraryPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, FileSystem, LibraryPaths, Configuration.SearchPaths);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, FileSystem, LibraryPaths, _userConfiguredPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
-            _userPaths = userPaths.Select(p => p.Path);
+            UserPaths = userPaths.Select(p => p.Path);
 
             if (Log != null) {
                 Log.Log(TraceEventType.Information, "Interpreter search paths:");
@@ -236,10 +237,19 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 }
 
                 Log.Log(TraceEventType.Information, "User search paths:");
-                foreach (var s in _userPaths) {
+                foreach (var s in UserPaths) {
                     Log.Log(TraceEventType.Information, $"    {s}");
                 }
             }
+        }
+
+        public bool SetUserConfiguredPaths(ImmutableArray<string> paths) {
+            if (paths.SequentiallyEquals(_userConfiguredPaths)) {
+                return false;
+            }
+
+            _userConfiguredPaths = paths;
+            return true;
         }
 
         public bool TryAddModulePath(in string path, in long fileSize, in bool allowNonRooted, out string fullModuleName)

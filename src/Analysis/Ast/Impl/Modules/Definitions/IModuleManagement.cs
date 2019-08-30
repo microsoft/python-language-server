@@ -85,5 +85,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Interpreter paths with additional classification.
         /// </summary>
         ImmutableArray<PythonLibraryPath> LibraryPaths { get; }
+
+        bool SetUserConfiguredPaths(ImmutableArray<string> paths);
     }
 }
