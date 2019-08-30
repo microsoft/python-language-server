@@ -81,6 +81,19 @@ x = requests.get('microsoft.com')
         }
 
         [TestMethod, Priority(0)]
+        public async Task GPy() {
+            const string code = @"
+import GPy.kern
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var v = analysis.GlobalScope.Variables["GPy"];
+            v.Should().NotBeNull();
+            if (v.Value.GetPythonType<IPythonModule>().ModuleType == ModuleType.Unresolved) {
+                Assert.Inconclusive("'GPy' package is not installed.");
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public async Task OpenBinaryFile() {
             const string code = @"
 with open('foo.txt', 'wb') as file:
