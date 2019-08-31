@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class TypeAlias: PythonTypeWrapper {
@@ -23,5 +24,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override string Name { get; }
         public override bool IsSpecialized => true;
 
+        public override IPythonInstance CreateInstance(IArgumentSet args) => new PythonInstance(this);
     }
 }

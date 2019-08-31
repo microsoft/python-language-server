@@ -135,7 +135,7 @@ foo: Foo = Foo({ })
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("Foo").OfType("Foo")
-                .And.HaveVariable("foo").OfType("dict");
+                .And.HaveVariable("foo").OfType("Foo");
             analysis.Should().HaveVariable("Foo").Which.Should().HaveMembers("keys", "values");
         }
 
