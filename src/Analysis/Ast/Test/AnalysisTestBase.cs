@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -64,8 +63,11 @@ namespace Microsoft.Python.Analysis.Tests {
         protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration, string stubCacheFolderPath = null, IServiceManager sm = null, string[] searchPaths = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
-            configuration.SearchPaths = searchPaths ?? new[] { GetAnalysisTestDataFilesPath() };
-            configuration.TypeshedPath = TestData.GetDefaultTypeshedPath();
+            stubCacheFolderPath = stubCacheFolderPath ?? TestData.GetAstAnalysisCachePath(configuration.Version, true);
+            Trace.TraceInformation("Cache Path: " + stubCacheFolderPath);
+
+            searchPaths = searchPaths ?? new[] { GetAnalysisTestDataFilesPath() };
+            var typeshedPath = TestData.GetDefaultTypeshedPath();
 
             sm = sm ?? CreateServiceManager();
 
@@ -82,7 +84,7 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");
-            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm);
+            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm, typeshedPath, searchPaths.ToImmutableArray());
             sm.AddService(interpreter);
 
             TestLogger.Log(TraceEventType.Information, "Create RunningDocumentTable");
