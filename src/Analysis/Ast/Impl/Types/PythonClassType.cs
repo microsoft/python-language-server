@@ -299,10 +299,12 @@ namespace Microsoft.Python.Analysis.Types {
                 if (imported is IPythonType importedType) {
                     // Variable with same name as the base was imported.
                     // If there is also a local declaration, we need to figure out which one wins.
-                    var declared = currentScope.LookupNameInScopes(b.Name, out var scope);
-                    if (declared != null && scope != null) {
-                        var v = scope.Variables[b.Name];
-                        if (v.Source != VariableSource.Import && v.Value is IPythonClassType cls && cls.IsDeclaredAfter(Location)) {
+                    var localDeclared = currentScope.LookupNameInScopes(b.Name, out var scope);
+                    if (localDeclared != null && scope != null) {
+                        // Get locally declared variable, make sure it is a declaration
+                        // and that it declared a class.
+                        var lv = scope.Variables[b.Name];
+                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(this.Location)) {
                             // There is a declaration with the same name, but it appears later in the module. Use the import.
                             if (!importedType.IsUnknown()) {
                                 newBases.Add(importedType);
@@ -321,7 +323,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private IEnumerable<IPythonType> FilterCircularBases(IEnumerable<IPythonType> bases) {
             // Inspect each base chain and exclude bases that chains to this class.
-            foreach(var b in bases.Where(x => !Equals(x))) {
+            foreach (var b in bases.Where(x => !Equals(x))) {
                 if (b is IPythonClassType cls) {
                     var chain = cls.Bases
                         .MaybeEnumerate()
