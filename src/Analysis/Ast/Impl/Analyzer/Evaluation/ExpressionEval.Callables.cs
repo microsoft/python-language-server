@@ -182,9 +182,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 LoadFunctionDependencyModules(fn);
 
-                var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
-                if (!t.IsUnknown()) {
-                    return t;
+                var m = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
+                if (!m.IsUnknown()) {
+                    switch (m) {
+                        case IPythonType type:
+                            return type.CreateInstance(args);
+                        default:
+                            return m;
+                    }
                 }
             }
 

@@ -419,6 +419,20 @@ def bar() -> List[Tuple[int, str, float]]:
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnpackingNestedTupleInList() {
+            const string code = @"
+def foo():
+    return [1,2], 3
+
+[var1, var2], var3 = foo();
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("var1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("var2").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("var3").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task UnpackingTypingListFromTuple() {
             const string code = @"
 from typing import Tuple, List
