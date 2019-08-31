@@ -6,7 +6,7 @@ using Microsoft.Python.Analysis.Values;
 namespace Microsoft.Python.Analysis.Utilities {
     internal sealed class ValueEnumerator {
         private readonly IMember _value;
-        private readonly IMember _unknown;
+        private readonly IPythonType _unknown;
         private readonly IMember[] _values;
         private int _index;
 
@@ -15,7 +15,7 @@ namespace Microsoft.Python.Analysis.Utilities {
         /// </summary>
         /// <param name="value">Collection to iterate over</param>
         /// <param name="unknown">Default type when we cannot find type from collection</param>
-        public ValueEnumerator(IMember value, IMember unknown) {
+        public ValueEnumerator(IMember value, IPythonType unknown) {
             _value = value;
             _unknown = unknown;
             switch (value) {
@@ -43,12 +43,12 @@ namespace Microsoft.Python.Analysis.Utilities {
                 if (_values.Length > 0) {
                     return _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
                 } else {
-                    return Filler;
+                    return Filler.CreateInstance();
                 }
             }
         }
 
-        private IMember Filler {
+        private IPythonType Filler {
             get {
                 switch (_value?.GetPythonType()) {
                     case ITypingListType tlt:

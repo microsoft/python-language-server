@@ -66,9 +66,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
                     // Nested sequence expression in sequence, Tuple[Tuple[int, str], int], List[Tuple[int], str]
-                    case SequenceExpression se when valueEnum.Peek is IPythonCollection:
-                        var pc = valueEnum.Next as IPythonCollection;
-                        Assign(se, pc, eval);
+                    // TODO: Because of bug with how collection types are constructed, they don't make nested collection types
+                    // into instances, meaning we have to create it here
+                    case SequenceExpression se when valueEnum.Peek is IPythonCollection || valueEnum.Peek is IPythonCollectionType:
+                        var collection = valueEnum.Next;
+                        var pc = collection as IPythonCollection;
+                        var pct = collection as IPythonCollectionType;
+                        Assign(se, pc ?? pct.CreateInstance(), eval);
                         break;
                     case SequenceExpression se:
                         Assign(se, valueEnum, eval);
