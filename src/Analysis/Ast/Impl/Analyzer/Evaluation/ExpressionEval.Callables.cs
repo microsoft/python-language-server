@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     value = GetValueFromInstanceCall(pi, expr);
                     break;
                 case IPythonFunctionType ft: // Standalone function or a class method call.
-                    var instance = ft.DeclaringType != null ? ft.DeclaringType.CreateInstance(args) : null;
+                    var instance = ft.DeclaringType?.CreateInstance(args);
                     value = GetValueFromFunctionType(ft, instance, expr);
                     break;
                 case IPythonClassType cls:
