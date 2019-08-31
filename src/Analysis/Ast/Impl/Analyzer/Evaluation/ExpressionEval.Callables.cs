@@ -184,12 +184,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 var m = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
                 if (!m.IsUnknown()) {
-                    switch (m) {
-                        case IPythonType type:
-                            return type.CreateInstance(args);
-                        default:
-                            return m;
-                    }
+                    return m;
                 }
             }
 

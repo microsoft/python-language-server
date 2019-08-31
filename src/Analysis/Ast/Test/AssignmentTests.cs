@@ -526,10 +526,32 @@ def foo() -> List[List[int], int]:
         }
 
         [TestMethod, Priority(0)]
-        public async Task UnpackingComplexNestedExpressions() {
+        public async Task UnpackingComplexTypingNestedExpressions() {
             const string code = @"
 from typing import List, Tuple
 def foo() -> Tuple[List[Tuple[List[str], int]], int]:
+    return [(['hi'], 1), (['test'], 5)], 2
+
+[var1, var2], var3 = foo()
+[(a, b), (c, d)], f = foo()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("var1").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("var2").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("var3").OfType(BuiltinTypeId.Int);
+
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingComplexNestedExpressions() {
+            const string code = @"
+def foo():
     return [(['hi'], 1), (['test'], 5)], 2
 
 [var1, var2], var3 = foo()
