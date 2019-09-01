@@ -583,6 +583,18 @@ def foo():
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnpackingMultipleAssignment() {
+            const string code = @"
+a = b, c = [0, 1]
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.List)
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Uts46dataModule() {
             const string code = @"from idna.uts46data import *";
             await GetAnalysisAsync(code);
