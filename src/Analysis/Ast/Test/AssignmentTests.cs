@@ -381,6 +381,18 @@ a, b = 1
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnpackSingleElementTuple() {
+            const string code = @"
+(foo) = 1234
+((x, y)) = 1, '2'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("foo").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task UnpackingTypingTuple() {
             const string code = @"
 from typing import Tuple
