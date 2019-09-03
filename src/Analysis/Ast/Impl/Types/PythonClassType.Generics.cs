@@ -25,7 +25,6 @@ namespace Microsoft.Python.Analysis.Types {
     internal partial class PythonClassType {
         private readonly ReentrancyGuard<IPythonClassType> _genericSpecializationGuard = new ReentrancyGuard<IPythonClassType>();
         private readonly ReentrancyGuard<IPythonClassType> _genericResolutionGuard = new ReentrancyGuard<IPythonClassType>();
-        private readonly object _genericParameterLock = new object();
 
         private bool _isGeneric;
         private Dictionary<string, PythonClassType> _specificTypeCache;
@@ -60,7 +59,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// B[int] inherits from A[int, str] 
         /// </summary>
         public IPythonType CreateSpecificType(IArgumentSet args) {
-            lock (_genericParameterLock) {
+            lock (_membersLock) {
                 var newGenericTypeParameters = GetTypeParameters();
                 var newBases = new List<IPythonType>();
 
@@ -161,7 +160,6 @@ namespace Microsoft.Python.Analysis.Types {
                     }
                 }
             }
-
             return fromBases.ToArray();
         }
 
@@ -169,10 +167,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Given an argument set, returns a dictionary mapping generic type parameter to the supplied specific 
         /// type from arguments. 
         /// </summary>
-        private IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GetSpecificTypes(IArgumentSet args,
-            IGenericTypeParameter[] genericTypeParameters,
-            List<IPythonType> newBases) {
-
+        private IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GetSpecificTypes(
+            IArgumentSet args,
+            IReadOnlyList<IGenericTypeParameter> genericTypeParameters,
+            ICollection<IPythonType> newBases
+            ) {
             // For now, map each type parameter to itself, and we can fill in the value as we go 
             var genericTypeToSpecificType = genericTypeParameters.ToDictionary(gtp => gtp, gtp => gtp as IPythonType);
 
@@ -240,7 +239,7 @@ namespace Microsoft.Python.Analysis.Types {
                 if (arg.Value is IMember member) {
                     var type = member.GetPythonType();
                     if (!type.IsUnknown()) {
-                        var gtd = gtIndex < genericTypeParameters.Length ? genericTypeParameters[gtIndex] : null;
+                        var gtd = gtIndex < genericTypeParameters.Count ? genericTypeParameters[gtIndex] : null;
                         if (gtd != null && genericTypeToSpecificType.TryGetValue(gtd, out var s) && s is IGenericTypeParameter) {
                             genericTypeToSpecificType[gtd] = type;
                         }
@@ -304,7 +303,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="gt">Generic type (Generic[T1, T2, ...], A[T1, T2, ..], etc.).</param>
         /// <param name="argumentValue">Argument value passed to the class constructor.</param>
         /// <param name="specificTypes">Dictionary or name (T1) to specific type to populate.</param>
-        private void GetSpecificTypeFromArgumentValue(IGenericType gt, object argumentValue, IDictionary<IGenericTypeParameter, IPythonType> specificTypes) {
+        private static void GetSpecificTypeFromArgumentValue(IGenericType gt, object argumentValue, IDictionary<IGenericTypeParameter, IPythonType> specificTypes) {
             switch (argumentValue) {
                 case IPythonDictionary dict when gt.Parameters.Count == 2:
                     var keyType = dict.Keys.FirstOrDefault()?.GetPythonType();
