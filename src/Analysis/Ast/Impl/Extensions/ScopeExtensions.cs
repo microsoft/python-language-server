@@ -15,12 +15,35 @@
 
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class ScopeExtensions {
+        public static IMember LookupNameInScopes(this IScope currentScope, string name, out IScope scope) {
+            scope = null;
+            foreach (var s in currentScope.EnumerateTowardsGlobal) {
+                if (s.Variables.TryGetVariable(name, out var v) && v != null) {
+                    scope = s;
+                    return v.Value;
+                }
+            }
+            return null;
+        }
+
+        public static IMember LookupImportedNameInScopes(this IScope currentScope, string name, out IScope scope) {
+            scope = null;
+            foreach (var s in currentScope.EnumerateTowardsGlobal) {
+                if (s.Imported.TryGetVariable(name, out var v) && v != null) {
+                    scope = s;
+                    return v.Value;
+                }
+            }
+            return null;
+        }
+
         public static int GetBodyStartIndex(this IScope scope) {
             switch (scope.Node) {
                 case ClassDefinition cd:
@@ -34,7 +57,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public static bool IsNestedInScope(this IScope s, IScope outer) 
+        public static bool IsNestedInScope(this IScope s, IScope outer)
             => s.OuterScope != null && s.OuterScope.EnumerateTowardsGlobal.Any(x => x == outer);
 
         public static IScope FindScope(this IScope parent, IDocument document, SourceLocation location) {

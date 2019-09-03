@@ -283,7 +283,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
                 /// property.The order describes the preferred format of the client.
                 /// </summary>
                 public string[] documentationFormat;
-                
+
                 /// <summary>
                 /// Client capabilities specific to parameter information.
                 /// </summary>

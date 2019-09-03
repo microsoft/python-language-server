@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -30,10 +31,12 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Class {Name}")]
-    internal partial class PythonClassType : PythonType, IPythonClassType, IGenericType, IEquatable<IPythonClassType> {
+    internal partial class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
+        private readonly object _membersLock = new object();
+
         private string _genericName;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
@@ -44,11 +47,9 @@ namespace Microsoft.Python.Analysis.Types {
             : base(name, location, string.Empty, BuiltinTypeId.Type) {
         }
 
-        public PythonClassType(
-            ClassDefinition classDefinition,
-            Location location,
-            BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+        public PythonClassType(ClassDefinition classDefinition, Location location, BuiltinTypeId builtinTypeId = BuiltinTypeId.Type)
+            : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+            Check.ArgumentNotNull(nameof(location), location.Module);
             location.Module.AddAstNode(this, classDefinition);
         }
 
@@ -61,18 +62,22 @@ namespace Microsoft.Python.Analysis.Types {
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
         public override IEnumerable<string> GetMemberNames() {
-            var names = new HashSet<string>();
-            names.UnionWith(Members.Keys);
-            foreach (var m in Mro.Skip(1)) {
-                names.UnionWith(m.GetMemberNames());
+            lock (_membersLock) {
+                var names = new HashSet<string>(Members.Keys);
+                foreach (var m in Mro.Skip(1)) {
+                    names.UnionWith(m.GetMemberNames());
+                }
+                return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods).Distinct() : names;
             }
-            return DeclaringModule.Interpreter.LanguageVersion.Is3x() ? names.Concat(_classMethods).Distinct() : names;
         }
 
         public override IMember GetMember(string name) {
-            // Push/Pop should be lock protected.
-            if (Members.TryGetValue(name, out var member)) {
-                return member;
+            IMember member;
+
+            lock (_membersLock) {
+                if (Members.TryGetValue(name, out member)) {
+                    return member;
+                }
             }
 
             // Special case names that we want to add to our own Members dict
@@ -160,12 +165,17 @@ namespace Microsoft.Python.Analysis.Types {
 
             return fromBases ?? defaultReturn;
         }
-
         #endregion
 
         #region IPythonClass
         public ClassDefinition ClassDefinition => DeclaringModule.GetAstNode<ClassDefinition>(this);
-        public IReadOnlyList<IPythonType> Bases => _bases;
+        public IReadOnlyList<IPythonType> Bases {
+            get {
+                lock(_membersLock) {
+                    return _bases?.ToArray();
+                }
+            }
+        }
 
         public IReadOnlyList<IPythonType> Mro {
             get {
@@ -192,12 +202,15 @@ namespace Microsoft.Python.Analysis.Types {
 
         #endregion
 
-        internal void SetBases(IEnumerable<IPythonType> bases) {
+        internal void SetBases(IEnumerable<IPythonType> bases, IScope currentScope = null) {
             if (_bases != null) {
                 return; // Already set
             }
 
-            bases = bases != null ? bases.Where(b => !b.GetPythonType().IsUnknown()).ToArray() : Array.Empty<IPythonType>();
+            // Consider
+            //    from X import A
+            //    class A(A): ...
+            bases = DisambiguateBases(bases, currentScope).ToArray();
 
             // For Python 3+ attach object as a base class by default except for the object class itself.
             if (DeclaringModule.Interpreter.LanguageVersion.Is3x() && DeclaringModule.ModuleType != ModuleType.Builtins) {
@@ -231,6 +244,7 @@ namespace Microsoft.Python.Analysis.Types {
             if (type == null) {
                 return Array.Empty<IPythonType>();
             }
+
             recursionProtection = recursionProtection ?? new HashSet<IPythonType>();
             if (!recursionProtection.Add(type)) {
                 return Array.Empty<IPythonType>();
@@ -281,5 +295,57 @@ namespace Microsoft.Python.Analysis.Types {
         public bool Equals(IPythonClassType other)
             => Name == other?.Name && DeclaringModule.Equals(other?.DeclaringModule);
 
+        private IEnumerable<IPythonType> DisambiguateBases(IEnumerable<IPythonType> bases, IScope currentScope) {
+            if (bases == null) {
+                return Enumerable.Empty<IPythonType>();
+            }
+
+            if (currentScope == null) {
+                return FilterCircularBases(bases).Where(b => !b.IsUnknown());
+            }
+
+            var newBases = new List<IPythonType>();
+            foreach (var b in bases) {
+                var imported = currentScope.LookupImportedNameInScopes(b.Name, out _);
+                if (imported is IPythonType importedType) {
+                    // Variable with same name as the base was imported.
+                    // If there is also a local declaration, we need to figure out which one wins.
+                    var localDeclared = currentScope.LookupNameInScopes(b.Name, out var scope);
+                    if (localDeclared != null && scope != null) {
+                        // Get locally declared variable, make sure it is a declaration
+                        // and that it declared a class.
+                        var lv = scope.Variables[b.Name];
+                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(this.Location)) {
+                            // There is a declaration with the same name, but it appears later in the module. Use the import.
+                            if (!importedType.IsUnknown()) {
+                                newBases.Add(importedType);
+                            }
+                            continue;
+                        }
+                    }
+                }
+
+                if (!b.IsUnknown()) {
+                    newBases.Add(b);
+                }
+            }
+            return FilterCircularBases(newBases);
+        }
+
+        private IEnumerable<IPythonType> FilterCircularBases(IEnumerable<IPythonType> bases) {
+            // Inspect each base chain and exclude bases that chains to this class.
+            foreach (var b in bases.Where(x => !Equals(x))) {
+                if (b is IPythonClassType cls) {
+                    var chain = cls.Bases
+                        .MaybeEnumerate()
+                        .OfType<IPythonClassType>()
+                        .SelectMany(x => x.TraverseDepthFirst(c => c.Bases.MaybeEnumerate().OfType<IPythonClassType>()));
+                    if (chain.Any(Equals)) {
+                        continue;
+                    }
+                }
+                yield return b;
+            }
+        }
     }
 }

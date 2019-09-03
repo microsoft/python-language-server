@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -24,6 +25,7 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
@@ -43,10 +45,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private IPythonInterpreter _interpreter;
         private IRunningDocumentTable _rdt;
-        private ClientCapabilities _clientCaps;
         private ILogger _log;
         private IIndexManager _indexManager;
         private string _rootDir;
+
+        private InitializeParams _initParams;
 
         private bool _watchSearchPaths;
         private PathsWatcher _pathsWatcher;
@@ -95,14 +98,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         };
 
-        public async Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken) {
+        public Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken = default) {
             _disposableBag.ThrowIfDisposed();
-            _clientCaps = @params.capabilities;
+            _initParams = @params;
             _log = _services.GetService<ILogger>();
+
+            _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
+
+            return Task.FromResult(GetInitializeResult());
+        }
+
+        public async Task InitializedAsync(InitializedParams @params, CancellationToken cancellationToken = default, IReadOnlyList<string> userConfiguredPaths = null) {
+            var initializationOptions = _initParams?.initializationOptions;
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var cacheFolderPath = @params.initializationOptions.cacheFolderPath;
+            var cacheFolderPath = initializationOptions?.cacheFolderPath;
             var fs = _services.GetService<IFileSystem>();
             if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
                 _log?.Log(TraceEventType.Warning, Resources.Error_InvalidCachePath);
@@ -118,55 +129,53 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
-            _rootDir = @params.rootUri != null ? @params.rootUri.ToAbsolutePath() : @params.rootPath;
+            _rootDir = _initParams?.rootUri != null ? _initParams.rootUri.ToAbsolutePath() : _initParams?.rootPath;
             if (_rootDir != null) {
                 _rootDir = PathUtils.NormalizePathAndTrim(_rootDir);
             }
 
-            Version.TryParse(@params.initializationOptions.interpreter.properties?.Version, out var version);
+            Version.TryParse(initializationOptions?.interpreter.properties?.Version, out var version);
 
             var configuration = new InterpreterConfiguration(null, null,
-                interpreterPath: @params.initializationOptions.interpreter.properties?.InterpreterPath,
+                interpreterPath: initializationOptions?.interpreter.properties?.InterpreterPath,
                 version: version
-            ) {
-                // Split on ';' to support older VS Code extension versions which send paths as a single entry separated by ';'. TODO: Eventually remove.
-                // Note that the actual classification of these paths as user/library is done later in MainModuleResolution.ReloadAsync.
-                SearchPaths = @params.initializationOptions.searchPaths
-                    .Select(p => p.Split(';', StringSplitOptions.RemoveEmptyEntries)).SelectMany()
-                    .ToList(),
-                TypeshedPath = @params.initializationOptions.typeStubSearchPaths.FirstOrDefault()
-            };
+            );
 
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, cancellationToken);
+            var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
+            userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
             _services.AddService(_interpreter);
+
+            _log?.Log(TraceEventType.Information,
+                string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
+                ? Resources.InitializingForGenericInterpreter
+                : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
 
             var fileSystem = _services.GetService<IFileSystem>();
             _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, _rootDir,
-                                            @params.initializationOptions.includeFiles,
-                                            @params.initializationOptions.excludeFiles,
+                                            initializationOptions?.includeFiles,
+                                            initializationOptions?.excludeFiles,
                                             _services.GetService<IIdleTimeService>());
             _indexManager.IndexWorkspace().DoNotWait();
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
 
-            DisplayStartupInfo();
+            var textDocCaps = _initParams?.capabilities?.textDocument;
 
             _completionSource = new CompletionSource(
-                ChooseDocumentationSource(_clientCaps?.textDocument?.completion?.completionItem?.documentationFormat),
+                ChooseDocumentationSource(textDocCaps?.completion?.completionItem?.documentationFormat),
                 Settings.completion
             );
 
             _hoverSource = new HoverSource(
-                ChooseDocumentationSource(_clientCaps?.textDocument?.hover?.contentFormat)
+                ChooseDocumentationSource(textDocCaps?.hover?.contentFormat)
             );
 
-            var sigInfo = _clientCaps?.textDocument?.signatureHelp?.signatureInformation;
+            var sigInfo = textDocCaps?.signatureHelp?.signatureInformation;
             _signatureSource = new SignatureSource(
                 ChooseDocumentationSource(sigInfo?.documentationFormat),
                 sigInfo?.parameterInformation?.labelOffsetSupport == true
             );
-
-            return GetInitializeResult();
         }
 
         public Task Shutdown() {
@@ -190,33 +199,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
         #endregion
 
-        #region Private Helpers
-        private void DisplayStartupInfo() {
-            _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
-            _log?.Log(TraceEventType.Information,
-                string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
-                ? Resources.InitializingForGenericInterpreter
-                : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
-        }
-
-        private IDocumentationSource ChooseDocumentationSource(string[] kinds) {
-            if (kinds == null) {
-                return new PlainTextDocumentationSource();
-            }
-
-            foreach (var k in kinds) {
-                switch (k) {
-                    case MarkupKind.Markdown:
-                        return new MarkdownDocumentationSource();
-                    case MarkupKind.PlainText:
-                        return new PlainTextDocumentationSource();
-                }
-            }
-
-            return new PlainTextDocumentationSource();
-        }
-        #endregion
-
         public void HandleWatchPathsChange(bool watchSearchPaths) {
             if (watchSearchPaths == _watchSearchPaths) {
                 return;
@@ -234,19 +216,43 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             ResetPathWatcher();
         }
 
+        public void HandleUserConfiguredPathsChange(ImmutableArray<string> paths) {
+            var changed = _interpreter.ModuleResolution.SetUserConfiguredPaths(paths);
+            if (changed) {
+                ResetAnalyzer();
+            }
+        }
+
+        #region Private Helpers
+        private IDocumentationSource ChooseDocumentationSource(string[] kinds) {
+            if (kinds == null) {
+                return new PlainTextDocumentationSource();
+            }
+
+            foreach (var k in kinds) {
+                switch (k) {
+                    case MarkupKind.Markdown:
+                        return new MarkdownDocumentationSource();
+                    case MarkupKind.PlainText:
+                        return new PlainTextDocumentationSource();
+                }
+            }
+
+            return new PlainTextDocumentationSource();
+        }
+
         private void ResetPathWatcher() {
             var paths = _interpreter.ModuleResolution.InterpreterPaths.ToArray();
 
             if (_searchPaths == null || !_searchPaths.SequenceEqual(paths)) {
                 _searchPaths = paths;
                 _pathsWatcher?.Dispose();
-                _pathsWatcher = new PathsWatcher(_searchPaths, NotifyPackagesChanged, _log);
+                _pathsWatcher = new PathsWatcher(_searchPaths, ResetAnalyzer, _log);
             }
         }
 
-        private void NotifyPackagesChanged() {
+        private void ResetAnalyzer() {
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
-
             _services.GetService<PythonAnalyzer>().ResetAnalyzer().ContinueWith(t => {
                 if (_watchSearchPaths) {
                     ResetPathWatcher();
@@ -256,5 +262,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 _log?.Log(TraceEventType.Information, Resources.AnalysisRestarted);
             }).DoNotWait();
         }
+        #endregion
     }
 }

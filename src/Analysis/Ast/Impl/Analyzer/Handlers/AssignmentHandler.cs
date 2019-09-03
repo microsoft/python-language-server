@@ -83,16 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             TryHandleClassVariable(lhs, value);
         }
 
-        private bool IsValidAssignment(string name, Location loc) {
-            if (Eval.GetInScope(name) is ILocatedMember m) {
-                // Class and function definition are processed first, so only override
-                // if assignment happens after declaration
-                if (loc.IndexSpan.Start < m.Location.IndexSpan.Start) {
-                    return false;
-                }
-            }
-            return true;
-        }
+        private bool IsValidAssignment(string name, Location loc) => !Eval.GetInScope(name).IsDeclaredAfter(loc);
 
         public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {
             if (expr?.Annotation == null) {
