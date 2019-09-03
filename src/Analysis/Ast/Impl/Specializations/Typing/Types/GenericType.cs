@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         public SpecializedGenericType(string name, string qualifiedName, IReadOnlyList<IGenericTypeParameter> parameters, IPythonModule declaringModule)
             : this(name, qualifiedName, declaringModule) {
-            FormalGenericParameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+            Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         ) : this(name, null, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
-            FormalGenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            Parameters = parameters ?? Array.Empty<IGenericTypeParameter>();
             Documentation = documentation ?? name;
         }
 
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             ) : this(name, qualifiedName, declaringModule) {
             SpecificTypeConstructor = specificTypeConstructor ?? throw new ArgumentNullException(nameof(specificTypeConstructor));
             TypeId = typeId;
-            FormalGenericParameters = parameters ?? Array.Empty<IGenericTypeParameter>();
+            Parameters = parameters ?? Array.Empty<IGenericTypeParameter>();
             Documentation = documentation ?? name;
         }
 
@@ -98,13 +98,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Documentation = Name;
         }
 
+        #region IMember
         public override PythonMemberType MemberType => PythonMemberType.Generic;
+        #endregion
 
+        #region IGenericType
         /// <summary>
         /// Type parameters such as in Tuple[T1, T2. ...] or
         /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
-        public IReadOnlyList<IGenericTypeParameter> FormalGenericParameters { get; }
+        public IReadOnlyList<IGenericTypeParameter> Parameters { get; }
+        public bool IsGeneric => true;
+        #endregion
 
         #region IPythonType
         public string Name { get; }
@@ -116,8 +121,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsBuiltin => false;
         public bool IsAbstract => true;
         public bool IsSpecialized => true;
-
-        public bool IsGeneric => true;
 
         public IMember CreateInstance(string typeName, IArgumentSet args) {
             var types = GetTypesFromValues(args.Arguments);

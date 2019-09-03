@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// Type parameters such as in Tuple[T1, T2. ...] or
         /// Generic[_T1, _T2, ...] as returned by TypeVar.
         /// </summary>
-        IReadOnlyList<IGenericTypeParameter> FormalGenericParameters { get; }
+        IReadOnlyList<IGenericTypeParameter> Parameters { get; }
 
         bool IsGeneric { get; }
     }

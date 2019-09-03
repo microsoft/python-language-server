@@ -73,6 +73,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public IVariableCollection Variables => _scopeVariables;
         public IVariableCollection NonLocals => VariableCollection.Empty;
         public IVariableCollection Globals => VariableCollection.Empty;
+        public IVariableCollection Imported => VariableCollection.Empty;
         public IPythonModule Module { get; }
         IGlobalScope IScope.GlobalScope => this;
 
