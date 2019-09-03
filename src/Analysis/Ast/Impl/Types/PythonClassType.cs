@@ -199,7 +199,7 @@ namespace Microsoft.Python.Analysis.Types {
                 if (_mro != null) {
                     return _mro;
                 }
-                if (_bases.Count == 0) {
+                if (_bases == null || _bases.Count == 0) {
                     return new IPythonType[] { this };
                 }
                 _mro = new IPythonType[] { this };
