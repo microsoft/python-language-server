@@ -76,3 +76,20 @@ An example usage:
 ```python
 from python import language_server  # noqa will suppress the linting message for this line
 ```
+
+## Cache location
+
+During analysis language server produces Python code from compiled modules and builtins which is similar to Python module stubs.
+It may also produce database files holding module analysis for faster retrieval later. Cache location is at
+
+**Windows**
+
+`"%LOCALAPPDATA%\Microsoft\Python Language Server"` (which is `Environment.SpecialFolder.LocalApplicationData`). Typically `"C:\Users\\%USER_NAME%\AppData\Local\Microsoft\Python Language Server"`
+
+**Linux**
+
+`"$XDG_CACHE_HOME/Microsoft/Python Language Server"`, or if `XDG_CACHE_HOME` is not set, `"$HOME/.cache/Microsoft/Python Language Server"`
+
+**macOS**
+
+`"$HOME/Library/Caches/Microsoft/Python Language Server"`

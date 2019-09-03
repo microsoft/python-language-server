@@ -1095,6 +1095,145 @@ y = boxedstr.get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericForwardRef() {
+            const string code = @"
+from typing import List, Dict
+
+x = List['A']
+y = Dict['A', 'B']
+
+class A:
+    def test(self) -> int:
+        pass
+class B:
+    def test(self) -> int:
+        pass
+z = List['A']
+w = Dict['A', 'B']
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("List[A]");
+            analysis.Should().HaveVariable("y")
+                           .Which.Should().HaveType("Dict[A, B]");
+            analysis.Should().HaveVariable("z")
+                .Which.Should().HaveType("List[A]");
+            analysis.Should().HaveVariable("w")
+                           .Which.Should().HaveType("Dict[A, B]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericBuiltinTypeForwardRef() {
+            const string code = @"
+from typing import List, Dict
+l = List['int']
+d = Dict['float', 'str']
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("l")
+                .Which.Should().HaveType("List[int]");
+            analysis.Should().HaveVariable("d")
+                           .Which.Should().HaveType("Dict[float, str]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericListForwardRef() {
+            const string code = @"
+from typing import List, Dict
+
+def test() -> 'List[A]':
+    pass
+
+def test1() -> 'Dict[A, B]':
+    pass
+
+class A: ...
+class B: ...
+
+x = test()
+y = test1()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("List[A]");
+            analysis.Should().HaveVariable("y")
+                        .Which.Should().HaveType("Dict[A, B]");
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassForwardRef() {
+            const string code = @"
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+K = TypeVar('K')
+
+class B(Generic[T, K]):
+    def test(self) -> T:
+        pass
+
+    def test1(self) -> K:
+        pass
+
+b = B['A', 'A']()
+y = b.test()
+z = b.test1()
+
+class A(Generic[T]):
+    def test(self) -> T:
+        pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("b")
+                          .Which.Should().HaveType("B[A, A]");
+            analysis.Should().HaveVariable("y")
+                           .Which.Should().HaveType("A");
+            analysis.Should().HaveVariable("z")
+                                      .Which.Should().HaveType("A");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericClassForwardRefNestedGenerics() {
+            const string code = @"
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+K = TypeVar('K')
+
+a = A['B']()
+x = a.test()
+
+b = B['A[int]', 'A[str]']()
+y = b.test()
+z = b.test1()
+
+class A(Generic[T]):
+    def test(self) -> T:
+        pass
+
+class B(Generic[T, K]):
+    def test(self) -> T:
+        pass
+
+    def test1(self) -> K:
+        pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveVariable("a")
+                .Which.Should().HaveType("A[B]");
+            analysis.Should().HaveVariable("x")
+                           .Which.Should().HaveType("B");
+
+            analysis.Should().HaveVariable("b")
+                          .Which.Should().HaveType("B[A[int], A[str]]");
+            analysis.Should().HaveVariable("y")
+                           .Which.Should().HaveType("A[int]");
+            analysis.Should().HaveVariable("z")
+                                      .Which.Should().HaveType("A[str]");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GenericFunctionArguments() {
             const string code = @"
 import unittest
