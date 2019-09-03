@@ -172,7 +172,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<IPythonType> Bases {
             get {
                 lock(_membersLock) {
-                    return _bases.ToArray();
+                    return _bases?.ToArray();
                 }
             }
         }
