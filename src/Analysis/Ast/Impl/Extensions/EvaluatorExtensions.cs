@@ -24,6 +24,7 @@ namespace Microsoft.Python.Analysis {
             => eval.LookupNameInScopes(name, out scope, out _, options);
         public static IMember LookupNameInScopes(this IExpressionEvaluator eval, string name, LookupOptions options = LookupOptions.Normal)
             => eval.LookupNameInScopes(name, out _, out _, options);
+
         public static IDisposable OpenScope(this IExpressionEvaluator eval, IPythonClassType cls)
          => eval.OpenScope(cls.DeclaringModule, cls.ClassDefinition);
         public static IDisposable OpenScope(this IExpressionEvaluator eval, IPythonFunctionType ft)
