@@ -78,7 +78,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             moduleRef = Modules.GetOrAdd(name, new ModuleRef());
             return moduleRef.GetOrCreate(name, this);
         }
-        
+
         public ModulePath FindModule(string filePath) {
             var bestLibraryPath = string.Empty;
 
@@ -93,11 +93,24 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
-            foreach (var moduleFile in rootPaths.Where(Directory.Exists).SelectMany(p => PathUtils.EnumerateFiles(FileSystem, p))) {
-                PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
+            foreach (var root in rootPaths) {
+                foreach (var moduleFile in PathUtils.EnumerateFiles(FileSystem, root)) {
+                    PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
+                }
+
+                if (PathUtils.TryGetZipFilePath(root, out var zipFilePath, out var _) && File.Exists(zipFilePath)) {
+                    foreach (var moduleFile in PathUtils.EnumerateZip(zipFilePath)) {
+                        if (!PathUtils.PathStartsWith(moduleFile.FullName, "EGG-INFO")) {
+                            PathResolver.TryAddModulePath(
+                                Path.Combine(zipFilePath,
+                                PathUtils.NormalizePath(moduleFile.FullName)),
+                                moduleFile.Length, false, out _
+                            );
+                        }
+                    }
+                }
             }
         }
-
         protected class ModuleRef {
             private readonly object _syncObj = new object();
             private IPythonModule _module;

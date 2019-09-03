@@ -16,9 +16,10 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Sources;
@@ -830,5 +831,100 @@ module2.";
             comps = cs.GetCompletions(analysis, new SourceLocation(4, 9));
             comps.Should().HaveLabels("Y");
         }
+
+        [DataRow("Basic.egg")]
+        [DataRow("Basic.zip")]
+        [DataTestMethod, Priority(0)]
+        public async Task BasicEggZip(string eggZipFilePath) {
+            var root = Path.Combine(GetAnalysisTestDataFilesPath(), "EggZip");
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X, searchPaths: new[] { root, Path.Combine(root, eggZipFilePath) });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            var uriPath = Path.Combine(root, "BasicEggZip.py");
+            var code = await File.ReadAllTextAsync(uriPath);
+            var moduleUri = TestData.GetTestSpecificUri(uriPath);
+            var module = rdt.OpenDocument(moduleUri, code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
+        }
+
+        [DataRow("EggImports.egg")]
+        [DataRow("ZipImports.zip")]
+        [DataTestMethod, Priority(0)]
+        public async Task EggZipImports(string eggZipFilePath) {
+            var root = Path.Combine(GetAnalysisTestDataFilesPath(), "EggZip");
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X, searchPaths: new[] { root, Path.Combine(root, eggZipFilePath, "test") });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            var uriPath = Path.Combine(root, "EggZipImports.py");
+            var code = await File.ReadAllTextAsync(uriPath);
+            var moduleUri = TestData.GetTestSpecificUri(uriPath);
+            var module = rdt.OpenDocument(moduleUri, code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("h").OfType("X");
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("b").OfType("A");
+            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
+        }
+
+        [DataRow("ZipRelativeImports.zip")]
+        [DataRow("EggRelativeImports.egg")]
+        [DataTestMethod, Priority(0)]
+        public async Task EggZipRelativeImports(string eggZipFilePath) {
+            var root = Path.Combine(GetAnalysisTestDataFilesPath(), "EggZip");
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X, searchPaths: new[] { root, Path.Combine(root, eggZipFilePath, "test") });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            var uriPath = Path.Combine(root, "EggZipRelativeImports.py");
+            var code = await File.ReadAllTextAsync(uriPath);
+            var moduleUri = TestData.GetTestSpecificUri(uriPath);
+            var module = rdt.OpenDocument(moduleUri, code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("h").OfType(BuiltinTypeId.Float);
+            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
+            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.Str);
+        }
+
+        [DataRow("simplejson.egg")]
+        [DataRow("simplejson.zip")]
+        [DataTestMethod, Priority(0)]
+        public async Task SimpleJsonEggZip(string eggZipFilePath) {
+            var root = Path.Combine(GetAnalysisTestDataFilesPath(), "EggZip");
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X, searchPaths: new[] { root, Path.Combine(root, eggZipFilePath) });
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            const string code = "import simplejson";
+            var uriPath = Path.Combine(root, "test.py");
+            var moduleUri = TestData.GetTestSpecificUri(uriPath);
+            var module = rdt.OpenDocument(moduleUri, code);
+
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await module.GetAnalysisAsync(-1);
+            analysis.Should().HaveVariable("simplejson").Which.Should().HaveMembers(
+                "Decimal",
+                "JSONDecodeError",
+                "JSONDecoder",
+                "JSONEncoder",
+                "JSONEncoderForHTML",
+                "OrderedDict",
+                "RawJSON",
+                "dump",
+                "dumps",
+                "load",
+                "loads",
+                "simple_first"
+            );
+        }
+
     }
 }
