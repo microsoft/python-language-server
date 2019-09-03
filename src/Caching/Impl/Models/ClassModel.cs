@@ -142,7 +142,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             _cls.SetDocumentation(Documentation);
 
             if (GenericParameterValues.Length > 0) {
-                _cls.StoreGenericParameters(_cls,
+                _cls.StoreGenericParameters(
+                    _cls,
                     _cls.GenericParameters.Keys.ToArray(),
                     GenericParameterValues.ToDictionary(
                         k => _cls.GenericParameters.Keys.First(x => x.Name == k.Name), 

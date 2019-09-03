@@ -25,7 +25,6 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -42,7 +41,6 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private readonly object _membersLock = new object();
 
-        private string _genericName;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
         private string _documentation;
@@ -217,7 +215,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Has the map {T: int, K: str}
         /// </summary>
         public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters =>
-                _genericActualParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+            _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
 
         #endregion
 
