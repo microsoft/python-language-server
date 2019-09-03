@@ -64,12 +64,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public bool IsAnalyzedLibrary(int analysisVersion) {
-            lock (_syncObj) {
-                return analysisVersion == _analysisVersion && _analysisTcs.Task.Status == TaskStatus.RanToCompletion && _analysisTcs.Task.Result is LibraryAnalysis;
-            }
-        }
-
         public IDocumentAnalysis PreviousAnalysis {
             get {
                 lock (_syncObj) {
@@ -103,25 +97,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken)
             => _analysisTcs.Task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken);
 
-        public bool IsValidVersion(int version, out IPythonModule module, out PythonAst ast) {
+        public bool CanUpdateAnalysis(int version, out IPythonModule module, out PythonAst ast, out IDocumentAnalysis currentAnalysis) {
             lock (_syncObj) {
                 module = _module;
                 ast = _ast;
+                currentAnalysis = _analysisTcs.Task.Status == TaskStatus.RanToCompletion ? _analysisTcs.Task.Result : default;
 
-                if (module == null) {
+                if (module == null || ast == null) {
                     return false;
                 }
 
-                if (ast == null) {
-                    Debug.Assert(!(_previousAnalysis is LibraryAnalysis), $"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
-                    return false;
+                if (_previousAnalysis is EmptyAnalysis || _moduleType == ModuleType.User) {
+                    return true;
                 }
 
-                return _previousAnalysis is EmptyAnalysis || _moduleType == ModuleType.User || _analysisVersion <= version;
+                return _analysisVersion <= version && !(_previousAnalysis is LibraryAnalysis);
             }
         }
 
         public void TrySetAnalysis(IDocumentAnalysis analysis, int version) {
+            TaskCompletionSource<IDocumentAnalysis> tcs;
             lock (_syncObj) {
                 if (_previousAnalysis is EmptyAnalysis) {
                     _previousAnalysis = analysis;
@@ -139,9 +134,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _analysisDependencies = null;
                 UpdateAnalysisTcs(version);
                 _previousAnalysis = analysis;
+                tcs = _analysisTcs;
             }
 
-            _analysisTcs.TrySetResult(analysis);
+            tcs.TrySetResult(analysis);
         }
 
         public void TrySetException(Exception ex, int version) {

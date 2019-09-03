@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Parsing;
 
@@ -33,6 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonInterpreter : IPythonInterpreter {
         private MainModuleResolution _moduleResolution;
         private TypeshedResolution _stubResolution;
+        private IPythonType _unknownType;
         private readonly object _lock = new object();
 
         private readonly Dictionary<BuiltinTypeId, IPythonType> _builtinTypes = new Dictionary<BuiltinTypeId, IPythonType>();
@@ -42,30 +44,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
             LanguageVersion = Configuration.Version.ToLanguageVersion();
         }
 
-        private async Task LoadBuiltinTypesAsync(string root, IServiceManager sm, CancellationToken cancellationToken = default) {
+        private async Task InitializeAsync(
+            string root,
+            IServiceManager sm,
+            string typeshedPath,
+            ImmutableArray<string> userConfiguredPaths,
+            CancellationToken cancellationToken
+        ) {
             cancellationToken.ThrowIfCancellationRequested();
 
             sm.AddService(this);
-            _moduleResolution = new MainModuleResolution(root, sm);
-            _stubResolution = new TypeshedResolution(sm);
+            _moduleResolution = new MainModuleResolution(root, sm, userConfiguredPaths);
+            _stubResolution = new TypeshedResolution(typeshedPath, sm);
 
-            await _moduleResolution.InitializeAsync(cancellationToken);
-            await _stubResolution.InitializeAsync(cancellationToken);
-
-            lock (_lock) {
-                var builtinModule = _moduleResolution.CreateBuiltinsModule();
-                _builtinTypes[BuiltinTypeId.NoneType]
-                    = new PythonType("NoneType", new Location(builtinModule), string.Empty, BuiltinTypeId.NoneType);
-                _builtinTypes[BuiltinTypeId.Unknown]
-                    = UnknownType = new PythonType("Unknown", new Location(builtinModule), string.Empty);
-            }
-
-            await _moduleResolution.LoadBuiltinTypesAsync(cancellationToken);
+            await _stubResolution.ReloadAsync(cancellationToken);
+            await _moduleResolution.ReloadAsync(cancellationToken);
         }
 
-        public static async Task<IPythonInterpreter> CreateAsync(InterpreterConfiguration configuration, string root, IServiceManager sm, CancellationToken cancellationToken = default) {
+        public static async Task<IPythonInterpreter> CreateAsync(
+            InterpreterConfiguration configuration,
+            string root,
+            IServiceManager sm,
+            string typeshedPath = null,
+            ImmutableArray<string> userConfiguredPaths = default,
+            CancellationToken cancellationToken = default
+        ) {
             var pi = new PythonInterpreter(configuration);
-            await pi.LoadBuiltinTypesAsync(root, sm, cancellationToken);
+            await pi.InitializeAsync(root, sm, typeshedPath, userConfiguredPaths, cancellationToken);
 
             // Specialize typing
             TypingModule.Create(sm);
@@ -93,6 +98,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IModuleResolution TypeshedResolution => _stubResolution;
 
         /// <summary>
+        /// Unknown type.
+        /// </summary>
+        public IPythonType UnknownType {
+            get {
+                lock (_lock) {
+                    var type = _unknownType;
+                    if (type != null) {
+                        return type;
+                    }
+
+                    _unknownType = new PythonType("Unknown", new Location(_moduleResolution.BuiltinsModule), string.Empty);
+                    _builtinTypes[BuiltinTypeId.Unknown] = _unknownType;
+                    return _unknownType;
+                }
+            }
+        }
+
+        /// <summary>
         /// Gets a well known built-in type such as int, list, dict, etc...
         /// </summary>
         /// <param name="id">The built-in type to get</param>
@@ -106,31 +129,34 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             lock (_lock) {
-                if (_builtinTypes.TryGetValue(id, out var res) && res != null) {
-                    return res;
+                if (id == BuiltinTypeId.Unknown) {
+                    return UnknownType;
                 }
 
-                var bm = ModuleResolution.BuiltinsModule;
-                var typeName = id.GetTypeName(LanguageVersion);
-                if (typeName != null) {
-                    res = bm.GetMember(typeName) as IPythonType;
+                if (_builtinTypes.TryGetValue(id, out var type) && type != null) {
+                    return type;
                 }
 
-                if (res == null) {
-                    res = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
-                    if (res == null) {
-                        return _builtinTypes[BuiltinTypeId.Unknown];
+                if (id == BuiltinTypeId.NoneType) {
+                    type = new PythonType("NoneType", new Location(_moduleResolution.BuiltinsModule), string.Empty, BuiltinTypeId.NoneType);
+                } else {
+                    var bm = _moduleResolution.BuiltinsModule;
+                    var typeName = id.GetTypeName(LanguageVersion);
+                    if (typeName != null) {
+                        type = _moduleResolution.BuiltinsModule.GetMember(typeName) as IPythonType;
+                    }
+
+                    if (type == null) {
+                        type = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
+                        if (type == null) {
+                            return UnknownType;
+                        }
                     }
                 }
 
-                _builtinTypes[id] = res;
-                return res;
+                _builtinTypes[id] = type;
+                return type;
             }
         }
-
-        /// <summary>
-        /// Unknown type.
-        /// </summary>
-        public IPythonType UnknownType { get; private set; }
     }
 }

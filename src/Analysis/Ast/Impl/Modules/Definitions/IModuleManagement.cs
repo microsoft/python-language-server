@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
@@ -25,7 +24,17 @@ namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
     /// Represents module resolution and search subsystem.
     /// </summary>
-    public interface IModuleManagement: IModuleResolution {
+    public interface IModuleManagement : IModuleResolution {
+        /// <summary>
+        /// Builtins module name.
+        /// </summary>
+        string BuiltinModuleName { get; }
+
+        /// <summary>
+        /// Builtins module.
+        /// </summary>
+        IBuiltinsPythonModule BuiltinsModule { get; }
+
         /// <summary>
         /// Locates module by path.
         /// </summary>
@@ -65,5 +74,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Set of interpreter paths.
         /// </summary>
         ImmutableArray<string> InterpreterPaths { get; }
+
+        bool SetUserConfiguredPaths(ImmutableArray<string> paths);
     }
 }

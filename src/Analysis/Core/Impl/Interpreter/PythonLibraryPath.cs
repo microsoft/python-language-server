@@ -109,31 +109,30 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <param name="library">Root of the standard library.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
         /// <remarks>New in 2.2, moved in 3.3</remarks>
-        private static List<PythonLibraryPath> GetDefaultSearchPaths(IFileSystem fs, string library) {
-            var result = new List<PythonLibraryPath>();
+        private static ImmutableArray<PythonLibraryPath> GetDefaultSearchPaths(IFileSystem fs, string library) {
+            var result = ImmutableArray<PythonLibraryPath>.Empty;
             if (!Directory.Exists(library)) {
                 return result;
             }
 
-            result.Add(new PythonLibraryPath(library, PythonLibraryPathType.StdLib));
+            result = result.Add(new PythonLibraryPath(library, PythonLibraryPathType.StdLib));
 
             var sitePackages = IOPath.Combine(library, "site-packages");
             if (!Directory.Exists(sitePackages)) {
                 return result;
             }
 
-            result.Add(new PythonLibraryPath(sitePackages));
-            result.AddRange(ModulePath.ExpandPathFiles(fs, sitePackages)
-                .Select(p => new PythonLibraryPath(p))
-            );
-
+            result = result.Add(new PythonLibraryPath(sitePackages));
+            foreach (var pathFile in ModulePath.ExpandPathFiles(fs, sitePackages)) {
+                result = result.Add(new PythonLibraryPath(pathFile));
+            }
             return result;
         }
 
         /// <summary>
         /// Gets the set of search paths for the specified factory.
         /// </summary>
-        public static async Task<IList<PythonLibraryPath>> GetSearchPathsAsync(InterpreterConfiguration config, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
+        public static async Task<ImmutableArray<PythonLibraryPath>> GetSearchPathsAsync(InterpreterConfiguration config, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             for (int retries = 5; retries > 0; --retries) {
                 try {
                     return await GetSearchPathsFromInterpreterAsync(config.InterpreterPath, fs, ps, cancellationToken);
@@ -142,7 +141,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                     break;
                 } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {
                     // Failed to get paths due to IO exception - sleep and then loop
-                    Thread.Sleep(50);
+                    await Task.Delay(50, cancellationToken);
                 }
             }
 
@@ -152,7 +151,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                 return GetDefaultSearchPaths(fs, standardLibraryPath);
             }
 
-            return Array.Empty<PythonLibraryPath>();
+            return ImmutableArray<PythonLibraryPath>.Empty;
         }
 
         /// <summary>
@@ -163,13 +162,13 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// <param name="ps">Process services.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>A list of search paths for the interpreter.</returns>
-        public static async Task<List<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
+        public static async Task<ImmutableArray<PythonLibraryPath>> GetSearchPathsFromInterpreterAsync(string interpreter, IFileSystem fs, IProcessServices ps, CancellationToken cancellationToken = default) {
             // sys.path will include the working directory, so we make an empty
             // path that we can filter out later
             var tempWorkingDir = IOPath.Combine(IOPath.GetTempPath(), IOPath.GetRandomFileName());
             fs.CreateDirectory(tempWorkingDir);
             if (!InstallPath.TryGetFile("get_search_paths.py", out var srcGetSearchPaths)) {
-                return new List<PythonLibraryPath>();
+                return ImmutableArray<PythonLibraryPath>.Empty;
             }
             var getSearchPaths = IOPath.Combine(tempWorkingDir, PathUtils.GetFileName(srcGetSearchPaths));
             File.Copy(srcGetSearchPaths, getSearchPaths);
@@ -204,7 +203,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
                         Debug.Fail("Invalid format for search path: " + s);
                         return null;
                     }
-                }).Where(p => p != null).ToList();
+                }).Where(p => p != null).ToImmutableArray();
             } finally {
                 fs.DeleteDirectory(tempWorkingDir, true);
             }

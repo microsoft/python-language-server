@@ -80,7 +80,7 @@ T = NewType(x, int)
         [DataRow("complex", "str")]
         [DataTestMethod, Priority(0)]
         public async Task DifferentTypesFirstArg(string nameType, string type) {
-            string code = $@"
+            var code = $@"
 from typing import NewType
 
 T = NewType({nameType}(10), {type})
@@ -96,7 +96,7 @@ T = NewType({nameType}(10), {type})
 
         [TestMethod, Priority(0)]
         public async Task ObjectFirstArg() {
-            string code = $@"
+            var code = $@"
 from typing import NewType
 
 class X:
@@ -118,7 +118,7 @@ T = NewType(h, int)
 
         [TestMethod, Priority(0)]
         public async Task TypeFirstArg() {
-            string code = $@"
+            var code = $@"
 from typing import NewType
 
 T = NewType(float, int)
@@ -134,7 +134,7 @@ T = NewType(float, int)
 
         [TestMethod, Priority(0)]
         public async Task GenericFirstArg() {
-            string code = $@"
+            var code = $@"
 from typing import NewType, Generic, TypeVar
 
 T = TypeVar('T', str, int)
@@ -159,7 +159,7 @@ T = NewType(h, int)
         [DataRow("testing", "int")]
         [DataTestMethod, Priority(0)]
         public async Task NoDiagnosticOnStringFirstArg(string name, string type) {
-            string code = $@"
+            var code = $@"
 from typing import NewType
 
 T = NewType('{name}', {type})
@@ -170,7 +170,7 @@ T = NewType('{name}', {type})
 
         [TestMethod, Priority(0)]
         public async Task NewTypeWrongNumArgs() {
-            string code = $@"
+            var code = $@"
 from typing import NewType
 
 Y = NewType()
@@ -197,7 +197,7 @@ Z = NewType('str', int, float)
 
         [TestMethod, Priority(0)]
         public async Task NewTypeOneArg() {
-            string code = $@"
+            var code = $@"
 from typing import NewType
 
 Y = NewType('str')

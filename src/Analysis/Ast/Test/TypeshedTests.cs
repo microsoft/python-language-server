@@ -55,7 +55,7 @@ e1, e2, e3 = sys.exc_info()
 
             f.Overloads.Should().HaveCount(1);
             f.Overloads[0].GetReturnDocumentation(null)
-                .Should().Be(@"Tuple[ (Optional[Type[BaseException]],Optional[BaseException],Optional[TracebackType])]");
+                .Should().Be(@"Tuple[Type[BaseException], BaseException, TracebackType]");
         }
 
         [TestMethod, Priority(0)]
@@ -72,7 +72,7 @@ scanner = _json.make_scanner()";
                     .And.HaveParameters("self", "string", "index")
                     .And.HaveParameterAt(1).WithName("string").WithType("str").WithNoDefaultValue()
                     .And.HaveParameterAt(2).WithName("index").WithType("int").WithNoDefaultValue()
-                    .And.HaveReturnDocumentation("Tuple[ (Any,int)]");
+                    .And.HaveReturnDocumentation("Tuple[Any, int]");
         }
 
         [TestMethod, Priority(0)]

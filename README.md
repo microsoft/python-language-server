@@ -36,7 +36,7 @@ The following diagnostics are supported:
 | `typing-newtype-arguments` | An error occurred while constructing `NewType`. |
 | `unknown-parameter-name` | The keyword argument name provided is unknown. |
 | `unresolved-import` | An import cannot be resolved, and may be missing. |
-| `undefined-variable` | A variable has used that has not yet been defined. |
+| `undefined-variable` | A variable has been used that has not yet been defined. |
 | `variable-not-defined-globally` | A variable is not defined in the global scope. |
 | `variable-not-defined-nonlocal` | A variable is not defined in non-local scopes. |
 
@@ -76,3 +76,20 @@ An example usage:
 ```python
 from python import language_server  # noqa will suppress the linting message for this line
 ```
+
+## Cache location
+
+During analysis language server produces Python code from compiled modules and builtins which is similar to Python module stubs.
+It may also produce database files holding module analysis for faster retrieval later. Cache location is at
+
+**Windows**
+
+`"%LOCALAPPDATA%\Microsoft\Python Language Server"` (which is `Environment.SpecialFolder.LocalApplicationData`). Typically `"C:\Users\\%USER_NAME%\AppData\Local\Microsoft\Python Language Server"`
+
+**Linux**
+
+`"$XDG_CACHE_HOME/Microsoft/Python Language Server"`, or if `XDG_CACHE_HOME` is not set, `"$HOME/.cache/Microsoft/Python Language Server"`
+
+**macOS**
+
+`"$HOME/Library/Caches/Microsoft/Python Language Server"`

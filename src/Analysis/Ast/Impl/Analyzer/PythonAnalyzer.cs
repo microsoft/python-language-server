@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
@@ -164,9 +165,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // It is possible that parsing request for the library has been started when document is open,
                     // but it is closed at the moment of analysis and then become open again.
                     // In this case, we still need to analyze the document, but using correct entry.
-                    var libraryAsDocumentKey = key.GetLibraryAsDocumentKey();
-                    if (entry.PreviousAnalysis is LibraryAnalysis && _analysisEntries.TryGetValue(libraryAsDocumentKey, out var documentEntry)) {
-                        key = libraryAsDocumentKey;
+                    var nonUserAsDocumentKey = key.GetNonUserAsDocumentKey();
+                    if (entry.PreviousAnalysis is LibraryAnalysis && _analysisEntries.TryGetValue(nonUserAsDocumentKey, out var documentEntry)) {
+                        key = nonUserAsDocumentKey;
                         entry = documentEntry;
                     }
 
@@ -237,7 +238,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             ActivityTracker.StartTracking();
             _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
 
-            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsLibraryAsDocument, dependencies);
+            var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
 
             lock (_syncObj) {
                 if (_version > graphVersion) {
@@ -299,6 +300,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private void StartNextSession(Task task) {
+            if (task.IsFaulted && task.Exception != null) {
+                var exception = task.Exception.InnerException;
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
+
             PythonAnalyzerSession session;
             lock (_syncObj) {
                 if (_nextSession == null) {

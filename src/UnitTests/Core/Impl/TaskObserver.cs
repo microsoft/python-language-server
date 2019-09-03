@@ -21,15 +21,16 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using FluentAssertions.Execution;
-using TestUtilities.Ben.Demystifier;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace TestUtilities {
     internal class TaskObserver {
         private readonly int _secondsTimeout;
         private readonly Action<Task> _afterTaskCompleted;
         private readonly TaskCompletionSource<Exception> _tcs;
-        private readonly ConcurrentDictionary<Task, StackFrame[]> _stackTraces;
+        private readonly ConcurrentDictionary<Task, StackTrace> _stackTraces;
         private int _count;
         private bool _isTestCompleted;
 
@@ -37,18 +38,23 @@ namespace TestUtilities {
             _secondsTimeout = secondsTimeout;
             _afterTaskCompleted = AfterTaskCompleted;
             _tcs = new TaskCompletionSource<Exception>();
-            _stackTraces = new ConcurrentDictionary<Task, StackFrame[]>();
+            _stackTraces = new ConcurrentDictionary<Task, StackTrace>();
         }
 
-        public void Add(Task task) {
-            // No reason to watch for task if it is completed already
-            if (task.IsCompleted) {
-                task.GetAwaiter().GetResult();
+        public bool TryAdd(Task task) {
+            if (!_stackTraces.TryAdd(task, GetFilteredStackTrace())) {
+                return false;
             }
 
             Interlocked.Increment(ref _count);
-            _stackTraces.TryAdd(task, GetFilteredStackTrace());
-            task.ContinueWith(_afterTaskCompleted, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            // No reason to watch for task if it is completed already
+            if (task.IsCompleted) {
+                AfterTaskCompleted(task);
+            } else {
+                task.ContinueWith(_afterTaskCompleted, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            }
+
+            return true;
         }
         
         public void WaitForObservedTask() {
@@ -62,20 +68,23 @@ namespace TestUtilities {
             }
         }
 
+        [CustomAssertion]
         private void Summarize() { 
-            var incompleteTasks = new Queue<KeyValuePair<Task, StackFrame[]>>();
-            var failedTasks = new Queue<KeyValuePair<StackFrame[], Exception>>();
+            var incompleteTasks = new Queue<(Task, StackTrace)>();
+            var failedTasks = new Queue<Exception>();
             foreach (var kvp in _stackTraces) {
                 var task = kvp.Key;
+                var stackTrace = kvp.Value;
+
                 if (!task.IsCompleted) {
-                    incompleteTasks.Enqueue(kvp);
+                    incompleteTasks.Enqueue((task, stackTrace));
                 } else if (task.IsFaulted && task.Exception != null) {
                     var aggregateException = task.Exception.Flatten();
                     var exception = aggregateException.InnerExceptions.Count == 1
                         ? aggregateException.InnerException
                         : aggregateException;
 
-                    failedTasks.Enqueue(new KeyValuePair<StackFrame[], Exception>(kvp.Value, exception));
+                    failedTasks.Enqueue(exception);
                 }
             }
 
@@ -99,16 +108,14 @@ namespace TestUtilities {
                 }
 
                 while (incompleteTasks.Count > 0) {
-                    var kvp = incompleteTasks.Dequeue();
-                    var task = kvp.Key;
+                    var (task, stackTrace) = incompleteTasks.Dequeue();
                     message
                         .Append("Id: ")
                         .Append(task.Id)
                         .Append(", status: ")
                         .Append(task.Status)
                         .AppendLine()
-                        .AppendFrames(kvp.Value)
-                        .AppendLine()
+                        .AppendLine(new EnhancedStackTrace(stackTrace).ToString())
                         .AppendLine();
                 }
 
@@ -133,20 +140,15 @@ namespace TestUtilities {
             }
 
             while (failedTasks.Count > 0) {
-                var kvp = failedTasks.Dequeue();
+                var exception = failedTasks.Dequeue();
                 message
-                    .Append(kvp.Value.GetType().Name)
-                    .Append(": ")
-                    .AppendException(kvp.Value)
-                    .AppendLine()
-                    .Append("   --- Task stack trace: ---")
-                    .AppendLine()
-                    .AppendFrames(kvp.Key)
+                    .AppendDemystified(exception)
                     .AppendLine()
                     .AppendLine();
             }
 
-            Execute.Assertion.FailWith(message.ToString());
+            Assert.Fail(message.ToString());
+            //Execute.Assertion.FailWith(message.ToString());
         }
 
         private void TestCompleted() {
@@ -169,27 +171,23 @@ namespace TestUtilities {
             }
         }
 
-        private static StackFrame[] GetFilteredStackTrace() {
-            var stackTrace = new StackTrace(2, true).GetFrames() ?? new StackFrame[0];
-            var filteredStackTrace = new List<StackFrame>();
-            var skip = true;
-            foreach (var frame in stackTrace) {
+        private static StackTrace GetFilteredStackTrace() {
+            var skipCount = 2;
+            var stackTrace = new StackTrace(skipCount, true);
+            var frames = stackTrace.GetFrames();
+            if (frames == null) {
+                return stackTrace;
+            }
+            
+            foreach (var frame in frames) {
+                skipCount++;
                 var frameMethod = frame.GetMethod();
-                if (skip) {
-                    if (frameMethod.Name == "DoNotWait" && frameMethod.DeclaringType?.Name == "TaskExtensions") {
-                        skip = false;
-                    }
-                    continue;
+                if (frameMethod.Name == "DoNotWait" && frameMethod.DeclaringType?.Name == "TaskExtensions") {
+                    return new StackTrace(skipCount, true);
                 }
-
-                if (frameMethod.DeclaringType?.Namespace?.StartsWith("Microsoft.VisualStudio.TestPlatform.MSTestFramework", StringComparison.Ordinal) ?? false) {
-                    continue;
-                }
-
-                filteredStackTrace.Add(frame);
             }
 
-            return filteredStackTrace.ToArray();
+            return stackTrace;
         }
     }
 }

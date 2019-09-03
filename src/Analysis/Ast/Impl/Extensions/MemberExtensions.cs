@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -34,6 +33,10 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsOfType(this IMember m, BuiltinTypeId typeId)
             => m?.GetPythonType().TypeId == typeId;
+
+        public static string GetString(this IMember m) {
+            return (m as IPythonConstant)?.GetString();
+        }
 
         public static IPythonType GetPythonType(this IMember m) {
             switch (m) {
@@ -102,5 +105,16 @@ namespace Microsoft.Python.Analysis {
             return parent;
         }
 
+        public static bool IsDeclaredAfter(this IMember m, Location loc)
+            => m is ILocatedMember lm && lm.IsDeclaredAfter(loc);
+
+        public static bool IsDeclaredAfter(this ILocatedMember lm, ILocatedMember other)
+            => lm.IsDeclaredAfter(other.Location);
+        public static bool IsDeclaredAfter(this ILocatedMember lm, Location loc)
+            => lm.Location.IndexSpan.Start > loc.IndexSpan.Start;
+        public static bool IsDeclaredAfterOrAt(this ILocatedMember lm, ILocatedMember other)
+            => lm.IsDeclaredAfterOrAt(other.Location);
+        public static bool IsDeclaredAfterOrAt(this ILocatedMember lm, Location loc)
+            => lm.Location.IndexSpan.Start >= loc.IndexSpan.Start;
     }
 }

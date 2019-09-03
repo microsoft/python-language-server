@@ -354,7 +354,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             var docArgs = new[] { $"'{name}'" }.Concat(constraints.Select(c => c.Name));
             var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
 
-            return new GenericTypeParameter(name, this, constraints, documentation, default);
+            return new GenericTypeParameter(name, this, constraints, default, documentation, default);
         }
 
         private IPythonType CreateGenericClassParameter(IReadOnlyList<IPythonType> typeArgs) {

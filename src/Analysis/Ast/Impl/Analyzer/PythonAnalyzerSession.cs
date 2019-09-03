@@ -17,6 +17,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -28,6 +29,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
+using Microsoft.Python.Core.Testing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -126,10 +128,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var stopWatch = Stopwatch.StartNew();
-            foreach (var affectedEntry in _walker.AffectedValues) {
-                affectedEntry.Invalidate(Version);
-            }
-
             var originalRemaining = _walker.Remaining;
             var remaining = originalRemaining;
             try {
@@ -196,7 +194,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     isCanceled = _isCanceled;
                 }
 
-                if (isCanceled && !node.Value.NotAnalyzed || IsAnalyzedLibraryInLoop(node)) {
+                if (isCanceled && !node.Value.NotAnalyzed) {
                     remaining++;
                     node.MoveNext();
                     continue;
@@ -207,6 +205,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (Interlocked.Increment(ref _runningTasks) >= _maxTaskRunning || _walker.Remaining == 1) {
                     RunAnalysis(node, stopWatch);
                 } else {
+                    ace.AddOne();
                     StartAnalysis(node, ace, stopWatch).DoNotWait();
                 }
             }
@@ -231,8 +230,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node)
-            => !node.HasMissingDependencies && node.Value.IsAnalyzedLibrary(_walker.Version) && node.IsWalkedWithDependencies && node.IsValidVersion;
+        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node, IDocumentAnalysis currentAnalysis)
+            => !node.HasMissingDependencies && currentAnalysis is LibraryAnalysis && node.IsWalkedWithDependencies && node.IsValidVersion;
 
         private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch) 
             => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
@@ -247,13 +246,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// </summary>
         private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
             try {
-                ace?.AddOne();
                 var entry = node.Value;
 
-                if (!entry.IsValidVersion(_walker.Version, out var module, out var ast)) {
-                    if (ast == null) {
-                        // Entry doesn't have ast yet. There should be at least one more session.
-                        Cancel();
+                if (!entry.CanUpdateAnalysis(_walker.Version, out var module, out var ast, out var currentAnalysis)) {
+                    if (IsAnalyzedLibraryInLoop(node, currentAnalysis)) {
+                        return;
+                    } else if (ast == default) {
+                        if (currentAnalysis == default) {
+                            // Entry doesn't have ast yet. There should be at least one more session.
+                            Cancel();
+                        } else {
+                            Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                        }
                     }
 
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
@@ -291,11 +295,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void AnalyzeEntry() {
             var stopWatch = _log != null ? Stopwatch.StartNew() : null;
             try {
-                if (!_entry.IsValidVersion(Version, out var module, out var ast)) {
-                    if (ast == null) {
-                        // Entry doesn't have ast yet. There should be at least one more session.
-                        Cancel();
+                if (!_entry.CanUpdateAnalysis(Version, out var module, out var ast, out var currentAnalysis)) {
+                    if (currentAnalysis is LibraryAnalysis) {
+                        return;
+                    } else if (ast == default) {
+                        if (currentAnalysis == default) {
+                            // Entry doesn't have ast yet. There should be at least one more session.
+                            Cancel();
+                        } else {
+                            Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                        }
                     }
+
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
                     return;
                 }
@@ -313,7 +324,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 LogException(_entry.Module, exception);
             } finally {
                 stopWatch?.Stop();
-                Interlocked.Decrement(ref _runningTasks);
             }
         }
 
@@ -340,9 +350,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var analysis = CreateAnalysis(node, (IDocument)module, ast, version, walker, isCanceled);
-
             analyzable?.NotifyAnalysisComplete(analysis);
-            entry.TrySetAnalysis(module.Analysis, version);
+            entry.TrySetAnalysis(analysis, version);
 
             if (module.ModuleType == ModuleType.User) {
                 var linterDiagnostics = _analyzer.LintModule(module);
@@ -352,9 +361,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void LogCompleted(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
-                var completed = node != null && module.Analysis is LibraryAnalysis ? "completed for library" : "completed ";
+                var completed = node != null && module.Analysis is LibraryAnalysis ? "completed for library" : "completed";
                 var message = node != null
-                    ? $"Analysis of {module.Name}({module.ModuleType}) on depth {node.VertexDepth} {completed} in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms."
+                    ? $"Analysis of {module.Name} ({module.ModuleType}) on depth {node.VertexDepth} {completed} in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms."
                     : $"Out of order analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.";
                 _log.Log(TraceEventType.Verbose, message);
             }
@@ -369,6 +378,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void LogException(IPythonModule module, Exception exception) {
             if (_log != null) {
                 _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. {exception}");
+            }
+
+            if (TestEnvironment.Current != null) {
+                ExceptionDispatchInfo.Capture(exception).Throw();
             }
         }
 

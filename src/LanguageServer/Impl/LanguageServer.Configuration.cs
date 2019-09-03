@@ -25,6 +25,8 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -36,7 +38,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
                 var settings = new LanguageServerSettings();
 
-                var rootSection = token["settings"];
+                var rootSection = token?["settings"];
                 var pythonSection = rootSection?["python"];
                 if (pythonSection == null) {
                     return;
@@ -51,7 +53,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
-                HandlePathWatchChanges(token);
+
+                var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
+
+                HandleUserConfiguredPathsChanges(userConfiguredPaths);
+                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
                 HandleDiagnosticsChanges(pythonSection, settings);
 
                 _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
@@ -97,6 +103,64 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
                 ds.Replace(m.Uri, entries, DiagnosticSource.Linter);
             }
+        }
+
+        private void HandlePathWatchChanges(bool watchSearchPaths) => _server.HandleWatchPathsChange(watchSearchPaths);
+
+        private void HandleUserConfiguredPathsChanges(ImmutableArray<string> paths) => _server.HandleUserConfiguredPathsChange(paths);
+
+        /// <summary>
+        /// Gets the user's configured search paths, by python.analysis.searchPaths,
+        /// python.autoComplete.extraPaths, PYTHONPATH, or _initParam's searchPaths.
+        /// </summary>
+        /// <param name="pythonSection">The python section of the user config.</param>
+        /// <returns>An array of search paths.</returns>
+        private ImmutableArray<string> GetUserConfiguredPaths(JToken pythonSection) {
+            var paths = ImmutableArray<string>.Empty;
+            var set = false;
+
+            if (pythonSection != null) {
+                var autoComplete = pythonSection["autoComplete"];
+                var analysis = pythonSection["analysis"];
+
+                // The values of these may not be null even if the value is "unset", depending on
+                // what the client uses as a default. Use null as a default anyway until the
+                // extension uses a null default (and/or extraPaths is dropped entirely).
+                var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
+                var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
+                var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
+
+                if (analysisSearchPaths != null) {
+                    set = true;
+                    paths = analysisSearchPaths.ToImmutableArray();
+                } else if (autoCompleteExtraPaths != null) {
+                    set = true;
+                    paths = autoCompleteExtraPaths.ToImmutableArray();
+                }
+
+                if (analysisUsePYTHONPATH) {
+                    var pythonpath = Environment.GetEnvironmentVariable("PYTHONPATH");
+                    if (pythonpath != null) {
+                        var sep = _services.GetService<IOSPlatform>().IsWindows ? ';' : ':';
+                        var pythonpathPaths = pythonpath.Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        if (pythonpathPaths.Length > 0) {
+                            paths = paths.AddRange(pythonpathPaths);
+                            set = true;
+                        }
+                    }
+                }
+            }
+
+            if (set) {
+                return paths;
+            }
+
+            var initPaths = _initParams?.initializationOptions?.searchPaths;
+            if (initPaths != null) {
+                return initPaths.ToImmutableArray();
+            }
+
+            return ImmutableArray<string>.Empty;
         }
     }
 }
