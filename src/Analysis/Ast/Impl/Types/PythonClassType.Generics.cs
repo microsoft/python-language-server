@@ -205,7 +205,7 @@ namespace Microsoft.Python.Analysis.Types {
                 }
 
                 // Don't add generic type parameters to bases 
-                if (!(arg.Value is IGenericTypeParameter) && arg.Value is IMember member && !member.GetPythonType().IsUnknown()) {
+                if (_bases != null && !(arg.Value is IGenericTypeParameter) && arg.Value is IMember member && !member.GetPythonType().IsUnknown()) {
                     var type = member.GetPythonType();
                     // Type may be a specific type created off generic or just a type
                     // for the copy constructor. Consider 'class A(Generic[K, V], Mapping[K, V])'
