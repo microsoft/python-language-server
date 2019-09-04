@@ -63,7 +63,6 @@ namespace Microsoft.Python.Analysis.Modules {
         private readonly Dictionary<object, Node> _astMap = new Dictionary<object, Node>();
         private readonly IDiagnosticsService _diagnosticsService;
 
-        private IModuleDatabaseService _dbService;
         private string _documentation; // Must be null initially.
         private CancellationTokenSource _parseCts;
         private CancellationTokenSource _linkedParseCts; // combined with 'dispose' cts
@@ -407,6 +406,8 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
+        public virtual IDependencyProvider DependencyProvider => new DependencyProvider(this, Services);
+
         public void NotifyAnalysisBegins() {
             lock (_syncObj) {
                 if (_updated) {
@@ -433,29 +434,6 @@ namespace Microsoft.Python.Analysis.Modules {
                     }
                 }
             }
-        }
-
-        public IDocumentAnalysis Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAst ast, int version, Func<bool> isCanceled, CancellationToken cancellationToken) {
-            var dbs = GetDbService();
-            var moduleType = node.Value.Module.ModuleType;
-
-            if (moduleType.CanBeCached() && dbs?.ModuleExistsInStorage(Name, FilePath) == true) {
-                if (!isCanceled() && dbs.TryRestoreGlobalScope(this, out var gs)) {
-                    Log?.Log(TraceEventType.Verbose, "Restored from database: ", Name);
-                    var analysis = new DocumentAnalysis(this, 1, gs, new ExpressionEval(Services, this, this.GetAst()), Array.Empty<string>());
-                    gs.ReconstructVariables();
-                    return analysis;
-                }
-                return null;
-            }
-
-            var walker = new ModuleWalker(Services, this, ast);
-            ast.Walk(walker);
-            cancellationToken.ThrowIfCancellationRequested();
-
-            walker.Complete();
-            cancellationToken.ThrowIfCancellationRequested();
-            return CreateAnalysis(node, ast, version, walker, isCanceled());
         }
 
         public void NotifyAnalysisComplete(IDocumentAnalysis analysis) {
@@ -486,45 +464,6 @@ namespace Microsoft.Python.Analysis.Modules {
             NewAnalysis?.Invoke(this, EventArgs.Empty);
         }
 
-        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
-            var canHaveLibraryAnalysis = false;
-            var saveAnalysis = false;
-            // Don't try to drop builtins; it causes issues elsewhere.
-            // We probably want the builtin module's AST and other info for evaluation.
-            switch (ModuleType) {
-                case ModuleType.Library:
-                case ModuleType.Compiled:
-                case ModuleType.CompiledBuiltin:
-                    canHaveLibraryAnalysis = true;
-                    saveAnalysis = true;
-                    break;
-            }
-
-            var createLibraryAnalysis = !isCanceled &&
-                                        node != null &&
-                                        !node.HasMissingDependencies &&
-                                        canHaveLibraryAnalysis &&
-                                        !IsOpen &&
-                                        node.HasOnlyWalkedDependencies &&
-                                        node.IsValidVersion;
-
-            if (!createLibraryAnalysis) {
-                return new DocumentAnalysis(this, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
-            }
-
-            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
-            this.SetAst(ast);
-
-            var eval = new ExpressionEval(walker.Eval.Services, this, ast);
-            var analysis = new LibraryAnalysis(this, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
-
-            if (saveAnalysis) {
-                var dbs = Services.GetService<IModuleDatabaseService>();
-                dbs?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
-            }
-
-            return analysis;
-        }
         protected virtual void OnAnalysisComplete() { }
         #endregion
 
@@ -658,18 +597,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public virtual int LocationToIndex(SourceLocation location) => this.GetAst()?.LocationToIndex(location) ?? default;
         #endregion
 
-        #region IDependencyProvider
-        public virtual HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) {
-            var dbs = GetDbService();
-            if (dbs != null && dbs.TryRestoreDependencies(this, out var dp)) {
-                return dp.GetDependencies(ast);
-            }
-            // TODO: try and handle LoadFunctionDependencyModules functionality here.
-            var dw = new DependencyWalker(this, ast);
-            return dw.Dependencies;
-        }
-        #endregion
-
         private void RemoveReferencesInModule(IPythonModule module) {
             if (module.GlobalScope?.Variables != null) {
                 foreach (var v in module.GlobalScope.Variables) {
@@ -677,7 +604,5 @@ namespace Microsoft.Python.Analysis.Modules {
                 }
             }
         }
-        private IModuleDatabaseService GetDbService()
-            => _dbService ?? (_dbService = Services.GetService<IModuleDatabaseService>());
     }
 }

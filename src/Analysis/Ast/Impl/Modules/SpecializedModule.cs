@@ -13,12 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -41,8 +39,8 @@ namespace Microsoft.Python.Analysis.Modules {
             return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;
         }
 
-        #region IDependencyProvider
-        public override HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => new HashSet<AnalysisModuleKey>();
+        #region IAnalyzable
+        public override IDependencyProvider DependencyProvider => Modules.DependencyProvider.Empty;
         #endregion
     }
 }

@@ -19,7 +19,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Collections;
@@ -252,7 +251,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return dependencies;
             }
 
-            var moduleDeps = (module as IDependencyProvider)?.GetDependencies(ast);
+            var dependencyProvider = (module as IAnalyzable)?.DependencyProvider;
+            var moduleDeps = dependencyProvider?.GetDependencies();
             if (moduleDeps != null) {
                 dependencies.UnionWith(moduleDeps);
             }
@@ -271,5 +271,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
         }
+
+
     }
 }

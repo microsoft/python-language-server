@@ -28,7 +28,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
@@ -253,7 +252,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 _dependencies = dc.Dependencies;
             }
 
-            public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
+            public HashSet<AnalysisModuleKey> GetDependencies() => _dependencies;
         }
     }
 }

@@ -20,9 +20,11 @@ using System.Runtime;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -234,7 +236,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node, IDocumentAnalysis currentAnalysis)
             => !node.HasMissingDependencies && currentAnalysis is LibraryAnalysis && node.IsWalkedWithDependencies && node.IsValidVersion;
 
-        private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch) 
+        private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch)
             => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
 
         private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
@@ -331,24 +333,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
-            
-            var analysis = analyzable?.Analyze(node, ast, version, () =>{
-                lock (_syncObj) {
-                    return _isCanceled;
-                }
-            }, _analyzerCancellationToken);
-
 
             bool isCanceled;
             lock (_syncObj) {
                 isCanceled = _isCanceled;
             }
+
+            var analysis = DoAnalyzeEntry(node, (IDocument)module, ast, version, isCanceled);
+            _analyzerCancellationToken.ThrowIfCancellationRequested();
+
             if (!isCanceled) {
                 node?.MarkWalked();
             }
 
             if (analysis != null) {
-                analyzable.NotifyAnalysisComplete(analysis);
+                analyzable?.NotifyAnalysisComplete(analysis);
                 entry.TrySetAnalysis(analysis, version);
 
                 if (module.ModuleType == ModuleType.User) {
@@ -357,6 +356,66 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
             }
         }
+
+        private IDocumentAnalysis DoAnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, bool isCanceled) {
+            var moduleType = node.Value.Module.ModuleType;
+
+            if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(document.Name, document.FilePath) == true) {
+                if (!isCanceled && _moduleDatabaseService.TryRestoreGlobalScope(document, out var gs)) {
+                    if (_log != null) {
+                        _log.Log(TraceEventType.Verbose, "Restored from database: ", document.Name);
+                    }
+                    var analysis = new DocumentAnalysis(document, 1, gs, new ExpressionEval(_services, document, document.GetAst()), Array.Empty<string>());
+                    gs.ReconstructVariables();
+                    return analysis;
+                }
+                return null;
+            }
+
+            var walker = new ModuleWalker(_services, document, ast);
+            ast.Walk(walker);
+
+            walker.Complete();
+            return CreateAnalysis(node, document, ast, version, walker, isCanceled);
+        }
+
+        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
+            var canHaveLibraryAnalysis = false;
+
+            // Don't try to drop builtins; it causes issues elsewhere.
+            // We probably want the builtin module's AST and other info for evaluation.
+            switch (document.ModuleType) {
+                case ModuleType.Library:
+                case ModuleType.Compiled:
+                case ModuleType.CompiledBuiltin:
+                    canHaveLibraryAnalysis = true;
+                    break;
+            }
+
+            var createLibraryAnalysis = !isCanceled &&
+                                        node != null &&
+                                        !node.HasMissingDependencies &&
+                                        canHaveLibraryAnalysis &&
+                                        !document.IsOpen &&
+                                        node.HasOnlyWalkedDependencies &&
+                                        node.IsValidVersion;
+
+            if (!createLibraryAnalysis) {
+                return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
+            }
+
+            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
+            document.SetAst(ast);
+
+            var eval = new ExpressionEval(walker.Eval.Services, document, ast);
+            var analysis = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
+
+            var dbs = _services.GetService<IModuleDatabaseService>();
+            dbs?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+
+            return analysis;
+        }
+
 
         private void LogCompleted(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {

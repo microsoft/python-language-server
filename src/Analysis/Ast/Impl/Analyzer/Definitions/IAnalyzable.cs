@@ -13,26 +13,22 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
-using System.Threading;
 using Microsoft.Python.Analysis.Dependencies;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
     /// </summary>
-    internal interface IAnalyzable: IDependencyProvider {
+    internal interface IAnalyzable {
+        /// <summary>
+        /// Returns object that can calculate dependencies of this entry.
+        /// </summary>
+        IDependencyProvider DependencyProvider { get; }
+
         /// <summary>
         /// Notifies document that analysis is about to begin.
         /// </summary>
         void NotifyAnalysisBegins();
-
-        /// <summary>
-        /// Performs analysis of the document base on the AST.
-        /// Database-backed modules may simply do nothing.
-        /// </summary>
-        IDocumentAnalysis Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAst ast, int version, Func<bool> isCanceled, CancellationToken cancellationToken);
 
         /// <summary>
         /// Notifies document that its analysis is now complete.

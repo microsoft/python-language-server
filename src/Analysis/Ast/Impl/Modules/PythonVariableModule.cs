@@ -22,7 +22,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -83,8 +82,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IDependencyProvider
-        public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) 
-            => (Module as IDependencyProvider)?.GetDependencies(ast) ?? new HashSet<AnalysisModuleKey>();
+        public IDependencyProvider DependencyProvider => (Module as IAnalyzable)?.DependencyProvider;
         #endregion
     }
 }

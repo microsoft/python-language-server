@@ -15,15 +15,14 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     /// <summary>
-    /// Implemented by a module that can provide list of imports to the dependency analysis.
+    /// Implements provider that can supply list of imports to the dependency analysis.
     /// Regular modules provide dependency from the AST, persistent/database modules
     /// provide dependencies from their models.
     /// </summary>
     internal interface IDependencyProvider {
-        HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast);
+        HashSet<AnalysisModuleKey> GetDependencies();
     }
 }
