@@ -339,12 +339,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 isCanceled = _isCanceled;
             }
 
+            var analysis = CreateAnalysis(node, (IDocument)module, ast, version, isCanceled);
+            _analyzerCancellationToken.ThrowIfCancellationRequested();
+
             if (!isCanceled) {
                 node?.MarkWalked();
             }
 
-            var analysis = CreateAnalysis(node, (IDocument)module, ast, version, isCanceled);
-            _analyzerCancellationToken.ThrowIfCancellationRequested();
             if (analysis != null) {
                 analyzable?.NotifyAnalysisComplete(analysis);
                 entry.TrySetAnalysis(analysis, version);
