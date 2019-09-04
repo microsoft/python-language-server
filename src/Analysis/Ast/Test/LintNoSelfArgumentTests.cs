@@ -160,34 +160,14 @@ class C:
         }
 
         [TestMethod, Priority(0)]
-        public async Task AbstractClassMethod() {
+        public async Task NoDiagnosticInMetaclass() {
             const string code = @"
-from typing import abstractclassmethod
-class A:
-    @abstractclassmethod
-    def test(cls):
+class Test(type):
+    def test(a):
         pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task AbstractProperty() {
-            const string code = @"
-class A:
-    @property
-    @abstractmethod
-    def test(cls):
-        pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().HaveCount(1);
-
-            var diagnostic = analysis.Diagnostics.ElementAt(0);
-            diagnostic.ErrorCode.Should().Be(ErrorCodes.NoSelfArgument);
-            diagnostic.SourceSpan.Should().Be(5, 14, 5, 17);
-            diagnostic.Message.Should().Be(Resources.NoSelfArgument.FormatInvariant("test"));
         }
     }
 }

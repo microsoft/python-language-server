@@ -73,6 +73,19 @@ class A:
         }
 
         [TestMethod, Priority(0)]
+        public async Task AbstractClassMethod() {
+            const string code = @"
+from typing import abstractclassmethod
+class A:
+    @abstractclassmethod
+    def test(cls):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ClsMethodValidInMetaclass() {
             const string code = @"
 class A(type):
@@ -177,6 +190,18 @@ class Test:
 class Test:
     @classmethod
     def test(cls, a, b, c, d, e):
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDiagnosticInMetaclass() {
+            const string code = @"
+class Test(type):
+    @classmethod
+    def test(a, b, c, d, e):
         pass
 ";
             var analysis = await GetAnalysisAsync(code);

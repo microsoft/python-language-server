@@ -52,20 +52,6 @@ class Test:
         }
 
         [TestMethod, Priority(0)]
-        public async Task AbstractClassPropertyNoArgs() {
-            const string code = @"
-class Test:
-    @classmethod
-    @abstractmethod
-    @property
-    def test():
-        pass
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Diagnostics.Should().BeEmpty();
-        }
-
-        [TestMethod, Priority(0)]
         public async Task ClassMethodNoArgs() {
             const string code = @"
 class Test:
@@ -119,6 +105,17 @@ class Test:
             const string code = @"
 class Test:
     @staticmethod
+    def test():
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDiagnosticInMetaclass() {
+            const string code = @"
+class Test(type):
     def test():
         pass
 ";
