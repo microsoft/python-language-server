@@ -24,13 +24,7 @@ namespace Microsoft.Python.Core.IO {
             return fileInfo.Length;
         }
 
-        public string ReadAllText(string filePath) {
-            if (PathUtils.TryGetZipFilePath(filePath, out var zipPath, out var relativeZipPath)) {
-                return PathUtils.GetZipContent(zipPath, relativeZipPath);
-            }
-            return File.ReadAllText(filePath);
-        }
-
+        public string ReadAllText(string path) => File.ReadAllText(path);
         public void WriteAllText(string path, string content) => File.WriteAllText(path, content);
         public IEnumerable<string> FileReadAllLines(string path) => File.ReadLines(path);
         public void FileWriteAllLines(string path, IEnumerable<string> contents) => File.WriteAllLines(path, contents);
