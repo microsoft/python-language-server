@@ -134,6 +134,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Id = uniqueId.GetStableHash(),
                 UniqueId = uniqueId,
                 Name = analysis.Document.Name,
+                QualifiedName = analysis.Document.QualifiedName,
                 Documentation = analysis.Document.Documentation,
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),

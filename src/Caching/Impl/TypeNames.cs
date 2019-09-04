@@ -100,13 +100,9 @@ namespace Microsoft.Python.Analysis.Caching {
                         parts.MemberNames = typeName == "..." ? new[] { "ellipsis" } : typeName.Split('.').ToArray();
                         break;
                     default:
-                        if (typeName.EndsWith("(stub)")) {
-                            parts.ModuleName = typeName.Substring(0, typeName.Length-6);
-                            parts.IsStub = true;
-                        } else {
-                            parts.ModuleName = typeName;
-                        }
+                        parts.ModuleName = typeName;
                         parts.MemberNames = Array.Empty<string>();
+                        DetermineModuleType(ref parts);
                         break;
                 }
                 return;
@@ -116,6 +112,15 @@ namespace Microsoft.Python.Analysis.Caching {
             parts.ModuleName = typeName.Substring(0, moduleSeparatorIndex);
             var memberNamesOffset = parts.ModuleName.Length + 1;
             parts.MemberNames = GetTypeNames(typeName.Substring(memberNamesOffset), '.');
+
+            DetermineModuleType(ref parts);
+        }
+
+        private static void DetermineModuleType(ref QualifiedNameParts parts) {
+            if (parts.ModuleName.EndsWith("(stub)")) {
+                parts.ModuleName = parts.ModuleName.Substring(0, parts.ModuleName.Length - 6);
+                parts.IsStub = true;
+            }
         }
 
         public static IReadOnlyList<string> GetTypeNames(string qualifiedTypeName, char separator) {

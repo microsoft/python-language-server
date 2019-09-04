@@ -664,6 +664,7 @@ namespace Microsoft.Python.Analysis.Modules {
             if (dbs != null && dbs.TryRestoreDependencies(this, out var dp)) {
                 return dp.GetDependencies(ast);
             }
+            // TODO: try and handle LoadFunctionDependencyModules functionality here.
             var dw = new DependencyWalker(this, ast);
             return dw.Dependencies;
         }

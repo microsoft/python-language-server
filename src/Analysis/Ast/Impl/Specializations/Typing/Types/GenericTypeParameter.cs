@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             object covariant,
             object contravariant,
             IndexSpan indexSpan)
-            : base(name, new Location(declaringModule, indexSpan), 
+            : base(name, new Location(declaringModule, indexSpan),
                 GetDocumentation(name, constraints, bound, covariant, contravariant, declaringModule)) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
             Bound = bound;
@@ -110,7 +110,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 case IPythonConstant c:
                     var s = c.GetString();
                     if (!string.IsNullOrEmpty(s)) {
-                        return eval.GetTypeFromString(c.GetString()) ?? argSet.Eval.UnknownType;
+                        return eval.GetTypeFromString(s) ?? argSet.Eval.UnknownType;
                     }
                     return argSet.Eval.UnknownType;
                 default:
@@ -144,7 +144,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             var boundStrings = Enumerable.Empty<string>();
             if (bound != null) {
-                var boundName = bound.DeclaringModule.Equals(declaringModule) ? bound.Name : bound.QualifiedName.Replace(':', '.');
+                var boundName = bound.DeclaringModule.Equals(declaringModule)
+                    ? bound.Name : $"{bound.DeclaringModule}.{bound.Name}";
                 boundStrings = Enumerable.Repeat($"bound={boundName}", 1);
             }
 

@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis {
             }
             return cm.DeclaringModule.ModuleType == ModuleType.Builtins
                 ? string.Join(".", s)
-                : $"{cm.DeclaringModule.Name}:{string.Join(".", s)}";
+                : $"{cm.DeclaringModule.QualifiedName}:{string.Join(".", s)}";
         }
     }
 }
