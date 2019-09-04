@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
@@ -88,11 +89,17 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         private static IPythonType GetBoundType(IArgumentSet argSet) {
             var eval = argSet.Eval;
-            var rawBound = argSet.GetArgumentValue<IMember>("bound");
+            var boundArg = argSet.Argument("bound");
+            // User did not pass in upper bound, bail
+            if(boundArg.ValueIsDefault) {
+                return null;
+            }
+
+            var rawBound = boundArg.Value as IMember;
             switch (rawBound) {
                 case IPythonType t:
                     return t;
-                case IPythonConstant c when c.GetString() != null:
+                case IPythonConstant c when !string.IsNullOrEmpty(c.GetString()):
                     return eval.GetTypeFromString(c.GetString());
                 default:
                     return rawBound.GetPythonType();
@@ -100,6 +107,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         }
 
         public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
+            Check.ArgumentNotNull(nameof(argSet.Eval), argSet.Eval);
+
             if (!TypeVarArgumentsValid(argSet)) {
                 return declaringModule.Interpreter.UnknownType;
             }

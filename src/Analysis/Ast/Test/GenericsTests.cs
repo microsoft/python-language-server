@@ -1331,6 +1331,44 @@ x = Test().get()
         }
 
         [TestMethod, Priority(0)]
+        public async Task GenericDefaultBound() {
+            const string code = @"
+from typing import TypeVar, Generic
+from logging import Logger, getLogger
+
+T = TypeVar('T')
+
+class A: ...
+
+class Test(Generic[T]):
+    def get(self) -> T: ...
+
+x = Test().get()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType("T");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task GenericUnknownBound() {
+            const string code = @"
+from typing import TypeVar, Generic
+from logging import Logger, getLogger
+
+T = TypeVar('T', bound='unknown_thing')
+
+class A: ...
+
+class Test(Generic[T]):
+    def get(self) -> T: ...
+
+x = Test().get()
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType("T");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GenericPath() {
             const string code = @"
 import pathlib

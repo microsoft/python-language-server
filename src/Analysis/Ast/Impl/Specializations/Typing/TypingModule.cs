@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             o.SetParameters(new List<ParameterInfo> {
                     new ParameterInfo("name", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
                     new ParameterInfo("constraints", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.List, null),
-                    new ParameterInfo("bound", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
+                    new ParameterInfo("bound", Interpreter.GetBuiltinType(BuiltinTypeId.Type), ParameterKind.KeywordOnly, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
                     new ParameterInfo("covariant", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.KeywordOnly, new PythonConstant(false, Interpreter.GetBuiltinType(BuiltinTypeId.Bool))),
                     new ParameterInfo("contravariant", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.KeywordOnly, new PythonConstant(false, Interpreter.GetBuiltinType(BuiltinTypeId.Bool)))
             });
