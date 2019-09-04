@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
@@ -56,6 +57,13 @@ namespace Microsoft.Python.Analysis {
         public static bool IsPrivateMember(this IPythonClassType cls, string memberName) {
             var unmangledName = cls.UnmangleMemberName(memberName);
             return unmangledName.StartsWithOrdinal("__") && memberName.EqualsOrdinal($"_{cls.Name}{unmangledName}");
+        }
+
+        /// <summary>
+        /// Returns if the class is a metaclass. Metaclasses have 'type' in their Mro.
+        /// </summary>
+        public static bool IsMetaclass(this IPythonClassType cls) {
+            return cls.Mro.Any(b => b.Name == BuiltinTypeId.Type.GetTypeName(true));
         }
 
         /// <summary>

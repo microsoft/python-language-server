@@ -105,13 +105,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     case IPythonFunctionType function:
                         CheckValidFunction(function, parameters);
                         break;
+                    //TODO check properties
                 }
             }
         }
 
         private void CheckValidFunction(IPythonFunctionType function, IReadOnlyList<IParameterInfo> parameters) {
             // Don't give diagnostics on functions defined in metaclasses
-            if (SelfIsMetaclass()) {
+            if (_self.IsMetaclass()) {
                 return;
             }
 
@@ -138,19 +139,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!function.IsClassMethod && !param.Equals("self")) {
                 ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
             }
-        }
-
-        /// <summary>
-        /// Returns if the function is part of a metaclass definition 
-        /// e.g 
-        /// class A(type):
-        ///  def f(cls): ...
-        /// f is a metaclass function
-        /// </summary>
-        /// <returns></returns>
-        private bool SelfIsMetaclass() {
-            // Just allow all specialized types in Mro to avoid false positives
-            return _self.Mro.Any(b => b.IsSpecialized);
         }
 
         private void ReportFunctionParams(string message, string errorCode, LocationInfo location) {
