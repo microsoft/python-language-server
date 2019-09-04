@@ -144,8 +144,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
             var boundStrings = Enumerable.Empty<string>();
             if (bound != null) {
-                var boundName = bound.DeclaringModule.Equals(declaringModule)
-                    ? bound.Name : $"{bound.DeclaringModule}.{bound.Name}";
+                string boundName;
+                if(bound.DeclaringModule.Equals(declaringModule) || bound.DeclaringModule is IBuiltinsPythonModule) {
+                    boundName = bound.Name;
+                } else {
+                    boundName = $"{bound.DeclaringModule.Name}.{bound.Name}";
+                }
                 boundStrings = Enumerable.Repeat($"bound={boundName}", 1);
             }
 
