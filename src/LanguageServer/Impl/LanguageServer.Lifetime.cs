@@ -53,6 +53,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private async Task<JToken> GetPythonConfigurationAsync(CancellationToken cancellationToken = default, int? cancelAfterMilli = null) {
+            if (_initParams?.capabilities?.workspace?.configuration != true) {
+                return null;
+            }
+
             try {
                 using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) {
                     if (cancelAfterMilli.HasValue) {

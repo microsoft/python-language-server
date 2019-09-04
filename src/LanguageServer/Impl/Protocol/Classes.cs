@@ -198,6 +198,11 @@ namespace Microsoft.Python.LanguageServer.Protocol {
 
         public struct ExecuteCommandCapabilities { public bool dynamicRegistration; }
         public ExecuteCommandCapabilities? executeCommand;
+
+        /// <summary>
+        /// Supports the 'workspace/configuration' request.
+        /// </summary>
+        public bool? configuration;
     }
 
     [Serializable]
