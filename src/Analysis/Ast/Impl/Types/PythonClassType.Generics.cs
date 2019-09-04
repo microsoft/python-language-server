@@ -391,7 +391,7 @@ namespace Microsoft.Python.Analysis.Types {
             // as well as qualified name.
             if (!_genericParameters.IsNullOrEmpty()) {
                 _nameWithParameters = CodeFormatter.FormatSequence(BaseName, '[', _genericParameters.Values);
-                _qualifiedNameWithParameters = CodeFormatter.FormatSequence(BaseName, '[', _genericParameters.Values.Select(v => v.Name));
+                _qualifiedNameWithParameters = CodeFormatter.FormatSequence(BaseName, '[', _genericParameters.Values.Select(v => v.QualifiedName));
             }
         }
 

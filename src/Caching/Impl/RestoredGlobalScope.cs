@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public void ReconstructVariables() {
-            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions).ToArray();
+            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
             foreach (var m in models.Concat(_model.Variables)) {
                 m.Populate(_factory, null, this);
             }
@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Caching {
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
             var mf = new ModuleFactory(_model, Module, this);
-            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions).ToArray();
+            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
 
             foreach (var m in models) {
                 _scopeVariables.DeclareVariable(m.Name, m.Create(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
