@@ -339,13 +339,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 isCanceled = _isCanceled;
             }
 
-            var analysis = DoAnalyzeEntry(node, (IDocument)module, ast, version, isCanceled);
-            _analyzerCancellationToken.ThrowIfCancellationRequested();
-
             if (!isCanceled) {
                 node?.MarkWalked();
             }
 
+            var analysis = CreateAnalysis(node, (IDocument)module, ast, version, isCanceled);
+            _analyzerCancellationToken.ThrowIfCancellationRequested();
             if (analysis != null) {
                 analyzable?.NotifyAnalysisComplete(analysis);
                 entry.TrySetAnalysis(analysis, version);
@@ -357,7 +356,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private IDocumentAnalysis DoAnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, bool isCanceled) {
+        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, bool isCanceled) {
             var moduleType = node.Value.Module.ModuleType;
 
             if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(document.Name, document.FilePath) == true) {
