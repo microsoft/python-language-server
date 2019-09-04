@@ -38,7 +38,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     context = context.IsUnknown() ? contextManager : context;
                 }
 
-                var sequenceHandler = new SequenceExpressionHandler(Walker);
                 switch (item.Variable) {
                     // Handle with Test() as a
                     case NameExpression nameExpr when !string.IsNullOrEmpty(nameExpr.Name):
@@ -51,7 +50,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     // Handle with Test() as (a, b) 
                     // Single element list [a] is a sequence expression so also handled here
                     case SequenceExpression seqExpr:
-                        SequenceExpressionHandler.Assign(seqExpr, context, Eval);
+                        var sequenceHandler = new SequenceExpressionHandler(Walker);
+                        sequenceHandler.HandleAssignment(seqExpr, context);
                         break;
                 }
             }

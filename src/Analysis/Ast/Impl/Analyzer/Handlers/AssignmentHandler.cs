@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     case SequenceExpression seq:
                         // Tuple = Tuple. Transfer values.
                         var seqHandler = new SequenceExpressionHandler(Walker);
-                        seqHandler.HandleAssignment(seq, node.Right, value);
+                        seqHandler.HandleAssignment(seq, value);
                         break;
                     case ExpressionWithAnnotation annExpr:
                         HandleAnnotatedExpression(annExpr, value);

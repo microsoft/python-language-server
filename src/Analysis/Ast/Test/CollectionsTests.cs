@@ -337,11 +337,18 @@ for some_str, some_int, some_bool in x:
     print some_str
     print some_int
     print some_bool
+
+for another_str, another_int, another_bool in [('abc', 42, True), ('abc', 23, False)]:
+    pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("some_str").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("some_int").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("some_bool").OfType(BuiltinTypeId.Bool);
+
+            analysis.Should().HaveVariable("another_str").OfType(BuiltinTypeId.Str)
+                   .And.HaveVariable("another_int").OfType(BuiltinTypeId.Int)
+                   .And.HaveVariable("another_bool").OfType(BuiltinTypeId.Bool);
         }
 
         [TestMethod, Priority(0)]

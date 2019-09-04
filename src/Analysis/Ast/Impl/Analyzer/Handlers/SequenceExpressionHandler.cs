@@ -25,27 +25,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class SequenceExpressionHandler : StatementHandler {
         public SequenceExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleAssignment(SequenceExpression seq, Expression rhs, IMember value) {
-            if (rhs is TupleExpression tex) {
-                Assign(seq, tex, Eval);
-            } else {
-                Assign(seq, value, Eval);
-            }
-        }
-
-        internal static void Assign(SequenceExpression lhs, TupleExpression rhs, ExpressionEval eval) {
-            var names = NamesFromSequenceExpression(lhs).ToArray();
-            var values = ValuesFromSequenceExpression(rhs, eval).ToArray();
-            for (var i = 0; i < names.Length; i++) {
-                IMember value = null;
-                if (values.Length > 0) {
-                    value = i < values.Length ? values[i] : values[values.Length - 1];
-                }
-
-                if (!string.IsNullOrEmpty(names[i]?.Name)) {
-                    eval.DeclareVariable(names[i].Name, value ?? eval.UnknownType, VariableSource.Declaration, names[i]);
-                }
-            }
+        public void HandleAssignment(SequenceExpression seq, IMember value) {
+            Assign(seq, value, Eval);
         }
 
         internal static void Assign(SequenceExpression seq, IMember value, ExpressionEval eval) {
@@ -95,22 +76,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
             return names;
-        }
-
-        private static IEnumerable<IMember> ValuesFromSequenceExpression(SequenceExpression seq, ExpressionEval eval) {
-            var members = new List<IMember>();
-            foreach (var item in seq.Items) {
-                var value = eval.GetValueFromExpression(item);
-                switch (value) {
-                    case IPythonCollection coll:
-                        members.AddRange(coll.Contents);
-                        break;
-                    default:
-                        members.Add(value);
-                        break;
-                }
-            }
-            return members;
         }
     }
 }

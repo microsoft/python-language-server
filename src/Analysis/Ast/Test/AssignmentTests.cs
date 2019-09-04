@@ -595,6 +595,74 @@ a = b, c = [0, 1]
         }
 
         [TestMethod, Priority(0)]
+        public async Task UnpackingNestedTuple() {
+            const string code = @"
+b, c = (1, (1,2))
+d, e, f, g = (1, (1,2), 2, ('test', 'test'))
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Tuple);
+
+            analysis.Should().HaveVariable("d").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("e").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.Tuple);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingNestedList() {
+            const string code = @"
+b, c = [1, [1,2]]
+d, e, f, g = [1, (1,2), 2, ['test', 'test']]
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.List);
+
+            analysis.Should().HaveVariable("d").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("e").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.List);
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingTypingNestedTuple() {
+            const string code = @"
+from typing import Tuple
+h: Tuple[int, Tuple[str, int]]
+b, c = h
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Tuple);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnpackingTypingNestedList() {
+            const string code = @"
+from typing import Tuple, List
+t: Tuple[int, Tuple[str, int], List[int]]
+b, c, d = t
+e, (f, g), h = t
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Tuple)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.List);
+
+            analysis.Should().HaveVariable("e").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("f").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("g").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("h").OfType(BuiltinTypeId.List);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task Uts46dataModule() {
             const string code = @"from idna.uts46data import *";
             await GetAnalysisAsync(code);
