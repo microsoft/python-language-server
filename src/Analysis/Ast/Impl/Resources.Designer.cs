@@ -259,15 +259,6 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The first argument to NewType must be a string, but it is of type &apos;{0}&apos;..
-        /// </summary>
-        internal static string NewTypeFirstArgNotString {
-            get {
-                return ResourceManager.GetString("NewTypeFirstArgNotString", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The first argument to NewType must be a string..
         /// </summary>
         internal static string NewTypeFirstArgument {

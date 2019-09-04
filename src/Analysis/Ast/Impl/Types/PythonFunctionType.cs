@@ -127,6 +127,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         private void ProcessDecorators(FunctionDefinition fd) {
+            // TODO warn about incompatible combinations, e.g @staticmethod + @classmethod
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
                 switch (dec.Name) {
                     case @"staticmethod":
