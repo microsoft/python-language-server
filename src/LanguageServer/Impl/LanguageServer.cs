@@ -102,7 +102,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (var timer = _requestTimer.Time("workspace/symbol")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
                 var result = await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
-                timer.AddMeasure("count", result.Length);
+                timer.AddMeasure("count", result?.Length ?? 0);
                 return result;
             }
         }
@@ -204,7 +204,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (var timer = _requestTimer.Time("textDocument/completion")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
                 var result = await _server.Completion(ToObject<CompletionParams>(token), GetToken(cancellationToken));
-                timer.AddMeasure("count", result.items.Length);
+                timer.AddMeasure("count", result?.items?.Length ?? 0);
                 return result;
             }
         }
