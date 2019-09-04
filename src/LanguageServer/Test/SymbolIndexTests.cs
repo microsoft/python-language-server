@@ -27,6 +27,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
+using Microsoft.Python.UnitTests.Core.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using TestUtilities;
@@ -168,7 +169,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 index.MarkAsPending(path);
                 using (var cts = new CancellationTokenSource()) {
                     var t = index.HierarchicalDocumentSymbolsAsync(path, cts.Token);
-                    t.IsCompleted.Should().BeFalse();
+                    t.Should().NotBeCompleted();
                     cts.Cancel();
                     Func<Task> cancelled = async () => {
                         await t;

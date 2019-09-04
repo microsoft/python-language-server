@@ -81,7 +81,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             _fileSystem.FileExists(testFilePath).Returns(true);
             SetFileOpen(_fileSystem, testFilePath, _ => throw new FileNotFoundException());
 
-            using (IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion)) {
+            using (var indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion)) {
                 await indexParser.ParseAsync(testFilePath);
             }
         }
@@ -95,7 +95,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 SetFileOpen(_fileSystem, testFilePath, fileStream);
             }
 
-            using (IIndexParser indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion))
+            using (var indexParser = new IndexParser(_fileSystem, _pythonLanguageVersion))
             using (var cancellationTokenSource = new CancellationTokenSource()) {
                 cancellationTokenSource.Cancel();
 
@@ -110,12 +110,10 @@ namespace Microsoft.Python.LanguageServer.Tests {
             fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read).Returns(stream);
         }
 
-        private void SetFileOpen(IFileSystem fileSystem, string path, Func<object, Stream> p) {
-            fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read).Returns(p);
-        }
+        private void SetFileOpen(IFileSystem fileSystem, string path, Func<object, Stream> p) 
+            => fileSystem.FileOpen(path, FileMode.Open, FileAccess.Read, FileShare.Read).Returns(p);
 
-        private Stream MakeStream(string str) {
-            return new MemoryStream(Encoding.UTF8.GetBytes(str));
-        }
+        private Stream MakeStream(string str) 
+            => new MemoryStream(Encoding.UTF8.GetBytes(str));
     }
 }
