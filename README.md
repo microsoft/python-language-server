@@ -27,13 +27,16 @@ The following diagnostics are supported:
 | `inherit-non-class` | Attempted to inherit something that is not a class. |
 | `too-many-function-arguments` | Too many arguments have been provided to a function call. |
 | `too-many-positional-arguments-before-star` | Too many arguments have been provided before a starred argument. |
+| `no-cls-argument` | First parameter in a class method must be `cls` |
+| `no-method-argument` | Method has no arguments
+| `no-self-argument` | First parameter in a method must be `self`
 | `parameter-already-specified` | A argument with this name has already been specified. |
 | `parameter-missing` | A required positional argument is missing. |
 | `positional-argument-after-keyword` | A positional argument has been provided after a keyword argument. |
 | `return-in-init` | Encountered an explicit return in `__init__` function. |
 | `typing-generic-arguments` | An error occurred while constructing `Generic`. |
-| `typing-typevar-arguments` | An error occurred while constructing `TypeVar`. |
 | `typing-newtype-arguments` | An error occurred while constructing `NewType`. |
+| `typing-typevar-arguments` | An error occurred while constructing `TypeVar`. |
 | `unknown-parameter-name` | The keyword argument name provided is unknown. |
 | `unresolved-import` | An import cannot be resolved, and may be missing. |
 | `undefined-variable` | A variable has been used that has not yet been defined. |
