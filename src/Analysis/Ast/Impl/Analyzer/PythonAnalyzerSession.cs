@@ -351,7 +351,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis DoAnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version) {
-            var moduleType = node.Value.Module.ModuleType;
+            var moduleType = document.ModuleType;
 
             bool isCanceled;
             lock (_syncObj) {
@@ -378,7 +378,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 isCanceled = _isCanceled;
             }
             if (!isCanceled) {
-                node.MarkWalked();
+                node?.MarkWalked();
             }
 
             return CreateAnalysis(node, document, ast, version, walker, isCanceled);
