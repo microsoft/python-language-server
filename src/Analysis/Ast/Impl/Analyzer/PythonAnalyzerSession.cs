@@ -334,17 +334,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
 
-            bool isCanceled;
-            lock (_syncObj) {
-                isCanceled = _isCanceled;
-            }
-
-            var analysis = CreateAnalysis(node, (IDocument)module, ast, version, isCanceled);
+            var analysis = DoAnalyzeEntry(node, (IDocument)module, ast, version);
             _analyzerCancellationToken.ThrowIfCancellationRequested();
-
-            if (!isCanceled) {
-                node?.MarkWalked();
-            }
 
             if (analysis != null) {
                 analyzable?.NotifyAnalysisComplete(analysis);
@@ -357,8 +348,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, bool isCanceled) {
+        private IDocumentAnalysis DoAnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version) {
             var moduleType = node.Value.Module.ModuleType;
+
+            bool isCanceled;
+            lock (_syncObj) {
+                isCanceled = _isCanceled;
+            }
 
             if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(document.Name, document.FilePath) == true) {
                 if (!isCanceled && _moduleDatabaseService.TryRestoreGlobalScope(document, out var gs)) {
@@ -374,8 +370,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var walker = new ModuleWalker(_services, document, ast);
             ast.Walk(walker);
-
             walker.Complete();
+
+            lock (_syncObj) {
+                isCanceled = _isCanceled;
+            }
+            if (!isCanceled) {
+                node.MarkWalked();
+            }
+
             return CreateAnalysis(node, document, ast, version, walker, isCanceled);
         }
 
