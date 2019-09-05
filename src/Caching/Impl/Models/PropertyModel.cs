@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
             _property.SetDocumentation(Documentation);
 
-            var o = new PythonFunctionOverload(Name, mf.DefaultLocation);
+            var o = new PythonFunctionOverload(_property, mf.DefaultLocation);
             o.SetDocumentation(Documentation);
             o.SetReturnValue(mf.ConstructMember(ReturnType), true);
             _property.AddOverload(o);
