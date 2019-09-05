@@ -252,7 +252,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var dependencyProvider = (module as IAnalyzable)?.DependencyProvider;
-            var moduleDeps = dependencyProvider?.GetDependencies();
+            var moduleDeps = dependencyProvider?.GetDependencies(ast);
             if (moduleDeps != null) {
                 dependencies.UnionWith(moduleDeps);
             }

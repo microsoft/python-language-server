@@ -19,6 +19,7 @@ using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Modules {
     internal sealed class DependencyProvider: IDependencyProvider {
@@ -33,11 +34,9 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         #region IDependencyProvider
-        public HashSet<AnalysisModuleKey> GetDependencies() {
-            var ast = _module.GetAst();
-
+        public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) {
             if (_dbService != null && _dbService.TryRestoreDependencies(_module, out var dp)) {
-                return dp.GetDependencies();
+                return dp.GetDependencies(ast);
             }
 
             // TODO: try and handle LoadFunctionDependencyModules functionality here.
@@ -47,7 +46,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         private sealed class EmptyDependencyProvider: IDependencyProvider {
-            public HashSet<AnalysisModuleKey> GetDependencies() => new HashSet<AnalysisModuleKey>();
+            public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => new HashSet<AnalysisModuleKey>();
         }
     }
 }
