@@ -1,0 +1,148 @@
+{
+  "UniqueId": "module",
+  "Documentation": "",
+  "Functions": [
+    {
+      "Overloads": [
+        {
+          "Parameters": [
+            {
+              "Name": "a",
+              "Type": null,
+              "DefaultValue": null,
+              "Kind": 0
+            }
+          ],
+          "ReturnType": null
+        }
+      ],
+      "Documentation": null,
+      "Attributes": 0,
+      "Classes": [],
+      "Functions": [],
+      "Id": 24395611,
+      "Name": "func",
+      "QualifiedName": "module:func",
+      "IndexSpan": {
+        "Start": 77,
+        "Length": 4
+      }
+    }
+  ],
+  "Variables": [
+    {
+      "Value": "t:bool",
+      "Id": -529376420,
+      "Name": "__debug__",
+      "QualifiedName": "__debug__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": -1636005055,
+      "Name": "__doc__",
+      "QualifiedName": "__doc__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 875442003,
+      "Name": "__file__",
+      "QualifiedName": "__file__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 1097116834,
+      "Name": "__name__",
+      "QualifiedName": "__name__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 75395663,
+      "Name": "__package__",
+      "QualifiedName": "__package__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:list",
+      "Id": 1154586556,
+      "Name": "__path__",
+      "QualifiedName": "__path__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:dict",
+      "Id": 817929997,
+      "Name": "__dict__",
+      "QualifiedName": "__dict__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:object",
+      "Id": 1253875154,
+      "Name": "__spec__",
+      "QualifiedName": "__spec__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    }
+  ],
+  "Classes": [],
+  "TypeVars": [],
+  "NamedTuples": [],
+  "NewLines": [
+    {
+      "EndIndex": 2,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 34,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 62,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 69,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 91,
+      "Kind": 3
+    }
+  ],
+  "FileSize": 91,
+  "Imports": [],
+  "FromImports": [],
+  "StubImports": [],
+  "StubFromImports": [],
+  "Id": -2131035837,
+  "Name": "module",
+  "QualifiedName": "module",
+  "IndexSpan": null
+}

@@ -24,6 +24,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public string Name => "Any";
+        public string QualifiedName => "typing:Any";
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public string Documentation => Name;
         public bool IsBuiltin => false;

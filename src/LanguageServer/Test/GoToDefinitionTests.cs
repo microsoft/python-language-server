@@ -464,5 +464,25 @@ class MainClass:
             reference.range.Should().Be(2, 8, 2, 16);
             reference.uri.AbsolutePath.Should().Contain("bar.py");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedTuple() {
+            const string code = @"
+from typing import NamedTuple
+
+Point = NamedTuple('Point', ['x', 'y'])
+
+def f(a, b):
+    return Point(a, b)
+
+pt = Point(1, 2)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(7, 14), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(3, 0, 3, 5);
+        }
     }
 }

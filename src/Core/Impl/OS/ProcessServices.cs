@@ -39,20 +39,20 @@ namespace Microsoft.Python.Core.OS {
 
         public async Task<string> ExecuteAndCaptureOutputAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default) {
             var output = string.Empty;
-            var process = Start(startInfo);
+            using (var process = Start(startInfo)) {
 
-            if (startInfo.RedirectStandardError && process is PlatformProcess p) {
-                p.Process.ErrorDataReceived += (s, e) => { };
-                p.Process.BeginErrorReadLine();
+                if (startInfo.RedirectStandardError && process is PlatformProcess p) {
+                    p.Process.ErrorDataReceived += (s, e) => { };
+                    p.Process.BeginErrorReadLine();
+                }
+
+                try {
+                    output = await process.StandardOutput.ReadToEndAsync();
+                    await process.WaitForExitAsync(30000, cancellationToken);
+                } catch (IOException) { } catch (OperationCanceledException) { }
+
+                return output;
             }
-
-            try {
-                output = await process.StandardOutput.ReadToEndAsync();
-                await process.WaitForExitAsync(30000, cancellationToken);
-            } catch (IOException) {
-            } catch (OperationCanceledException) { }
-
-            return output;
         }
     }
 }

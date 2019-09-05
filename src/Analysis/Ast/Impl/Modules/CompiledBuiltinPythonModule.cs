@@ -23,8 +23,8 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Represents compiled module that is built into the language.
     /// </summary>
     internal sealed class CompiledBuiltinPythonModule : CompiledPythonModule {
-        public CompiledBuiltinPythonModule(string moduleName, IPythonModule stub, IServiceContainer services)
-            : base(moduleName, ModuleType.CompiledBuiltin, MakeFakeFilePath(moduleName, services), stub, services) { }
+        public CompiledBuiltinPythonModule(string moduleName, IPythonModule stub, bool isPersistent, IServiceContainer services)
+            : base(moduleName, ModuleType.CompiledBuiltin, MakeFakeFilePath(moduleName, services), stub, isPersistent, services) { }
 
         protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
             => !InstallPath.TryGetFile("scrape_module.py", out var sm) ? null : new [] { "-W", "ignore", "-B", "-E", sm, "-u8", Name };

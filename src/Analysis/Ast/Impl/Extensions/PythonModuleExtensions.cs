@@ -21,7 +21,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis {
     public static class PythonModuleExtensions {
         internal static PythonAst GetAst(this IPythonModule module)
-            => (PythonAst)((IAstNodeContainer)module).GetAstNode(module);
+            => (PythonAst)(module as IAstNodeContainer)?.GetAstNode(module);
 
         internal static void SetAst(this IPythonModule module, PythonAst ast) {
             var contained = (IAstNodeContainer)module;

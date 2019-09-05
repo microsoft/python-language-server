@@ -25,11 +25,9 @@ namespace Microsoft.Python.Parsing.Tests {
             IsCPython = cPython;
         }
 
-        public override string ToString() => Configuration.Description;
         public string LibraryPath => Configuration.LibraryPath;
         public string InterpreterPath => Configuration.InterpreterPath;
         public PythonLanguageVersion Version => Configuration.Version.ToLanguageVersion();
-        public string Id => Configuration.Id;
         public bool Isx64 => Configuration.Architecture == InterpreterArchitecture.x64;
         public InterpreterArchitecture Architecture => Configuration.Architecture;
     }

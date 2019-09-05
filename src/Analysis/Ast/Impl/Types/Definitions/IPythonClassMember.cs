@@ -17,7 +17,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents member of a class.
     /// </summary>
-    public interface IPythonClassMember : IPythonType, ILocatedMember {
+    public interface IPythonClassMember : IPythonType {
         IPythonType DeclaringType { get; }
     }
 }

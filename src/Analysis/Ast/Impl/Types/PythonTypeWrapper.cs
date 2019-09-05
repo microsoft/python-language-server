@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Types {
     /// <summary>
@@ -24,6 +23,8 @@ namespace Microsoft.Python.Analysis.Types {
     /// </summary>
     internal class PythonTypeWrapper : IPythonType {
         private readonly BuiltinTypeId _builtinTypeId;
+        private readonly string _typeName;
+        private readonly string _documentation;
         private IPythonType _innerType;
 
         protected IPythonType InnerType 
@@ -33,7 +34,11 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates delegate type wrapper over an existing type.
         /// Use dedicated constructor for wrapping builtin types.
         /// </summary>
-        public PythonTypeWrapper(IPythonType type) : this(type, type.DeclaringModule) {
+        public PythonTypeWrapper(IPythonType type) : this(type, type.DeclaringModule) { }
+
+        public PythonTypeWrapper(string typeName, string documentation, IPythonModule declaringModule, IPythonType baseType) : this(baseType, declaringModule) {
+            _typeName = typeName;
+            _documentation = documentation;
         }
 
         /// <summary>
@@ -56,9 +61,10 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         #region IPythonType
-        public virtual string Name => InnerType.Name;
+        public virtual string Name => _typeName ?? InnerType.Name;
+        public virtual string QualifiedName => _typeName != null ? $"{DeclaringModule.Name}:{_typeName}" : InnerType.QualifiedName;
         public IPythonModule DeclaringModule { get; }
-        public virtual string Documentation => InnerType.Documentation;
+        public virtual string Documentation => _documentation ?? InnerType.Documentation;
         public virtual  BuiltinTypeId TypeId => InnerType.TypeId;
         public virtual PythonMemberType MemberType => InnerType.MemberType;
         public virtual  bool IsBuiltin => InnerType.IsBuiltin;
@@ -74,11 +80,11 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region ILocatedMember
-        public Location Location => InnerType?.Location ?? default;
-        public LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
-        public IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
-        public void AddReference(Location location) => InnerType?.AddReference(location);
-        public void RemoveReferences(IPythonModule module) => InnerType?.RemoveReferences(module);
+        public virtual Location Location => InnerType?.Location ?? default;
+        public virtual LocationInfo Definition => InnerType?.Definition ?? LocationInfo.Empty;
+        public virtual IReadOnlyList<LocationInfo> References => InnerType?.References ?? Array.Empty<LocationInfo>();
+        public virtual void AddReference(Location location) => InnerType?.AddReference(location);
+        public virtual void RemoveReferences(IPythonModule module) => InnerType?.RemoveReferences(module);
         #endregion
 
         #region IMemberContainer

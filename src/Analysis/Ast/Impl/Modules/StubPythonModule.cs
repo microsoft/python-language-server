@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsTypeshed { get; }
 
         public StubPythonModule(string moduleName, string stubPath, bool isTypeshed, IServiceContainer services)
-            : base(moduleName, ModuleType.Stub, stubPath, null, services) {
+            : base(moduleName, ModuleType.Stub, stubPath, null, false, services) {
             IsTypeshed = isTypeshed;
         }
 

@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
     internal sealed class PythonTypeIterator : PythonInstance, IPythonIterator {
         private readonly BuiltinTypeId _contentType;
         public PythonTypeIterator(BuiltinTypeId iteratorType, BuiltinTypeId contentType, IPythonInterpreter interpreter)
-            : base(new PythonIteratorType(iteratorType, interpreter)) {
+            : base(new PythonIteratorType(iteratorType, interpreter.ModuleResolution.BuiltinsModule)) {
             _contentType = contentType;
         }
 

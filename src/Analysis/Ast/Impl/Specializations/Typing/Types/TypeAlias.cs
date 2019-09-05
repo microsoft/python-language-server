@@ -21,6 +21,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             Name = name;
         }
         public override string Name { get; }
+        public override string QualifiedName => $"typing:{Name}";
         public override bool IsSpecialized => true;
 
     }

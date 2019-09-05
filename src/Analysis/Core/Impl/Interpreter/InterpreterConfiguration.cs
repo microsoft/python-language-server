@@ -15,21 +15,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Core.Interpreter {
     public sealed class InterpreterConfiguration : IEquatable<InterpreterConfiguration> {
-        private readonly string _description;
-        private string _fullDescription;
-
         /// <summary>
         /// Constructs a new interpreter configuration based on the provided values.
         /// </summary>
-        public InterpreterConfiguration(
-            string id,
-            string description,
+        public InterpreterConfiguration(string interpreterPath = null, Version version = null) :
+            this(interpreterPath, string.Empty, null, null, default, version) { }
+
+        // Tests only
+        internal InterpreterConfiguration(
             string interpreterPath = null,
             string pathVar = "",
             string libPath = null,
@@ -37,8 +33,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             InterpreterArchitecture architecture = default,
             Version version = null
         ) {
-            Id = id;
-            _description = description ?? string.Empty;
             InterpreterPath = interpreterPath;
             PathEnvironmentVariable = pathVar;
             Architecture = architecture ?? InterpreterArchitecture.Unknown;
@@ -51,8 +45,6 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             => d.TryGetValue(k, out var o) ? o as string : null;
 
         private InterpreterConfiguration(IReadOnlyDictionary<string, object> properties) {
-            Id = Read(properties, nameof(Id));
-            _description = Read(properties, nameof(Description)) ?? "";
             InterpreterPath = Read(properties, nameof(InterpreterPath));
             PathEnvironmentVariable = Read(properties, nameof(PathEnvironmentVariable));
             LibraryPath = Read(properties, nameof(LibraryPath));
@@ -65,60 +57,12 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         }
 
         public void WriteToDictionary(IDictionary<string, object> properties) {
-            properties[nameof(Id)] = Id;
-            properties[nameof(Description)] = _description;
             properties[nameof(InterpreterPath)] = InterpreterPath;
             properties[nameof(PathEnvironmentVariable)] = PathEnvironmentVariable;
             properties[nameof(LibraryPath)] = LibraryPath;
             properties[nameof(Architecture)] = Architecture.ToString();
             if (Version != null) {
                 properties[nameof(Version)] = Version.ToString();
-            }
-        }
-
-        /// <summary>
-        /// Reconstructs an interpreter configuration from a dictionary.
-        /// </summary>
-        public static InterpreterConfiguration FromDictionary(IReadOnlyDictionary<string, object> properties)
-            => new InterpreterConfiguration(properties);
-
-        /// <summary>
-        /// Serializes an interpreter configuration to a dictionary.
-        /// </summary>
-        public IReadOnlyDictionary<string, object> ToDictionary() {
-            var d = new Dictionary<string, object>();
-            WriteToDictionary(d);
-            return d;
-        }
-
-        /// <summary>
-        /// Gets a unique and stable identifier for this interpreter.
-        /// </summary>
-        public string Id { get; }
-
-        /// <summary>
-        /// Gets a friendly description of the interpreter
-        /// </summary>
-        public string Description => _fullDescription ?? _description;
-
-        /// <summary>
-        /// Changes the description to be less likely to be
-        /// ambiguous with other interpreters.
-        /// </summary>
-        public void SwitchToFullDescription() {
-            var hasVersion = _description.Contains(Version.ToString());
-            var hasArch = _description.IndexOf(Architecture.ToString(null, CultureInfo.CurrentCulture), StringComparison.CurrentCultureIgnoreCase) >= 0 ||
-                _description.IndexOf(Architecture.ToString("x", CultureInfo.CurrentCulture), StringComparison.CurrentCultureIgnoreCase) >= 0;
-
-            if (hasVersion && hasArch) {
-                // Regular description is sufficient
-                _fullDescription = null;
-            } else if (hasVersion) {
-                _fullDescription = "{0} ({1})".FormatUI(_description, Architecture);
-            } else if (hasArch) {
-                _fullDescription = "{0} ({1})".FormatUI(_description, Version);
-            } else {
-                _fullDescription = "{0} ({1}, {2})".FormatUI(_description, Version, Architecture);
             }
         }
 
@@ -166,8 +110,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             }
 
             var cmp = StringComparer.OrdinalIgnoreCase;
-            return string.Equals(Id, other.Id) &&
-                cmp.Equals(Description, other.Description) &&
+            return
                 cmp.Equals(InterpreterPath, other.InterpreterPath) &&
                 cmp.Equals(PathEnvironmentVariable, other.PathEnvironmentVariable) &&
                 Architecture == other.Architecture &&
@@ -176,28 +119,13 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
 
         public override int GetHashCode() {
             var cmp = StringComparer.OrdinalIgnoreCase;
-            return Id.GetHashCode() ^
-                cmp.GetHashCode(Description) ^
+            return
                 cmp.GetHashCode(InterpreterPath ?? "") ^
                 cmp.GetHashCode(PathEnvironmentVariable ?? "") ^
                 Architecture.GetHashCode() ^
                 Version.GetHashCode();
         }
 
-        public override string ToString() => Description;
-
-        /// <summary>
-        /// Attempts to update descriptions to be unique within the
-        /// provided sequence by adding information about the
-        /// interpreter that is missing from the default description.
-        /// </summary>
-        public static void DisambiguateDescriptions(IReadOnlyList<InterpreterConfiguration> configs) {
-            foreach (var c in configs) {
-                c._fullDescription = null;
-            }
-            foreach (var c in configs.GroupBy(i => i._description ?? "").Where(g => g.Count() > 1).SelectMany(g => g)) {
-                c.SwitchToFullDescription();
-            }
-        }
+        public override string ToString() => InterpreterPath;
     }
 }

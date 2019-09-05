@@ -25,7 +25,7 @@ namespace Microsoft.Python.Parsing.Ast {
     /// <summary>
     /// Top-level ast for all Python code. Holds onto the body and the line mapping information.
     /// </summary>
-    public sealed class PythonAst : ScopeStatement {
+    public sealed class PythonAst : ScopeStatement, ILocationConverter {
         private readonly object _lock = new object();
         private readonly Statement _body;
         private readonly Dictionary<Node, Dictionary<object, object>> _attributes = new Dictionary<Node, Dictionary<object, object>>();
@@ -140,8 +140,10 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
+        #region ILocationConverter
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
+        #endregion
 
         internal int GetLineEndFromPosition(int index) {
             var loc = IndexToLocation(index);

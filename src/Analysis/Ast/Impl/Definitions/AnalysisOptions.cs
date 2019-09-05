@@ -14,6 +14,25 @@
 // permissions and limitations under the License.
 
 namespace Microsoft.Python.Analysis {
+    public enum AnalysisCachingLevel {
+        /// <summary>
+        /// No caching of analysis.
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// Cache analysis results of system (language) modules.
+        /// Do not cache user-installed modules or site-packages.
+        /// </summary>
+        System,
+
+        /// <summary>
+        /// Full caching, includes system and library modules.
+        /// Does not enable caching of user code analysis.
+        /// </summary>
+        Library
+    }
+
     public class AnalysisOptions {
         public bool LintingEnabled { get; set; }
 
@@ -29,5 +48,10 @@ namespace Microsoft.Python.Analysis {
         /// improve performance when library code has to be re-analyzed.
         /// </summary>
         public bool KeepLibraryAst { get; set; }
+
+        /// <summary>
+        /// Defines level of caching analysis engine will maintain.
+        /// </summary>
+        public AnalysisCachingLevel AnalysisCachingLevel { get; set; }
     }
 }

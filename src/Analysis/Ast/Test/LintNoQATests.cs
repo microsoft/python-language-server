@@ -6,7 +6,6 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
-using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -40,7 +39,7 @@ _T = _X
         [DataRow("x = Generic[T, T] #noqa ")]
         [DataTestMethod, Priority(0)]
         public async Task IgnoreGenerics(string decl) {
-            string code = GenericSetup + decl;
+            var code = GenericSetup + decl;
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
@@ -81,7 +80,7 @@ _T = _X
 
         [TestMethod, Priority(0)]
         public async Task VarNamedNoQAStillGivesDiagnostic() {
-            string code = GenericSetup + "NOQA = Generic[T, T]";
+            const string code = GenericSetup + "NOQA = Generic[T, T]";
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
@@ -103,7 +102,7 @@ _T = _X
 
         [TestMethod, Priority(0)]
         public async Task IgnoreMissingImport() {
-            string code = @"
+            const string code = @"
 from fake_module import User         #noqa
 ";
             var analysis = await GetAnalysisAsync(code);

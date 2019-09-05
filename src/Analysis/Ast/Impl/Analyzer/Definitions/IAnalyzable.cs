@@ -13,11 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Dependencies;
+
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
     /// Represents document that can be analyzed asynchronously.
     /// </summary>
     internal interface IAnalyzable {
+        /// <summary>
+        /// Returns object that can calculate dependencies of this entry.
+        /// </summary>
+        IDependencyProvider DependencyProvider { get; }
+
         /// <summary>
         /// Notifies document that analysis is about to begin.
         /// </summary>
