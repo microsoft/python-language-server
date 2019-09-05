@@ -238,6 +238,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
 
             var m = GetValueFromExpression(expr.Target);
+            if (m == null) {
+                return UnknownType;
+            }
+
             var type = m.GetPythonType();
             var value = type?.GetMember(expr.Name);
             type?.AddMemberReference(expr.Name, this, GetLocationOfName(expr));
@@ -254,7 +258,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     f.AddReference(GetLocationOfName(expr));
                     return f.ToUnbound();
                 }
-                instance = typeInfo.CreateInstance(ArgumentSet.Empty(expr, this));
+                instance = type.CreateInstance(ArgumentSet.Empty(expr, this));
             }
 
             instance = instance ?? m as IPythonInstance;

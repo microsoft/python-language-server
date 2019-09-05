@@ -182,7 +182,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IArgumentSet args, IGenericTypeParameter returnType) {
-            if (selfClassType.GetSpecificType(returnType, out var specificType)) {
+            if (selfClassType.GetSpecificType(returnType.Name, out var specificType)) {
                 return specificType.CreateInstance(args);
             }
 
@@ -193,7 +193,7 @@ namespace Microsoft.Python.Analysis.Types {
                 .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType.Name));
 
             // Try and infer return value from base class
-            if (baseType != null && baseType.GetSpecificType(returnType, out specificType)) {
+            if (baseType != null && baseType.GetSpecificType(returnType.Name, out specificType)) {
                 return specificType.CreateInstance(args);
             }
 
