@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <!-- This file is shared across desktop .NET and .NET Core builds. 
-        Please do not put Windows-specific or dekstop-specific settings
-        here (these incluse C#, C++ or VSSDK settings and targets -->
+        Please do not put Windows-specific or desktop-specific settings
+        here (these include C#, C++ or VS SDK settings and targets -->
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

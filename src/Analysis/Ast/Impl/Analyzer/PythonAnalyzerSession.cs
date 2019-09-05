@@ -152,6 +152,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     _progress.ReportRemaining(remaining);
                     if (isFinal) {
                         var (modulesCount, totalMilliseconds) = ActivityTracker.EndTracking();
+                        totalMilliseconds = Math.Round(totalMilliseconds, 2);
                         (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
                         _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
                     }
@@ -177,6 +178,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
+            elapsed = Math.Round(elapsed, 2);
             if (remaining == 0) {
                 logger.Log(TraceEventType.Verbose, $"Analysis version {version} of {originalRemaining} entries has been completed in {elapsed} ms.");
             } else if (remaining < originalRemaining) {
@@ -423,9 +425,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void LogCompleted(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
                 var completed = node != null && module.Analysis is LibraryAnalysis ? "completed for library" : "completed";
+                var elapsed = Math.Round((stopWatch.Elapsed - startTime).TotalMilliseconds, 2);
                 var message = node != null
-                    ? $"Analysis of {module.Name} ({module.ModuleType}) on depth {node.VertexDepth} {completed} in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms."
-                    : $"Out of order analysis of {module.Name}({module.ModuleType}) completed in {(stopWatch.Elapsed - startTime).TotalMilliseconds} ms.";
+                    ? $"Analysis of {module.Name} ({module.ModuleType}) on depth {node.VertexDepth} {completed} in {elapsed} ms."
+                    : $"Out of order analysis of {module.Name}({module.ModuleType}) completed in {elapsed} ms.";
                 _log.Log(TraceEventType.Verbose, message);
             }
         }
