@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
@@ -25,6 +24,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
+using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class HoverSource {
