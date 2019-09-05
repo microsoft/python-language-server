@@ -13,12 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
-using Microsoft.Python.Analysis.Extensions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
@@ -74,6 +72,17 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 .FailWith($"Expected {GetName()} to have overload at index {index}{{reason}}, but it {GetOverloadsString(overloads.Length)}.");
 
             return new AndWhichConstraint<PythonFunctionAssertions, IPythonFunctionOverload>(this, overloads[index]);
+        }
+
+        public void HaveSameOverloadsAs(IPythonFunctionType other, string because = "", params object[] reasonArgs) {
+            var overloads = Subject.Overloads.ToArray();
+            Subject.Should().HaveOverloadCount(other.Overloads.Count);
+
+            for (var i = 0; i < Subject.Overloads.Count; i++) {
+                var subjectOverload = Subject.Overloads[i];
+                var otherOverload = other.Overloads[i];
+                subjectOverload.Should().HaveSameParametersAs(otherOverload);
+            }
         }
 
         public AndWhichConstraint<PythonFunctionOverloadAssertions, IParameterInfo> HaveParameterAt(int index, string because = "", params object[] reasonArgs) {

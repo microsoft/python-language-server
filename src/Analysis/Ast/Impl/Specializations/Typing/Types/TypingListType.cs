@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// </summary>
         /// <param name="typeName">Type name.</param>
         /// <param name="itemType">List item type.</param>
-        /// <param name="interpreter">Python interpreter</param>
+        /// <param name="interpreter">Python interpreter.</param>
         /// <param name="isMutable">Tells of list represents a mutable collection.</param>
         /// <param name="formatName">If true, type will append item type names to the base type name.</param>
         public TypingListType(string typeName, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable, bool formatName = true) 
@@ -37,16 +37,18 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="typeName">Type name.</param>
         /// <param name="typeId">Collection type id. Can be used when list is used to simulate other collections, like a set.</param>
         /// <param name="itemType">List item type.</param>
-        /// <param name="interpreter">Python interpreter</param>
+        /// <param name="interpreter">Python interpreter.</param>
         /// <param name="isMutable">Tells of list represents a mutable collection.</param>
         /// <param name="formatName">If true, type will append item type names to the base type name.</param>
         public TypingListType(string typeName, BuiltinTypeId typeId, IPythonType itemType, IPythonInterpreter interpreter, bool isMutable, bool formatName = true)
-            : base(null, typeId, interpreter, isMutable) {
+            : base(typeId, interpreter.ModuleResolution.GetSpecializedModule("typing"), isMutable) {
             ItemType = itemType;
             Name = formatName ? $"{typeName}[{itemType.Name}]" : typeName;
+            QualifiedName = formatName ? $"typing:{typeName}[{itemType.QualifiedName}]" : $"typing:{typeName}";
         }
 
         public override string Name { get; }
+        public override string QualifiedName { get; }
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 

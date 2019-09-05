@@ -15,12 +15,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 

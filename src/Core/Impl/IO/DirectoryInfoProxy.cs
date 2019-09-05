@@ -53,7 +53,7 @@ namespace Microsoft.Python.Core.IO {
 
         public IEnumerable<IFileSystemInfo> EnumerateFileSystemInfos(string[] includePatterns, string[] excludePatterns) {
             var matcher = GetMatcher(includePatterns, excludePatterns);
-            PatternMatchingResult matchResult = SafeExecuteMatcher(matcher);
+            var matchResult = SafeExecuteMatcher(matcher);
             return matchResult.Files.Select((filePatternMatch) => {
                 var path = PathUtils.NormalizePath(filePatternMatch.Path);
                 return CreateFileSystemInfoProxy(new FileInfo(path));

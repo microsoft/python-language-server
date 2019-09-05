@@ -26,8 +26,8 @@ namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
         protected IStubCache StubCache => Interpreter.ModuleResolution.StubCache;
 
-        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, IServiceContainer services)
-            : base(moduleName, filePath, moduleType, stub, services) { }
+        public CompiledPythonModule(string moduleName, ModuleType moduleType, string filePath, IPythonModule stub, bool isPersistent, IServiceContainer services)
+            : base(moduleName, filePath, moduleType, stub, isPersistent, services) { }
 
         public override string Documentation
             => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;
@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Modules {
             try {
                 using (var process = new Process()) {
                     process.StartInfo = startInfo;
-                    process.ErrorDataReceived += new DataReceivedEventHandler((s, e) => { });
+                    process.ErrorDataReceived += (s, e) => { };
 
                     process.Start();
                     process.BeginErrorReadLine();

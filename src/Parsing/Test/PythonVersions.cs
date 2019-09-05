@@ -26,7 +26,6 @@ namespace Microsoft.Python.Parsing.Tests {
         public static readonly InterpreterConfiguration Python36 = GetCPythonVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python37 = GetCPythonVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Python38 = GetCPythonVersion(PythonLanguageVersion.V38, InterpreterArchitecture.x86);
-        public static readonly InterpreterConfiguration IronPython27 = GetIronPythonVersion(false);
         public static readonly InterpreterConfiguration Python27_x64 = GetCPythonVersion(PythonLanguageVersion.V27, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python35_x64 = GetCPythonVersion(PythonLanguageVersion.V35, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Python36_x64 = GetCPythonVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x64);
@@ -38,8 +37,6 @@ namespace Microsoft.Python.Parsing.Tests {
         public static readonly InterpreterConfiguration Anaconda36_x64 = GetAnacondaVersion(PythonLanguageVersion.V36, InterpreterArchitecture.x64);
         public static readonly InterpreterConfiguration Anaconda37 = GetAnacondaVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x86);
         public static readonly InterpreterConfiguration Anaconda37_x64 = GetAnacondaVersion(PythonLanguageVersion.V37, InterpreterArchitecture.x64);
-        public static readonly InterpreterConfiguration IronPython27_x64 = GetIronPythonVersion(true);
-        public static readonly InterpreterConfiguration Jython27 = GetJythonVersion(PythonLanguageVersion.V27);
 
         public static IEnumerable<InterpreterConfiguration> AnacondaVersions => GetVersions(
             Anaconda36,
@@ -52,8 +49,6 @@ namespace Microsoft.Python.Parsing.Tests {
         public static IEnumerable<InterpreterConfiguration> Versions => GetVersions(
             Python27,
             Python27_x64,
-            IronPython27,
-            IronPython27_x64,
             Python35,
             Python35_x64,
             Python36,
@@ -61,7 +56,7 @@ namespace Microsoft.Python.Parsing.Tests {
             Python37,
             Python37_x64,
             Python38,
-            Python38_x64, Jython27);
+            Python38_x64);
 
         public static InterpreterConfiguration Required_Python27X => Python27 ?? Python27_x64 ?? NotInstalled("v2.7");
         public static InterpreterConfiguration Required_Python35X => Python35 ?? Python35_x64 ?? NotInstalled("v3.5");
@@ -121,50 +116,6 @@ namespace Microsoft.Python.Parsing.Tests {
 
         private static InterpreterConfiguration GetAnacondaVersion(PythonLanguageVersion version, InterpreterArchitecture arch)
             => PythonInstallPathResolver.Instance.GetCondaPythonConfiguration(arch, version.ToVersion());
-
-        private static InterpreterConfiguration GetIronPythonVersion(bool x64) {
-            return PythonInstallPathResolver.Instance.GetIronPythonConfiguration(x64);
-        }
-
-        private static InterpreterConfiguration GetJythonVersion(PythonLanguageVersion version) {
-            var candidates = new List<DirectoryInfo>();
-            var ver = version.ToVersion();
-            var path1 = string.Format("jython{0}{1}*", ver.Major, ver.Minor);
-            var path2 = string.Format("jython{0}.{1}*", ver.Major, ver.Minor);
-
-            foreach (var drive in DriveInfo.GetDrives()) {
-                if (drive.DriveType != DriveType.Fixed) {
-                    continue;
-                }
-
-                try {
-                    candidates.AddRange(drive.RootDirectory.EnumerateDirectories(path1));
-                    candidates.AddRange(drive.RootDirectory.EnumerateDirectories(path2));
-                } catch {
-                }
-            }
-
-            foreach (var dir in candidates) {
-                var interpreter = dir.EnumerateFiles("jython.bat").FirstOrDefault();
-                if (interpreter == null) {
-                    continue;
-                }
-
-                var libPath = dir.EnumerateDirectories("Lib").FirstOrDefault();
-                if (libPath == null || !libPath.EnumerateFiles("site.py").Any()) {
-                    continue;
-                }
-
-                return new InterpreterConfiguration(
-                    id: $"Global|Jython|{version.ToVersion()}",
-                    description: string.Format("Jython {0}", version.ToVersion()),
-                    interpreterPath: interpreter.FullName,
-                    version: version.ToVersion()
-                );
-            }
-
-            return null;
-        }
 
         private static InterpreterConfiguration NotInstalled(string version) {
             Assert.Inconclusive($"Python interpreter {version} is not installed");

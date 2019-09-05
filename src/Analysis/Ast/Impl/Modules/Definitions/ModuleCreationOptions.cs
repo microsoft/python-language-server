@@ -47,5 +47,10 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Module stub, if any.
         /// </summary>
         public IPythonModule Stub { get; set; }
+
+        /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        public bool IsPersistent { get; set; }
     }
 }

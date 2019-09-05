@@ -105,9 +105,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 switch (leftTypeId) {
                     case BuiltinTypeId.List:
-                        return PythonCollectionType.CreateConcatenatedList(Module.Interpreter, lc, rc);
+                        return PythonCollectionType.CreateConcatenatedList(Module, lc, rc);
                     case BuiltinTypeId.Tuple:
-                        return PythonCollectionType.CreateConcatenatedTuple(Module.Interpreter, lc, rc);
+                        return PythonCollectionType.CreateConcatenatedTuple(Module, lc, rc);
                 }
             }
 

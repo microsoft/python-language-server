@@ -24,7 +24,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.0" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.5.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.4.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
     <PackageReference Include="MicroBuild.Core" Version="0.3.0">
@@ -41,6 +40,9 @@
     <ProjectReference Include="..\..\..\UnitTests\Core\Impl\UnitTests.Core.csproj" />
     <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
     <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <Import Project="..\..\..\..\build\NetStandard.targets" />

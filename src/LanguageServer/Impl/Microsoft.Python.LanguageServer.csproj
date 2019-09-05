@@ -43,6 +43,7 @@
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\Analysis\Ast\Impl\Microsoft.Python.Analysis.csproj" />
+      <ProjectReference Include="..\..\Caching\Impl\Microsoft.Python.Analysis.Caching.csproj" />
       <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Core.csproj" />
       <ProjectReference Include="..\..\Parsing\Impl\Microsoft.Python.Parsing.csproj" />
     </ItemGroup>

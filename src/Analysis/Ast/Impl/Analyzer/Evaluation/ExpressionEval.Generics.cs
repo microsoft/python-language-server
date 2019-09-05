@@ -62,11 +62,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         /// <summary>
-        /// Returns whether the arguments to Generic are valid
+        /// Determines if arguments to Generic are valid
         /// </summary>
+        // TODO: move check to GenericClassBase. This requires extensive changes to SpecificTypeConstructor.
         private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeParameter> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
-            // All arguments to Generic must be type parameters
-            // e.g. Generic[T, str] throws a runtime error
+            // All arguments to Generic must be type parameters	
+            // e.g. Generic[T, str] throws a runtime error	
             if (genericTypeArgs.Count != args.Count) {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                     Resources.GenericNotAllTypeParameters,
@@ -77,14 +78,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return false;
             }
 
-            // All arguments to Generic must be distinct
+            // All arguments to Generic must be distinct	
             if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Count) {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                   Resources.GenericNotAllUnique,
-                   GetLocation(expr).Span,
-                   ErrorCodes.TypingGenericArguments,
-                   Severity.Warning,
-                   DiagnosticSource.Analysis));
+                    Resources.GenericNotAllUnique,
+                    GetLocation(expr).Span,
+                    ErrorCodes.TypingGenericArguments,
+                    Severity.Warning,
+                    DiagnosticSource.Analysis));
                 return false;
             }
 
@@ -97,24 +98,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// (if the former) on specific type (if the latter).
         /// </summary>
         private IMember CreateSpecificTypeFromIndex(IGenericType gt, IReadOnlyList<IMember> args, Expression expr) {
+            // TODO: move check to GenericClassBase. This requires extensive changes to SpecificTypeConstructor.
             if (gt.Name.EqualsOrdinal("Generic")) {
                 var genericTypeArgs = args.OfType<IGenericTypeParameter>().ToArray();
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
                     return UnknownType;
                 }
-
-                // Generic[T1, T2, ...] expression. Create generic base for the class.
-                return new GenericClassParameter(genericTypeArgs, Module);
+                // Generic[T1, T2, ...] expression. Create generic base for the class.	
+                return new GenericClassBase(genericTypeArgs, Module.Interpreter);
             }
 
-            // For other types just use supplied arguments
-            if (args.Count > 0) {
-                return gt.CreateSpecificType(new ArgumentSet(args, expr, this));
-            }
-
-            return UnknownType;
+            // For other types just use supplied arguments	
+            return args.Count > 0 ? gt.CreateSpecificType(new ArgumentSet(args, expr, this)) : UnknownType;
         }
-
         private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
             var indices = new List<IMember>();
             if (expr.Index is TupleExpression tex) {

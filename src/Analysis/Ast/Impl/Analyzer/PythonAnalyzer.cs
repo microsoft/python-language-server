@@ -59,7 +59,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _startNextSession = StartNextSession;
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
-            _services.AddService(new StubCache(_services, cacheFolderPath));
+
+            _services.AddService(new CacheFolderService(_services, cacheFolderPath));
+            _services.AddService(new StubCache(_services));
         }
 
         public void Dispose() {
@@ -236,7 +238,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
             _analysisCompleteEvent.Reset();
             ActivityTracker.StartTracking();
-            _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) queued");
+            _log?.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name} ({entry.Module.ModuleType}) queued. Dependencies: {string.Join(", ", dependencies.Select(d => d.IsTypeshed ? $"{d.Name} (stub)" : d.Name))}");
 
             var graphVersion = _dependencyResolver.ChangeValue(key, entry, entry.IsUserOrBuiltin || key.IsNonUserAsDocument, dependencies);
 
