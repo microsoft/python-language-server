@@ -16,8 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.Python.Core.Text;
 using Newtonsoft.Json;
+using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]
@@ -203,6 +203,11 @@ namespace Microsoft.Python.LanguageServer.Protocol {
 
         public struct ExecuteCommandCapabilities { public bool dynamicRegistration; }
         public ExecuteCommandCapabilities? executeCommand;
+
+        /// <summary>
+        /// Supports the 'workspace/configuration' request.
+        /// </summary>
+        public bool? configuration;
     }
 
     [Serializable]
