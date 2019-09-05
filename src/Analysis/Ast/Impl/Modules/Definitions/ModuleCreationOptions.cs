@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Modules {
@@ -48,5 +47,10 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Module stub, if any.
         /// </summary>
         public IPythonModule Stub { get; set; }
+
+        /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        public bool IsPersistent { get; set; }
     }
 }

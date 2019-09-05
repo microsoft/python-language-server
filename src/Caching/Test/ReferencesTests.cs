@@ -15,13 +15,12 @@
 
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NSubstitute;
 using TestUtilities;
-using Microsoft.Python.Analysis.Modules;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
     [TestClass]
@@ -67,6 +66,8 @@ class B:
             Baseline.CompareToFile(BaselineFileName, json);
 
             using (var dbModule = new PythonDbModule(model, analysis.Document.FilePath, Services)) {
+                dbModule.Construct(model);
+
                 var sum = dbModule.GetMember("sum") as IPythonFunctionType;
                 sum.Should().NotBeNull();
                 sum.Definition.Span.Should().Be(4, 5, 4, 8);
@@ -103,23 +104,16 @@ logging.critical()
             var logging = analysis.Document.Interpreter.ModuleResolution.GetImportedModule("logging");
             var model = ModuleModel.FromAnalysis(logging.Analysis, Services, AnalysisCachingLevel.Library);
 
-            var dbModule = new PythonDbModule(model, logging.FilePath, Services);
-            analysis.Document.Interpreter.ModuleResolution.SpecializeModule("logging", x => dbModule, replaceExisting: true);
-            
-            var moduleName = $"{analysis.Document.Name}_db.py";
-            var modulePath = TestData.GetTestSpecificPath(moduleName);
-            analysis = await GetAnalysisAsync(code, Services, moduleName, modulePath);
+            await CompareBaselineAndRestoreAsync(model, logging);
 
-            var v = analysis.Should().HaveVariable("logging").Which;
-            var vm = v.Value.Should().BeOfType<PythonVariableModule>().Which;
-            var m = vm.Module.Should().BeOfType<PythonDbModule>().Which;
+            using (var m = CreateDbModule(model, logging.FilePath)) {
+                var critical = m.GetMember("critical") as IPythonFunctionType;
+                critical.Should().NotBeNull();
 
-            var critical = m.GetMember("critical") as IPythonFunctionType;
-            critical.Should().NotBeNull();
-
-            var span = critical.Definition.Span;
-            span.Start.Line.Should().BeGreaterThan(1000);
-            (span.End.Column - span.Start.Column).Should().Be("critical".Length);
+                var span = critical.Definition.Span;
+                span.Start.Line.Should().BeGreaterThan(1000);
+                (span.End.Column - span.Start.Column).Should().Be("critical".Length);
+            }
         }
     }
 }

@@ -64,5 +64,6 @@ namespace Microsoft.Python.Analysis.Modules {
     public static class ModuleTypeExtensions {
         public static bool IsNonUserFile(this ModuleType type) => type == ModuleType.Library || type == ModuleType.Stub;
         public static bool IsCompiled(this ModuleType type) => type == ModuleType.Compiled || type == ModuleType.CompiledBuiltin;
+        public static bool CanBeCached(this ModuleType type) => type == ModuleType.Library || type == ModuleType.Compiled || type == ModuleType.CompiledBuiltin;
     }
 }

@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -32,30 +33,36 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal class ModuleWalker : AnalysisWalker {
         private const string AllVariableName = "__all__";
         private readonly IDocumentAnalysis _stubAnalysis;
+        private readonly CancellationToken _cancellationToken;
 
         // A hack to use __all__ export in the most simple case.
         private int _allReferencesCount;
         private bool _allIsUsable = true;
 
-        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
+        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast, CancellationToken cancellationToken)
             : base(new ExpressionEval(services, module, ast)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
+            _cancellationToken = cancellationToken;
         }
 
         public override bool Walk(NameExpression node) {
             if (Eval.CurrentScope == Eval.GlobalScope && node.Name == AllVariableName) {
                 _allReferencesCount++;
             }
+
+            _cancellationToken.ThrowIfCancellationRequested();
             return base.Walk(node);
         }
 
         public override bool Walk(AugmentedAssignStatement node) {
             HandleAugmentedAllAssign(node);
+            _cancellationToken.ThrowIfCancellationRequested();
             return base.Walk(node);
         }
 
         public override bool Walk(CallExpression node) {
             HandleAllAppendExtend(node);
+            _cancellationToken.ThrowIfCancellationRequested();
             return base.Walk(node);
         }
 
@@ -146,6 +153,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override bool Walk(PythonAst node) {
             Check.InvalidOperation(() => Ast == node, "walking wrong AST");
+            _cancellationToken.ThrowIfCancellationRequested();
 
             // Collect basic information about classes and functions in order
             // to correctly process forward references. Does not determine
@@ -181,16 +189,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         // Classes and functions are walked by their respective evaluators
         public override bool Walk(ClassDefinition node) {
+            _cancellationToken.ThrowIfCancellationRequested();
             SymbolTable.Evaluate(node);
             return false;
         }
 
         public override bool Walk(FunctionDefinition node) {
+            _cancellationToken.ThrowIfCancellationRequested();
             SymbolTable.Evaluate(node);
             return false;
         }
 
         public void Complete() {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             SymbolTable.EvaluateAll();
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
@@ -220,11 +232,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of the definitions. Stub may contains those so we need to merge it in.
         /// </remarks>
         private void MergeStub() {
-            if (Module.ModuleType == ModuleType.User) {
+            _cancellationToken.ThrowIfCancellationRequested();
+
+            if (Module.ModuleType == ModuleType.User || Module.ModuleType == ModuleType.Stub) {
                 return;
             }
             // No stub, no merge.
-            if (_stubAnalysis == null) {
+            if (_stubAnalysis.IsEmpty()) {
                 return;
             }
             // TODO: figure out why module is getting analyzed before stub.
@@ -248,6 +262,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
                     continue;
                 }
+
+                if (sourceVar?.Source == VariableSource.Import &&
+                   sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
+                    // Keep imported types as they are defined in the library. For example,
+                    // 'requests' imports NullHandler as 'from logging import NullHandler'.
+                    // But 'requests' also declares NullHandler in its stub (but not in the main code)
+                    // and that declaration does not have documentation or location. Therefore avoid
+                    // taking types that are stub-only when similar type is imported from another
+                    // module that also has a stub.
+                    continue;
+                }
+
                 TryReplaceMember(v, sourceType, stubType);
             }
 
@@ -257,7 +283,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private void TryReplaceMember(IVariable v, IPythonType sourceType, IPythonType stubType) {
             // If type does not exist in module, but exists in stub, declare it unless it is an import.
             // If types are the classes, take class from the stub, then add missing members.
-            // Otherwise, replace type from one from the stub.
+            // Otherwise, replace type by one from the stub.
             switch (sourceType) {
                 case null:
                     // Nothing in sources, but there is type in the stub. Declare it.
@@ -379,28 +405,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (s != d && s is PythonType src && d is PythonType dst) {
                 // If type is a class, then doc can either come from class definition node of from __init__.
                 // If class has doc from the class definition, don't stomp on it.
-                var transferDoc = true;
                 if (src is PythonClassType srcClass && dst is PythonClassType dstClass) {
                     // Higher lever source wins
                     if (srcClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ||
                        (srcClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Init && dstClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Base)) {
                         dstClass.SetDocumentation(srcClass.Documentation);
-                        transferDoc = false;
                     }
-                }
-
-                // Sometimes destination (stub type) already has documentation. This happens when stub type 
-                // is used to augment more than one type. For example, in threading module RLock stub class
-                // replaces both  RLock function and _RLock class making 'factory' function RLock to look 
-                // like a class constructor. Effectively a single  stub type is used for more than one type
-                // in the source and two source types may have different documentation. Thus transferring doc
-                // from one source type affects documentation of another type. It may be better to clone stub
-                // type and separate instances for separate source type, but for now we'll just avoid stomping
-                // on the existing documentation. 
-                if (transferDoc && string.IsNullOrEmpty(dst.Documentation)) {
-                    var srcDocumentation = src.Documentation;
-                    if (!string.IsNullOrEmpty(srcDocumentation)) {
-                        dst.SetDocumentation(srcDocumentation);
+                } else {
+                    // Sometimes destination (stub type) already has documentation. This happens when stub type 
+                    // is used to augment more than one type. For example, in threading module RLock stub class
+                    // replaces both  RLock function and _RLock class making 'factory' function RLock to look 
+                    // like a class constructor. Effectively a single  stub type is used for more than one type
+                    // in the source and two source types may have different documentation. Thus transferring doc
+                    // from one source type affects documentation of another type. It may be better to clone stub
+                    // type and separate instances for separate source type, but for now we'll just avoid stomping
+                    // on the existing documentation. 
+                    if (string.IsNullOrEmpty(dst.Documentation)) {
+                        var srcDocumentation = src.Documentation;
+                        if (!string.IsNullOrEmpty(srcDocumentation)) {
+                            dst.SetDocumentation(srcDocumentation);
+                        }
                     }
                 }
 

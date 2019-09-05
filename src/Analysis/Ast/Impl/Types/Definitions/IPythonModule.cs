@@ -63,5 +63,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// wants to see library code and not a stub.
         /// </summary>
         IPythonModule PrimaryModule { get; }
+
+        /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        bool IsPersistent { get; }
     }
 }

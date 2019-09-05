@@ -33,7 +33,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             object covariant,
             object contravariant,
             IndexSpan indexSpan)
-            : base(name, new Location(declaringModule, indexSpan), GetDocumentation(name, constraints, bound, covariant, contravariant)) {
+            : base(name, new Location(declaringModule, indexSpan),
+                GetDocumentation(name, constraints, bound, covariant, contravariant, declaringModule)) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
             Bound = bound;
             Covariant = covariant;
@@ -106,8 +107,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             switch (rawBound) {
                 case IPythonType t:
                     return t;
-                case IPythonConstant c when c.GetString() != null:
-                    return eval.GetTypeFromString(c.GetString());
+                case IPythonConstant c:
+                    var s = c.GetString();
+                    if (!string.IsNullOrEmpty(s)) {
+                        return eval.GetTypeFromString(s) ?? argSet.Eval.UnknownType;
+                    }
+                    return argSet.Eval.UnknownType;
                 default:
                     return rawBound.GetPythonType();
             }
@@ -118,7 +123,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var args = argSet.Arguments;
             var constraintArgs = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
 
             var name = argSet.GetArgumentValue<IPythonConstant>("name")?.GetString();
@@ -135,9 +139,20 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return new GenericTypeParameter(name, declaringModule, constraints, bound, covariant, contravariant, indexSpan);
         }
 
-        private static string GetDocumentation(string name, IReadOnlyList<IPythonType> constraints, object bound, object covariant, object contravariant) {
+        private static string GetDocumentation(string name, IReadOnlyList<IPythonType> constraints, IPythonType bound, object covariant, object contravariant, IPythonModule declaringModule) {
             var constaintStrings = constraints != null ? constraints.Select(c => c.IsUnknown() ? "?" : c.Name) : Enumerable.Empty<string>();
-            var boundStrings = bound != null ? Enumerable.Repeat($"bound={bound}", 1) : Enumerable.Empty<string>();
+
+            var boundStrings = Enumerable.Empty<string>();
+            if (bound != null) {
+                string boundName;
+                if(bound.DeclaringModule.Equals(declaringModule) || bound.DeclaringModule is IBuiltinsPythonModule) {
+                    boundName = bound.Name;
+                } else {
+                    boundName = $"{bound.DeclaringModule.Name}.{bound.Name}";
+                }
+                boundStrings = Enumerable.Repeat($"bound={boundName}", 1);
+            }
+
             var covariantStrings = covariant != null ? Enumerable.Repeat($"covariant={covariant}", 1) : Enumerable.Empty<string>();
             var contravariantStrings = contravariant != null ? Enumerable.Repeat($"contravariant={contravariant}", 1) : Enumerable.Empty<string>();
 

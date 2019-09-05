@@ -16,13 +16,22 @@
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Tests;
+using Microsoft.Python.Analysis.Types;
 using Newtonsoft.Json;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
     public abstract class AnalysisCachingTestBase: AnalysisTestBase {
-        protected string ToJson(object model) {
+        protected AnalysisCachingTestBase() {
+            ModuleFactory.EnableMissingMemberAssertions = true;
+        }
+
+        protected static string ToJson(object model) {
             var sb = new StringBuilder();
             using (var sw = new StringWriter(sb))
             using (var jw = new JsonTextWriter(sw)) {
@@ -45,5 +54,48 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             => Path.ChangeExtension(suffix == null 
                 ? Path.Combine(BaselineFilesFolder, testName)
                 : Path.Combine(BaselineFilesFolder, testName + suffix), "json");
+
+        internal PythonDbModule CreateDbModule(ModuleModel model, string modulePath) {
+            var dbModule = new PythonDbModule(model, modulePath, Services);
+            dbModule.Construct(model);
+            return dbModule;
+        }
+
+        internal async Task CompareBaselineAndRestoreAsync(ModuleModel model, IPythonModule m) {
+            //var json = ToJson(model);
+            //Baseline.CompareToFile(BaselineFileName, json);
+
+            // In real case dependency analysis will restore model dependencies.
+            // Here we don't go through the dependency analysis so we have to
+            // manually restore dependent modules.
+            foreach (var imp in model.Imports) {
+                foreach (var name in imp.ModuleNames) {
+                    m.Interpreter.ModuleResolution.GetOrLoadModule(name);
+                }
+            }
+            foreach (var imp in model.FromImports) {
+                foreach (var name in imp.RootNames) {
+                    m.Interpreter.ModuleResolution.GetOrLoadModule(name);
+                }
+            }
+
+            foreach (var imp in model.StubImports) {
+                foreach (var name in imp.ModuleNames) {
+                    m.Interpreter.TypeshedResolution.GetOrLoadModule(name);
+                }
+            }
+            foreach (var imp in model.StubFromImports) {
+                foreach (var name in imp.RootNames) {
+                    m.Interpreter.TypeshedResolution.GetOrLoadModule(name);
+                }
+            }
+
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+            await analyzer.WaitForCompleteAnalysisAsync();
+
+            using (var dbModule = CreateDbModule(model, m.FilePath)) {
+                dbModule.Should().HaveSameMembersAs(m);
+            }
+        }
     }
 }

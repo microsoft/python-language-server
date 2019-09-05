@@ -75,8 +75,8 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         #region IGenericType
         public IReadOnlyList<IGenericTypeParameter> Parameters => (InnerType as IGenericType)?.Parameters ?? Array.Empty<IGenericTypeParameter>();
         public bool IsGeneric => (InnerType as IPythonClassType)?.IsGeneric == true;
-        public IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
-            => (InnerType as IPythonClassType)?.GenericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        public IReadOnlyDictionary<string, IPythonType> GenericParameters
+            => (InnerType as IPythonClassType)?.GenericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
         #endregion
 
         #region IPythonClassType

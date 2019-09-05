@@ -28,15 +28,15 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public PythonDbModule(ModuleModel model, string filePath, IServiceContainer services)
             : base(model.Name, filePath, services) {
-            
-            var gs = new GlobalScope(model, this);
-            GlobalScope = gs;
-            gs.ReconstructVariables();
-
             Documentation = model.Documentation;
-
             _newLines = model.NewLines.Select(nl => new NewLineLocation(nl.EndIndex, nl.Kind)).ToArray();
             _fileSize = model.FileSize;
+        }
+
+        public void Construct(ModuleModel model) {
+            var gs = new RestoredGlobalScope(model, this);
+            GlobalScope = gs;
+            gs.ReconstructVariables();
         }
 
         protected override string LoadContent() => string.Empty;

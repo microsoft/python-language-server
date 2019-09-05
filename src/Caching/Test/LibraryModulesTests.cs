@@ -20,7 +20,6 @@ using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -181,7 +180,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         [TestMethod, Priority(0)]
         public Task Pickle() => TestModule("pickle");
-        
+
         [TestMethod, Priority(0)]
         public Task Pipes() => TestModule("pipes");
 
@@ -295,7 +294,7 @@ x = requests.get('microsoft.com')
             // Verify this looks like a version.
             new Version(u.Substring(open + 1, u.IndexOf(')') - open - 1));
 
-            CompareBaselineAndRestore(model, rq);
+            await CompareBaselineAndRestoreAsync(model, rq);
         }
 
         private async Task TestModule(string name) {
@@ -303,16 +302,7 @@ x = requests.get('microsoft.com')
             var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
             var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingLevel.Library);
 
-            CompareBaselineAndRestore(model, m);
-        }
-
-        private void CompareBaselineAndRestore(ModuleModel model, IPythonModule m) {
-            //var json = ToJson(model);
-            //Baseline.CompareToFile(BaselineFileName, json);
-
-            using (var dbModule = new PythonDbModule(model, m.FilePath, Services)) {
-                dbModule.Should().HaveSameMembersAs(m);
-            }
+            await CompareBaselineAndRestoreAsync(model, m);
         }
     }
 }

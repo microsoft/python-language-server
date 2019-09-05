@@ -101,7 +101,7 @@ b = A().methodA1()
             //var json = ToJson(model);
             //Baseline.CompareToFile(BaselineFileName, json);
 
-            using (var dbModule = new PythonDbModule(model, analysis.Document.FilePath, Services)) {
+            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(analysis.Document);
             }
         }
@@ -128,7 +128,7 @@ x = A(1, 'a')
             //var json = ToJson(model);
             //Baseline.CompareToFile(BaselineFileName, json);
 
-            using (var dbModule = new PythonDbModule(model, analysis.Document.FilePath, Services)) {
+            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(analysis.Document);
             }
         }

@@ -83,10 +83,25 @@ T = TypeVar('T', str, int, covariant=True)
 
 
         [TestMethod, Priority(0)]
-        public async Task KeywordArgMixDocCheck() {
+        public async Task TypeVarBoundToUnknown() {
             const string code = @"
 from typing import TypeVar
 X = TypeVar('X', bound='hello', covariant=True)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("X")
+                .Which.Value.Should().HaveDocumentation("TypeVar('X', bound=Unknown, covariant=True)");
+            analysis.Should().HaveGenericVariable("X");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeVarBoundToStringName() {
+            const string code = @"
+from typing import TypeVar
+
+X = TypeVar('X', bound='hello', covariant=True)
+
+class hello: ...
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("X")

@@ -54,50 +54,51 @@ namespace TestUtilities {
         }
 
         public static int CompareLines(string expected, string actual, out string expectedLine, out string actualLine, out int index, bool ignoreCase = false) {
-            var actualReader = new StringReader(actual);
-            var expectedReader = new StringReader(expected);
+            using (var actualReader = new StringReader(actual))
+            using (var expectedReader = new StringReader(expected)) {
 
-            var lineNum = 1;
-            index = 0;
+                var lineNum = 1;
+                index = 0;
 
-            for (; ; lineNum++) {
-                expectedLine = expectedReader.ReadLine();
-                actualLine = actualReader.ReadLine();
+                for (;; lineNum++) {
+                    expectedLine = expectedReader.ReadLine();
+                    actualLine = actualReader.ReadLine();
 
-                if (expectedLine == null || actualLine == null) {
-                    break;
-                }
-
-                var minLength = Math.Min(expectedLine.Length, actualLine.Length);
-                for (var i = 0; i < minLength; i++) {
-                    var act = actualLine[i];
-                    var exp = expectedLine[i];
-
-                    if (ignoreCase) {
-                        act = char.ToLowerInvariant(act);
-                        exp = char.ToLowerInvariant(exp);
+                    if (expectedLine == null || actualLine == null) {
+                        break;
                     }
 
-                    if (act != exp) {
-                        index = i + 1;
+                    var minLength = Math.Min(expectedLine.Length, actualLine.Length);
+                    for (var i = 0; i < minLength; i++) {
+                        var act = actualLine[i];
+                        var exp = expectedLine[i];
+
+                        if (ignoreCase) {
+                            act = char.ToLowerInvariant(act);
+                            exp = char.ToLowerInvariant(exp);
+                        }
+
+                        if (act != exp) {
+                            index = i + 1;
+                            return lineNum;
+                        }
+                    }
+
+                    if (expectedLine.Length != actualLine.Length) {
+                        index = minLength + 1;
                         return lineNum;
                     }
                 }
 
-                if (expectedLine.Length != actualLine.Length) {
-                    index = minLength + 1;
-                    return lineNum;
+                if (expectedLine == null && actualLine == null) {
+                    expectedLine = string.Empty;
+                    actualLine = string.Empty;
+
+                    return 0;
                 }
+
+                return lineNum;
             }
-
-            if (expectedLine == null && actualLine == null) {
-                expectedLine = string.Empty;
-                actualLine = string.Empty;
-
-                return 0;
-            }
-
-            return lineNum;
         }
 
         public static void CompareToFile(string baselineFile, string actual, bool regenerateBaseline = false, bool ignoreCase = false) {

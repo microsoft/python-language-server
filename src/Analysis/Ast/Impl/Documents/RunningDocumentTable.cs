@@ -241,10 +241,10 @@ namespace Microsoft.Python.Analysis.Documents {
             IDocument document;
             switch (mco.ModuleType) {
                 case ModuleType.Compiled when TryAddModulePath(mco):
-                    document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, _services);
+                    document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, mco.IsPersistent, _services);
                     break;
                 case ModuleType.CompiledBuiltin:
-                    document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, _services);
+                    document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, mco.IsPersistent, _services);
                     break;
                 case ModuleType.User:
                     TryAddModulePath(mco);

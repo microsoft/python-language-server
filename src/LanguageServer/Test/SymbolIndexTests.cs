@@ -27,6 +27,7 @@ using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.Tests.Utilities.FluentAssertions;
+using Microsoft.Python.UnitTests.Core.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using TestUtilities;
@@ -51,14 +52,15 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task IndexHierarchicalDocumentAsync() {
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
-            index.Add(path, DocumentWithAst("x = 1"));
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
+                index.Add(path, DocumentWithAst("x = 1"));
 
-            var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
-            });
+                var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2))
+                });
+            }
         }
 
         private static ISymbolIndex MakeSymbolIndex() {
@@ -67,124 +69,130 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task IndexHierarchicalDocumentUpdate() {
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
 
-            index.Add(path, DocumentWithAst("x = 1"));
+                index.Add(path, DocumentWithAst("x = 1"));
 
-            var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
-            });
+                var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new HierarchicalSymbol("x", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2))
+                });
 
-            index.Add(path, DocumentWithAst("y = 1"));
+                index.Add(path, DocumentWithAst("y = 1"));
 
-            symbols = await index.HierarchicalDocumentSymbolsAsync(path);
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
-            });
+                symbols = await index.HierarchicalDocumentSymbolsAsync(path);
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new HierarchicalSymbol("y", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2))
+                });
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task IndexHierarchicalDocumentNotFoundAsync() {
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
 
-            var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
-            symbols.Should().BeEmpty();
+                var symbols = await index.HierarchicalDocumentSymbolsAsync(path);
+                symbols.Should().BeEmpty();
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task IndexWorkspaceSymbolsFlattenAsync() {
-            var code = @"class Foo(object):
+            const string code = @"class Foo(object):
     def foo(self, x): ...";
 
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
+                index.Add(path, DocumentWithAst(code));
 
-            index.Add(path, DocumentWithAst(code));
-
-            var symbols = await index.WorkspaceSymbolsAsync("", maxSymbols);
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("Foo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 10)),
-                new FlatSymbol("foo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 12), "Foo"),
-                new FlatSymbol("self", SymbolKind.Variable, path, new SourceSpan(2, 13, 2, 17), "foo"),
-                new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(2, 19, 2, 20), "foo"),
-            });
+                var symbols = await index.WorkspaceSymbolsAsync("", maxSymbols);
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new FlatSymbol("Foo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 10)),
+                    new FlatSymbol("foo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 12), "Foo"),
+                    new FlatSymbol("self", SymbolKind.Variable, path, new SourceSpan(2, 13, 2, 17), "foo"),
+                    new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(2, 19, 2, 20), "foo")
+                });
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task IndexWorkspaceSymbolsFilteredAsync() {
-            var code = @"class Foo(object):
+            const string code = @"class Foo(object):
     def foo(self, x): ...";
 
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
 
-            index.Add(path, DocumentWithAst(code));
+                index.Add(path, DocumentWithAst(code));
 
-            var symbols = await index.WorkspaceSymbolsAsync("x", maxSymbols);
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(2, 19, 2, 20), "foo"),
-            });
+                var symbols = await index.WorkspaceSymbolsAsync("x", maxSymbols);
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(2, 19, 2, 20), "foo"),
+                });
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task IndexWorkspaceSymbolsNotFoundAsync() {
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
-
-            var symbols = await index.WorkspaceSymbolsAsync("", maxSymbols);
-            symbols.Should().BeEmpty();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
+                var symbols = await index.WorkspaceSymbolsAsync("", maxSymbols);
+                symbols.Should().BeEmpty();
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task IndexWorkspaceSymbolsCaseInsensitiveAsync() {
-            var code = @"class Foo(object):
+            const string code = @"class Foo(object):
     def foo(self, x): ...";
 
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
+                index.Add(path, DocumentWithAst(code));
 
-            index.Add(path, DocumentWithAst(code));
-
-            var symbols = await index.WorkspaceSymbolsAsync("foo", maxSymbols);
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("Foo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 10)),
-                new FlatSymbol("foo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 12), "Foo"),
-            });
+                var symbols = await index.WorkspaceSymbolsAsync("foo", maxSymbols);
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new FlatSymbol("Foo", SymbolKind.Class, path, new SourceSpan(1, 7, 1, 10)),
+                    new FlatSymbol("foo", SymbolKind.Method, path, new SourceSpan(2, 9, 2, 12), "Foo"),
+                });
+            }
         }
 
         [TestMethod, Priority(0)]
         public void MarkAsPendingWaitsForUpdates() {
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
 
-            index.Add(path, DocumentWithAst("x = 1"));
-            index.MarkAsPending(path);
-            var cts = new CancellationTokenSource();
-            var t = index.HierarchicalDocumentSymbolsAsync(path, cts.Token);
-            t.IsCompleted.Should().BeFalse();
-            cts.Cancel();
-            Func<Task> cancelled = async () => {
-                await t;
-            };
-            cancelled.Should().Throw<OperationCanceledException>();
+                index.Add(path, DocumentWithAst("x = 1"));
+                index.MarkAsPending(path);
+                using (var cts = new CancellationTokenSource()) {
+                    var t = index.HierarchicalDocumentSymbolsAsync(path, cts.Token);
+                    t.Should().NotBeCompleted();
+                    cts.Cancel();
+                    Func<Task> cancelled = async () => {
+                        await t;
+                    };
+                    cancelled.Should().Throw<OperationCanceledException>();
+                }
+            }
         }
 
         [TestMethod, Priority(0)]
         public async Task SymbolsAfterPendingWaitsForUpdateAsync() {
-            ISymbolIndex index = MakeSymbolIndex();
-            var path = TestData.GetDefaultModulePath();
+            using (var index = MakeSymbolIndex()) {
+                var path = TestData.GetDefaultModulePath();
 
-            index.Add(path, DocumentWithAst("x = 1"));
-            index.MarkAsPending(path);
-            var t = index.WorkspaceSymbolsAsync("", maxSymbols);
-            index.ReIndex(path, DocumentWithAst("x = 1"));
-            var symbols = await t;
-            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
-                new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(1, 1, 1, 2)),
-            });
+                index.Add(path, DocumentWithAst("x = 1"));
+                index.MarkAsPending(path);
+                var t = index.WorkspaceSymbolsAsync("", maxSymbols);
+                index.ReIndex(path, DocumentWithAst("x = 1"));
+                var symbols = await t;
+                symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                    new FlatSymbol("x", SymbolKind.Variable, path, new SourceSpan(1, 1, 1, 2))
+                });
+            }
         }
 
         private PythonAst GetParse(string code, PythonLanguageVersion version = PythonLanguageVersion.V37)
@@ -199,14 +207,14 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         private IDocument DocumentWithAst(string testCode, string filePath = null) {
             filePath = filePath ?? $"{_rootPath}/{testCode}.py";
-            IDocument doc = Substitute.For<IDocument>();
+            var doc = Substitute.For<IDocument>();
             doc.GetAstAsync().ReturnsForAnyArgs(Task.FromResult(MakeAst(testCode)));
             doc.Uri.Returns(new Uri(filePath));
             return doc;
         }
 
         private PythonAst MakeAst(string testCode) {
-            PythonLanguageVersion latestVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
+            var latestVersion = PythonVersions.LatestAvailable3X.Version.ToLanguageVersion();
             return Parser.CreateParser(MakeStream(testCode), latestVersion).ParseFile();
         }
 

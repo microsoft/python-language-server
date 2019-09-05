@@ -31,22 +31,26 @@ namespace Microsoft.Python.Analysis.Caching {
     /// Constructs module from its persistent model.
     /// </summary>
     internal sealed class ModuleFactory {
+        /// <summary>For use in tests so missing members will assert.</summary>
+        internal static bool EnableMissingMemberAssertions { get; set; }
+
         // TODO: better resolve circular references.
-        private readonly ReentrancyGuard<string> _typeReentrancy = new ReentrancyGuard<string>();
         private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
         private readonly ModuleModel _model;
+        private readonly IGlobalScope _gs;
 
         public IPythonModule Module { get; }
         public Location DefaultLocation { get; }
 
-        public ModuleFactory(ModuleModel model, IPythonModule module) {
+        public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs) {
             _model = model;
-
+            _gs = gs;
             Module = module;
             DefaultLocation = new Location(Module);
         }
 
-        public IPythonType ConstructType(string qualifiedName) => ConstructMember(qualifiedName)?.GetPythonType();
+        public IPythonType ConstructType(string qualifiedName) 
+            => ConstructMember(qualifiedName)?.GetPythonType();
 
         public IMember ConstructMember(string qualifiedName) {
             // Determine module name, member chain and if this is an instance.
@@ -101,8 +105,9 @@ namespace Microsoft.Python.Analysis.Caching {
                     return null;
                 }
 
-                m = nextModel.Construct(this, declaringType);
+                m = nextModel.Create(this, declaringType, _gs);
                 Debug.Assert(m != null);
+
                 if (m is IGenericType gt && typeArgs.Count > 0) {
                     m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));
                 }
@@ -136,13 +141,13 @@ namespace Microsoft.Python.Analysis.Caching {
                 // from the stub and the main module was never loaded. This, for example,
                 // happens with io which has member with mmap type coming from mmap
                 // stub rather than the primary mmap module.
-                var m = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
-                // Try stub-only case (ex _importlib_modulespec).
-                m = m ?? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
+                var m = parts.IsStub 
+                    ? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName) 
+                    : Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
+
                 if (m != null) {
                     return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
                 }
-
                 return null;
             }
         }
@@ -175,7 +180,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (member == null) {
-                    Debug.Assert(member != null);
+                    Debug.Assert(member != null || EnableMissingMemberAssertions == false);
                     break;
                 }
 

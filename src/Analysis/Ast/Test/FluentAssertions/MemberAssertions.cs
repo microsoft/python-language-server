@@ -138,8 +138,9 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 }
 
                 subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
+                Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
 
-                if(subjectMemberType is IPythonClassType subjectClass) {
+                if (subjectMemberType is IPythonClassType subjectClass) {
                     var otherClass = otherMemberType as IPythonClassType;
                     otherClass.Should().NotBeNull();
 
@@ -163,8 +164,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     case PythonMemberType.Class:
                         // Restored collections (like instance of tuple) turn into classes
                         // rather than into collections with content since we don't track
-                        // collection content in libraries.
-                        subjectMemberType.QualifiedName.Should().Be(otherMemberType.QualifiedName);
+                        // collection content in libraries. We don't compare qualified names
+                        // since original module may be source or a stub and that is not
+                        // preserved during restore.
+                        // subjectMemberType.QualifiedName.Should().Be(otherMemberType.QualifiedName);
                         break;
                     case PythonMemberType.Function:
                     case PythonMemberType.Method:

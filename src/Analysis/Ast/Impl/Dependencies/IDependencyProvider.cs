@@ -14,24 +14,15 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using Microsoft.Python.Analysis.Analyzer;
 
-namespace Microsoft.Python.Analysis.Caching {
-    public enum ObjectType {
-        Type,
-        Instance,
-        Module,
-        VariableModule,
-        BuiltinModule
-    }
-
-    internal struct QualifiedNameParts {
-        /// <summary>Object type.</summary>
-        public ObjectType ObjectType;
-        /// <summary>Module name.</summary>
-        public string ModuleName;
-        /// <summary>Indicates if module is a stub.</summary>
-        public bool IsStub;
-        /// <summary>Module member names such as 'A', 'B', 'C' from module:A.B.C.</summary>
-        public IReadOnlyList<string> MemberNames;
+namespace Microsoft.Python.Analysis.Dependencies {
+    /// <summary>
+    /// Implements provider that can supply list of imports to the dependency analysis.
+    /// Regular modules provide dependency from the AST, persistent/database modules
+    /// provide dependencies from their models.
+    /// </summary>
+    internal interface IDependencyProvider {
+        HashSet<AnalysisModuleKey> GetDependencies();
     }
 }

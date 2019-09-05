@@ -13,30 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-namespace Microsoft.Python.Analysis.Caching {
+namespace Microsoft.Python.Analysis.Caching.Models {
     /// <summary>
-    /// Describes module data stored in a database.
+    /// Represents from import statement for dependency resolution.
     /// </summary>
-    public enum ModuleStorageState {
-        /// <summary>
-        /// Module does not exist in the database.
-        /// </summary>
-        DoesNotExist,
-
-        /// <summary>
-        /// Partial data. This means module is still being analyzed
-        /// and the data on the module members is incomplete.
-        /// </summary>
-        Partial,
-
-        /// <summary>
-        /// Modules exist and the analysis is complete.
-        /// </summary>
-        Complete,
-
-        /// <summary>
-        /// Storage is corrupted or incompatible.
-        /// </summary>
-        Corrupted
+    internal sealed class FromImportModel {
+        public string[] RootNames { get; set; }
+        public int DotCount { get; set; }
+        public bool ForceAbsolute { get; set; }
     }
 }

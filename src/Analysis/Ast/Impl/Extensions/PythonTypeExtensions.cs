@@ -15,7 +15,6 @@
 
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonTypeExtensions {

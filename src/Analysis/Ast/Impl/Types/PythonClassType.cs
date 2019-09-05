@@ -214,8 +214,8 @@ namespace Microsoft.Python.Analysis.Types {
         /// class B(A[int, str]): ...
         /// Has the map {T: int, K: str}
         /// </summary>
-        public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters =>
-            _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        public virtual IReadOnlyDictionary<string, IPythonType> GenericParameters =>
+                _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
 
         #endregion
 
@@ -226,6 +226,13 @@ namespace Microsoft.Python.Analysis.Types {
             DocumentationSource = ClassDocumentationSource.Class;
         }
 
+        /// <summary>
+        /// Sets class bases. If scope is provided, detects loops in base classes and removes them.
+        /// </summary>
+        /// <param name="bases">List of base types.</param>
+        /// <param name="currentScope">Current scope to look up base types.
+        /// Can be null if class is restored from database, in which case
+        /// there is no need to try and disambiguate bases.</param>
         internal void SetBases(IEnumerable<IPythonType> bases, IScope currentScope = null) {
             if (_bases != null) {
                 return; // Already set

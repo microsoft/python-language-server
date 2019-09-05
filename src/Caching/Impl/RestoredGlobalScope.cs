@@ -22,44 +22,45 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class GlobalScope : IGlobalScope {
+    internal sealed class RestoredGlobalScope : IRestoredGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
-        private ModuleModel _model;
+        private ModuleModel _model; // Non-readonly b/c of DEBUG conditional.
+        private ModuleFactory _factory; // Non-readonly b/c of DEBUG conditional.
 
-        public GlobalScope(ModuleModel model, IPythonModule module) {
-            _model = model;
-            Module = module;
+        public RestoredGlobalScope(ModuleModel model, IPythonModule module) {
+            _model = model ?? throw new ArgumentNullException(nameof(model));
+            Module = module ?? throw new ArgumentNullException(nameof(module));
             Name = model.Name;
+            _factory = new ModuleFactory(_model, Module, this);
+            DeclareVariables();
         }
 
         public void ReconstructVariables() {
+            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
+            foreach (var m in models.Concat(_model.Variables)) {
+                m.Populate(_factory, null, this);
+            }
+            // TODO: re-declare __doc__, __name__, etc.
+#if !DEBUG
+            _model = null;
+            _factory = null;
+#endif
+        }
+
+        private void DeclareVariables() {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
-            var mf = new ModuleFactory(_model, Module);
-            foreach (var tvm in _model.TypeVars) {
-                var t = tvm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(tvm.Name, t, VariableSource.Generic, mf.DefaultLocation);
-            }
-            foreach (var ntm in _model.NamedTuples) {
-                var nt = ntm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(ntm.Name, nt, VariableSource.Declaration, mf.DefaultLocation);
-            }
-            foreach (var cm in _model.Classes) {
-                var cls = cm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(cm.Name, cls, VariableSource.Declaration, mf.DefaultLocation);
-            }
-            foreach (var fm in _model.Functions) {
-                var ft = fm.Construct(mf, null);
-                _scopeVariables.DeclareVariable(fm.Name, ft, VariableSource.Declaration, mf.DefaultLocation);
+            var mf = new ModuleFactory(_model, Module, this);
+            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
+
+            foreach (var m in models) {
+                _scopeVariables.DeclareVariable(m.Name, m.Create(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
             }
             foreach (var vm in _model.Variables) {
-                var v = (IVariable)vm.Construct(mf, null);
+                var v = (IVariable)vm.Create(mf, null, this);
                 _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
             }
-
-            // TODO: re-declare __doc__, __name__, etc.
-            _model = null;
         }
 
         #region IScope

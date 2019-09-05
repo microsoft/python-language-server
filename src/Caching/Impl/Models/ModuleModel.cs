@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Microsoft.Python.Analysis.Caching.Models {
@@ -49,11 +50,16 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// </summary>
         public int FileSize { get; set; }
 
+        public ImportModel[] Imports { get; set; }
+        public FromImportModel[] FromImports { get; set; }
+        public ImportModel[] StubImports { get; set; }
+        public FromImportModel[] StubFromImports { get; set; }
+
         [NonSerialized] private Dictionary<string, MemberModel> _modelCache;
 
         public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services, AnalysisCachingLevel options) {
             var uniqueId = analysis.Document.GetUniqueId(services, options);
-            if(uniqueId == null) {
+            if (uniqueId == null) {
                 // Caching level setting does not permit this module to be persisted.
                 return null;
             }
@@ -68,9 +74,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             // as well as variables that are declarations.
             var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
             foreach (var v in analysis.GlobalScope.Variables
-                .Where(v => exportedNames.Contains(v.Name) || 
-                            v.Source == VariableSource.Declaration || 
-                            v.Source == VariableSource.Builtin || 
+                .Where(v => exportedNames.Contains(v.Name) ||
+                            v.Source == VariableSource.Declaration ||
+                            v.Source == VariableSource.Builtin ||
                             v.Source == VariableSource.Generic)) {
 
                 if (v.Value is IGenericTypeParameter && !typeVars.ContainsKey(v.Name)) {
@@ -115,10 +121,20 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
 
+            // Take dependencies from imports. If module has stub we should also take
+            // dependencies from there since persistent state is based on types that
+            // are combination of stub and the module. Sometimes stub may import more
+            // and we must make sure dependencies are restored before the module.
+            var primaryDependencyWalker = new DependencyWalker(analysis.Ast);
+            var stubDependencyWalker = analysis.Document.Stub != null ? new DependencyWalker(analysis.Document.Stub.Analysis.Ast) : null;
+            var stubImports = stubDependencyWalker?.Imports ?? Enumerable.Empty<ImportModel>();
+            var stubFromImports = stubDependencyWalker?.FromImports ?? Enumerable.Empty<FromImportModel>();
+
             return new ModuleModel {
                 Id = uniqueId.GetStableHash(),
                 UniqueId = uniqueId,
                 Name = analysis.Document.Name,
+                QualifiedName = analysis.Document.QualifiedName,
                 Documentation = analysis.Document.Documentation,
                 Functions = functions.Values.ToArray(),
                 Variables = variables.Values.ToArray(),
@@ -129,7 +145,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     EndIndex = l.EndIndex,
                     Kind = l.Kind
                 }).ToArray(),
-                FileSize = analysis.Ast.EndIndex
+                FileSize = analysis.Ast.EndIndex,
+                Imports = primaryDependencyWalker.Imports.ToArray(),
+                FromImports = primaryDependencyWalker.FromImports.ToArray(),
+                StubImports = stubImports.ToArray(),
+                StubFromImports = stubFromImports.ToArray()
             };
         }
 
@@ -149,8 +169,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return null;
         }
 
-        protected override IMember ReConstruct(ModuleFactory mf, IPythonType declaringType) => throw new NotImplementedException();
-
         public override MemberModel GetModel(string name) {
             if (_modelCache == null) {
                 var models = TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions).Concat(Variables);
@@ -160,8 +178,38 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     _modelCache[m.Name] = m;
                 }
             }
-
             return _modelCache.TryGetValue(name, out var model) ? model : null;
+        }
+
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
+        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
+
+        private sealed class DependencyWalker : PythonWalker {
+            public List<ImportModel> Imports { get; } = new List<ImportModel>();
+            public List<FromImportModel> FromImports { get; } = new List<FromImportModel>();
+
+            public DependencyWalker(PythonAst ast) {
+                ast.Walk(this);
+            }
+
+            public override bool Walk(ImportStatement import) {
+                var model = new ImportModel {
+                    ForceAbsolute = import.ForceAbsolute,
+                    ModuleNames = import.Names.SelectMany(mn => mn.Names).Select(n => n.Name).ToArray()
+                };
+                Imports.Add(model);
+                return false;
+            }
+
+            public override bool Walk(FromImportStatement fromImport) {
+                var model = new FromImportModel {
+                    ForceAbsolute = fromImport.ForceAbsolute,
+                    RootNames = fromImport.Root.Names.Select(n => n.Name).ToArray(),
+                    DotCount = fromImport.Root is RelativeModuleName rn ? rn.DotCount : 0
+                };
+                FromImports.Add(model);
+                return false;
+            }
         }
     }
 }
