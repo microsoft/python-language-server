@@ -88,8 +88,8 @@ pt = f(1, 2)
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var pt = analysis.Should().HaveVariable("pt").Which;
-            pt.Should().HaveType("Point(x, y)").And.HaveMember("x");
-            pt.Should().HaveType("Point(x, y)").And.HaveMember("y");
+            pt.Should().HaveType("Point").And.HaveMember("x");
+            pt.Should().HaveType("Point").And.HaveMember("y");
         }
 
         [TestMethod, Priority(0)]
@@ -565,6 +565,35 @@ z = y()
 
             analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Function)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedMembers() {
+            const string code = @"
+def outer():
+    class innerClass(): ...
+    def innerFunc(): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            var outer = analysis.Should().HaveFunction("outer").Which as IPythonType;
+            outer.Should().HaveMember<IPythonClassType>("innerClass");
+            outer.Should().HaveMember<IPythonFunctionType>("innerFunc");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedPropertyMembers() {
+            const string code = @"
+def outer():
+    @property
+    def p(self):
+        class innerClass(): ...
+        def innerFunc(): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            var outer = analysis.Should().HaveFunction("outer").Which as IPythonType;
+            var p = outer.Should().HaveMember<IPythonPropertyType>("p").Which as IPythonType;
+            p.Should().HaveMember<IPythonClassType>("innerClass");
+            p.Should().HaveMember<IPythonFunctionType>("innerFunc");
         }
 
         [TestMethod, Priority(0)]

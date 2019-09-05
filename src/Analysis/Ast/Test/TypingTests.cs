@@ -83,10 +83,25 @@ T = TypeVar('T', str, int, covariant=True)
 
 
         [TestMethod, Priority(0)]
-        public async Task KeywordArgMixDocCheck() {
+        public async Task TypeVarBoundToUnknown() {
             const string code = @"
 from typing import TypeVar
 X = TypeVar('X', bound='hello', covariant=True)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("X")
+                .Which.Value.Should().HaveDocumentation("TypeVar('X', bound=Unknown, covariant=True)");
+            analysis.Should().HaveGenericVariable("X");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypeVarBoundToStringName() {
+            const string code = @"
+from typing import TypeVar
+
+X = TypeVar('X', bound='hello', covariant=True)
+
+class hello: ...
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("X")
@@ -144,7 +159,6 @@ foo: Foo = Foo({ })
             const string code = @"
 from typing import *
 
-i : SupportsInt = ...
 lst_i : List[int] = ...
 lst_i_0 = lst_i[0]
 
@@ -169,8 +183,7 @@ dctv_s_i_item_1, dctv_s_i_item_2 = next(iter(dctv_s_i_items))
             ;
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("lst_i").OfType("List[int]")
+            analysis.Should().HaveVariable("lst_i").OfType("List[int]")
                 .And.HaveVariable("lst_i_0").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("u").OfType("Union[Mapping[int, str], MappingView[str, float], MutableMapping[int, List[str]]]")
                 .And.HaveVariable("dct_s_i").OfType("Mapping[str, int]")
@@ -235,9 +248,10 @@ n1_i = n1[i]
 ";
 
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("n1").OfType("n1(x: int, y: float)")
+            analysis.Should().HaveVariable("n1").OfType("n1")
+                .Which.Value.Should().HaveDocumentation("n1(x: int, y: float)");
 
-                .And.HaveVariable("n1_x").OfType(BuiltinTypeId.Int)
+            analysis.Should().HaveVariable("n1_x").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("n1_y").OfType(BuiltinTypeId.Float)
 
                 .And.HaveVariable("n1_0").OfType(BuiltinTypeId.Int)
@@ -265,9 +279,9 @@ n2 : AnyStr = b'abc'
 y = n2[0]
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("n1").OfType("AnyStr")
-                .And.HaveVariable("x").OfType("AnyStr")
-                .And.HaveVariable("y").OfType("AnyStr");
+            analysis.Should().HaveVariable("n1").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("x").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]

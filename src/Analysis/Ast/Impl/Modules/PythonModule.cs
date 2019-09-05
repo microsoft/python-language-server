@@ -22,6 +22,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Caching;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -42,7 +45,7 @@ namespace Microsoft.Python.Analysis.Modules {
     /// to AST and the module analysis.
     /// </summary>
     [DebuggerDisplay("{Name} : {ModuleType}")]
-    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer {
+    internal class PythonModule : LocatedMember, IDocument, IAnalyzable, IEquatable<IPythonModule>, IAstNodeContainer, ILocationConverter {
         private enum State {
             None,
             Loading,
@@ -79,17 +82,19 @@ namespace Microsoft.Python.Analysis.Modules {
             Log = services.GetService<ILogger>();
             Interpreter = services.GetService<IPythonInterpreter>();
             Analysis = new EmptyAnalysis(services, this);
+            GlobalScope = Analysis.GlobalScope;
 
             _diagnosticsService = services.GetService<IDiagnosticsService>();
             SetDeclaringModule(this);
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
                 ModuleType = moduleType,
-                Stub = stub
+                Stub = stub,
+                IsPersistent = isPersistent
             }, services) { }
 
         internal PythonModule(ModuleCreationOptions creationOptions, IServiceContainer services)
@@ -102,8 +107,10 @@ namespace Microsoft.Python.Analysis.Modules {
             if (uri == null && !string.IsNullOrEmpty(creationOptions.FilePath)) {
                 Uri.TryCreate(creationOptions.FilePath, UriKind.Absolute, out uri);
             }
+
             Uri = uri;
             FilePath = creationOptions.FilePath ?? uri?.LocalPath;
+
             Stub = creationOptions.Stub;
             if (Stub is PythonModule stub && ModuleType != ModuleType.Stub) {
                 stub.PrimaryModule = this;
@@ -112,11 +119,14 @@ namespace Microsoft.Python.Analysis.Modules {
             if (ModuleType == ModuleType.Specialized || ModuleType == ModuleType.Unresolved) {
                 ContentState = State.Analyzed;
             }
+
+            IsPersistent = creationOptions.IsPersistent;
             InitializeContent(creationOptions.Content, 0);
         }
 
         #region IPythonType
         public string Name { get; }
+        public string QualifiedName => ModuleType == ModuleType.Stub ? $"{Name}(stub)" : Name;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;
@@ -149,10 +159,10 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => Analysis.GlobalScope.Variables[name]?.Value;
+        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
-            return Analysis.GlobalScope.Variables
+            return GlobalScope.Variables
                 .Where(v => {
                     // Instances are always fine.
                     if (v.Value is IPythonInstance) {
@@ -162,8 +172,20 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (valueType is PythonModule) {
                         return false; // Do not re-export modules.
                     }
-                    // Do not re-export types from typing
-                    return !(valueType?.DeclaringModule is TypingModule) || this is TypingModule;
+                    if (valueType is IPythonFunctionType f && f.IsLambda()) {
+                        return false;
+                    }
+                    if (this is TypingModule) {
+                        return true; // Let typing module behave normally.
+                    }
+                    // Do not re-export types from typing. However, do export variables
+                    // assigned with types from typing. Example:
+                    //    from typing import Any # do NOT export Any
+                    //    x = Union[int, str] # DO export x
+                    if (valueType?.DeclaringModule is TypingModule && v.Name == valueType.Name) {
+                        return false;
+                    }
+                    return true;
                 })
                 .Select(v => v.Name);
         }
@@ -173,14 +195,10 @@ namespace Microsoft.Python.Analysis.Modules {
         public override LocationInfo Definition => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
         #endregion
 
-        #region IPythonFile
-        public virtual string FilePath { get; }
-        public virtual Uri Uri { get; }
-        #endregion
-
         #region IPythonModule
+        public virtual string FilePath { get; protected set; }
+        public virtual Uri Uri { get; }
         public IDocumentAnalysis Analysis { get; private set; }
-
         public IPythonInterpreter Interpreter { get; }
 
         /// <summary>
@@ -192,7 +210,7 @@ namespace Microsoft.Python.Analysis.Modules {
         /// <summary>
         /// Global cope of the module.
         /// </summary>
-        public IGlobalScope GlobalScope { get; private set; }
+        public IGlobalScope GlobalScope { get; protected set; }
 
         /// <summary>
         /// If module is a stub points to the primary module.
@@ -200,6 +218,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
+
+        /// <summary>
+        /// Indicates if module is restored from database.
+        /// </summary>
+        public bool IsPersistent { get; }
         #endregion
 
         #region IDisposable
@@ -210,6 +233,8 @@ namespace Microsoft.Python.Analysis.Modules {
             _disposeToken.TryMarkDisposed();
             var analyzer = Services.GetService<IPythonAnalyzer>();
             analyzer.RemoveAnalysis(this);
+            _parseCts?.Dispose();
+            _linkedParseCts?.Dispose();
         }
         #endregion
 
@@ -381,6 +406,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
+        public virtual IDependencyProvider DependencyProvider => new DependencyProvider(this, Services);
 
         public void NotifyAnalysisBegins() {
             lock (_syncObj) {
@@ -504,7 +530,11 @@ namespace Microsoft.Python.Analysis.Modules {
         private void LoadContent(string content, int version) {
             if (ContentState < State.Loading) {
                 try {
-                    content = content ?? LoadContent();
+                    if (IsPersistent) {
+                        content = string.Empty;
+                    } else {
+                        content = content ?? LoadContent();
+                    }
                     _buffer.Reset(version, content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -560,6 +590,11 @@ namespace Microsoft.Python.Analysis.Modules {
             } catch (IOException) { } catch (UnauthorizedAccessException) { }
             return string.Empty;
         }
+        #endregion
+
+        #region ILocationConverter
+        public virtual SourceLocation IndexToLocation(int index) => this.GetAst()?.IndexToLocation(index) ?? default;
+        public virtual int LocationToIndex(SourceLocation location) => this.GetAst()?.LocationToIndex(location) ?? default;
         #endregion
 
         private void RemoveReferencesInModule(IPythonModule module) {

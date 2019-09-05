@@ -17,28 +17,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
-using Microsoft.Python.Core.Disposables;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     /// <summary>
-    /// Represents Generic[T1, T2, ...] parameter. When class is instantiated
+    /// Represents Generic[T1, T2, ...] base. When class is instantiated
     /// or methods evaluated, class generic parameters are matched to
     /// generic type parameters from TypeVar. <see cref="IGenericTypeParameter"/>
     /// </summary>
-    internal sealed class GenericClassParameter : PythonClassType, IGenericClassParameter {
-        internal GenericClassParameter(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonModule declaringModule)
-        : base("Generic", new Location(declaringModule)) {
-            TypeParameters = typeArgs ?? new List<IGenericTypeParameter>();
+    internal sealed class GenericClassBase : PythonClassType, IGenericClassBase {
+        internal GenericClassBase(IReadOnlyList<IGenericTypeParameter> typeArgs, IPythonInterpreter interpreter)
+            : base("Generic", new Location(interpreter.ModuleResolution.GetSpecializedModule("typing"))) {
+            TypeParameters = typeArgs ?? Array.Empty<IGenericTypeParameter>();
         }
 
-        public override bool IsGeneric => true;
+        #region IPythonType
+        public override PythonMemberType MemberType => PythonMemberType.Generic;
+        public override string Documentation => Name;
+        #endregion
 
-        public override IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters
-            => TypeParameters.ToDictionary(tp => tp, tp => tp as IPythonType ?? UnknownType) ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        #region IPythonClassType
+        public override bool IsGeneric => true;
+        public override IReadOnlyDictionary<string, IPythonType> GenericParameters
+            => TypeParameters.ToDictionary(tp => tp.Name, tp => tp as IPythonType ?? UnknownType);
+        public override IPythonType CreateSpecificType(IArgumentSet args)
+            => new GenericClassBase(args.Arguments.Select(a => a.Value).OfType<IGenericTypeParameter>().ToArray(), DeclaringModule.Interpreter);
+        #endregion
 
         public IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
-
-        public override PythonMemberType MemberType => PythonMemberType.Generic;
     }
 }

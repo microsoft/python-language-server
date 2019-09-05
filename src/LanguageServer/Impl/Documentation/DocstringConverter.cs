@@ -87,7 +87,7 @@ namespace Microsoft.Python.LanguageServer.Documentation {
         private string CurrentLineWithinBlock => CurrentLine.Substring(_blockIndent);
 
         private DocstringConverter(string input) {
-            _builder = new StringBuilder(input.Length);
+            _builder = new StringBuilder(input?.Length ?? 0);
             _state = ParseText;
             _lines = SplitDocstring(input);
         }

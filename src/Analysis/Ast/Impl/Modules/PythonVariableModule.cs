@@ -16,11 +16,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -28,10 +29,12 @@ namespace Microsoft.Python.Analysis.Modules {
     /// Contains either module members, members + imported children of explicit package or imported implicit package children
     /// Instance is unique for each module analysis
     /// </summary>
-    internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule> {
+    internal sealed class PythonVariableModule : LocatedMember, IPythonModule, IEquatable<IPythonModule>, ILocationConverter {
         private readonly Dictionary<string, PythonVariableModule> _children = new Dictionary<string, PythonVariableModule>();
-
+ 
         public string Name { get; }
+        public string QualifiedName => Name;
+
         public IPythonModule Module { get; }
         public IPythonInterpreter Interpreter { get; }
 
@@ -48,14 +51,15 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
+        public bool IsPersistent => Module?.IsPersistent == true;
 
-        public PythonVariableModule(string name, IPythonInterpreter interpreter): base(null) {
+        public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 
             Name = name;
             Interpreter = interpreter;
             SetDeclaringModule(this);
         }
 
-        public PythonVariableModule(IPythonModule module): base(module) {
+        public PythonVariableModule(IPythonModule module): base(module) { 
             Name = module.Name;
             Interpreter = module.Interpreter;
             Module = module;
@@ -71,5 +75,14 @@ namespace Microsoft.Python.Analysis.Modules {
         public IPythonInstance CreateInstance(IArgumentSet args = null) => new PythonInstance(this);
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
+
+        #region ILocationConverter
+        public SourceLocation IndexToLocation(int index) => (Module as ILocationConverter)?.IndexToLocation(index) ?? default;
+        public int LocationToIndex(SourceLocation location) => (Module as ILocationConverter)?.LocationToIndex(location) ?? default;
+        #endregion
+
+        #region IDependencyProvider
+        public IDependencyProvider DependencyProvider => (Module as IAnalyzable)?.DependencyProvider;
+        #endregion
     }
 }

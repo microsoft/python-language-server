@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents Python class type definition.
     /// </summary>
-    public interface IPythonClassType : IPythonType, IGenericType, ILocatedMember {
+    public interface IPythonClassType : IPythonClassMember, IGenericType {
         /// <summary>
         /// Class definition node in the AST.
         /// </summary>
@@ -41,6 +41,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// If class is created off generic template, represents
         /// pairs of the generic parameter / actual supplied type.
         /// </summary>
-        IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters { get; }
+        IReadOnlyDictionary<string, IPythonType> GenericParameters { get; }
     }
 }

@@ -19,7 +19,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents instance of a collection.
     /// </summary>
-    public interface IPythonCollectionType : IPythonType {
+    public interface IPythonCollectionType : IPythonClassType {
         /// <summary>
         /// Type of the collection iterator.
         /// </summary>

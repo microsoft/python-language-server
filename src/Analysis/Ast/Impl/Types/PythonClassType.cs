@@ -25,19 +25,22 @@ using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("Class {Name}")]
+    [DebuggerDisplay("Class {" + nameof(Name) + "}")]
     internal partial class PythonClassType : PythonType, IPythonClassType, IEquatable<IPythonClassType> {
+        internal enum ClassDocumentationSource {
+            Class,
+            Init,
+            Base
+        }
         private static readonly string[] _classMethods = { "mro", "__dict__", @"__weakref__" };
 
         private readonly ReentrancyGuard<IPythonClassType> _memberGuard = new ReentrancyGuard<IPythonClassType>();
         private readonly object _membersLock = new object();
 
-        private string _genericName;
         private List<IPythonType> _bases;
         private IReadOnlyList<IPythonType> _mro;
         private string _documentation;
@@ -47,18 +50,22 @@ namespace Microsoft.Python.Analysis.Types {
             : base(name, location, string.Empty, BuiltinTypeId.Type) {
         }
 
-        public PythonClassType(ClassDefinition classDefinition, Location location, BuiltinTypeId builtinTypeId = BuiltinTypeId.Type)
-            : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
-            Check.ArgumentNotNull(nameof(location), location.Module);
+        public PythonClassType(
+            ClassDefinition classDefinition,
+            IPythonType declaringType,
+            Location location,
+            BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
+        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
             location.Module.AddAstNode(this, classDefinition);
+            DeclaringType = declaringType;
         }
 
+        #region IPythonType
         /// <summary>
         /// If class has generic type parameters, returns that form, e.g 'A[T1, int, ...]', otherwise returns base, e.g 'A'
         /// </summary>
-        public override string Name => _genericName ?? base.Name;
-
-        #region IPythonType
+        public override string Name => _nameWithParameters ?? base.Name;
+        public override string QualifiedName => this.GetQualifiedName(_qualifiedNameWithParameters);
         public override PythonMemberType MemberType => PythonMemberType.Class;
 
         public override IEnumerable<string> GetMemberNames() {
@@ -85,7 +92,7 @@ namespace Microsoft.Python.Analysis.Types {
             switch (name) {
                 case "__mro__":
                 case "mro":
-                    return is3x ? PythonCollectionType.CreateList(DeclaringModule.Interpreter, Mro) : UnknownType as IMember;
+                    return is3x ? PythonCollectionType.CreateList(DeclaringModule, Mro) : UnknownType as IMember;
                 case "__dict__":
                     return is3x ? DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Dict) : UnknownType;
                 case @"__weakref__":
@@ -118,18 +125,23 @@ namespace Microsoft.Python.Analysis.Types {
                     }
                     // Try doc from the type first (class definition AST node).
                     _documentation = base.Documentation;
+                    DocumentationSource = ClassDocumentationSource.Class;
+
                     if (string.IsNullOrEmpty(_documentation)) {
                         // If not present, try docs __init__. IPythonFunctionType handles
                         // __init__ in a special way so there is no danger of call coming
                         // back here and causing stack overflow.
                         _documentation = (GetMember("__init__") as IPythonFunctionType)?.Documentation;
+                        DocumentationSource = ClassDocumentationSource.Init;
                     }
 
                     if (string.IsNullOrEmpty(_documentation) && Bases != null) {
                         // If still not found, try bases. 
                         var o = DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object);
-                        _documentation = Bases.FirstOrDefault(b => b != o && !string.IsNullOrEmpty(b?.Documentation))
-                            ?.Documentation;
+                        _documentation = Bases
+                            .FirstOrDefault(b => b != o && !(b is IGenericClassBase) && !string.IsNullOrEmpty(b?.Documentation))?
+                            .Documentation;
+                        DocumentationSource = ClassDocumentationSource.Base;
                     }
                 }
                 return _documentation;
@@ -137,19 +149,20 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IPythonInstance CreateInstance(IArgumentSet args) {
+        public override IMember CreateInstance(IArgumentSet args) {
+            var builtins = DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule;
             // Specializations
             switch (Name) {
                 case "list":
-                    return PythonCollectionType.CreateList(DeclaringModule.Interpreter, args);
+                    return PythonCollectionType.CreateList(builtins, args);
                 case "dict": {
                         // self, then contents
                         var contents = args.Values<IMember>().Skip(1).FirstOrDefault();
-                        return new PythonDictionary(DeclaringModule.Interpreter, contents);
+                        return new PythonDictionary(builtins, contents);
                     }
                 case "tuple": {
                         var contents = args.Values<IMember>();
-                        return PythonCollectionType.CreateTuple(DeclaringModule.Interpreter, contents);
+                        return PythonCollectionType.CreateTuple(builtins, contents);
                     }
             }
             return new PythonInstance(this);
@@ -167,6 +180,10 @@ namespace Microsoft.Python.Analysis.Types {
         }
         #endregion
 
+        #region IPythonClassMember
+        public IPythonType DeclaringType { get; }
+        #endregion
+
         #region IPythonClass
         public ClassDefinition ClassDefinition => DeclaringModule.GetAstNode<ClassDefinition>(this);
         public IReadOnlyList<IPythonType> Bases {
@@ -182,7 +199,7 @@ namespace Microsoft.Python.Analysis.Types {
                 if (_mro != null) {
                     return _mro;
                 }
-                if (_bases == null) {
+                if (_bases == null || _bases.Count == 0) {
                     return new IPythonType[] { this };
                 }
                 _mro = new IPythonType[] { this };
@@ -197,11 +214,25 @@ namespace Microsoft.Python.Analysis.Types {
         /// class B(A[int, str]): ...
         /// Has the map {T: int, K: str}
         /// </summary>
-        public virtual IReadOnlyDictionary<IGenericTypeParameter, IPythonType> GenericParameters =>
-                _genericParameters ?? EmptyDictionary<IGenericTypeParameter, IPythonType>.Instance;
+        public virtual IReadOnlyDictionary<string, IPythonType> GenericParameters =>
+                _genericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
 
         #endregion
 
+        internal ClassDocumentationSource DocumentationSource { get; private set; }
+
+        internal override void SetDocumentation(string documentation) {
+            _documentation = documentation;
+            DocumentationSource = ClassDocumentationSource.Class;
+        }
+
+        /// <summary>
+        /// Sets class bases. If scope is provided, detects loops in base classes and removes them.
+        /// </summary>
+        /// <param name="bases">List of base types.</param>
+        /// <param name="currentScope">Current scope to look up base types.
+        /// Can be null if class is restored from database, in which case
+        /// there is no need to try and disambiguate bases.</param>
         internal void SetBases(IEnumerable<IPythonType> bases, IScope currentScope = null) {
             if (_bases != null) {
                 return; // Already set
@@ -229,12 +260,14 @@ namespace Microsoft.Python.Analysis.Types {
             }
             // Invalidate MRO
             _mro = null;
+            DecideGeneric();
+
             if (DeclaringModule is BuiltinsPythonModule) {
                 // TODO: If necessary, we can set __bases__ on builtins when the module is fully analyzed.
                 return;
             }
 
-            AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter, _bases), true);
+            AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, _bases), true);
         }
 
         /// <summary>

@@ -102,6 +102,26 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndConstraint<PythonFunctionOverloadAssertions>(this);
         }
 
+        public AndConstraint<PythonFunctionOverloadAssertions> HaveSameParametersAs(IPythonFunctionOverload other, string because = "", params object[] reasonArgs) {
+            var parameters = Subject.Parameters.ToArray();
+            var expected = other.Parameters.ToArray();
+
+            parameters.Should().HaveCount(other.Parameters.Count);
+            for (var j = 0; j < expected.Length; j++) {
+                var subjectParam = other.Parameters[j];
+                var otherParam = other.Parameters[j];
+                subjectParam.Name.Should().Be(otherParam.Name);
+
+                if (subjectParam.Type == null) {
+                    otherParam.Type.Should().BeNull();
+                } else {
+                    subjectParam.Type.Name.Should().Be(otherParam.Type.Name);
+                }
+            }
+
+            return new AndConstraint<PythonFunctionOverloadAssertions>(this);
+        }
+
         public AndConstraint<PythonFunctionOverloadAssertions> HaveNoParameters(string because = "", params object[] reasonArgs)
             => HaveParameters(Enumerable.Empty<string>(), because, reasonArgs);
 

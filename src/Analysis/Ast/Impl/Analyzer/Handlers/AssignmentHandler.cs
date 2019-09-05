@@ -71,22 +71,32 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         private bool IsValidAssignment(string name, Location loc) => !Eval.GetInScope(name).IsDeclaredAfter(loc);
 
         private void HandleNameExpression(NameExpression ne, IMember value) {
-            if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
-                Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Nonlocal);
-                scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
-                return;
-            }
+                IScope scope;
+                if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
+                    Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Nonlocal);
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
+                    continue;
+                }
 
-            if (Eval.CurrentScope.Globals[ne.Name] != null) {
-                Eval.LookupNameInScopes(ne.Name, out var scope, LookupOptions.Global);
-                scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
-                return;
-            }
+                if (Eval.CurrentScope.Globals[ne.Name] != null) {
+                    Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Global);
+                    scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
+                    continue;
+                }
 
-            var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
-            var location = Eval.GetLocationOfName(ne);
-            if (IsValidAssignment(ne.Name, location)) {
-                Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, location);
+                var m = Eval.LookupNameInScopes(ne.Name, out scope);
+                if(m?.MemberType == PythonMemberType.Class) {
+                    // Ignore assignments to classes: enum.py does Enum = None
+                    // which prevents persistence from restoring proper type from enum:Enum.
+                    continue; 
+                }
+
+                var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
+                var location = Eval.GetLocationOfName(ne);
+                if (IsValidAssignment(ne.Name, location)) {
+                    Eval.DeclareVariable(ne.Name, value ?? Module.Interpreter.UnknownType, source, location);
+                }
+            }
             }
         }
         public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {

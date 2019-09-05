@@ -21,27 +21,50 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class NamedTupleType : TypingTupleType, ITypingNamedTupleType {
+        // Since named tuple operates as a new, separate type, we need to track
+        // its location rather than delegating down to the general wrapper over
+        // Python built-in tuple.
+        private sealed class NamedTupleLocatedMember: LocatedMember {
+            public NamedTupleLocatedMember(Location location) : base(location) { }
+            public override PythonMemberType MemberType => PythonMemberType.Class;
+        }
+        private readonly NamedTupleLocatedMember _locatedMember;
+
         /// <summary>
         /// Creates type info for a strongly-typed tuple, such as Tuple[T1, T2, ...].
         /// </summary>
-        public NamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
-            : base(itemTypes, interpreter) {
-            TupleName = tupleName ?? throw new ArgumentNullException(nameof(tupleName));
+        public NamedTupleType(string tupleName, IReadOnlyList<string> itemNames, IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IndexSpan indexSpan)
+            : base(itemTypes, declaringModule, declaringModule.Interpreter) {
+            Name = tupleName ?? throw new ArgumentNullException(nameof(tupleName));
             ItemNames = itemNames;
 
             var typeNames = itemTypes.Select(t => t.IsUnknown() ? string.Empty : t.Name);
             var pairs = itemNames.Zip(typeNames, (name, typeName) => string.IsNullOrEmpty(typeName) ? name : $"{name}: {typeName}");
-            Name = CodeFormatter.FormatSequence(tupleName, '(', pairs);
+            Documentation = CodeFormatter.FormatSequence(tupleName, '(', pairs);
+
+            _locatedMember = new NamedTupleLocatedMember(new Location(declaringModule, indexSpan));
         }
 
-        public string TupleName { get; }
         public IReadOnlyList<string> ItemNames { get; }
 
+        #region IPythonType
         public override string Name { get; }
+        public override string QualifiedName => $"{DeclaringModule.Name}:{Name}"; // Named tuple name is a type name as class.
         public override bool IsSpecialized => true;
+        public override string Documentation { get; }
+        #endregion
+
+        #region ILocatedMember
+        public override Location Location => _locatedMember.Location;
+        public override LocationInfo Definition => _locatedMember.Definition;
+        public override IReadOnlyList<LocationInfo> References => _locatedMember.References;
+        public override void AddReference(Location location) => _locatedMember.AddReference(location);
+        public override void RemoveReferences(IPythonModule module) => _locatedMember.RemoveReferences(module);
+        #endregion
 
         public override IPythonInstance CreateInstance(IArgumentSet args) => new TypingTuple(this);
 

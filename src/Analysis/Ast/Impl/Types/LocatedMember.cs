@@ -54,6 +54,9 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual void AddReference(Location location) {
             lock (this) {
+                if(this.DeclaringModule == null || this.DeclaringModule?.ModuleType == ModuleType.Builtins) {
+                    return;
+                }
                 // Don't add references to library code.
                 if (location.Module?.ModuleType == ModuleType.User && !location.Equals(Location)) {
                     _references = _references ?? new HashSet<Location>();

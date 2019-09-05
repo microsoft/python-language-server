@@ -45,7 +45,7 @@ import sys
 e1, e2, e3 = sys.exc_info()
 ";
             var analysis = await GetAnalysisAsync(code);
-            // sys.exc_info() -> (exception_type, exception_value, traceback)
+            // def exc_info() -> Tuple[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]]: ...
             var f = analysis.Should()
                 .HaveVariable("e1").OfType(BuiltinTypeId.Type)
                 .And.HaveVariable("e2").OfType("BaseException")

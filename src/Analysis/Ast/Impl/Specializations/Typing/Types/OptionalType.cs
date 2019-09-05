@@ -23,8 +23,10 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class OptionalType : PythonTypeWrapper, IPythonUnionType {
         public OptionalType(IPythonModule declaringModule, IPythonType type) : base(type, declaringModule) {
             Name = $"Optional[{type.Name}]";
+            QualifiedName = $"typing:Optional[{type.QualifiedName}]";
         }
         public override string Name { get; }
+        public override string QualifiedName { get; }
         public override PythonMemberType MemberType => PythonMemberType.Union;
         public override bool IsSpecialized => true;
 

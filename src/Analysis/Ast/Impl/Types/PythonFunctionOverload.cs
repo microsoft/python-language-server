@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -30,18 +31,19 @@ namespace Microsoft.Python.Analysis.Types {
     /// <param name="declaringModule">Module making the call.</param>
     /// <param name="overload">Function overload the return value is requested for.</param>
     /// <param name="args">Call arguments.</param>
-    /// <returns></returns>
+    /// <param name="indexSpan">Location of the call expression.</param>
     public delegate IMember ReturnValueProvider(
         IPythonModule declaringModule,
         IPythonFunctionOverload overload,
-        IArgumentSet args);
+        IArgumentSet args,
+        IndexSpan indexSpan);
 
     internal sealed class PythonFunctionOverload : LocatedMember, IPythonFunctionOverload {
         private readonly string _returnDocumentation;
 
         // Allow dynamic function specialization, such as defining return types for builtin
         // functions that are impossible to scrape and that are missing from stubs.
-        //  Parameters: declaring module, overload for the return value, list of arguments.
+        //  FormalGenericParameters: declaring module, overload for the return value, list of arguments.
         private ReturnValueProvider _returnValueProvider;
 
         // Return value can be an instance or a type info. Consider type(C()) returning
@@ -122,7 +124,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember Call(IArgumentSet args, IPythonType self) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(DeclaringModule, this, args);
+                var rt = _returnValueProvider?.Invoke(args.Eval.Module, this, args, default);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
@@ -159,7 +161,7 @@ namespace Microsoft.Python.Analysis.Types {
             // -> A[_T1, _T2, ...]
             // Match arguments
             IReadOnlyList<IPythonType> typeArgs = null;
-            var classGenericParameters = selfClassType?.GenericParameters.Keys.ToArray() ?? Array.Empty<IGenericTypeParameter>();
+            var classGenericParameters = selfClassType?.GenericParameters.Keys.ToArray() ?? Array.Empty<string>();
             if (classGenericParameters.Length > 0 && selfClassType != null) {
                 // Declaring class is specific and provides definitions of generic parameters
                 typeArgs = classGenericParameters
@@ -188,7 +190,7 @@ namespace Microsoft.Python.Analysis.Types {
             var baseType = selfClassType.Mro
                 .OfType<IPythonClassType>()
                 .Skip(1)
-                .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType));
+                .FirstOrDefault(b => b.GetMember(ClassMember.Name) != null && b.GenericParameters.ContainsKey(returnType.Name));
 
             // Try and infer return value from base class
             if (baseType != null && baseType.GetSpecificType(returnType, out specificType)) {
@@ -196,8 +198,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // Try getting type from passed in arguments
-            var typeFromArgs = args?.Arguments.FirstOrDefault(a => returnType.Equals(a.Type))?.Value as IMember;
-            if (typeFromArgs != null) {
+            if (args?.Arguments.FirstOrDefault(a => returnType.Equals(a.Type))?.Value is IMember typeFromArgs) {
                 return typeFromArgs;
             }
 

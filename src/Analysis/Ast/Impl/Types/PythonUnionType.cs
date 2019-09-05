@@ -26,11 +26,13 @@ namespace Microsoft.Python.Analysis.Types {
         private readonly HashSet<IPythonType> _types = new HashSet<IPythonType>(PythonTypeComparer.Instance);
         private readonly object _lock = new object();
 
-        public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule) : base(declaringModule) {
+        public PythonUnionType(IEnumerable<IPythonType> types, IPythonModule declaringModule)
+            : base(declaringModule.Interpreter.ModuleResolution.GetSpecializedModule("typing")) {
             _types.UnionWith(types);
         }
 
-        private PythonUnionType(IPythonType x, IPythonType y) : base(x.DeclaringModule) {
+        private PythonUnionType(IPythonType x, IPythonType y)
+            : base(x.DeclaringModule.Interpreter.ModuleResolution.GetSpecializedModule("typing")) {
             Check.Argument(nameof(x), () => !(x is IPythonUnionType));
             Check.Argument(nameof(y), () => !(y is IPythonUnionType));
             _types.Add(x);
@@ -49,8 +51,12 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public override IPythonModule DeclaringModule {
-            get { lock (_lock) { return _types.First().DeclaringModule; } }
+        public string QualifiedName {
+            get {
+                lock (_lock) {
+                    return CodeFormatter.FormatSequence("typing:Union", '[', _types.Select(t => t.QualifiedName).ToArray());
+                }
+            }
         }
 
         public BuiltinTypeId TypeId => BuiltinTypeId.Type;

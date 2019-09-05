@@ -28,16 +28,20 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// Creates type info for a strongly-typed tuple, such as Tuple[T1, T2, ...].
         /// </summary>
         /// <param name="itemTypes">Tuple item types.</param>
+        /// <param name="declaringModule">Declaring module. If null, then 'typing' is assumed.</param>
         /// <param name="interpreter">Python interpreter.</param>
-        public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonInterpreter interpreter)
-            : base(null, BuiltinTypeId.Tuple, interpreter, false) {
-            ItemTypes = itemTypes;
-            Name = CodeFormatter.FormatSequence("Tuple", '[', itemTypes);
+        public TypingTupleType(IReadOnlyList<IPythonType> itemTypes, IPythonModule declaringModule, IPythonInterpreter interpreter)
+            : base(BuiltinTypeId.Tuple, declaringModule ?? interpreter.ModuleResolution.GetSpecializedModule("typing"), false) {
+            ItemTypes = itemTypes.Count > 0 ? itemTypes : new[] { interpreter.UnknownType };
+            Name = CodeFormatter.FormatSequence("Tuple", '[', ItemTypes);
+            QualifiedName = CodeFormatter.FormatSequence("typing:Tuple", '[', ItemTypes.Select(t => t.QualifiedName));
         }
 
         public IReadOnlyList<IPythonType> ItemTypes { get; }
 
         public override string Name { get; }
+        public override string QualifiedName { get; }
+
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 
@@ -74,7 +78,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             return true;
         }
 
-        public override int GetHashCode() 
+        public override int GetHashCode()
             => ItemTypes.Aggregate(0, (current, item) => current ^ item.GetHashCode()) ^ Name.GetHashCode();
     }
 }
