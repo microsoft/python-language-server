@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -32,30 +33,36 @@ namespace Microsoft.Python.Analysis.Analyzer {
     internal class ModuleWalker : AnalysisWalker {
         private const string AllVariableName = "__all__";
         private readonly IDocumentAnalysis _stubAnalysis;
+        private readonly CancellationToken _cancellationToken;
 
         // A hack to use __all__ export in the most simple case.
         private int _allReferencesCount;
         private bool _allIsUsable = true;
 
-        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast)
+        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast, CancellationToken cancellationToken)
             : base(new ExpressionEval(services, module, ast)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
+            _cancellationToken = cancellationToken;
         }
 
         public override bool Walk(NameExpression node) {
             if (Eval.CurrentScope == Eval.GlobalScope && node.Name == AllVariableName) {
                 _allReferencesCount++;
             }
+
+            _cancellationToken.ThrowIfCancellationRequested();
             return base.Walk(node);
         }
 
         public override bool Walk(AugmentedAssignStatement node) {
             HandleAugmentedAllAssign(node);
+            _cancellationToken.ThrowIfCancellationRequested();
             return base.Walk(node);
         }
 
         public override bool Walk(CallExpression node) {
             HandleAllAppendExtend(node);
+            _cancellationToken.ThrowIfCancellationRequested();
             return base.Walk(node);
         }
 
@@ -146,6 +153,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override bool Walk(PythonAst node) {
             Check.InvalidOperation(() => Ast == node, "walking wrong AST");
+            _cancellationToken.ThrowIfCancellationRequested();
 
             // Collect basic information about classes and functions in order
             // to correctly process forward references. Does not determine
@@ -181,16 +189,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         // Classes and functions are walked by their respective evaluators
         public override bool Walk(ClassDefinition node) {
+            _cancellationToken.ThrowIfCancellationRequested();
             SymbolTable.Evaluate(node);
             return false;
         }
 
         public override bool Walk(FunctionDefinition node) {
+            _cancellationToken.ThrowIfCancellationRequested();
             SymbolTable.Evaluate(node);
             return false;
         }
 
         public void Complete() {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             SymbolTable.EvaluateAll();
             SymbolTable.ReplacedByStubs.Clear();
             MergeStub();
@@ -220,6 +232,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of the definitions. Stub may contains those so we need to merge it in.
         /// </remarks>
         private void MergeStub() {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             if (Module.ModuleType == ModuleType.User || Module.ModuleType == ModuleType.Stub) {
                 return;
             }

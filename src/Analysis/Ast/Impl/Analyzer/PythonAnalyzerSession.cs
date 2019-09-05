@@ -368,7 +368,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return null;
             }
 
-            var walker = new ModuleWalker(_services, document, ast);
+            var walker = new ModuleWalker(_services, document, ast, _analyzerCancellationToken);
             ast.Walk(walker);
             walker.Complete();
 
