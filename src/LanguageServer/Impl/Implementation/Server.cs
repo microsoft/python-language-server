@@ -73,8 +73,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public IServiceContainer Services => _services;
 
-
-
         public void Dispose() => _disposableBag.TryDispose();
 
         #region Client message handling
