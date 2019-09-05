@@ -175,12 +175,21 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private ImmutableArray<string> AutoSearchPathHeuristic() {
             var fs = _services.GetService<IFileSystem>();
 
+            // Only happens in the case of a non-folder open, in which case we aren't going to end up with any valid user search paths.
             if (_server.Root == null) {
                 return ImmutableArray<string>.Empty;
             }
 
+            // For now, just check for "src".
             var srcDir = Path.Combine(_server.Root, "src");
             if (!fs.DirectoryExists(srcDir)) {
+                return ImmutableArray<string>.Empty;
+            }
+
+            // If src is definitely an importable package, then don't add it as an import root, since otherwise it'd be unimportable.
+            // There are still cases where "import src.foo.bar" are importable, but more difficult to check.
+            var srcInit = Path.Combine(srcDir, "__init__.py");
+            if (fs.FileExists(srcInit)) {
                 return ImmutableArray<string>.Empty;
             }
 
