@@ -25,7 +25,6 @@ using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Core.Threading;
 using Microsoft.Python.LanguageServer.Extensibility;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -33,6 +32,7 @@ using Microsoft.Python.LanguageServer.Telemetry;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
+using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     /// <summary>
