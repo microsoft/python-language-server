@@ -31,13 +31,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// <param name="name">Type name (Dict, Mapping, ...)</param>
         /// <param name="keyType">Type of dictionary keys.</param>
         /// <param name="valueType">Type of dictionary values.</param>
-        /// <param name="interpreter">Python interpreter</param>
+        /// <param name="interpreter">Python interpreter.</param>
         /// <param name="isMutable">Tells if collection is mutable (Dict) or not (Mapping)</param>
         public TypingDictionaryType(string name, IPythonType keyType, IPythonType valueType, IPythonInterpreter interpreter, bool isMutable)
-            : base(interpreter, isMutable) {
+            : base(interpreter.ModuleResolution.GetSpecializedModule("typing"), isMutable) {
             KeyType = keyType;
             ValueType = valueType;
             Name = $"{name}[{keyType.Name}, {valueType.Name}]";
+            QualifiedName = $"typing:{name}[{keyType.QualifiedName}, {valueType.QualifiedName}]";
         }
 
         public IPythonType KeyType { get; }
@@ -45,13 +46,14 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonType ItemType => _itemType ?? (_itemType = CreateItemType());
 
         public override string Name { get; }
+        public override string QualifiedName { get; }
 
         public override IMember CreateInstance(string typeName, IArgumentSet args) => new TypingDictionary(this);
         public override IMember Index(IPythonInstance instance, IArgumentSet args) => new PythonInstance(ValueType);
         public override bool IsSpecialized => true;
 
         private TypingTupleType CreateItemType() {
-            var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule.Interpreter);
+            var itemType = new TypingTupleType(new[] { KeyType, ValueType }, DeclaringModule, DeclaringModule.Interpreter);
             return itemType;
         }
 

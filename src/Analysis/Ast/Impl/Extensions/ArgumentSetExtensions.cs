@@ -13,9 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
@@ -33,11 +33,11 @@ namespace Microsoft.Python.Analysis {
         public static T Argument<T>(this IArgumentSet args, int index) where T : class
             => args.Arguments[index].Value as T;
 
-        public static IArgument Argument(this IArgumentSet args, string name) 
-            => args.Arguments.FirstOrDefault(a => name.Equals(a.Name));
+        public static IArgument Argument(this IArgumentSet args, string name, bool excludeDefault = true) 
+            => args.Arguments.FirstOrDefault(a => name.Equals(a.Name) && !(excludeDefault &&a.ValueIsDefault));
 
-        public static T GetArgumentValue<T>(this IArgumentSet args, string name) where T : class {
-            var value = Argument(args, name)?.Value;
+        public static T GetArgumentValue<T>(this IArgumentSet args, string name, bool excludeDefault) where T : class {
+            var value = Argument(args, name, excludeDefault)?.Value;
             if (value == null && args.DictionaryArgument?.Arguments != null && args.DictionaryArgument.Arguments.TryGetValue(name, out var m)) {
                 return m as T;
             }
@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis {
             }
 
             if (args.ListArgument != null && !string.IsNullOrEmpty(args.ListArgument.Name)) {
-                var type = new PythonCollectionType(null, BuiltinTypeId.List, eval.Interpreter, false);
+                var type = new PythonCollectionType(BuiltinTypeId.List, eval.BuiltinsModule, false);
                 var list = new PythonCollection(type, args.ListArgument.Values);
                 eval.DeclareVariable(args.ListArgument.Name, list, VariableSource.Declaration, args.ListArgument.Location);
             }

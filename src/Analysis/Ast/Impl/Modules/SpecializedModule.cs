@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -31,11 +32,15 @@ namespace Microsoft.Python.Analysis.Modules {
     /// </remarks>
     internal abstract class SpecializedModule : PythonModule {
         protected SpecializedModule(string name, string modulePath, IServiceContainer services)
-            : base(name, modulePath, ModuleType.Specialized, null, services) { }
+            : base(name, modulePath, ModuleType.Specialized, null, false, services) { }
 
         protected override string LoadContent() {
             // Exceptions are handled in the base
             return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;
         }
+
+        #region IAnalyzable
+        public override IDependencyProvider DependencyProvider => Modules.DependencyProvider.Empty;
+        #endregion
     }
 }

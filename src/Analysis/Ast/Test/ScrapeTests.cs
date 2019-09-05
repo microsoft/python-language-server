@@ -262,8 +262,7 @@ namespace Microsoft.Python.Analysis.Tests {
                 "win32ui"
             );
         }
-
-
+        
         private async Task FullStdLibTest(InterpreterConfiguration configuration, params string[] skipModules) {
             configuration.AssertInstalled();
             var moduleUri = TestData.GetDefaultModuleUri();

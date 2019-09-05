@@ -32,5 +32,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
         /// Bound type, i.e upper bound this type parameter can represent
         /// </summary>
         IPythonType Bound { get; }
+
+        object Covariant { get; }
+        object Contravariant { get; }
     }
 }

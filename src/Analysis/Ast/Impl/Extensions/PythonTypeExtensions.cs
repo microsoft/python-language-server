@@ -15,7 +15,6 @@
 
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonTypeExtensions {
@@ -27,5 +26,9 @@ namespace Microsoft.Python.Analysis {
 
         public static bool IsGeneric(this IPythonType value)
             => value is IGenericTypeParameter || (value is IGenericType gt && gt.IsGeneric);
+
+        public static string GetQualifiedName(this IPythonType t) => $"{t.DeclaringModule.Name}:{t.Name}";
+
+        internal static IPythonType ToBound(this IPythonType t) => t is PythonFunctionType.PythonUnboundMethod m ? m.Function : t;
     }
 }

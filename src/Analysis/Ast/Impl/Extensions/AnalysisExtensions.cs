@@ -22,6 +22,8 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Analysis {
     public static class AnalysisExtensions {
+        public static bool IsEmpty(this IDocumentAnalysis analysis) => analysis == null || analysis is EmptyAnalysis;
+
         public static IScope FindScope(this IDocumentAnalysis analysis, SourceLocation location)
             => analysis.GlobalScope.FindScope(analysis.Document, location);
 

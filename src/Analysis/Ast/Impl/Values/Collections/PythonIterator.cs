@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
 
         private IArgumentSet GetArgSet(int index) {
             var newArg = new PythonConstant(index, Type.DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Int));
-            return new ArgumentSet(new List<IMember>() { newArg }, null, null);
+            return new ArgumentSet(new List<IMember> { newArg }, null, null);
         }
 
         public override IMember Call(string memberName, IArgumentSet args) {

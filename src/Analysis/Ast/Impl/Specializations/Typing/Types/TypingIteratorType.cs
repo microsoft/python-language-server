@@ -30,10 +30,11 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// track items in the collection, it repeats the same item endlessly.
         /// </summary>
         public TypingIteratorType(IPythonType itemType, BuiltinTypeId iteratorType, IPythonInterpreter interpreter)
-            : base(iteratorType, interpreter) {
+            : base(iteratorType, interpreter.ModuleResolution.GetSpecializedModule("typing")) {
             ItemTypes = new[] { itemType };
             Repeat = true;
             Name = $"Iterator[{itemType.Name}]";
+            QualifiedName = $"typing:Iterator[{itemType.QualifiedName}]";
         }
 
         /// <summary>
@@ -41,14 +42,16 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         /// The iterator goes along declared items types and stops when there are no more types.
         /// </summary>
         public TypingIteratorType(IReadOnlyList<IPythonType> itemTypes, BuiltinTypeId iteratorType, IPythonInterpreter interpreter)
-            : base(iteratorType, interpreter) {
+            : base(iteratorType, interpreter.ModuleResolution.GetSpecializedModule("typing")) {
             ItemTypes = itemTypes;
             Name = $"Iterator[{CodeFormatter.FormatSequence(string.Empty, '(', itemTypes)}]";
+            QualifiedName = $"typing:Iterator[{CodeFormatter.FormatSequence(string.Empty, '(', itemTypes.Select(t => t.QualifiedName))}]";
         }
 
         public IReadOnlyList<IPythonType> ItemTypes { get; }
         public bool Repeat { get; }
         public override string Name { get; }
+        public override string QualifiedName { get; }
         public override bool IsSpecialized => true;
 
 

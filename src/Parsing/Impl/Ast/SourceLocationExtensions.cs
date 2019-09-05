@@ -18,18 +18,18 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public static class SourceLocationExtensions {
-        public static int ToIndex(this SourceLocation location, PythonAst ast) => ast.LocationToIndex(location);
+        public static int ToIndex(this SourceLocation location, ILocationConverter lc) => lc.LocationToIndex(location);
     }
 
     public static class SourceSpanExtensions {
-        public static IndexSpan ToIndexSpan(this SourceSpan span, PythonAst ast)
-            => IndexSpan.FromBounds(ast.LocationToIndex(span.Start), ast.LocationToIndex(span.End));
-        public static IndexSpan ToIndexSpan(this Range range, PythonAst ast)
-            => IndexSpan.FromBounds(ast.LocationToIndex(range.start), ast.LocationToIndex(range.end));
+        public static IndexSpan ToIndexSpan(this SourceSpan span, ILocationConverter lc)
+            => IndexSpan.FromBounds(lc.LocationToIndex(span.Start), lc.LocationToIndex(span.End));
+        public static IndexSpan ToIndexSpan(this Range range, ILocationConverter lc)
+            => IndexSpan.FromBounds(lc.LocationToIndex(range.start), lc.LocationToIndex(range.end));
     }
 
     public static class IndexSpanExtensions {
-        public static SourceSpan ToSourceSpan(this IndexSpan span, PythonAst ast)
-            => ast != null ? new SourceSpan(ast.IndexToLocation(span.Start), ast.IndexToLocation(span.End)) : default;
+        public static SourceSpan ToSourceSpan(this IndexSpan span, ILocationConverter lc)
+            => lc != null ? new SourceSpan(lc.IndexToLocation(span.Start), lc.IndexToLocation(span.End)) : default;
     }
 }

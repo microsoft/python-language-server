@@ -36,27 +36,27 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             _interpreter = dictType.DeclaringModule.Interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, IMember contents, bool exact = false) :
-            base(new PythonDictionaryType(interpreter), Array.Empty<IMember>(), exact: exact) {
+        public PythonDictionary(IPythonModule declaringModule, IMember contents, bool exact = false) :
+            base(new PythonDictionaryType(declaringModule), Array.Empty<IMember>(), exact: exact) {
             if (contents is IPythonDictionary dict) {
                 foreach (var key in dict.Keys) {
                     _contents[key] = dict[key];
                 }
                 Contents = _contents.Keys.ToArray();
             }
-            _interpreter = interpreter;
+            _interpreter = declaringModule.Interpreter;
         }
 
-        public PythonDictionary(IPythonInterpreter interpreter, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
-            this(new PythonDictionaryType(interpreter), contents, exact: exact) {
-            _interpreter = interpreter;
+        public PythonDictionary(IPythonModule declaringModule, IReadOnlyDictionary<IMember, IMember> contents, bool exact = false) :
+            this(new PythonDictionaryType(declaringModule), contents, exact: exact) {
+            _interpreter = declaringModule.Interpreter;
         }
 
         public IEnumerable<IMember> Keys => _contents.Keys.ToArray();
         public IEnumerable<IMember> Values => _contents.Values.ToArray();
 
         public IReadOnlyList<IPythonCollection> Items
-            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter, new[] { kvp.Key, kvp.Value })).ToArray();
+            => _contents.Select(kvp => PythonCollectionType.CreateTuple(Type.DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, new[] { kvp.Key, kvp.Value })).ToArray();
 
         public IMember this[IMember key] =>
             _contents.TryGetValue(key, out var value) ? value : UnknownType;
@@ -103,7 +103,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         }
 
         private IPythonCollection CreateList(IReadOnlyList<IMember> items)
-            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter, items, false);
+            => PythonCollectionType.CreateList(Type.DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, items, false);
 
         private sealed class KeyComparer : IEqualityComparer<IMember> {
             public bool Equals(IMember x, IMember y) {

@@ -16,33 +16,30 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types.Collections {
     /// <summary>
     /// Type info for an iterable entity. Most base collection class.
     /// </summary>
     internal class PythonCollectionType : PythonTypeWrapper, IPythonCollectionType {
-        private string _typeName;
-
         /// <summary>
         /// Creates type info for an collection.
         /// </summary>
-        /// <param name="typeName">Iterable type name. If null, name of the type id will be used.</param>
         /// <param name="collectionTypeId">Collection type id, such as <see cref="BuiltinTypeId.List"/>.</param>
-        /// <param name="interpreter">Python interpreter.</param>
+        /// <param name="declaringModule">Declaring module.</param>
         /// <param name="isMutable">Indicates if collection is mutable (like list) or immutable (like tuple).</param>
         public PythonCollectionType(
-            string typeName,
             BuiltinTypeId collectionTypeId,
-            IPythonInterpreter interpreter,
+            IPythonModule declaringModule,
             bool isMutable
-        ) : base(collectionTypeId, interpreter.ModuleResolution.BuiltinsModule) {
-            _typeName = typeName;
+            ) : base(collectionTypeId, declaringModule) {
             TypeId = collectionTypeId;
-            IteratorType = new PythonIteratorType(collectionTypeId.GetIteratorTypeId(), interpreter);
+            IteratorType = new PythonIteratorType(collectionTypeId.GetIteratorTypeId(), declaringModule);
             IsMutable = isMutable;
         }
 
@@ -56,18 +53,6 @@ namespace Microsoft.Python.Analysis.Types.Collections {
         #endregion
 
         #region IPythonType
-        public override string Name {
-            get {
-                if (_typeName == null) {
-                    var type = DeclaringModule.Interpreter.GetBuiltinType(TypeId);
-                    if (!type.IsUnknown()) {
-                        _typeName = type.Name;
-                    }
-                }
-                return _typeName ?? "<not set>"; ;
-            }
-        }
-
         public override BuiltinTypeId TypeId { get; }
         public override PythonMemberType MemberType => PythonMemberType.Class;
         public override IMember GetMember(string name) => name == @"__iter__" ? IteratorType : base.GetMember(name);
@@ -80,10 +65,28 @@ namespace Microsoft.Python.Analysis.Types.Collections {
 
         public override IMember Index(IPythonInstance instance, IArgumentSet args)
             => (instance as IPythonCollection)?.Index(args) ?? UnknownType;
+
+        public IPythonType CreateSpecificType(IArgumentSet typeArguments) {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
+        #region IGenericType
+        public IReadOnlyList<IGenericTypeParameter> Parameters => (InnerType as IGenericType)?.Parameters ?? Array.Empty<IGenericTypeParameter>();
+        public bool IsGeneric => (InnerType as IPythonClassType)?.IsGeneric == true;
+        public IReadOnlyDictionary<string, IPythonType> GenericParameters
+            => (InnerType as IPythonClassType)?.GenericParameters ?? EmptyDictionary<string, IPythonType>.Instance;
+        #endregion
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, IArgumentSet args) {
+        #region IPythonClassType
+        public IPythonType DeclaringType => (InnerType as IPythonClassType)?.DeclaringType;
+        public ClassDefinition ClassDefinition => (InnerType as IPythonClassType)?.ClassDefinition;
+        public IReadOnlyList<IPythonType> Mro => (InnerType as IPythonClassType)?.Mro ?? Array.Empty<IPythonType>();
+        public IReadOnlyList<IPythonType> Bases => (InnerType as IPythonClassType)?.Bases ?? Array.Empty<IPythonType>();
+        #endregion
+
+        public static IPythonCollection CreateList(IPythonModule declaringModule, IArgumentSet args) {
             var exact = true;
             IReadOnlyList<IMember> contents;
             if (args.Arguments.Count > 1) {
@@ -94,37 +97,37 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             } else {
                 contents = args.ListArgument?.Values;
             }
-            return CreateList(interpreter, contents ?? Array.Empty<IMember>(), exact: exact);
+            return CreateList(declaringModule, contents ?? Array.Empty<IMember>(), exact: exact);
         }
 
-        public static IPythonCollection CreateList(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.List, interpreter, true);
+        public static IPythonCollection CreateList(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
+            var collectionType = new PythonCollectionType(BuiltinTypeId.List, declaringModule, true);
             return new PythonCollection(collectionType, contents, flatten, exact: exact);
         }
 
-        public static IPythonCollection CreateConcatenatedList(IPythonInterpreter interpreter, params IPythonCollection[] many) {
+        public static IPythonCollection CreateConcatenatedList(IPythonModule declaringModule, params IPythonCollection[] many) {
             var exact = many?.All(c => c != null && c.IsExact) ?? false;
             var contents = many?.ExcludeDefault().Select(c => c.Contents).SelectMany().ToList() ?? new List<IMember>();
-            return CreateList(interpreter, contents, false, exact: exact);
+            return CreateList(declaringModule, contents, false, exact: exact);
         }
 
-        public static IPythonCollection CreateTuple(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Tuple, interpreter, false);
+        public static IPythonCollection CreateTuple(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool exact = false) {
+            var collectionType = new PythonCollectionType(BuiltinTypeId.Tuple, declaringModule, false);
             return new PythonCollection(collectionType, contents, exact: exact);
         }
 
-        public static IPythonCollection CreateConcatenatedTuple(IPythonInterpreter interpreter, params IPythonCollection[] many) {
+        public static IPythonCollection CreateConcatenatedTuple(IPythonModule declaringModule, params IPythonCollection[] many) {
             var exact = many?.All(c => c != null && c.IsExact) ?? false;
             var contents = many?.ExcludeDefault().Select(c => c.Contents).SelectMany().ToList() ?? new List<IMember>();
-            return CreateTuple(interpreter, contents, exact: exact);
+            return CreateTuple(declaringModule, contents, exact: exact);
         }
 
-        public static IPythonCollection CreateSet(IPythonInterpreter interpreter, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
-            var collectionType = new PythonCollectionType(null, BuiltinTypeId.Set, interpreter, true);
+        public static IPythonCollection CreateSet(IPythonModule declaringModule, IReadOnlyList<IMember> contents, bool flatten = true, bool exact = false) {
+            var collectionType = new PythonCollectionType(BuiltinTypeId.Set, declaringModule, true);
             return new PythonCollection(collectionType, contents, flatten, exact: exact);
         }
 
-        public override bool Equals(object obj) 
+        public override bool Equals(object obj)
             => obj is IPythonType pt && (PythonTypeComparer.Instance.Equals(pt, this) || PythonTypeComparer.Instance.Equals(pt, InnerType));
         public override int GetHashCode() => PythonTypeComparer.Instance.GetHashCode(this);
     }

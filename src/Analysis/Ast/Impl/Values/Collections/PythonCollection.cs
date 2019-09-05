@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
         /// <param name="collectionType">Collection type.</param>
         /// <param name="contents">Contents of the collection (typically elements from the initialization).</param>
         /// <param name="flatten">If true and contents is a single element</param>
-        /// <param name="exact">True if the contents are an exact representation of the collection contents.</param>
+        /// <param name="exact">True if the contents are an exact representation of the collection contents.
         /// and is a sequence, the sequence elements are copied rather than creating
         /// a sequence of sequences with a single element.</param>
         public PythonCollection(

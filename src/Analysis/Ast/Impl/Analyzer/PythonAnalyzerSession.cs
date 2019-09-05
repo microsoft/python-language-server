@@ -21,6 +21,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -48,6 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly IPythonAnalyzer _analyzer;
         private readonly ILogger _log;
         private readonly bool _forceGC;
+        private readonly IModuleDatabaseService _moduleDatabaseService;
 
         private State _state;
         private bool _isCanceled;
@@ -88,6 +90,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _diagnosticsService = _services.GetService<IDiagnosticsService>();
             _analyzer = _services.GetService<IPythonAnalyzer>();
             _log = _services.GetService<ILogger>();
+            _moduleDatabaseService = _services.GetService<IModuleDatabaseService>();
             _progress = progress;
         }
 
@@ -233,7 +236,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node, IDocumentAnalysis currentAnalysis)
             => !node.HasMissingDependencies && currentAnalysis is LibraryAnalysis && node.IsWalkedWithDependencies && node.IsValidVersion;
 
-        private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch) 
+        private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch)
             => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
 
         private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
@@ -312,7 +315,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 }
 
                 var startTime = stopWatch?.Elapsed ?? TimeSpan.Zero;
-
                 AnalyzeEntry(null, _entry, module, ast, Version);
 
                 LogCompleted(null, module, stopWatch, startTime);
@@ -332,32 +334,91 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
 
-            var walker = new ModuleWalker(_services, module, ast);
-            ast.Walk(walker);
-
+            var analysis = DoAnalyzeEntry(node, (IDocument)module, ast, version);
             _analyzerCancellationToken.ThrowIfCancellationRequested();
 
-            walker.Complete();
-            _analyzerCancellationToken.ThrowIfCancellationRequested();
+            if (analysis != null) {
+                analyzable?.NotifyAnalysisComplete(analysis);
+                entry.TrySetAnalysis(analysis, version);
+
+                if (module.ModuleType == ModuleType.User) {
+                    var linterDiagnostics = _analyzer.LintModule(module);
+                    _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+                }
+            }
+        }
+
+        private IDocumentAnalysis DoAnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version) {
+            var moduleType = node.Value.Module.ModuleType;
 
             bool isCanceled;
             lock (_syncObj) {
                 isCanceled = _isCanceled;
             }
 
+            if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(document.Name, document.FilePath) == true) {
+                if (!isCanceled && _moduleDatabaseService.TryRestoreGlobalScope(document, out var gs)) {
+                    if (_log != null) {
+                        _log.Log(TraceEventType.Verbose, "Restored from database: ", document.Name);
+                    }
+                    var analysis = new DocumentAnalysis(document, 1, gs, new ExpressionEval(_services, document, document.GetAst()), Array.Empty<string>());
+                    gs.ReconstructVariables();
+                    return analysis;
+                }
+                return null;
+            }
+
+            var walker = new ModuleWalker(_services, document, ast, _analyzerCancellationToken);
+            ast.Walk(walker);
+            walker.Complete();
+
+            lock (_syncObj) {
+                isCanceled = _isCanceled;
+            }
             if (!isCanceled) {
-                node?.MarkWalked();
+                node.MarkWalked();
             }
 
-            var analysis = CreateAnalysis(node, (IDocument)module, ast, version, walker, isCanceled);
-            analyzable?.NotifyAnalysisComplete(analysis);
-            entry.TrySetAnalysis(analysis, version);
-
-            if (module.ModuleType == ModuleType.User) {
-                var linterDiagnostics = _analyzer.LintModule(module);
-                _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
-            }
+            return CreateAnalysis(node, document, ast, version, walker, isCanceled);
         }
+
+        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
+            var canHaveLibraryAnalysis = false;
+
+            // Don't try to drop builtins; it causes issues elsewhere.
+            // We probably want the builtin module's AST and other info for evaluation.
+            switch (document.ModuleType) {
+                case ModuleType.Library:
+                case ModuleType.Compiled:
+                case ModuleType.CompiledBuiltin:
+                    canHaveLibraryAnalysis = true;
+                    break;
+            }
+
+            var createLibraryAnalysis = !isCanceled &&
+                                        node != null &&
+                                        !node.HasMissingDependencies &&
+                                        canHaveLibraryAnalysis &&
+                                        !document.IsOpen &&
+                                        node.HasOnlyWalkedDependencies &&
+                                        node.IsValidVersion;
+
+            if (!createLibraryAnalysis) {
+                return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
+            }
+
+            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
+            document.SetAst(ast);
+
+            var eval = new ExpressionEval(walker.Eval.Services, document, ast);
+            var analysis = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
+
+            var dbs = _services.GetService<IModuleDatabaseService>();
+            dbs?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+
+            return analysis;
+        }
+
 
         private void LogCompleted(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
@@ -383,37 +444,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (TestEnvironment.Current != null) {
                 ExceptionDispatchInfo.Capture(exception).Throw();
             }
-        }
-
-        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker, bool isCanceled) {
-            var canHaveLibraryAnalysis = false;
-
-            // Don't try to drop builtins; it causes issues elsewhere.
-            // We probably want the builtin module's AST and other info for evaluation.
-            switch (document.ModuleType) {
-                case ModuleType.Library:
-                case ModuleType.Stub:
-                case ModuleType.Compiled:
-                    canHaveLibraryAnalysis = true;
-                    break;
-            }
-
-            var createLibraryAnalysis = !isCanceled &&
-                node != null &&
-                !node.HasMissingDependencies &&
-                canHaveLibraryAnalysis &&
-                !document.IsOpen &&
-                node.HasOnlyWalkedDependencies &&
-                node.IsValidVersion;
-
-            if (!createLibraryAnalysis) {
-                return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
-            }
-
-            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
-            document.SetAst(ast);
-            var eval = new ExpressionEval(walker.Eval.Services, document, ast);
-            return new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
         }
 
         private enum State {

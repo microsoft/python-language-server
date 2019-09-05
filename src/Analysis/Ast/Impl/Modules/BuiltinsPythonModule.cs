@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private IPythonType _boolType;
 
         public BuiltinsPythonModule(string moduleName, string filePath, IServiceContainer services)
-            : base(moduleName, ModuleType.Builtins, filePath, null, services) { } // TODO: builtins stub
+            : base(moduleName, ModuleType.Builtins, filePath, null, false, services) { } // TODO: builtins stub & persistence
 
         public override IMember GetMember(string name) => _hiddenNames.Contains(name) ? null : base.GetMember(name);
 

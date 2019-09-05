@@ -26,21 +26,36 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class GenericTypeParameter : PythonType, IGenericTypeParameter {
-        public GenericTypeParameter(string name, IPythonModule declaringModule, IReadOnlyList<IPythonType> constraints,
-            IPythonType bound, string documentation, IndexSpan location)
-            : base(name, new Location(declaringModule), documentation) {
+        public GenericTypeParameter(
+            string name,
+            IPythonModule declaringModule,
+            IReadOnlyList<IPythonType> constraints,
+            IPythonType bound,
+            object covariant,
+            object contravariant,
+            IndexSpan indexSpan)
+            : base(name, new Location(declaringModule, indexSpan),
+                GetDocumentation(name, constraints, bound, covariant, contravariant, declaringModule)) {
             Constraints = constraints ?? Array.Empty<IPythonType>();
             Bound = bound;
+            Covariant = covariant;
+            Contravariant = contravariant;
         }
 
         #region IGenericTypeParameter
         public IReadOnlyList<IPythonType> Constraints { get; }
         public IPythonType Bound { get; }
+        public object Covariant { get; }
+        public object Contravariant { get; }
         #endregion
+
+        #region IPythonType
 
         public override BuiltinTypeId TypeId => BuiltinTypeId.Type;
         public override PythonMemberType MemberType => PythonMemberType.Generic;
         public override bool IsSpecialized => true;
+
+        #endregion
 
         private static bool TypeVarArgumentsValid(IArgumentSet argSet) {
             var args = argSet.Arguments;
@@ -91,7 +106,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             var eval = argSet.Eval;
             var boundArg = argSet.Argument("bound");
             // User did not pass in upper bound, bail
-            if(boundArg.ValueIsDefault) {
+            if(boundArg == default) {
                 return null;
             }
 
@@ -99,21 +114,23 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
             switch (rawBound) {
                 case IPythonType t:
                     return t;
-                case IPythonConstant c when !string.IsNullOrEmpty(c.GetString()):
-                    return eval.GetTypeFromString(c.GetString());
+                case IPythonConstant c:
+                    var s = c.GetString();
+                    if (!string.IsNullOrEmpty(s)) {
+                        return eval.GetTypeFromString(s) ?? argSet.Eval.UnknownType;
+                    }
+                    return argSet.Eval.UnknownType;
                 default:
                     return rawBound.GetPythonType();
             }
         }
 
-        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan location = default) {
+        public static IPythonType FromTypeVar(IArgumentSet argSet, IPythonModule declaringModule, IndexSpan indexSpan = default) {
             Check.ArgumentNotNull(nameof(argSet.Eval), argSet.Eval);
-
             if (!TypeVarArgumentsValid(argSet)) {
                 return declaringModule.Interpreter.UnknownType;
             }
 
-            var args = argSet.Arguments;
             var constraintArgs = argSet.ListArgument?.Values ?? Array.Empty<IMember>();
 
             var name = argSet.GetArgumentValue<IPythonConstant>("name")?.GetString();
@@ -121,24 +138,39 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
                 // Type constraints may be specified as type name strings.
                 var typeString = a.GetString();
                 return !string.IsNullOrEmpty(typeString) ? argSet.Eval.GetTypeFromString(typeString) : a.GetPythonType();
-            }).ToArray() ?? Array.Empty<IPythonType>();
-            var bound = GetBoundType(argSet);
-            var documentation = GetDocumentation(args, constraints);
+            }).ToArray();
 
-            return new GenericTypeParameter(name, declaringModule, constraints, bound, documentation, location);
+            var bound = GetBoundType(argSet);
+            var covariant = argSet.GetArgumentValue<IPythonConstant>("covariant")?.Value;
+            var contravariant = argSet.GetArgumentValue<IPythonConstant>("contravariant")?.Value;
+
+            return new GenericTypeParameter(name, declaringModule, constraints, bound, covariant, contravariant, indexSpan);
         }
 
-        private static string GetDocumentation(IReadOnlyList<IArgument> args, IReadOnlyList<IPythonType> constraints) {
-            var name = (args[0].Value as IPythonConstant).GetString();
-            var keyWordArgs = args.Skip(1)
-                .Where(x => !x.ValueIsDefault)
-                .Select(x => $"{x.Name}={(x.Value as IPythonConstant)?.Value}");
+        private static string GetDocumentation(string name, IReadOnlyList<IPythonType> constraints, IPythonType bound, object covariant, object contravariant, IPythonModule declaringModule) {
+            var constaintStrings = constraints != null ? constraints.Select(c => c.IsUnknown() ? "?" : c.Name) : Enumerable.Empty<string>();
 
-            var docArgs = constraints.Select(c => c.IsUnknown() ? "?" : c.Name).Concat(keyWordArgs).Prepend($"'{name}'");
+            var boundStrings = Enumerable.Empty<string>();
+            if (bound != null) {
+                string boundName;
+                if(bound.DeclaringModule.Equals(declaringModule) || bound.DeclaringModule is IBuiltinsPythonModule) {
+                    boundName = bound.Name;
+                } else {
+                    boundName = $"{bound.DeclaringModule.Name}.{bound.Name}";
+                }
+                boundStrings = Enumerable.Repeat($"bound={boundName}", 1);
+            }
+
+            var covariantStrings = covariant != null ? Enumerable.Repeat($"covariant={covariant}", 1) : Enumerable.Empty<string>();
+            var contravariantStrings = contravariant != null ? Enumerable.Repeat($"contravariant={contravariant}", 1) : Enumerable.Empty<string>();
+
+            var docArgs = Enumerable.Repeat($"'{name}'", 1)
+                .Concat(constaintStrings).Concat(boundStrings).Concat(covariantStrings).Concat(contravariantStrings);
+
             var documentation = CodeFormatter.FormatSequence("TypeVar", '(', docArgs);
             return documentation;
         }
 
-        public bool Equals(IGenericTypeParameter other) => Name.Equals(other.Name);
+        public bool Equals(IGenericTypeParameter other) => Name.Equals(other?.Name);
     }
 }
