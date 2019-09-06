@@ -536,5 +536,27 @@ print(os_path.basename('a/b/c'))
             line.Should().EndWith("as path");
             line.Substring(reference.range.start.character).Should().Be("path");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Unittest() {
+            const string code = @"
+from unittest import TestCase
+
+class MyTestCase(TestCase):
+    def test_example(self):
+        with self.assertRaises(ZeroDivisionError):
+            value = 1 / 0
+        self.assertNotEqual(value, 1)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(6, 24), out _);
+            reference.Should().NotBeNull();
+            reference.range.start.line.Should().BeGreaterThan(0);
+            reference.uri.AbsolutePath.Should().Contain("unittest.py");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
+
     }
 }
