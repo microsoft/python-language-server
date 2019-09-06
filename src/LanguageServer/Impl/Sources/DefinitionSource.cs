@@ -15,7 +15,6 @@
 
 using System;
 using System.Linq;
-using System.Text;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
@@ -28,7 +27,6 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
-using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 

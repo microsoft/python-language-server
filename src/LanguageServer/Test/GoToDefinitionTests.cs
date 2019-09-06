@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -557,6 +556,5 @@ class MyTestCase(TestCase):
             reference.uri.AbsolutePath.Should().Contain("unittest.py");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
-
     }
 }
