@@ -851,8 +851,8 @@ module2.";
             analysis.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
         }
 
-        [DataRow("EggImports.egg")]
         [DataRow("ZipImports.zip")]
+        [DataRow("EggImports.egg")]
         [DataTestMethod, Priority(0)]
         public async Task EggZipImports(string eggZipFilePath) {
             var root = Path.Combine(GetAnalysisTestDataFilesPath(), "EggZip");

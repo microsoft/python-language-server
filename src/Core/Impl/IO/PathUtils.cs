@@ -316,8 +316,11 @@ namespace Microsoft.Python.Core.IO {
         public static bool TryGetZipFilePath(string filePath, out string zipPath, out string relativeZipPath) {
             zipPath = string.Empty;
             relativeZipPath = string.Empty;
-            var workingPath = filePath;
+            if (string.IsNullOrEmpty(filePath)) {
+                return false;
+            }
 
+            var workingPath = filePath;
             // Filepath doesn't have zip or egg in it, bail 
             if (!filePath.Contains(".zip") && !filePath.Contains(".egg")) {
                 return false;
@@ -331,7 +334,7 @@ namespace Microsoft.Python.Core.IO {
                     relativeZipPath = filePath.Substring(workingPath.Length);
 
                     // According to https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT, zip files must have forward slashes
-                    foreach(var separator in DirectorySeparators) {
+                    foreach (var separator in DirectorySeparators) {
                         relativeZipPath = relativeZipPath.Replace(separator, '/');
                     }
                     return true;
