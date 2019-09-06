@@ -16,9 +16,8 @@ https://github.com/microsoft/python-language-server/blob/master/TROUBLESHOOTING.
 ## Environment data
 <!--
 To find your version: 
-* (CTRL + Shift + P >> Python: Create Terminal >> Select "Output" >> Select "Python" from the dropdown menu in the top right of the output window). Look for the line Microsoft Python Language Server version X in the console.
 
-* Note: if you are using the Insiders build of VS Code, find your version by navigating to the following: CTRL + Shift + P >> Python: Create Terminal >> Select "Output" >> Select "Python Language Server". Again, you will look for the line Microsoft Python Language Server version X in the console.
+Select "View: Toggle Output" from the command palette (Ctrl+Shift+P), then select "Python" in the dropdown on the right ("Python Language Server" if running Insiders build of VS Code). Look for the line Microsoft Python Language Server version X in the console.
 -->
 
 - Language Server version: XXX   
