@@ -39,6 +39,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal sealed class MainModuleResolution : ModuleResolutionBase, IModuleManagement {
         private readonly ConcurrentDictionary<string, IPythonModule> _specialized = new ConcurrentDictionary<string, IPythonModule>();
         private readonly IUIService _ui;
+        private IModuleDatabaseService _dbService;
         private IRunningDocumentTable _rdt;
 
         private ImmutableArray<string> _userConfiguredPaths;
@@ -50,6 +51,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         public string BuiltinModuleName => BuiltinTypeId.Unknown.GetModuleName(Interpreter.LanguageVersion);
+        public ImmutableArray<PythonLibraryPath> LibraryPaths { get; private set; } = ImmutableArray<PythonLibraryPath>.Empty;
 
         public IBuiltinsPythonModule BuiltinsModule { get; private set; }
 
@@ -68,26 +70,32 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 }
             }
 
-            // If there is a stub, make sure it is loaded and attached
-            // First check stub next to the module.
-            if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
-                // If nothing found, try Typeshed.
-                stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
-            }
+            var dbs = GetDbService();
+            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath);
 
-            // If stub is created and its path equals to module, return that stub as module
-            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
-                return stub;
+            IPythonModule stub = null;
+            if (!moduleImport.IsPersistent) {
+                // If there is a stub, make sure it is loaded and attached
+                // First check stub next to the module.
+                if (!TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
+                    // If nothing found, try Typeshed.
+                    stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
+                }
+
+                // If stub is created and its path equals to module, return that stub as module
+                if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                    return stub;
+                }
             }
 
             if (moduleImport.IsBuiltin) {
                 Log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
-                return new CompiledBuiltinPythonModule(name, stub, Services);
+                return new CompiledBuiltinPythonModule(name, stub, moduleImport.IsPersistent, Services);
             }
 
             if (moduleImport.IsCompiled) {
                 Log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, Services);
+                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, moduleImport.IsPersistent, Services);
             }
 
             Log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
@@ -97,7 +105,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                 FilePath = moduleImport.ModulePath,
-                Stub = stub
+                Stub = stub,
+                IsPersistent = moduleImport.IsPersistent
             };
 
             return GetRdt().AddModule(mco);
@@ -130,19 +139,30 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         /// </summary>
         /// <param name="name">Module to specialize.</param>
         /// <param name="specializationConstructor">Specialized module constructor.</param>
-        /// <returns>Original (library) module loaded as stub.</returns>
-        public IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor) {
+        /// <param name="replaceExisting">Replace existing loaded module, if any.</param>
+        /// <returns>Specialized module.</returns>
+        public IPythonModule SpecializeModule(string name, Func<string, IPythonModule> specializationConstructor, bool replaceExisting = false) {
             var import = CurrentPathResolver.GetModuleImportFromModuleName(name);
             var module = specializationConstructor(import?.ModulePath);
             _specialized[name] = module;
+
+            if (replaceExisting) {
+                Modules.TryRemove(name, out _);
+            }
             return module;
         }
 
         /// <summary>
         /// Returns specialized module, if any.
         /// </summary>
-        public IPythonModule GetSpecializedModule(string name)
-        => _specialized.TryGetValue(name, out var module) ? module : null;
+        public IPythonModule GetSpecializedModule(string fullName, bool allowCreation = false, string modulePath = null)
+            => _specialized.TryGetValue(fullName, out var module) ? module : null;
+
+        /// <summary>
+        /// Determines of module is specialized or exists in the database.
+        /// </summary>
+        public bool IsSpecializedModule(string fullName, string modulePath = null)
+            => _specialized.ContainsKey(fullName);
 
         internal async Task AddBuiltinTypesToPathResolverAsync(CancellationToken cancellationToken = default) {
             var analyzer = Services.GetService<IPythonAnalyzer>();
@@ -197,8 +217,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         private async Task ReloadSearchPaths(CancellationToken cancellationToken = default) {
-            var paths = await GetInterpreterSearchPathsAsync(cancellationToken);
-            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, FileSystem, paths, _userConfiguredPaths);
+            LibraryPaths = await GetInterpreterSearchPathsAsync(cancellationToken);
+            var (interpreterPaths, userPaths) = PythonLibraryPath.ClassifyPaths(Root, FileSystem, LibraryPaths, _userConfiguredPaths);
 
             InterpreterPaths = interpreterPaths.Select(p => p.Path);
             UserPaths = userPaths.Select(p => p.Path);
@@ -250,5 +270,8 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         private IRunningDocumentTable GetRdt()
             => _rdt ?? (_rdt = Services.GetService<IRunningDocumentTable>());
+
+        private IModuleDatabaseService GetDbService()
+            => _dbService ?? (_dbService = Services.GetService<IModuleDatabaseService>());
     }
 }

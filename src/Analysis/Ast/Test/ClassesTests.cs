@@ -575,6 +575,27 @@ class C(B):
         }
 
         [TestMethod, Priority(0)]
+        public async Task NoDocFromObject() {
+            const string code = @"
+class A(object): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("A").Which.Documentation.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDocFromGeneric() {
+            const string code = @"
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+class A(Generic[T]): ...
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().HaveClass("A").Which.Documentation.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GetAttr() {
             const string code = @"
 class A:
@@ -633,6 +654,40 @@ class Test():
             // Desktop: product time is typically less few seconds second.
             // Test run time: typically ~ 20 sec.
             sw.ElapsedMilliseconds.Should().BeLessThan(60000);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedClasses() {
+            const string code = @"
+class A:
+    class B:
+        def __init__(self): ...
+
+    def __init__(self): ...
+
+x = A.B
+ab = A.B()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Type);
+            var ab = analysis.Should().HaveVariable("ab").Which;
+            ab.Value.Should().BeAssignableTo<IPythonInstance>()
+                .And.HaveType(typeof(IPythonClassType));
+
+            var c = ab.Value.GetPythonType<IPythonClassType>();
+            c.Should().NotBeNull();
+            c.DeclaringType.Name.Should().Be("A");
+            c.DeclaringType.Should().BeAssignableTo<IPythonClassType>();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MethodType() {
+            const string code = @"
+x = type(object.__init__)
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Method);
         }
 
         [TestMethod, Priority(0)]

@@ -464,5 +464,77 @@ class MainClass:
             reference.range.Should().Be(2, 8, 2, 16);
             reference.uri.AbsolutePath.Should().Contain("bar.py");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedTuple() {
+            const string code = @"
+from typing import NamedTuple
+
+Point = NamedTuple('Point', ['x', 'y'])
+
+def f(a, b):
+    return Point(a, b)
+
+pt = Point(1, 2)
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(7, 14), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(3, 0, 3, 5);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ModulePartsNavigation() {
+            const string code = @"
+import os.path
+from os import path as os_path
+print(os.path.basename('a/b/c'))
+print(os_path.basename('a/b/c'))
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 9), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(0, 0, 0, 0);
+            reference.uri.AbsolutePath.Should().Contain("os.py");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 13), out _);
+            reference.Should().NotBeNull();
+            var line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            line.Should().EndWith("as path");
+            line.Substring(reference.range.start.character).Should().Be("path");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(3, 7), out _);
+            reference.Should().NotBeNull();
+            reference.range.Should().Be(0, 0, 0, 0);
+            reference.uri.AbsolutePath.Should().Contain("os.py");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(3, 17), out _);
+            reference.Should().NotBeNull();
+            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            line.Should().EndWith("as path");
+            line.Substring(reference.range.start.character).Should().Be("path");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(3, 27), out _);
+            reference.Should().NotBeNull();
+            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            line.Should().EndWith("as path");
+            line.Substring(reference.range.start.character).Should().Be("path");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(4, 12), out _);
+            reference.Should().NotBeNull();
+            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            line.Should().EndWith("as path");
+            line.Substring(reference.range.start.character).Should().Be("path");
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(5, 12), out _);
+            reference.Should().NotBeNull();
+            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            line.Should().EndWith("as path");
+            line.Substring(reference.range.start.character).Should().Be("path");
+        }
     }
 }

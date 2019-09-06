@@ -19,26 +19,27 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal static class CacheFolders {
-        public static string GetCacheFilePath(string root, string moduleName, string content, IFileSystem fs) {
-            // Folder for all module versions and variants
-            // {root}/module_name/content_hash.pyi
-            var folder = Path.Combine(root, moduleName);
-
-            var filePath = Path.Combine(root, folder, $"{FileNameFromContent(content)}.pyi");
-            if (fs.StringComparison == StringComparison.Ordinal) {
-                filePath = filePath.ToLowerInvariant();
-            }
-
-            return filePath;
+    internal sealed class CacheFolderService: ICacheFolderService {
+        public CacheFolderService(IServiceContainer services, string cacheRootFolder) {
+            CacheFolder = cacheRootFolder ?? GetCacheFolder(services);
         }
 
-        public static string GetCacheFolder(IServiceContainer services) {
+        public string CacheFolder { get; }
+
+        public string GetFileNameFromContent(string content) {
+            // File name depends on the content so we can distinguish between different versions.
+            using (var hash = SHA256.Create()) {
+                return Convert
+                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
+                    .Replace('/', '_').Replace('+', '-');
+            }
+        }
+
+        private static string GetCacheFolder(IServiceContainer services) {
             var platform = services.GetService<IOSPlatform>();
             var logger = services.GetService<ILogger>();
 
@@ -94,17 +95,6 @@ namespace Microsoft.Python.Analysis.Caching {
             logger?.Log(TraceEventType.Information, Resources.AnalysisCachePath.FormatInvariant(cachePath));
             return cachePath;
         }
-
-        public static string FileNameFromContent(string content) {
-            // File name depends on the content so we can distinguish between different versions.
-            var hash = SHA256.Create();
-            return Convert
-                .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
-                .Replace('/', '_').Replace('+', '-');
-        }
-
-        public static string GetAnalysisCacheFilePath(string analysisRootFolder, string moduleName, string content, IFileSystem fs)
-            => GetCacheFilePath(analysisRootFolder, moduleName, content, fs);
 
         private static bool CheckPathRooted(string varName, string path, ILogger logger) {
             if (!string.IsNullOrWhiteSpace(path) && Path.IsPathRooted(path)) {

@@ -1,4 +1,5 @@
-﻿// Copyright(c) Microsoft Corporation
+﻿// Python Tools for Visual Studio
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,15 +14,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-
-namespace Microsoft.Python.Analysis {
-    internal static class QualifiedNameExtensions {
-        public static string CombineNames(this KeyValuePair<string, string> qualifiedNamePair, string sep = ".") {
-            if (string.IsNullOrEmpty(qualifiedNamePair.Key)) {
-                return qualifiedNamePair.Value;
-            }
-            return qualifiedNamePair.Key + sep + qualifiedNamePair.Value;
-        }
+namespace Microsoft.Python.Core.Text {
+    /// <summary>
+    /// Represents object that can convert linear span coordinates
+    /// to line/column and vise versa.
+    /// </summary>
+    public interface ILocationConverter {
+        SourceLocation IndexToLocation(int index);
+        int LocationToIndex(SourceLocation location);
     }
 }

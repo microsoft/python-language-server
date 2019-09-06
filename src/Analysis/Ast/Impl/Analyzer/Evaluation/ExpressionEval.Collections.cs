@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateList(Module.Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
+            return PythonCollectionType.CreateList(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         public IMember GetValueFromDictionary(DictionaryExpression expression) {
@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
-            return new PythonDictionary(Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
+            return new PythonDictionary(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         private IMember GetValueFromTuple(TupleExpression expression) {
@@ -81,7 +81,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateTuple(Module.Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
+            return PythonCollectionType.CreateTuple(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         public IMember GetValueFromSet(SetExpression expression) {
@@ -90,7 +90,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-            return PythonCollectionType.CreateSet(Interpreter, contents, exact: expression.Items.Count <= MaxCollectionSize);
+            return PythonCollectionType.CreateSet(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
         public IMember GetValueFromGenerator(GeneratorExpression expression) {
@@ -110,14 +110,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 switch (node) {
                     case ListComprehension lc:
                         var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateList(Interpreter, new[] { v1 });
+                        return PythonCollectionType.CreateList(Module, new[] { v1 });
                     case SetComprehension sc:
                         var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateSet(Interpreter, new[] { v2 });
+                        return PythonCollectionType.CreateSet(Module, new[] { v2 });
                     case DictionaryComprehension dc:
                         var k = GetValueFromExpression(dc.Key) ?? UnknownType;
                         var v = GetValueFromExpression(dc.Value) ?? UnknownType;
-                        return new PythonDictionary(new PythonDictionaryType(Interpreter), new Dictionary<IMember, IMember> { { k, v } });
+                        return new PythonDictionary(new PythonDictionaryType(Interpreter.ModuleResolution.BuiltinsModule), new Dictionary<IMember, IMember> { { k, v } });
                 }
 
                 return UnknownType;

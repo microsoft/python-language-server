@@ -26,7 +26,6 @@ namespace Microsoft.Python.Analysis {
 
             return GetLocation(node, eval.Ast, eval.Module);
         }
-
         public static LocationInfo GetLocation(this Node node, IDocumentAnalysis analysis) {
             if (node == null || node.StartIndex >= node.EndIndex) {
                 return LocationInfo.Empty;
@@ -35,10 +34,10 @@ namespace Microsoft.Python.Analysis {
             return GetLocation(node, analysis.Ast, analysis.Document);
         }
 
-        private static LocationInfo GetLocation(Node node, PythonAst ast, IPythonFile pythonFile) {
+        private static LocationInfo GetLocation(Node node, PythonAst ast, IPythonModule module) {
             var start = node.GetStart(ast);
             var end = node.GetEnd(ast);
-            return new LocationInfo(pythonFile.FilePath, pythonFile.Uri, start.Line, start.Column, end.Line, end.Column);
+            return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
         }
 
         public static Expression RemoveParenthesis(this Expression e) {

@@ -19,7 +19,7 @@ namespace Microsoft.Python.LanguageServer {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -57,6 +57,15 @@ namespace Microsoft.Python.LanguageServer {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Analysis caching mode: {0}..
+        /// </summary>
+        internal static string AnalysisCacheLevel {
+            get {
+                return ResourceManager.GetString("AnalysisCacheLevel", resourceCulture);
             }
         }
         
@@ -129,6 +138,15 @@ namespace Microsoft.Python.LanguageServer {
         internal static string LineFormatter_UnmatchedToken {
             get {
                 return ResourceManager.GetString("LineFormatter_UnmatchedToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Python interpreter version not specified. Assuming latests 3.x..
+        /// </summary>
+        internal static string PythonInterpreterVersionNotSpecified {
+            get {
+                return ResourceManager.GetString("PythonInterpreterVersionNotSpecified", resourceCulture);
             }
         }
         

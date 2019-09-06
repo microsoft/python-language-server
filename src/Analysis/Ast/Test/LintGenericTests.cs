@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
-using Microsoft.Python.Parsing.Tests;
+using Microsoft.Python.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -37,15 +37,15 @@ _T = _X
         [DataRow("x = Generic[str]")]
         [DataTestMethod, Priority(0)]
         public async Task GenericNotAllTypeParameters(string decl) {
-            string code = GenericSetup + decl;
+            var code = GenericSetup + decl;
 
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            var start = decl.IndexOf("Generic") + 1;
+            var start = decl.IndexOfOrdinal("Generic") + 1;
             // adding 1 because SourceSpan.End is exclusive and another 1 because SourceSpan is 1-indexed
-            var end = decl.IndexOf("]", start) + 2;
+            var end = decl.IndexOfOrdinal("]", start) + 2;
 
             diagnostic.SourceSpan.Should().Be(8, start, 8, end);
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingGenericArguments);
@@ -58,14 +58,14 @@ _T = _X
         [DataRow("x = Generic[T,T]")]
         [DataTestMethod, Priority(0)]
         public async Task GenericDuplicateArguments(string decl) {
-            string code = GenericSetup + decl;
+            var code = GenericSetup + decl;
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().HaveCount(1);
 
             var diagnostic = analysis.Diagnostics.ElementAt(0);
-            var start = decl.IndexOf("Generic") + 1;
+            var start = decl.IndexOfOrdinal("Generic") + 1;
             // adding 1 because SourceSpan.End is exclusive and another 1 because SourceSpan is 1-indexed
-            var end = decl.IndexOf("]", start) + 2;
+            var end = decl.IndexOfOrdinal("]", start) + 2;
             diagnostic.SourceSpan.Should().Be(8, start, 8, end);
 
             diagnostic.ErrorCode.Should().Be(Diagnostics.ErrorCodes.TypingGenericArguments);
@@ -78,14 +78,14 @@ _T = _X
         [DataRow("x = Generic[T,T1, _X]")]
         [DataTestMethod, Priority(0)]
         public async Task GenericArgumentsNoDiagnosticOnValid(string decl) {
-            string code = GenericSetup + decl;
+            var code = GenericSetup + decl;
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
         public async Task GenericNoArgumentsNoDiagnostic() {
-            string code = GenericSetup + @"
+            const string code = GenericSetup + @"
 x = Generic[]
 ";
             var analysis = await GetAnalysisAsync(code);
@@ -95,7 +95,7 @@ x = Generic[]
 
         [TestMethod, Priority(0)]
         public async Task GenericArgumentSpaceNoDiagnostic() {
-            string code = GenericSetup + @"
+            const string code = GenericSetup + @"
 x = Generic[  ]
 ";
             var analysis = await GetAnalysisAsync(code);

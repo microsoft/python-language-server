@@ -1,0 +1,202 @@
+{
+  "UniqueId": "module",
+  "Documentation": "",
+  "Functions": [],
+  "Variables": [
+    {
+      "Value": "t:bool",
+      "Id": -529376420,
+      "Name": "__debug__",
+      "QualifiedName": "__debug__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": -1636005055,
+      "Name": "__doc__",
+      "QualifiedName": "__doc__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 875442003,
+      "Name": "__file__",
+      "QualifiedName": "__file__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 1097116834,
+      "Name": "__name__",
+      "QualifiedName": "__name__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 75395663,
+      "Name": "__package__",
+      "QualifiedName": "__package__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:list",
+      "Id": 1154586556,
+      "Name": "__path__",
+      "QualifiedName": "__path__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:dict",
+      "Id": 817929997,
+      "Name": "__dict__",
+      "QualifiedName": "__dict__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:object",
+      "Id": 1253875154,
+      "Name": "__spec__",
+      "QualifiedName": "__spec__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    }
+  ],
+  "Classes": [
+    {
+      "Documentation": "class A doc",
+      "Bases": [
+        "t:object"
+      ],
+      "NamedTupleBases": [],
+      "Methods": [],
+      "Properties": [],
+      "Fields": [],
+      "Classes": [],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
+      "Id": 778,
+      "Name": "A",
+      "QualifiedName": "module:A",
+      "IndexSpan": {
+        "Start": 8,
+        "Length": 1
+      }
+    },
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:module:A",
+        "t:object"
+      ],
+      "NamedTupleBases": [],
+      "Methods": [
+        {
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:module:B",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Documentation": null,
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "QualifiedName": "module:B.__init__",
+          "IndexSpan": {
+            "Start": 58,
+            "Length": 8
+          }
+        }
+      ],
+      "Properties": [],
+      "Fields": [],
+      "Classes": [],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
+      "Id": 779,
+      "Name": "B",
+      "QualifiedName": "module:B",
+      "IndexSpan": {
+        "Start": 43,
+        "Length": 1
+      }
+    }
+  ],
+  "TypeVars": [],
+  "NamedTuples": [],
+  "NewLines": [
+    {
+      "EndIndex": 2,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 12,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 35,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 37,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 50,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 75,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 99,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 115,
+      "Kind": 3
+    }
+  ],
+  "FileSize": 115,
+  "Imports": [],
+  "FromImports": [],
+  "StubImports": [],
+  "StubFromImports": [],
+  "Id": -2131035837,
+  "Name": "module",
+  "QualifiedName": "module",
+  "IndexSpan": null
+}

@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Parsing.Ast;
 
@@ -20,9 +21,13 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
     public static class AstUtilities {
         public static IImportSearchResult FindImports(this PathResolverSnapshot pathResolver, string modulePath, FromImportStatement fromImportStatement) {
             var rootNames = fromImportStatement.Root.Names.Select(n => n.Name);
-            return fromImportStatement.Root is RelativeModuleName relativeName
-                ? pathResolver.GetImportsFromRelativePath(modulePath, relativeName.DotCount, rootNames)
-                : pathResolver.GetImportsFromAbsoluteName(modulePath, rootNames, fromImportStatement.ForceAbsolute);
+            var dotCount = fromImportStatement.Root is RelativeModuleName relativeName ? relativeName.DotCount : 0;
+            return pathResolver.FindImports(modulePath, rootNames, dotCount, fromImportStatement.ForceAbsolute);
         }
+
+        public static IImportSearchResult FindImports(this PathResolverSnapshot pathResolver, string modulePath, IEnumerable<string> rootNames, int dotCount, bool forceAbsolute)
+            => dotCount > 0
+                ? pathResolver.GetImportsFromRelativePath(modulePath, dotCount, rootNames)
+                : pathResolver.GetImportsFromAbsoluteName(modulePath, rootNames, forceAbsolute);
     }
 }

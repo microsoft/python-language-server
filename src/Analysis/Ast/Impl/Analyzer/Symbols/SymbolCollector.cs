@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
@@ -29,7 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// so the symbol table can resolve references on demand.
     /// </summary>
     internal sealed class SymbolCollector : PythonWalker {
-        private readonly Dictionary<ScopeStatement, IPythonType> _typeMap = new Dictionary<ScopeStatement, IPythonType>();
+        private readonly Dictionary<ScopeStatement, PythonType> _typeMap = new Dictionary<ScopeStatement, PythonType>();
         private readonly Stack<IDisposable> _scopes = new Stack<IDisposable>();
         private readonly ModuleSymbolTable _table;
         private readonly ExpressionEval _eval;
@@ -93,9 +94,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private PythonClassType CreateClass(ClassDefinition cd) {
-            var cls = new PythonClassType(cd, _eval.GetLocationOfName(cd),
+            PythonType declaringType = null;
+            if(!(cd.Parent is PythonAst)) {
+                Debug.Assert(_typeMap.ContainsKey(cd.Parent));
+                _typeMap.TryGetValue(cd.Parent, out declaringType);
+            }
+            var cls = new PythonClassType(cd, declaringType, _eval.GetLocationOfName(cd),
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
             _typeMap[cd] = cls;
+
+            declaringType?.AddMember(cls.Name, cls, overwrite: true);
             return cls;
         }
 
@@ -107,14 +115,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
         }
 
-        private void AddFunction(FunctionDefinition fd, IPythonType declaringType) {
-            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType existing)) {
-                existing = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
+        private void AddFunction(FunctionDefinition fd, PythonType declaringType) {
+            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonFunctionType f)) {
+                f = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+                _eval.DeclareVariable(fd.Name, f, VariableSource.Declaration);
+                _typeMap[fd] = f;
+                declaringType?.AddMember(f.Name, f, overwrite: true);
             }
-            AddOverload(fd, existing, o => existing.AddOverload(o));
+            AddOverload(fd, f, o => f.AddOverload(o));
         }
 
         private void AddOverload(FunctionDefinition fd, IPythonClassMember function, Action<IPythonFunctionOverload> addOverload) {
@@ -152,7 +162,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return null;
         }
 
-        private bool TryAddProperty(FunctionDefinition node, IPythonType declaringType) {
+        private bool TryAddProperty(FunctionDefinition node, PythonType declaringType) {
             // We can't add a property to an unknown type. Fallback to a regular function for now.
             // TOOD: Decouple declaring types from the property.
             if (declaringType.IsUnknown()) {
@@ -175,14 +185,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return false;
         }
 
-        private void AddProperty(FunctionDefinition fd, IPythonType declaringType, bool isAbstract) {
-            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType existing)) {
-                existing = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
+        private void AddProperty(FunctionDefinition fd, PythonType declaringType, bool isAbstract) {
+            if (!(_eval.LookupNameInScopes(fd.Name, LookupOptions.Local) is PythonPropertyType p)) {
+                p = new PythonPropertyType(fd, _eval.GetLocationOfName(fd), declaringType, isAbstract);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Property type is tracking locations for references and renaming.
-                _eval.DeclareVariable(fd.Name, existing, VariableSource.Declaration);
+                _eval.DeclareVariable(fd.Name, p, VariableSource.Declaration);
+                _typeMap[fd] = p;
+                declaringType?.AddMember(p.Name, p, overwrite: true);
             }
-            AddOverload(fd, existing, o => existing.AddOverload(o));
+            AddOverload(fd, p, o => p.AddOverload(o));
         }
 
         private IMember GetMemberFromStub(string name) {

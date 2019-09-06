@@ -16,11 +16,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -30,6 +32,7 @@ using Microsoft.Python.Core.OS;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
+using DiagnosticSource = Microsoft.Python.Analysis.Diagnostics.DiagnosticSource;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class LanguageServer {
@@ -38,6 +41,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
                 var settings = new LanguageServerSettings();
 
+                // https://github.com/microsoft/python-language-server/issues/915
+                // If token or settings are missing, assume defaults.
                 var rootSection = token?["settings"];
                 var pythonSection = rootSection?["python"];
                 if (pythonSection == null) {
@@ -84,6 +89,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
             optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", false);
             optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
+            optionsProvider.Options.AnalysisCachingLevel = GetAnalysisCachingLevel(analysis);
+
+            _logger?.Log(TraceEventType.Information, Resources.AnalysisCacheLevel.FormatInvariant(optionsProvider.Options.AnalysisCachingLevel));
         }
 
         internal static void HandleLintingOnOff(IServiceContainer services, bool linterEnabled) {
@@ -161,6 +169,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             return ImmutableArray<string>.Empty;
+        }
+
+        private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
+            var s = GetSetting(analysisKey, "cachingLevel", "None");
+            if (s.EqualsIgnoreCase("System")) {
+                return AnalysisCachingLevel.System;
+            }
+            return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
         }
     }
 }

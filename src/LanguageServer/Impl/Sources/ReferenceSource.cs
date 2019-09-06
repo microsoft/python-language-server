@@ -100,7 +100,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 return new List<(Uri, long)>();
             }
 
-            var interpreterPaths = interpreter.ModuleResolution.InterpreterPaths.ToArray();
+            var interpreterPaths = interpreter.ModuleResolution.InterpreterPaths;
             var files = new List<(Uri, long)>();
 
             foreach (var filePath in fs.GetFiles(root, "*.py", SearchOption.AllDirectories).Select(Path.GetFullPath)) {

@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public ParameterInfo(string name, IPythonType type, ParameterKind? kind, IMember defaultValue) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+            Name = name ?? "*"; // ?? throw new ArgumentNullException(nameof(name));
             Documentation = string.Empty;
             DefaultValue = defaultValue;
             Type = type;
