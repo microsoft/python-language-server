@@ -26,8 +26,9 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         public HashSet<AnalysisModuleKey> Dependencies => _dependencyCollector.Dependencies;
 
-        public DependencyWalker(IPythonModule module, PythonAst ast) {
+        public DependencyWalker(IPythonModule module, PythonAst ast = null) {
             _dependencyCollector = new DependencyCollector(module);
+            ast = ast ?? module.GetAst();
             ast.Walk(this);
         }
 
@@ -44,7 +45,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         }
 
         public override bool Walk(FromImportStatement fromImport) {
-            var rootNames = fromImport.Root.Names.Select(n => n.Name).ToArray();
+            var rootNames = fromImport.Root.Names.Select(n => n.Name);
             var dotCount = fromImport.Root is RelativeModuleName relativeName ? relativeName.DotCount : 0;
             _dependencyCollector.AddFromImport(rootNames, dotCount, fromImport.ForceAbsolute);
             return false;
