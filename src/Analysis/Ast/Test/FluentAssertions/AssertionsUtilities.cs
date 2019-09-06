@@ -188,13 +188,13 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             => input.Replace("\r", "\\\u200Br").Replace("\n", "\\\u200Bn").Replace("\t", @"\t");
 
         [CustomAssertion]
-        public static Continuation AssertIsNotNull<T>(this AssertionScope assertionScope, T instance, string subjectName, string itemName, string accessorName)
+        public static Continuation AssertIsNotNull<T>(this IAssertionScope assertionScope, T instance, string subjectName, string itemName, string accessorName)
             where T : class
             => assertionScope.ForCondition(!(instance is null))
                 .FailWith($"Expected {subjectName} to have {itemName}{{reason}}, but {accessorName} is null.");
 
         [CustomAssertion]
-        public static Continuation AssertAtIndex<T, TItem>(this AssertionScope assertionScope, IReadOnlyList<T> collection, int index, string subjectName, string itemName)
+        public static Continuation AssertAtIndex<T, TItem>(this IAssertionScope assertionScope, IReadOnlyList<T> collection, int index, string subjectName, string itemName)
             where T : class => assertionScope.ForCondition(collection.Count > index)
             .FailWith($"Expected {subjectName} to have {itemName} of type {typeof(T).Name} at index {index}{{reason}}, but collection has only {collection.Count} items.", subjectName, itemName)
             .Then
@@ -202,7 +202,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             .FailWith($"Expected {subjectName} to have {itemName} of type `{typeof(T).Name}` at index {index}{{reason}}, but its type is `{collection[index].GetType().Name}`.");
 
         [CustomAssertion]
-        public static Continuation AssertHasMember(this AssertionScope assertionScope, IMember m, string memberName, string analysisValueName, string memberPrintName, out IMember member) {
+        public static Continuation AssertHasMember(this IAssertionScope assertionScope, IMember m, string memberName, string analysisValueName, string memberPrintName, out IMember member) {
             var t = m.GetPythonType();
             t.Should().BeAssignableTo<IMemberContainer>();
             try {
@@ -217,7 +217,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         [CustomAssertion]
-        public static Continuation AssertHasMemberOfType<TMember>(this AssertionScope assertionScope, IPythonType type, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
+        public static Continuation AssertHasMemberOfType<TMember>(this IAssertionScope assertionScope, IPythonType type, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
             where TMember : class, IPythonType {
             var continuation = assertionScope.AssertHasMember(type, memberName, analysisValueName, memberPrintName, out var member)
                 .Then
