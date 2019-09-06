@@ -23,6 +23,7 @@ using FluentAssertions.Execution;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
+using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]

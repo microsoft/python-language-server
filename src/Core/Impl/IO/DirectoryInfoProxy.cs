@@ -55,7 +55,7 @@ namespace Microsoft.Python.Core.IO {
             var matcher = GetMatcher(includePatterns, excludePatterns);
             PatternMatchingResult matchResult = SafeExecuteMatcher(matcher);
             return matchResult.Files.Select((filePatternMatch) => {
-                var path = PathUtils.NormalizePath(filePatternMatch.Path);
+                var path = PathUtils.NormalizePath(Path.Combine(_directoryInfo.FullName, filePatternMatch.Path));
                 return CreateFileSystemInfoProxy(new FileInfo(path));
             });
         }

@@ -16,8 +16,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Microsoft.Python.Core.Text;
 using Newtonsoft.Json;
+using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]

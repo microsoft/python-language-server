@@ -17,6 +17,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
+using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]
