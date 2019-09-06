@@ -15,6 +15,7 @@
 
 using System;
 using System.Linq;
+using System.Text;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
@@ -167,20 +168,40 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 return null;
             }
 
-            var index = statement.Names.IndexOf(x => x?.MakeString() == name);
-            if (index < 0) {
-                return null;
-            }
+            var moduleName = statement.Names.FirstOrDefault(x => x.IndexSpan.Start <= expr.StartIndex && x.IndexSpan.Start <= expr.EndIndex);
+            if (moduleName != null) {
+                var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName.Names.First().Name);
+                foreach (var member in moduleName.Names.Skip(1)) {
+                    if (module == null) {
+                        return null;
+                    }
+                    
+                    if(member.StartIndex >= expr.EndIndex) {
+                        break;
+                    }
 
-            var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
-            if (module != null) {
-                definingMember = module;
-                return new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null };
+                    if (member.StartIndex <= expr.EndIndex && member.EndIndex <= expr.EndIndex) {
+                        if (module.Analysis.GlobalScope.Variables[member.Name] is ILocatedMember lm && lm.Location.Module is ILocationConverter lc) {
+                            definingMember = lm;
+                            return new Reference { 
+                                range = lm.Location.IndexSpan.ToSourceSpan(lc), 
+                                uri = CanNavigateToModule(module) ? module.Uri : null 
+                            };
+                        }
+                    }
+                    module = module.GetMember(member.Name) as IPythonModule;
+                }
+
+                if (module != null) {
+                    definingMember = module;
+                    return new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null };
+                }
             }
 
             // Import A as B
-            if (index >= 0 && index < statement.AsNames.Count) {
-                var value = analysis.ExpressionEvaluator.GetValueFromExpression(statement.AsNames[index]);
+            var asName = statement.AsNames.FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
+            if (asName != null) {
+                var value = analysis.ExpressionEvaluator.GetValueFromExpression(asName);
                 if (!value.IsUnknown()) {
                     definingMember = value as ILocatedMember;
                     return FromMember(definingMember);
