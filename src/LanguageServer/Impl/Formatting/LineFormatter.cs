@@ -24,6 +24,7 @@ using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
+using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Formatting {
     /// <summary>

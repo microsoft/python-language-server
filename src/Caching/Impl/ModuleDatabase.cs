@@ -28,6 +28,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
@@ -247,12 +248,12 @@ namespace Microsoft.Python.Analysis.Caching {
                     dc.AddImport(imp.ModuleNames, imp.ForceAbsolute);
                 }
                 foreach (var fi in model.FromImports) {
-                    dc.AddFromImport(fi.RootNames, fi.DotCount, fi.ForceAbsolute);
+                    dc.AddFromImport(fi.RootNames, fi.MemberNames, fi.DotCount, fi.ForceAbsolute);
                 }
                 _dependencies = dc.Dependencies;
             }
 
-            public HashSet<AnalysisModuleKey> GetDependencies() => _dependencies;
+            public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
         }
     }
 }

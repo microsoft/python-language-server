@@ -51,15 +51,15 @@ namespace Microsoft.Python.Analysis.Types {
         private bool _fromAnnotation;
 
         public PythonFunctionOverload(IPythonClassMember cm, FunctionDefinition fd, Location location, string returnDocumentation)
-            : this(cm.Name, location) {
-            ClassMember = cm;
+            : this(cm, location) {
             Documentation = fd.GetDocumentation();
             cm.DeclaringModule.AddAstNode(this, fd);
             _returnDocumentation = returnDocumentation;
         }
 
-        public PythonFunctionOverload(string name, Location location) : base(location) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
+        public PythonFunctionOverload(IPythonClassMember cm, Location location) : base(location) {
+            ClassMember =  cm ?? throw new ArgumentNullException(nameof(cm));
+            Name = cm.Name ?? throw new ArgumentNullException(nameof(cm.Name));
         }
 
         #region ILocatedMember

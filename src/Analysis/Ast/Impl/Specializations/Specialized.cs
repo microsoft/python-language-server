@@ -20,7 +20,7 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static IPythonPropertyType Property(string name, IPythonModule declaringModule, IPythonType declaringType, IMember returnValue) {
             var location = new Location(declaringModule);
             var prop = new PythonPropertyType(name, location, declaringType, false);
-            var o = new PythonFunctionOverload(prop.Name, location);
+            var o = new PythonFunctionOverload(prop, location);
             o.AddReturnValue(returnValue);
             prop.AddOverload(o);
             return prop;
@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static IPythonFunctionType Function(string name, IPythonModule declaringModule, string documentation, IMember returnValue) {
             var location = new Location(declaringModule);
             var prop = PythonFunctionType.Specialize(name, declaringModule, documentation);
-            var o = new PythonFunctionOverload(prop.Name, location);
+            var o = new PythonFunctionOverload(prop, location);
             o.AddReturnValue(returnValue);
             prop.AddOverload(o);
             return prop;
