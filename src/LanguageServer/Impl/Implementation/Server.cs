@@ -137,24 +137,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             Version.TryParse(initializationOptions?.interpreter.properties?.Version, out var version);
 
-            if (initializationOptions?.enableAnalysisCache != false) {
-                _log?.Log(TraceEventType.Information, Resources.AnalysisCacheEnabled);
-                _services.AddService(new ModuleDatabase(_services));
-            } else {
-                _log?.Log(TraceEventType.Information, Resources.AnalysisCacheDisabled);
-            }
-
             var configuration = new InterpreterConfiguration(
                 interpreterPath: initializationOptions?.interpreter.properties?.InterpreterPath,
                 version: version
             );
+            _services.AddService(new ModuleDatabase(_services));
 
             var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
             userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
             _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
-            
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
-            _services.AddService(_interpreter);
 
             _log?.Log(TraceEventType.Information,
                 string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)

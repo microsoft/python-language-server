@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             // TypeVar
             var fn = PythonFunctionType.Specialize("TypeVar", this, GetMemberDocumentation("TypeVar"));
-            var o = new PythonFunctionOverload(fn.Name, location);
+            var o = new PythonFunctionOverload(fn, location);
             o.SetParameters(new List<ParameterInfo> {
                     new ParameterInfo("name", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
                     new ParameterInfo("constraints", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.List, null),
@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
             // Type
             fn = PythonFunctionType.Specialize("Type", this, GetMemberDocumentation("Type"));
-            o = new PythonFunctionOverload(fn.Name, location);
+            o = new PythonFunctionOverload(fn, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((declaringModule, overload, args, indexSpan) => {
@@ -134,7 +134,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
             _members["ByteString"] = Interpreter.GetBuiltinType(BuiltinTypeId.Bytes);
 
             fn = PythonFunctionType.Specialize("NamedTuple", this, GetMemberDocumentation("NamedTuple"));
-            o = new PythonFunctionOverload(fn.Name, location);
+            o = new PythonFunctionOverload(fn, location);
             o.SetReturnValueProvider((declaringModule, overload, args, indexSpan) 
                 => CreateNamedTuple(args.Values<IMember>(), declaringModule, indexSpan));
             fn.AddOverload(o);
@@ -154,7 +154,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
 
         private IPythonType SpecializeNewType(Location location) {
             var fn = PythonFunctionType.Specialize("NewType", this, GetMemberDocumentation("NewType"));
-            var o = new PythonFunctionOverload(fn.Name, location);
+            var o = new PythonFunctionOverload(fn, location);
             // When called, create generic parameter type. For documentation
             // use original TypeVar declaration so it appear as a tooltip.
             o.SetReturnValueProvider((interpreter, overload, args, indexSpan) => CreateTypeAlias(args));

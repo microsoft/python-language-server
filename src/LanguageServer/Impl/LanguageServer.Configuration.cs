@@ -16,11 +16,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -30,6 +32,7 @@ using Microsoft.Python.Core.OS;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
+using DiagnosticSource = Microsoft.Python.Analysis.Diagnostics.DiagnosticSource;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public sealed partial class LanguageServer {
@@ -87,6 +90,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", false);
             optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
             optionsProvider.Options.AnalysisCachingLevel = GetAnalysisCachingLevel(analysis);
+
+            _logger?.Log(TraceEventType.Information, Resources.AnalysisCacheLevel.FormatInvariant(optionsProvider.Options.AnalysisCachingLevel));
         }
 
         internal static void HandleLintingOnOff(IServiceContainer services, bool linterEnabled) {

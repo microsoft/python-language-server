@@ -61,20 +61,11 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Analysis cache disabled..
+        ///   Looks up a localized string similar to Analysis caching mode: {0}..
         /// </summary>
-        internal static string AnalysisCacheDisabled {
+        internal static string AnalysisCacheLevel {
             get {
-                return ResourceManager.GetString("AnalysisCacheDisabled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Analysis cache enabled..
-        /// </summary>
-        internal static string AnalysisCacheEnabled {
-            get {
-                return ResourceManager.GetString("AnalysisCacheEnabled", resourceCulture);
+                return ResourceManager.GetString("AnalysisCacheLevel", resourceCulture);
             }
         }
         

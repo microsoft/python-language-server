@@ -47,11 +47,11 @@ namespace Microsoft.Python.Analysis.Dependencies {
             HandleSearchResults(imports);
         }
 
-        public void AddFromImport(IReadOnlyList<string> importNames, int dotCount, bool forceAbsolute) {
+        public void AddFromImport(IEnumerable<string> importNames, IEnumerable<string> memberNames, int dotCount, bool forceAbsolute) {
             var imports = _pathResolver.FindImports(_module.FilePath, importNames, dotCount, forceAbsolute);
             HandleSearchResults(imports);
             if (imports is IImportChildrenSource childrenSource) {
-                foreach (var name in importNames) {
+                foreach (var name in memberNames) {
                     if (childrenSource.TryGetChildImport(name, out var childImport)) {
                         HandleSearchResults(childImport);
                     }
