@@ -38,7 +38,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <None Remove="b.py" />
     <None Remove="Typeshed\LICENSE" />
     <None Remove="Typeshed\stdlib\2and3\argparse.pyi" />
     <None Remove="Typeshed\stdlib\2and3\array.pyi" />

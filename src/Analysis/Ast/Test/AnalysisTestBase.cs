@@ -63,7 +63,6 @@ namespace Microsoft.Python.Analysis.Tests {
         protected async Task<IServiceManager> CreateServicesAsync(string root, InterpreterConfiguration configuration, string stubCacheFolderPath = null, IServiceManager sm = null, string[] searchPaths = null) {
             configuration = configuration ?? PythonVersions.LatestAvailable;
             configuration.AssertInstalled();
-            stubCacheFolderPath = stubCacheFolderPath ?? TestData.GetAstAnalysisCachePath(configuration.Version, true);
             Trace.TraceInformation("Cache Path: " + stubCacheFolderPath);
 
             searchPaths = searchPaths ?? new[] { GetAnalysisTestDataFilesPath() };
@@ -147,16 +146,16 @@ namespace Microsoft.Python.Analysis.Tests {
                 doc = new PythonModule(mco, services);
             }
 
-            TestLogger.Log(TraceEventType.Information, "Ast begin");
+            TestLogger.Log(TraceEventType.Information, "Test: AST begin.");
             var ast = await doc.GetAstAsync(CancellationToken.None);
             ast.Should().NotBeNull();
-            TestLogger.Log(TraceEventType.Information, "Ast end");
+            TestLogger.Log(TraceEventType.Information, "Test: AST end.");
 
-            TestLogger.Log(TraceEventType.Information, "Analysis begin");
+            TestLogger.Log(TraceEventType.Information, "Test: Analysis begin.");
             await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(-1);
             analysis.Should().NotBeNull();
-            TestLogger.Log(TraceEventType.Information, "Analysis end");
+            TestLogger.Log(TraceEventType.Information, "Test: Analysis end.");
 
             return analysis;
         }

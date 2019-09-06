@@ -205,6 +205,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 var model = new FromImportModel {
                     ForceAbsolute = fromImport.ForceAbsolute,
                     RootNames = fromImport.Root.Names.Select(n => n.Name).ToArray(),
+                    MemberNames = fromImport.Names.Select(n => n.Name).ToArray(),
                     DotCount = fromImport.Root is RelativeModuleName rn ? rn.DotCount : 0
                 };
                 FromImports.Add(model);

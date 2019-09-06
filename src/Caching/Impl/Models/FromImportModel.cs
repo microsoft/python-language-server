@@ -19,6 +19,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     /// </summary>
     internal sealed class FromImportModel {
         public string[] RootNames { get; set; }
+        public string[] MemberNames { get; set; }
         public int DotCount { get; set; }
         public bool ForceAbsolute { get; set; }
     }

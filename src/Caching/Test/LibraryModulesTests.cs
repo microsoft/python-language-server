@@ -234,6 +234,9 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Sys() => TestModule("sys");
 
         [TestMethod, Priority(0)]
+        public Task Tensorflow() => TestModule("tensorflow");
+
+        [TestMethod, Priority(0)]
         public Task Time() => TestModule("time");
 
         [TestMethod, Priority(0)]
