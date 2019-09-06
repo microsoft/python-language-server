@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis {
         public static IArgument Argument(this IArgumentSet args, string name, bool excludeDefault = true) 
             => args.Arguments.FirstOrDefault(a => name.Equals(a.Name) && !(excludeDefault &&a.ValueIsDefault));
 
-        public static T GetArgumentValue<T>(this IArgumentSet args, string name, bool excludeDefault) where T : class {
+        public static T GetArgumentValue<T>(this IArgumentSet args, string name, bool excludeDefault = true) where T : class {
             var value = Argument(args, name, excludeDefault)?.Value;
             if (value == null && args.DictionaryArgument?.Arguments != null && args.DictionaryArgument.Arguments.TryGetValue(name, out var m)) {
                 return m as T;
