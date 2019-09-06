@@ -169,10 +169,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
             definingMember = null;
             var part = names.FirstOrDefault(x => x.IndexSpan.Start <= expr.StartIndex && x.IndexSpan.Start <= expr.EndIndex);
             if (part != null) {
-                if (module.Analysis.GlobalScope.Variables[part.Name] is ILocatedMember lm && lm.Location.Module is ILocationConverter lc) {
-                    definingMember = lm;
+                var definition = module.Analysis.GlobalScope.Variables[part.Name]?.Definition;
+                if (definition != null) {
                     return new Reference {
-                        range = lm.Location.IndexSpan.ToSourceSpan(lc),
+                        range = definition.Span,
                         uri = CanNavigateToModule(module) ? module.Uri : null
                     };
                 }
@@ -227,10 +227,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
 
                 if (member.StartIndex <= expr.EndIndex && member.EndIndex <= expr.EndIndex) {
-                    if (module.Analysis.GlobalScope.Variables[member.Name] is ILocatedMember lm && lm.Location.Module is ILocationConverter lc) {
-                        definingMember = lm;
+                    var definition = module.Analysis.GlobalScope.Variables[member.Name]?.Definition;
+                    if (definition != null) {
                         return new Reference {
-                            range = lm.Location.IndexSpan.ToSourceSpan(lc),
+                            range = definition.Span,
                             uri = CanNavigateToModule(module) ? module.Uri : null
                         };
                     }
