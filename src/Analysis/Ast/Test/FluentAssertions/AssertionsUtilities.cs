@@ -188,38 +188,38 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             => input.Replace("\r", "\\\u200Br").Replace("\n", "\\\u200Bn").Replace("\t", @"\t");
 
         [CustomAssertion]
-        public static Continuation AssertIsNotNull<T>(this IAssertionScope IAssertionScope, T instance, string subjectName, string itemName, string accessorName)
+        public static Continuation AssertIsNotNull<T>(this IAssertionScope assertionScope, T instance, string subjectName, string itemName, string accessorName)
             where T : class
-            => IAssertionScope.ForCondition(!(instance is null))
+            => assertionScope.ForCondition(!(instance is null))
                 .FailWith($"Expected {subjectName} to have {itemName}{{reason}}, but {accessorName} is null.");
 
         [CustomAssertion]
-        public static Continuation AssertAtIndex<T, TItem>(this IAssertionScope IAssertionScope, IReadOnlyList<T> collection, int index, string subjectName, string itemName)
-            where T : class => IAssertionScope.ForCondition(collection.Count > index)
+        public static Continuation AssertAtIndex<T, TItem>(this IAssertionScope assertionScope, IReadOnlyList<T> collection, int index, string subjectName, string itemName)
+            where T : class => assertionScope.ForCondition(collection.Count > index)
             .FailWith($"Expected {subjectName} to have {itemName} of type {typeof(T).Name} at index {index}{{reason}}, but collection has only {collection.Count} items.", subjectName, itemName)
             .Then
             .ForCondition(collection[index] is TItem)
             .FailWith($"Expected {subjectName} to have {itemName} of type `{typeof(T).Name}` at index {index}{{reason}}, but its type is `{collection[index].GetType().Name}`.");
 
         [CustomAssertion]
-        public static Continuation AssertHasMember(this IAssertionScope IAssertionScope, IMember m, string memberName, string analysisValueName, string memberPrintName, out IMember member) {
+        public static Continuation AssertHasMember(this IAssertionScope assertionScope, IMember m, string memberName, string analysisValueName, string memberPrintName, out IMember member) {
             var t = m.GetPythonType();
             t.Should().BeAssignableTo<IMemberContainer>();
             try {
                 member = ((IMemberContainer)m).GetMember(memberName);
             } catch (Exception e) {
                 member = null;
-                return IAssertionScope.FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}, but {nameof(t.GetMember)} has failed with exception: {e}.");
+                return assertionScope.FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}, but {nameof(t.GetMember)} has failed with exception: {e}.");
             }
 
-            return IAssertionScope.ForCondition(!(member is null))
+            return assertionScope.ForCondition(!(member is null))
                 .FailWith($"Expected {analysisValueName} to have a {memberPrintName}{{reason}}.");
         }
 
         [CustomAssertion]
-        public static Continuation AssertHasMemberOfType<TMember>(this IAssertionScope IAssertionScope, IPythonType type, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
+        public static Continuation AssertHasMemberOfType<TMember>(this IAssertionScope assertionScope, IPythonType type, string memberName, string analysisValueName, string memberPrintName, out TMember typedMember)
             where TMember : class, IPythonType {
-            var continuation = IAssertionScope.AssertHasMember(type, memberName, analysisValueName, memberPrintName, out var member)
+            var continuation = assertionScope.AssertHasMember(type, memberName, analysisValueName, memberPrintName, out var member)
                 .Then
                 .ForCondition(member is TMember)
                 .FailWith($"Expected {analysisValueName} to have a {memberPrintName} of type {typeof(TMember)}{{reason}}, but its type is {member.GetType()}.");
