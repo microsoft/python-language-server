@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
             if (!_fromAnnotation && !currentType.Equals(valueType)) {
                 var type = PythonUnionType.Combine(currentType, valueType);
                 // Track instance vs type info.
-                StaticReturnValue = value is IPythonInstance ? type.CreateInstance() : (IMember)type;
+                StaticReturnValue = value is IPythonInstance ? type.CreateInstance(ArgumentSet.WithoutContext) : (IMember)type;
             }
         }
 

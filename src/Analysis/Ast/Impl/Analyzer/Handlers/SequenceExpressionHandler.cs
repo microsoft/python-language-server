@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         var collection = valueEnum.Next;
                         var pc = collection as IPythonCollection;
                         var pct = collection as IPythonCollectionType;
-                        Assign(se, pc ?? pct.CreateInstance(), eval);
+                        Assign(se, pc ?? pct.CreateInstance(ArgumentSet.Empty(se, eval)), eval);
                         break;
                     case SequenceExpression se:
                         Assign(se, valueEnum, eval);

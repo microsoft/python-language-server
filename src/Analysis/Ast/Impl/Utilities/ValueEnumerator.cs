@@ -43,7 +43,7 @@ namespace Microsoft.Python.Analysis.Utilities {
                 if (_values.Length > 0) {
                     return _index < _values.Length ? _values[_index] : _values[_values.Length - 1];
                 } else {
-                    return Filler.CreateInstance();
+                    return Filler.CreateInstance(ArgumentSet.WithoutContext);
                 }
             }
         }

@@ -137,7 +137,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
             var args = ArgumentSet.Empty(expr, Eval);
-            instance = instance ?? variableType?.CreateInstance(args) ?? Eval.UnknownType.CreateInstance();
+            instance = instance ?? variableType?.CreateInstance(args) ?? Eval.UnknownType.CreateInstance(ArgumentSet.WithoutContext);
 
             if (expr is NameExpression ne) {
                 Eval.DeclareVariable(ne.Name, instance, VariableSource.Declaration, ne);
