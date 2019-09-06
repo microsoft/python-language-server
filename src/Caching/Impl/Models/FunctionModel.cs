@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
 
             foreach (var om in Overloads) {
-                var o = new PythonFunctionOverload(Name, new Location(mf.Module, IndexSpan.ToSpan()));
+                var o = new PythonFunctionOverload(_function, new Location(mf.Module, IndexSpan.ToSpan()));
                 o.SetDocumentation(Documentation);
                 o.SetReturnValue(mf.ConstructMember(om.ReturnType), true);
                 o.SetParameters(om.Parameters.Select(p => ConstructParameter(mf, p)).ToArray());

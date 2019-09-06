@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     /// <summary>
@@ -23,6 +24,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// provide dependencies from their models.
     /// </summary>
     internal interface IDependencyProvider {
-        HashSet<AnalysisModuleKey> GetDependencies();
+        HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast);
     }
 }

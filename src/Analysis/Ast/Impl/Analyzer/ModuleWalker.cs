@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast, CancellationToken cancellationToken)
             : base(new ExpressionEval(services, module, ast)) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
-            _cancellationToken = cancellationToken;
+            _cancellationToken = CancellationToken.None;
         }
 
         public override bool Walk(NameExpression node) {
