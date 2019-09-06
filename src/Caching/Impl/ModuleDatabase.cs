@@ -248,7 +248,7 @@ namespace Microsoft.Python.Analysis.Caching {
                     dc.AddImport(imp.ModuleNames, imp.ForceAbsolute);
                 }
                 foreach (var fi in model.FromImports) {
-                    dc.AddFromImport(fi.RootNames, fi.DotCount, fi.ForceAbsolute);
+                    dc.AddFromImport(fi.RootNames, fi.MemberNames, fi.DotCount, fi.ForceAbsolute);
                 }
                 _dependencies = dc.Dependencies;
             }

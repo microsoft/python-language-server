@@ -46,8 +46,9 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         public override bool Walk(FromImportStatement fromImport) {
             var rootNames = fromImport.Root.Names.Select(n => n.Name);
+            var memberNames = fromImport.Names.Select(n => n.Name);
             var dotCount = fromImport.Root is RelativeModuleName relativeName ? relativeName.DotCount : 0;
-            _dependencyCollector.AddFromImport(rootNames, dotCount, fromImport.ForceAbsolute);
+            _dependencyCollector.AddFromImport(rootNames, memberNames, dotCount, fromImport.ForceAbsolute);
             return false;
         }
     }
