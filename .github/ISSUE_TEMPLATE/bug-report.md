@@ -17,8 +17,6 @@ https://github.com/microsoft/python-language-server/blob/master/TROUBLESHOOTING.
 - Language Server version: XXX   
 - OS and version: XXX
 - Python version (& distribution if applicable, e.g. Anaconda): XXX
-- Type of virtual environment used (N/A | venv | virtualenv | conda | ...): XXX
-- Relevant/affected Python packages and their versions: XXX
 
 ## Expected behaviour
 
