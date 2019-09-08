@@ -54,8 +54,10 @@ namespace Microsoft.Python.Analysis.Tests {
             module.Name.Should().Be("datetime");
 
             var dt = module.Should().HaveMember<IPythonClassType>("datetime").Which;
+            var day = dt.Should().HaveReadOnlyProperty("day").Which;
+            day.Documentation.Should().NotBeNullOrEmpty();
 
-            dt.Should().HaveReadOnlyProperty("day").And.HaveMethod("now")
+            dt.Should().HaveMethod("now")
                 .Which.Should().BeClassMethod().And.HaveSingleOverload()
                 .Which.Should().HaveReturnType()
                 .Which.Should().HaveMembers(

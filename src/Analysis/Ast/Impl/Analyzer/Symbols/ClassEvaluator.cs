@@ -109,16 +109,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private IEnumerable<IPythonType> ProcessBases() {
-            var bases = new List<IPythonType>();
-            foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
-                if (IsValidBase(a)) {
-                    TryAddBase(bases, a);
-                } else {
-                    ReportInvalidBase(a);
+            // Base types must be evaluated in outer scope
+            using (Eval.OpenScope(Eval.CurrentScope.OuterScope)) {
+                var bases = new List<IPythonType>();
+                foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
+                    if (IsValidBase(a)) {
+                        TryAddBase(bases, a);
+                    } else {
+                        ReportInvalidBase(a);
+                    }
                 }
+                return bases;
             }
-
-            return bases;
         }
 
         private bool IsValidBase(Arg a) {

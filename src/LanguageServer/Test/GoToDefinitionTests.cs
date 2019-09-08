@@ -556,5 +556,21 @@ class MyTestCase(TestCase):
             reference.uri.AbsolutePath.Should().Contain("case.py");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task DateTimeProperty() {
+            const string code = @"
+import datetime
+x = datetime.datetime.day
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(3, 15), out _);
+            reference.Should().NotBeNull();
+            reference.range.start.line.Should().BeGreaterThan(0);
+            reference.uri.AbsolutePath.Should().Contain("datetime.py");
+            reference.uri.AbsolutePath.Should().NotContain("pyi");
+        }
     }
 }
