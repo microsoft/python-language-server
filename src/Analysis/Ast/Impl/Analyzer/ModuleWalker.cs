@@ -226,10 +226,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Merges data from stub with the data from the module.
         /// </summary>
         /// <remarks>
-        /// Functions are taken from the stub by the function walker since
-        /// information on the return type is needed during the analysis walk.
-        /// However, if the module is compiled (scraped), it often lacks some
-        /// of the definitions. Stub may contains those so we need to merge it in.
+        /// Types are taken from the stub while location and documentation comes from 
+        /// source so code navigation takes user to the source and not to the stub. 
+        /// Stub data, such as class methods are augmented by methods from source
+        /// since stub is not guaranteed to be complete.
         /// </remarks>
         private void MergeStub() {
             _cancellationToken.ThrowIfCancellationRequested();
@@ -245,7 +245,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // https://github.com/microsoft/python-language-server/issues/907
             // Debug.Assert(!(_stubAnalysis is EmptyAnalysis));
 
-            // Note that scrape can pick up more functions than the stub contains
+            // Scraping process can pick up more functions than the stub contains
             // Or the stub can have definitions that scraping had missed. Therefore
             // merge is the combination of the two with the documentation coming
             // from the library source of from the scraped module.
@@ -254,12 +254,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (stubType.IsUnknown()) {
                     continue;
                 }
+                // If stub says 'Any' but we have better type, keep the current type.
+                if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
+                    continue;
+                }
 
                 var sourceVar = Eval.GlobalScope.Variables[v.Name];
                 var sourceType = sourceVar?.Value.GetPythonType();
-
-                // If stub says 'Any' but we have better type, keep the current type.
-                if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
+                if (sourceType.IsUnknown()) {
                     continue;
                 }
 
@@ -286,15 +288,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Otherwise, replace type by one from the stub.
             switch (sourceType) {
                 case null:
-                    // Nothing in sources, but there is type in the stub. Declare it.
+                    // Nothing in source, but there is type in the stub. Declare it.
                     if (v.Source == VariableSource.Declaration || v.Source == VariableSource.Generic) {
                         Eval.DeclareVariable(v.Name, v.Value, v.Source);
                     }
                     break;
 
-                case PythonClassType sourceClass when Module.Equals(sourceClass.DeclaringModule):
+                case PythonClassType sourceClass:
                     // Transfer documentation first so we get class documentation
-                    // that came from class definition win over one that may
+                    // that comes from the class definition win over one that may
                     // come from __init__ during the member merge below.
                     TransferDocumentationAndLocation(sourceClass, stubType);
 
@@ -306,27 +308,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Go through source class members and pick those that are
                     // not present in the stub class.
                     foreach (var name in sourceClass.GetMemberNames()) {
-
                         var sourceMember = sourceClass.GetMember(name);
                         if (sourceMember.IsUnknown()) {
-                            continue; // Anything is better than unknowns.
+                            continue; // Do not add unknowns to the stub.
                         }
                         var sourceMemberType = sourceMember?.GetPythonType();
+                        if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceClass) {
+                            continue; // Only take members from this class and not from bases.
+                        }
+                        if (!IsAcceptableModule(sourceMemberType)) {
+                            continue; // Member does not come from module or its submodules.
+                        }
 
-                        var stubMember = stubType.GetMember(name);
+                            var stubMember = stubType.GetMember(name);
                         var stubMemberType = stubMember.GetPythonType();
-
-                        // Don't augment types that do not come from this module.
-                        if (sourceType.IsBuiltin || stubType.IsBuiltin) {
-                            // If source type does not have an immediate member such as __init__() and
-                            // rather have it inherited from object, we do not want to use the inherited
-                            // since stub class may either have its own of inherits it from the object.
-                            continue;
-                        }
-
-                        if (stubMemberType?.MemberType == PythonMemberType.Method && stubMemberType?.DeclaringModule.ModuleType == ModuleType.Builtins) {
-                            // Leave methods coming from object at the object and don't copy them into the derived class.
-                        }
 
                         // Get documentation from the current type, if any, since stubs
                         // typically do not contain documentation while scraped code does.
@@ -354,9 +349,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                     // We do not re-declaring variables that are imported.
                     if (v.Source == VariableSource.Declaration) {
-                        // Re-declare variable with the data from the stub.
                         TransferDocumentationAndLocation(sourceType, stubType);
-                        // TODO: choose best type between the scrape and the stub. Stub probably should always win.
+                        // Re-declare variable with the data from the stub.
                         var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? v.Source;
                         Eval.DeclareVariable(v.Name, v.Value, source);
                     }
@@ -389,12 +383,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private static void TransferDocumentationAndLocation(IPythonType s, IPythonType d) {
-            if (s.IsUnknown() || s.IsBuiltin || d == null || d.IsBuiltin) {
+        private void TransferDocumentationAndLocation(IPythonType s, IPythonType d) {
+            if (s.IsUnknown() || s.DeclaringModule.ModuleType == ModuleType.Builtins ||
+                d.IsUnknown() || d.DeclaringModule.ModuleType == ModuleType.Builtins) {
                 return; // Do not transfer location of unknowns or builtins
             }
 
-            if (d.DeclaringModule != s.DeclaringModule.Stub) {
+            // Stub may be one for multiple modules - when module consists of several
+            // submodules, there is typically only one stub for the main module.
+            // Types from 'unittest.case' (library) are stubbed in 'unittest' stub.
+            if (!IsAcceptableModule(s)) {
                 return; // Do not change unrelated types.
             }
 
@@ -432,6 +430,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     dst.Location = src.Location;
                 }
             }
+        }
+
+        private bool IsAcceptableModule(IPythonType type) {
+            var thisModule = Eval.Module;
+            var typeModule = type.DeclaringModule;
+            var typeMainModuleName = typeModule.Name.Split('.').FirstOrDefault();
+            return typeModule.Equals(thisModule) || typeMainModuleName == thisModule.Name;
         }
     }
 }

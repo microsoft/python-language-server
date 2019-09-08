@@ -553,7 +553,7 @@ class MyTestCase(TestCase):
             var reference = ds.FindDefinition(analysis, new SourceLocation(6, 24), out _);
             reference.Should().NotBeNull();
             reference.range.start.line.Should().BeGreaterThan(0);
-            reference.uri.AbsolutePath.Should().Contain("unittest.py");
+            reference.uri.AbsolutePath.Should().Contain("case.py");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
     }
