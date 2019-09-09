@@ -412,7 +412,7 @@ sys  .  version
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 5));
-            result.Completions?.Select(i => i.documentation.kind)
+            result.Completions?.Select(i => i.documentation?.kind).ExcludeDefault()
                 .Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
         }
 

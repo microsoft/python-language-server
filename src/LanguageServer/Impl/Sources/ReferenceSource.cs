@@ -58,7 +58,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                 // If it is an implicitly declared variable, such as function or a class
                 // then the location is invalid and the module is null. Use current module.
-                var declaringModule = rootDefinition.DeclaringModule ?? analysis.Document;
+                var declaringModule = rootDefinition?.DeclaringModule ?? analysis.Document;
                 if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
                     return await FindAllReferencesAsync(name, declaringModule, rootDefinition, location, definitionSource, cancellationToken);
                 }

@@ -13,20 +13,18 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Documents;
-using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Module.Name} : {Module.ModuleType}")]
@@ -205,7 +203,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             SymbolTable.EvaluateAll();
             SymbolTable.ReplacedByStubs.Clear();
-            MergeStub();
+            new StubMerger(Eval).MergeStub(_stubAnalysis, _cancellationToken);
 
             if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable)
                 && variable?.Value is IPythonCollection collection && collection.IsExact) {
@@ -221,217 +219,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public GlobalScope GlobalScope => Eval.GlobalScope;
         public IReadOnlyList<string> StarImportMemberNames { get; private set; }
-
-        /// <summary>
-        /// Merges data from stub with the data from the module.
-        /// </summary>
-        /// <remarks>
-        /// Functions are taken from the stub by the function walker since
-        /// information on the return type is needed during the analysis walk.
-        /// However, if the module is compiled (scraped), it often lacks some
-        /// of the definitions. Stub may contains those so we need to merge it in.
-        /// </remarks>
-        private void MergeStub() {
-            _cancellationToken.ThrowIfCancellationRequested();
-
-            if (Module.ModuleType == ModuleType.User || Module.ModuleType == ModuleType.Stub) {
-                return;
-            }
-            // No stub, no merge.
-            if (_stubAnalysis.IsEmpty()) {
-                return;
-            }
-            // TODO: figure out why module is getting analyzed before stub.
-            // https://github.com/microsoft/python-language-server/issues/907
-            // Debug.Assert(!(_stubAnalysis is EmptyAnalysis));
-
-            // Note that scrape can pick up more functions than the stub contains
-            // Or the stub can have definitions that scraping had missed. Therefore
-            // merge is the combination of the two with the documentation coming
-            // from the library source of from the scraped module.
-            foreach (var v in _stubAnalysis.GlobalScope.Variables) {
-                var stubType = v.Value.GetPythonType();
-                if (stubType.IsUnknown()) {
-                    continue;
-                }
-
-                var sourceVar = Eval.GlobalScope.Variables[v.Name];
-                var sourceType = sourceVar?.Value.GetPythonType();
-
-                // If stub says 'Any' but we have better type, keep the current type.
-                if (stubType.DeclaringModule is TypingModule && stubType.Name == "Any") {
-                    continue;
-                }
-
-                if (sourceVar?.Source == VariableSource.Import &&
-                   sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {
-                    // Keep imported types as they are defined in the library. For example,
-                    // 'requests' imports NullHandler as 'from logging import NullHandler'.
-                    // But 'requests' also declares NullHandler in its stub (but not in the main code)
-                    // and that declaration does not have documentation or location. Therefore avoid
-                    // taking types that are stub-only when similar type is imported from another
-                    // module that also has a stub.
-                    continue;
-                }
-
-                TryReplaceMember(v, sourceType, stubType);
-            }
-
-            UpdateVariables();
-        }
-
-        private void TryReplaceMember(IVariable v, IPythonType sourceType, IPythonType stubType) {
-            // If type does not exist in module, but exists in stub, declare it unless it is an import.
-            // If types are the classes, take class from the stub, then add missing members.
-            // Otherwise, replace type by one from the stub.
-            switch (sourceType) {
-                case null:
-                    // Nothing in sources, but there is type in the stub. Declare it.
-                    if (v.Source == VariableSource.Declaration || v.Source == VariableSource.Generic) {
-                        Eval.DeclareVariable(v.Name, v.Value, v.Source);
-                    }
-                    break;
-
-                case PythonClassType sourceClass when Module.Equals(sourceClass.DeclaringModule):
-                    // Transfer documentation first so we get class documentation
-                    // that came from class definition win over one that may
-                    // come from __init__ during the member merge below.
-                    TransferDocumentationAndLocation(sourceClass, stubType);
-
-                    // Replace the class entirely since stub members may use generic types
-                    // and the class definition is important. We transfer missing members
-                    // from the original class to the stub.
-                    Eval.DeclareVariable(v.Name, v.Value, v.Source);
-
-                    // Go through source class members and pick those that are
-                    // not present in the stub class.
-                    foreach (var name in sourceClass.GetMemberNames()) {
-
-                        var sourceMember = sourceClass.GetMember(name);
-                        if (sourceMember.IsUnknown()) {
-                            continue; // Anything is better than unknowns.
-                        }
-                        var sourceMemberType = sourceMember?.GetPythonType();
-
-                        var stubMember = stubType.GetMember(name);
-                        var stubMemberType = stubMember.GetPythonType();
-
-                        // Don't augment types that do not come from this module.
-                        if (sourceType.IsBuiltin || stubType.IsBuiltin) {
-                            // If source type does not have an immediate member such as __init__() and
-                            // rather have it inherited from object, we do not want to use the inherited
-                            // since stub class may either have its own of inherits it from the object.
-                            continue;
-                        }
-
-                        if (stubMemberType?.MemberType == PythonMemberType.Method && stubMemberType?.DeclaringModule.ModuleType == ModuleType.Builtins) {
-                            // Leave methods coming from object at the object and don't copy them into the derived class.
-                        }
-
-                        // Get documentation from the current type, if any, since stubs
-                        // typically do not contain documentation while scraped code does.
-                        TransferDocumentationAndLocation(sourceMemberType, stubMemberType);
-
-                        // If stub says 'Any' but we have better type, use member from the original class.
-                        if (stubMember != null && !(stubType.DeclaringModule is TypingModule && stubType.Name == "Any")) {
-                            continue; // Stub already have the member, don't replace.
-                        }
-
-                        (stubType as PythonType)?.AddMember(name, stubMember, overwrite: true);
-                    }
-                    break;
-
-                case IPythonModule _:
-                    // We do not re-declare modules.
-                    break;
-
-                default:
-                    var stubModule = stubType.DeclaringModule;
-                    if (stubType is IPythonModule || stubModule.ModuleType == ModuleType.Builtins) {
-                        // Modules members that are modules should remain as they are, i.e. os.path
-                        // should remain library with its own stub attached.
-                        break;
-                    }
-                    // We do not re-declaring variables that are imported.
-                    if (v.Source == VariableSource.Declaration) {
-                        // Re-declare variable with the data from the stub.
-                        TransferDocumentationAndLocation(sourceType, stubType);
-                        // TODO: choose best type between the scrape and the stub. Stub probably should always win.
-                        var source = Eval.CurrentScope.Variables[v.Name]?.Source ?? v.Source;
-                        Eval.DeclareVariable(v.Name, v.Value, source);
-                    }
-
-                    break;
-            }
-        }
-
-        private void UpdateVariables() {
-            // Second pass: if we replaced any classes by new from the stub, we need to update 
-            // variables that may still be holding old content. For example, ctypes
-            // declares 'c_voidp = c_void_p' so when we replace 'class c_void_p'
-            // by class from the stub, we need to go and update 'c_voidp' variable.
-            foreach (var v in GlobalScope.Variables) {
-                var variableType = v.Value.GetPythonType();
-                if (!variableType.DeclaringModule.Equals(Module) && !variableType.DeclaringModule.Equals(Module.Stub)) {
-                    continue;
-                }
-                // Check if type that the variable references actually declared here.
-                var typeInScope = GlobalScope.Variables[variableType.Name].GetPythonType();
-                if (typeInScope == null || variableType == typeInScope) {
-                    continue;
-                }
-
-                if (v.Value == variableType) {
-                    Eval.DeclareVariable(v.Name, typeInScope, v.Source);
-                } else if (v.Value is IPythonInstance) {
-                    Eval.DeclareVariable(v.Name, new PythonInstance(typeInScope), v.Source);
-                }
-            }
-        }
-
-        private static void TransferDocumentationAndLocation(IPythonType s, IPythonType d) {
-            if (s.IsUnknown() || s.IsBuiltin || d == null || d.IsBuiltin) {
-                return; // Do not transfer location of unknowns or builtins
-            }
-
-            if (d.DeclaringModule != s.DeclaringModule.Stub) {
-                return; // Do not change unrelated types.
-            }
-
-            // Documentation and location are always get transferred from module type
-            // to the stub type and never the other way around. This makes sure that
-            // we show documentation from the original module and goto definition
-            // navigates to the module source and not to the stub.
-            if (s != d && s is PythonType src && d is PythonType dst) {
-                // If type is a class, then doc can either come from class definition node of from __init__.
-                // If class has doc from the class definition, don't stomp on it.
-                if (src is PythonClassType srcClass && dst is PythonClassType dstClass) {
-                    // Higher lever source wins
-                    if (srcClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ||
-                       (srcClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Init && dstClass.DocumentationSource == PythonClassType.ClassDocumentationSource.Base)) {
-                        dstClass.SetDocumentation(srcClass.Documentation);
-                    }
-                } else {
-                    // Sometimes destination (stub type) already has documentation. This happens when stub type 
-                    // is used to augment more than one type. For example, in threading module RLock stub class
-                    // replaces both  RLock function and _RLock class making 'factory' function RLock to look 
-                    // like a class constructor. Effectively a single  stub type is used for more than one type
-                    // in the source and two source types may have different documentation. Thus transferring doc
-                    // from one source type affects documentation of another type. It may be better to clone stub
-                    // type and separate instances for separate source type, but for now we'll just avoid stomping
-                    // on the existing documentation. 
-                    if (string.IsNullOrEmpty(dst.Documentation)) {
-                        var srcDocumentation = src.Documentation;
-                        if (!string.IsNullOrEmpty(srcDocumentation)) {
-                            dst.SetDocumentation(srcDocumentation);
-                        }
-                    }
-                }
-
-                if (src.Location.IsValid) {
-                    dst.Location = src.Location;
-                }
-            }
-        }
     }
 }

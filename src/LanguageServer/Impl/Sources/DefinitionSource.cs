@@ -24,9 +24,9 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
-using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
@@ -113,49 +113,68 @@ namespace Microsoft.Python.LanguageServer.Sources {
         private Reference HandleFromImport(IDocumentAnalysis analysis, SourceLocation location, FromImportStatement statement, Node expr, out ILocatedMember definingMember) {
             definingMember = null;
 
-            // Are in the dotted name?
+            var mres = analysis.Document.Interpreter.ModuleResolution;
+            var imports = mres.CurrentPathResolver.FindImports(analysis.Document.FilePath, statement);
+            IPythonModule module = null;
+            switch (imports) {
+                case ModuleImport moduleImport:
+                    module = mres.GetImportedModule(moduleImport.FullName);
+                    break;
+                case ImplicitPackageImport packageImport:
+                    module = mres.GetImportedModule(packageImport.FullName);
+                    break;
+            }
+
+            // Are we in the module name (i.e. A in 'from A import B')?
             var locationIndex = location.ToIndex(analysis.Ast);
             if (statement.Root.StartIndex <= locationIndex && locationIndex <= statement.Root.EndIndex) {
-                var mres = analysis.Document.Interpreter.ModuleResolution;
-                var imports = mres.CurrentPathResolver.FindImports(analysis.Document.FilePath, statement);
-                IPythonModule module = null;
-                switch (imports) {
-                    case ModuleImport moduleImport:
-                        module = mres.GetImportedModule(moduleImport.FullName);
-                        break;
-                    case ImplicitPackageImport packageImport:
-                        module = mres.GetImportedModule(packageImport.FullName);
-                        break;
-                }
-
                 definingMember = module;
                 return module != null
                     ? new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null }
                     : null;
             }
 
-            // We are in what/as part
-            var nex = expr as NameExpression;
-            var name = nex?.Name;
+            if (module == null) {
+                return null;
+            }
+
+            // Are we in the member name part (ie. B in 'from A import B')?
+            // Handle 'from A import B' similar to 'import A.B' 
+            var partReference = FindModulePartReference(statement.Names, expr, module, out definingMember);
+            if (partReference != null) {
+                return partReference;
+            }
+
+            // Are we in 'as' names?
+            var name = (expr as NameExpression)?.Name;
             if (string.IsNullOrEmpty(name)) {
                 return null;
             }
 
-            // From X import A
-            var value = analysis.ExpressionEvaluator.GetValueFromExpression(nex);
-            if (value.IsUnknown()) {
-                // From X import A as B
-                var index = statement.Names.IndexOf(x => x?.Name == name);
-                if (index >= 0 && index < statement.AsNames.Count) {
-                    value = analysis.ExpressionEvaluator.GetValueFromExpression(statement.AsNames[index]);
+            var asName = statement.AsNames.FirstOrDefault(x => x?.Name == name);
+            if (asName != null) {
+                var value = analysis.ExpressionEvaluator.GetValueFromExpression(asName);
+                if (!value.IsUnknown()) {
+                    definingMember = value as ILocatedMember;
+                    return FromMember(definingMember);
                 }
             }
 
-            if (!value.IsUnknown()) {
-                definingMember = value as ILocatedMember;
-                return FromMember(definingMember);
-            }
+            return null;
+        }
 
+        private static Reference FindModulePartReference(ImmutableArray<NameExpression> names, Node expr, IPythonModule module, out ILocatedMember definingMember) {
+            definingMember = null;
+            var part = names.FirstOrDefault(x => x.IndexSpan.Start <= expr.StartIndex && x.IndexSpan.Start <= expr.EndIndex);
+            if (part != null) {
+                var definition = module.Analysis.GlobalScope.Variables[part.Name]?.Definition;
+                if (definition != null) {
+                    return new Reference {
+                        range = definition.Span,
+                        uri = CanNavigateToModule(module) ? module.Uri : null
+                    };
+                }
+            }
             return null;
         }
 
@@ -167,20 +186,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 return null;
             }
 
-            var index = statement.Names.IndexOf(x => x?.MakeString() == name);
-            if (index < 0) {
-                return null;
-            }
-
-            var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
-            if (module != null) {
-                definingMember = module;
-                return new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null };
+            var reference = FindModuleNamePartReference(analysis, statement.Names, expr, out definingMember);
+            if(reference != null) {
+                return reference;
             }
 
             // Import A as B
-            if (index >= 0 && index < statement.AsNames.Count) {
-                var value = analysis.ExpressionEvaluator.GetValueFromExpression(statement.AsNames[index]);
+            var asName = statement.AsNames.FirstOrDefault(n => n.IndexSpan.Start <= expr.StartIndex && n.IndexSpan.Start <= expr.EndIndex);
+            if (asName != null) {
+                var value = analysis.ExpressionEvaluator.GetValueFromExpression(asName);
                 if (!value.IsUnknown()) {
                     definingMember = value as ILocatedMember;
                     return FromMember(definingMember);
@@ -189,6 +203,45 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
+        /// <summary>
+        /// Given dotted name located reference to the part of the name. For example, given
+        /// 'os.path' and the name expression 'path' locates definition of 'path' part of 'os' module.
+        /// </summary>
+        private static Reference FindModuleNamePartReference(IDocumentAnalysis analysis, ImmutableArray<ModuleName> dottedName, Node expr, out ILocatedMember definingMember) {
+            definingMember = null;
+            var moduleName = dottedName.FirstOrDefault(x => x.IndexSpan.Start <= expr.StartIndex && x.IndexSpan.Start <= expr.EndIndex);
+            if (moduleName == null) {
+                return null;
+            }
+
+            var module = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(moduleName.Names.First().Name);
+            foreach (var member in moduleName.Names.Skip(1)) {
+                if (module == null) {
+                    return null;
+                }
+
+                if (member.StartIndex >= expr.EndIndex) {
+                    break;
+                }
+
+                if (member.StartIndex <= expr.EndIndex && member.EndIndex <= expr.EndIndex) {
+                    var definition = module.Analysis.GlobalScope.Variables[member.Name]?.Definition;
+                    if (definition != null) {
+                        return new Reference {
+                            range = definition.Span,
+                            uri = CanNavigateToModule(module) ? module.Uri : null
+                        };
+                    }
+                }
+                module = module.GetMember(member.Name) as IPythonModule;
+            }
+
+            if (module != null) {
+                definingMember = module;
+                return new Reference { range = default, uri = CanNavigateToModule(module) ? module.Uri : null };
+            }
+            return null;
+        }
 
         private Reference TryFromVariable(string name, IDocumentAnalysis analysis, SourceLocation location, Node statement, out ILocatedMember definingMember) {
             definingMember = null;
