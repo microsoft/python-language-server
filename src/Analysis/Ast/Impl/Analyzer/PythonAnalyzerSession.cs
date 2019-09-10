@@ -316,17 +316,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (!entry.CanUpdateAnalysis(version, out module, out ast, out currentAnalysis)) {
                 if (IsAnalyzedLibraryInLoop(node, currentAnalysis)) {
-                    return false;
-                } else if (ast == default) {
+                    // Library analysis exists, don't analyze again
+                    return false; 
+                } 
+                if (ast == default) {
                     if (currentAnalysis == default) {
                         // Entry doesn't have ast yet. There should be at least one more session.
                         Cancel();
-                    } else {
-                        Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                        _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled (no AST yet).");
+                        return false;
                     }
+                    //Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                    return true;
                 }
 
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled.");
+                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled. Version: {version}, current: {module.Analysis.Version}.");
                 return false;
             }
             return true;
