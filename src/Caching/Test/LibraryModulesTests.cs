@@ -219,6 +219,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Socket() => TestModule("socket");
 
         [TestMethod, Priority(0)]
+        [Ignore]
         public Task Sqlite3() => TestModule("sqlite3");
 
         [TestMethod, Priority(0)]

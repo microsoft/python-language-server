@@ -82,9 +82,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var sourceVar = _eval.GlobalScope.Variables[v.Name];
                 var sourceType = sourceVar?.Value.GetPythonType();
-                if (sourceType.IsUnknown()) {
-                    continue;
-                }
 
                 if (sourceVar?.Source == VariableSource.Import &&
                    sourceVar.GetPythonType()?.DeclaringModule.Stub != null) {

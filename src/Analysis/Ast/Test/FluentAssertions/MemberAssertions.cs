@@ -149,9 +149,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                         otherClass.IsGeneric.Should().Be(gt.IsGeneric);
                     }
 
+                    // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
                     //Debug.Assert(subjectClass.Bases.Count == otherClass.Bases.Count);
-                    subjectClass.Bases.Count.Should().BeGreaterOrEqualTo(otherClass.Bases.Count);
-                } 
+                    //subjectClass.Bases.Count.Should().BeGreaterOrEqualTo(otherClass.Bases.Count);
+                }
 
                 if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
                     otherMemberType.Documentation.Should().BeNullOrEmpty();

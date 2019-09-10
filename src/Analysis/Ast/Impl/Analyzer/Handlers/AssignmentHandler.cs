@@ -70,13 +70,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     continue;
                 }
 
-                var m = Eval.LookupNameInScopes(ne.Name, out scope);
-                if(m?.MemberType == PythonMemberType.Class) {
-                    // Ignore assignments to classes: enum.py does Enum = None
-                    // which prevents persistence from restoring proper type from enum:Enum.
-                    continue; 
-                }
-
                 var source = value.IsGeneric() ? VariableSource.Generic : VariableSource.Declaration;
                 var location = Eval.GetLocationOfName(ne);
                 if (IsValidAssignment(ne.Name, location)) {
