@@ -13,13 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using System.Linq;
-using System.Threading;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class StubMerger {
@@ -47,9 +48,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (stubAnalysis.IsEmpty()) {
                 return;
             }
-            // TODO: figure out why module is getting analyzed before stub.
             // https://github.com/microsoft/python-language-server/issues/907
-            // Debug.Assert(!(_stubAnalysis is EmptyAnalysis));
+            Debug.Assert(!(stubAnalysis is EmptyAnalysis));
 
             // Stub is the primary information source. Take types from the stub
             // and replace source types by stub types. Transfer location and documentation
