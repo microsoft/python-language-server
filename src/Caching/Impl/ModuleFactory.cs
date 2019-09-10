@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Caching {
             DefaultLocation = new Location(Module);
         }
 
-        public IPythonType ConstructType(string qualifiedName) 
+        public IPythonType ConstructType(string qualifiedName)
             => ConstructMember(qualifiedName)?.GetPythonType();
 
         public IMember ConstructMember(string qualifiedName) {
@@ -95,12 +95,12 @@ namespace Microsoft.Python.Analysis.Caching {
                     memberName = typeName;
                 }
 
-                if(memberName == "<lambda>") {
+                if (memberName == "<lambda>") {
                     return null;
                 }
 
                 var nextModel = currentModel.GetModel(memberName);
-                Debug.Assert(nextModel != null);
+                Debug.Assert(nextModel != null, $"Unable to find member {memberName} in module {Module.Name}");
                 if (nextModel == null) {
                     return null;
                 }
@@ -141,8 +141,8 @@ namespace Microsoft.Python.Analysis.Caching {
                 // from the stub and the main module was never loaded. This, for example,
                 // happens with io which has member with mmap type coming from mmap
                 // stub rather than the primary mmap module.
-                var m = parts.IsStub 
-                    ? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName) 
+                var m = parts.IsStub
+                    ? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName)
                     : Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
 
                 if (m != null) {
@@ -180,7 +180,8 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (member == null) {
-                    Debug.Assert(member != null || EnableMissingMemberAssertions == false);
+                    var containerName = mc is IPythonType t ? t.Name : "<mc>";
+                    Debug.Assert(member != null || EnableMissingMemberAssertions == false, $"Unable to find member {memberName} in {containerName}.");
                     break;
                 }
 
