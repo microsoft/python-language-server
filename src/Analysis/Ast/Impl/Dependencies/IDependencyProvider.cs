@@ -24,6 +24,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// provide dependencies from their models.
     /// </summary>
     internal interface IDependencyProvider {
-        HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast);
+        ISet<AnalysisModuleKey> GetDependencies(PythonAst ast);
     }
 }

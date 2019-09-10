@@ -79,14 +79,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     Attributes |= FunctionAttributes.Static;
                 }
             }
-            //if (callable is IPythonPropertyType p) {
-            //    if (p.IsClassMethod) {
-            //        Attributes |= FunctionAttributes.ClassMethod;
-            //    }
-            //    if (p.IsStatic) {
-            //        Attributes |= FunctionAttributes.Static;
-            //    }
-            //}
         }
 
         protected override IEnumerable<MemberModel> GetMemberModels() => Classes.Concat<MemberModel>(Functions);

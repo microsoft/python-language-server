@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         #region IDependencyProvider
-        public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) {
+        public ISet<AnalysisModuleKey> GetDependencies(PythonAst ast) {
             if (_dbService != null && _dbService.TryRestoreDependencies(_module, out var dp)) {
                 return dp.GetDependencies(ast);
             }
@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         private sealed class EmptyDependencyProvider: IDependencyProvider {
-            public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => new HashSet<AnalysisModuleKey>();
+            public ISet<AnalysisModuleKey> GetDependencies(PythonAst ast) => new HashSet<AnalysisModuleKey>();
         }
     }
 }

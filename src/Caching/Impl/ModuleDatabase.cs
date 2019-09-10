@@ -32,7 +32,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private const int _databaseFormatVersion = 1;
+        private const int DatabaseFormatVersion = 1;
 
         private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
         private readonly object _lock = new object();
@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Caching {
             _fs = services.GetService<IFileSystem>();
 
             var cfs = services.GetService<ICacheFolderService>();
-            _databaseFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{_databaseFormatVersion}");
+            _databaseFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{DatabaseFormatVersion}");
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             lock (_lock) {
                 if (FindModuleModel(module.Name, module.FilePath, out var model)) {
-                    gs =  new RestoredGlobalScope(model, module);
+                    gs = new RestoredGlobalScope(model, module);
                 }
             }
 
@@ -253,7 +253,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 _dependencies = dc.Dependencies;
             }
 
-            public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
+            public ISet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
         }
     }
 }
