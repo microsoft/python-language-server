@@ -111,6 +111,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
+            _log?.Log(TraceEventType.Information, Resources.WorkspaceRoot.FormatInvariant(Root));
 
             return Task.FromResult(GetInitializeResult());
         }
