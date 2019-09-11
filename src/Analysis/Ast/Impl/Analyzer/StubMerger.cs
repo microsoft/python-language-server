@@ -161,7 +161,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceClass) {
                     continue; // Only take members from this class and not from bases.
                 }
-                if (!IsAcceptableModule(sourceMemberType)) {
+                if (!IsFromThisModuleOrSubmodules(sourceMemberType)) {
                     continue; // Member does not come from module or its submodules.
                 }
 
@@ -215,7 +215,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // by class from the stub, we need to go and update 'c_voidp' variable.
             foreach (var v in _eval.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
                 var variableType = v.Value.GetPythonType();
-                if (!IsAcceptableModule(variableType)) {
+                if (!IsFromThisModuleOrSubmodules(variableType)) {
                     continue;
                 }
                 // Check if type that the variable references actually declared here.
@@ -241,7 +241,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // Stub may be one for multiple modules - when module consists of several
             // submodules, there is typically only one stub for the main module.
             // Types from 'unittest.case' (library) are stubbed in 'unittest' stub.
-            if (!IsAcceptableModule(sourceType)) {
+            if (!IsFromThisModuleOrSubmodules(sourceType)) {
                 return; // Do not change unrelated types.
             }
 
@@ -298,7 +298,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// does match the type module so we don't accidentally modify documentation
         /// or location of unrelated types such as coming from the base object type.
         /// </remarks>
-        private bool IsAcceptableModule(IPythonType type) {
+        private bool IsFromThisModuleOrSubmodules(IPythonType type) {
             var thisModule = _eval.Module;
             var typeModule = type.DeclaringModule;
             var typeMainModuleName = typeModule.Name.Split('.').FirstOrDefault();

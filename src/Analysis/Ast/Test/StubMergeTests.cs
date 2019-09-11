@@ -18,6 +18,7 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -47,6 +48,19 @@ namespace Microsoft.Python.Analysis.Tests {
 
             var dt = stub.Should().HaveClass("datetime").Which;
             dt.DeclaringModule.Name.Should().Be("datetime");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Os() {
+            var analysis = await GetAnalysisAsync("import os");
+
+            var module = analysis.Should().HaveVariable("os")
+                .Which.Should().HaveType<IPythonModule>().Which.Value as IPythonModule;
+            module.Should().NotBeNull();
+
+            var environ = module.Should().HaveMember<IPythonInstance>("environ").Which;
+            var environType = environ.GetPythonType();
+            environType.Documentation.Should().NotBeNullOrEmpty();
         }
     }
 }
