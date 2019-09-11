@@ -240,7 +240,7 @@ namespace Microsoft.Python.Analysis.Caching {
             => _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel ?? AnalysisCachingLevel.None;
 
         private sealed class DependencyProvider : IDependencyProvider {
-            private readonly HashSet<AnalysisModuleKey> _dependencies;
+            private readonly ISet<AnalysisModuleKey> _dependencies;
 
             public DependencyProvider(IPythonModule module, ModuleModel model) {
                 var dc = new DependencyCollector(module);

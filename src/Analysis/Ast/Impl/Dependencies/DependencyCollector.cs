@@ -27,7 +27,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private readonly IModuleManagement _moduleResolution;
         private readonly PathResolverSnapshot _pathResolver;
 
-        public HashSet<AnalysisModuleKey> Dependencies { get; } = new HashSet<AnalysisModuleKey>();
+        public ISet<AnalysisModuleKey> Dependencies { get; } = new HashSet<AnalysisModuleKey>();
 
         public DependencyCollector(IPythonModule module, bool? isTypeShed = null) {
             _module = module;
@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 Dependencies.Add(new AnalysisModuleKey(module.Stub));
             }
         }
-        
+
         public void AddImport(IReadOnlyList<string> importNames, bool forceAbsolute) {
             var imports = _pathResolver.GetImportsFromAbsoluteName(_module.FilePath, importNames, forceAbsolute);
             HandleSearchResults(imports);

@@ -69,20 +69,18 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             // In real case dependency analysis will restore model dependencies.
             // Here we don't go through the dependency analysis so we have to
             // manually restore dependent modules.
-            var dp = new DependencyCollector(m);
-            foreach (var imp in model.Imports) {
-                dp.AddImport(imp.ModuleNames, imp.ForceAbsolute);
-            }
-            foreach (var imp in model.FromImports) {
-                dp.AddFromImport(imp.RootNames, imp.MemberNames, imp.DotCount, imp.ForceAbsolute);
+            var dc = new DependencyCollector(m);
+            dc.AddImports(model.Imports);
+            dc.AddFromImports(model.FromImports);
+            foreach(var dep in dc.Dependencies) {
+                m.Interpreter.ModuleResolution.GetOrLoadModule(dep.Name);
             }
 
-            var dps = new DependencyCollector(m, true);
-            foreach (var imp in model.StubImports) {
-                dps.AddImport(imp.ModuleNames, imp.ForceAbsolute);
-            }
-            foreach (var imp in model.StubFromImports) {
-                dps.AddFromImport(imp.RootNames, imp.MemberNames, imp.DotCount, imp.ForceAbsolute);
+            var dcs = new DependencyCollector(m, true);
+            dcs.AddImports(model.StubImports);
+            dcs.AddFromImports(model.StubFromImports);
+            foreach (var dep in dcs.Dependencies) {
+                m.Interpreter.TypeshedResolution.GetOrLoadModule(dep.Name);
             }
 
             var analyzer = Services.GetService<IPythonAnalyzer>();
