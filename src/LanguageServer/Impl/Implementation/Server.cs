@@ -105,9 +105,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _initParams = @params;
             _log = _services.GetService<ILogger>();
 
-            Root = _initParams?.rootUri != null ? _initParams.rootUri.ToAbsolutePath() : _initParams?.rootPath;
-            if (Root != null) {
-                Root = PathUtils.NormalizePathAndTrim(Root);
+            var root = _initParams?.rootUri?.ToAbsolutePath() ?? _initParams?.rootPath;
+            if (!string.IsNullOrEmpty(root)) {
+                Root = PathUtils.NormalizePathAndTrim(root);
             }
 
             _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
