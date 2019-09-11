@@ -213,7 +213,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // variables that may still be holding old content. For example, ctypes
             // declares 'c_voidp = c_void_p' so when we replace 'class c_void_p'
             // by class from the stub, we need to go and update 'c_voidp' variable.
-            foreach (var v in _eval.GlobalScope.Variables) {
+            foreach (var v in _eval.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
                 var variableType = v.Value.GetPythonType();
                 if (!IsAcceptableModule(variableType)) {
                     continue;
@@ -232,24 +232,32 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void TransferDocumentationAndLocation(IPythonType s, IPythonType d) {
-            if (s.IsUnknown() || s.DeclaringModule.ModuleType == ModuleType.Builtins ||
-                d.IsUnknown() || d.DeclaringModule.ModuleType == ModuleType.Builtins) {
+        private void TransferDocumentationAndLocation(IPythonType sourceType, IPythonType stubType) {
+            if (sourceType.IsUnknown() || sourceType.DeclaringModule.ModuleType == ModuleType.Builtins ||
+                stubType.IsUnknown() || stubType.DeclaringModule.ModuleType == ModuleType.Builtins) {
                 return; // Do not transfer location of unknowns or builtins
             }
 
             // Stub may be one for multiple modules - when module consists of several
             // submodules, there is typically only one stub for the main module.
             // Types from 'unittest.case' (library) are stubbed in 'unittest' stub.
-            if (!IsAcceptableModule(s)) {
+            if (!IsAcceptableModule(sourceType)) {
                 return; // Do not change unrelated types.
+            }
+
+            // Destination must be from this module stub and not from other modules.
+            // Consider that 'email.headregistry' stub has DataHeader declaring 'datetime'
+            // property of type 'datetime' from 'datetime' module. We don't want to modify
+            // datetime type and change it's location to 'email.headregistry'.
+            if(stubType.DeclaringModule.ModuleType != ModuleType.Stub || stubType.DeclaringModule != _eval.Module.Stub) {
+                return;
             }
 
             // Documentation and location are always get transferred from module type
             // to the stub type and never the other way around. This makes sure that
             // we show documentation from the original module and goto definition
             // navigates to the module source and not to the stub.
-            if (s != d && s is PythonType src && d is PythonType dst) {
+            if (sourceType != stubType && sourceType is PythonType src && stubType is PythonType dst) {
                 // If type is a class, then doc can either come from class definition node of from __init__.
                 // If class has doc from the class definition, don't stomp on it.
                 if (src is PythonClassType srcClass && dst is PythonClassType dstClass) {

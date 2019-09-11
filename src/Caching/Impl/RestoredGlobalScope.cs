@@ -52,12 +52,16 @@ namespace Microsoft.Python.Analysis.Caching {
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
             var mf = new ModuleFactory(_model, Module, this);
-            var models = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
 
-            foreach (var m in models) {
+            // Generics first
+            var typeVars = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);
+            foreach (var m in typeVars) {
                 _scopeVariables.DeclareVariable(m.Name, m.Create(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
             }
-            foreach (var vm in _model.Variables) {
+
+            // Declare variables in the order of appearance since later variables
+            // may use types declared in the preceding ones.
+            foreach (var vm in _model.Variables.OrderBy(m => m.IndexSpan.Start)) {
                 var v = (IVariable)vm.Create(mf, null, this);
                 _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
             }
