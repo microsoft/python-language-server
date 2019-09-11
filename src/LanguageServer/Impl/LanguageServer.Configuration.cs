@@ -30,6 +30,7 @@ using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.LanguageServer.SearchPaths;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
@@ -154,7 +155,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 if (analayisAutoSearchPaths) {
-                    var auto = AutoSearchPathHeuristic();
+                    var fs = _services.GetService<IFileSystem>();
+                    var auto = AutoSearchPathFinder.Find(fs, _server.Root);
                     paths = paths.AddRange(auto);
                     set = true;
                 }
@@ -170,30 +172,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             return ImmutableArray<string>.Empty;
-        }
-
-        private ImmutableArray<string> AutoSearchPathHeuristic() {
-            var fs = _services.GetService<IFileSystem>();
-
-            // Only happens in the case of a non-folder open, in which case we aren't going to end up with any valid user search paths.
-            if (_server.Root == null) {
-                return ImmutableArray<string>.Empty;
-            }
-
-            // For now, just check for "src".
-            var srcDir = Path.Combine(_server.Root, "src");
-            if (!fs.DirectoryExists(srcDir)) {
-                return ImmutableArray<string>.Empty;
-            }
-
-            // If src is definitely an importable package, then don't add it as an import root, since otherwise it'd be unimportable.
-            // There are still cases where "import src.foo.bar" are importable, but more difficult to check.
-            var srcInit = Path.Combine(srcDir, "__init__.py");
-            if (fs.FileExists(srcInit)) {
-                return ImmutableArray<string>.Empty;
-            }
-
-            return ImmutableArray<string>.Create(srcDir);
         }
     }
 }
