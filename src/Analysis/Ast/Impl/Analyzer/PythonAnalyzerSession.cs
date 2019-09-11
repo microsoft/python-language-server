@@ -223,10 +223,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             if (_walker.MissingKeys.Count == 0 || _walker.MissingKeys.All(k => k.IsTypeshed)) {
                 Interlocked.Exchange(ref _runningTasks, 0);
-
-                if (!isCanceled) {
-                    _analysisCompleteEvent.Set();
-                }
             } else if (!isCanceled && _log != null && _log.LogLevel >= TraceEventType.Verbose) {
                 _log?.Log(TraceEventType.Verbose, $"Missing keys: {string.Join(", ", _walker.MissingKeys)}");
             }
