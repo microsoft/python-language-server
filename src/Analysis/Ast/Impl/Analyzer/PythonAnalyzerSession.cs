@@ -327,7 +327,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         return false;
                     }
                     //Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
-                    return true;
+                    return false;
                 }
 
                 _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled. Version: {version}, current: {module.Analysis.Version}.");
@@ -341,6 +341,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
 
+            Debug.Assert(ast != null);
             var analysis = DoAnalyzeEntry(node, module, ast, version);
             _analyzerCancellationToken.ThrowIfCancellationRequested();
 
