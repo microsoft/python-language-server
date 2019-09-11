@@ -213,7 +213,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // variables that may still be holding old content. For example, ctypes
             // declares 'c_voidp = c_void_p' so when we replace 'class c_void_p'
             // by class from the stub, we need to go and update 'c_voidp' variable.
-            foreach (var v in _eval.GlobalScope.Variables.Where(v => v.Source == VariableSource.Declaration)) {
+            foreach (var v in _eval.GlobalScope.Variables) {
                 var variableType = v.Value.GetPythonType();
                 if (!IsFromThisModuleOrSubmodules(variableType)) {
                     continue;
