@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,8 +27,10 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.LanguageServer.SearchPaths;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
@@ -129,6 +132,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
                 var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
                 var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
+                var analayisAutoSearchPaths = GetSetting(analysis, "autoSearchPaths", true);
 
                 if (analysisSearchPaths != null) {
                     set = true;
@@ -148,6 +152,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                             set = true;
                         }
                     }
+                }
+
+                if (analayisAutoSearchPaths) {
+                    var fs = _services.GetService<IFileSystem>();
+                    var auto = AutoSearchPathFinder.Find(fs, _server.Root);
+                    paths = paths.AddRange(auto);
+                    set = true;
                 }
             }
 
