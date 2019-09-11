@@ -165,7 +165,7 @@
       "Properties": [
         {
           "ReturnType": "i:int",
-          "Documentation": "",
+          "Documentation": null,
           "Attributes": 0,
           "Classes": [],
           "Functions": [],
