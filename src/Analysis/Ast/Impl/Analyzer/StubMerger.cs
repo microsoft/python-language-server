@@ -68,7 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// from source members to the stub types.
         /// </remarks> 
         private void TransferTypesFromStub(IDocumentAnalysis stubAnalysis, CancellationToken cancellationToken) {
-            foreach (var v in stubAnalysis.GlobalScope.Variables) {
+            foreach (var v in stubAnalysis.GlobalScope.Variables.ToArray()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var stubType = v.Value.GetPythonType();
@@ -150,7 +150,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // First pass: go through source class members and pick those 
             // that are not present in the stub class.
-            foreach (var name in sourceClass.GetMemberNames()) {
+            foreach (var name in sourceClass.GetMemberNames().ToArray()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var sourceMember = sourceClass.GetMember(name);
@@ -184,7 +184,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // or location, check if source class has same member and fetch it from there. 
             // The reason is that in the stub sometimes members are specified all in one 
             // class while in source they may come from bases. Example: datetime.
-            foreach (var name in stubType.GetMemberNames()) {
+            foreach (var name in stubType.GetMemberNames().ToArray()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var stubMember = stubType.GetMember(name);
@@ -213,7 +213,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // variables that may still be holding old content. For example, ctypes
             // declares 'c_voidp = c_void_p' so when we replace 'class c_void_p'
             // by class from the stub, we need to go and update 'c_voidp' variable.
-            foreach (var v in _eval.GlobalScope.Variables) {
+            foreach (var v in _eval.GlobalScope.Variables.ToArray()) {
                 var variableType = v.Value.GetPythonType();
                 if (!IsFromThisModuleOrSubmodules(variableType)) {
                     continue;
