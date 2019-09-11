@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Tests;
 using Microsoft.Python.Analysis.Types;
 using Newtonsoft.Json;
@@ -68,26 +69,20 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             // In real case dependency analysis will restore model dependencies.
             // Here we don't go through the dependency analysis so we have to
             // manually restore dependent modules.
+            var dp = new DependencyCollector(m);
             foreach (var imp in model.Imports) {
-                foreach (var name in imp.ModuleNames) {
-                    m.Interpreter.ModuleResolution.GetOrLoadModule(name);
-                }
+                dp.AddImport(imp.ModuleNames, imp.ForceAbsolute);
             }
             foreach (var imp in model.FromImports) {
-                foreach (var name in imp.RootNames) {
-                    m.Interpreter.ModuleResolution.GetOrLoadModule(name);
-                }
+                dp.AddFromImport(imp.RootNames, imp.MemberNames, imp.DotCount, imp.ForceAbsolute);
             }
 
+            var dps = new DependencyCollector(m, true);
             foreach (var imp in model.StubImports) {
-                foreach (var name in imp.ModuleNames) {
-                    m.Interpreter.TypeshedResolution.GetOrLoadModule(name);
-                }
+                dps.AddImport(imp.ModuleNames, imp.ForceAbsolute);
             }
             foreach (var imp in model.StubFromImports) {
-                foreach (var name in imp.RootNames) {
-                    m.Interpreter.TypeshedResolution.GetOrLoadModule(name);
-                }
+                dps.AddFromImport(imp.RootNames, imp.MemberNames, imp.DotCount, imp.ForceAbsolute);
             }
 
             var analyzer = Services.GetService<IPythonAnalyzer>();
