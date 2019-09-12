@@ -137,8 +137,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     otherMember.Should().BeAssignableTo<IPythonInstance>();
                 }
 
-                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
-                Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
+                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType, $"Type name: {subjectMemberType.Name}");
+                //Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
 
                 if (subjectMemberType is IPythonClassType subjectClass) {
                     var otherClass = otherMemberType as IPythonClassType;
@@ -146,7 +146,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
                     if(subjectClass is IGenericType gt) {
                         otherClass.Should().BeAssignableTo<IGenericType>();
-                        otherClass.IsGeneric.Should().Be(gt.IsGeneric);
+                        otherClass.IsGeneric.Should().Be(gt.IsGeneric, $"Class name: {subjectClass.Name}");
                     }
 
                     // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
@@ -155,10 +155,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 }
 
                 if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
-                    otherMemberType.Documentation.Should().BeNullOrEmpty();
+                    otherMemberType.Documentation.Should().BeNullOrEmpty($"Type name: {subjectMemberType.Name}.");
                 } else {
                     //Debug.Assert(subjectMemberType.Documentation == otherMemberType.Documentation);
-                    subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation);
+                    subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation, $"Type name: {subjectMemberType.Name}.");
                 }
 
                 switch (subjectMemberType.MemberType) {
