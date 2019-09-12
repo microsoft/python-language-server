@@ -158,6 +158,16 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         /// Path to a writable folder where analyzer can cache its data.
         /// </summary>
         public string cacheFolderPath;
+
+        /// <summary>
+        /// Root folder path override for PTVS since it does not have control over
+        /// the values that language server client passes in <see cref="InitializedParams"/>.
+        /// </summary>
+        /// <remarks>
+        /// When non-null, this takes precedence over <see cref="InitializeParams.rootUri"/>
+        /// and <see cref="InitializeParams.rootPath"/>.
+        /// </remarks>
+        public string rootPathOverride;
     }
 
     [Serializable]
