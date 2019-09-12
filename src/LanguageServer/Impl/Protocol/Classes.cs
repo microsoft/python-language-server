@@ -161,7 +161,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
 
         /// <summary>
         /// Root folder path override for PTVS since it does not have control over
-        /// the values that language server client passes in <see cref="InitializedParams"/>.
+        /// the values that language server client passes in <see cref="InitializeParams"/>.
         /// </summary>
         /// <remarks>
         /// When non-null, this takes precedence over <see cref="InitializeParams.rootUri"/>
