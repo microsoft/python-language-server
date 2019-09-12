@@ -167,5 +167,14 @@ namespace Microsoft.Python.LanguageServer {
                 return ResourceManager.GetString("RenameVariable_CannotRename", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Workspace root: {0}.
+        /// </summary>
+        internal static string WorkspaceRoot {
+            get {
+                return ResourceManager.GetString("WorkspaceRoot", resourceCulture);
+            }
+        }
     }
 }
