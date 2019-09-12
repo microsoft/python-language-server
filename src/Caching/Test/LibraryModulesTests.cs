@@ -302,8 +302,15 @@ x = requests.get('microsoft.com')
 
         private async Task TestModule(string name) {
             var analysis = await GetAnalysisAsync($"import {name}", PythonVersions.Python37_x64);
+            
             var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
+            if (m.ModuleType == ModuleType.Unresolved) {
+                Assert.Inconclusive(@"Module {name} is not installed");
+                return;
+            }
+
             var model = ModuleModel.FromAnalysis(m.Analysis, Services, AnalysisCachingLevel.Library);
+            model.Should().NotBeNull($"Module {name} is either not installed or cannot be cached");
 
             await CompareBaselineAndRestoreAsync(model, m);
         }
