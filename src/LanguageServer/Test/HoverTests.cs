@@ -89,7 +89,7 @@ string = str
 import datetime
 datetime.datetime.now().day
 ";
-            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAnaconda2X);
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
             AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
