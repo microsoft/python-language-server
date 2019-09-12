@@ -144,7 +144,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                     _state = State.Completed;
-                    isFinal = _walker.MissingKeys.Count == 0 && !isCanceled && remaining == 0;
+                    isFinal = (_walker.MissingKeys.Count == 0 && !isCanceled && remaining == 0) || (_analyzer as PythonAnalyzer)?.IsFinalSession == true;
                     _walker = null;
                 }
 
