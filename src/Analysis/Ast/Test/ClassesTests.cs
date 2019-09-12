@@ -33,8 +33,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() { 
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -649,7 +651,7 @@ class Test():
             // Verifies that analysis of the fragment completes in reasonable time.
             // see https://github.com/microsoft/python-language-server/issues/1291.
             var sw = Stopwatch.StartNew();
-            await GetAnalysisAsync(code);
+            await GetAnalysisAsync(code, runIsolated: true);
             sw.Stop();
             // Desktop: product time is typically less few seconds second.
             // Test run time: typically ~ 20 sec.

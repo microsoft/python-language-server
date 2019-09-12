@@ -30,8 +30,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -426,7 +428,7 @@ class A: ...
 def func(a = A()): ...
 ";
             await TestData.CreateTestSpecificFileAsync("module2.py", code2);
-            var argSet = await GetArgSetAsync(code, "func");
+            var argSet = await GetArgSetAsync(code, "func", runIsolated: true);
             argSet.Arguments.Count.Should().Be(1);
             argSet.Evaluate();
             var v = argSet.Arguments[0].Value;
@@ -437,8 +439,8 @@ def func(a = A()): ...
             t.MemberType.Should().Be(PythonMemberType.Class);
         }
 
-        private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f") {
-            var analysis = await GetAnalysisAsync(code);
+        private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f", bool runIsolated = false) {
+            var analysis = await GetAnalysisAsync(code, runIsolated);
             var f = analysis.Should().HaveFunction(funcName).Which;
             var call = GetCall(analysis.Ast);
             return new ArgumentSet(f, 0, null, call, analysis.ExpressionEvaluator);

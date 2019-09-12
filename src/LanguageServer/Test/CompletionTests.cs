@@ -114,7 +114,7 @@ class oar(list):
     def 
     pass
 ";
-            var analysis = await GetAnalysisAsync(code, version);
+            var analysis = await GetAnalysisAsync(code, version, null, null);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
 
@@ -147,7 +147,7 @@ class oar(list):
     def 
     pass
 ";
-            var analysis = await GetAnalysisAsync(code, version);
+            var analysis = await GetAnalysisAsync(code, version, null, null);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
 

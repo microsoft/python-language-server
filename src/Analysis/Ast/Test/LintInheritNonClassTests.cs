@@ -32,8 +32,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -486,7 +488,7 @@ from enum import Enum, EnumMeta
 
 class C(Enum): ...
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, runIsolated: true);
             analysis.Diagnostics.Should().BeEmpty();
         }
     }
