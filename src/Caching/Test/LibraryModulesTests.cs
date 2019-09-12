@@ -301,7 +301,7 @@ x = requests.get('microsoft.com')
         }
 
         private async Task TestModule(string name) {
-            var analysis = await GetAnalysisAsync($"import {name}", PythonVersions.Python36_x64);
+            var analysis = await GetAnalysisAsync($"import {name}", PythonVersions.Python37_x64);
             
             var m = analysis.Document.Interpreter.ModuleResolution.GetImportedModule(name);
             if (m == null || m.ModuleType == ModuleType.Unresolved) {
