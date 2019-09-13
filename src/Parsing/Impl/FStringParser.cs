@@ -15,7 +15,6 @@ namespace Microsoft.Python.Parsing {
         private readonly ErrorSink _errors;
         private readonly ParserOptions _options;
         private readonly PythonLanguageVersion _langVersion;
-        private readonly bool _verbatim;
         private readonly SourceLocation _start;
 
         // Nonparametric initialization
@@ -29,10 +28,11 @@ namespace Microsoft.Python.Parsing {
         private bool _hasErrors = false;
 
         // Static fields
-        private static readonly StringSpan DoubleOpen = new StringSpan("{{", 0, 2);
-        private static readonly StringSpan DoubleClose = new StringSpan("}}", 0, 2);
-        private static readonly StringSpan NotEqualStringSpan = new StringSpan("!=", 0, 2);
-        private static readonly StringSpan BackslashN = new StringSpan("\\N", 0, 2);
+        private static readonly StringSpan DoubleOpen = new StringSpan("{{");
+        private static readonly StringSpan DoubleClose = new StringSpan("}}");
+        private static readonly StringSpan NotEqual = new StringSpan("!=");
+        private static readonly StringSpan EqualEqual = new StringSpan("==");
+        private static readonly StringSpan BackslashN = new StringSpan("\\N");
 
         internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
@@ -43,7 +43,6 @@ namespace Microsoft.Python.Parsing {
             _errors = options.ErrorSink ?? ErrorSink.Null;
             _options = options;
             _langVersion = langVersion;
-            _verbatim = options.Verbatim;
             _start = options.InitialSourceLocation ?? SourceLocation.MinValue;
             _currentLineNumber = _start.Line;
             _currentColNumber = _start.Column;
@@ -132,8 +131,9 @@ namespace Microsoft.Python.Parsing {
                 _buffer.Clear();
             }
 
-            Debug.Assert(CurrentChar() == '}' || CurrentChar() == '!' || CurrentChar() == ':');
+            Debug.Assert(CurrentChar() == '}' || CurrentChar() == '!' || CurrentChar() == ':' || (_langVersion >= PythonLanguageVersion.V38 && CurrentChar() == '='));
 
+            MaybeReadEqualSpecifier();
             var conversion = MaybeReadConversionChar();
             var formatSpecifier = MaybeReadFormatSpecifier();
             Read('}');
@@ -150,6 +150,20 @@ namespace Microsoft.Python.Parsing {
 
         private SourceLocation CurrentLocation() {
             return new SourceLocation(StartIndex() + _position, _currentLineNumber, _currentColNumber);
+        }
+
+        private void MaybeReadEqualSpecifier() {
+            if (_langVersion < PythonLanguageVersion.V38) {
+                return;
+            }
+
+            if (!EndOfFString() && CurrentChar() == '=') {
+                NextChar();
+            }
+
+            while (!EndOfFString() && IsAsciiWhitespace()) {
+                NextChar();
+            }
         }
 
         private Expression MaybeReadFormatSpecifier() {
@@ -213,12 +227,16 @@ namespace Microsoft.Python.Parsing {
 
             while (!EndOfFString()) {
                 var ch = CurrentChar();
-                if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}' || ch == '!' || ch == ':')) {
-                    // check that it's not a != comparison
-                    if (ch != '!' || !IsNext(NotEqualStringSpan)) {
-                        break;
+                if (!quoteChar.HasValue && _nestedParens.Count == 0) {
+                    switch (ch) {
+                        case '!' when !IsNext(NotEqual):
+                        case '=' when !IsNext(EqualEqual) && _langVersion >= PythonLanguageVersion.V38:
+                        case '}':
+                        case ':':
+                            return;
                     }
                 }
+
                 if (HasBackslash(ch)) {
                     ReportSyntaxError(Resources.BackslashFStringExpressionErrorMsg);
                     _buffer.Append(NextChar());
@@ -243,7 +261,7 @@ namespace Microsoft.Python.Parsing {
                 var ch = CurrentChar();
                 if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}')) {
                     // check that it's not a != comparison
-                    if (ch != '!' || !IsNext(NotEqualStringSpan)) {
+                    if (ch != '!' || !IsNext(NotEqual)) {
                         break;
                     }
                 }
@@ -263,7 +281,7 @@ namespace Microsoft.Python.Parsing {
             if (ch == '\'' || ch == '"') {
                 /* Is this a triple quoted string? */
                 quoteChar = ch;
-                if (IsNext(new StringSpan($"{ch}{ch}{ch}", 0, 3))) {
+                if (IsNext(new StringSpan(new string(ch, 3)))) {
                     stringType = 3;
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
@@ -295,7 +313,7 @@ namespace Microsoft.Python.Parsing {
             if (ch == '\'' || ch == '"') {
                 /* Is this a triple quoted string? */
                 quoteChar = ch;
-                if (IsNext(new StringSpan($"{ch}{ch}{ch}", 0, 3))) {
+                if (IsNext(new StringSpan(new string(ch, 3)))) {
                     stringType = 3;
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
@@ -342,7 +360,7 @@ namespace Microsoft.Python.Parsing {
                 /* Does this match the string_type (single or triple
                    quoted)? */
                 if (stringType == 3) {
-                    if (IsNext(new StringSpan($"{ch}{ch}{ch}", 0, 3))) {
+                    if (IsNext(new StringSpan(new string(ch, 3)))) {
                         /* We're at the end of a triple quoted string. */
                         _buffer.Append(NextChar());
                         _buffer.Append(NextChar());
@@ -427,7 +445,7 @@ namespace Microsoft.Python.Parsing {
 
         private int StartIndex() => _start.Index;
 
-        private bool IsLineEnding(char prev) => prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n", 0, 1)));
+        private bool IsLineEnding(char prev) => prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n")));
 
         private bool HasBackslash(char ch) => ch == '\\';
 
@@ -447,6 +465,19 @@ namespace Microsoft.Python.Parsing {
             var expr = new ErrorExpression(verbatimImage, preceding);
             expr.SetLoc(StartIndex() + startPos, StartIndex() + _position);
             return expr;
+        }
+
+        private bool IsAsciiWhitespace() {
+            switch (CurrentChar()) {
+                case '\t':
+                case '\n':
+                case '\v':
+                case '\f':
+                case '\r':
+                case ' ':
+                    return true;
+            }
+            return false;
         }
     }
 }

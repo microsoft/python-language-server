@@ -416,6 +416,63 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void FStringEquals() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("FStringEquals.py", errors, version),
+                    CheckSuite(
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("name")
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("name")
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("name")
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckCallExpression(CheckMemberExpr(CheckNameExpr("foo"), "bar"))
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("user"),
+                                    's'
+                                ),
+                                CheckNodeConstant("  "),
+                                CheckFormattedValue(
+                                    CheckMemberExpr(CheckNameExpr("delta"), "days"),
+                                    formatSpecifier: CheckFormatSpecifer(
+                                        CheckNodeConstant(",d")
+                                   )
+                                )
+                            )
+                        )
+                    )
+                );
+
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void GeneralizedUnpacking() {
             foreach (var version in V35AndUp) {
                 CheckAst(
