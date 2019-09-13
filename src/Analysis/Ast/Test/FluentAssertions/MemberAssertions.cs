@@ -160,7 +160,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
                     otherMemberType.Documentation.Should().BeNullOrEmpty($"Type name: {subjectMemberType.Name}.");
                 } else {
-                    //Debug.Assert(subjectMemberType.Documentation == otherMemberType.Documentation);
+                    Debug.Assert(subjectMemberType.Documentation == otherMemberType.Documentation);
                     subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation, $"Type name: {subjectMemberType.Name}.");
                 }
 
