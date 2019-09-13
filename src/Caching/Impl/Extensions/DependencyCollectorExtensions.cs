@@ -16,14 +16,22 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Dependencies;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class DependencyCollectorExtensions {
         public static void AddImports(this DependencyCollector dc, IEnumerable<ImportModel> imports) {
             foreach (var imp in imports) {
-                dc.AddImport(imp.ModuleNames, imp.ForceAbsolute);
+                foreach (var dottedName in imp.ModuleNames) {
+                    var importNames = ImmutableArray<string>.Empty;
+                    foreach (var part in dottedName.NameParts) {
+                        importNames = importNames.Add(part);
+                        dc.AddImport(importNames, imp.ForceAbsolute);
+                    }
+                }
             }
         }
+
         public static void AddFromImports(this DependencyCollector dc, IEnumerable<FromImportModel> imports) {
             foreach (var imp in imports) {
                 dc.AddFromImport(imp.RootNames, imp.MemberNames, imp.DotCount, imp.ForceAbsolute);

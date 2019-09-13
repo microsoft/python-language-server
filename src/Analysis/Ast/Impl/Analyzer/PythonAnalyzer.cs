@@ -231,7 +231,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
-        public bool IsFinalSession => _nextSession == null;
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
             _analysisCompleteEvent.Set();

@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using FluentAssertions;
@@ -122,7 +123,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             var missingNames = otherMemberNames.Except(subjectMemberNames).ToArray();
             var extraNames = subjectMemberNames.Except(otherMemberNames).ToArray();
 
+            Debug.Assert(missingNames.Length == 0);
             missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
+            
+            Debug.Assert(extraNames.Length == 0);
             extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
 
             foreach (var n in subjectMemberNames.Except(Enumerable.Repeat("__base__", 1))) {

@@ -26,6 +26,7 @@ using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
@@ -244,12 +245,8 @@ namespace Microsoft.Python.Analysis.Caching {
 
             public DependencyProvider(IPythonModule module, ModuleModel model) {
                 var dc = new DependencyCollector(module);
-                foreach (var imp in model.Imports) {
-                    dc.AddImport(imp.ModuleNames, imp.ForceAbsolute);
-                }
-                foreach (var fi in model.FromImports) {
-                    dc.AddFromImport(fi.RootNames, fi.MemberNames, fi.DotCount, fi.ForceAbsolute);
-                }
+                dc.AddImports(model.Imports);
+                dc.AddFromImports(model.FromImports);
                 _dependencies = dc.Dependencies;
             }
 

@@ -148,7 +148,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
             userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, Root, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
 
             _log?.Log(TraceEventType.Information,
                 string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
