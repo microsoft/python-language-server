@@ -161,7 +161,7 @@ namespace Microsoft.Python.Parsing {
                 NextChar();
             }
 
-            while (!EndOfFString() && IsAsciiWhitespace()) {
+            while (!EndOfFString() && IsAsciiWhiteSpace()) {
                 NextChar();
             }
         }
@@ -467,7 +467,7 @@ namespace Microsoft.Python.Parsing {
             return expr;
         }
 
-        private bool IsAsciiWhitespace() {
+        private bool IsAsciiWhiteSpace() {
             switch (CurrentChar()) {
                 case '\t':
                 case '\n':
