@@ -126,9 +126,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     public sealed class DidChangeTextDocumentParams {
         public VersionedTextDocumentIdentifier textDocument;
         public TextDocumentContentChangedEvent[] contentChanges;
-
-        // Defaults to true, but can be set to false to suppress analysis
-        public bool? _enqueueForAnalysis;
     }
 
     [Serializable]

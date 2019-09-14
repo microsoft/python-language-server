@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Protocol;
@@ -32,15 +34,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         public void DidChangeTextDocument(DidChangeTextDocumentParams @params) {
             _disposableBag.ThrowIfDisposed();
-            var uri = @params.textDocument.uri;
-            var doc = _rdt.GetDocument(uri);
+            var doc = _rdt.GetDocument(@params.textDocument.uri);
             if (doc != null) {
-                var changes = new List<DocumentChange>();
-                foreach (var c in @params.contentChanges) {
-                    var change = c.range.HasValue ? DocumentChange.Replace(c.range.Value, c.text) : DocumentChange.ReplaceAll(c.text);
-                    changes.Add(change);
-                }
-                doc.Update(changes);
+                doc.Update(@params.contentChanges
+                    .Select(c => c.range.HasValue ? DocumentChange.Replace(c.range.Value, c.text) : DocumentChange.ReplaceAll(c.text)));
                 _indexManager.AddPendingDoc(doc);
             } else {
                 _log?.Log(TraceEventType.Warning, $"Unable to find document for {@params.textDocument.uri}");
