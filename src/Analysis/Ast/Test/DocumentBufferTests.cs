@@ -215,6 +215,20 @@ line4
 ", doc.Text);
         }
 
+        [TestMethod, Priority(0)]
+        public void InsertTopToBottom() {
+            var doc = new DocumentBuffer();
+            doc.Reset(0, @"linelinelineline");
+            doc.Update(new[] {
+                DocumentChange.Insert("\n", new SourceLocation(1, 1)),
+                DocumentChange.Insert("1\n", new SourceLocation(2, 5)),
+                DocumentChange.Insert("2\r", new SourceLocation(3, 5)),
+                DocumentChange.Insert("3\r\n", new SourceLocation(4, 5)),
+                DocumentChange.Insert("4\r\n", new SourceLocation(5, 5)),
+            });
+            Assert.AreEqual("\nline1\nline2\rline3\r\nline4\r\n", doc.Text);
+        }
+
         [NewLineTestData]
         [DataTestMethod, Priority(0)]
         public void NewLines(string s, NewLineLocation[] expected) {
