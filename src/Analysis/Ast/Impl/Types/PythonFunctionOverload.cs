@@ -203,7 +203,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // Try getting the type from the type parameter bound
-            if (returnType.Bound != null) {
+            if (!returnType.Bound.IsUnknown()) {
                 return returnType.Bound.CreateInstance(args);
             }
 
