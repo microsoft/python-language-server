@@ -1395,7 +1395,7 @@ class Test(Generic[T]):
 x = Test().get()
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("x").OfType("T");
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unknown);
         }
 
         [TestMethod, Priority(0)]

@@ -105,13 +105,12 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         private static IPythonType GetBoundType(IArgumentSet argSet) {
             var eval = argSet.Eval;
             var boundArg = argSet.Argument("bound");
-            // User did not pass in upper bound, bail
-            if(boundArg == default) {
-                return null;
-            }
-
-            var rawBound = boundArg.Value as IMember;
+            var rawBound = boundArg?.Value as IMember;
             switch (rawBound) {
+                // User did not pass in upper bound, bail
+                case null:
+                case IMember m when m.IsUnknown():
+                    return null;
                 case IPythonType t:
                     return t;
                 case IPythonConstant c:
