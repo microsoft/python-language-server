@@ -142,10 +142,7 @@ namespace Microsoft.Python.Parsing {
             var conversion = MaybeReadConversionChar();
             var formatSpecifier = MaybeReadFormatSpecifier();
 
-            if (CurrentChar != '}') {
-                _incomplete = true;
-            }
-            Read('}');
+            _incomplete = !Read('}');
 
             if (fStringExpression == null) {
                 return Error(initialPosition);
