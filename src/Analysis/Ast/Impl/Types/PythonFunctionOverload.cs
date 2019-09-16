@@ -203,8 +203,8 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             // Try getting the type from the type parameter bound
-            if (returnType.Bound != null) {
-                return returnType.Bound.CreateInstance(args);
+            if (!returnType.Bound.IsUnknown()) {
+                return new PythonInstance(returnType.Bound);
             }
 
             // Try returning the constraint
