@@ -260,7 +260,7 @@ namespace Microsoft.Python.Parsing {
             Debug.Assert(_nestedParens.Count == 0);
 
             char? quoteChar = null;
-            int stringType = 0;
+            var stringType = 0;
 
             while (!EndOfFString) {
                 var ch = CurrentChar;
@@ -298,7 +298,7 @@ namespace Microsoft.Python.Parsing {
                 }
                 /* Start looking for the end of the string. */
             } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count > 0) {
-                char opening = _nestedParens.Pop();
+                var opening = _nestedParens.Pop();
                 if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
@@ -332,7 +332,7 @@ namespace Microsoft.Python.Parsing {
             } else if (ch == '#') {
                 ReportSyntaxError(Resources.NumberSignFStringExpressionErrorMsg);
             } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count > 0) {
-                char opening = _nestedParens.Pop();
+                var opening = _nestedParens.Pop();
                 if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
@@ -408,7 +408,7 @@ namespace Microsoft.Python.Parsing {
                 return false;
             }
 
-            bool expected = CurrentChar == nextChar;
+            var expected = CurrentChar == nextChar;
             if (!expected) {
                 ReportSyntaxError(Resources.ExpectingCharButFoundFStringErrorMsg.FormatInvariant(nextChar, CurrentChar));
             }
@@ -423,7 +423,7 @@ namespace Microsoft.Python.Parsing {
             }
             var s = _buffer.ToString();
             _buffer.Clear();
-            string contents = "";
+            var contents = "";
             try {
                 contents = LiteralParser.ParseString(s.ToCharArray(),
                 0, s.Length, _isRaw, isUni: true, normalizeLineEndings: true, allowTrailingBackslash: true);
