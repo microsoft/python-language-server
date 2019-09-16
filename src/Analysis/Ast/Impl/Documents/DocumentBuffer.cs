@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     // Every change may change where the lines end so in order 
                     // to correctly determine line/offsets we must re-split buffer
                     // into lines after each change.
-                    var lineLoc = GetNewLineLications().ToArray();
+                    var lineLoc = GetNewLineLocations().ToArray();
 
                     if (change.ReplaceAllText) {
                         _sb = new StringBuilder(change.InsertedText);
@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public IEnumerable<NewLineLocation> GetNewLineLications() {
+        public IEnumerable<NewLineLocation> GetNewLineLocations() {
             _sb = _sb ?? new StringBuilder(_content); // for tests
 
             if (_sb.Length == 0) {
