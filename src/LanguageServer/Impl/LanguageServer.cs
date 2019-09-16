@@ -133,15 +133,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private static DidChangeTextDocumentParams CreateDidChangeTextDocumentParams(DidChangeTextDocumentParams @params, int version, Stack<TextDocumentContentChangedEvent> contentChanges)
-            => new DidChangeTextDocumentParams {
-                contentChanges = contentChanges.ToArray(),
-                textDocument = new VersionedTextDocumentIdentifier {
-                    uri = @params.textDocument.uri,
-                    version = version
-                }
-            };
-
         [JsonRpcMethod("textDocument/willSave")]
         public void WillSaveTextDocument(JToken token) { }
 
