@@ -48,13 +48,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IRunningDocumentTable _rdt;
         private ILogger _log;
         private IIndexManager _indexManager;
-        private string _rootDir;
 
         private InitializeParams _initParams;
 
         private bool _watchSearchPaths;
         private PathsWatcher _pathsWatcher;
         private string[] _searchPaths;
+
+        public string Root { get; private set; }
 
         public Server(IServiceManager services) {
             _services = services;
@@ -72,6 +73,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         internal ServerSettings Settings { get; private set; } = new ServerSettings();
 
         public IServiceContainer Services => _services;
+
         public void Dispose() => _disposableBag.TryDispose();
 
         #region Client message handling
@@ -104,7 +106,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _initParams = @params;
             _log = _services.GetService<ILogger>();
 
+            var root = _initParams?.initializationOptions?.rootPathOverride ?? _initParams?.rootUri?.ToAbsolutePath() ?? _initParams?.rootPath;
+            if (!string.IsNullOrEmpty(root)) {
+                Root = PathUtils.NormalizePathAndTrim(root);
+            }
+
             _log?.Log(TraceEventType.Information, Resources.LanguageServerVersion.FormatInvariant(Assembly.GetExecutingAssembly().GetName().Version));
+            _log?.Log(TraceEventType.Information, Resources.WorkspaceRoot.FormatInvariant(Root));
 
             return Task.FromResult(GetInitializeResult());
         }
@@ -130,11 +138,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
 
-            _rootDir = _initParams?.rootUri != null ? _initParams.rootUri.ToAbsolutePath() : _initParams?.rootPath;
-            if (_rootDir != null) {
-                _rootDir = PathUtils.NormalizePathAndTrim(_rootDir);
-            }
-
             Version.TryParse(initializationOptions?.interpreter.properties?.Version, out var version);
 
             var configuration = new InterpreterConfiguration(
@@ -145,7 +148,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
             userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
-            _interpreter = await PythonInterpreter.CreateAsync(configuration, _rootDir, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
+            _interpreter = await PythonInterpreter.CreateAsync(configuration, Root, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
 
             _log?.Log(TraceEventType.Information,
                 string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)
@@ -153,7 +156,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 : Resources.InitializingForPythonInterpreter.FormatInvariant(_interpreter.Configuration.InterpreterPath));
 
             var fileSystem = _services.GetService<IFileSystem>();
-            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, _rootDir,
+            _indexManager = new IndexManager(fileSystem, _interpreter.LanguageVersion, Root,
                                             initializationOptions?.includeFiles,
                                             initializationOptions?.excludeFiles,
                                             _services.GetService<IIdleTimeService>());

@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsSpecialized => Module?.IsSpecialized ?? false;
         public ModuleType ModuleType => Module?.ModuleType ?? ModuleType.Package;
         public IPythonModule PrimaryModule => null;
-        public IPythonModule Stub => null;
+        public IPythonModule Stub => Module?.Stub;
         public IGlobalScope GlobalScope => Module?.GlobalScope;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
@@ -72,7 +72,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName = null, IArgumentSet args = null) => this;
+        public IPythonInstance CreateInstance(IArgumentSet args = null) => new PythonInstance(this);
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
 

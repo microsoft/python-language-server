@@ -18,7 +18,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     /// Represents import statement for dependency resolution.
     /// </summary>
     internal sealed class ImportModel {
-        public string[] ModuleNames { get; set; }
+        public DottedNameModel[] ModuleNames { get; set; }
         public bool ForceAbsolute { get; set; }
     }
 }

@@ -44,6 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // so we can invoke Call over the instance. Second, an type info
             // so we can create an instance of the type (as in C() where C is class).
             IMember value = null;
+            var args = ArgumentSet.Empty(expr, this);
             switch (target) {
                 case IPythonBoundType bt: // Bound property, method or an iterator.
                     value = GetValueFromBound(bt, expr);
@@ -52,7 +53,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     value = GetValueFromInstanceCall(pi, expr);
                     break;
                 case IPythonFunctionType ft: // Standalone function or a class method call.
-                    var instance = ft.DeclaringType != null ? new PythonInstance(ft.DeclaringType) : null;
+                    var instance = ft.DeclaringType?.CreateInstance(args);
                     value = GetValueFromFunctionType(ft, instance, expr);
                     break;
                 case IPythonClassType cls:
@@ -61,7 +62,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonType t:
                     // Target is type (info), the call creates instance.
                     // For example, 'x = C; y = x()' or 'x = C()' where C is class
-                    value = new PythonInstance(t);
+                    value = t.CreateInstance(args);
                     break;
             }
 
@@ -93,14 +94,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var init = cls.GetMember<IPythonFunctionType>(@"__init__");
             if (init != null) {
                 using (OpenScope(cls.DeclaringModule, cls.ClassDefinition, out _)) {
-                    var a = new ArgumentSet(init, 0, new PythonInstance(cls), expr, this);
+                    var a = new ArgumentSet(init, 0, cls, expr, this);
                     if (a.Errors.Count > 0) {
                         // AddDiagnostics(Module.Uri, a.Errors);
                     }
                     args = a.Evaluate();
                 }
             }
-            return cls.CreateInstance(cls.Name, args);
+            return cls.CreateInstance(args);
         }
 
         private IMember GetValueFromBound(IPythonBoundType t, CallExpression expr) {
@@ -146,12 +147,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Pick the best overload.
             FunctionDefinition fd;
             ArgumentSet args;
+            var instanceType = instance?.GetPythonType();
+
             if (fn.Overloads.Count == 1) {
                 fd = fn.Overloads[0].FunctionDefinition;
-                args = new ArgumentSet(fn, 0, instance, expr, this);
+                args = new ArgumentSet(fn, 0, instanceType, expr, this);
                 args = args.Evaluate();
             } else {
-                args = FindOverload(fn, instance, expr);
+                args = FindOverload(fn, instanceType, expr);
                 if (args == null) {
                     return UnknownType;
                 }
@@ -167,11 +170,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 }
             }
 
-            // If instance is not the same as the declaring type, then call most probably comes
+            // If instance type is not the same as the declaring type, then call most probably comes
             // from the derived class which means that the original 'self' and 'cls' variables
             // are no longer valid and function has to be re-evaluated with new arguments.
             // Note that there is nothing to re-evaluate in stubs.
-            var instanceType = instance?.GetPythonType();
             if (instanceType == null || fn.DeclaringType == null || fn.IsSpecialized ||
                 instanceType.IsSpecialized || fn.DeclaringType.IsSpecialized ||
                 instanceType.Equals(fn.DeclaringType) ||
@@ -179,9 +181,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 LoadFunctionDependencyModules(fn);
 
-                var t = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
-                if (!t.IsUnknown()) {
-                    return t;
+                var m = instance?.Call(fn.Name, args) ?? fn.Call(null, fn.Name, args);
+                if (!m.IsUnknown()) {
+                    return m;
                 }
             }
 
@@ -244,14 +246,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return result;
         }
 
-        private ArgumentSet FindOverload(IPythonFunctionType fn, IPythonInstance instance, CallExpression expr) {
+        private ArgumentSet FindOverload(IPythonFunctionType fn, IPythonType instanceType, CallExpression expr) {
             if (fn.Overloads.Count == 1) {
                 return null;
             }
 
             var sets = new List<ArgumentSet>();
             for (var i = 0; i < fn.Overloads.Count; i++) {
-                var a = new ArgumentSet(fn, i, instance, expr, this);
+                var a = new ArgumentSet(fn, i, instanceType, expr, this);
                 var args = a.Evaluate();
                 sets.Add(args);
             }
@@ -329,7 +331,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // The reason is that if method might be called on a derived class.
                     // Declare self or cls in this scope.
                     if (declareVariables) {
-                        DeclareVariable(p0.Name, new PythonInstance(self), VariableSource.Declaration, p0.NameExpression);
+                        DeclareVariable(p0.Name, self.CreateInstance(ArgumentSet.Empty(p0.NameExpression, this)),
+                            VariableSource.Declaration, p0.NameExpression);
                     }
                     // Set parameter info, declare type as annotation type for generic self 
                     // e.g def test(self: T)
@@ -377,7 +380,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             } else {
                 paramType = pi?.DefaultValue?.GetPythonType() ?? UnknownType;
             }
-            DeclareVariable(p.Name, new PythonInstance(paramType), VariableSource.Declaration, p.NameExpression);
+            DeclareVariable(p.Name, paramType.CreateInstance(ArgumentSet.Empty(p.NameExpression, this)),
+                VariableSource.Declaration, p.NameExpression);
         }
     }
 }

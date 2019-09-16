@@ -84,7 +84,7 @@ namespace Microsoft.Python.Analysis.Types {
             if (!_fromAnnotation && !currentType.Equals(valueType)) {
                 var type = PythonUnionType.Combine(currentType, valueType);
                 // Track instance vs type info.
-                StaticReturnValue = value is IPythonInstance ? new PythonInstance(type) : (IMember)type;
+                StaticReturnValue = value is IPythonInstance ? type.CreateInstance(ArgumentSet.WithoutContext) : (IMember)type;
             }
         }
 
@@ -173,8 +173,9 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             if (typeArgs != null) {
-                var specificReturnValue = returnClassType.CreateSpecificType(new ArgumentSet(typeArgs, args?.Expression, args?.Eval));
-                return new PythonInstance(specificReturnValue);
+                var newArgs = new ArgumentSet(typeArgs, args?.Expression, args?.Eval);
+                var specificReturnValue = returnClassType.CreateSpecificType(newArgs);
+                return specificReturnValue.CreateInstance(newArgs);
             }
 
             return null;
@@ -182,7 +183,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         private IMember CreateSpecificReturnFromTypeVar(IPythonClassType selfClassType, IArgumentSet args, IGenericTypeParameter returnType) {
             if (selfClassType.GetSpecificType(returnType.Name, out var specificType)) {
-                return new PythonInstance(specificType);
+                return specificType.CreateInstance(args);
             }
 
             // Find first base class type in which function was declared
@@ -193,7 +194,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             // Try and infer return value from base class
             if (baseType != null && baseType.GetSpecificType(returnType.Name, out specificType)) {
-                return new PythonInstance(specificType);
+                return specificType.CreateInstance(args);
             }
 
             // Try getting type from passed in arguments

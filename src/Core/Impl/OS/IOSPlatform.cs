@@ -18,5 +18,6 @@ namespace Microsoft.Python.Core.OS {
         bool IsWindows { get; }
         bool IsMac { get; }
         bool IsLinux { get; }
+        bool IsLittleEndian { get; }
     }
 }

@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Tests;
 using Microsoft.Python.Analysis.Types;
 using Newtonsoft.Json;
@@ -68,26 +69,18 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             // In real case dependency analysis will restore model dependencies.
             // Here we don't go through the dependency analysis so we have to
             // manually restore dependent modules.
-            foreach (var imp in model.Imports) {
-                foreach (var name in imp.ModuleNames) {
-                    m.Interpreter.ModuleResolution.GetOrLoadModule(name);
-                }
-            }
-            foreach (var imp in model.FromImports) {
-                foreach (var name in imp.RootNames) {
-                    m.Interpreter.ModuleResolution.GetOrLoadModule(name);
-                }
+            var dc = new DependencyCollector(m);
+            dc.AddImports(model.Imports);
+            dc.AddFromImports(model.FromImports);
+            foreach(var dep in dc.Dependencies) {
+                m.Interpreter.ModuleResolution.GetOrLoadModule(dep.Name);
             }
 
-            foreach (var imp in model.StubImports) {
-                foreach (var name in imp.ModuleNames) {
-                    m.Interpreter.TypeshedResolution.GetOrLoadModule(name);
-                }
-            }
-            foreach (var imp in model.StubFromImports) {
-                foreach (var name in imp.RootNames) {
-                    m.Interpreter.TypeshedResolution.GetOrLoadModule(name);
-                }
+            var dcs = new DependencyCollector(m, true);
+            dcs.AddImports(model.StubImports);
+            dcs.AddFromImports(model.StubFromImports);
+            foreach (var dep in dcs.Dependencies) {
+                m.Interpreter.TypeshedResolution.GetOrLoadModule(dep.Name);
             }
 
             var analyzer = Services.GetService<IPythonAnalyzer>();

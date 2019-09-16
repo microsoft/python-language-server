@@ -38,6 +38,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             if (flatten && c.Count == 1 && c[0] is IPythonCollection seq) {
                 Contents = seq.Contents;
             } else {
+                // TODO find elements that are IPythonType and make them into PythonInstances
                 Contents = c;
             }
             IsExact = exact;

@@ -83,10 +83,10 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="fn">Function type.</param>
         /// <param name="overloadIndex">Function overload to call.</param>
-        /// <param name="instance">Type instance the function is bound to. For derived classes it is different from the declared type.</param>
+        /// <param name="instanceType">Type of the instance the function is bound to. For derived classes it is different from the declared type.</param>
         /// <param name="callExpr">Call expression that invokes the function.</param>
         /// <param name="eval">Evaluator that can calculate values of arguments from their respective expressions.</param>
-        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonInstance instance, CallExpression callExpr, IExpressionEvaluator eval) {
+        public ArgumentSet(IPythonFunctionType fn, int overloadIndex, IPythonType instanceType, CallExpression callExpr, IExpressionEvaluator eval) {
             Eval = eval;
             OverloadIndex = overloadIndex;
             DeclaringModule = fn.DeclaringModule;
@@ -154,7 +154,7 @@ namespace Microsoft.Python.Analysis.Types {
             // Class methods
             var formalParamIndex = 0;
             if (fn.DeclaringType != null && fn.HasClassFirstArgument() && slots.Length > 0) {
-                slots[0].Value = instance != null ? instance.GetPythonType() : fn.DeclaringType;
+                slots[0].Value = instanceType ?? fn.DeclaringType;
                 formalParamIndex++;
             }
 

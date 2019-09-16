@@ -168,6 +168,38 @@ elif sys.version_info < (3, 0):
                 .Which.Should().HaveParameters(is3x ? new[] { "a" } : new[] { "a", "b" });
         }
 
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task BigLittleEndian(bool isLittleEndian) {
+            const string code = @"
+if sys.byteorder == 'little':
+    x = 1
+else:
+    x = 'a'
+";
+            var platform = SubstitutePlatform(out var sm);
+            platform.IsLittleEndian.Returns(x => isLittleEndian);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, sm);
+            analysis.Should().HaveVariable("x").OfType(isLittleEndian ? BuiltinTypeId.Int : BuiltinTypeId.Str);
+        }
+
+        [DataRow(false)]
+        [DataRow(true)]
+        [DataTestMethod, Priority(0)]
+        public async Task BigLittleEndianNotEqual(bool isLittleEndian) {
+            const string code = @"
+if sys.byteorder != 'little':
+    x = 1
+else:
+    x = 'a'
+";
+            var platform = SubstitutePlatform(out var sm);
+            platform.IsLittleEndian.Returns(x => isLittleEndian);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, sm);
+            analysis.Should().HaveVariable("x").OfType(!isLittleEndian ? BuiltinTypeId.Int : BuiltinTypeId.Str);
+        }
+
         private IOSPlatform SubstitutePlatform(out IServiceManager sm) {
             sm = new ServiceManager();
             var platform = Substitute.For<IOSPlatform>();

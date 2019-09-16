@@ -195,7 +195,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             public override bool Walk(ImportStatement import) {
                 var model = new ImportModel {
                     ForceAbsolute = import.ForceAbsolute,
-                    ModuleNames = import.Names.SelectMany(mn => mn.Names).Select(n => n.Name).ToArray()
+                    ModuleNames = import.Names.Select(mn => new DottedNameModel {
+                        NameParts = mn.Names.Select(nex => nex.Name).ToArray()
+                    }).ToArray()
                 };
                 Imports.Add(model);
                 return false;

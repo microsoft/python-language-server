@@ -258,7 +258,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     f.AddReference(GetLocationOfName(expr));
                     return f.ToUnbound();
                 }
-                instance = new PythonInstance(type);
+                instance = type.CreateInstance(ArgumentSet.Empty(expr, this));
             }
 
             instance = instance ?? m as IPythonInstance;

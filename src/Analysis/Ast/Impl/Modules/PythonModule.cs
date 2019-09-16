@@ -22,8 +22,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -132,7 +130,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
 
-        public IMember CreateInstance(string typeName, IArgumentSet args) => this;
+        public IPythonInstance CreateInstance(IArgumentSet args) => new PythonInstance(this);
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
@@ -192,7 +190,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region ILocatedMember
-        public override LocationInfo Definition => new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0);
+        public override LocationInfo Definition => Uri != null ? new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0) : LocationInfo.Empty;
         #endregion
 
         #region IPythonModule

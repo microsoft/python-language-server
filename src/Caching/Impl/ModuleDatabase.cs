@@ -26,13 +26,14 @@ using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private const int _databaseFormatVersion = 1;
+        private const int DatabaseFormatVersion = 1;
 
         private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
         private readonly object _lock = new object();
@@ -48,7 +49,7 @@ namespace Microsoft.Python.Analysis.Caching {
             _fs = services.GetService<IFileSystem>();
 
             var cfs = services.GetService<ICacheFolderService>();
-            _databaseFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{_databaseFormatVersion}");
+            _databaseFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{DatabaseFormatVersion}");
         }
 
         /// <summary>
@@ -91,7 +92,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             lock (_lock) {
                 if (FindModuleModel(module.Name, module.FilePath, out var model)) {
-                    gs =  new RestoredGlobalScope(model, module);
+                    gs = new RestoredGlobalScope(model, module);
                 }
             }
 
@@ -240,20 +241,16 @@ namespace Microsoft.Python.Analysis.Caching {
             => _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel ?? AnalysisCachingLevel.None;
 
         private sealed class DependencyProvider : IDependencyProvider {
-            private readonly HashSet<AnalysisModuleKey> _dependencies;
+            private readonly ISet<AnalysisModuleKey> _dependencies;
 
             public DependencyProvider(IPythonModule module, ModuleModel model) {
                 var dc = new DependencyCollector(module);
-                foreach (var imp in model.Imports) {
-                    dc.AddImport(imp.ModuleNames, imp.ForceAbsolute);
-                }
-                foreach (var fi in model.FromImports) {
-                    dc.AddFromImport(fi.RootNames, fi.MemberNames, fi.DotCount, fi.ForceAbsolute);
-                }
+                dc.AddImports(model.Imports);
+                dc.AddFromImports(model.FromImports);
                 _dependencies = dc.Dependencies;
             }
 
-            public HashSet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
+            public ISet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
         }
     }
 }
