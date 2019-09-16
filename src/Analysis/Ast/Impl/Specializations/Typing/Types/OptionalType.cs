@@ -17,6 +17,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
     internal sealed class OptionalType : PythonTypeWrapper, IPythonUnionType {
@@ -38,7 +39,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public IPythonUnionType Add(IPythonType t) => this;
         public IPythonUnionType Add(IPythonUnionType types) => this;
 
-        public override IMember CreateInstance(string typeName, IArgumentSet args)
-            => InnerType.CreateInstance(typeName, args);
+        public override IPythonInstance CreateInstance(IArgumentSet args)
+            => InnerType.CreateInstance(args);
     }
 }

@@ -130,7 +130,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsAbstract => false;
         public virtual bool IsSpecialized => false;
 
-        public IMember CreateInstance(string typeName, IArgumentSet args) => this;
+        public IPythonInstance CreateInstance(IArgumentSet args) => new PythonInstance(this);
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;

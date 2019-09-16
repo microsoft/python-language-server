@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="typeName">Name of the type. Used in specialization scenarios
         /// where constructor may want to create specialized type.</param>
         /// <param name="args">Any custom arguments required to create the instance.</param>
-        IMember CreateInstance(string typeName = null, IArgumentSet args = null);
+        IPythonInstance CreateInstance(IArgumentSet args);
 
         /// <summary>
         /// Invokes method or property on the specified instance.

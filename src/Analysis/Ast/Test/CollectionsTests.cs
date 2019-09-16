@@ -16,6 +16,7 @@
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -50,6 +51,32 @@ x4 = l1[x0]
                 .And.HaveVariable("x3").WithNoTypes()
                 .And.HaveVariable("x4").OfType(BuiltinTypeId.Str);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task TypingListEnum() {
+            const string code = @"
+from typing import List
+xs: List[str] = ['tmp']
+for x in xs:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Str);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task TypingListInFuncEnum() {
+            const string code = @"
+from typing import List
+def f(xs: List[str]):
+    for x in xs:
+        pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.GlobalScope.Should().OnlyHaveChildScope<Scope>().Which.Should().HaveVariable("x")
+                .OfType(BuiltinTypeId.Str);
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task ListCallCtor() {
@@ -310,11 +337,18 @@ for some_str, some_int, some_bool in x:
     print some_str
     print some_int
     print some_bool
+
+for another_str, another_int, another_bool in [('abc', 42, True), ('abc', 23, False)]:
+    pass
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("some_str").OfType(BuiltinTypeId.Str)
                 .And.HaveVariable("some_int").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("some_bool").OfType(BuiltinTypeId.Bool);
+
+            analysis.Should().HaveVariable("another_str").OfType(BuiltinTypeId.Str)
+                   .And.HaveVariable("another_int").OfType(BuiltinTypeId.Int)
+                   .And.HaveVariable("another_bool").OfType(BuiltinTypeId.Bool);
         }
 
         [TestMethod, Priority(0)]

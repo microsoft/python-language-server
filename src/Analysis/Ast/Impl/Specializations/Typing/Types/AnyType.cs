@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args)
             => DeclaringModule.Interpreter.UnknownType;
-        public IMember CreateInstance(string typeName, IArgumentSet args) => new PythonInstance(this);
+        public IPythonInstance CreateInstance(IArgumentSet args) => new PythonInstance(this);
 
         public IMember GetMember(string name) => null;
         public IEnumerable<string> GetMemberNames() => Array.Empty<string>();

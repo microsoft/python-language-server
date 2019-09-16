@@ -116,7 +116,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             }
 
             var returnType = io?.GetMember(returnTypeName)?.GetPythonType();
-            return returnType != null ? new PythonInstance(returnType) : null;
+            return returnType != null ? returnType.CreateInstance(argSet) : null;
         }
 
         public static IMember GetAttr(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {

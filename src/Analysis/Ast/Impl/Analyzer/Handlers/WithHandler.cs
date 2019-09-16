@@ -39,13 +39,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
 
                 switch (item.Variable) {
+                    // Handle with Test() as a
                     case NameExpression nameExpr when !string.IsNullOrEmpty(nameExpr.Name):
                         Eval.DeclareVariable(nameExpr.Name, context, VariableSource.Declaration, item);
                         break;
-                    case ParenthesisExpression parExpr:
+                    // Handle with Test() as (a)
+                    case ParenthesisExpression parExpr when parExpr.Expression is NameExpression nameExpr && !string.IsNullOrEmpty(nameExpr.Name):
+                        Eval.DeclareVariable(nameExpr.Name, context, VariableSource.Declaration, item);
+                        break;
+                    // Handle with Test() as (a, b) 
+                    // Single element list [a] is a sequence expression so also handled here
                     case SequenceExpression seqExpr:
                         var sequenceHandler = new SequenceExpressionHandler(Walker);
-                        SequenceExpressionHandler.Assign(new[] { item.Variable }, context, Eval);
+                        sequenceHandler.HandleAssignment(seqExpr, context);
                         break;
                 }
             }
