@@ -32,8 +32,11 @@ namespace Microsoft.Python.Analysis {
         public static T Argument<T>(this IArgumentSet args, int index) where T : class
             => args.Arguments[index].Value as T;
 
+        public static IArgument Argument(this IArgumentSet args, string name, bool excludeDefault = true) 
+            => args.Arguments.FirstOrDefault(a => name.Equals(a.Name) && !(excludeDefault &&a.ValueIsDefault));
+
         public static T GetArgumentValue<T>(this IArgumentSet args, string name, bool excludeDefault = true) where T : class {
-            var value = args.Arguments.FirstOrDefault(a => name.Equals(a.Name) && !(excludeDefault && a.ValueIsDefault))?.Value;
+            var value = Argument(args, name, excludeDefault)?.Value;
             if (value == null && args.DictionaryArgument?.Arguments != null && args.DictionaryArgument.Arguments.TryGetValue(name, out var m)) {
                 return m as T;
             }
