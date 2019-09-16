@@ -72,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         private static CompletionItemKind ToCompletionItemKind(PythonMemberType memberType) {
             switch (memberType) {
-                case PythonMemberType.Unknown: return CompletionItemKind.None;
+                case PythonMemberType.Unknown: return CompletionItemKind.Text;
                 case PythonMemberType.Class: return CompletionItemKind.Class;
                 case PythonMemberType.Instance: return CompletionItemKind.Value;
                 case PythonMemberType.Function: return CompletionItemKind.Function;
@@ -83,7 +83,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 case PythonMemberType.Variable: return CompletionItemKind.Variable;
                 case PythonMemberType.Generic: return CompletionItemKind.TypeParameter;
             }
-            return CompletionItemKind.None;
+            return CompletionItemKind.Text;
         }
     }
 }

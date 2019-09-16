@@ -73,7 +73,7 @@ class Response: # truncated
             timedelta.IsUnknown().Should().BeFalse();
 
             c.Should().HaveMember<IPythonInstance>("elapsed")
-                .Which.Should().HaveSameMembersAs(timedelta);
+                .Which.Should().HaveSameMemberNamesAs(timedelta);
         }
 
         [TestMethod, Priority(0)]

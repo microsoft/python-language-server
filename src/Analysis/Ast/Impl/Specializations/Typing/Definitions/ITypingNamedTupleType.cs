@@ -20,7 +20,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing {
     /// Represents typing.NamedTuple.
     /// </summary>
     public interface ITypingNamedTupleType : ITypingTupleType {
-        string TupleName { get; }
         IReadOnlyList<string> ItemNames { get; }
     }
 }

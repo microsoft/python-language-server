@@ -13,15 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Python.Analysis;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionCompletion {

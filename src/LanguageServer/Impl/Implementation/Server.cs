@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
@@ -139,15 +140,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             Version.TryParse(initializationOptions?.interpreter.properties?.Version, out var version);
 
-            var configuration = new InterpreterConfiguration(null, null,
+            var configuration = new InterpreterConfiguration(
                 interpreterPath: initializationOptions?.interpreter.properties?.InterpreterPath,
                 version: version
             );
+            _services.AddService(new ModuleDatabase(_services));
 
             var typeshedPath = initializationOptions?.typeStubSearchPaths.FirstOrDefault();
             userConfiguredPaths = userConfiguredPaths ?? initializationOptions?.searchPaths;
             _interpreter = await PythonInterpreter.CreateAsync(configuration, Root, _services, typeshedPath, userConfiguredPaths.ToImmutableArray(), cancellationToken);
-            _services.AddService(_interpreter);
 
             _log?.Log(TraceEventType.Information,
                 string.IsNullOrEmpty(_interpreter.Configuration.InterpreterPath)

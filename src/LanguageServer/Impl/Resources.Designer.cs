@@ -61,6 +61,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Analysis caching mode: {0}..
+        /// </summary>
+        internal static string AnalysisCacheLevel {
+            get {
+                return ResourceManager.GetString("AnalysisCacheLevel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Code analysis is in progress....
         /// </summary>
         internal static string AnalysisIsInProgressHover {
@@ -129,6 +138,15 @@ namespace Microsoft.Python.LanguageServer {
         internal static string LineFormatter_UnmatchedToken {
             get {
                 return ResourceManager.GetString("LineFormatter_UnmatchedToken", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Python interpreter version not specified. Assuming latests 3.x..
+        /// </summary>
+        internal static string PythonInterpreterVersionNotSpecified {
+            get {
+                return ResourceManager.GetString("PythonInterpreterVersionNotSpecified", resourceCulture);
             }
         }
         

@@ -22,8 +22,8 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
-    [DebuggerDisplay("{Name}")]
-    internal class PythonType : LocatedMember, IPythonType {//, IEquatable<IPythonType> {
+    [DebuggerDisplay("{" + nameof(Name) + "}")]
+    internal class PythonType : LocatedMember, IPythonType {
         private readonly object _lock = new object();
         private Dictionary<string, IMember> _members;
         private BuiltinTypeId _typeId;
@@ -58,6 +58,11 @@ namespace Microsoft.Python.Analysis.Types {
         #endregion
 
         #region IPythonType
+
+        public virtual string QualifiedName
+            => DeclaringModule.ModuleType == ModuleType.Builtins
+                       ? TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : Name
+                       : this.GetQualifiedName();
 
         public virtual string Name => TypeId == BuiltinTypeId.Ellipsis ? "..." : BaseName;
         public virtual string Documentation { get; private set; }
@@ -154,16 +159,14 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        internal void MakeReadOnly() => _readonly = true;
+        internal void MakeReadOnly() {
+            lock (_lock) {
+                _readonly = true;
+            }
+        }
 
         internal bool IsHidden => ContainsMember("__hidden__");
         protected bool ContainsMember(string name) => Members.ContainsKey(name);
         protected IPythonType UnknownType => DeclaringModule.Interpreter.UnknownType;
-
-        //public bool Equals(IPythonType other) => PythonTypeComparer.Instance.Equals(this, other);
-
-        //public override bool Equals(object obj)
-        //    => obj is IPythonType pt && PythonTypeComparer.Instance.Equals(this, pt);
-        //public override int GetHashCode() => 0;
     }
 }

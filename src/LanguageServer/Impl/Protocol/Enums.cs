@@ -146,7 +146,9 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     }
 
     public enum CompletionItemKind {
-        None = 0,
+        // Do not return 0 or anything not in this list.
+        // See https://microsoft.github.io/language-server-protocol/specification
+        // VS Code converts values outside of the LSP range into Text.
         Text = 1,
         Method = 2,
         Function = 3,

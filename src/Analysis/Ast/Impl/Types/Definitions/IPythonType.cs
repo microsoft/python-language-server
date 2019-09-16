@@ -26,6 +26,11 @@ namespace Microsoft.Python.Analysis.Types {
         string Name { get; }
 
         /// <summary>
+        /// Fully qualified type name. Used for analysis persistence.
+        /// </summary>
+        string QualifiedName { get; }
+
+        /// <summary>
         /// Indicates built-in type id such as 'int' or 'str'
         /// or 'type' for user-defined entities.
         /// </summary>

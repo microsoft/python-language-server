@@ -13,21 +13,25 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis {
     public static class PythonWalkerExtensions {
-        public static bool WalkIfWithSystemConditions(this IfStatement node, PythonWalker walker, PythonLanguageVersion languageVersion, bool isWindows) {
+        public static bool WalkIfWithSystemConditions(this IfStatement node, PythonWalker walker, PythonLanguageVersion languageVersion, IOSPlatform platform) {
             // System version, platform and os.path specializations
             var executeElse = false;
             foreach (var test in node.Tests) {
 
                 var result = test.TryHandleSysVersionInfo(languageVersion);
                 if (result == ConditionTestResult.Unrecognized) {
-                    result = test.TryHandleSysPlatform(isWindows);
+                    result = test.TryHandleSysPlatform(platform.IsWindows);
                     if (result == ConditionTestResult.Unrecognized) {
-                        result = test.TryHandleOsPath(isWindows);
+                        result = test.TryHandleOsPath(platform.IsWindows);
+                        if (result == ConditionTestResult.Unrecognized) {
+                            result = test.TryHandleBigLittleEndian(platform.IsLittleEndian);
+                        }
                     }
                 }
 

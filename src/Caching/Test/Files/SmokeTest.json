@@ -1,0 +1,321 @@
+{
+  "UniqueId": "module",
+  "Documentation": "",
+  "Functions": [
+    {
+      "Overloads": [
+        {
+          "Parameters": [],
+          "ReturnType": "i:float"
+        }
+      ],
+      "Documentation": null,
+      "Attributes": 0,
+      "Classes": [],
+      "Functions": [],
+      "Id": 24395611,
+      "Name": "func",
+      "QualifiedName": "module:func",
+      "IndexSpan": {
+        "Start": 207,
+        "Length": 4
+      }
+    }
+  ],
+  "Variables": [
+    {
+      "Value": "t:bool",
+      "Id": -529376420,
+      "Name": "__debug__",
+      "QualifiedName": "__debug__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": -1636005055,
+      "Name": "__doc__",
+      "QualifiedName": "__doc__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 875442003,
+      "Name": "__file__",
+      "QualifiedName": "__file__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 1097116834,
+      "Name": "__name__",
+      "QualifiedName": "__name__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:str",
+      "Id": 75395663,
+      "Name": "__package__",
+      "QualifiedName": "__package__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:list",
+      "Id": 1154586556,
+      "Name": "__path__",
+      "QualifiedName": "__path__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:dict",
+      "Id": 817929997,
+      "Name": "__dict__",
+      "QualifiedName": "__dict__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "t:object",
+      "Id": 1253875154,
+      "Name": "__spec__",
+      "QualifiedName": "__spec__",
+      "IndexSpan": {
+        "Start": 0,
+        "Length": 0
+      }
+    },
+    {
+      "Value": "i:str",
+      "Id": 833,
+      "Name": "x",
+      "QualifiedName": "x",
+      "IndexSpan": {
+        "Start": 2,
+        "Length": 1
+      }
+    },
+    {
+      "Value": "i:module:C",
+      "Id": 812,
+      "Name": "c",
+      "QualifiedName": "c",
+      "IndexSpan": {
+        "Start": 234,
+        "Length": 1
+      }
+    }
+  ],
+  "Classes": [
+    {
+      "Documentation": null,
+      "Bases": [
+        "t:object"
+      ],
+      "NamedTupleBases": [],
+      "Methods": [
+        {
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:module:C",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": null
+            }
+          ],
+          "Documentation": null,
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 965872103,
+          "Name": "__init__",
+          "QualifiedName": "module:C.__init__",
+          "IndexSpan": {
+            "Start": 45,
+            "Length": 8
+          }
+        },
+        {
+          "Overloads": [
+            {
+              "Parameters": [
+                {
+                  "Name": "self",
+                  "Type": "t:module:C",
+                  "DefaultValue": null,
+                  "Kind": 0
+                }
+              ],
+              "ReturnType": "i:float"
+            }
+          ],
+          "Documentation": null,
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": -2139806792,
+          "Name": "method",
+          "QualifiedName": "module:C.method",
+          "IndexSpan": {
+            "Start": 100,
+            "Length": 6
+          }
+        }
+      ],
+      "Properties": [
+        {
+          "ReturnType": "i:int",
+          "Documentation": null,
+          "Attributes": 0,
+          "Classes": [],
+          "Functions": [],
+          "Id": 24690682,
+          "Name": "prop",
+          "QualifiedName": "module:C.prop",
+          "IndexSpan": {
+            "Start": 163,
+            "Length": 4
+          }
+        }
+      ],
+      "Fields": [
+        {
+          "Value": "i:int",
+          "Id": 833,
+          "Name": "x",
+          "QualifiedName": "x",
+          "IndexSpan": null
+        },
+        {
+          "Value": "i:int",
+          "Id": 834,
+          "Name": "y",
+          "QualifiedName": "y",
+          "IndexSpan": null
+        }
+      ],
+      "Classes": [],
+      "GenericBaseParameters": [],
+      "GenericParameterValues": [],
+      "Id": 780,
+      "Name": "C",
+      "QualifiedName": "module:C",
+      "IndexSpan": {
+        "Start": 21,
+        "Length": 1
+      }
+    }
+  ],
+  "TypeVars": [],
+  "NamedTuples": [],
+  "NewLines": [
+    {
+      "EndIndex": 2,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 13,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 15,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 25,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 37,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 62,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 82,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 92,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 115,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 138,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 140,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 155,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 183,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 201,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 203,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 216,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 232,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 234,
+      "Kind": 3
+    },
+    {
+      "EndIndex": 243,
+      "Kind": 3
+    }
+  ],
+  "FileSize": 243,
+  "Imports": [],
+  "FromImports": [],
+  "StubImports": [],
+  "StubFromImports": [],
+  "Id": -2131035837,
+  "Name": "module",
+  "QualifiedName": "module",
+  "IndexSpan": null
+}

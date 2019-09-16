@@ -68,11 +68,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (!string.IsNullOrEmpty(memberName)) {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
-                    var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-                    var exported = variable ?? variableModule.GetMember(memberName);
-                    var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-                    // Do not allow imported variables to override local declarations
-                    Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
+                    if (!string.IsNullOrEmpty(variableName)) {
+                        var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
+                        var exported = variable ?? variableModule.GetMember(memberName);
+                        var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+                        // Do not allow imported variables to override local declarations
+                        Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
+                    }
                 }
             }
         }
@@ -84,7 +86,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
-            var memberNames = isImplicitPackage 
+            var memberNames = isImplicitPackage
                 ? variableModule.GetMemberNames()
                 : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
@@ -109,7 +111,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private bool CanOverwriteVariable(string name, int importPosition) {
             var v = Eval.CurrentScope.Variables[name];
-            if(v == null) {
+            if (v == null) {
                 return true; // Variable does not exist
             }
             // Allow overwrite if import is below the variable. Consider
@@ -118,10 +120,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             //   from A import * # brings another x
             //   x = 3
             var references = v.References.Where(r => r.DocumentUri == Module.Uri).ToArray();
-            if(references.Length == 0) {
+            if (references.Length == 0) {
                 // No references to the variable in this file - the variable 
                 // is imported from another module. OK to overwrite.
-                return true; 
+                return true;
             }
             var firstAssignmentPosition = references.Min(r => r.Span.ToIndexSpan(Ast).Start);
             return firstAssignmentPosition < importPosition;
@@ -151,7 +153,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var printNameExpression = node.Names.FirstOrDefault(n => n?.Name == "print_function");
             if (printNameExpression != null) {
                 var fn = new PythonFunctionType("print", new Location(Module), null, string.Empty);
-                var o = new PythonFunctionOverload(fn.Name, new Location(Module));
+                var o = new PythonFunctionOverload(fn, new Location(Module));
                 var parameters = new List<ParameterInfo> {
                     new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
                     new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),

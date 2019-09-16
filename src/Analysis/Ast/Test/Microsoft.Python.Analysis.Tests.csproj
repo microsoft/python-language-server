@@ -42,6 +42,9 @@
     <ProjectReference Include="..\..\Core\Impl\Microsoft.Python.Analysis.Core.csproj" />
     <ProjectReference Include="..\Impl\Microsoft.Python.Analysis.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <Import Project="..\..\..\..\build\NetStandard.targets" />
 </Project>

@@ -53,7 +53,6 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="args">Call arguments or type arguments.</param>
         /// <param name="self">Invoking class instance. In case of generics it is instance of the specific type
         /// as opposed to declaring type which is the generic template class.</param>
-        /// <param name="callLocation">Call expression location, if any.</param>
         IMember Call(IArgumentSet args, IPythonType self);
 
         /// <summary>

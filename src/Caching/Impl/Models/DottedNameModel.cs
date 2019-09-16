@@ -15,16 +15,9 @@
 
 using System;
 
-namespace Microsoft.Python.Analysis.Types {
-    public interface IPythonFile {
-        /// <summary>
-        /// File path to the module.
-        /// </summary>
-        string FilePath { get; }
-
-        /// <summary>
-        /// Module URI.
-        /// </summary>
-        Uri Uri { get; }
+namespace Microsoft.Python.Analysis.Caching.Models {
+    [Serializable]
+    internal sealed class DottedNameModel {
+        public string[] NameParts { get; set; }
     }
 }

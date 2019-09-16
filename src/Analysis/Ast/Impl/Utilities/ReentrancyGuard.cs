@@ -19,7 +19,7 @@ using System.Threading;
 using Microsoft.Python.Core.Disposables;
 
 namespace Microsoft.Python.Analysis.Utilities {
-    public sealed class ReentrancyGuard<T> {
+    internal sealed class ReentrancyGuard<T> {
         private readonly AsyncLocal<Stack<T>> _stack = new AsyncLocal<Stack<T>>();
 
         public IDisposable Push(T t, out bool reentered) {
@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Utilities {
 
         public void Pop() {
             _stack.Value.Pop();
-            if(_stack.Value.Count == 0) {
+            if (_stack.Value.Count == 0) {
                 _stack.Value = null;
             }
         }

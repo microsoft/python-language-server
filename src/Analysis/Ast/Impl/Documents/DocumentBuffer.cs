@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     // Every change may change where the lines end so in order 
                     // to correctly determine line/offsets we must re-split buffer
                     // into lines after each change.
-                    var lineLoc = GetNewLineLications().ToArray();
+                    var lineLoc = GetNewLineLocations().ToArray();
 
                     if (change.ReplaceAllText) {
                         _sb = new StringBuilder(change.InsertedText);
@@ -72,32 +72,35 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public IEnumerable<NewLineLocation> GetNewLineLications() {
-            _sb = _sb ?? new StringBuilder(_content); // for tests
+        public IEnumerable<NewLineLocation> GetNewLineLocations() {
+            lock (_lock) {
+                _sb = _sb ?? new StringBuilder(_content); // for tests
 
-            if (_sb.Length == 0) {
-                yield return new NewLineLocation(0, NewLineKind.None);
-            }
+                if (_sb.Length == 0) {
+                    yield return new NewLineLocation(0, NewLineKind.None);
+                }
 
-            for (var i = 0; i < _sb.Length; i++) {
-                var ch = _sb[i];
-                var nextCh = i < _sb.Length - 1 ? _sb[i + 1] : '\0';
-                switch (ch) {
-                    case '\r' when nextCh == '\n':
-                        i++;
-                        yield return new NewLineLocation(i + 1, NewLineKind.CarriageReturnLineFeed);
-                        break;
-                    case '\n':
-                        yield return new NewLineLocation(i + 1, NewLineKind.LineFeed);
-                        break;
-                    case '\r':
-                        yield return new NewLineLocation(i + 1, NewLineKind.CarriageReturn);
-                        break;
-                    default:
-                        if (i == _sb.Length - 1) {
-                            yield return new NewLineLocation(i + 1, NewLineKind.None);
-                        }
-                        break;
+                for (var i = 0; i < _sb.Length; i++) {
+                    var ch = _sb[i];
+                    var nextCh = i < _sb.Length - 1 ? _sb[i + 1] : '\0';
+                    switch (ch) {
+                        case '\r' when nextCh == '\n':
+                            i++;
+                            yield return new NewLineLocation(i + 1, NewLineKind.CarriageReturnLineFeed);
+                            break;
+                        case '\n':
+                            yield return new NewLineLocation(i + 1, NewLineKind.LineFeed);
+                            break;
+                        case '\r':
+                            yield return new NewLineLocation(i + 1, NewLineKind.CarriageReturn);
+                            break;
+                        default:
+                            if (i == _sb.Length - 1) {
+                                yield return new NewLineLocation(i + 1, NewLineKind.None);
+                            }
+
+                            break;
+                    }
                 }
             }
         }

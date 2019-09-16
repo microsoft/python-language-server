@@ -13,17 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Analysis.Types;
-
-namespace Microsoft.Python.Analysis.Specializations.Typing {
+namespace Microsoft.Python.Analysis.Caching.Models {
     /// <summary>
-    /// Represents Generic[T1, T2, ...]. Used as a base class to generic classes.
+    /// Model for actual values assigned to generic parameters.
+    /// I.e. if class is based on Generic[T], what is assigned to T.
     /// </summary>
-    public interface IGenericClassParameter: IPythonType {
+    internal sealed class GenericParameterValueModel {
         /// <summary>
-        /// List of T1, T2, ... generic type parameters
+        /// Generic parameter name as defined by TypeVar, such as T.
         /// </summary>
-        IReadOnlyList<IGenericTypeParameter> TypeParameters { get; }
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Qualified name of the type assigned to T.
+        /// </summary>
+        public string Type { get; set; }
     }
 }

@@ -234,7 +234,7 @@ line4
         public void NewLines(string s, NewLineLocation[] expected) {
             var doc = new DocumentBuffer();
             doc.Reset(0, s);
-            var nls = doc.GetNewLineLications().ToArray();
+            var nls = doc.GetNewLineLocations().ToArray();
             for (var i = 0; i < nls.Length; i++) {
                 Assert.AreEqual(nls[i].Kind, expected[i].Kind);
                 Assert.AreEqual(nls[i].EndIndex, expected[i].EndIndex);
