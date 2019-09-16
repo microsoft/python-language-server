@@ -416,6 +416,72 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void FStringEquals() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("FStringEquals.py", errors, version),
+                    CheckSuite(
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("name")
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("name")
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("name")
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckCallExpression(CheckMemberExpr(CheckNameExpr("foo"), "bar"))
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckFString(
+                                CheckFormattedValue(
+                                    CheckNameExpr("user"),
+                                    's'
+                                ),
+                                CheckNodeConstant("  "),
+                                CheckFormattedValue(
+                                    CheckMemberExpr(CheckNameExpr("delta"), "days"),
+                                    formatSpecifier: CheckFormatSpecifer(
+                                        CheckNodeConstant(",d")
+                                   )
+                                )
+                            )
+                        )
+                    )
+                );
+
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void FStringEqualsErrors() {
+            ParseErrors("FStringEqualsErrors.py",
+                PythonLanguageVersion.V38,
+                new ErrorResult("f-string: expecting '}' but found 'f'", new SourceSpan(1, 9, 1, 10)),
+                new ErrorResult("f-string: expecting '}' but found 'a'", new SourceSpan(2, 10, 2, 11))
+            );
+        }
+
+        [TestMethod, Priority(0)]
         public void GeneralizedUnpacking() {
             foreach (var version in V35AndUp) {
                 CheckAst(
@@ -3654,7 +3720,7 @@ pass
         #endregion
 
         #region Checker Factories / Helpers
-        
+
         private void ParseErrors(string filename, PythonLanguageVersion version, params ErrorResult[] errors) {
             ParseErrors(filename, version, Severity.Hint, errors);
         }

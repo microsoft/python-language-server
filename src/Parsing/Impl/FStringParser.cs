@@ -15,7 +15,6 @@ namespace Microsoft.Python.Parsing {
         private readonly ErrorSink _errors;
         private readonly ParserOptions _options;
         private readonly PythonLanguageVersion _langVersion;
-        private readonly bool _verbatim;
         private readonly SourceLocation _start;
 
         // Nonparametric initialization
@@ -27,12 +26,14 @@ namespace Microsoft.Python.Parsing {
         private int _currentLineNumber;
         private int _currentColNumber;
         private bool _hasErrors = false;
+        private bool _incomplete = false;
 
         // Static fields
-        private static readonly StringSpan DoubleOpen = new StringSpan("{{", 0, 2);
-        private static readonly StringSpan DoubleClose = new StringSpan("}}", 0, 2);
-        private static readonly StringSpan NotEqualStringSpan = new StringSpan("!=", 0, 2);
-        private static readonly StringSpan BackslashN = new StringSpan("\\N", 0, 2);
+        private static readonly StringSpan DoubleOpen = new StringSpan("{{");
+        private static readonly StringSpan DoubleClose = new StringSpan("}}");
+        private static readonly StringSpan NotEqual = new StringSpan("!=");
+        private static readonly StringSpan EqualEqual = new StringSpan("==");
+        private static readonly StringSpan BackslashN = new StringSpan("\\N");
 
         internal FStringParser(List<Node> fStringChildren, string fString, bool isRaw,
             ParserOptions options, PythonLanguageVersion langVersion) {
@@ -43,15 +44,14 @@ namespace Microsoft.Python.Parsing {
             _errors = options.ErrorSink ?? ErrorSink.Null;
             _options = options;
             _langVersion = langVersion;
-            _verbatim = options.Verbatim;
             _start = options.InitialSourceLocation ?? SourceLocation.MinValue;
             _currentLineNumber = _start.Line;
             _currentColNumber = _start.Column;
         }
 
         public void Parse() {
-            var bufferStartLoc = CurrentLocation();
-            while (!EndOfFString()) {
+            var bufferStartLoc = CurrentLocation;
+            while (!EndOfFString) {
                 if (IsNext(DoubleOpen)) {
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
@@ -61,10 +61,10 @@ namespace Microsoft.Python.Parsing {
                 } else if (!_isRaw && IsNext(BackslashN)) {
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
-                    if (CurrentChar() == '{') {
+                    if (CurrentChar == '{') {
                         Read('{');
                         _buffer.Append('{');
-                        while (!EndOfFString() && CurrentChar() != '}') {
+                        while (!EndOfFString && CurrentChar != '}') {
                             _buffer.Append(NextChar());
                         }
                         if (Read('}')) {
@@ -73,12 +73,14 @@ namespace Microsoft.Python.Parsing {
                     } else {
                         _buffer.Append(NextChar());
                     }
-                } else if (CurrentChar() == '{') {
+                } else if (CurrentChar == '{') {
                     AddBufferedSubstring(bufferStartLoc);
                     ParseInnerExpression();
-                    bufferStartLoc = CurrentLocation();
-                } else if (CurrentChar() == '}') {
-                    ReportSyntaxError(Resources.SingleClosedBraceFStringErrorMsg);
+                    bufferStartLoc = CurrentLocation;
+                } else if (CurrentChar == '}') {
+                    if (!_incomplete) {
+                        ReportSyntaxError(Resources.SingleClosedBraceFStringErrorMsg);
+                    }
                     _buffer.Append(NextChar());
                 } else {
                     _buffer.Append(NextChar());
@@ -98,16 +100,18 @@ namespace Microsoft.Python.Parsing {
         private Node ParseFStringExpression() {
             Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
 
-            var startOfFormattedValue = CurrentLocation().Index;
+            var startOfFormattedValue = CurrentLocation.Index;
             Read('{');
             var initialPosition = _position;
-            SourceLocation initialSourceLocation = CurrentLocation();
+            SourceLocation initialSourceLocation = CurrentLocation;
+
+            _incomplete = false;
 
             BufferInnerExpression();
             Expression fStringExpression = null;
             FormattedValue formattedValue;
 
-            if (EndOfFString()) {
+            if (EndOfFString) {
                 if (_nestedParens.Count > 0) {
                     ReportSyntaxError(Resources.UnmatchedFStringErrorMsg.FormatInvariant(_nestedParens.Peek()));
                     _nestedParens.Clear();
@@ -121,7 +125,7 @@ namespace Microsoft.Python.Parsing {
                     fStringExpression = Error(initialPosition);
                 }
                 formattedValue = new FormattedValue(fStringExpression, null, null);
-                formattedValue.SetLoc(new IndexSpan(startOfFormattedValue, CurrentLocation().Index - startOfFormattedValue));
+                formattedValue.SetLoc(new IndexSpan(startOfFormattedValue, CurrentLocation.Index - startOfFormattedValue));
                 return formattedValue;
             }
             if (!_hasErrors) {
@@ -132,31 +136,47 @@ namespace Microsoft.Python.Parsing {
                 _buffer.Clear();
             }
 
-            Debug.Assert(CurrentChar() == '}' || CurrentChar() == '!' || CurrentChar() == ':');
+            Debug.Assert(CurrentChar == '}' || CurrentChar == '!' || CurrentChar == ':' || (_langVersion >= PythonLanguageVersion.V38 && CurrentChar == '='));
 
+            MaybeReadEqualSpecifier();
             var conversion = MaybeReadConversionChar();
             var formatSpecifier = MaybeReadFormatSpecifier();
-            Read('}');
+
+            _incomplete = !Read('}');
 
             if (fStringExpression == null) {
                 return Error(initialPosition);
             }
             formattedValue = new FormattedValue(fStringExpression, conversion, formatSpecifier);
-            formattedValue.SetLoc(new IndexSpan(startOfFormattedValue, CurrentLocation().Index - startOfFormattedValue));
+            formattedValue.SetLoc(new IndexSpan(startOfFormattedValue, CurrentLocation.Index - startOfFormattedValue));
 
             Debug.Assert(_buffer.Length == 0, "Current buffer is not empty");
             return formattedValue;
         }
 
-        private SourceLocation CurrentLocation() {
-            return new SourceLocation(StartIndex() + _position, _currentLineNumber, _currentColNumber);
+        private SourceLocation CurrentLocation => new SourceLocation(StartIndex + _position, _currentLineNumber, _currentColNumber);
+
+        private void MaybeReadEqualSpecifier() {
+            if (_langVersion < PythonLanguageVersion.V38) {
+                return;
+            }
+
+            if (EndOfFString || CurrentChar != '=') {
+                return;
+            }
+
+            NextChar();
+
+            while (!EndOfFString && IsAsciiWhiteSpace) {
+                NextChar();
+            }
         }
 
         private Expression MaybeReadFormatSpecifier() {
             Debug.Assert(_buffer.Length == 0);
 
             Expression formatSpecifier = null;
-            if (!EndOfFString() && CurrentChar() == ':') {
+            if (!EndOfFString && CurrentChar == ':') {
                 Read(':');
                 var position = _position;
                 /* Ideally we would just call the FStringParser here. But we are relying on 
@@ -165,10 +185,10 @@ namespace Microsoft.Python.Parsing {
                 BufferFormatSpecifier();
 
                 // If we got to the end, there will be an error when we try to read '}'
-                if (!EndOfFString()) {
+                if (!EndOfFString) {
                     var options = _options.Clone();
                     options.InitialSourceLocation = new SourceLocation(
-                        StartIndex() + position,
+                        StartIndex + position,
                         _currentLineNumber,
                         _currentColNumber
                     );
@@ -177,7 +197,7 @@ namespace Microsoft.Python.Parsing {
                     var formatSpecifierChildren = new List<Node>();
                     new FStringParser(formatSpecifierChildren, formatStr, _isRaw, options, _langVersion).Parse();
                     formatSpecifier = new FormatSpecifier(formatSpecifierChildren.ToArray(), formatStr);
-                    formatSpecifier.SetLoc(new IndexSpan(StartIndex() + position, formatStr.Length));
+                    formatSpecifier.SetLoc(new IndexSpan(StartIndex + position, formatStr.Length));
                 }
             }
 
@@ -185,13 +205,12 @@ namespace Microsoft.Python.Parsing {
         }
 
         private char? MaybeReadConversionChar() {
-            char? conversion = null;
-            if (!EndOfFString() && CurrentChar() == '!') {
+            if (!EndOfFString && CurrentChar == '!') {
                 Read('!');
-                if (EndOfFString()) {
+                if (EndOfFString) {
                     return null;
                 }
-                conversion = CurrentChar();
+                char? conversion = CurrentChar;
                 if (conversion == 's' || conversion == 'r' || conversion == 'a') {
                     NextChar();
                     return conversion;
@@ -211,15 +230,19 @@ namespace Microsoft.Python.Parsing {
             char? quoteChar = null;
             int stringType = 0;
 
-            while (!EndOfFString()) {
-                var ch = CurrentChar();
-                if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}' || ch == '!' || ch == ':')) {
-                    // check that it's not a != comparison
-                    if (ch != '!' || !IsNext(NotEqualStringSpan)) {
-                        break;
+            while (!EndOfFString) {
+                var ch = CurrentChar;
+                if (!quoteChar.HasValue && _nestedParens.Count == 0) {
+                    switch (ch) {
+                        case '!' when !IsNext(NotEqual):
+                        case '=' when !IsNext(EqualEqual) && _langVersion >= PythonLanguageVersion.V38:
+                        case '}':
+                        case ':':
+                            return;
                     }
                 }
-                if (HasBackslash(ch)) {
+
+                if (ch == '\\') {
                     ReportSyntaxError(Resources.BackslashFStringExpressionErrorMsg);
                     _buffer.Append(NextChar());
                     continue;
@@ -237,13 +260,13 @@ namespace Microsoft.Python.Parsing {
             Debug.Assert(_nestedParens.Count == 0);
 
             char? quoteChar = null;
-            int stringType = 0;
+            var stringType = 0;
 
-            while (!EndOfFString()) {
-                var ch = CurrentChar();
+            while (!EndOfFString) {
+                var ch = CurrentChar;
                 if (!quoteChar.HasValue && _nestedParens.Count == 0 && (ch == '}')) {
                     // check that it's not a != comparison
-                    if (ch != '!' || !IsNext(NotEqualStringSpan)) {
+                    if (ch != '!' || !IsNext(NotEqual)) {
                         break;
                     }
                 }
@@ -259,11 +282,11 @@ namespace Microsoft.Python.Parsing {
         private void HandleFormatSpecOutsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(!quoteChar.HasValue);
 
-            var ch = CurrentChar();
+            var ch = CurrentChar;
             if (ch == '\'' || ch == '"') {
                 /* Is this a triple quoted string? */
                 quoteChar = ch;
-                if (IsNext(new StringSpan($"{ch}{ch}{ch}", 0, 3))) {
+                if (IsNext(new StringSpan(new string(ch, 3)))) {
                     stringType = 3;
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
@@ -275,7 +298,7 @@ namespace Microsoft.Python.Parsing {
                 }
                 /* Start looking for the end of the string. */
             } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count > 0) {
-                char opening = _nestedParens.Pop();
+                var opening = _nestedParens.Pop();
                 if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
@@ -291,11 +314,11 @@ namespace Microsoft.Python.Parsing {
         private void HandleInnerExprOutsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(!quoteChar.HasValue);
 
-            var ch = CurrentChar();
+            var ch = CurrentChar;
             if (ch == '\'' || ch == '"') {
                 /* Is this a triple quoted string? */
                 quoteChar = ch;
-                if (IsNext(new StringSpan($"{ch}{ch}{ch}", 0, 3))) {
+                if (IsNext(new StringSpan(new string(ch, 3)))) {
                     stringType = 3;
                     _buffer.Append(NextChar());
                     _buffer.Append(NextChar());
@@ -309,7 +332,7 @@ namespace Microsoft.Python.Parsing {
             } else if (ch == '#') {
                 ReportSyntaxError(Resources.NumberSignFStringExpressionErrorMsg);
             } else if ((ch == ')' || ch == '}' || ch == ']') && _nestedParens.Count > 0) {
-                char opening = _nestedParens.Pop();
+                var opening = _nestedParens.Pop();
                 if (!IsOpeningOf(opening, ch)) {
                     ReportSyntaxError(Resources.ClosingParensNotMatchFStringErrorMsg.FormatInvariant(ch, opening));
                 }
@@ -322,7 +345,7 @@ namespace Microsoft.Python.Parsing {
             _buffer.Append(NextChar());
         }
 
-        private bool IsOpeningOf(char opening, char ch) {
+        private static bool IsOpeningOf(char opening, char ch) {
             switch (opening) {
                 case '(' when ch == ')':
                 case '{' when ch == '}':
@@ -336,13 +359,13 @@ namespace Microsoft.Python.Parsing {
         private void HandleInsideString(ref char? quoteChar, ref int stringType) {
             Debug.Assert(quoteChar.HasValue);
 
-            var ch = CurrentChar();
+            var ch = CurrentChar;
             /* We're inside a string. See if we're at the end. */
             if (ch == quoteChar.Value) {
                 /* Does this match the string_type (single or triple
                    quoted)? */
                 if (stringType == 3) {
-                    if (IsNext(new StringSpan($"{ch}{ch}{ch}", 0, 3))) {
+                    if (IsNext(new StringSpan(new string(ch, 3)))) {
                         /* We're at the end of a triple quoted string. */
                         _buffer.Append(NextChar());
                         _buffer.Append(NextChar());
@@ -380,18 +403,18 @@ namespace Microsoft.Python.Parsing {
         }
 
         private bool Read(char nextChar) {
-            if (EndOfFString()) {
+            if (EndOfFString) {
                 ReportSyntaxError(Resources.ExpectingCharFStringErrorMsg.FormatInvariant(nextChar));
                 return false;
             }
-            char ch = CurrentChar();
-            NextChar();
 
-            if (ch != nextChar) {
-                ReportSyntaxError(Resources.ExpectingCharButFoundFStringErrorMsg.FormatInvariant(nextChar, ch));
-                return false;
+            var expected = CurrentChar == nextChar;
+            if (!expected) {
+                ReportSyntaxError(Resources.ExpectingCharButFoundFStringErrorMsg.FormatInvariant(nextChar, CurrentChar));
             }
-            return true;
+
+            NextChar();
+            return expected;
         }
 
         private void AddBufferedSubstring(SourceLocation bufferStartLoc) {
@@ -400,12 +423,12 @@ namespace Microsoft.Python.Parsing {
             }
             var s = _buffer.ToString();
             _buffer.Clear();
-            string contents = "";
+            var contents = "";
             try {
                 contents = LiteralParser.ParseString(s.ToCharArray(),
                 0, s.Length, _isRaw, isUni: true, normalizeLineEndings: true, allowTrailingBackslash: true);
             } catch (DecoderFallbackException e) {
-                var span = new SourceSpan(bufferStartLoc, CurrentLocation());
+                var span = new SourceSpan(bufferStartLoc, CurrentLocation);
                 _errors.Add(e.Message, span, ErrorCodes.SyntaxError, Severity.Error);
             } finally {
                 var expr = new ConstantExpression(contents);
@@ -415,7 +438,7 @@ namespace Microsoft.Python.Parsing {
         }
 
         private char NextChar() {
-            var prev = CurrentChar();
+            var prev = CurrentChar;
             _position++;
             _currentColNumber++;
             if (IsLineEnding(prev)) {
@@ -425,28 +448,41 @@ namespace Microsoft.Python.Parsing {
             return prev;
         }
 
-        private int StartIndex() => _start.Index;
+        private int StartIndex => _start.Index;
 
-        private bool IsLineEnding(char prev) => prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n", 0, 1)));
+        private bool IsLineEnding(char prev) => prev == '\n' || (prev == '\\' && IsNext(new StringSpan("n")));
 
-        private bool HasBackslash(char ch) => ch == '\\';
+        private char CurrentChar => _fString[_position];
 
-        private char CurrentChar() => _fString[_position];
-
-        private bool EndOfFString() => _position >= _fString.Length;
+        private bool EndOfFString => _position >= _fString.Length;
 
         private void ReportSyntaxError(string message) {
             _hasErrors = true;
             var span = new SourceSpan(new SourceLocation(_start.Index + _position, _currentLineNumber, _currentColNumber),
-            new SourceLocation(StartIndex() + _position + 1, _currentLineNumber, _currentColNumber + 1));
+            new SourceLocation(StartIndex + _position + 1, _currentLineNumber, _currentColNumber + 1));
             _errors.Add(message, span, ErrorCodes.SyntaxError, Severity.Error);
         }
 
         private ErrorExpression Error(int startPos, string verbatimImage = null, Expression preceding = null) {
             verbatimImage = verbatimImage ?? (_fString.Substring(startPos, _position - startPos));
             var expr = new ErrorExpression(verbatimImage, preceding);
-            expr.SetLoc(StartIndex() + startPos, StartIndex() + _position);
+            expr.SetLoc(StartIndex + startPos, StartIndex + _position);
             return expr;
+        }
+
+        private bool IsAsciiWhiteSpace {
+            get {
+                switch (CurrentChar) {
+                    case '\t':
+                    case '\n':
+                    case '\v':
+                    case '\f':
+                    case '\r':
+                    case ' ':
+                        return true;
+                }
+                return false;
+            }
         }
     }
 }

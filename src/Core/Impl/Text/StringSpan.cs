@@ -30,6 +30,8 @@ namespace Microsoft.Python.Core.Text {
         public int End => Start + Length;
         public bool IsValid => Source != null && Start >= 0 && Length >= 0 && Source.Length >= End;
 
+        public StringSpan(string source) : this(source, 0, source.Length) { }
+
         public StringSpan(string source, int start, int length) {
             Source = source;
             Start = start;
