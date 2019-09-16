@@ -26,6 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Types {
     [DebuggerDisplay("Function {Name} ({TypeId})")]
     internal sealed class PythonFunctionType : PythonType, IPythonFunctionType {
+        private static readonly IReadOnlyList<string> DefaultClassMethods = new[] { "__new__", "__init_subclass__", "__class_getitem__" };
         private ImmutableArray<IPythonFunctionOverload> _overloads = ImmutableArray<IPythonFunctionOverload>.Empty;
         private bool _isAbstract;
         private bool _isSpecialized;
@@ -71,6 +72,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             location.Module.AddAstNode(this, fd);
             ProcessDecorators(fd);
+            DecideClassMethod();
         }
 
         #region IPythonType
@@ -127,9 +129,17 @@ namespace Microsoft.Python.Analysis.Types {
             return new PythonUnboundMethod(this);
         }
 
+        private void DecideClassMethod() {
+            if (IsClassMethod) {
+                return;
+            }
+
+            IsClassMethod = DefaultClassMethods.Contains(Name);
+        }
+
         private void ProcessDecorators(FunctionDefinition fd) {
+            // TODO warn about incompatible combinations, e.g @staticmethod + @classmethod
             foreach (var dec in (fd.Decorators?.Decorators).MaybeEnumerate().OfType<NameExpression>()) {
-                // TODO: warn about incompatible combinations.
                 switch (dec.Name) {
                     case @"staticmethod":
                         IsStatic = true;
