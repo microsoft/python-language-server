@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Types {
         public bool IsAbstract => false;
         public bool IsSpecialized => true;
 
-        public IMember CreateInstance(string typeName, IArgumentSet args) => new PythonUnion(this);
+        public IPythonInstance CreateInstance(IArgumentSet args) => new PythonUnion(this);
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) {
             IPythonType[] types;

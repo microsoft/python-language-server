@@ -20,8 +20,8 @@ using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingTuple : PythonCollection {
-        private readonly TypingTupleType _collectionType;
-        public TypingTuple(TypingTupleType collectionType)
+        private readonly ITypingTupleType _collectionType;
+        public TypingTuple(ITypingTupleType collectionType)
             : base(collectionType, collectionType.ItemTypes) {
             _collectionType = collectionType;
         }
@@ -33,6 +33,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         }
 
         public override IMember Index(IArgumentSet args) 
-            => _collectionType.Index(this, args).GetPythonType().CreateInstance(null, ArgumentSet.Empty(args.Expression, args.Eval));
+            => _collectionType.Index(this, args).GetPythonType().CreateInstance(ArgumentSet.Empty(args.Expression, args.Eval));
     }
 }

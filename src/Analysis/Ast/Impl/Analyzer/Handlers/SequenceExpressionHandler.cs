@@ -25,36 +25,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class SequenceExpressionHandler : StatementHandler {
         public SequenceExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleAssignment(IEnumerable<Expression> lhs, Expression rhs, IMember value) {
-            if (rhs is TupleExpression tex) {
-                Assign(lhs, tex, Eval);
-            } else {
-                Assign(lhs, value, Eval);
-            }
+        public void HandleAssignment(SequenceExpression seq, IMember value) {
+            Assign(seq, value, Eval);
         }
 
-        internal static void Assign(IEnumerable<Expression> lhs, TupleExpression rhs, ExpressionEval eval) {
-            var names = NamesFromSequenceExpression(lhs).ToArray();
-            var values = ValuesFromSequenceExpression(rhs.Items, eval).ToArray();
-            for (var i = 0; i < names.Length; i++) {
-                IMember value = null;
-                if (values.Length > 0) {
-                    value = i < values.Length ? values[i] : values[values.Length - 1];
-                }
-
-                if (!string.IsNullOrEmpty(names[i]?.Name)) {
-                    eval.DeclareVariable(names[i].Name, value ?? eval.UnknownType, VariableSource.Declaration, names[i]);
-                }
-            }
-        }
-
-        internal static void Assign(IEnumerable<Expression> lhs, IMember value, ExpressionEval eval) {
+        internal static void Assign(SequenceExpression seq, IMember value, ExpressionEval eval) {
             var typeEnum = new ValueEnumerator(value, eval.UnknownType);
-            Assign(lhs, typeEnum, eval);
+            Assign(seq, typeEnum, eval);
         }
 
-        private static void Assign(IEnumerable<Expression> items, ValueEnumerator valueEnum, ExpressionEval eval) {
-            foreach (var item in items) {
+        private static void Assign(SequenceExpression seq, ValueEnumerator valueEnum, ExpressionEval eval) {
+            foreach (var item in seq.Items) {
                 switch (item) {
                     case StarredExpression stx when stx.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
@@ -65,20 +46,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                         eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
                         break;
+                    // Nested sequence expression in sequence, Tuple[Tuple[int, str], int], List[Tuple[int], str]
+                    // TODO: Because of bug with how collection types are constructed, they don't make nested collection types
+                    // into instances, meaning we have to create it here
+                    case SequenceExpression se when valueEnum.Peek is IPythonCollection || valueEnum.Peek is IPythonCollectionType:
+                        var collection = valueEnum.Next;
+                        var pc = collection as IPythonCollection;
+                        var pct = collection as IPythonCollectionType;
+                        Assign(se, pc ?? pct.CreateInstance(ArgumentSet.Empty(se, eval)), eval);
+                        break;
                     case SequenceExpression se:
-                        Assign(se.Items, valueEnum, eval);
+                        Assign(se, valueEnum, eval);
                         break;
                 }
             }
         }
 
-        private static IEnumerable<NameExpression> NamesFromSequenceExpression(IEnumerable<Expression> items) {
+        private static IEnumerable<NameExpression> NamesFromSequenceExpression(SequenceExpression rootSeq) {
             var names = new List<NameExpression>();
-            foreach (var item in items) {
+            foreach (var item in rootSeq.Items) {
                 var expr = item.RemoveParenthesis();
                 switch (expr) {
                     case SequenceExpression seq:
-                        names.AddRange(NamesFromSequenceExpression(seq.Items));
+                        names.AddRange(NamesFromSequenceExpression(seq));
                         break;
                     case NameExpression nex:
                         names.Add(nex);
@@ -86,22 +76,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
             return names;
-        }
-
-        private static IEnumerable<IMember> ValuesFromSequenceExpression(IEnumerable<Expression> items, ExpressionEval eval) {
-            var members = new List<IMember>();
-            foreach (var item in items) {
-                var value = eval.GetValueFromExpression(item);
-                switch (value) {
-                    case IPythonCollection coll:
-                        members.AddRange(coll.Contents);
-                        break;
-                    default:
-                        members.Add(value);
-                        break;
-                }
-            }
-            return members;
         }
     }
 }

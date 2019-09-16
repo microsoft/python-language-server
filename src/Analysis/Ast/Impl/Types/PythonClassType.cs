@@ -149,10 +149,10 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IMember CreateInstance(string typeName, IArgumentSet args) {
+        public override IPythonInstance CreateInstance(IArgumentSet args) {
             var builtins = DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule;
             // Specializations
-            switch (typeName) {
+            switch (Name) {
                 case "list":
                     return PythonCollectionType.CreateList(builtins, args);
                 case "dict": {
