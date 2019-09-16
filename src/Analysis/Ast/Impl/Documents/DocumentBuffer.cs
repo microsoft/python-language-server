@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -47,23 +46,18 @@ namespace Microsoft.Python.Analysis.Documents {
             lock (_lock) {
                 _sb = _sb ?? new StringBuilder(_content);
 
-                var lastStart = int.MaxValue;
-                var lineLoc = SplitLines(_sb).ToArray();
-
                 foreach (var change in changes) {
+                    // Every change may change where the lines end so in order 
+                    // to correctly determine line/offsets we must re-split buffer
+                    // into lines after each change.
+                    var lineLoc = GetNewLineLications().ToArray();
+
                     if (change.ReplaceAllText) {
                         _sb = new StringBuilder(change.InsertedText);
-                        lastStart = int.MaxValue;
-                        lineLoc = SplitLines(_sb).ToArray();
                         continue;
                     }
 
                     var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
-                    if (start > lastStart) {
-                        throw new InvalidOperationException("changes must be in reverse order of start location");
-                    }
-                    lastStart = start;
-
                     var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
                     if (end > start) {
                         _sb.Remove(start, end - start);
@@ -78,20 +72,33 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        private static IEnumerable<NewLineLocation> SplitLines(StringBuilder text) {
-            NewLineLocation nextLine;
+        public IEnumerable<NewLineLocation> GetNewLineLications() {
+            _sb = _sb ?? new StringBuilder(_content); // for tests
 
-            // TODO: Avoid string allocation by operating directly on StringBuilder
-            var str = text.ToString();
-
-            var lastLineEnd = 0;
-            while ((nextLine = NewLineLocation.FindNewLine(str, lastLineEnd)).EndIndex != lastLineEnd) {
-                yield return nextLine;
-                lastLineEnd = nextLine.EndIndex;
+            if (_sb.Length == 0) {
+                yield return new NewLineLocation(0, NewLineKind.None);
             }
 
-            if (lastLineEnd != str.Length) {
-                yield return nextLine;
+            for (var i = 0; i < _sb.Length; i++) {
+                var ch = _sb[i];
+                var nextCh = i < _sb.Length - 1 ? _sb[i + 1] : '\0';
+                switch (ch) {
+                    case '\r' when nextCh == '\n':
+                        i++;
+                        yield return new NewLineLocation(i + 1, NewLineKind.CarriageReturnLineFeed);
+                        break;
+                    case '\n':
+                        yield return new NewLineLocation(i + 1, NewLineKind.LineFeed);
+                        break;
+                    case '\r':
+                        yield return new NewLineLocation(i + 1, NewLineKind.CarriageReturn);
+                        break;
+                    default:
+                        if (i == _sb.Length - 1) {
+                            yield return new NewLineLocation(i + 1, NewLineKind.None);
+                        }
+                        break;
+                }
             }
         }
     }
