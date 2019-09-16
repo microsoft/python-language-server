@@ -30,7 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
-            // Filter out parenthesis expression in assignment becaues it makes no difference
+            // Filter out parenthesis expression in assignment because it makes no difference.
             var lhs = node.Left.Select(s => s.RemoveParenthesis());
             // Check PEP hint first
             var valueType = Eval.GetTypeFromPepHint(node.Right);
