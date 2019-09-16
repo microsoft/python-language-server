@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return true;
                 }
 
-                return _analysisVersion <= version && !(_previousAnalysis is LibraryAnalysis);
+                return _analysisVersion <= version;
             }
         }
 

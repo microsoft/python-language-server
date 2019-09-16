@@ -25,6 +25,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         public bool HandleIf(IfStatement node)
-            => node.WalkIfWithSystemConditions(Walker, Ast.LanguageVersion, _platformService.IsWindows);
+            => node.WalkIfWithSystemConditions(Walker, Ast.LanguageVersion, _platformService);
     }
 }

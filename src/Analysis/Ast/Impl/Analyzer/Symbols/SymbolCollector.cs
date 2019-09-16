@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         private void Walk() => _eval.Ast.Walk(this);
 
         public override bool Walk(IfStatement node)
-            => node.WalkIfWithSystemConditions(this, _eval.Ast.LanguageVersion, _eval.Services.GetService<IOSPlatform>().IsWindows);
+            => node.WalkIfWithSystemConditions(this, _eval.Ast.LanguageVersion, _eval.Services.GetService<IOSPlatform>());
 
         public override bool Walk(ClassDefinition cd) {
             if (IsDeprecated(cd)) {

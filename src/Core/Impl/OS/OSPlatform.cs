@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Runtime.InteropServices;
 
 namespace Microsoft.Python.Core.OS {
@@ -20,5 +21,6 @@ namespace Microsoft.Python.Core.OS {
         public bool IsWindows => RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         public bool IsMac => RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX);
         public bool IsLinux => RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
+        public bool IsLittleEndian => BitConverter.IsLittleEndian;
     }
 }

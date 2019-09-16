@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool IsSpecialized => Module?.IsSpecialized ?? false;
         public ModuleType ModuleType => Module?.ModuleType ?? ModuleType.Package;
         public IPythonModule PrimaryModule => null;
-        public IPythonModule Stub => null;
+        public IPythonModule Stub => Module?.Stub;
         public IGlobalScope GlobalScope => Module?.GlobalScope;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;

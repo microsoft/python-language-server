@@ -90,5 +90,24 @@ namespace Microsoft.Python.Analysis {
             }
             return ConditionTestResult.Unrecognized;
         }
+
+        public static ConditionTestResult TryHandleBigLittleEndian(this IfStatementTest test, bool isLittleEndian) {
+            if (test.Test is BinaryExpression cmp &&
+                cmp.Left is MemberExpression me && (me.Target as NameExpression)?.Name == "sys" && me.Name == "byteorder" &&
+                cmp.Right is ConstantExpression cex && cex.GetStringValue() is string s) {
+                switch (cmp.Operator) {
+                    case PythonOperator.Equals when s == "little" && isLittleEndian:
+                            return ConditionTestResult.WalkBody;
+                    case PythonOperator.Equals when s == "big" && !isLittleEndian:
+                            return ConditionTestResult.WalkBody;
+                    case PythonOperator.NotEquals when s == "little" && !isLittleEndian:
+                            return ConditionTestResult.WalkBody;
+                    case PythonOperator.NotEquals when s == "big" && isLittleEndian:
+                        return ConditionTestResult.WalkBody;
+                }
+                return ConditionTestResult.DontWalkBody;
+            }
+            return ConditionTestResult.Unrecognized;
+        }
     }
 }

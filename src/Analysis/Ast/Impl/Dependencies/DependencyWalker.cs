@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
     internal sealed class DependencyWalker : PythonWalker {
         private readonly DependencyCollector _dependencyCollector;
 
-        public HashSet<AnalysisModuleKey> Dependencies => _dependencyCollector.Dependencies;
+        public ISet<AnalysisModuleKey> Dependencies => _dependencyCollector.Dependencies;
 
         public DependencyWalker(IPythonModule module, PythonAst ast = null) {
             _dependencyCollector = new DependencyCollector(module);

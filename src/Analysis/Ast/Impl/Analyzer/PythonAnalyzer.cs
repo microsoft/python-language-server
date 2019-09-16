@@ -232,8 +232,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
 
-        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed)
-            => AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+        internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
+            _analysisCompleteEvent.Set();
+            AnalysisComplete?.Invoke(this, new AnalysisCompleteEventArgs(moduleCount, msElapsed));
+        }
 
         private void AnalyzeDocument(in AnalysisModuleKey key, in PythonAnalyzerEntry entry, in ImmutableArray<AnalysisModuleKey> dependencies) {
             _analysisCompleteEvent.Reset();

@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         }
 
         public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
-            => _property ?? (_property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), declaringType, (Attributes & FunctionAttributes.Abstract) != 0));
+            => _property ?? (_property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), Documentation, declaringType, (Attributes & FunctionAttributes.Abstract) != 0));
 
         public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
             _property.SetDocumentation(Documentation);
