@@ -13,14 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class AssignmentHandler : StatementHandler {
@@ -81,13 +79,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (Eval.CurrentScope.Globals[ne.Name] != null) {
                 Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Global);
                 scope?.Variables[ne.Name].Assign(value, Eval.GetLocationOfName(ne));
-                return;
-            }
-
-            var m = Eval.LookupNameInScopes(ne.Name, out scope);
-            if (m?.MemberType == PythonMemberType.Class) {
-                // Ignore assignments to classes: enum.py does Enum = None
-                // which prevents persistence from restoring proper type from enum:Enum.
                 return;
             }
 
