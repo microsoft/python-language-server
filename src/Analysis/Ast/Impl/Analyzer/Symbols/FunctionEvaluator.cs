@@ -55,6 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var returnType = TryDetermineReturnValue();
 
                 var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub);
+                CheckValidOverload(parameters);
                 _overload.SetParameters(parameters);
 
                 // Do process body of constructors since they may be declaring
@@ -103,6 +104,59 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 }
             }
             return annotationType;
+        }
+
+        private void CheckValidOverload(IReadOnlyList<IParameterInfo> parameters) {
+            if (_self?.MemberType == PythonMemberType.Class) {
+                switch (_function) {
+                    case IPythonFunctionType function:
+                        CheckValidFunction(function, parameters);
+                        break;
+                    //TODO check properties
+                }
+            }
+        }
+
+        private void CheckValidFunction(IPythonFunctionType function, IReadOnlyList<IParameterInfo> parameters) {
+            // Don't give diagnostics on functions defined in metaclasses
+            if (_self.IsMetaclass()) {
+                return;
+            }
+
+            // Static methods don't need any diagnostics
+            if (function.IsStatic) {
+                return;
+            }
+
+            // Otherwise, functions defined in classes must have at least one argument
+            if (parameters.IsNullOrEmpty()) {
+                var funcLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
+                ReportFunctionParams(Resources.NoMethodArgument, ErrorCodes.NoMethodArgument, funcLoc);
+                return;
+            }
+
+            var param = parameters[0].Name;
+            var paramLoc = Eval.GetLocation(FunctionDefinition.Parameters[0]);
+            // If it is a class method check for cls
+            if (function.IsClassMethod && !param.Equals("cls")) {
+                ReportFunctionParams(Resources.NoClsArgument, ErrorCodes.NoClsArgument, paramLoc);
+            }
+
+            // If it is a method check for self
+            if (!function.IsClassMethod && !param.Equals("self")) {
+                ReportFunctionParams(Resources.NoSelfArgument, ErrorCodes.NoSelfArgument, paramLoc);
+            }
+        }
+
+        private void ReportFunctionParams(string message, string errorCode, LocationInfo location) {
+            Eval.ReportDiagnostics(
+                Eval.Module.Uri,
+                new DiagnosticsEntry(
+                    message.FormatInvariant(FunctionDefinition.Name),
+                    location.Span,
+                    errorCode,
+                    Parsing.Severity.Warning,
+                    DiagnosticSource.Analysis));
         }
 
         public override bool Walk(AssignmentStatement node) {
