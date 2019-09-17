@@ -28,8 +28,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() { 
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -1408,7 +1410,7 @@ root = pathlib.Path('/some/directory')
 subdir = root / 'subdir'
 child = subdir / 'file.txt'
 ";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.Python37);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Python37, runIsolated: true);
             analysis.Should().HaveVariable("root").OfType("Path");
             analysis.Should().HaveVariable("subdir").OfType("PurePath");
             analysis.Should().HaveVariable("child").OfType("PurePath");

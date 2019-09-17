@@ -28,8 +28,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -665,7 +667,7 @@ e, (f, g), h = t
         [TestMethod, Priority(0)]
         public async Task Uts46dataModule() {
             const string code = @"from idna.uts46data import *";
-            await GetAnalysisAsync(code);
+            await GetAnalysisAsync(code, runIsolated: true);
         }
     }
 }

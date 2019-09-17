@@ -31,8 +31,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -97,7 +99,7 @@ pt = f(1, 2)
             const string code = @"from ReturnAnnotations import *
 x = f()
 y = g()";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, runIsolated: true);
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int)
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Str)

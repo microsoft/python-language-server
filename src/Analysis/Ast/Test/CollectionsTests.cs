@@ -27,8 +27,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() { 
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -91,7 +93,7 @@ x2 = l1[2]
 x3 = l1[3]
 x4 = l1[x0]
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, runIsolated: true);
             analysis.Should().HaveVariable("l").OfType(BuiltinTypeId.List)
                 .And.HaveVariable("l0").OfType(BuiltinTypeId.List)
                 .And.HaveVariable("l1").OfType(BuiltinTypeId.List)
@@ -566,7 +568,7 @@ from collections import namedtuple
 nt = namedtuple('Point', ['x', 'y'])
 pt = nt(1, 2)
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, runIsolated: true);
             var nt = analysis.Should().HaveVariable("nt").Which;
             nt.Should().HaveType(BuiltinTypeId.Tuple);
             nt.Should().HaveMembers("x", "y");

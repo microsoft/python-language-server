@@ -31,8 +31,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -320,7 +322,7 @@ class A:
             op.Options.LintingEnabled = enabled;
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, sm);
 
-            var a = Services.GetService<IPythonAnalyzer>();
+            var a = sm.GetService<IPythonAnalyzer>();
             var d = a.LintModule(analysis.Document);
             d.Should().HaveCount(enabled ? 1 : 0);
         }
@@ -462,7 +464,7 @@ y = lambda x: [e for e in x if e == 1]
 from __future__ import print_function
 print()
 ";
-            var d = await LintAsync(code, PythonVersions.LatestAvailable2X);
+            var d = await LintAsync(code, PythonVersions.LatestAvailable2X, runIsolated: true);
             d.Should().BeEmpty();
         }
 
@@ -477,7 +479,7 @@ class XXX:
         with (self.path / 'object.xml').open() as f:
             self.root = ElementTree.parse(f)
 ";
-            var d = await LintAsync(code);
+            var d = await LintAsync(code, runIsolated: true);
             d.Should().BeEmpty();
         }
 
@@ -521,7 +523,7 @@ a.y = 2
             const string code = @"
 from datetime import date
 [year, month] = date.split(' - ')";
-            var d = await LintAsync(code);
+            var d = await LintAsync(code, runIsolated: true);
             d.Should().BeEmpty();
         }
 
@@ -757,8 +759,9 @@ with Test() as [a]:
             d.Should().BeEmpty();
         }
 
-        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
-            var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
+        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null, bool runIsolated = false) {
+            configuration = configuration ?? PythonVersions.LatestAvailable3X;
+            var analysis = await GetAnalysisAsync(code, configuration, runIsolated);
             var a = Services.GetService<IPythonAnalyzer>();
             return a.LintModule(analysis.Document);
         }

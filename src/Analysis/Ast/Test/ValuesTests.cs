@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -27,8 +28,10 @@ namespace Microsoft.Python.Analysis.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() { 
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
@@ -160,10 +163,10 @@ with X():
         }
 
 
-        [DataRow(PythonLanguageVersion.V27)]
-        [DataRow(PythonLanguageVersion.V37)]
+        [DataRow(true)]
+        [DataRow(false)]
         [DataTestMethod, Priority(0)]
-        public async Task WithIOStatement(PythonLanguageVersion version) {
+        public async Task WithIOStatement(bool is3x) {
             const string code = @"
 with open('a', 'r') as r:
     pass
@@ -182,7 +185,7 @@ with open('a', 'x') as x:
 with open('a', 'xb') as xb:
     pass
 ";
-            var analysis = await GetAnalysisAsync(code, version);
+            var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
 
             analysis.Should().HaveVariable("r").OfType("TextIOWrapper")
                 .And.HaveVariable("rb").OfType("BufferedReader")

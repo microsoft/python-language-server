@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -37,8 +38,15 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase {
+        private static Dictionary<InterpreterConfiguration, IServiceManager> _servicesCache =
+            new Dictionary<InterpreterConfiguration, IServiceManager>();
+
         protected TestLogger TestLogger { get; } = new TestLogger();
         protected ServiceManager Services { get; private set; }
+        
+        protected bool SharedMode { get; set; }
+        protected IServiceManager GetServices(InterpreterConfiguration configuration)
+            => _servicesCache[configuration];
 
         protected virtual IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => null;
 
@@ -98,21 +106,37 @@ namespace Microsoft.Python.Analysis.Tests {
             await CreateServicesAsync(moduleDirectory, configuration);
         }
 
-        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, PythonLanguageVersion version, IServiceManager sm = null, string modulePath = null)
-            => GetAnalysisAsync(code, PythonVersions.GetRequiredCPythonConfiguration(version), sm, modulePath);
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, PythonLanguageVersion version, IServiceManager sm, string modulePath)
+            => GetAnalysisAsync(code, PythonVersions.GetRequiredCPythonConfiguration(version), sm, modulePath, runIsolated: true);
 
-        protected async Task<IDocumentAnalysis> GetAnalysisAsync(
-            string code,
-            InterpreterConfiguration configuration = null,
-            IServiceManager sm = null,
-            string modulePath = null) {
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration, IServiceManager sm, string modulePath)
+            => GetAnalysisAsync(code, configuration, sm, modulePath, runIsolated: true);
+
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration, IServiceManager sm)
+            => GetAnalysisAsync(code, configuration, sm, null, runIsolated: true);
+
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, bool runIsolated = false)
+            => GetAnalysisAsync(code, PythonVersions.LatestAvailable, runIsolated);
+
+        protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration, bool runIsolated = false)
+            => GetAnalysisAsync(code, configuration, null, null, runIsolated);
+
+        protected async Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration, IServiceManager sm, string modulePath, bool runIsolated) {
 
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
             var moduleName = Path.GetFileNameWithoutExtension(modulePath);
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
-            var services = await CreateServicesAsync(moduleDirectory, configuration, null, sm);
-            return await GetAnalysisAsync(code, services, moduleName, modulePath);
+
+            if (!runIsolated && sm == null && SharedMode) {
+                // Shared run and custom service manager was not supplied.
+                if (!_servicesCache.TryGetValue(configuration, out sm)) {
+                    sm = await CreateServicesAsync(moduleDirectory, configuration, null, null);
+                    _servicesCache[configuration] = sm;
+                }
+            }
+            sm = sm ?? await CreateServicesAsync(moduleDirectory, configuration, null, sm);
+            return await GetAnalysisAsync(code, sm, moduleName, modulePath);
         }
 
         protected async Task<IDocumentAnalysis> GetNextAnalysisAsync(string code, string modulePath = null) {
