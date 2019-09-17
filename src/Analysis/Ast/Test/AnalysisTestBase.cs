@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Tests {
         protected TestLogger TestLogger { get; } = new TestLogger();
         protected ServiceManager Services { get; private set; }
         
-        protected bool SharedMode { get; set; }
+        protected bool SharedServicesMode { get; set; }
         protected IServiceManager GetServices(InterpreterConfiguration configuration)
             => _servicesCache[configuration];
 
@@ -128,7 +128,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var moduleDirectory = Path.GetDirectoryName(modulePath);
 
 
-            if (!runIsolated && sm == null && SharedMode) {
+            if (!runIsolated && sm == null && SharedServicesMode) {
                 // Shared run and custom service manager was not supplied.
                 if (!_servicesCache.TryGetValue(configuration, out sm)) {
                     sm = await CreateServicesAsync(moduleDirectory, configuration, null, null);

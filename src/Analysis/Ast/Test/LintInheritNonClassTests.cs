@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestInitialize]
         public void TestInitialize() {
             TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
-            SharedMode = true;
+            SharedServicesMode = true;
         }
 
         [TestCleanup]
