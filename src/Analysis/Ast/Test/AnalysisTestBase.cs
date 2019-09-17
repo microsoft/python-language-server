@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -42,11 +43,24 @@ namespace Microsoft.Python.Analysis.Tests {
             new Dictionary<InterpreterConfiguration, IServiceManager>();
 
         protected TestLogger TestLogger { get; } = new TestLogger();
+
+        /// <summary>
+        /// Services container in isolated run. 
+        /// </summary>
         protected ServiceManager Services { get; private set; }
         
+        /// <summary>
+        /// Allows tests in the class to reuse service container per interpreter confguration.
+        /// Makes tests faster but may not be appropriate for tests relying on certain
+        /// order of imports or that prefer import table to be clean.
+        /// </summary>
         protected bool SharedServicesMode { get; set; }
-        protected IServiceManager GetServices(InterpreterConfiguration configuration)
-            => _servicesCache[configuration];
+
+        /// <summary>
+        /// Retrieves shared service container for given interpreter configuration.
+        /// </summary>
+        protected IServiceManager GetSharedServices(InterpreterConfiguration configuration)
+            => _servicesCache.Count == 0 || !SharedServicesMode ? Services : _servicesCache[configuration];
 
         protected virtual IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => null;
 
@@ -121,7 +135,7 @@ namespace Microsoft.Python.Analysis.Tests {
         protected Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration, bool runIsolated = false)
             => GetAnalysisAsync(code, configuration, null, null, runIsolated);
 
-        protected async Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration, IServiceManager sm, string modulePath, bool runIsolated) {
+        private async Task<IDocumentAnalysis> GetAnalysisAsync(string code, InterpreterConfiguration configuration, IServiceManager sm, string modulePath, bool runIsolated) {
 
             modulePath = modulePath ?? TestData.GetDefaultModulePath();
             var moduleName = Path.GetFileNameWithoutExtension(modulePath);
@@ -134,8 +148,16 @@ namespace Microsoft.Python.Analysis.Tests {
                     sm = await CreateServicesAsync(moduleDirectory, configuration, null, null);
                     _servicesCache[configuration] = sm;
                 }
+                // Clear RDT from documents that may have come from other tests in shared mode.
+                var rdt = sm.GetService<IRunningDocumentTable>();
+                foreach (var doc in rdt.GetDocuments().ToArray()) {
+                    rdt.CloseDocument(doc.Uri);
+                    rdt.UnlockDocument(doc.Uri);
+                }
+            } else {
+                sm = await CreateServicesAsync(moduleDirectory, configuration, null, sm);
             }
-            sm = sm ?? await CreateServicesAsync(moduleDirectory, configuration, null, sm);
+
             return await GetAnalysisAsync(code, sm, moduleName, modulePath);
         }
 
