@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Types {
         public static string GetTypeName(this BuiltinTypeId id, PythonLanguageVersion languageVersion)
             => id.GetTypeName(languageVersion.IsNone() || languageVersion.Is3x());
 
-        private static string GetTypeName(this BuiltinTypeId id, bool is3x) {
+        public static string GetTypeName(this BuiltinTypeId id, bool is3x) {
             string name;
             switch (id) {
                 case BuiltinTypeId.Bool: name = "bool"; break;

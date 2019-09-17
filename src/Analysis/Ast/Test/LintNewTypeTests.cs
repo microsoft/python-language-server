@@ -100,7 +100,7 @@ T = NewType({nameType}(10), {type})
 from typing import NewType
 
 class X:
-    def hello():
+    def hello(self):
         pass
 
 h = X()
