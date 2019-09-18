@@ -19,18 +19,19 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class LintNoClsArgumentTests : AnalysisTestBase {
+    public class LintNoClsArgumentTests : LinterTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+            SharedServicesMode = true;
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();

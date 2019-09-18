@@ -13,12 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -27,7 +24,7 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class LintUndefinedVarsTests : AnalysisTestBase {
+    public class LintUndefinedVarsTests : LinterTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -464,7 +461,7 @@ y = lambda x: [e for e in x if e == 1]
 from __future__ import print_function
 print()
 ";
-            var d = await LintAsync(code, PythonVersions.LatestAvailable2X, runIsolated: true);
+            var d = await LintAsync(code, PythonVersions.LatestAvailable2X);
             d.Should().BeEmpty();
         }
 
@@ -479,7 +476,7 @@ class XXX:
         with (self.path / 'object.xml').open() as f:
             self.root = ElementTree.parse(f)
 ";
-            var d = await LintAsync(code, runIsolated: true);
+            var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
 
@@ -523,7 +520,7 @@ a.y = 2
             const string code = @"
 from datetime import date
 [year, month] = date.split(' - ')";
-            var d = await LintAsync(code, runIsolated: true);
+            var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
 
@@ -757,17 +754,6 @@ with Test() as [a]:
 ";
             var d = await LintAsync(code);
             d.Should().BeEmpty();
-        }
-
-        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null, bool runIsolated = false) {
-            configuration = configuration ?? PythonVersions.LatestAvailable3X;
-            var analysis = await GetAnalysisAsync(code, configuration, runIsolated);
-            var a = Services.GetService<IPythonAnalyzer>();
-            return a.LintModule(analysis.Document);
-        }
-
-        private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
-            public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
     }
 }

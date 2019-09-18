@@ -17,7 +17,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;

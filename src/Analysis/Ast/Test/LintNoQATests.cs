@@ -1,10 +1,21 @@
-﻿using System.Collections.Generic;
+﻿// Copyright(c) Microsoft Corporation
+// All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the License); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+//
+// THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
+// IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+// MERCHANTABILITY OR NON-INFRINGEMENT.
+//
+// See the Apache Version 2.0 License for specific language governing
+// permissions and limitations under the License.
+
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Core.Interpreter;
-using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
@@ -15,7 +26,7 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 namespace Microsoft.Python.Analysis.Tests {
 
     [TestClass]
-    public class LintNoQATests : AnalysisTestBase {
+    public class LintNoQATests : LinterTestBase {
 
         public const string GenericSetup = @"
 from typing import Generic, TypeVar
@@ -109,12 +120,6 @@ from fake_module import User         #noqa
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
-        }
-
-        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
-            var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
-            var a = Services.GetService<IPythonAnalyzer>();
-            return a.LintModule(analysis.Document);
         }
     }
 }

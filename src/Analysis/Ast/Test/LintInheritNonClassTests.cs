@@ -28,7 +28,7 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
-    public class LintInheritNonClassTests : AnalysisTestBase {
+    public class LintInheritNonClassTests : LinterTestBase {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -488,7 +488,7 @@ from enum import Enum, EnumMeta
 
 class C(Enum): ...
 ";
-            var analysis = await GetAnalysisAsync(code, runIsolated: true);
+            var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
     }

@@ -105,9 +105,8 @@ namespace Microsoft.Python.Analysis.Tests {
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");
-            var interpreter = await PythonInterpreter.CreateAsync(configuration, root, sm, typeshedPath, searchPaths.ToImmutableArray());
-            sm.AddService(interpreter);
-
+            await PythonInterpreter.CreateAsync(configuration, root, sm, typeshedPath, searchPaths.ToImmutableArray());
+            
             TestLogger.Log(TraceEventType.Information, "Create RunningDocumentTable");
             sm.AddService(new RunningDocumentTable(sm));
 
@@ -150,9 +149,10 @@ namespace Microsoft.Python.Analysis.Tests {
                 }
                 // Clear RDT from documents that may have come from other tests in shared mode.
                 var rdt = sm.GetService<IRunningDocumentTable>();
-                foreach (var doc in rdt.GetDocuments().ToArray()) {
+                foreach (var doc in rdt.GetDocuments()
+                    .Where(d => d.ModuleType == ModuleType.User || d.ModuleType == ModuleType.Unresolved)
+                    .ToArray()) {
                     rdt.CloseDocument(doc.Uri);
-                    rdt.UnlockDocument(doc.Uri);
                 }
             } else {
                 sm = await CreateServicesAsync(moduleDirectory, configuration, null, sm);
