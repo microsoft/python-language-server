@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -157,7 +158,9 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
+        public virtual IMember GetMember(string name)
+            => GlobalScope.Variables[name]?.Value ?? this.GetSubmodule(name);
+
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
             return GlobalScope.Variables
@@ -166,16 +169,20 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (v.Value is IPythonInstance) {
                         return true;
                     }
+
                     var valueType = v.Value?.GetPythonType();
                     if (valueType is PythonModule) {
                         return false; // Do not re-export modules.
                     }
+
                     if (valueType is IPythonFunctionType f && f.IsLambda()) {
                         return false;
                     }
+
                     if (this is TypingModule) {
                         return true; // Let typing module behave normally.
                     }
+
                     // Do not re-export types from typing. However, do export variables
                     // assigned with types from typing. Example:
                     //    from typing import Any # do NOT export Any
@@ -183,9 +190,11 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (valueType?.DeclaringModule is TypingModule && v.Name == valueType.Name) {
                         return false;
                     }
+
                     return true;
                 })
-                .Select(v => v.Name);
+                .Select(v => v.Name)
+                .Concat(this.GetSubmoduleNames());
         }
         #endregion
 

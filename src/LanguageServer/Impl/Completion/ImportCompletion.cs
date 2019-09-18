@@ -15,11 +15,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
@@ -41,7 +40,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 if (name != null && context.Position >= name.StartIndex) {
                     if (context.Position > name.EndIndex && name.EndIndex > name.StartIndex) {
                         var applicableSpan = context.GetApplicableSpanFromLastToken(import);
-                        return new CompletionResult(new []{ CompletionItemSource.AsKeyword }, applicableSpan);
+                        return new CompletionResult(new[] { CompletionItemSource.AsKeyword }, applicableSpan);
                     }
 
                     if (name.Names.Count == 0 || name.Names[0].EndIndex >= context.Position) {
@@ -60,7 +59,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         public static CompletionResult GetCompletionsInFromImport(FromImportStatement fromImport, CompletionContext context) {
             // No more completions after '*', ever!
-            if (fromImport.Names != null && fromImport.Names.Any(n => n?.Name == "*" && context.Position > n.EndIndex)) {
+            if (fromImport.Names.Any(n => n?.Name == "*" && context.Position > n.EndIndex)) {
                 return CompletionResult.Empty;
             }
 
@@ -160,7 +159,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 default:
                     return CompletionResult.Empty;
             }
-            
+
             var completions = new List<CompletionItem>();
             if (prependStar) {
                 completions.Add(CompletionItemSource.Star);
@@ -168,25 +167,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             if (module != null) {
                 completions.AddRange(module.GetMemberNames()
-                    .Where(n => !string.IsNullOrEmpty(n))
-                    .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
-            }
-
-            if (importSearchResult is IImportChildrenSource children) {
-                foreach (var childName in children.GetChildrenNames()) {
-                    if (!children.TryGetChildImport(childName, out var imports)) {
-                        continue;
-                    }
-
-                    switch (imports) {
-                        case ImplicitPackageImport packageImport:
-                            completions.Add(CompletionItemSource.CreateCompletionItem(packageImport.Name, CompletionItemKind.Module));
-                            break;
-                        case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(document.FilePath):
-                            completions.Add(CompletionItemSource.CreateCompletionItem(moduleImport.Name, CompletionItemKind.Module));
-                            break;
-                    }
-                }
+                        .Where(n => !string.IsNullOrEmpty(n))
+                        .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
             }
 
             return new CompletionResult(completions, applicableSpan);
