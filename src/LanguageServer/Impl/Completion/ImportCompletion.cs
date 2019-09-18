@@ -167,8 +167,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             if (module != null) {
                 completions.AddRange(module.GetMemberNames()
-                        .Where(n => !string.IsNullOrEmpty(n))
-                        .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
             }
 
             if (importSearchResult is IImportChildrenSource children) {
