@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
