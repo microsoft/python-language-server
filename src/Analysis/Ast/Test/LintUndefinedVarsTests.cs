@@ -757,6 +757,30 @@ with Test() as [a]:
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task NamedExpr() {
+            const string code = @"
+x = 123
+if (y := x):
+    print(y)
+";
+            var d = await LintAsync(code, PythonVersions.Python38_x64);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedExprInComprehension() {
+            // This code is syntactically incorrect due to the intruction of a name in the iterable expression,
+            // but since we still recover, ensure that no warnings are reported in addition to the sytnax errors.
+            const string code = @"
+stuff = []
+[i+1 for i in range(2) for j in (k := stuff)]
+[i+1 for i in [j for j in (k := stuff)]]
+";
+            var d = await LintAsync(code, PythonVersions.Python38_x64);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();

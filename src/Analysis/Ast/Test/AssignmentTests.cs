@@ -667,5 +667,29 @@ e, (f, g), h = t
             const string code = @"from idna.uts46data import *";
             await GetAnalysisAsync(code);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedExpressionIf() {
+            const string code = @"
+if (x := 1234) == 1234:
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        [Ignore("Needs comprehension scoping")]
+        public async Task NamedExpressionFromComprehension() {
+            const string code = @"
+from typing import List
+a: List[int]
+b = [(x := i) for i in a]
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
     }
 }
