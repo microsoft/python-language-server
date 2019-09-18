@@ -29,3 +29,6 @@ foo(x := 1, cat='vector')
 # a is 2
 
 ((x) := 1)
+
+if x := a:
+    pass
