@@ -208,7 +208,7 @@ x = f()
 
         [TestMethod, Priority(0)]
         public async Task UnresolvedRelativeFromImportAs() {
-            var analysis = await GetAnalysisAsync(@"from ..nonexistent import A as B");
+            var analysis = await GetAnalysisAsync(@"from ..nonexistent import A as B", runIsolated: true);
             analysis.Diagnostics.Should().HaveCount(1);
             var d = analysis.Diagnostics.First();
             d.ErrorCode.Should().Be(ErrorCodes.UnresolvedImport);
