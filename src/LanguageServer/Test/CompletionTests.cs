@@ -1096,6 +1096,7 @@ os.path.
             var rdt = Services.GetService<IRunningDocumentTable>();
             var doc = rdt.OpenDocument(appUri, "import package\npackage.");
 
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             
