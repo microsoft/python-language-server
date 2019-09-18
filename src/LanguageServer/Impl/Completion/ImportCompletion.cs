@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
@@ -168,6 +169,23 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 completions.AddRange(module.GetMemberNames()
                         .Where(n => !string.IsNullOrEmpty(n))
                         .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
+            } else {
+                if (importSearchResult is IImportChildrenSource children) {
+                    foreach (var childName in children.GetChildrenNames()) {
+                        if (!children.TryGetChildImport(childName, out var imports)) {
+                            continue;
+                        }
+
+                        switch (imports) {
+                            case ImplicitPackageImport packageImport:
+                                completions.Add(CompletionItemSource.CreateCompletionItem(packageImport.Name, CompletionItemKind.Module));
+                                break;
+                            case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(document.FilePath):
+                                completions.Add(CompletionItemSource.CreateCompletionItem(moduleImport.Name, CompletionItemKind.Module));
+                                break;
+                        }
+                    }
+                }
             }
 
             return new CompletionResult(completions, applicableSpan);
