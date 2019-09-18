@@ -65,8 +65,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndWhichConstraint<VariableAssertions, IMember> NotHaveMember(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
-            var m = Value.GetPythonType().GetMember(name);
-            m.GetPythonType().IsUnknown().Should().BeTrue();
+            Value.GetPythonType().GetMemberNames().Should().NotContain(name);
             return new AndWhichConstraint<VariableAssertions, IMember>(this, Subject);
         }
 

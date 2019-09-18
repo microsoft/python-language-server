@@ -1013,7 +1013,7 @@ os.path.
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().OnlyHaveLabels("module1", "__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__", "__spec__");
+            result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__", "__spec__");
         }
 
         [TestMethod, Priority(0)]
@@ -1088,7 +1088,7 @@ os.path.
         [TestMethod, Priority(0)]
         public async Task SubmoduleMember() {
             var appUri = TestData.GetTestSpecificUri("app.py");
-            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), "import m1\nx = 1");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), "from . import m1\nfrom . import m2\nx = 1");
             await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "m1", "__init__.py"), string.Empty);
             await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "m2", "__init__.py"), string.Empty);
 

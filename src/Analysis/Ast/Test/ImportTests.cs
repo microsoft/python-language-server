@@ -18,6 +18,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
@@ -241,15 +242,16 @@ x = exit()
         [TestMethod, Priority(0)]
         public async Task ModuleMembers() {
             var appUri = TestData.GetTestSpecificUri("app.py");
-            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), "import m1");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), "from . import m1\nimport sys");
             await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "m1", "__init__.py"), string.Empty);
 
             await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
             var doc = rdt.OpenDocument(appUri, "import package");
 
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
-            analysis.Should().HaveVariable("package").Which.Should().HaveMember("m1");
+            analysis.Should().HaveVariable("package").Which.Should().HaveMember("m1").And.NotHaveMember("sys");
         }
     }
 }
