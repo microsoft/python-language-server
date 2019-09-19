@@ -86,14 +86,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // Consider pandas that has 'import pandas.testing' in __init__.py and 'testing'
             // is available as member. See also https://github.com/microsoft/python-language-server/issues/1395
             if (firstModule?.Module == Eval.Module && importNames.Count > 1 && !string.IsNullOrEmpty(importNames[1]) && secondModule != default) {
+                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
                 Eval.DeclareVariable(importNames[1], secondModule, VariableSource.Import, moduleImportExpression.Names[1]);
                 return;
             }
 
             // "import fob.oar.baz" is handled as fob = import_module('fob')
             if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
-                var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
+                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
             }
         }
 

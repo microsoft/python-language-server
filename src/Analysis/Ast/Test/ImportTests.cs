@@ -268,5 +268,27 @@ x = exit()
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
             analysis.Should().HaveVariable("package").Which.Should().HaveMember("m1");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ModuleImportingSubmodules() {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "__init__.py"), @"
+from top import sub1
+import top.sub2
+import top.sub3.sub4
+");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub2.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub3", "__init__.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub3", "sub4.py"), string.Empty);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var doc = rdt.OpenDocument(appUri, "import top");
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+            analysis.Should().HaveVariable("top").Which.Should().HaveMembers("sub1", "sub2", "sub3", "top");
+        }
     }
 }
