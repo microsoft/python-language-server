@@ -190,7 +190,7 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region ILocatedMember
-        public override LocationInfo Definition => Uri != null ? new LocationInfo(Uri.ToAbsolutePath(), Uri, 0, 0) : LocationInfo.Empty;
+        public override LocationInfo Definition => Uri != null ? new LocationInfo(Uri.ToAbsolutePath(), Uri) : LocationInfo.Empty;
         #endregion
 
         #region IPythonModule

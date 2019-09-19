@@ -37,7 +37,7 @@ namespace Microsoft.Python.Analysis {
         private static LocationInfo GetLocation(Node node, PythonAst ast, IPythonModule module) {
             var start = node.GetStart(ast);
             var end = node.GetEnd(ast);
-            return new LocationInfo(module.FilePath, module.Uri, start.Line, start.Column, end.Line, end.Column);
+            return new LocationInfo(module.FilePath, module.Uri, start, end);
         }
 
         public static Expression RemoveParenthesis(this Expression e) {
