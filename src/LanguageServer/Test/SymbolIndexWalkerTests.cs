@@ -657,7 +657,7 @@ if b := a:
             });
         }
 
-        private PythonAst GetParse(string code, PythonLanguageVersion version = PythonLanguageVersion.V37)
+        private PythonAst GetParse(string code, PythonLanguageVersion version)
             => Parser.CreateParser(new StringReader(code), version).ParseFile();
 
         private IReadOnlyList<HierarchicalSymbol> WalkSymbols(string code, PythonLanguageVersion version = PythonLanguageVersion.V37) {
