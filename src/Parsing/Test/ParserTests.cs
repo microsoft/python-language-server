@@ -3001,6 +3001,17 @@ namespace Microsoft.Python.Parsing.Tests {
                                     One
                                 )
                             )
+                        ),
+                        CheckIfStmt(
+                            IfTests(
+                                IfTest(
+                                    CheckNamedExpr(
+                                        CheckNameExpr("x"),
+                                        CheckNameExpr("a")
+                                    ),
+                                    CheckSuite(Pass)
+                                )
+                            )
                         )
                     )
                 );

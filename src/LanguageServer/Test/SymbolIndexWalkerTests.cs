@@ -643,11 +643,25 @@ else:
             });
         }
 
-        private PythonAst GetParse(string code, PythonLanguageVersion version = PythonLanguageVersion.V37)
+        [TestMethod, Priority(0)]
+        public void WalkerNamedExpression() {
+            var code = @"a = 123
+if b := a:
+    print(b)
+";
+
+            var symbols = WalkSymbols(code, version: PythonLanguageVersion.V38);
+            symbols.Should().BeEquivalentToWithStrictOrdering(new[] {
+                new HierarchicalSymbol("a", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
+                new HierarchicalSymbol("b", SymbolKind.Variable, new SourceSpan(2, 4, 2, 5))
+            });
+        }
+
+        private PythonAst GetParse(string code, PythonLanguageVersion version)
             => Parser.CreateParser(new StringReader(code), version).ParseFile();
 
         private IReadOnlyList<HierarchicalSymbol> WalkSymbols(string code, PythonLanguageVersion version = PythonLanguageVersion.V37) {
-            var ast = GetParse(code);
+            var ast = GetParse(code, version);
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
             return walker.Symbols;
