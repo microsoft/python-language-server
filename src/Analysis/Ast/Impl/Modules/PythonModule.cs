@@ -22,7 +22,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -159,40 +158,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IMemberContainer
         public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
-
-        public virtual IEnumerable<string> GetMemberNames() {
-            var fs = Services.GetService<IFileSystem>();
-            var thisModuleDirectory = Path.GetDirectoryName(FilePath);
-
-            // drop imported modules and typing.
-            return GlobalScope.Variables
-                .Where(v => {
-                    // Instances are always fine.
-                    if (v.Value is IPythonInstance) {
-                        return true;
-                    }
-
-                    var valueType = v.Value?.GetPythonType();
-                    switch (valueType) {
-                        case IPythonModule m:
-                            // Do not re-export modules except submodules.
-                            return !string.IsNullOrEmpty(m.FilePath) && fs.IsPathUnderRoot(thisModuleDirectory, Path.GetDirectoryName(m.FilePath));
-                        case IPythonFunctionType f when f.IsLambda():
-                            return false;
-                    }
-
-                    if (this is TypingModule) {
-                        return true; // Let typing module behave normally.
-                    }
-
-                    // Do not re-export types from typing. However, do export variables
-                    // assigned with types from typing. Example:
-                    //    from typing import Any # do NOT export Any
-                    //    x = Union[int, str] # DO export x
-                    return !(valueType?.DeclaringModule is TypingModule) || v.Name != valueType.Name;
-                })
-                .Select(v => v.Name);
-        }
+        public virtual IEnumerable<string> GetMemberNames() => GlobalScope.Variables.Select(v => v.Name).ToArray();
         #endregion
 
         #region ILocatedMember
