@@ -314,13 +314,14 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private class SymbolStack {
             private readonly Stack<(SymbolKind? kind, List<HierarchicalSymbol> symbols)> _symbols;
             private readonly Stack<HashSet<string>> _declared = new Stack<HashSet<string>>(new[] { new HashSet<string>() });
+            private readonly List<HierarchicalSymbol> _root = new List<HierarchicalSymbol>();
 
-            public List<HierarchicalSymbol> Root { get; } = new List<HierarchicalSymbol>();
+            public IReadOnlyList<HierarchicalSymbol> Root => _root;
 
             public SymbolKind? Parent => _symbols.Peek().kind;
 
             public SymbolStack() {
-                _symbols = new Stack<(SymbolKind?, List<HierarchicalSymbol>)>(new (SymbolKind?, List<HierarchicalSymbol>)[] { (null, Root) });
+                _symbols = new Stack<(SymbolKind?, List<HierarchicalSymbol>)>(new (SymbolKind?, List<HierarchicalSymbol>)[] { (null, _root) });
             }
 
             public void Enter(SymbolKind parent) {
@@ -339,6 +340,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             public void ExitDeclaredAndMerge() => _declared.Peek().UnionWith(_declared.Pop());
 
             public void AddSymbol(HierarchicalSymbol sym) {
+                if (string.IsNullOrWhiteSpace(sym.Name)) {
+                    return;
+                }
+
                 if (sym.Kind == SymbolKind.Variable && _declared.Peek().Contains(sym.Name)) {
                     return;
                 }
