@@ -12,6 +12,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
@@ -655,6 +656,14 @@ if b := a:
                 new HierarchicalSymbol("a", SymbolKind.Variable, new SourceSpan(1, 1, 1, 2)),
                 new HierarchicalSymbol("b", SymbolKind.Variable, new SourceSpan(2, 4, 2, 5))
             });
+        }
+
+        [TestMethod, Priority(0)]
+        public void WalkerNoNameFunction() {
+            var code = @"def ():";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEmpty();
         }
 
         private PythonAst GetParse(string code, PythonLanguageVersion version)
