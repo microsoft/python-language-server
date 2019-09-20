@@ -81,20 +81,16 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = version;
         }
 
-        public ImmutableArray<string> GetAllModuleNames() => GetModuleNames(_roots.Prepend(_nonRooted));
-        public IEnumerable<string> GetInterpreterModuleNames() => GetModuleNames(_roots.Skip(_userRootsCount).Append(_builtins));
-
-        private ImmutableArray<string> GetModuleNames(IEnumerable<Node> roots) {
+        public ImmutableArray<string> GetAllImportableModuleNames() {
+            var roots = _roots.Prepend(_nonRooted);
             var items = new Queue<Node>(roots);
             var names = ImmutableArray<string>.Empty;
+            
             while (items.Count > 0) {
                 var item = items.Dequeue();
-                if (item.IsModule) {
-                    names = names.Add(item.FullModuleName);
-                } else {
-                    foreach (var child in item.Children) {
-                        items.Enqueue(child);
-                    }
+                names = names.Add(item.FullModuleName);
+                foreach (var child in item.Children) {
+                    items.Enqueue(child);
                 }
             }
 

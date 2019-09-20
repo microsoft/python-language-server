@@ -272,7 +272,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var interpreter = services.GetService<IPythonInterpreter>();
 
             var pathResolver = interpreter.ModuleResolution.CurrentPathResolver;
-            var modules = pathResolver.GetAllModuleNames()
+            var modules = pathResolver.GetAllImportableModuleNames()
                 .Select(n => pathResolver.GetModuleImportFromModuleName(n))
                 .Where(i => i.RootPath.PathEquals(configuration.SitePackagesPath) || i.RootPath.PathEquals(configuration.LibraryPath))
                 .ToList();
