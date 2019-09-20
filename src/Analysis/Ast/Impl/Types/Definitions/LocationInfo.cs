@@ -23,19 +23,22 @@ namespace Microsoft.Python.Analysis.Types {
         [DebuggerDisplay("{StartLine}, {StartColumn} - {EndLine}, {EndColumn}")]
         public static readonly LocationInfo Empty = new LocationInfo();
 
-        private LocationInfo() : this(string.Empty, null, 1, 1) { }
-
-        public LocationInfo(string path, Uri documentUri, int line, int column) :
-             this(path, documentUri, line, column, null, null) {
-        }
+        public LocationInfo(string path, Uri documentUri) : this(path, documentUri, 1, 1) { }
 
         public LocationInfo(string path, Uri documentUri, SourceSpan span) :
             this(path, documentUri, span.Start.Line, span.Start.Column, span.End.Line, span.End.Column) {
         }
 
-        public LocationInfo(string path, Uri documentUri, int line, int column, int? endLine, int? endColumn) {
+        public LocationInfo(string path, Uri documentUri, SourceLocation start, SourceLocation end) :
+            this(path, documentUri, start.Line, start.Column, end.Line, end.Column) {
+        }
+
+        private LocationInfo() : this(string.Empty, null, 1, 1) { }
+
+        private LocationInfo(string path, Uri documentUri, int line, int column, int? endLine = null, int? endColumn = null) {
             FilePath = path;
             DocumentUri = documentUri;
+
             StartLine = line;
             StartColumn = column;
             EndLine = endLine;
@@ -77,7 +80,7 @@ namespace Microsoft.Python.Analysis.Types {
 
         /// <summary>
         /// Provides an IEqualityComparer that compares line, column and project entries.  By
-        /// default locations are equaitable based upon only line/project entry.
+        /// default locations are equatable based upon only line/project entry.
         /// </summary>
         public static IEqualityComparer<LocationInfo> FullComparer { get; } = new FullLocationComparer();
 
