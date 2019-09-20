@@ -81,14 +81,14 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = version;
         }
 
-        public ImmutableArray<string> GetAllImportableModuleNames() {
+        public ImmutableArray<string> GetAllImportableModuleNames(bool includeImplicitPackages = true) {
             var roots = _roots.Prepend(_nonRooted);
             var items = new Queue<Node>(roots);
             var names = ImmutableArray<string>.Empty;
-            
+
             while (items.Count > 0) {
                 var item = items.Dequeue();
-                if (!string.IsNullOrEmpty(item.FullModuleName)) {
+                if (!string.IsNullOrEmpty(item.FullModuleName) && (item.IsModule || includeImplicitPackages)) {
                     names = names.Add(item.FullModuleName);
                 }
                 foreach (var child in item.Children) {
@@ -96,11 +96,11 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 }
             }
 
-            foreach (var builtin in _builtins.Children) {
-                names = names.Add(builtin.FullModuleName);
-            }
-
-            return names;
+            return names.AddRange(
+                _builtins.Children
+                    .Where(b => !string.IsNullOrEmpty(b.FullModuleName))
+                    .Select(b => b.FullModuleName)
+            );
         }
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
