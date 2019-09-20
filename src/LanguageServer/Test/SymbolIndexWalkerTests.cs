@@ -657,6 +657,14 @@ if b := a:
             });
         }
 
+        [TestMethod, Priority(0)]
+        public void WalkerNoNameFunction() {
+            var code = @"def ():";
+
+            var symbols = WalkSymbols(code);
+            symbols.Should().BeEmpty();
+        }
+
         private PythonAst GetParse(string code, PythonLanguageVersion version)
             => Parser.CreateParser(new StringReader(code), version).ParseFile();
 
