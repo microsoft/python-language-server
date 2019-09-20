@@ -29,40 +29,68 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return;
             }
 
-            var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             // Filter out parenthesis expression in assignment because it makes no difference.
             var lhs = node.Left.Select(s => s.RemoveParenthesis());
-            // Check PEP hint first
-            var valueType = Eval.GetTypeFromPepHint(node.Right);
-            if (valueType != null) {
-                HandleTypedVariable(valueType, value, lhs.FirstOrDefault());
+
+            // TODO: Assigning like this is wrong; the assignment needs to be considering the
+            // right side's unpacking for what's on the left, not just apply it to every case.
+            var value = ExtractRhs(node.Right, lhs.FirstOrDefault());
+            if (value != null) {
+                foreach (var expr in lhs) {
+                    AssignToExpr(expr, value);
+                }
+            }
+        }
+
+        public void HandleNamedExpression(NamedExpression node) {
+            if (node.Value is ErrorExpression) {
                 return;
             }
 
+            var lhs = node.Target.RemoveParenthesis();
+
+            var value = ExtractRhs(node.Value, lhs);
+            if (value != null) {
+                AssignToExpr(lhs, value);
+            }
+        }
+
+        private IMember ExtractRhs(Expression rhs, Expression typed) {
+            var value = Eval.GetValueFromExpression(rhs) ?? Eval.UnknownType;
+
+            // Check PEP hint first
+            var valueType = Eval.GetTypeFromPepHint(rhs);
+            if (valueType != null) {
+                HandleTypedVariable(valueType, value, typed);
+                return null;
+            }
+
             if (value.IsUnknown()) {
-                Log?.Log(TraceEventType.Verbose, $"Undefined value: {node.Right.ToCodeString(Ast).Trim()}");
+                Log?.Log(TraceEventType.Verbose, $"Undefined value: {rhs.ToCodeString(Ast).Trim()}");
             }
             if (value?.GetPythonType().TypeId == BuiltinTypeId.Ellipsis) {
                 value = Eval.UnknownType;
             }
 
-            foreach (var expr in lhs) {
-                switch (expr) {
-                    case SequenceExpression seq:
-                        // Tuple = Tuple. Transfer values.
-                        var seqHandler = new SequenceExpressionHandler(Walker);
-                        seqHandler.HandleAssignment(seq, value);
-                        break;
-                    case ExpressionWithAnnotation annExpr:
-                        HandleAnnotatedExpression(annExpr, value);
-                        break;
-                    case NameExpression nameExpr:
-                        HandleNameExpression(nameExpr, value);
-                        break;
-                    case MemberExpression memberExpr:
-                        TryHandleClassVariable(memberExpr, value);
-                        break;
-                }
+            return value;
+        }
+
+        private void AssignToExpr(Expression expr, IMember value) {
+            switch (expr) {
+                case SequenceExpression seq:
+                    // Tuple = Tuple. Transfer values.
+                    var seqHandler = new SequenceExpressionHandler(Walker);
+                    seqHandler.HandleAssignment(seq, value);
+                    break;
+                case ExpressionWithAnnotation annExpr:
+                    HandleAnnotatedExpression(annExpr, value);
+                    break;
+                case NameExpression nameExpr:
+                    HandleNameExpression(nameExpr, value);
+                    break;
+                case MemberExpression memberExpr:
+                    TryHandleClassVariable(memberExpr, value);
+                    break;
             }
         }
 
