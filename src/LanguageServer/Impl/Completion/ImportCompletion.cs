@@ -18,10 +18,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
+using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
@@ -134,8 +136,10 @@ namespace Microsoft.Python.LanguageServer.Completion {
         }
 
         private static IEnumerable<CompletionItem> GetAllImportableModules(CompletionContext context) {
-            var mres = context.Analysis.Document.Interpreter.ModuleResolution;
-            var modules = mres.CurrentPathResolver.GetAllModuleNames();
+            var interpreter = context.Analysis.Document.Interpreter;
+            var languageVersion = interpreter.LanguageVersion.ToVersion();
+            var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
+            var modules = interpreter.ModuleResolution.CurrentPathResolver.GetAllImportableModuleNames(includeImplicit);
             return modules
                 .Where(n => !string.IsNullOrEmpty(n))
                 .Distinct()

@@ -16,6 +16,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
@@ -1302,6 +1303,24 @@ class A:
             comps = cs.GetCompletions(analysis, new SourceLocation(14, 8));
             names = comps.Completions.Select(c => c.label);
             names.Should().NotContain(new[] { "x1", "x2", "method1", "method2", "B" });
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FromImportPackageNoInitPy() {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "__init__.py"), string.Empty);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var doc = rdt.OpenDocument(appUri, "from top import s");
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(1, 18));
+            var names = comps.Completions.Select(c => c.label);
+            names.Should().Contain(new[] { "sub1" });
         }
     }
 }
