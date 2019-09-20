@@ -88,7 +88,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             
             while (items.Count > 0) {
                 var item = items.Dequeue();
-                names = names.Add(item.FullModuleName);
+                if (!string.IsNullOrEmpty(item.FullModuleName)) {
+                    names = names.Add(item.FullModuleName);
+                }
                 foreach (var child in item.Children) {
                     items.Enqueue(child);
                 }
