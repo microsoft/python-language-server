@@ -59,7 +59,7 @@ class C:
 
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(8, 1));
             comps.Should().HaveLabels("C", "x", "y", "while", "for");
         }
@@ -71,7 +71,7 @@ x = 'str'
 x.
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(3, 3));
             comps.Should().HaveLabels(@"isupper", @"capitalize", @"split");
         }
@@ -83,7 +83,7 @@ import datetime
 datetime.datetime.
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(3, 19));
             comps.Should().HaveLabels("now", @"tzinfo", @"ctime");
         }
@@ -98,7 +98,7 @@ ABC
 ABCDE.me
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(5, 4));
             comps.Should().HaveLabels(@"ABCDE");
 
@@ -116,7 +116,7 @@ class oar(list):
     pass
 ";
             var analysis = await GetAnalysisAsync(code, version);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
 
             result.Should().HaveItem("append")
@@ -131,7 +131,7 @@ class Test():
     def __
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 10));
 
             result.Should().HaveItem("__init__")
@@ -149,7 +149,7 @@ class oar(list):
     pass
 ";
             var analysis = await GetAnalysisAsync(code, version);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
 
             result.Should().HaveItem("append")
@@ -168,7 +168,7 @@ class Test(A):
     def __
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
 
             result.Should().HaveItem("__init__")
@@ -192,7 +192,7 @@ x.oar(100)
 ";
 
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(4, 8));
             result.Should().HaveItem("a");
         }
@@ -209,7 +209,7 @@ x.oar(100)
 ";
 
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(4, 8));
             result.Should().HaveItem("a");
         }
@@ -231,7 +231,7 @@ c.
 
 
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(11, 3));
             result.Should().NotContainLabels("fob");
             result.Should().HaveLabels("oar");
@@ -250,7 +250,7 @@ class B(A):
     def f";
 
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
             result.Should()
@@ -265,13 +265,13 @@ class B(A):
             var version = is3X ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X;
 
             var analysis = await GetAnalysisAsync("raise ", version);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
             result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
 
             if (is3X) {
                 analysis = await GetAnalysisAsync("raise Exception from ", PythonVersions.LatestAvailable3X);
-                cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+                cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
                 result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
                 result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
@@ -301,7 +301,7 @@ class B(A):
         [TestMethod, Priority(0)]
         public async Task InExcept() {
             var analysis = await GetAnalysisAsync("try:\n    pass\nexcept ");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 8));
             result.Should().HaveInsertTexts("Exception", "ValueError").And.NotContainInsertTexts("def", "abs");
@@ -342,7 +342,7 @@ x.
 x  
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 3));
             result.Should().HaveLabels("real", @"imag").And.NotContainLabels("abs");
@@ -369,7 +369,7 @@ x
         [TestMethod, Priority(0)]
         public async Task AfterAssign() {
             var analysis = await GetAnalysisAsync("x = x\ny = ");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 4));
             result.Should().HaveLabels("x", "abs");
@@ -389,7 +389,7 @@ class Simple(unittest.TestCase):
         self.assertRaises(TypeError).
 ";
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(5, 38));
             result.Should().HaveInsertTexts("exception");
@@ -401,7 +401,7 @@ class Simple(unittest.TestCase):
 sys  .  version
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 7));
             result.Should().HaveLabels("argv");
@@ -410,7 +410,7 @@ sys  .  version
         [TestMethod, Priority(0)]
         public async Task MarkupKindValid() {
             var analysis = await GetAnalysisAsync("import sys\nsys.\n");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 5));
             result.Completions?.Select(i => i.documentation?.kind).ExcludeDefault()
@@ -427,7 +427,7 @@ foo: Foo = Foo({ })
 foo.
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(6, 5));
             result.Should().HaveLabels("clear", "copy", "items", "keys", "update", "values");
@@ -444,7 +444,7 @@ def func(a: List[str]):
     pass
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(5, 7));
             result.Should().HaveLabels("clear", "copy", "count", "index", "remove", "reverse");
@@ -464,7 +464,7 @@ def func(a: Dict[int, str]):
     pass
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(5, 7));
             result.Should().HaveLabels("keys", "values");
@@ -494,7 +494,7 @@ boxedstr = Box('str')
 y = boxedstr.
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(14, 14));
             result.Should().HaveItem("get").Which.Should().HaveDocumentation("Box.get() -> int");
@@ -526,7 +526,7 @@ boxedstr = Box('str')
 y = boxedstr.
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(14, 14));
             result.Should().HaveLabels("append", "index");
@@ -555,7 +555,7 @@ class C(object):
     def baz(self): pass
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var completionInD = cs.GetCompletions(analysis, new SourceLocation(3, 5));
             var completionInOar = cs.GetCompletions(analysis, new SourceLocation(5, 9));
@@ -581,7 +581,7 @@ a = x()
 x.abc()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var objectMemberNames = analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Object).GetMemberNames();
 
             var completion = cs.GetCompletions(analysis, new SourceLocation(7, 1));
@@ -598,7 +598,7 @@ x.abc()
             var version = is3X ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X;
 
             var analysis = await GetAnalysisAsync("def f(a, b:int, c=2, d:float=None): pass", version);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
             result.Should().HaveNoCompletion();
@@ -632,7 +632,7 @@ x.abc()
         [TestMethod, Priority(0)]
         public async Task InFunctionDefinition_2X() {
             var analysis = await GetAnalysisAsync("@dec" + Environment.NewLine + "def  f(): pass", PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 1));
             result.Should().HaveLabels("any");
@@ -656,7 +656,7 @@ x.abc()
         [TestMethod, Priority(0)]
         public async Task InFunctionDefinition_3X() {
             var analysis = await GetAnalysisAsync("@dec" + Environment.NewLine + "async   def  f(): pass", PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 1));
             result.Should().HaveLabels("any");
@@ -684,7 +684,7 @@ x.abc()
             var version = is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X;
 
             var analysis = await GetAnalysisAsync("class C(object, parameter=MC): pass", version);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 8));
             result.Should().HaveNoCompletion();
@@ -726,7 +726,7 @@ x.abc()
         [TestMethod, Priority(0)]
         public async Task InWithStatement() {
             var analysis = await GetAnalysisAsync("with x as y, z as w: pass");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 6));
             result.Should().HaveAnyCompletions();
@@ -780,7 +780,7 @@ x.abc()
             var analysis2 = await module2.GetAnalysisAsync(-1);
             var analysis3 = await module3.GetAnalysisAsync(-1);
 
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis1, new SourceLocation(1, 16));
             result.Should().OnlyHaveLabels("module2", "sub_package");
@@ -801,7 +801,7 @@ from unittest.case import TestCase as TC, TestCase
 ";
 
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 7));
             result.Should().HaveLabels("from", "import", "abs", "dir").And.NotContainLabels("abc");
@@ -887,7 +887,7 @@ class A(object):
     def 
 pass";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
             result.Should().HaveNoCompletion();
@@ -905,7 +905,7 @@ pass";
         public async Task NoCompletionInEllipsis(bool is2x) {
             const string code = "...";
             var analysis = await GetAnalysisAsync(code, is2x ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 4));
             result.Should().HaveNoCompletion();
@@ -917,7 +917,7 @@ pass";
         [DataTestMethod, Priority(0)]
         public async Task NoCompletionInString(bool is2x) {
             var analysis = await GetAnalysisAsync("\"str.\"", is2x ? PythonVersions.LatestAvailable2X : PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 6));
             result.Should().HaveNoCompletion();
         }
@@ -925,7 +925,7 @@ pass";
         [TestMethod, Priority(0)]
         public async Task NoCompletionInOpenString() {
             var analysis = await GetAnalysisAsync("'''.");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
             result.Should().HaveNoCompletion();
         }
@@ -936,7 +936,7 @@ pass";
         [DataTestMethod, Priority(0)]
         public async Task NoCompletionInFStringConstant(string openFString) {
             var analysis = await GetAnalysisAsync(openFString);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 5));
             result.Should().HaveNoCompletion();
         }
@@ -944,7 +944,7 @@ pass";
         [TestMethod, Priority(0)]
         public async Task NoCompletionBadImportExpression() {
             var analysis = await GetAnalysisAsync("import os,.");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             cs.GetCompletions(analysis, new SourceLocation(1, 12)); // Should not crash.
         }
 
@@ -952,7 +952,7 @@ pass";
         public async Task NoCompletionInComment() {
 
             var analysis = await GetAnalysisAsync("x = 1 #str. more text");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 12));
             result.Should().HaveNoCompletion();
         }
@@ -966,7 +966,7 @@ import os
 os.
 ";
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 4));
             result.Should().HaveLabels("path", @"devnull", "SEEK_SET", @"curdir");
@@ -981,7 +981,7 @@ import os
 os.path.
 ";
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 9));
             result.Should().HaveLabels("split", @"getsize", @"islink", @"abspath");
@@ -991,7 +991,7 @@ os.path.
         public async Task FromDotInRoot() {
             const string code = "from .";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
             result.Should().HaveNoCompletion();
@@ -1011,7 +1011,7 @@ os.path.
 
             var analysis = await module1.GetAnalysisAsync(-1);
 
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
             result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__", "__spec__");
         }
@@ -1034,7 +1034,7 @@ os.path.
 
             await analyzer.WaitForCompleteAnalysisAsync();
             var analysis = await module.GetAnalysisAsync(-1);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
             result.Should().HaveLabels("module2", "sub_package", "answer");
@@ -1057,7 +1057,7 @@ os.path.
             await module.GetAnalysisAsync(-1);
             var analysis1 = await module1.GetAnalysisAsync(-1);
             var analysis2 = await module2.GetAnalysisAsync(-1);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis1, new SourceLocation(1, 8));
             result.Should().HaveLabels("package").And.NotContainLabels("module2", "sub_package", "answer");
@@ -1079,7 +1079,7 @@ os.path.
             rdt.OpenDocument(module3, string.Empty);
 
             var analysis = await module.GetAnalysisAsync(-1);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
             result.Should().OnlyHaveLabels("module2", "sub_package");
@@ -1098,7 +1098,7 @@ os.path.
 
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 9));
             result.Should().HaveLabels("m1", "m2", "x");
@@ -1113,7 +1113,7 @@ from os.path import exists as EX
 E
 ";
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 2));
             result.Should().HaveLabels("EX");
@@ -1126,7 +1126,7 @@ E
         public async Task NoDuplicateMembers() {
             const string code = @"import sy";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 10));
             result.Completions.Count(c => c.label.EqualsOrdinal(@"sys")).Should().Be(1);
@@ -1143,7 +1143,7 @@ a = A()
 a.
 ";
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var extraMembers = new[] { "mro", "__dict__", @"__weakref__" };
             var result = cs.GetCompletions(analysis, new SourceLocation(4, 3));
             if (is3x) {
@@ -1170,7 +1170,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     $"'azure.functions' package is not installed for Python {ver}, see https://github.com/Microsoft/python-language-server/issues/462");
             }
 
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(5, 23));
             result.Should().HaveLabels("get");
             result.Completions.First(x => x.label == "get").Should().HaveDocumentation("dict.get*");
@@ -1182,7 +1182,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 for a, b in x:
     
 ");
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(3, 4));
             result.Should().HaveLabels("a", "b");
         }
@@ -1195,7 +1195,7 @@ for a, b in x:
             var code = empty ? string.Empty : $"{Path.GetFileNameWithoutExtension(modulePath)}.";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X, null, modulePath);
 
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, code.Length + 1));
             result.Should().NotContainLabels(analysis.Document.Name);
         }
@@ -1213,7 +1213,7 @@ sys.
 
             var analysis = await GetDocumentAnalysisAsync(doc);
 
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var completions = cs.GetCompletions(analysis, new SourceLocation(3, 5));
             completions.Should().HaveLabels("argv", "path", "exit");
         }
@@ -1225,7 +1225,7 @@ def func():
     aaa = 1
 a";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(4, 2));
             result.Completions.Select(c => c.label).Should().NotContain("aaa");
@@ -1244,7 +1244,7 @@ class A:
 A().
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var result = cs.GetCompletions(analysis, new SourceLocation(7, 14));
             result.Completions.Select(c => c.label).Should().Contain("__x").And.NotContain("_A__x");
@@ -1270,7 +1270,7 @@ def test(x: Foo = func()):
     x.
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(13, 7));
             comps.Should().HaveLabels("name", "z");
         }
@@ -1281,7 +1281,7 @@ def test(x: Foo = func()):
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
 
             ServerSettings.completion.addBrackets = true;
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var comps = cs.GetCompletions(analysis, new SourceLocation(1, 5));
             var print = comps.Completions.FirstOrDefault(x => x.label == "print");
@@ -1313,7 +1313,7 @@ class A:
         
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var comps = cs.GetCompletions(analysis, new SourceLocation(11, 21));
             var names = comps.Completions.Select(c => c.label);

@@ -13,12 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
@@ -43,12 +39,12 @@ namespace Microsoft.Python.Analysis {
         /// </summary>
         /// <param name="lineNum">The line number</param>
         internal static string GetLine(this IPythonModule module, int lineNum) {
-            string content = module.Analysis?.Document?.Content;
+            var content = module.Analysis?.Document?.Content;
             if (string.IsNullOrEmpty(content)) {
                 return string.Empty;
             }
 
-            SourceLocation source = new SourceLocation(lineNum, 1);
+            var source = new SourceLocation(lineNum, 1);
             var start = module.GetAst().LocationToIndex(source);
             var end = start;
 
@@ -62,9 +58,9 @@ namespace Microsoft.Python.Analysis {
         /// </summary>
         /// <param name="lineNum">The line number</param>
         internal static string GetComment(this IPythonModule module, int lineNum) {
-            string line = module.GetLine(lineNum);
+            var line = module.GetLine(lineNum);
 
-            int commentPos = line.IndexOf('#');
+            var commentPos = line.IndexOf('#');
             if (commentPos < 0) {
                 return string.Empty;
             }
@@ -72,41 +68,8 @@ namespace Microsoft.Python.Analysis {
             return line.Substring(commentPos + 1).Trim('\t', ' ');
         }
 
-        internal static bool IsNonUserFile(this IPythonModule module) => module.ModuleType.IsNonUserFile();
-        internal static bool IsCompiled(this IPythonModule module) => module.ModuleType.IsCompiled();
-
-        public static IEnumerable<string> GetSubmoduleNames(this IPythonModule module) {
-            var searchResult = module.Interpreter.ModuleResolution.CurrentPathResolver.FindImports(module.FilePath, Enumerable.Repeat(module.Name, 1), 0, true);
-            if (searchResult is IImportChildrenSource children) {
-                foreach (var name in children.GetChildrenNames()) {
-                    if (children.TryGetChildImport(name, out var imports)) {
-                        switch (imports) {
-                            case ImplicitPackageImport packageImport:
-                                yield return packageImport.Name;
-                                break;
-                            case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(module.FilePath):
-                                yield return moduleImport.Name;
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-
-        public static IPythonModule GetSubmodule(this IPythonModule module, string subModuleName) {
-            var mres = module.Interpreter.ModuleResolution;
-            var searchResult = mres.CurrentPathResolver.FindImports(module.FilePath, Enumerable.Repeat(module.Name, 1), 0, true);
-            if (searchResult is IImportChildrenSource children) {
-                if (children.TryGetChildImport(subModuleName, out var imports)) {
-                    switch (imports) {
-                        case ImplicitPackageImport packageImport:
-                            return mres.GetImportedModule(packageImport.FullName);
-                        case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(module.FilePath):
-                            return mres.GetImportedModule(moduleImport.FullName);
-                    }
-                }
-            }
-            return null;
-        }
+        public static bool IsNonUserFile(this IPythonModule module) => module.ModuleType.IsNonUserFile();
+        public static bool IsCompiled(this IPythonModule module) => module.ModuleType.IsCompiled();
+        public static bool IsTypingModule(this IPythonModule module) => module?.ModuleType == ModuleType.Specialized && module.Name == "typing";
     }
 }

@@ -19,7 +19,10 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionCompletion {
@@ -41,21 +44,55 @@ namespace Microsoft.Python.LanguageServer.Completion {
             if (!value.IsUnknown()) {
 
                 var type = value.GetPythonType();
-                if(type is IPythonClassType cls) {
+                if (type is IPythonClassType cls) {
                     return GetClassItems(cls, e, context);
                 }
 
-                var items = new List<CompletionItem>();
-                foreach (var t in type.GetMemberNames().ToArray()) {
-                    var m = type.GetMember(t);
-                    if (m is IVariable v && v.Source != VariableSource.Declaration) {
-                        continue;
-                    }
-                    items.Add(context.ItemSource.CreateCompletionItem(t, m, type));
-                }
-                return items;
+                var memberNames = type is IPythonModule module
+                    ? GetModuleMemberNames(module, context)
+                    : type.GetMemberNames();
+
+                return memberNames.Select(name => context.ItemSource.CreateCompletionItem(name, type.GetMember(name), type));
             }
             return Enumerable.Empty<CompletionItem>();
+        }
+
+        private static IEnumerable<string> GetModuleMemberNames(IPythonModule module, CompletionContext context) {
+            var variables = module.Analysis?.GlobalScope?.Variables;
+            if (variables == null) {
+                return module.GetMemberNames();
+            }
+
+            var fs = context.Services.GetService<IFileSystem>();
+            var thisModuleDirectory = Path.GetDirectoryName(module.FilePath);
+            // drop imported modules and typing.
+            return variables
+                .Where(v => {
+                    // Instances are always fine.
+                    if (v.Value is IPythonInstance) {
+                        return true;
+                    }
+
+                    var valueType = v.Value?.GetPythonType();
+                    switch (valueType) {
+                        case IPythonModule m:
+                            // Do not show modules except submodules.
+                            return !string.IsNullOrEmpty(m.FilePath) && fs.IsPathUnderRoot(thisModuleDirectory, Path.GetDirectoryName(m.FilePath));
+                        case IPythonFunctionType f when f.IsLambda():
+                            return false;
+                    }
+
+                    if (module.IsTypingModule()) {
+                        return true; // Let typing module behave normally.
+                    }
+
+                    // Do not re-export types from typing. However, do export variables
+                    // assigned with types from typing. Example:
+                    //    from typing import Any # do NOT export Any
+                    //    x = Union[int, str] # DO export x
+                    return valueType?.DeclaringModule.IsTypingModule() != true || v.Name != valueType.Name;
+                })
+                .Select(v => v.Name);
         }
 
         private static IEnumerable<CompletionItem> GetClassItems(IPythonClassType cls, Expression e, CompletionContext context) {

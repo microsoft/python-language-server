@@ -165,10 +165,9 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 completions.Add(CompletionItemSource.Star);
             }
 
+            var memberNames = (module?.GetMemberNames().Where(n => !string.IsNullOrEmpty(n)) ?? Enumerable.Empty<string>()).ToHashSet();
             if (module != null) {
-                completions.AddRange(module.GetMemberNames()
-                    .Where(n => !string.IsNullOrEmpty(n))
-                    .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
+                completions.AddRange(memberNames.Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
             }
 
             if (importSearchResult is IImportChildrenSource children) {
@@ -177,13 +176,18 @@ namespace Microsoft.Python.LanguageServer.Completion {
                         continue;
                     }
 
+                    string name = null;
                     switch (imports) {
                         case ImplicitPackageImport packageImport:
-                            completions.Add(CompletionItemSource.CreateCompletionItem(packageImport.Name, CompletionItemKind.Module));
+                            name = packageImport.Name;
                             break;
                         case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(document.FilePath):
-                            completions.Add(CompletionItemSource.CreateCompletionItem(moduleImport.Name, CompletionItemKind.Module));
+                            name = moduleImport.Name;
                             break;
+                    }
+
+                    if (name != null && !memberNames.Contains(name)) {
+                        completions.Add(CompletionItemSource.CreateCompletionItem(name, CompletionItemKind.Module));
                     }
                 }
             }
