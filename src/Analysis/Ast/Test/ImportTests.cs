@@ -290,5 +290,22 @@ import top.sub3.sub4
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
             analysis.Should().HaveVariable("top").Which.Should().HaveMembers("sub1", "sub2", "sub3", "top");
         }
+
+
+        [TestMethod, Priority(0)]
+        public async Task ImportPackageNoInitPy() {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "__init__.py"), string.Empty);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var doc = rdt.OpenDocument(appUri, "from top import sub1");
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+            var sub1 = analysis.Should().HaveVariable("sub1")
+                .Which.Should().HaveType<IPythonModule>().Which;
+            sub1.Value.MemberType.Should().NotBe(ModuleType.Unresolved);
+        }
     }
 }
