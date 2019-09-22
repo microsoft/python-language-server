@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         var exported = variable ?? variableModule.GetMember(memberName);
                         var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
                         // Do not allow imported variables to override local declarations
-                        Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
+                        Eval.DeclareImportedVariable(variableName, value, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
                     }
                 }
             }
@@ -105,7 +105,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
                 var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
                 // Do not allow imported variables to override local declarations
-                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, Eval.DefaultLocation, CanOverwriteVariable(memberName, importPosition));
+                Eval.DeclareImportedVariable(memberName, variable ?? member, null, CanOverwriteVariable(memberName, importPosition));
             }
         }
 

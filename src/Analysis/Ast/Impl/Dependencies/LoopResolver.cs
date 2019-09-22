@@ -13,10 +13,17 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Values;
+using System.Collections.Generic;
+using Microsoft.Python.Core.Collections;
 
-namespace Microsoft.Python.Analysis {
-    public static class VariableExtensions {
-        public static T GetValue<T>(this IVariable v) where T : class => v.Value as T;
+namespace Microsoft.Python.Analysis.Dependencies {
+    internal sealed class IndexedLoopResolver<T> {
+        private readonly IComparer<T> _comparer;
+
+        public IndexedLoopResolver(IComparer<T> comparer) => _comparer = comparer;
+
+        public ImmutableArray<T> FindStartingItems(IEnumerable<(T from, int fromIndex, T to, int toIndex)> edges) {
+
+        }
     }
 }

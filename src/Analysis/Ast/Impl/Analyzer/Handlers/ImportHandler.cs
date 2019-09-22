@@ -168,7 +168,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private void MakeUnresolvedImport(string variableName, string moduleName, Node location) {
             if (!string.IsNullOrEmpty(variableName)) {
-                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
+                Eval.DeclareImportedVariable(variableName, new SentinelModule(moduleName, Eval.Services), location);
             }
             Eval.ReportDiagnostics(Eval.Module.Uri, 
                 new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), 

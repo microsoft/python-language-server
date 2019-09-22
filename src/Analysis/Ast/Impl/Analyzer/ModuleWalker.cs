@@ -206,7 +206,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             new StubMerger(Eval).MergeStub(_stubAnalysis, _cancellationToken);
 
             if (_allIsUsable && _allReferencesCount >= 1 && GlobalScope.Variables.TryGetVariable(AllVariableName, out var variable)
-                && variable?.Value is IPythonCollection collection && collection.IsExact) {
+                && variable.Value is IPythonCollection collection && collection.IsExact) {
                 StarImportMemberNames = collection.Contents
                     .OfType<IPythonConstant>()
                     .Select(c => c.GetString())
