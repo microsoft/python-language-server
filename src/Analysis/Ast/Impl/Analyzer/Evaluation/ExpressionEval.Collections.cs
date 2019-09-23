@@ -108,8 +108,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        public IMember GetValueFromComprehension(Comprehension node) {
+        public IMember GetValueFromComprehensionInScope(Comprehension node, bool is3X = true) {
+            if (is3X) {
+                using (OpenScope(Module, node)) {
+                    ProcessComprehension(node);
+                    return GetValueFromComprehension(node);
+                }
+            }
+                
             ProcessComprehension(node);
+            return GetValueFromComprehension(node);
+        }
+
+        private IMember GetValueFromComprehension(Comprehension node) {
             // TODO: Evaluate comprehensions to produce exact contents, if possible.
             switch (node) {
                 case ListComprehension lc:
@@ -127,18 +138,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        internal void ProcessComprehension(Comprehension node) {
+        internal void ProcessComprehensionInScope(Comprehension node, bool is3X = true) {
             // In 2X there is a bug where comprehension variables get leaked to outer scopes, fixed in 3X
-            if (Interpreter.LanguageVersion.Is3x()) {
+            if (is3X) {
                 using (OpenScope(Module, node)) {
-                    ProcessComprehension0(node);
+                    ProcessComprehension(node);
                     return;
                 }
             }
-            ProcessComprehension0(node);
+
+            ProcessComprehension(node);
         }
 
-        private void ProcessComprehension0(Comprehension node) {
+        private void ProcessComprehension(Comprehension node) {
             foreach (var cfor in node.Iterators.OfType<ComprehensionFor>().Where(c => c.Left != null)) {
                 var value = GetValueFromExpression(cfor.List);
                 if (value != null) {

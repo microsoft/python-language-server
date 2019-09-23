@@ -70,7 +70,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     AssignmentHandler.HandleAnnotatedExpression(ea, null);
                     return false;
                 case Comprehension comp:
-                    Eval.ProcessComprehension(comp);
+                    Eval.ProcessComprehensionInScope(comp, Eval.Interpreter.LanguageVersion.Is3x());
                     return false;
                 case CallExpression callex when callex.Target is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
                     Eval.LookupNameInScopes(nex.Name)?.AddReference(Eval.GetLocationOfName(nex));
@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         #endregion
 
-        protected T[] GetStatements<T>(IScopeStatement s)
+        protected T[] GetStatements<T>(IScopeStatement s) 
             => (s.Body as SuiteStatement)?.Statements.OfType<T>().ToArray() ?? Array.Empty<T>();
     }
 }

@@ -4,8 +4,6 @@ namespace Microsoft.Python.Parsing.Ast {
     public class AstScopeInfo : ScopeInfo {
         public AstScopeInfo(IScopeNode node) : base(node) { }
 
-        public override string Name => "<ast>";
-        
         internal override bool IsGlobal => true;
 
         protected override bool ExposesLocalVariable => true;

@@ -65,29 +65,29 @@ def func(x, y):
                 (new SourceLocation(2, 2), "<module>"),
                 (new SourceLocation(3, 1), "<module>"),
                 (new SourceLocation(3, 3), "<module>"),
-                (new SourceLocation(4, 11), "<class A>"),
-                (new SourceLocation(5, 1), "<class A>"),
-                (new SourceLocation(5, 5), "<class A>"),
-                (new SourceLocation(5, 6), "<class A>"),
-                (new SourceLocation(5, 17), "<function method>"),
-                (new SourceLocation(6, 9), "<function method>"),
-                (new SourceLocation(7, 9), "<function method>"),
-                (new SourceLocation(7, 14), "<function method>"),
-                (new SourceLocation(8, 9), "<function method>"),
-                (new SourceLocation(9, 5), "<class A>"),
-                (new SourceLocation(10, 5), "<class A>"),
-                (new SourceLocation(10, 7), "<class A>"),
+                (new SourceLocation(4, 11), "A"),
+                (new SourceLocation(5, 1), "A"),
+                (new SourceLocation(5, 5), "A"),
+                (new SourceLocation(5, 6), "A"),
+                (new SourceLocation(5, 17), "method"),
+                (new SourceLocation(6, 9), "method"),
+                (new SourceLocation(7, 9), "method"),
+                (new SourceLocation(7, 14), "method"),
+                (new SourceLocation(8, 9), "method"),
+                (new SourceLocation(9, 5), "A"),
+                (new SourceLocation(10, 5), "A"),
+                (new SourceLocation(10, 7), "A"),
                 (new SourceLocation(11, 1), "<module>"),
                 (new SourceLocation(12, 1), "<module>"),
-                (new SourceLocation(12, 11), "<function func>"),
-                (new SourceLocation(13, 5), "<function func>"),
-                (new SourceLocation(13, 6), "<function func>"),
-                (new SourceLocation(14, 5), "<function func>"),
-                (new SourceLocation(14, 15), "<function inner>"),
-                (new SourceLocation(15, 9), "<function inner>"),
-                (new SourceLocation(15, 10), "<function inner>"),
-                (new SourceLocation(16, 9), "<function inner>"),
-                (new SourceLocation(17, 5), "<function func>"),
+                (new SourceLocation(12, 11), "func"),
+                (new SourceLocation(13, 5), "func"),
+                (new SourceLocation(13, 6), "func"),
+                (new SourceLocation(14, 5), "func"),
+                (new SourceLocation(14, 15), "inner"),
+                (new SourceLocation(15, 9), "inner"),
+                (new SourceLocation(15, 10), "inner"),
+                (new SourceLocation(16, 9), "inner"),
+                (new SourceLocation(17, 5), "func"),
                 (new SourceLocation(18, 1), "<module>")
             };
 
@@ -110,8 +110,8 @@ class A:
 
             var locations = new[] {
                 (new SourceLocation(5, 1), "<module>"),
-                (new SourceLocation(5, 5), "<class A>"),
-                (new SourceLocation(5, 9), "<function method>")
+                (new SourceLocation(5, 5), "A"),
+                (new SourceLocation(5, 9), "method")
             };
 
             foreach (var loc in locations) {

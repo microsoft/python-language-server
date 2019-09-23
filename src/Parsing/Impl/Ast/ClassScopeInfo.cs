@@ -13,8 +13,6 @@ namespace Microsoft.Python.Parsing.Ast {
             set => base.HasLateBoundVariableSets = value;
         }
         
-        public override string Name => "<ast>";
-
         protected override bool ExposesLocalVariable => true;
 
         internal override bool TryBindOuter(IScopeNode from, string name, bool allowGlobals,

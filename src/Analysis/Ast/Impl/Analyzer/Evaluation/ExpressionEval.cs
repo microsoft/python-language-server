@@ -25,6 +25,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Definition;
 
@@ -171,7 +172,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     m = GetValueFromGenerator(genex);
                     break;
                 case Comprehension comp:
-                    m = GetValueFromComprehension(comp);
+                    m = GetValueFromComprehensionInScope(comp, Interpreter.LanguageVersion.Is3x());
                     break;
                 case LambdaExpression lambda:
                     m = GetValueFromLambda(lambda);

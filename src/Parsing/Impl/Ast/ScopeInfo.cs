@@ -22,9 +22,9 @@ namespace Microsoft.Python.Parsing.Ast {
         protected ScopeInfo(IScopeNode node) {
             Node = node;
         }
-        
-        public virtual string /*!*/ Name => "<unknown>";
 
+        public string Name => Node.ScopeName;
+        
         protected IScopeNode Node { get; }
 
         internal bool ContainsImportStar { get; set; }
@@ -148,8 +148,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
                         // Accessing outer scope variable which is being deleted?
                         if (variable != null) {
-                            if (variable.Deleted && variable.Scope != Node && !variable.IsGlobal &&
-                                binder.LanguageVersion < PythonLanguageVersion.V32) {
+                            if (variable.Deleted && variable.Scope != Node && !variable.IsGlobal && binder.LanguageVersion < PythonLanguageVersion.V32) {
                                 // report syntax error
                                 binder.ReportSyntaxError(
                                     "can not delete variable '{0}' referenced in nested scope"
@@ -247,7 +246,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal bool IsReferenced(string name) => _references != null && _references.ContainsKey(name);
 
-        internal PythonVariable /*!*/ CreateVariable(string name, VariableKind kind) {
+        internal PythonVariable CreateVariable(string name, VariableKind kind) {
             EnsureVariables();
             PythonVariable variable;
             Variables[name] = variable = new PythonVariable(name, kind, Node);
