@@ -15,11 +15,10 @@
 
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -152,7 +151,7 @@ h = [i for i in range(1, 100)]
             scopes.Should().HaveCount(2);
             var scope = scopes[0];
             scope.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
-            
+
             scope = scopes[1];
             scope.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
         }
@@ -172,6 +171,28 @@ h = [[float(y) for y in x] for x in l]
             scope = scopes[1];
             scope.Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedListComprehensionInSetComprehension() {
+            const string code = @"
+my_obj = {
+    'Episodes' : [
+        {'Tags' : ['one','two','three']},
+        {'Tags' : ['three','four','five']}
+            ]
+        }
+
+tags = {tag for e in my_obj['Episodes'] for tag in e['Tags']}
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var scopes = analysis.GlobalScope.Should().HaveChildScopes("<set comprehension>").Which;
+            scopes.Should().HaveCount(1);
+            var scope = scopes[0];
+            scope.Should().HaveVariable("e").OfType(BuiltinTypeId.Dict);
+            scope.Should().HaveVariable("tag").OfType(BuiltinTypeId.Str);
+        }
+
+
 
         [TestMethod, Priority(0)]
         public async Task VariableInDictComprehension() {
@@ -201,6 +222,25 @@ my_set = {x for x in range(10)}
             scope.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
             scope = scopes[1];
             scope.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VariableInComprehension2X() {
+            const string code = @"
+class K:
+    a = 10
+    b = 12
+    def c(self, r):
+        b = r
+        return b
+A = K()
+AR = [A, A, A]
+b = [a for a in AR]
+c = {a for a in AR}
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.GlobalScope.Should().NotHaveChildScopes("<list comprehension>")
+                .And.NotHaveChildScopes("<set comprehension>");
         }
     }
 }

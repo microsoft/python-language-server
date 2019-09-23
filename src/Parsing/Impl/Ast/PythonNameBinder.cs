@@ -265,8 +265,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // ListComprehension
         public override bool Walk(ListComprehension node) {
-            PushScope(node);
+            // Only create new scope if 3x
+            if (!LanguageVersion.Is3x()) {
+                return true;
+            }
 
+            PushScope(node);
             node.Item?.Walk(this);
             foreach (var ci in node.Iterators) {
                 ci.Walk(this);
@@ -277,12 +281,22 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // ListComprehension
         public override void PostWalk(ListComprehension node) {
+            if (!LanguageVersion.Is3x()) {
+                base.PostWalk(node);
+                return;
+            }
+
             Debug.Assert(node == _currentScope);
             PopScope();
         }
 
         // DictionaryComprehension
         public override bool Walk(DictionaryComprehension node) {
+            // Only create new scope if 3x
+            if (!LanguageVersion.Is3x()) {
+                return true;
+            }
+
             PushScope(node);
             node.Slice?.Walk(this);
             foreach (var ci in node.Iterators.MaybeEnumerate()) {
@@ -294,12 +308,22 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // DictionaryComprehension
         public override void PostWalk(DictionaryComprehension node) {
+            if (!LanguageVersion.Is3x()) {
+                base.PostWalk(node);
+                return;
+            }
+
             Debug.Assert(node == _currentScope);
             PopScope();
         }
 
         // SetComprehension
         public override bool Walk(SetComprehension node) {
+            // Only create new scope if 3x
+            if (!LanguageVersion.Is3x()) {
+                return true;
+            }
+
             PushScope(node);
             node.Item?.Walk(this);
             foreach (var ci in node.Iterators.MaybeEnumerate()) {
@@ -311,6 +335,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // SetComprehension
         public override void PostWalk(SetComprehension node) {
+            if (!LanguageVersion.Is3x()) {
+                base.PostWalk(node);
+                return;
+            }
+
             Debug.Assert(node == _currentScope);
             PopScope();
         }

@@ -59,6 +59,20 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         [CustomAssertion]
+        public AndConstraint<TScopeAssertions> NotHaveChildScopes(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+            var scopeMatch = Subject.Children.TraverseBreadthFirst(s => s.Children)
+                .Where(s => s.Name == name)
+                .ToList();
+
+            Execute.Assertion.BecauseOf(because, reasonArgs)
+                .ForCondition(scopeMatch.IsNullOrEmpty())
+                .FailWith($"Expected to not have child scope with name {name} ");
+
+            return new AndConstraint<TScopeAssertions>((TScopeAssertions) this);
+        }
+
+        [CustomAssertion]
         public AndWhichConstraint<TScopeAssertions, List<IScope>> HaveChildScopes(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             var scopeMatch = Subject.Children.TraverseBreadthFirst(s => s.Children)

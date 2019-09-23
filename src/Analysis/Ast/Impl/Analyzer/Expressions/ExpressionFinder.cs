@@ -215,6 +215,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     return false;
                 }
 
+                // Don't set scope if 2x 
+                if (!Tree.LanguageVersion.Is3x()) {
+                    return true;
+                }
+
                 Scope = node;
                 node.Slice?.Walk(this);
                 foreach (var ci in node.Iterators.MaybeEnumerate()) {
@@ -228,6 +233,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (!base.Walk(node)) {
                     return false;
                 }
+
+                // Don't set scope if 2x 
+                if (!Tree.LanguageVersion.Is3x()) {
+                    return true;
+                }
+
                 Scope = node;
 
                 node.Item?.Walk(this);
