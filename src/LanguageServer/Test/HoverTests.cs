@@ -229,7 +229,7 @@ f'hey {some}'
             const string code = @"
 (a := 1)
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
             AssertHover(hs, analysis, new SourceLocation(2, 2), @"a: int", new SourceSpan(2, 2, 2, 3));
         }
