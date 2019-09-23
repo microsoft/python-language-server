@@ -1013,7 +1013,7 @@ os.path.
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__", "__spec__");
+            result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__", "__spec__", "module1");
         }
 
         [TestMethod, Priority(0)]
@@ -1336,7 +1336,7 @@ class A:
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
 
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(1, 18));
             var names = comps.Completions.Select(c => c.label);
             names.Should().Contain(new[] { "sub1" });

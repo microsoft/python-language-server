@@ -307,5 +307,37 @@ import top.sub3.sub4
                 .Which.Should().HaveType<IPythonModule>().Which;
             sub1.Value.MemberType.Should().NotBe(ModuleType.Unresolved);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task DeepSubmoduleImport() {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "__init__.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "__init__.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "sub2", "__init__.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "sub2", "sub3", "__init__.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "sub2", "sub3", "sub4", "__init__.py"), string.Empty);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var appDoc = rdt.OpenDocument(appUri, "import top.sub1.sub2.sub3.sub4");
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await appDoc.GetAnalysisAsync(Timeout.Infinite);
+            
+            var topModule = analysis.Should().HaveVariable("top")
+                .Which.Should().HaveType<IPythonModule>().Which;
+
+            topModule.Should().HaveMemberName("sub1");
+            var sub1Module = topModule.Should().HaveMember<IPythonModule>("sub1").Which;
+
+            sub1Module.Should().HaveMemberName("sub2");
+            var sub2Module = sub1Module.Should().HaveMember<IPythonModule>("sub2").Which;
+
+            sub2Module.Should().HaveMemberName("sub3");
+            var sub3Module = sub2Module.Should().HaveMember<IPythonModule>("sub3").Which;
+
+            sub3Module.Should().HaveMemberName("sub4");
+            sub3Module.Should().HaveMember<IPythonModule>("sub4");
+        }
     }
 }

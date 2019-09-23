@@ -89,6 +89,11 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return new AndWhichConstraint<VariableAssertions, T>(this, m);
         }
 
+        public void HaveMemberName(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+            Value.GetPythonType().GetMemberNames().Should().Contain(name);
+        }
+
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadWithParametersAt(int index, string because = "", params object[] reasonArgs) {
             var constraint = HaveOverloadAt(index);
             var overload = constraint.Which;
