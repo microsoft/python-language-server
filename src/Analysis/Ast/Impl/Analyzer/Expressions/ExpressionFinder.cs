@@ -53,11 +53,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     return;
                 }
             }
+
             if (Options.MemberTarget) {
                 walker = new MemberTargetExpressionWalker(Ast, startIndex);
             } else {
                 walker = new NormalExpressionWalker(Ast, startIndex, endIndex, Options);
             }
+
             Ast.Walk(walker);
             node = walker.Expression;
             statement = walker.Statement;
@@ -103,6 +105,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                         ? m.Names.FirstOrDefault(n => n.StartIndex <= _endLocation && _endLocation <= n.EndIndex)
                         : node;
                 }
+
                 return baseWalk;
             }
 
@@ -110,6 +113,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (stmt == null) {
                     return false;
                 }
+
                 if (baseWalk) {
                     Statement = stmt;
                 }
@@ -182,10 +186,55 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 foreach (var p in node.Parameters) {
                     p?.Walk(this);
                 }
+
                 node.ReturnAnnotation?.Walk(this);
 
                 ClearStmt(node, node.Body, node.HeaderIndex);
                 node.Body?.Walk(this);
+
+                return false;
+            }
+
+            public override bool Walk(ListComprehension node) {
+                if (base.Walk(node)) {
+                    Scope = node;
+
+                    node.Item?.Walk(this);
+                    foreach (var ci in node.Iterators) {
+                        ci.Walk(this);
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            public override bool Walk(DictionaryComprehension node) {
+                if (base.Walk(node)) {
+                    Scope = node;
+                    node.Slice?.Walk(this);
+                    foreach (var ci in node.Iterators.MaybeEnumerate()) {
+                        ci.Walk(this);
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            public override bool Walk(SetComprehension node) {
+                if (base.Walk(node)) {
+                    Scope = node;
+                    
+                    node.Item?.Walk(this);
+                    foreach (var ci in node.Iterators.MaybeEnumerate()) {
+                        ci.Walk(this);
+                    }
+
+                    return true;
+                }
 
                 return false;
             }
@@ -195,8 +244,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.NameExpression != null) {
                         Save(node.NameExpression, base.Walk(node.NameExpression), _options.ParameterNames);
                     }
+
                     return true;
                 }
+
                 return false;
             }
 
@@ -210,8 +261,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     } else if (_options.Members) {
                         Expression = node;
                     }
+
                     return true;
                 }
+
                 return false;
             }
 
@@ -230,6 +283,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (_options.ClassDefinitionName) {
                     node.NameExpression?.Walk(this);
                 }
+
                 node.Decorators?.Walk(this);
                 foreach (var b in node.Bases) {
                     b.Walk(this);
@@ -257,7 +311,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             public override bool Walk(ImportStatement node) {
                 if (!base.Walk(node)) {
                     return false;
-
                 }
 
                 SaveStmt(node, true);
@@ -267,6 +320,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                         n?.Walk(this);
                     }
                 }
+
                 if (_options.ImportAsNames) {
                     foreach (var n in node.AsNames) {
                         n?.Walk(this);
@@ -306,15 +360,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (Location > node.StartIndex && BeforeBody(node.Body, node.HeaderIndex)) {
                     Statement = node;
                 }
+
                 node.Body?.Walk(this);
                 if (node.Handlers != null) {
                     foreach (var handler in node.Handlers) {
                         if (Location > handler.StartIndex && BeforeBody(handler.Body, handler.HeaderIndex)) {
                             Statement = handler;
                         }
+
                         handler.Walk(this);
                     }
                 }
+
                 node.Else?.Walk(this);
                 node.Finally?.Walk(this);
 
@@ -334,8 +391,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (Location >= node.NameHeader && Location <= node.EndIndex) {
                         Expression = node.Target;
                     }
+
                     return true;
                 }
+
                 return false;
             }
         }
@@ -404,8 +463,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                             return Save(node.OperatorIndex, true, "is") &&
                                 Save(node.GetIndexOfSecondOp(_ast), true, "not");
                     }
+
                     return true;
                 }
+
                 return false;
             }
 
@@ -414,8 +475,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
+
                     return Save(node.GetIndexOfFor(_ast), true, "for") && Save(node.GetIndexOfIn(_ast), true, "in");
                 }
+
                 return false;
             }
 
@@ -423,6 +486,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (base.Walk(node)) {
                     return Save(node.IfIndex, true, "if") && Save(node.ElseIndex, true, "else");
                 }
+
                 return false;
             }
 
@@ -431,14 +495,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
+
                     if (!Save(node.ForIndex, true, "for")) {
                         return false;
                     }
+
                     if (!Save(node.InIndex, true, "in")) {
                         return false;
                     }
+
                     return node.Else == null || Save(node.Else.StartIndex, true, "else");
                 }
+
                 return false;
             }
 
@@ -447,11 +515,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (!Save(node, true, "from")) {
                         return false;
                     }
+
                     if (node.ImportIndex > 0) {
                         return Save(node.ImportIndex, true, "import");
                     }
+
                     return true;
                 }
+
                 return false;
             }
 
@@ -460,11 +531,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsCoroutine && !Save(node, true, "async")) {
                         return false;
                     }
+
                     if (!Save(node.GetIndexOfDef(_ast), true, "def")) {
                         return false;
                     }
+
                     return true;
                 }
+
                 return false;
             }
 
@@ -478,6 +552,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                         return Save(node, true, "not");
                     }
                 }
+
                 return false;
             }
 
@@ -489,8 +564,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (!Save(node, true, "while")) {
                         return false;
                     }
+
                     return node.ElseStatement == null || Save(node.ElseStatement.StartIndex, true, "else");
                 }
+
                 return false;
             }
 
@@ -499,9 +576,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
+
                     return Save(node.GetIndexOfWith(_ast), true, "with") &&
-                           node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
+                        node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
                 }
+
                 return false;
             }
 
@@ -509,6 +588,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (base.Walk(node)) {
                     return Save(node, true, "yield") && Save(node.GetIndexOfFrom(_ast), true, "from");
                 }
+
                 return false;
             }
         }

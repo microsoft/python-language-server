@@ -174,6 +174,8 @@ namespace Microsoft.Python.Parsing.Ast {
         
         public override string ScopeName => $"<dict comprehension>";
 
+        public SliceExpression Slice => _value;
+        
         public Expression Key => _value.SliceStart;
 
         public Expression Value => _value.SliceStop;

@@ -413,7 +413,7 @@ sys  .  version
 
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 5));
             result.Completions?.Select(i => i.documentation?.kind).ExcludeDefault()
-                .Should().NotBeEmpty().And.BeSubsetOf(new[] { MarkupKind.PlainText, MarkupKind.Markdown });
+                .Should().NotBeEmpty().And.BeSubsetOf(new[] {MarkupKind.PlainText, MarkupKind.Markdown});
         }
 
         [TestMethod, Priority(0)]
@@ -949,7 +949,6 @@ pass";
 
         [TestMethod, Priority(0)]
         public async Task NoCompletionInComment() {
-
             var analysis = await GetAnalysisAsync("x = 1 #str. more text");
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 12));
@@ -1124,7 +1123,7 @@ a.
 ";
             var analysis = await GetAnalysisAsync(code, is3x ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
-            var extraMembers = new[] { "mro", "__dict__", @"__weakref__" };
+            var extraMembers = new[] {"mro", "__dict__", @"__weakref__"};
             var result = cs.GetCompletions(analysis, new SourceLocation(4, 3));
             if (is3x) {
                 result.Should().HaveLabels(extraMembers);
@@ -1297,11 +1296,32 @@ class A:
 
             var comps = cs.GetCompletions(analysis, new SourceLocation(11, 21));
             var names = comps.Completions.Select(c => c.label);
-            names.Should().Contain(new[] { "x1", "x2", "method1", "method2", "B" });
+            names.Should().Contain(new[] {"x1", "x2", "method1", "method2", "B"});
 
             comps = cs.GetCompletions(analysis, new SourceLocation(14, 8));
             names = comps.Completions.Select(c => c.label);
-            names.Should().NotContain(new[] { "x1", "x2", "method1", "method2", "B" });
+            names.Should().NotContain(new[] {"x1", "x2", "method1", "method2", "B"});
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VariableInComprehension() {
+            const string code = @"
+class K:
+    a = 10
+    b = 12
+    def c(self, r):
+        b = r
+        return b
+A = K()
+AR = [A, A, A]
+b = [a. for a in AR]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var comps = cs.GetCompletions(analysis, new SourceLocation(10, 8));
+            var names = comps.Completions.Select(c => c.label);
+            names.Should().Contain(new[] {"a", "b", "c"});
         }
     }
 }
