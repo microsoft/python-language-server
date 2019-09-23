@@ -764,7 +764,7 @@ x = 123
 if (y := x):
     print(y)
 ";
-            var d = await LintAsync(code, PythonVersions.Python38_x64);
+            var d = await LintAsync(code, PythonVersions.Required_Python38X);
             d.Should().BeEmpty();
         }
 
@@ -777,7 +777,7 @@ stuff = []
 [i+1 for i in range(2) for j in (k := stuff)]
 [i+1 for i in [j for j in (k := stuff)]]
 ";
-            var d = await LintAsync(code, PythonVersions.Python38_x64);
+            var d = await LintAsync(code, PythonVersions.Required_Python38X);
             d.Should().BeEmpty();
         }
 
