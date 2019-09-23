@@ -158,7 +158,8 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IMemberContainer
         public virtual IMember GetMember(string name)
-            => GlobalScope.Variables[name]?.Value ?? this.GetSubmodule(name);
+            => this.GetSubmodule(name) ?? GlobalScope.Variables[name]?.Value;
+
         public virtual IEnumerable<string> GetMemberNames() {
             var submoduleNames = this.GetSubmoduleNames();
             // drop imported modules and typing.
