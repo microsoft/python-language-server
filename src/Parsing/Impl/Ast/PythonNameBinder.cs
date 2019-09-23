@@ -45,15 +45,19 @@ using Microsoft.Python.Parsing.Definition;
 namespace Microsoft.Python.Parsing.Ast {
     internal class DefineBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
+
         public DefineBinder(PythonNameBinder binder) {
             _binder = binder;
         }
+
         public override bool Walk(NameExpression node) {
             if (node.Name != null) {
                 _binder.DefineName(node.Name);
             }
+
             return false;
         }
+
         public override bool Walk(ParenthesisExpression node) => true;
         public override bool Walk(TupleExpression node) => true;
         public override bool Walk(ListExpression node) => true;
@@ -61,6 +65,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
     internal class ParameterBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
+
         public ParameterBinder(PythonNameBinder binder) {
             _binder = binder;
         }
@@ -69,6 +74,7 @@ namespace Microsoft.Python.Parsing.Ast {
             node.AddVariable(_binder.GlobalScope, _binder.BindReferences, _binder.DefineParameter(node.Name));
             return false;
         }
+
         public override bool Walk(SublistParameter node) {
             node.AddVariable(_binder.GlobalScope, _binder.BindReferences, _binder.DefineParameter(node.Name));
             // we walk the node by hand to avoid walking the default values.
@@ -86,14 +92,17 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
         }
+
         public override bool Walk(TupleExpression node) => true;
     }
 
     class DeleteBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
+
         public DeleteBinder(PythonNameBinder binder) {
             _binder = binder;
         }
+
         public override bool Walk(NameExpression node) {
             _binder.DefineDeleted(node.Name);
             return false;
@@ -175,13 +184,13 @@ namespace Microsoft.Python.Parsing.Ast {
             _finallyCount.RemoveAt(_finallyCount.Count - 1);
         }
 
-        internal PythonReference Reference(string/*!*/ name) => _currentScope.ScopeInfo.Reference(name);
+        internal PythonReference Reference(string /*!*/ name) => _currentScope.ScopeInfo.Reference(name);
 
-        internal PythonVariable DefineName(string/*!*/ name) => _currentScope.ScopeInfo.EnsureVariable(name);
+        internal PythonVariable DefineName(string /*!*/ name) => _currentScope.ScopeInfo.EnsureVariable(name);
 
-        internal PythonVariable DefineParameter(string/*!*/ name) => _currentScope.ScopeInfo.DefineParameter(name);
+        internal PythonVariable DefineParameter(string /*!*/ name) => _currentScope.ScopeInfo.DefineParameter(name);
 
-        internal PythonVariable DefineDeleted(string/*!*/ name) {
+        internal PythonVariable DefineDeleted(string /*!*/ name) {
             var variable = _currentScope.ScopeInfo.EnsureVariable(name);
             variable.Deleted = true;
             return variable;
@@ -198,6 +207,7 @@ namespace Microsoft.Python.Parsing.Ast {
             foreach (var e in node.Left) {
                 e.Walk(_define);
             }
+
             return true;
         }
 
@@ -236,6 +246,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (node.Body.Documentation != null) {
                 node.DocVariable = DefineName("__doc__");
             }
+
             node.ModVariable = DefineName("__module__");
             if (LanguageVersion.Is3x()) {
                 node.ClassVariable = DefineName("__class__");
@@ -252,11 +263,64 @@ namespace Microsoft.Python.Parsing.Ast {
             PopScope();
         }
 
+        // ListComprehension
+        public override bool Walk(ListComprehension node) {
+            PushScope(node);
+
+            node.Item?.Walk(this);
+            foreach (var ci in node.Iterators) {
+                ci.Walk(this);
+            }
+
+            return false;
+        }
+
+        // ListComprehension
+        public override void PostWalk(ListComprehension node) {
+            Debug.Assert(node == _currentScope);
+            PopScope();
+        }
+
+        // DictionaryComprehension
+        public override bool Walk(DictionaryComprehension node) {
+            PushScope(node);
+            node.Slice?.Walk(this);
+            foreach (var ci in node.Iterators.MaybeEnumerate()) {
+                ci.Walk(this);
+            }
+
+            return false;
+        }
+
+        // DictionaryComprehension
+        public override void PostWalk(DictionaryComprehension node) {
+            Debug.Assert(node == _currentScope);
+            PopScope();
+        }
+
+        // SetComprehension
+        public override bool Walk(SetComprehension node) {
+            PushScope(node);
+            node.Item?.Walk(this);
+            foreach (var ci in node.Iterators.MaybeEnumerate()) {
+                ci.Walk(this);
+            }
+
+            return false;
+        }
+
+        // SetComprehension
+        public override void PostWalk(SetComprehension node) {
+            Debug.Assert(node == _currentScope);
+            PopScope();
+        }
+
         // DelStatement
         public override bool Walk(DelStatement node) {
             foreach (var e in node.Expressions) {
                 e.Walk(_delete);
             }
+
             return true;
         }
 
@@ -266,6 +330,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 Debug.Assert(_currentScope != null);
                 _currentScope.ScopeInfo.ContainsUnqualifiedExec = true;
             }
+
             return true;
         }
 
@@ -288,6 +353,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (node.Left != null) {
                 node.Left.Walk(this);
             }
+
             if (node.List != null) {
                 node.List.Walk(this);
             }
@@ -322,6 +388,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     node.Items[i].Variable.Walk(_define);
                 }
             }
+
             return true;
         }
 
@@ -333,12 +400,14 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (BindReferences) {
                     references = new PythonReference[node.Names.Count];
                 }
+
                 for (var i = 0; i < node.Names.Count; i++) {
                     variables[i] = DefineName(node.AsNames[i] != null ? node.AsNames[i].Name : node.Names[i].Name);
                     if (references != null) {
                         references[i] = Reference(variables[i].Name);
                     }
                 }
+
                 node.Variables = variables;
                 node.AddVariableReference(_ast, BindReferences, references);
             } else {
@@ -347,6 +416,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 _currentScope.ScopeInfo.NeedsLocalsDictionary = true;
                 _currentScope.ScopeInfo.HasLateBoundVariableSets = true;
             }
+
             return true;
         }
 
@@ -366,6 +436,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 p.DefaultValue?.Walk(this);
                 p.Annotation?.Walk(this);
             }
+
             // process the decorators in the outer context
             foreach (var dec in (node.Decorators?.Decorators).MaybeEnumerate().ExcludeDefault()) {
                 dec.Walk(this);
@@ -444,6 +515,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
             }
+
             return true;
         }
 
@@ -496,9 +568,11 @@ namespace Microsoft.Python.Parsing.Ast {
                     // no previously definied variables, add it to the current scope
                     _currentScope.ScopeInfo.CreateVariable(n, VariableKind.Nonlocal);
                 }
+
                 _currentScope.ScopeInfo.AddNonLocalVariable(nameNode);
                 nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
             }
+
             return true;
         }
 
@@ -526,6 +600,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (BindReferences) {
                 references = new PythonReference[variables.Length];
             }
+
             for (var i = 0; i < node.Names.Count; i++) {
                 string name;
 
@@ -544,6 +619,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     }
                 }
             }
+
             node.Variables = variables;
             node.AddVariableReference(_ast, BindReferences, references);
             return true;
@@ -561,6 +637,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     if (tsh.Target != null) {
                         tsh.Target.Walk(_define);
                     }
+
                     tsh.Walk(this);
                 }
             }

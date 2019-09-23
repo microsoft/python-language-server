@@ -196,44 +196,43 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             }
 
             public override bool Walk(ListComprehension node) {
-                if (base.Walk(node)) {
-                    Scope = node;
+                if (!base.Walk(node)) {
+                    return false;
+                }
 
-                    node.Item?.Walk(this);
-                    foreach (var ci in node.Iterators) {
-                        ci.Walk(this);
-                    }
+                Scope = node;
 
-                    return true;
+                node.Item?.Walk(this);
+                foreach (var ci in node.Iterators) {
+                    ci.Walk(this);
                 }
 
                 return false;
             }
 
             public override bool Walk(DictionaryComprehension node) {
-                if (base.Walk(node)) {
-                    Scope = node;
-                    node.Slice?.Walk(this);
-                    foreach (var ci in node.Iterators.MaybeEnumerate()) {
-                        ci.Walk(this);
-                    }
+                if (!base.Walk(node)) {
+                    return false;
+                }
 
-                    return true;
+                Scope = node;
+                node.Slice?.Walk(this);
+                foreach (var ci in node.Iterators.MaybeEnumerate()) {
+                    ci.Walk(this);
                 }
 
                 return false;
             }
 
             public override bool Walk(SetComprehension node) {
-                if (base.Walk(node)) {
-                    Scope = node;
-                    
-                    node.Item?.Walk(this);
-                    foreach (var ci in node.Iterators.MaybeEnumerate()) {
-                        ci.Walk(this);
-                    }
+                if (!base.Walk(node)) {
+                    return false;
+                }
+                Scope = node;
 
-                    return true;
+                node.Item?.Walk(this);
+                foreach (var ci in node.Iterators.MaybeEnumerate()) {
+                    ci.Walk(this);
                 }
 
                 return false;

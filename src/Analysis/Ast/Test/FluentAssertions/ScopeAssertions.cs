@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         }
 
         [CustomAssertion]
-        public AndWhichConstraint<TScopeAssertions, List<IScope>> HaveChildScope(string name, string because = "", params object[] reasonArgs) {
+        public AndWhichConstraint<TScopeAssertions, List<IScope>> HaveChildScopes(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
             var scopeMatch = Subject.Children.TraverseBreadthFirst(s => s.Children)
                 .Where(s => s.Name == name)

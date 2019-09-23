@@ -66,29 +66,29 @@ def func(x, y):
                 (new SourceLocation(2, 2), "<module>"),
                 (new SourceLocation(3, 1), "<module>"),
                 (new SourceLocation(3, 3), "<module>"),
-                (new SourceLocation(4, 11), "A"),
-                (new SourceLocation(5, 1), "A"),
-                (new SourceLocation(5, 5), "A"),
-                (new SourceLocation(5, 6), "A"),
-                (new SourceLocation(5, 17), "method"),
-                (new SourceLocation(6, 9), "method"),
-                (new SourceLocation(7, 9), "method"),
-                (new SourceLocation(7, 14), "method"),
-                (new SourceLocation(8, 9), "method"),
-                (new SourceLocation(9, 5), "A"),
-                (new SourceLocation(10, 5), "A"),
-                (new SourceLocation(10, 7), "A"),
+                (new SourceLocation(4, 11), "<class A>"),
+                (new SourceLocation(5, 1), "<class A>"),
+                (new SourceLocation(5, 5), "<class A>"),
+                (new SourceLocation(5, 6), "<class A>"),
+                (new SourceLocation(5, 17), "<function method>"),
+                (new SourceLocation(6, 9), "<function method>"),
+                (new SourceLocation(7, 9), "<function method>"),
+                (new SourceLocation(7, 14), "<function method>"),
+                (new SourceLocation(8, 9), "<function method>"),
+                (new SourceLocation(9, 5), "<class A>"),
+                (new SourceLocation(10, 5), "<class A>"),
+                (new SourceLocation(10, 7), "<class A>"),
                 (new SourceLocation(11, 1), "<module>"),
                 (new SourceLocation(12, 1), "<module>"),
-                (new SourceLocation(12, 11), "func"),
-                (new SourceLocation(13, 5), "func"),
-                (new SourceLocation(13, 6), "func"),
-                (new SourceLocation(14, 5), "func"),
-                (new SourceLocation(14, 15), "inner"),
-                (new SourceLocation(15, 9), "inner"),
-                (new SourceLocation(15, 10), "inner"),
-                (new SourceLocation(16, 9), "inner"),
-                (new SourceLocation(17, 5), "func"),
+                (new SourceLocation(12, 11), "<function func>"),
+                (new SourceLocation(13, 5), "<function func>"),
+                (new SourceLocation(13, 6), "<function func>"),
+                (new SourceLocation(14, 5), "<function func>"),
+                (new SourceLocation(14, 15), "<function inner>"),
+                (new SourceLocation(15, 9), "<function inner>"),
+                (new SourceLocation(15, 10), "<function inner>"),
+                (new SourceLocation(16, 9), "<function inner>"),
+                (new SourceLocation(17, 5), "<function func>"),
                 (new SourceLocation(18, 1), "<module>")
             };
 
@@ -111,8 +111,8 @@ class A:
 
             var locations = new[] {
                 (new SourceLocation(5, 1), "<module>"),
-                (new SourceLocation(5, 5), "A"),
-                (new SourceLocation(5, 9), "method")
+                (new SourceLocation(5, 5), "<class A>"),
+                (new SourceLocation(5, 9), "<function method>")
             };
 
             foreach (var loc in locations) {
@@ -135,34 +135,72 @@ AR = [A, A, A]
 b = [a for a in AR]
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var scopes = analysis.GlobalScope.Should().HaveChildScope("<list comprehension>").Which;
+            var scopes = analysis.GlobalScope.Should().HaveChildScopes("<list comprehension>").Which;
             scopes.Should().HaveCount(1);
             var scope = scopes[0];
             scope.Should().HaveVariable("a").OfType("K");
         }
-        
+
         [TestMethod, Priority(0)]
         public async Task VariableInListComprehension() {
             const string code = @"
+h = [i for i in range(1, 100)]
 [i for i in range(1, 100)]
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var scopes = analysis.GlobalScope.Should().HaveChildScope("<list comprehension>").Which;
-            scopes.Should().HaveCount(1);
+            var scopes = analysis.GlobalScope.Should().HaveChildScopes("<list comprehension>").Which;
+            scopes.Should().HaveCount(2);
             var scope = scopes[0];
             scope.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
+            
+            scope = scopes[1];
+            scope.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NestedVariableInListComprehension() {
+            const string code = @"
+l = [['40', '20', '10', '30'], ['20', '20', '20', '20', '20', '30', '20'], ['30', '20', '30', '50', '10', '30', '20', '20', '20'], ['100', '100'], ['100', '100', '100', '100', '100'], ['100', '100', '100', '100']]
+h = [[float(y) for y in x] for x in l]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var scopes = analysis.GlobalScope.Should().HaveChildScopes("<list comprehension>").Which;
+            scopes.Should().HaveCount(2);
+            var scope = scopes[0];
+            scope.Should().HaveVariable("x").OfType(BuiltinTypeId.List);
+
+            scope = scopes[1];
+            scope.Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
 
         [TestMethod, Priority(0)]
         public async Task VariableInDictComprehension() {
             const string code = @"
 x = {str(k): e > 0 for e in {1, 2, 3}}
+{str(k): e > 0 for e in {1, 2, 3}}
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var scopes = analysis.GlobalScope.Should().HaveChildScope("<dict comprehension>").Which;
-            scopes.Should().HaveCount(1);
+            var scopes = analysis.GlobalScope.Should().HaveChildScopes("<dict comprehension>").Which;
+            scopes.Should().HaveCount(2);
             var scope = scopes[0];
             scope.Should().HaveVariable("e").OfType(BuiltinTypeId.Int);
+            scope = scopes[1];
+            scope.Should().HaveVariable("e").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VariableInSetComprehension() {
+            const string code = @"
+my_set = {x for x in range(10)}
+{x for x in range(10)}
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var scopes = analysis.GlobalScope.Should().HaveChildScopes("<set comprehension>").Which;
+            scopes.Should().HaveCount(2);
+            var scope = scopes[0];
+            scope.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+            scope = scopes[1];
+            scope.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
         }
     }
 }
