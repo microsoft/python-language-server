@@ -15,8 +15,12 @@
 
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -58,34 +62,34 @@ def func(x, y):
             var gs = analysis.GlobalScope;
 
             var locations = new[] {
-                (new SourceLocation(2, 1),   "<module>"),
-                (new SourceLocation(2, 2),   "<module>"),
-                (new SourceLocation(3, 1),   "<module>"),
-                (new SourceLocation(3, 3),   "<module>"),
-                (new SourceLocation(4, 11),  "A"),
-                (new SourceLocation(5, 1),   "A"),
-                (new SourceLocation(5, 5),   "A"),
-                (new SourceLocation(5, 6),   "A"),
-                (new SourceLocation(5, 17),  "method"),
-                (new SourceLocation(6, 9),   "method"),
-                (new SourceLocation(7, 9),   "method"),
-                (new SourceLocation(7, 14),  "method"),
-                (new SourceLocation(8, 9),   "method"),
-                (new SourceLocation(9, 5),   "A"),
-                (new SourceLocation(10, 5),  "A"),
-                (new SourceLocation(10, 7),  "A"),
-                (new SourceLocation(11, 1),  "<module>"),
-                (new SourceLocation(12, 1),  "<module>"),
+                (new SourceLocation(2, 1), "<module>"),
+                (new SourceLocation(2, 2), "<module>"),
+                (new SourceLocation(3, 1), "<module>"),
+                (new SourceLocation(3, 3), "<module>"),
+                (new SourceLocation(4, 11), "A"),
+                (new SourceLocation(5, 1), "A"),
+                (new SourceLocation(5, 5), "A"),
+                (new SourceLocation(5, 6), "A"),
+                (new SourceLocation(5, 17), "method"),
+                (new SourceLocation(6, 9), "method"),
+                (new SourceLocation(7, 9), "method"),
+                (new SourceLocation(7, 14), "method"),
+                (new SourceLocation(8, 9), "method"),
+                (new SourceLocation(9, 5), "A"),
+                (new SourceLocation(10, 5), "A"),
+                (new SourceLocation(10, 7), "A"),
+                (new SourceLocation(11, 1), "<module>"),
+                (new SourceLocation(12, 1), "<module>"),
                 (new SourceLocation(12, 11), "func"),
-                (new SourceLocation(13, 5),  "func"),
-                (new SourceLocation(13, 6),  "func"),
-                (new SourceLocation(14, 5),  "func"),
+                (new SourceLocation(13, 5), "func"),
+                (new SourceLocation(13, 6), "func"),
+                (new SourceLocation(14, 5), "func"),
                 (new SourceLocation(14, 15), "inner"),
-                (new SourceLocation(15, 9),  "inner"),
+                (new SourceLocation(15, 9), "inner"),
                 (new SourceLocation(15, 10), "inner"),
-                (new SourceLocation(16, 9),  "inner"),
-                (new SourceLocation(17, 5),  "func"),
-                (new SourceLocation(18, 1),  "<module>")
+                (new SourceLocation(16, 9), "inner"),
+                (new SourceLocation(17, 5), "func"),
+                (new SourceLocation(18, 1), "<module>")
             };
 
             foreach (var loc in locations) {
@@ -115,6 +119,50 @@ class A:
                 var scope = gs.FindScope(analysis.Document, loc.Item1);
                 scope.Name.Should().Be(loc.Item2, $"location {loc.Item1.Line}, {loc.Item1.Column}");
             }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ObjectInListComprehension() {
+            const string code = @"
+class K:
+    a = 10
+    b = 12
+    def c(self, r):
+        b = r
+        return b
+A = K()
+AR = [A, A, A]
+b = [a for a in AR]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var scopes = analysis.GlobalScope.Should().HaveChildScope("<list comprehension>").Which;
+            scopes.Should().HaveCount(1);
+            var scope = scopes[0];
+            scope.Should().HaveVariable("a").OfType("K");
+        }
+        
+        [TestMethod, Priority(0)]
+        public async Task VariableInListComprehension() {
+            const string code = @"
+[i for i in range(1, 100)]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var scopes = analysis.GlobalScope.Should().HaveChildScope("<list comprehension>").Which;
+            scopes.Should().HaveCount(1);
+            var scope = scopes[0];
+            scope.Should().HaveVariable("i").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VariableInDictComprehension() {
+            const string code = @"
+x = {str(k): e > 0 for e in {1, 2, 3}}
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var scopes = analysis.GlobalScope.Should().HaveChildScope("<dict comprehension>").Which;
+            scopes.Should().HaveCount(1);
+            var scope = scopes[0];
+            scope.Should().HaveVariable("e").OfType(BuiltinTypeId.Int);
         }
     }
 }

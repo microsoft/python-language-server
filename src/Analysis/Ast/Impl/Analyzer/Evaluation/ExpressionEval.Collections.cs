@@ -19,6 +19,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -47,9 +48,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (!(target is IPythonInstance instance)) {
                     instance = type.CreateInstance(ArgumentSet.Empty(expr, this));
                 }
+
                 var index = GetValueFromExpression(expr.Index);
                 if (index != null) {
-                    return type.Index(instance, new ArgumentSet(new[] { index }, expr, this));
+                    return type.Index(instance, new ArgumentSet(new[] {index}, expr, this));
                 }
             }
 
@@ -62,6 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
+
             return PythonCollectionType.CreateList(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -72,6 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
+
             return new PythonDictionary(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -81,6 +85,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
+
             return PythonCollectionType.CreateTuple(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -90,6 +95,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
+
             return PythonCollectionType.CreateSet(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -98,40 +104,38 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (iter != null) {
                 return GetValueFromExpression(iter.List) ?? UnknownType;
             }
+
             return UnknownType;
         }
 
         public IMember GetValueFromComprehension(Comprehension node) {
-            var oldVariables = CurrentScope.Variables.OfType<Variable>().ToDictionary(k => k.Name, v => v);
-            try {
-                ProcessComprehension(node);
-
-                // TODO: Evaluate comprehensions to produce exact contents, if possible.
-                switch (node) {
-                    case ListComprehension lc:
-                        var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateList(Module, new[] { v1 });
-                    case SetComprehension sc:
-                        var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
-                        return PythonCollectionType.CreateSet(Module, new[] { v2 });
-                    case DictionaryComprehension dc:
-                        var k = GetValueFromExpression(dc.Key) ?? UnknownType;
-                        var v = GetValueFromExpression(dc.Value) ?? UnknownType;
-                        return new PythonDictionary(new PythonDictionaryType(Interpreter.ModuleResolution.BuiltinsModule), new Dictionary<IMember, IMember> { { k, v } });
-                }
-
-                return UnknownType;
-            } finally {
-                // Remove temporary variables since this is assignment and the right hand
-                // side comprehension does not leak internal variables into the scope.
-                var newVariables = CurrentScope.Variables.ToDictionary(k => k.Name, v => v);
-                var variables = (VariableCollection)CurrentScope.Variables;
-                foreach (var kvp in newVariables) {
-                    if (!oldVariables.ContainsKey(kvp.Key)) {
-                        variables.RemoveVariable(kvp.Key);
-                    }
+            // In 2X there is a bug where comprehension variables get leaked to outer scopes, fixed in 3X
+            if (Interpreter.LanguageVersion.Is3x()) {
+                using (OpenScope(Module, node)) {
+                    return GetValueFromComprehension0(node);
                 }
             }
+            return GetValueFromComprehension0(node);
+        }
+
+        private IMember GetValueFromComprehension0(Comprehension node) {
+            ProcessComprehension(node);
+
+            // TODO: Evaluate comprehensions to produce exact contents, if possible.
+            switch (node) {
+                case ListComprehension lc:
+                    var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
+                    return PythonCollectionType.CreateList(Module, new[] {v1});
+                case SetComprehension sc:
+                    var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
+                    return PythonCollectionType.CreateSet(Module, new[] {v2});
+                case DictionaryComprehension dc:
+                    var k = GetValueFromExpression(dc.Key) ?? UnknownType;
+                    var v = GetValueFromExpression(dc.Value) ?? UnknownType;
+                    return new PythonDictionary(new PythonDictionaryType(Interpreter.ModuleResolution.BuiltinsModule), new Dictionary<IMember, IMember> {{k, v}});
+            }
+
+            return UnknownType;
         }
 
         internal void ProcessComprehension(Comprehension node) {
@@ -149,18 +153,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                             if (tex.Items[0] is NameExpression nx0 && !string.IsNullOrEmpty(nx0.Name)) {
                                 DeclareVariable(nx0.Name, dict.Keys.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx0);
                             }
+
                             if (tex.Items.Count > 1 && tex.Items[1] is NameExpression nx1 && !string.IsNullOrEmpty(nx1.Name)) {
                                 DeclareVariable(nx1.Name, dict.Values.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx1);
                             }
+
                             foreach (var item in tex.Items.Skip(2).OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
                                 DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, item);
                             }
+
                             break;
                         case TupleExpression tex when value is IPythonCollection c2 && tex.Items.Count > 0:
                             var iter = c2.GetIterator();
                             foreach (var item in tex.Items.OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
                                 DeclareVariable(item.Name, iter.Next, VariableSource.Declaration, item);
                             }
+
                             break;
                     }
                 }

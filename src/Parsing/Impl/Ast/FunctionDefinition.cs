@@ -100,7 +100,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region IScopeNode
 
-        public string ScopeName => $"<Function ${Name}>";
+        public string ScopeName => $"<function {Name}>";
 
         public IScopeNode Parent { get; set; }
 

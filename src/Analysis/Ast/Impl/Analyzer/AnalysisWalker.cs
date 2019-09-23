@@ -19,6 +19,7 @@ using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Definition;
 

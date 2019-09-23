@@ -214,9 +214,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // ClassDefinition
         public override bool Walk(ClassDefinition node) {
-            if (node.ScopeName != null) {
-                node.Variable = DefineName(node.ScopeName);
-                node.AddVariableReference(GlobalScope, BindReferences, Reference(node.ScopeName));
+            if (node.Name != null) {
+                node.Variable = DefineName(node.Name);
+                node.AddVariableReference(GlobalScope, BindReferences, Reference(node.Name));
             }
 
             // Base references are in the outer context

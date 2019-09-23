@@ -3,7 +3,7 @@ using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class FunctionScopeInfo : ScopeInfo {
-        public FunctionScopeInfo(FunctionDefinition node) : base(node) { }
+        public FunctionScopeInfo(IScopeNode node) : base(node) { }
 
         protected override bool ExposesLocalVariable => NeedsLocalsDictionary;
 

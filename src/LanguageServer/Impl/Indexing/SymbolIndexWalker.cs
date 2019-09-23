@@ -39,7 +39,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             var children = _stack.Exit();
 
             _stack.AddSymbol(new HierarchicalSymbol(
-                node.ScopeName,
+                node.Name,
                 SymbolKind.Class,
                 node.GetSpan(_ast),
                 node.NameExpression.GetSpan(_ast),

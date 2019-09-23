@@ -4172,7 +4172,7 @@ pass
                 var classDef = (ClassDefinition)stmt;
 
                 if (name != null) {
-                    Assert.AreEqual(name, classDef.ScopeName);
+                    Assert.AreEqual(name, classDef.Name);
                 }
 
                 if (bases != null) {

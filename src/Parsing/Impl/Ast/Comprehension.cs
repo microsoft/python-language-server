@@ -19,12 +19,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public abstract class ComprehensionIterator : Node {
-    }
+    public abstract class ComprehensionIterator : Node { }
 
-    public abstract class Comprehension : Expression {
+    public abstract class Comprehension : Expression, IScopeNode {
+        private readonly ScopeInfo _scopeInfo;
+
+        public Comprehension() {
+            _scopeInfo = new FunctionScopeInfo(this);
+        }
+
         public abstract ImmutableArray<ComprehensionIterator> Iterators { get; }
         public abstract override string NodeName { get; }
 
@@ -45,6 +51,20 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append(end);
             }
         }
+
+        #region IScopeNode
+
+        public virtual string ScopeName => $"<comprehension>";
+        public IScopeNode Parent { get; set; }
+        public ScopeInfo ScopeInfo => _scopeInfo;
+
+        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
+
+        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
+
+        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
+
+        #endregion
     }
 
     public sealed class ListComprehension : Comprehension {
@@ -52,6 +72,8 @@ namespace Microsoft.Python.Parsing.Ast {
             Item = item;
             Iterators = iterators;
         }
+        
+        public override string ScopeName => $"<list comprehension>";
 
         public Expression Item { get; }
 
@@ -73,6 +95,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     ci.Walk(walker);
                 }
             }
+
             walker.PostWalk(this);
         }
 
@@ -81,10 +104,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Item != null) {
                     await Item.WalkAsync(walker, cancellationToken);
                 }
+
                 foreach (var ci in Iterators) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
+
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
@@ -96,7 +121,8 @@ namespace Microsoft.Python.Parsing.Ast {
             Item = item;
             Iterators = iterators;
         }
-
+        public override string ScopeName => $"<set comprehension>";
+        
         public Expression Item { get; }
 
         public override ImmutableArray<ComprehensionIterator> Iterators { get; }
@@ -117,6 +143,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     ci.Walk(walker);
                 }
             }
+
             walker.PostWalk(this);
         }
 
@@ -125,10 +152,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Item != null) {
                     await Item.WalkAsync(walker, cancellationToken);
                 }
+
                 foreach (var ci in Iterators.MaybeEnumerate()) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
+
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
@@ -142,6 +171,8 @@ namespace Microsoft.Python.Parsing.Ast {
             _value = value;
             Iterators = iterators;
         }
+        
+        public override string ScopeName => $"<dict comprehension>";
 
         public Expression Key => _value.SliceStart;
 
@@ -165,6 +196,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     ci.Walk(walker);
                 }
             }
+
             walker.PostWalk(this);
         }
 
@@ -173,10 +205,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (_value != null) {
                     await _value.WalkAsync(walker, cancellationToken);
                 }
+
                 foreach (var ci in Iterators.MaybeEnumerate()) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
+
             await walker.PostWalkAsync(this, cancellationToken);
         }
 

@@ -17,6 +17,8 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -72,10 +74,25 @@ v = values[0]
                 .And.NotHaveVariable("e");
         }
 
+        // TODO handle dictionary comprehension better
+        [Ignore, TestMethod, Priority(0)]
+        public async Task DictionaryComprehensionTuple() {
+            const string code = @"
+x = {k: v for (k, v) in [(1, 1), (2, 2), (3, 3)]}
+
+y = x[1]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Dict)
+                .And.HaveVariable("y").OfType(BuiltinTypeId.Int)
+                .And.NotHaveVariable("k")
+                .And.NotHaveVariable("v");
+        }
+
         [TestMethod, Priority(0)]
         public async Task ListComprehensionStatement() {
             const string code = @"[e > 0 for e in {1, 2, 3}]";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.Should().HaveVariable("e").OfType(BuiltinTypeId.Int);
         }
     }

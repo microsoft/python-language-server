@@ -54,7 +54,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region IScopeNode
 
-        public string ScopeName => $"<Class ${Name}>";
+        
+        public string ScopeName => $"<class {Name}>";
         
         public IScopeNode Parent { get; set; }
         public ScopeInfo ScopeInfo { get; }

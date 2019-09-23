@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public void EvaluateClass() {
             // Open class scope chain
             using (Eval.OpenScope(Module, _classDef, out var outerScope)) {
-                var instance = Eval.GetInScope(_classDef.ScopeName, outerScope);
+                var instance = Eval.GetInScope(_classDef.Name, outerScope);
                 if (!(instance?.GetPythonType() is PythonClassType classInfo)) {
                     if (instance != null) {
                         // TODO: warning that variable is already declared of a different type.

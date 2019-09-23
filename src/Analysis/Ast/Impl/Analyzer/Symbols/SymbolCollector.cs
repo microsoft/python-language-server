@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.OS;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Definition;
 
@@ -60,11 +61,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var classInfo = CreateClass(cd);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
-                _eval.DeclareVariable(cd.ScopeName, classInfo, VariableSource.Declaration);
+                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
             }
+
             return true;
         }
 
@@ -72,6 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!IsDeprecated(cd) && !string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 _scopes.Pop().Dispose();
             }
+
             base.PostWalk(cd);
         }
 
@@ -79,11 +82,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (IsDeprecated(fd)) {
                 return false;
             }
+
             if (!string.IsNullOrEmpty(fd.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, fd, out _));
             }
+
             return true;
         }
 
@@ -91,15 +96,68 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.Name)) {
                 _scopes.Pop().Dispose();
             }
+
             base.PostWalk(fd);
+        }
+
+        public override bool Walk(DictionaryComprehension comprehension) {
+            if (_eval.Interpreter.LanguageVersion.Is3x()) {
+                // Open comprehension scope
+                _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
+            }
+
+            return true;
+        }
+
+        public override void PostWalk(DictionaryComprehension comprehension) {
+            if (_eval.Interpreter.LanguageVersion.Is3x()) {
+                _scopes.Pop().Dispose();
+            }
+
+            base.PostWalk(comprehension);
+        }
+
+        public override bool Walk(ListComprehension comprehension) {
+            if (_eval.Interpreter.LanguageVersion.Is3x()) {
+                // Open comprehension scope
+                _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
+            }
+
+            return true;
+        }
+
+        public override void PostWalk(ListComprehension comprehension) {
+            if (_eval.Interpreter.LanguageVersion.Is3x()) {
+                _scopes.Pop().Dispose();
+            }
+
+            base.PostWalk(comprehension);
+        }
+
+        public override bool Walk(SetComprehension comprehension) {
+            if (_eval.Interpreter.LanguageVersion.Is3x()) {
+                // Open comprehension scope
+                _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
+            }
+
+            return true;
+        }
+
+        public override void PostWalk(SetComprehension comprehension) {
+            if (_eval.Interpreter.LanguageVersion.Is3x()) {
+                _scopes.Pop().Dispose();
+            }
+
+            base.PostWalk(comprehension);
         }
 
         private PythonClassType CreateClass(ClassDefinition cd) {
             PythonType declaringType = null;
-            if(!(cd.Parent is PythonAst)) {
+            if (!(cd.Parent is PythonAst)) {
                 Debug.Assert(_typeMap.ContainsKey(cd.Parent));
                 _typeMap.TryGetValue(cd.Parent, out declaringType);
             }
+
             var cls = new PythonClassType(cd, declaringType, _eval.GetLocationOfName(cd),
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
             _typeMap[cd] = cls;
@@ -125,6 +183,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 _typeMap[fd] = f;
                 declaringType?.AddMember(f.Name, f, overwrite: true);
             }
+
             AddOverload(fd, f, o => f.AddOverload(o));
         }
 
@@ -138,6 +197,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     if (!string.IsNullOrEmpty(documentation)) {
                         stubOverload.SetDocumentation(documentation);
                     }
+
                     addOverload(stubOverload);
                     _table.ReplacedByStubs.Add(fd);
                     return;
@@ -160,6 +220,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     .OfType<PythonFunctionOverload>()
                     .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);
             }
+
             return null;
         }
 
@@ -183,6 +244,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         return true;
                 }
             }
+
             return false;
         }
 
@@ -195,6 +257,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 _typeMap[fd] = p;
                 declaringType?.AddMember(p.Name, p, overwrite: true);
             }
+
             AddOverload(fd, p, o => p.AddOverload(o));
         }
 
@@ -216,6 +279,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (!(member is IMemberContainer mc)) {
                     return null;
                 }
+
                 member = mc.GetMember(memberNameChain[i]);
                 if (member == null) {
                     return null;
@@ -236,6 +300,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private static bool IsDeprecationDecorator(CallExpression c)
             => (c.Target is MemberExpression n1 && n1.Name == "deprecated") ||
-               (c.Target is NameExpression n2 && n2.Name == "deprecated");
+                (c.Target is NameExpression n2 && n2.Name == "deprecated");
     }
 }

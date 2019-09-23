@@ -138,7 +138,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 };
             }
 
-            name = name == null && statement is ClassDefinition cd ? cd.ScopeName : name;
+            name = name == null && statement is ClassDefinition cd ? cd.Name : name;
             name = name == null && statement is FunctionDefinition fd ? fd.Name : name;
 
             return new Hover {
