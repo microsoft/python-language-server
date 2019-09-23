@@ -674,7 +674,7 @@ e, (f, g), h = t
 if (x := 1234) == 1234:
     pass
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
 
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
         }

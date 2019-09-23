@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Types {
             IPythonType declaringType,
             Location location,
             BuiltinTypeId builtinTypeId = BuiltinTypeId.Type
-        ) : base(classDefinition.Name, location, classDefinition.GetDocumentation(), builtinTypeId) {
+        ) : base(classDefinition.ScopeName, location, classDefinition.GetDocumentation(), builtinTypeId) {
             location.Module.AddAstNode(this, classDefinition);
             DeclaringType = declaringType;
         }

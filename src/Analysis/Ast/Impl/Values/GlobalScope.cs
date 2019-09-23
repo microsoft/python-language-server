@@ -16,6 +16,7 @@
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Values {
     internal sealed class GlobalScope: Scope, IGlobalScope {
@@ -26,7 +27,7 @@ namespace Microsoft.Python.Analysis.Values {
             DeclareBuiltinVariables();
         }
 
-        public override ScopeStatement Node => _ast;
+        public override IScopeNode Node => _ast;
 
         private void DeclareBuiltinVariables() {
             if (Module.ModuleType != ModuleType.User) {

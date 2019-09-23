@@ -18,15 +18,16 @@ using System.Diagnostics;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
-    [DebuggerDisplay("{Target.Name}")]
+    [DebuggerDisplay("{Target.ScopeName}")]
     internal abstract class MemberEvaluator : AnalysisWalker {
-        protected MemberEvaluator(ExpressionEval eval, ScopeStatement target) : base(eval) {
+        protected MemberEvaluator(ExpressionEval eval, IScopeNode target) : base(eval) {
             Target = target ?? throw new ArgumentNullException(nameof(target));
         }
 
-        public ScopeStatement Target { get; }
+        public IScopeNode Target { get; }
         public IMember Result { get; protected set; }
         public abstract void Evaluate();
     }

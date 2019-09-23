@@ -13,9 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Parsing.Definition;
+
 namespace Microsoft.Python.Parsing.Ast {
     public class PythonVariable {
-        internal PythonVariable(string name, VariableKind kind, ScopeStatement/*!*/ scope) {
+        internal PythonVariable(string name, VariableKind kind, IScopeNode/*!*/ scope) {
             Name = name;
             Kind = kind;
             Scope = scope;
@@ -29,12 +31,12 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// The scope the variable was declared in.
         /// </summary>
-        public ScopeStatement Scope { get; }
+        public IScopeNode Scope { get; }
 
         /// <summary>
         /// True if the variable is a global variable (either referenced from an inner scope, or referenced from the global scope);
         /// </summary>
-        internal bool IsGlobal => Kind == VariableKind.Global || Scope.IsGlobal;
+        internal bool IsGlobal => Kind == VariableKind.Global || Scope.ScopeInfo.IsGlobal;
 
         internal VariableKind Kind { get; set; }
 

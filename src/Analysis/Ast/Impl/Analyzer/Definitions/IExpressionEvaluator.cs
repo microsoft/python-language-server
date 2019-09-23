@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public interface IExpressionEvaluator {
@@ -35,7 +36,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// on the stack and will be removed when the returned
         /// disposable is disposed.
         /// </summary>
-        IDisposable OpenScope(IPythonModule module, ScopeStatement scope);
+        IDisposable OpenScope(IPythonModule module, IScopeNode scope);
 
         /// <summary>
         /// Currently opened (deep-most) scope.

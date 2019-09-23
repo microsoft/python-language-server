@@ -26,6 +26,7 @@ using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     /// <summary>
@@ -121,7 +122,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return new ScopeTracker(this);
         }
 
-        public IDisposable OpenScope(IPythonModule module, ScopeStatement scope) => OpenScope(module, scope, out _);
+        public IDisposable OpenScope(IPythonModule module, IScopeNode scope) => OpenScope(module, scope, out _);
         #endregion
 
         public IMember GetValueFromExpression(Expression expr, LookupOptions options = LookupOptions.Normal) {

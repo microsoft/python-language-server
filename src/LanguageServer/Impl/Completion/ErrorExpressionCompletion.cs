@@ -21,10 +21,11 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ErrorExpressionCompletion {
-        public static CompletionResult GetCompletions(ScopeStatement scope, Node statement, Node expression, CompletionContext context) {
+        public static CompletionResult GetCompletions(IScopeNode scope, Node statement, Node expression, CompletionContext context) {
             if (!(expression is ErrorExpression)) {
                 return CompletionResult.Empty;
             }

@@ -24,6 +24,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Sources {
@@ -137,7 +138,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 };
             }
 
-            name = name == null && statement is ClassDefinition cd ? cd.Name : name;
+            name = name == null && statement is ClassDefinition cd ? cd.ScopeName : name;
             name = name == null && statement is FunctionDefinition fd ? fd.Name : name;
 
             return new Hover {
@@ -159,7 +160,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
         }
 
-        private bool IsInvalidClassMember(IVariable v, ScopeStatement scope, int hoverPosition) {
+        private bool IsInvalidClassMember(IVariable v, IScopeNode scope, int hoverPosition) {
             if (v == null || !v.IsClassMember) {
                 return false;
             }
@@ -176,7 +177,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return true;
         }
 
-        private MarkupContent HandleImport(ImportStatement imp, SourceLocation location, ScopeStatement scope, IDocumentAnalysis analysis) {
+        private MarkupContent HandleImport(ImportStatement imp, SourceLocation location, IScopeNode scope, IDocumentAnalysis analysis) {
             // 'import A.B, B.C, D.E as F, G, H'
             var eval = analysis.ExpressionEvaluator;
             var position = location.ToIndex(analysis.Ast);
@@ -201,7 +202,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
-        private MarkupContent HandleFromImport(FromImportStatement fi, SourceLocation location, ScopeStatement scope, IDocumentAnalysis analysis) {
+        private MarkupContent HandleFromImport(FromImportStatement fi, SourceLocation location, IScopeNode scope, IDocumentAnalysis analysis) {
             var eval = analysis.ExpressionEvaluator;
             var position = location.ToIndex(analysis.Ast);
             // 'from A.B import C as D'

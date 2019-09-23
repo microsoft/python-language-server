@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
@@ -31,7 +32,7 @@ namespace Microsoft.Python.Analysis.Values {
         /// Node defining the scope. Typically <see cref="ClassDefinition"/>
         /// or <see cref="FunctionDefinition"/>
         /// </summary>
-        ScopeStatement Node { get; }
+        IScopeNode Node { get; }
 
         /// <summary>
         /// Immediate parent of this scope.

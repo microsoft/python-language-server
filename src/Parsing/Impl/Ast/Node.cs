@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public abstract class Node {
+    public abstract class Node : INode {
 
         #region Public API
         public int EndIndex {
@@ -102,8 +102,6 @@ namespace Microsoft.Python.Parsing.Ast {
         public void SetLoc(IndexSpan span) => IndexSpan = span;
 
         public IndexSpan IndexSpan { get; set; }
-
-        internal virtual string GetDocumentation(Statement/*!*/ stmt) => stmt.Documentation;
 
         internal static PythonReference GetVariableReference(Node node, PythonAst ast) {
             if (ast.TryGetAttribute(node, NodeAttributes.VariableReference, out var reference)) {

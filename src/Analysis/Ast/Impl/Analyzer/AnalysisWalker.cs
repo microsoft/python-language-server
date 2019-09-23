@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     /// <summary>
@@ -51,6 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         #region AST walker overrides
+
         public override bool Walk(AssignmentStatement node) {
             AssignmentHandler.HandleAssignment(node);
             return base.Walk(node);
@@ -103,9 +105,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             WithHandler.HandleWith(node);
             return base.Walk(node);
         }
+
         #endregion
 
-        protected T[] GetStatements<T>(ScopeStatement s)
+        protected T[] GetStatements<T>(IScopeStatement s)
             => (s.Body as SuiteStatement)?.Statements.OfType<T>().ToArray() ?? Array.Empty<T>();
     }
 }

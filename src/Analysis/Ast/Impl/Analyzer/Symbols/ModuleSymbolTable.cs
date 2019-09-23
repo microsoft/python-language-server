@@ -18,6 +18,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// <summary>
@@ -27,14 +28,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// or there is nothing left to walk.
     /// </summary>
     internal sealed class ModuleSymbolTable {
-        private readonly Dictionary<ScopeStatement, MemberEvaluator> _evaluators = new Dictionary<ScopeStatement, MemberEvaluator>();
-        private readonly HashSet<ScopeStatement> _processed = new HashSet<ScopeStatement>();
+        private readonly Dictionary<IScopeNode, MemberEvaluator> _evaluators = new Dictionary<IScopeNode, MemberEvaluator>();
+        private readonly HashSet<IScopeNode> _processed = new HashSet<IScopeNode>();
 
-        public HashSet<Node> ReplacedByStubs { get; } = new HashSet<Node>();
+        public HashSet<INode> ReplacedByStubs { get; } = new HashSet<INode>();
 
-        public IEnumerable<KeyValuePair<ScopeStatement, MemberEvaluator>> Evaluators => _evaluators.ToArray();
+        public IEnumerable<KeyValuePair<IScopeNode, MemberEvaluator>> Evaluators => _evaluators.ToArray();
         public void Add(MemberEvaluator e) => _evaluators[e.Target] = e;
-        public bool Contains(ScopeStatement node) => _evaluators.ContainsKey(node) || _processed.Contains(node);
+        public bool Contains(IScopeNode node) => _evaluators.ContainsKey(node) || _processed.Contains(node);
 
         public void Build(ExpressionEval eval)
             // This part only adds definition for the function and its overloads
@@ -70,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
         }
 
-        public void EvaluateScope(ScopeStatement target) {
+        public void EvaluateScope(IScopeNode target) {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             while (_evaluators.Count > 0) {
@@ -82,7 +83,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
         }
 
-        public IMember Evaluate(ScopeStatement target) {
+        public IMember Evaluate(IScopeNode target) {
             if (target != null && _evaluators.TryGetValue(target, out var w)) {
                 Evaluate(w);
                 return w.Result;

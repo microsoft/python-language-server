@@ -29,9 +29,9 @@ namespace Microsoft.Python.Analysis {
             contained.AddAstNode(module, ast);
         }
 
-        internal static T GetAstNode<T>(this IPythonModule module, object o) where T : Node
+        internal static T GetAstNode<T>(this IPythonModule module, object o) where T : INode
             => (T)((IAstNodeContainer)module).GetAstNode(o);
-        internal static void AddAstNode(this IPythonModule module, object o, Node n)
+        internal static void AddAstNode(this IPythonModule module, object o, INode n)
             => ((IAstNodeContainer)module).AddAstNode(o, n);
 
         /// <summary>

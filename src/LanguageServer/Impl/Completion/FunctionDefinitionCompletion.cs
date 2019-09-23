@@ -49,7 +49,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
         private static CompletionItem ToOverrideCompletionItem(IPythonFunctionOverload o, ClassDefinition cd, CompletionContext context, string indent) {
             return new CompletionItem {
                 label = o.Name,
-                insertText = MakeOverrideCompletionString(indent, o, cd.Name, context),
+                insertText = MakeOverrideCompletionString(indent, o, cd.ScopeName, context),
                 insertTextFormat = InsertTextFormat.PlainText,
                 kind = CompletionItemKind.Method
             };
@@ -114,7 +114,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
             var handled = new HashSet<string>(scope.Children.Select(child => child.Name));
 
-            var classVar = scope.OuterScope.Variables[cls.Name];
+            var classVar = scope.OuterScope.Variables[cls.ScopeName];
             var classType = classVar?.GetValue<IMember>()?.GetPythonType<IPythonClassType>();
             if (classType?.Mro == null) {
                 return result;

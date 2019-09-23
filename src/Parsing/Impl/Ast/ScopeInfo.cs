@@ -1,40 +1,31 @@
-// Copyright(c) Microsoft Corporation
-// All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the License); you may not use
-// this file except in compliance with the License. You may obtain a copy of the
-// License at http://www.apache.org/licenses/LICENSE-2.0
-//
-// THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
-// OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
-// IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-// MERCHANTABILITY OR NON-INFRINGEMENT.
-//
-// See the Apache Version 2.0 License for specific language governing
-// permissions and limitations under the License.
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public abstract class ScopeStatement : Statement {
-        // due to "exec" or call to dir, locals, eval, vars...
+    public abstract class ScopeInfo {
+        // Storing variables due to "exec" or call to dir, locals, eval, vars...
+    
+        // list of variables accessed from outer scopes
+        private List<PythonVariable> _freeVars; 
+        // global variables accessed from this scope
+        private List<string> _globalVars; 
+        // variables accessed from nested scopes
+        private List<string> _cellVars; 
+        // variables declared as nonlocal within this scope
+        private List<NameExpression> _nonLocalVars; 
+        // names of all variables referenced, null after binding completes
+        private Dictionary<string, List<PythonReference>> _references;
 
-        private List<PythonVariable> _freeVars;                         // list of variables accessed from outer scopes
-        private List<string> _globalVars;                               // global variables accessed from this scope
-        private List<string> _cellVars;                                 // variables accessed from nested scopes
-        private List<NameExpression> _nonLocalVars;                             // variables declared as nonlocal within this scope
-        private Dictionary<string, List<PythonReference>> _references;        // names of all variables referenced, null after binding completes
-
-        internal const string NameForExec = "module: <exec>";
-
-        public ScopeStatement Parent { get; set; }
-
-        public abstract Statement Body {
-            get;
+        protected ScopeInfo(IScopeNode node) {
+            Node = node;
         }
+        
+        public virtual string /*!*/ Name => "<unknown>";
+
+        protected IScopeNode Node { get; }
 
         internal bool ContainsImportStar { get; set; }
         internal bool ContainsExceptionHandling { get; set; }
@@ -58,9 +49,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// from ... import *.
         /// </summary>
         public bool NeedsLocalsDictionary { get; set; }
-
-        public virtual string/*!*/ Name => "<unknown>";
-
+        
         /// <summary>
         /// True if variables can be set in a late bound fashion that we don't
         /// know about at code gen time - for example via from fob import *.
@@ -74,23 +63,23 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// Gets the variables for this scope.
         /// </summary>
-        public ICollection<PythonVariable> ScopeVariables
-            => Variables?.Values ?? Array.Empty<PythonVariable>() as ICollection<PythonVariable>;
+        public ICollection<PythonVariable> ScopeVariables => Variables?.Values ?? Array.Empty<PythonVariable>() as ICollection<PythonVariable>;
 
-        public virtual bool IsGlobal => false;
+        internal virtual bool IsGlobal => false;
 
         public PythonAst GlobalParent {
             get {
-                var cur = this;
+                var cur = Node;
                 while (!(cur is PythonAst)) {
                     Debug.Assert(cur != null);
                     cur = cur.Parent;
                 }
-                return (PythonAst)cur;
+
+                return (PythonAst) cur;
             }
         }
 
-        protected void Clear() {
+        internal void Clear() {
             _references?.Clear();
             _cellVars?.Clear();
             _freeVars?.Clear();
@@ -110,6 +99,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (!_globalVars.Contains(name)) {
                 _globalVars.Add(name);
             }
+
             return name;
         }
 
@@ -130,9 +120,9 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public IReadOnlyList<PythonVariable> FreeVariables => _freeVars;
 
-        internal abstract bool ExposesLocalVariable(PythonVariable variable);
+        protected virtual bool ExposesLocalVariable { get; }
 
-        public bool TryGetVariable(string name, out PythonVariable variable) {
+        internal bool TryGetVariable(string name, out PythonVariable variable) {
             if (Variables != null && name != null) {
                 return Variables.TryGetValue(name, out variable);
             } else {
@@ -141,7 +131,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        internal virtual bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {
+        internal virtual bool TryBindOuter(IScopeNode from, string name, bool allowGlobals, out PythonVariable variable) {
             // Hide scope contents by default (only functions expose their locals)
             variable = null;
             return false;
@@ -158,12 +148,13 @@ namespace Microsoft.Python.Parsing.Ast {
 
                         // Accessing outer scope variable which is being deleted?
                         if (variable != null) {
-                            if (variable.Deleted && variable.Scope != this && !variable.Scope.IsGlobal && binder.LanguageVersion < PythonLanguageVersion.V32) {
-
+                            if (variable.Deleted && variable.Scope != Node && !variable.IsGlobal &&
+                                binder.LanguageVersion < PythonLanguageVersion.V32) {
                                 // report syntax error
                                 binder.ReportSyntaxError(
-                                    "can not delete variable '{0}' referenced in nested scope".FormatUI(reference.Name),
-                                    this);
+                                    "can not delete variable '{0}' referenced in nested scope"
+                                        .FormatUI(reference.Name),
+                                    Node);
                             }
                         }
                     }
@@ -171,21 +162,22 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        internal virtual void FinishBind(PythonNameBinder binder) {
+        internal void FinishBind(PythonNameBinder binder) {
             List<ClosureInfo> closureVariables = null;
 
             if (_nonLocalVars != null) {
                 foreach (var variableName in _nonLocalVars) {
                     var bound = false;
-                    for (var parent = Parent; parent != null; parent = parent.Parent) {
-                        if (parent.TryBindOuter(this, variableName.Name, false, out var variable)) {
+                    for (var parent = Node.Parent; parent != null; parent = parent.Parent) {
+                        if (parent.ScopeInfo.TryBindOuter(Node, variableName.Name, false, out var variable)) {
                             bound = !variable.IsGlobal;
                             break;
                         }
                     }
 
                     if (!bound) {
-                        binder.ReportSyntaxError("no binding for nonlocal '{0}' found".FormatUI(variableName.Name), variableName);
+                        binder.ReportSyntaxError("no binding for nonlocal '{0}' found".FormatUI(variableName.Name),
+                            variableName);
                     }
                 }
             }
@@ -194,7 +186,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 closureVariables = new List<ClosureInfo>();
 
                 foreach (var variable in FreeVariables) {
-                    closureVariables.Add(new ClosureInfo(variable, !(this is ClassDefinition)));
+                    closureVariables.Add(new ClosureInfo(variable, !(Node is ClassDefinition)));
                 }
             }
 
@@ -205,12 +197,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 foreach (var variable in Variables.Values) {
                     if (!HasClosureVariable(closureVariables, variable) &&
-                        !variable.IsGlobal && (variable.AccessedInNestedScope || ExposesLocalVariable(variable))) {
+                        !variable.IsGlobal && (variable.AccessedInNestedScope || ExposesLocalVariable)) {
                         closureVariables.Add(new ClosureInfo(variable, true));
                     }
 
                     if (variable.Kind == VariableKind.Local) {
-                        Debug.Assert(variable.Scope == this);
+                        Debug.Assert(variable.Scope == Node);
                     }
                 }
             }
@@ -239,12 +231,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        internal void AddVariable(PythonVariable variable) {
-            EnsureVariables();
-            Variables[variable.Name] = variable;
-        }
-
-        internal PythonReference Reference(string/*!*/ name) {
+        internal PythonReference Reference(string /*!*/ name) {
             if (_references == null) {
                 _references = new Dictionary<string, List<PythonReference>>(StringComparer.Ordinal);
             }
@@ -252,6 +239,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (!_references.TryGetValue(name, out var references)) {
                 _references[name] = references = new List<PythonReference>();
             }
+
             var reference = new PythonReference(name);
             references.Add(reference);
             return reference;
@@ -259,17 +247,36 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal bool IsReferenced(string name) => _references != null && _references.ContainsKey(name);
 
-        internal PythonVariable/*!*/ CreateVariable(string name, VariableKind kind) {
+        internal PythonVariable /*!*/ CreateVariable(string name, VariableKind kind) {
             EnsureVariables();
             PythonVariable variable;
-            Variables[name] = variable = new PythonVariable(name, kind, this);
+            Variables[name] = variable = new PythonVariable(name, kind, Node);
             return variable;
         }
 
-        internal PythonVariable/*!*/ EnsureVariable(string/*!*/ name) {
+        internal void AddVariable(PythonVariable variable) {
+            EnsureVariables();
+            Variables[variable.Name] = variable;
+        }
+
+        internal PythonVariable /*!*/ EnsureVariable(string /*!*/ name) {
             if (!TryGetVariable(name, out var variable)) {
                 return CreateVariable(name, VariableKind.Local);
             }
+
+            return variable;
+        }
+
+        /// <summary>
+        /// Creates a variable at the global level.  Called for known globals (e.g. __name__),
+        /// for variables explicitly declared global by the user, and names accessed
+        /// but not defined in the lexical scope.
+        /// </summary>
+        internal PythonVariable /*!*/ EnsureGlobalVariable(string name) {
+            if (!TryGetVariable(name, out var variable)) {
+                variable = CreateVariable(name, VariableKind.Global);
+            }
+
             return variable;
         }
 

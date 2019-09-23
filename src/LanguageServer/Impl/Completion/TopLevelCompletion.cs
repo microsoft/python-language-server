@@ -23,10 +23,11 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class TopLevelCompletion {
-        public static CompletionResult GetCompletions(Node statement, ScopeStatement scopeStatement, CompletionContext context) {
+        public static CompletionResult GetCompletions(Node statement, IScopeNode scopeNode, CompletionContext context) {
             SourceSpan? applicableSpan = null;
             var eval = context.Analysis.ExpressionEvaluator;
 
@@ -74,7 +75,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 }
             }
 
-            var keywords = GetKeywordItems(context, options, scopeStatement);
+            var keywords = GetKeywordItems(context, options, scopeNode);
             items = items.Concat(keywords);
 
             return new CompletionResult(items, applicableSpan);
@@ -150,7 +151,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     return CompletionListOptions.ExpressionKeywords;
             }
         }
-        private static IEnumerable<CompletionItem> GetKeywordItems(CompletionContext context, CompletionListOptions options, ScopeStatement scope) {
+        private static IEnumerable<CompletionItem> GetKeywordItems(CompletionContext context, CompletionListOptions options, IScopeNode scope) {
             var keywords = Enumerable.Empty<string>();
 
             if ((options & CompletionListOptions.ExpressionKeywords) == CompletionListOptions.ExpressionKeywords) {

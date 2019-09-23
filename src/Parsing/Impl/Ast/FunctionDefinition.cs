@@ -19,21 +19,21 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Core;
-using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
     [DebuggerDisplay("{Name}")]
-    public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement {
+    public class FunctionDefinition : Statement, IMaybeAsyncStatement, IScopeStatement {
+        public ScopeInfo ScopeInfo { get; }
+
         internal static readonly object WhitespaceAfterAsync = new object();
 
         private int? _keywordEndIndex;
 
-        protected Statement _body;
+        private Statement _body;
 
         public FunctionDefinition(NameExpression name, Parameter[] parameters)
-            : this(name, parameters, (Statement)null) {
-        }
+            : this(name, parameters, null) { }
 
         public FunctionDefinition(NameExpression name, Parameter[] parameters, Statement body, DecoratorStatement decorators = null) {
             if (name == null) {
@@ -46,6 +46,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Parameters = parameters ?? Array.Empty<Parameter>();
             _body = body;
             Decorators = decorators;
+            ScopeInfo = new FunctionScopeInfo(this);
         }
 
         public bool IsLambda { get; }
@@ -58,15 +59,11 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Expression ReturnAnnotation { get; set; }
 
-        public override Statement Body => _body;
-
-        internal void SetBody(Statement body) => _body = body;
-
         public int HeaderIndex { get; set; }
 
         public int DefIndex { get; set; }
 
-        public override string/*!*/ Name => NameExpression.Name ?? string.Empty;
+        public string /*!*/ Name => NameExpression.Name ?? string.Empty;
 
         public NameExpression NameExpression { get; }
 
@@ -94,92 +91,33 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public PythonVariable Variable { get; set; }
 
-        /// <summary>
-        /// Gets the variable reference for the specific assignment to the variable for this function definition.
-        /// </summary>
-        public PythonReference GetVariableReference(PythonAst ast) => GetVariableReference(this, ast);
+        #region IScopeStatement
 
-        internal override bool ExposesLocalVariable(PythonVariable variable) => NeedsLocalsDictionary;
+        public Statement Body => _body;
+        internal void SetBody(Statement body) => _body = body;
 
-        internal override bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {
-            // Functions expose their locals to direct access
-            ContainsNestedFreeVariables = true;
-            if (TryGetVariable(name, out variable)) {
-                variable.AccessedInNestedScope = true;
+        #endregion
 
-                if (variable.Kind == VariableKind.Local || variable.Kind == VariableKind.Parameter) {
-                    from.AddFreeVariable(variable, true);
+        #region IScopeNode
 
-                    for (var scope = from.Parent; scope != this; scope = scope.Parent) {
-                        scope.AddFreeVariable(variable, false);
-                    }
+        public string ScopeName => $"<Function ${Name}>";
 
-                    AddCellVariable(variable);
-                } else if (allowGlobals) {
-                    from.AddReferencedGlobal(name);
-                }
-                return true;
-            }
-            return false;
-        }
+        public IScopeNode Parent { get; set; }
 
-        internal override PythonVariable BindReference(PythonNameBinder binder, string name) {
-            // First try variables local to this scope
-            if (TryGetVariable(name, out var variable) && variable.Kind != VariableKind.Nonlocal) {
-                if (variable.Kind == VariableKind.Global) {
-                    AddReferencedGlobal(name);
-                }
-                return variable;
-            }
+        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
 
-            // Try to bind in outer scopes
-            for (var parent = Parent; parent != null; parent = parent.Parent) {
-                if (parent.TryBindOuter(this, name, true, out variable)) {
-                    return variable;
-                }
-            }
+        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
 
-            return null;
-        }
+        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
 
+        #endregion
 
-        internal override void Bind(PythonNameBinder binder) {
-            base.Bind(binder);
-            Verify(binder);
-        }
-
-        private void Verify(PythonNameBinder binder) {
-            if (ContainsImportStar && IsClosure) {
-                binder.ReportSyntaxError(
-                    "import * is not allowed in function '{0}' because it is a nested function".FormatUI(Name),
-                    this);
-            }
-            if (ContainsImportStar && Parent is FunctionDefinition) {
-                binder.ReportSyntaxError(
-                    "import * is not allowed in function '{0}' because it is a nested function".FormatUI(Name),
-                    this);
-            }
-            if (ContainsImportStar && ContainsNestedFreeVariables) {
-                binder.ReportSyntaxError(
-                    "import * is not allowed in function '{0}' because it contains a nested function with free variables".FormatUI(Name),
-                    this);
-            }
-            if (ContainsUnqualifiedExec && ContainsNestedFreeVariables) {
-                binder.ReportSyntaxError(
-                    "unqualified exec is not allowed in function '{0}' because it contains a nested function with free variables".FormatUI(Name),
-                    this);
-            }
-            if (ContainsUnqualifiedExec && IsClosure) {
-                binder.ReportSyntaxError(
-                    "unqualified exec is not allowed in function '{0}' because it is a nested function".FormatUI(Name),
-                    this);
-            }
-        }
 
         public int GetIndexOfDef(PythonAst ast) {
             if (!IsCoroutine) {
                 return DefIndex;
             }
+
             return DefIndex + NodeAttributes.GetWhiteSpace(this, ast, WhitespaceAfterAsync).Length + 5;
         }
 
@@ -188,6 +126,7 @@ namespace Microsoft.Python.Parsing.Ast {
             foreach (var parameter in Parameters) {
                 yield return parameter;
             }
+
             if (Decorators != null) yield return Decorators;
             if (_body != null) yield return _body;
             if (ReturnAnnotation != null) yield return ReturnAnnotation;
@@ -199,10 +138,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 foreach (var p in Parameters) {
                     p.Walk(walker);
                 }
+
                 Decorators?.Walk(walker);
                 _body?.Walk(walker);
                 ReturnAnnotation?.Walk(walker);
             }
+
             walker.PostWalk(this);
         }
 
@@ -219,22 +160,24 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Decorators != null) {
                     await Decorators.WalkAsync(walker, cancellationToken);
                 }
+
                 if (_body != null) {
                     await _body.WalkAsync(walker, cancellationToken);
                 }
+
                 if (ReturnAnnotation != null) {
                     await ReturnAnnotation.WalkAsync(walker, cancellationToken);
                 }
             }
+
             await walker.PostWalkAsync(this, cancellationToken);
         }
-
-        public SourceLocation Header => GlobalParent.IndexToLocation(HeaderIndex);
 
         public override string GetLeadingWhiteSpace(PythonAst ast) {
             if (Decorators != null) {
                 return Decorators.GetLeadingWhiteSpace(ast);
             }
+
             return base.GetLeadingWhiteSpace(ast);
         }
 
@@ -243,6 +186,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 Decorators.SetLeadingWhiteSpace(ast, whiteSpace);
                 return;
             }
+
             base.SetLeadingWhiteSpace(ast, whiteSpace);
         }
 
@@ -277,9 +221,7 @@ namespace Microsoft.Python.Parsing.Ast {
                             ast,
                             commaWhiteSpace,
                             format,
-                            format.SpaceWithinFunctionDeclarationParens != null ?
-                                format.SpaceWithinFunctionDeclarationParens.Value ? " " : "" :
-                                null
+                            format.SpaceWithinFunctionDeclarationParens != null ? format.SpaceWithinFunctionDeclarationParens.Value ? " " : "" : null
                         );
                     }
 
@@ -290,9 +232,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
                     format.Append(
                         res,
-                        Parameters.Length != 0 ?
-                            format.SpaceWithinFunctionDeclarationParens :
-                            format.SpaceWithinEmptyParameterList,
+                        Parameters.Length != 0 ? format.SpaceWithinFunctionDeclarationParens : format.SpaceWithinEmptyParameterList,
                         " ",
                         "",
                         this.GetFourthWhiteSpaceDefaultNull(ast)
@@ -315,9 +255,7 @@ namespace Microsoft.Python.Parsing.Ast {
                             res,
                             ast,
                             format,
-                            format.SpaceAroundAnnotationArrow != null ?
-                                format.SpaceAroundAnnotationArrow.Value ? " " : string.Empty :
-                                null
+                            format.SpaceAroundAnnotationArrow != null ? format.SpaceAroundAnnotationArrow.Value ? " " : string.Empty : null
                         );
                     }
 
@@ -332,8 +270,10 @@ namespace Microsoft.Python.Parsing.Ast {
                     if (commaWhiteSpace != null) {
                         res.Append(commaWhiteSpace[i - 1]);
                     }
+
                     res.Append(',');
                 }
+
                 Parameters[i].AppendCodeString(res, ast, format, initialLeadingWhiteSpace);
                 initialLeadingWhiteSpace = null;
             }
@@ -343,6 +283,10 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append(commaWhiteSpace[commaWhiteSpace.Length - 1]);
                 res.Append(",");
             }
+        }
+
+        void IScopeNode.Bind(PythonNameBinder binder) {
+            Bind(binder);
         }
     }
 }

@@ -187,7 +187,7 @@ namespace Microsoft.Python.Analysis.Tests {
             foreach (var stmt in ((SuiteStatement)ast.Body).Statements) {
                 switch (stmt) {
                     case ClassDefinition cd:
-                        seen.Add(cd.Name).Should().BeTrue($"Repeated use of {cd.Name} at index {cd.StartIndex} in {modPath}");
+                        seen.Add(cd.ScopeName).Should().BeTrue($"Repeated use of {cd.ScopeName} at index {cd.StartIndex} in {modPath}");
                         break;
                     case FunctionDefinition fd:
                         seen.Add(fd.Name).Should().BeTrue($"Repeated use of {fd.Name} at index {fd.StartIndex} in {modPath}");

@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Core;
+using Microsoft.Python.Parsing.Definition;
 
 
 /*
@@ -99,10 +100,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
     }
 
-    class PythonNameBinder : PythonWalker {
-        private ScopeStatement _currentScope;
+    public class PythonNameBinder : PythonWalker {
+        private IScopeNode _currentScope;
         private readonly PythonAst _ast;
-        private readonly List<ScopeStatement> _scopes = new List<ScopeStatement>();
+        private readonly List<IScopeNode> _scopes = new List<IScopeNode>();
         private readonly List<int> _finallyCount = new List<int>();
         public bool BindReferences { get; }
         public PythonAst GlobalScope { get; private set; }
@@ -162,7 +163,7 @@ namespace Microsoft.Python.Parsing.Ast {
             unboundAst.FinishBind(this);
         }
 
-        private void PushScope(ScopeStatement node) {
+        private void PushScope(IScopeNode node) {
             node.Parent = _currentScope;
             _currentScope = node;
             _finallyCount.Add(0);
@@ -174,21 +175,21 @@ namespace Microsoft.Python.Parsing.Ast {
             _finallyCount.RemoveAt(_finallyCount.Count - 1);
         }
 
-        internal PythonReference Reference(string/*!*/ name) => _currentScope.Reference(name);
+        internal PythonReference Reference(string/*!*/ name) => _currentScope.ScopeInfo.Reference(name);
 
-        internal PythonVariable DefineName(string/*!*/ name) => _currentScope.EnsureVariable(name);
+        internal PythonVariable DefineName(string/*!*/ name) => _currentScope.ScopeInfo.EnsureVariable(name);
 
-        internal PythonVariable DefineParameter(string/*!*/ name) => _currentScope.DefineParameter(name);
+        internal PythonVariable DefineParameter(string/*!*/ name) => _currentScope.ScopeInfo.DefineParameter(name);
 
         internal PythonVariable DefineDeleted(string/*!*/ name) {
-            var variable = _currentScope.EnsureVariable(name);
+            var variable = _currentScope.ScopeInfo.EnsureVariable(name);
             variable.Deleted = true;
             return variable;
         }
 
         internal void ReportSyntaxWarning(string message, Node node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Warning);
 
-        internal void ReportSyntaxError(string message, Node node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Error);
+        internal void ReportSyntaxError(string message, INode node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Error);
 
         #region AstBinder Overrides
 
@@ -207,15 +208,15 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public override void PostWalk(CallExpression node) {
             if (node.NeedsLocalsDictionary()) {
-                _currentScope.NeedsLocalsDictionary = true;
+                _currentScope.ScopeInfo.NeedsLocalsDictionary = true;
             }
         }
 
         // ClassDefinition
         public override bool Walk(ClassDefinition node) {
-            if (node.Name != null) {
-                node.Variable = DefineName(node.Name);
-                node.AddVariableReference(GlobalScope, BindReferences, Reference(node.Name));
+            if (node.ScopeName != null) {
+                node.Variable = DefineName(node.ScopeName);
+                node.AddVariableReference(GlobalScope, BindReferences, Reference(node.ScopeName));
             }
 
             // Base references are in the outer context
@@ -229,7 +230,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             PushScope(node);
-            node.ModuleNameVariable = GlobalScope.EnsureGlobalVariable("__name__");
+            node.ModuleNameVariable = GlobalScope.ScopeInfo.EnsureGlobalVariable("__name__");
 
             // define the __doc__ and the __module__
             if (node.Body.Documentation != null) {
@@ -263,18 +264,18 @@ namespace Microsoft.Python.Parsing.Ast {
         public override bool Walk(ExecStatement node) {
             if (node.Locals == null && node.Globals == null) {
                 Debug.Assert(_currentScope != null);
-                _currentScope.ContainsUnqualifiedExec = true;
+                _currentScope.ScopeInfo.ContainsUnqualifiedExec = true;
             }
             return true;
         }
 
         public override void PostWalk(ExecStatement node) {
             if (node.NeedsLocalsDictionary()) {
-                _currentScope.NeedsLocalsDictionary = true;
+                _currentScope.ScopeInfo.NeedsLocalsDictionary = true;
             }
 
             if (node.Locals == null) {
-                _currentScope.HasLateBoundVariableSets = true;
+                _currentScope.ScopeInfo.HasLateBoundVariableSets = true;
             }
         }
 
@@ -314,7 +315,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // WithStatement
         public override bool Walk(WithStatement node) {
-            _currentScope.ContainsExceptionHandling = true;
+            _currentScope.ScopeInfo.ContainsExceptionHandling = true;
 
             for (var i = 0; i < node.Items.Count; i++) {
                 if (node.Items[i].Variable != null) {
@@ -342,16 +343,16 @@ namespace Microsoft.Python.Parsing.Ast {
                 node.AddVariableReference(_ast, BindReferences, references);
             } else {
                 Debug.Assert(_currentScope != null);
-                _currentScope.ContainsImportStar = true;
-                _currentScope.NeedsLocalsDictionary = true;
-                _currentScope.HasLateBoundVariableSets = true;
+                _currentScope.ScopeInfo.ContainsImportStar = true;
+                _currentScope.ScopeInfo.NeedsLocalsDictionary = true;
+                _currentScope.ScopeInfo.HasLateBoundVariableSets = true;
             }
             return true;
         }
 
         // FunctionDefinition
         public override bool Walk(FunctionDefinition node) {
-            GlobalScope.EnsureGlobalVariable("__name__");
+            GlobalScope.ScopeInfo.EnsureGlobalVariable("__name__");
 
             // Name is defined in the enclosing context
             if (!node.IsLambda) {
@@ -425,7 +426,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
 
                 // Check for the name being referenced previously. If it has been, issue warning.
-                if (_currentScope.IsReferenced(n) && !assignedGlobal) {
+                if (_currentScope.ScopeInfo.IsReferenced(n) && !assignedGlobal) {
                     ReportSyntaxWarning(
                         "name '{0}' is used prior to global declaration".FormatUI(n),
                         node);
@@ -433,12 +434,12 @@ namespace Microsoft.Python.Parsing.Ast {
 
 
                 // Create the variable in the global context and mark it as global
-                var variable = GlobalScope.EnsureGlobalVariable(n);
+                var variable = GlobalScope.ScopeInfo.EnsureGlobalVariable(n);
                 variable.Kind = VariableKind.Global;
 
                 if (conflict == null) {
                     // no previously definied variables, add it to the current scope
-                    _currentScope.AddVariable(variable);
+                    _currentScope.ScopeInfo.AddVariable(variable);
                 }
 
                 nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
@@ -484,7 +485,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
 
                 // Check for the name being referenced previously. If it has been, issue warning.
-                if (_currentScope.IsReferenced(n) && !assignedLocal) {
+                if (_currentScope.ScopeInfo.IsReferenced(n) && !assignedLocal) {
                     ReportSyntaxWarning(
                         "name '{0}' is used prior to nonlocal declaration".FormatUI(n),
                         node);
@@ -493,9 +494,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 if (conflict == null) {
                     // no previously definied variables, add it to the current scope
-                    _currentScope.CreateVariable(n, VariableKind.Nonlocal);
+                    _currentScope.ScopeInfo.CreateVariable(n, VariableKind.Nonlocal);
                 }
-                _currentScope.AddNonLocalVariable(nameNode);
+                _currentScope.ScopeInfo.AddNonLocalVariable(nameNode);
                 nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
             }
             return true;
@@ -551,7 +552,7 @@ namespace Microsoft.Python.Parsing.Ast {
         // TryStatement
         public override bool Walk(TryStatement node) {
             // we manually walk the TryStatement so we can track finally blocks.
-            _currentScope.ContainsExceptionHandling = true;
+            _currentScope.ScopeInfo.ContainsExceptionHandling = true;
 
             node.Body.Walk(this);
 

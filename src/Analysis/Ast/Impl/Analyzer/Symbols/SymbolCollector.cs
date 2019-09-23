@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// <summary>
@@ -30,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// so the symbol table can resolve references on demand.
     /// </summary>
     internal sealed class SymbolCollector : PythonWalker {
-        private readonly Dictionary<ScopeStatement, PythonType> _typeMap = new Dictionary<ScopeStatement, PythonType>();
+        private readonly Dictionary<IScopeNode, PythonType> _typeMap = new Dictionary<IScopeNode, PythonType>();
         private readonly Stack<IDisposable> _scopes = new Stack<IDisposable>();
         private readonly ModuleSymbolTable _table;
         private readonly ExpressionEval _eval;
@@ -59,7 +60,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var classInfo = CreateClass(cd);
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
-                _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
+                _eval.DeclareVariable(cd.ScopeName, classInfo, VariableSource.Declaration);
                 _table.Add(new ClassEvaluator(_eval, cd));
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));

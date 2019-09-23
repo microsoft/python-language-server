@@ -23,10 +23,11 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        private readonly ConcurrentDictionary<ScopeStatement, Scope> _scopeLookupCache = new ConcurrentDictionary<ScopeStatement, Scope>();
+        private readonly ConcurrentDictionary<IScopeNode, Scope> _scopeLookupCache = new ConcurrentDictionary<IScopeNode, Scope>();
 
         public IMember GetInScope(string name, IScope scope)
             => scope.Variables.TryGetVariable(name, out var variable) ? variable.Value : null;
@@ -136,7 +137,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// as a child of the specified scope. Scope is pushed on the stack
         /// and will be removed when returned the disposable is disposed.
         /// </summary>
-        public IDisposable OpenScope(IPythonModule module, ScopeStatement node, out Scope outerScope) {
+        public IDisposable OpenScope(IPythonModule module, IScopeNode node, out Scope outerScope) {
             outerScope = null;
             if (node == null) {
                 return Disposable.Empty;

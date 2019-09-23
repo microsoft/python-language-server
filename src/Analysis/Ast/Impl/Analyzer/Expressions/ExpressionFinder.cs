@@ -19,6 +19,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Expressions {
     public sealed class ExpressionFinder {
@@ -40,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
         public Node GetExpression(int index) => GetExpression(index, index);
         public Node GetExpression(SourceLocation location) => GetExpression(new SourceSpan(location, location));
 
-        public void Get(int startIndex, int endIndex, out Node node, out Node statement, out ScopeStatement scope) {
+        public void Get(int startIndex, int endIndex, out Node node, out Node statement, out IScopeNode scope) {
             ExpressionWalker walker;
             if (Options.Keywords) {
                 walker = new KeywordWalker(Ast, startIndex, endIndex);
@@ -78,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
             protected ExpressionWalker(int location) : base(location) { }
             public Node Expression { get; protected set; }
             public Node Statement { get; protected set; }
-            public ScopeStatement Scope { get; protected set; }
+            public IScopeNode Scope { get; protected set; }
         }
 
         private class NormalExpressionWalker : ExpressionWalker {

@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Linting {
     internal abstract class LinterWalker : PythonWalker {
@@ -32,7 +33,7 @@ namespace Microsoft.Python.Analysis.Linting {
             Services = services;
         }
 
-        protected void OpenScope(ScopeStatement node) => _scopeStack.Push(Eval.OpenScope(Analysis.Document, node));
+        protected void OpenScope(IScopeNode node) => _scopeStack.Push(Eval.OpenScope(Analysis.Document, node));
         protected void CloseScope() => _scopeStack.Pop().Dispose();
     }
 }

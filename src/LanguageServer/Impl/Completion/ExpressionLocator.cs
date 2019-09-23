@@ -16,11 +16,12 @@
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionLocator {
 
-        public static void FindExpression(PythonAst ast, SourceLocation position, FindExpressionOptions options, out Node expression, out Node statement, out ScopeStatement scope) {
+        public static void FindExpression(PythonAst ast, SourceLocation position, FindExpressionOptions options, out Node expression, out Node statement, out IScopeNode scope) {
             expression = null;
             statement = null;
             scope = null;
@@ -35,7 +36,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             finder.Get(index, index, out expression, out statement, out scope);
 
             var col = position.Column;
-            while (CanBackUp(ast, expression, statement, scope, col)) {
+            while (CanBackUp(ast, expression, statement, scope as IScopeStatement, col)) {
                 col -= 1;
                 index -= 1;
                 finder.Get(index, index, out expression, out statement, out scope);
@@ -45,7 +46,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             scope = scope ?? ast;
         }
 
-        private static bool CanBackUp(PythonAst ast, Node node, Node statement, ScopeStatement scope, int column) {
+        private static bool CanBackUp(PythonAst ast, Node node, Node statement, IScopeStatement scope, int column) {
             if (node != null || !((statement as ExpressionStatement)?.Expression is ErrorExpression)) {
                 return false;
             }

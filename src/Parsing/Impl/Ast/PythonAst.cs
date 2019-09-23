@@ -20,12 +20,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
     /// <summary>
     /// Top-level ast for all Python code. Holds onto the body and the line mapping information.
     /// </summary>
-    public sealed class PythonAst : ScopeStatement, ILocationConverter {
+    public sealed class PythonAst : Statement, IScopeStatement, ILocationConverter {
         private readonly object _lock = new object();
         private readonly Statement _body;
         private readonly Dictionary<Node, Dictionary<object, object>> _attributes = new Dictionary<Node, Dictionary<object, object>>();
@@ -36,11 +37,12 @@ namespace Microsoft.Python.Parsing.Ast {
             LanguageVersion = langVersion;
             NewLineLocations = lineLocations;
             CommentLocations = commentLocations;
+            ScopeInfo = new AstScopeInfo(this);
         }
 
         public PythonAst(IEnumerable<PythonAst> existingAst) {
             var asts = existingAst.ToArray();
-            _body = new SuiteStatement(asts.Select(a => a.Body).ToArray());
+            _body = new SuiteStatement(asts.Select(a => a.Body).OfType<Statement>().ToArray());
             LanguageVersion = asts.Select(a => a.LanguageVersion).Distinct().Single();
             var locs = new List<NewLineLocation>();
             var comments = new List<SourceLocation>();
@@ -49,19 +51,21 @@ namespace Microsoft.Python.Parsing.Ast {
                 locs.AddRange(a.NewLineLocations.Select(ll => new NewLineLocation(ll.EndIndex + offset, ll.Kind)));
                 offset = locs.LastOrDefault().EndIndex;
             }
+
             NewLineLocations = locs.ToArray();
             offset = 0;
             foreach (var a in asts) {
                 comments.AddRange(a.CommentLocations.Select(cl => new SourceLocation(cl.Line + offset, cl.Column)));
                 offset += a.NewLineLocations.Length + 1;
             }
+
             CommentLocations = comments.ToArray();
+            ScopeInfo = new AstScopeInfo(this);
         }
 
         public Uri Module { get; }
         public NewLineLocation[] NewLineLocations { get; private set; }
         public SourceLocation[] CommentLocations { get; private set; }
-        public override string Name => "<module>";
 
         /// <summary>
         /// Gets the class name which this AST was parsed under.  The class name is appended to any member
@@ -74,12 +78,13 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public bool HasVerbatim { get; internal set; }
 
-        public override IEnumerable<Node> GetChildNodes() => new[] { _body };
+        public override IEnumerable<Node> GetChildNodes() => new[] {_body};
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
                 _body.Walk(walker);
             }
+
             walker.PostWalk(this);
         }
 
@@ -87,21 +92,41 @@ namespace Microsoft.Python.Parsing.Ast {
             if (await walker.WalkAsync(this, cancellationToken)) {
                 await _body.WalkAsync(walker, cancellationToken);
             }
+
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public override Statement Body => _body;
+        #region IScopeStatement
+
+        public Statement Body => _body;
+
+        #endregion
+
+        #region IScopeNode
+
+        public string ScopeName => "<module>";
+
+        public IScopeNode Parent { get; set; }
+        public ScopeInfo ScopeInfo { get; }
+
+        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
+
+        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
+        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
+
+        #endregion
+
         public PythonLanguageVersion LanguageVersion { get; }
 
         public void Reduce(Func<Statement, bool> filter) {
             lock (_lock) {
                 (Body as SuiteStatement)?.FilterStatements(filter);
                 _attributes?.Clear();
-                Variables?.Clear();
+                ScopeInfo.Variables?.Clear();
                 CommentLocations = Array.Empty<SourceLocation>();
                 // DO keep NewLineLocations as they are required
                 // to calculate node positions for navigation;
-                base.Clear();
+                ScopeInfo.Clear();
             }
         }
 
@@ -121,6 +146,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (!_attributes.TryGetValue(node, out var nodeAttrs)) {
                     nodeAttrs = _attributes[node] = new Dictionary<object, object>();
                 }
+
                 nodeAttrs[key] = value;
             }
         }
@@ -141,8 +167,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         #region ILocationConverter
+
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
+
         #endregion
 
         internal int GetLineEndFromPosition(int index) {
@@ -150,6 +178,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (loc.Line >= NewLineLocations.Length) {
                 return index;
             }
+
             var res = NewLineLocations[loc.Line - 1];
             switch (res.Kind) {
                 case NewLineKind.LineFeed:
@@ -160,67 +189,9 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        #region Name Binding Support
-
-        internal override bool ExposesLocalVariable(PythonVariable variable) => true;
-
-        internal override void FinishBind(PythonNameBinder binder) {
-        }
-
-        internal override PythonVariable BindReference(PythonNameBinder binder, string name) => EnsureVariable(name);
-
-        internal override bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {
-            if (allowGlobals) {
-                // Unbound variable
-                from.AddReferencedGlobal(name);
-
-                if (from.HasLateBoundVariableSets) {
-                    // If the context contains unqualified exec, new locals can be introduced
-                    // Therefore we need to turn this into a fully late-bound lookup which
-                    // happens when we don't have a PythonVariable.
-                    variable = null;
-                    return false;
-                } else {
-                    // Create a global variable to bind to.
-                    variable = EnsureGlobalVariable(name);
-                    return true;
-                }
-            }
-            variable = null;
-            return false;
-        }
-
-        public override bool IsGlobal => true;
-
-        /// <summary>
-        /// Creates a variable at the global level.  Called for known globals (e.g. __name__),
-        /// for variables explicitly declared global by the user, and names accessed
-        /// but not defined in the lexical scope.
-        /// </summary>
-        internal PythonVariable/*!*/ EnsureGlobalVariable(string name) {
-            if (!TryGetVariable(name, out var variable)) {
-                variable = CreateVariable(name, VariableKind.Global);
-            }
-
-            return variable;
-        }
-
-
-        internal PythonVariable/*!*/ EnsureNonlocalVariable(string name) {
-            if (!TryGetVariable(name, out var variable)) {
-                variable = CreateVariable(name, VariableKind.Nonlocal);
-            }
-
-            return variable;
-        }
-
-        #endregion
-
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             _body.AppendCodeString(res, ast, format);
             res.Append(this.GetExtraVerbatimText(ast));
         }
     }
 }
-
-

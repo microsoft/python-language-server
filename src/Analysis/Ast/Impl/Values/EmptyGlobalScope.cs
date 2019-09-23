@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Values {
     internal class EmptyGlobalScope : IGlobalScope {
@@ -28,7 +29,7 @@ namespace Microsoft.Python.Analysis.Values {
 
         public IPythonModule Module { get; }
         public string Name => string.Empty;
-        public ScopeStatement Node => Module.Analysis.Ast;
+        public IScopeNode Node => Module.Analysis.Ast;
         public IScope OuterScope => null;
         public IGlobalScope GlobalScope { get; }
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();

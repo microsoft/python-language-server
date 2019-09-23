@@ -20,6 +20,7 @@ using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionCompletion {
@@ -29,7 +30,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             }
         }
 
-        public static IEnumerable<CompletionItem> GetCompletionsFromMembers(Expression e, ScopeStatement scope, CompletionContext context) {
+        public static IEnumerable<CompletionItem> GetCompletionsFromMembers(Expression e, IScopeNode scope, CompletionContext context) {
             using (context.Analysis.ExpressionEvaluator.OpenScope(context.Analysis.Document, scope)) {
                 return GetItemsFromExpression(e, context);
             }

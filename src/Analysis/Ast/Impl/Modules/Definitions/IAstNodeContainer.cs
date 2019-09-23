@@ -24,12 +24,12 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Nodes are not available for library modules as AST is not retained
         /// in libraries in order to conserve memory.
         /// </summary>
-        Node GetAstNode(object o);
+        INode GetAstNode(object o);
 
         /// <summary>
         /// Associated AST node with the object.
         /// </summary>
-        void AddAstNode(object o, Node n);
+        void AddAstNode(object o, INode n);
 
         void ClearContent();
     }

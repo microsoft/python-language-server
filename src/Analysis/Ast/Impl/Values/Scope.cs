@@ -20,6 +20,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Values {
     /// <summary>
@@ -32,7 +33,7 @@ namespace Microsoft.Python.Analysis.Values {
         private VariableCollection _imported;
         private List<Scope> _childScopes;
 
-        public Scope(ScopeStatement node, IScope outerScope, IPythonModule module) {
+        public Scope(IScopeNode node, IScope outerScope, IPythonModule module) {
             OuterScope = outerScope;
             Module = module;
             if (node != null) {
@@ -42,8 +43,8 @@ namespace Microsoft.Python.Analysis.Values {
         }
 
         #region IScope
-        public string Name => Node?.Name ?? "<global>";
-        public virtual ScopeStatement Node => Module.GetAstNode<ScopeStatement>(this) ?? Module.GetAst();
+        public string Name => Node?.ScopeName ?? "<global>";
+        public virtual IScopeNode Node => Module.GetAstNode<IScopeNode>(this) ?? Module.GetAst();
         public IScope OuterScope { get; }
         public IPythonModule Module { get; }
 

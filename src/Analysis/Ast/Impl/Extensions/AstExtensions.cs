@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis {
     public static class AstExtensions {
@@ -31,7 +32,7 @@ namespace Microsoft.Python.Analysis {
         public static Expression FindExpression(this PythonAst ast, SourceLocation location, FindExpressionOptions options)
             => new ExpressionFinder(ast, options).GetExpression(location) as Expression;
 
-        public static string GetDocumentation(this ScopeStatement node) {
+        public static string GetDocumentation(this IScopeStatement node) {
             var docExpr = (node?.Body as SuiteStatement)?.Statements?.FirstOrDefault() as ExpressionStatement;
             var ce = docExpr?.Expression as ConstantExpression;
             return ce?.GetStringValue();

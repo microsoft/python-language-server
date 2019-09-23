@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -58,6 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         return CreateClassInstance(c1, arguments, callExpr);
                 }
             }
+
             return null;
         }
 
@@ -65,27 +67,26 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// Determines if arguments to Generic are valid
         /// </summary>
         // TODO: move check to GenericClassBase. This requires extensive changes to SpecificTypeConstructor.
-        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeParameter> genericTypeArgs, IReadOnlyList<IMember> args, Expression expr) {
+        private bool GenericClassParameterValid(IReadOnlyList<IGenericTypeParameter> genericTypeArgs,
+            IReadOnlyList<IMember> args, Expression expr) {
             // All arguments to Generic must be type parameters	
             // e.g. Generic[T, str] throws a runtime error	
             if (genericTypeArgs.Count != args.Count) {
                 ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                    Resources.GenericNotAllTypeParameters,
-                    GetLocation(expr).Span,
-                    ErrorCodes.TypingGenericArguments,
-                    Severity.Warning,
-                    DiagnosticSource.Analysis));
+                                                                   Resources.GenericNotAllTypeParameters,
+                                                                   GetLocation(expr).Span,
+                                                                   ErrorCodes.TypingGenericArguments,
+                                                                   Severity.Warning,
+                                                                   DiagnosticSource.Analysis));
                 return false;
             }
 
             // All arguments to Generic must be distinct	
             if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Count) {
-                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
-                    Resources.GenericNotAllUnique,
-                    GetLocation(expr).Span,
-                    ErrorCodes.TypingGenericArguments,
-                    Severity.Warning,
-                    DiagnosticSource.Analysis));
+                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(Resources.GenericNotAllUnique, GetLocation(expr).Span,
+                                                                   ErrorCodes.TypingGenericArguments,
+                                                                   Severity.Warning,
+                                                                   DiagnosticSource.Analysis));
                 return false;
             }
 
@@ -104,6 +105,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (!GenericClassParameterValid(genericTypeArgs, args, expr)) {
                     return UnknownType;
                 }
+
                 // Generic[T1, T2, ...] expression. Create generic base for the class.	
                 return new GenericClassBase(genericTypeArgs, Module.Interpreter);
             }
@@ -111,6 +113,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // For other types just use supplied arguments	
             return args.Count > 0 ? gt.CreateSpecificType(new ArgumentSet(args, expr, this)) : UnknownType;
         }
+
         private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
             var indices = new List<IMember>();
             if (expr.Index is TupleExpression tex) {
@@ -130,6 +133,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     indices.Add(index);
                 }
             }
+
             return indices;
         }
 
@@ -156,6 +160,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(e) ?? UnknownType;
                 indices.Add(value);
             }
+
             return indices;
         }
 
@@ -165,32 +170,35 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// supplied arguments to either __init__ signature or to the
         /// list of generic definitions in Generic[T1, T2, ...].
         /// </summary>
-        private IMember CreateClassInstance(PythonClassType cls, IReadOnlyList<IMember> constructorArguments, CallExpression callExpr) {
+        private IMember CreateClassInstance(PythonClassType cls, IReadOnlyList<IMember> constructorArguments,
+            CallExpression callExpr) {
             // Look at the constructor arguments and create argument set
             // based on the __init__ definition.
             var initFunc = cls.GetMember(@"__init__") as IPythonFunctionType;
             var initOverload = initFunc?.DeclaringType == cls ? initFunc.Overloads.FirstOrDefault() : null;
 
             var argSet = initOverload != null
-                    ? new ArgumentSet(initFunc, 0, cls, callExpr, this)
-                    : new ArgumentSet(constructorArguments, callExpr, this);
+                ? new ArgumentSet(initFunc, 0, cls, callExpr, this)
+                : new ArgumentSet(constructorArguments, callExpr, this);
 
             argSet.Evaluate();
             var specificType = cls.CreateSpecificType(argSet);
             return specificType.CreateInstance(argSet);
         }
 
-        private ScopeStatement GetScope(IMember m) {
+        private IScopeNode GetScope(IMember m) {
             switch (m.GetPythonType()) {
                 case IPythonClassType ct:
                     return ct.ClassDefinition;
                 case IPythonFunctionType ct:
                     return ct.FunctionDefinition;
             }
+
             return null;
         }
 
-        public static IReadOnlyList<IPythonType> GetTypeArgumentsFromParameters(IPythonFunctionOverload o, IArgumentSet args) {
+        public static IReadOnlyList<IPythonType> GetTypeArgumentsFromParameters(
+            IPythonFunctionOverload o, IArgumentSet args) {
             if (o.Parameters.Any(p => p.IsGeneric)) {
                 // Declaring class is not generic, but the function is and arguments
                 // should provide actual specific types.
@@ -201,8 +209,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         list.AddRange(GetSpecificTypeFromArgumentValue(args.Arguments[i].Value));
                     }
                 }
+
                 return list;
             }
+
             return null;
         }
 
@@ -224,9 +234,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     if (!keyType.IsUnknown()) {
                         specificTypes.Add(keyType);
                     }
+
                     if (!valueType.IsUnknown()) {
                         specificTypes.Add(valueType);
                     }
+
                     break;
                 case IPythonCollection coll:
                     specificTypes.AddRange(coll.Contents.Select(m => m.GetPythonType()));
@@ -238,13 +250,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     } else if (argumentValue is IPythonInstance inst) {
                         specificTypes.Add(inst.GetPythonType());
                     }
+
                     break;
                 case IMember m:
                     if (!m.IsUnknown()) {
                         specificTypes.Add(m.GetPythonType());
                     }
+
                     break;
             }
+
             return specificTypes;
         }
     }

@@ -20,30 +20,51 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class ClassDefinition : ScopeStatement {
-        private readonly NameExpression/*!*/ _name;
+    public class ClassDefinition : Statement, IScopeStatement {
+        private readonly NameExpression /*!*/ _name;
+
         private readonly Statement _body;
         private DecoratorStatement _decorators;
 
-        public ClassDefinition(NameExpression/*!*/ name, ImmutableArray<Arg> bases, Statement body) {
+        public ClassDefinition(NameExpression /*!*/ name, ImmutableArray<Arg> bases, Statement body) {
             _name = name;
             Bases = bases;
             _body = body;
+            ScopeInfo = new ClassScopeInfo(this);
         }
+
+        public string Name => _name?.Name ?? string.Empty;
 
         public override int KeywordLength => 5;
 
         public int HeaderIndex { get; set; }
 
-        public override string/*!*/ Name => _name.Name ?? "";
-
-        public NameExpression/*!*/ NameExpression => _name;
+        public NameExpression /*!*/ NameExpression => _name;
 
         public ImmutableArray<Arg> Bases { get; }
 
-        public override Statement Body => _body;
+        #region IScopeStatement
+
+        public Statement Body => _body;
+
+        #endregion
+
+        #region IScopeNode
+
+        public string ScopeName => $"<Class ${Name}>";
+        
+        public IScopeNode Parent { get; set; }
+        public ScopeInfo ScopeInfo { get; }
+        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
+
+        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
+        
+        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
+
+        #endregion
 
         public DecoratorStatement Decorators {
             get => _decorators;
@@ -54,11 +75,6 @@ namespace Microsoft.Python.Parsing.Ast {
         /// Gets the variable that this class definition was assigned to.
         /// </summary>
         public PythonVariable Variable { get; set; }
-
-        /// <summary>
-        /// Gets the variable reference for the specific assignment to the variable for this class definition.
-        /// </summary>
-        public PythonReference GetVariableReference(PythonAst ast) => GetVariableReference(this, ast);
 
         /// <summary>
         /// Variable for the classes __class__ cell var on 3.x
@@ -80,57 +96,13 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         internal PythonVariable ModuleNameVariable { get; set; }
 
-        internal override bool HasLateBoundVariableSets {
-            get => base.HasLateBoundVariableSets || NeedsLocalsDictionary;
-            set => base.HasLateBoundVariableSets = value;
-        }
-
-        internal override bool ExposesLocalVariable(PythonVariable variable) => true;
-
-        internal override bool TryBindOuter(ScopeStatement from, string name, bool allowGlobals, out PythonVariable variable) {
-            if (name == "__class__" && ClassVariable != null) {
-                // 3.x has a cell var called __class__ which can be bound by inner scopes
-                variable = ClassVariable;
-                return true;
-            }
-
-            return base.TryBindOuter(from, name, allowGlobals, out variable);
-        }
-
-        internal override PythonVariable BindReference(PythonNameBinder binder, string name) {
-
-            // Python semantics: The variables bound local in the class
-            // scope are accessed by name - the dictionary behavior of classes
-            if (TryGetVariable(name, out var variable)) {
-                // TODO: This results in doing a dictionary lookup to get/set the local,
-                // when it should probably be an uninitialized check / global lookup for gets
-                // and a direct set
-                if (variable.Kind == VariableKind.Global) {
-                    AddReferencedGlobal(name);
-                } else if (variable.Kind == VariableKind.Local) {
-                    return null;
-                }
-
-                return variable;
-            }
-
-            // Try to bind in outer scopes, if we have an unqualified exec we need to leave the
-            // variables as free for the same reason that locals are accessed by name.
-            for (var parent = Parent; parent != null; parent = parent.Parent) {
-                if (parent.TryBindOuter(this, name, true, out variable)) {
-                    return variable;
-                }
-            }
-
-            return null;
-        }
-
         public override IEnumerable<Node> GetChildNodes() {
             if (_name != null) yield return _name;
             if (_decorators != null) yield return _decorators;
             foreach (var b in Bases) {
                 yield return b;
             }
+
             if (_body != null) yield return _body;
         }
 
@@ -141,8 +113,10 @@ namespace Microsoft.Python.Parsing.Ast {
                 foreach (var b in Bases) {
                     b.Walk(walker);
                 }
+
                 _body?.Walk(walker);
             }
+
             walker.PostWalk(this);
         }
 
@@ -155,17 +129,20 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (_decorators != null) {
                     await _decorators.WalkAsync(walker, cancellationToken);
                 }
+
                 foreach (var b in Bases) {
                     await b.WalkAsync(walker, cancellationToken);
                 }
+
                 if (_body != null) {
                     await _body.WalkAsync(walker, cancellationToken);
                 }
             }
+
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public SourceLocation Header => GlobalParent.IndexToLocation(HeaderIndex);
+        public SourceLocation Header => ScopeInfo.GlobalParent.IndexToLocation(HeaderIndex);
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             if (Decorators != null) {

@@ -19,7 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class RestoredGlobalScope : IRestoredGlobalScope {
@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
         #region IScope
         public string Name { get; }
-        public ScopeStatement Node => null;
+        public IScopeNode Node => null;
         public IScope OuterScope => null;
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Empty<IScope>();
