@@ -686,8 +686,7 @@ from typing import List
 a: List[int]
 b = [(x := i) for i in a]
 ";
-            var analysis = await GetAnalysisAsync(code);
-
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
         }
     }
