@@ -148,7 +148,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (Location >= body.StartIndex - ws.Length) {
                     return false;
                 }
-
                 return true;
             }
 
@@ -186,7 +185,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 foreach (var p in node.Parameters) {
                     p?.Walk(this);
                 }
-
                 node.ReturnAnnotation?.Walk(this);
 
                 ClearStmt(node, node.Body, node.HeaderIndex);
@@ -206,7 +204,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 foreach (var ci in node.Iterators) {
                     ci.Walk(this);
                 }
-
                 return false;
             }
 
@@ -225,7 +222,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 foreach (var ci in node.Iterators.MaybeEnumerate()) {
                     ci.Walk(this);
                 }
-
                 return false;
             }
 
@@ -245,7 +241,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 foreach (var ci in node.Iterators.MaybeEnumerate()) {
                     ci.Walk(this);
                 }
-
                 return false;
             }
 
@@ -254,7 +249,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.NameExpression != null) {
                         Save(node.NameExpression, base.Walk(node.NameExpression), _options.ParameterNames);
                     }
-
                     return true;
                 }
 
@@ -271,10 +265,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     } else if (_options.Members) {
                         Expression = node;
                     }
-
                     return true;
                 }
-
                 return false;
             }
 
@@ -377,7 +369,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                         if (Location > handler.StartIndex && BeforeBody(handler.Body, handler.HeaderIndex)) {
                             Statement = handler;
                         }
-
                         handler.Walk(this);
                     }
                 }
@@ -401,10 +392,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (Location >= node.NameHeader && Location <= node.EndIndex) {
                         Expression = node.Target;
                     }
-
                     return true;
                 }
-
                 return false;
             }
         }
@@ -433,7 +422,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     Expression = ne;
                     return false;
                 }
-
                 return true;
             }
 
@@ -473,10 +461,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                             return Save(node.OperatorIndex, true, "is") &&
                                 Save(node.GetIndexOfSecondOp(_ast), true, "not");
                     }
-
                     return true;
                 }
-
                 return false;
             }
 
@@ -485,10 +471,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
-
                     return Save(node.GetIndexOfFor(_ast), true, "for") && Save(node.GetIndexOfIn(_ast), true, "in");
                 }
-
                 return false;
             }
 
@@ -496,7 +480,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (base.Walk(node)) {
                     return Save(node.IfIndex, true, "if") && Save(node.ElseIndex, true, "else");
                 }
-
                 return false;
             }
 
@@ -505,18 +488,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
-
                     if (!Save(node.ForIndex, true, "for")) {
                         return false;
                     }
-
                     if (!Save(node.InIndex, true, "in")) {
                         return false;
                     }
-
                     return node.Else == null || Save(node.Else.StartIndex, true, "else");
                 }
-
                 return false;
             }
 
@@ -529,10 +508,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.ImportIndex > 0) {
                         return Save(node.ImportIndex, true, "import");
                     }
-
                     return true;
                 }
-
                 return false;
             }
 
@@ -541,17 +518,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsCoroutine && !Save(node, true, "async")) {
                         return false;
                     }
-
                     if (!Save(node.GetIndexOfDef(_ast), true, "def")) {
                         return false;
                     }
-
                     return true;
                 }
-
                 return false;
             }
-
 
             public override bool Walk(IfStatement node)
                 => base.Walk(node) && Save(node, true, "if");
@@ -562,7 +535,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                         return Save(node, true, "not");
                     }
                 }
-
                 return false;
             }
 
@@ -574,10 +546,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (!Save(node, true, "while")) {
                         return false;
                     }
-
                     return node.ElseStatement == null || Save(node.ElseStatement.StartIndex, true, "else");
                 }
-
                 return false;
             }
 
@@ -586,11 +556,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     if (node.IsAsync && !Save(node, true, "async")) {
                         return false;
                     }
-
                     return Save(node.GetIndexOfWith(_ast), true, "with") &&
                         node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
                 }
-
                 return false;
             }
 
@@ -598,7 +566,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (base.Walk(node)) {
                     return Save(node, true, "yield") && Save(node.GetIndexOfFrom(_ast), true, "from");
                 }
-
                 return false;
             }
         }

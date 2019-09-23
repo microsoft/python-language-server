@@ -29,7 +29,7 @@ namespace Microsoft.Python.Parsing.Ast {
         private readonly Statement _body;
         private DecoratorStatement _decorators;
 
-        public ClassDefinition(NameExpression /*!*/ name, ImmutableArray<Arg> bases, Statement body) {
+        public ClassDefinition(NameExpression name, ImmutableArray<Arg> bases, Statement body) {
             _name = name;
             Bases = bases;
             _body = body;
@@ -103,7 +103,6 @@ namespace Microsoft.Python.Parsing.Ast {
             foreach (var b in Bases) {
                 yield return b;
             }
-
             if (_body != null) yield return _body;
         }
 
@@ -114,10 +113,8 @@ namespace Microsoft.Python.Parsing.Ast {
                 foreach (var b in Bases) {
                     b.Walk(walker);
                 }
-
                 _body?.Walk(walker);
             }
-
             walker.PostWalk(this);
         }
 
@@ -126,20 +123,16 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (_name != null) {
                     await _name.WalkAsync(walker, cancellationToken);
                 }
-
                 if (_decorators != null) {
                     await _decorators.WalkAsync(walker, cancellationToken);
                 }
-
                 foreach (var b in Bases) {
                     await b.WalkAsync(walker, cancellationToken);
                 }
-
                 if (_body != null) {
                     await _body.WalkAsync(walker, cancellationToken);
                 }
             }
-
             await walker.PostWalkAsync(this, cancellationToken);
         }
 

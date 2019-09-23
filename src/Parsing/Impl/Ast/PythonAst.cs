@@ -42,7 +42,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public PythonAst(IEnumerable<PythonAst> existingAst) {
             var asts = existingAst.ToArray();
-            _body = new SuiteStatement(asts.Select(a => a.Body).OfType<Statement>().ToArray());
+            _body = new SuiteStatement(asts.Select(a => a.Body).ToArray());
             LanguageVersion = asts.Select(a => a.LanguageVersion).Distinct().Single();
             var locs = new List<NewLineLocation>();
             var comments = new List<SourceLocation>();
@@ -51,14 +51,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 locs.AddRange(a.NewLineLocations.Select(ll => new NewLineLocation(ll.EndIndex + offset, ll.Kind)));
                 offset = locs.LastOrDefault().EndIndex;
             }
-
             NewLineLocations = locs.ToArray();
             offset = 0;
             foreach (var a in asts) {
                 comments.AddRange(a.CommentLocations.Select(cl => new SourceLocation(cl.Line + offset, cl.Column)));
                 offset += a.NewLineLocations.Length + 1;
             }
-
             CommentLocations = comments.ToArray();
             ScopeInfo = new AstScopeInfo(this);
         }
@@ -78,7 +76,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public bool HasVerbatim { get; internal set; }
 
-        public override IEnumerable<Node> GetChildNodes() => new[] {_body};
+        public override IEnumerable<Node> GetChildNodes() => new[] { _body };
 
         public override void Walk(PythonWalker walker) {
             if (walker.Walk(this)) {
@@ -92,7 +90,6 @@ namespace Microsoft.Python.Parsing.Ast {
             if (await walker.WalkAsync(this, cancellationToken)) {
                 await _body.WalkAsync(walker, cancellationToken);
             }
-
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
@@ -167,10 +164,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         #region ILocationConverter
-
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
-
         #endregion
 
         internal int GetLineEndFromPosition(int index) {
@@ -178,7 +173,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (loc.Line >= NewLineLocations.Length) {
                 return index;
             }
-
+            
             var res = NewLineLocations[loc.Line - 1];
             switch (res.Kind) {
                 case NewLineKind.LineFeed:

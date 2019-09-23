@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
                 var index = GetValueFromExpression(expr.Index);
                 if (index != null) {
-                    return type.Index(instance, new ArgumentSet(new[] {index}, expr, this));
+                    return type.Index(instance, new ArgumentSet(new[] { index }, expr, this));
                 }
             }
 
@@ -115,7 +115,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return GetValueFromComprehension(node);
                 }
             }
-                
+
             ProcessComprehension(node);
             return GetValueFromComprehension(node);
         }
@@ -125,14 +125,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             switch (node) {
                 case ListComprehension lc:
                     var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
-                    return PythonCollectionType.CreateList(Module, new[] {v1});
+                    return PythonCollectionType.CreateList(Module, new[] { v1 });
                 case SetComprehension sc:
                     var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
-                    return PythonCollectionType.CreateSet(Module, new[] {v2});
+                    return PythonCollectionType.CreateSet(Module, new[] { v2 });
                 case DictionaryComprehension dc:
                     var k = GetValueFromExpression(dc.Key) ?? UnknownType;
                     var v = GetValueFromExpression(dc.Value) ?? UnknownType;
-                    return new PythonDictionary(new PythonDictionaryType(Interpreter.ModuleResolution.BuiltinsModule), new Dictionary<IMember, IMember> {{k, v}});
+                    return new PythonDictionary(new PythonDictionaryType(Interpreter.ModuleResolution.BuiltinsModule), new Dictionary<IMember, IMember> { { k, v } });
             }
 
             return UnknownType;

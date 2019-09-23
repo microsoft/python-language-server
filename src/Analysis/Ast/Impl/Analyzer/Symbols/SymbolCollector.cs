@@ -66,7 +66,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Open class scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, cd, out _));
             }
-
             return true;
         }
 
@@ -74,7 +73,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!IsDeprecated(cd) && !string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 _scopes.Pop().Dispose();
             }
-
             base.PostWalk(cd);
         }
 
@@ -82,13 +80,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (IsDeprecated(fd)) {
                 return false;
             }
-
             if (!string.IsNullOrEmpty(fd.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, fd, out _));
             }
-
             return true;
         }
 
@@ -96,7 +92,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.Name)) {
                 _scopes.Pop().Dispose();
             }
-
             base.PostWalk(fd);
         }
 
@@ -105,7 +100,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Open comprehension scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
             }
-
             return true;
         }
 
@@ -113,7 +107,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (_eval.Interpreter.LanguageVersion.Is3x()) {
                 _scopes.Pop().Dispose();
             }
-
             base.PostWalk(comprehension);
         }
 
@@ -122,7 +115,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Open comprehension scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
             }
-
             return true;
         }
 
@@ -130,7 +122,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (_eval.Interpreter.LanguageVersion.Is3x()) {
                 _scopes.Pop().Dispose();
             }
-
             base.PostWalk(comprehension);
         }
 
@@ -139,7 +130,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 // Open comprehension scope
                 _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
             }
-
             return true;
         }
 
@@ -147,7 +137,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (_eval.Interpreter.LanguageVersion.Is3x()) {
                 _scopes.Pop().Dispose();
             }
-
             base.PostWalk(comprehension);
         }
 
@@ -166,7 +155,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return cls;
         }
 
-
         private void AddFunctionOrProperty(FunctionDefinition fd) {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             if (!TryAddProperty(fd, declaringType)) {
@@ -183,7 +171,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 _typeMap[fd] = f;
                 declaringType?.AddMember(f.Name, f, overwrite: true);
             }
-
             AddOverload(fd, f, o => f.AddOverload(o));
         }
 
@@ -217,10 +204,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var t = GetMemberFromStub(node.Name).GetPythonType();
             if (t is IPythonFunctionType f) {
                 return f.Overloads
-                    .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);
+                        .OfType<PythonFunctionOverload>()
+                        .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);
             }
-
             return null;
         }
 
@@ -244,7 +230,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                         return true;
                 }
             }
-
             return false;
         }
 
@@ -257,7 +242,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 _typeMap[fd] = p;
                 declaringType?.AddMember(p.Name, p, overwrite: true);
             }
-
             AddOverload(fd, p, o => p.AddOverload(o));
         }
 
@@ -279,13 +263,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 if (!(member is IMemberContainer mc)) {
                     return null;
                 }
-
                 member = mc.GetMember(memberNameChain[i]);
                 if (member == null) {
                     return null;
                 }
             }
-
             return member;
         }
 
@@ -300,6 +282,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private static bool IsDeprecationDecorator(CallExpression c)
             => (c.Target is MemberExpression n1 && n1.Name == "deprecated") ||
-                (c.Target is NameExpression n2 && n2.Name == "deprecated");
+               (c.Target is NameExpression n2 && n2.Name == "deprecated");
     }
 }

@@ -95,7 +95,6 @@ namespace Microsoft.Python.Parsing.Ast {
                     ci.Walk(walker);
                 }
             }
-
             walker.PostWalk(this);
         }
 
@@ -104,12 +103,10 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Item != null) {
                     await Item.WalkAsync(walker, cancellationToken);
                 }
-
                 foreach (var ci in Iterators) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
-
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
@@ -143,7 +140,6 @@ namespace Microsoft.Python.Parsing.Ast {
                     ci.Walk(walker);
                 }
             }
-
             walker.PostWalk(this);
         }
 
@@ -152,12 +148,10 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (Item != null) {
                     await Item.WalkAsync(walker, cancellationToken);
                 }
-
                 foreach (var ci in Iterators.MaybeEnumerate()) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
-
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
@@ -198,7 +192,6 @@ namespace Microsoft.Python.Parsing.Ast {
                     ci.Walk(walker);
                 }
             }
-
             walker.PostWalk(this);
         }
 
@@ -207,12 +200,10 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (_value != null) {
                     await _value.WalkAsync(walker, cancellationToken);
                 }
-
                 foreach (var ci in Iterators.MaybeEnumerate()) {
                     await ci.WalkAsync(walker, cancellationToken);
                 }
             }
-
             await walker.PostWalkAsync(this, cancellationToken);
         }
 

@@ -238,7 +238,6 @@ namespace Microsoft.Python.Parsing.Ast {
             if (!_references.TryGetValue(name, out var references)) {
                 _references[name] = references = new List<PythonReference>();
             }
-
             var reference = new PythonReference(name);
             references.Add(reference);
             return reference;

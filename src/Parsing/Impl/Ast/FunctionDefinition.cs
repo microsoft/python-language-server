@@ -63,7 +63,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public int DefIndex { get; set; }
 
-        public string /*!*/ Name => NameExpression.Name ?? string.Empty;
+        public string Name => NameExpression.Name ?? string.Empty;
 
         public NameExpression NameExpression { get; }
 
@@ -117,7 +117,6 @@ namespace Microsoft.Python.Parsing.Ast {
             if (!IsCoroutine) {
                 return DefIndex;
             }
-
             return DefIndex + NodeAttributes.GetWhiteSpace(this, ast, WhitespaceAfterAsync).Length + 5;
         }
 
@@ -126,7 +125,6 @@ namespace Microsoft.Python.Parsing.Ast {
             foreach (var parameter in Parameters) {
                 yield return parameter;
             }
-
             if (Decorators != null) yield return Decorators;
             if (_body != null) yield return _body;
             if (ReturnAnnotation != null) yield return ReturnAnnotation;
@@ -138,12 +136,10 @@ namespace Microsoft.Python.Parsing.Ast {
                 foreach (var p in Parameters) {
                     p.Walk(walker);
                 }
-
                 Decorators?.Walk(walker);
                 _body?.Walk(walker);
                 ReturnAnnotation?.Walk(walker);
             }
-
             walker.PostWalk(this);
         }
 
@@ -152,24 +148,19 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (NameExpression != null) {
                     await NameExpression.WalkAsync(walker, cancellationToken);
                 }
-
                 foreach (var p in Parameters) {
                     await p.WalkAsync(walker, cancellationToken);
                 }
-
                 if (Decorators != null) {
                     await Decorators.WalkAsync(walker, cancellationToken);
                 }
-
                 if (_body != null) {
                     await _body.WalkAsync(walker, cancellationToken);
                 }
-
                 if (ReturnAnnotation != null) {
                     await ReturnAnnotation.WalkAsync(walker, cancellationToken);
                 }
             }
-
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
@@ -186,7 +177,6 @@ namespace Microsoft.Python.Parsing.Ast {
                 Decorators.SetLeadingWhiteSpace(ast, whiteSpace);
                 return;
             }
-
             base.SetLeadingWhiteSpace(ast, whiteSpace);
         }
 
@@ -221,7 +211,8 @@ namespace Microsoft.Python.Parsing.Ast {
                             ast,
                             commaWhiteSpace,
                             format,
-                            format.SpaceWithinFunctionDeclarationParens != null ? format.SpaceWithinFunctionDeclarationParens.Value ? " " : "" : null
+                            format.SpaceWithinFunctionDeclarationParens != null ?
+                                format.SpaceWithinFunctionDeclarationParens.Value ? " " : "" : null
                         );
                     }
 
@@ -232,7 +223,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
                     format.Append(
                         res,
-                        Parameters.Length != 0 ? format.SpaceWithinFunctionDeclarationParens : format.SpaceWithinEmptyParameterList,
+                        Parameters.Length != 0 ? format.SpaceWithinFunctionDeclarationParens 
+                            : format.SpaceWithinEmptyParameterList,
                         " ",
                         "",
                         this.GetFourthWhiteSpaceDefaultNull(ast)
@@ -277,16 +269,11 @@ namespace Microsoft.Python.Parsing.Ast {
                 Parameters[i].AppendCodeString(res, ast, format, initialLeadingWhiteSpace);
                 initialLeadingWhiteSpace = null;
             }
-
             if (commaWhiteSpace != null && commaWhiteSpace.Length == Parameters.Length && Parameters.Length != 0) {
                 // trailing comma
                 res.Append(commaWhiteSpace[commaWhiteSpace.Length - 1]);
                 res.Append(",");
             }
-        }
-
-        void IScopeNode.Bind(PythonNameBinder binder) {
-            Bind(binder);
         }
     }
 }
