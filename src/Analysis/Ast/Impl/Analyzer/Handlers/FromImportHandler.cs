@@ -69,9 +69,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
                     if (!string.IsNullOrEmpty(variableName)) {
-                        var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-                        var exported = variable ?? variableModule.GetMember(memberName);
-                        var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+                        // First try imports since child modules should win, i.e. in 'from a.b import c'
+                        // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
+                        var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+                        // Now try exported
+                        value = value ?? variableModule.GetMember(memberName);
+                        // If nothing is exported, variables are still accessible.
+                        value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
                         // Do not allow imported variables to override local declarations
                         Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
                     }
@@ -131,7 +135,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private IMember GetValueFromImports(PythonVariableModule parentModule, IImportChildrenSource childrenSource, string memberName) {
             if (childrenSource == null || !childrenSource.TryGetChildImport(memberName, out var childImport)) {
-                return Interpreter.UnknownType;
+                return null;
             }
 
             switch (childImport) {
@@ -141,7 +145,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 case ImplicitPackageImport packageImport:
                     return GetOrCreateVariableModule(packageImport.FullName, parentModule, memberName);
                 default:
-                    return Interpreter.UnknownType;
+                    return null;
             }
         }
 

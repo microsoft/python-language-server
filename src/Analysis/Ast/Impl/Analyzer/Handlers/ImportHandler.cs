@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // import_module('fob.oar.baz')
             var importNames = ImmutableArray<string>.Empty;
             var lastModule = default(PythonVariableModule);
-            var modules = new (string, PythonVariableModule)[moduleImportExpression.Names.Count];
+            var resolvedModules = new (string name, PythonVariableModule module)[moduleImportExpression.Names.Count];
             for (var i = 0; i < moduleImportExpression.Names.Count; i++) {
                 var nameExpression = moduleImportExpression.Names[i];
                 importNames = importNames.Add(nameExpression.Name);
@@ -65,7 +65,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     lastModule = default;
                     break;
                 }
-                modules[i] = (nameExpression.Name, lastModule);
+                resolvedModules[i] = (nameExpression.Name, lastModule);
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
@@ -74,8 +74,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return;
             }
 
-            var firstModule = modules.Length > 0 ? modules[0].Item2 : null;
-            var secondModule = modules.Length > 1 ? modules[1].Item2 : null;
+            var firstModule = resolvedModules.Length > 0 ? resolvedModules[0].module : null;
+            var secondModule = resolvedModules.Length > 1 ? resolvedModules[1].module : null;
 
             // "import fob.oar.baz" when 'fob' is THIS module handled by declaring 'oar' as member.
             // Consider pandas that has 'import pandas.testing' in __init__.py and 'testing'
@@ -91,10 +91,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             // import a.b.c.d => declares a, b in the current module, c in b, d in c.
-            for (var i = 1; i < modules.Length - 1; i++) {
-                var (childName, childModule) = modules[i + 1];
+            for (var i = 1; i < resolvedModules.Length - 1; i++) {
+                var (childName, childModule) = resolvedModules[i + 1];
                 if (!string.IsNullOrEmpty(childName) && childModule != null) {
-                    var parent = modules[i].Item2;
+                    var parent = resolvedModules[i].module;
                     parent?.AddChildModule(childName, childModule);
                 }
             }

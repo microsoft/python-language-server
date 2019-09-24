@@ -24,6 +24,7 @@ using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -338,6 +339,22 @@ import top.sub3.sub4
 
             sub3Module.Should().HaveMemberName("sub4");
             sub3Module.Should().HaveMember<IPythonModule>("sub4");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SubmoduleOverridesVariable() {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "__init__.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "__init__.py"), "sub2 = 1");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "sub2", "__init__.py"), string.Empty);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var appDoc = rdt.OpenDocument(appUri, "from top.sub1 import sub2");
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await appDoc.GetAnalysisAsync(Timeout.Infinite);
+            analysis.Should().HaveVariable("sub2").Which.Should().HaveType(BuiltinTypeId.Module);
         }
     }
 }
