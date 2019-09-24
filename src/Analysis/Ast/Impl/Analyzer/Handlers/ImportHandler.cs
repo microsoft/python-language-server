@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     break;
                 }
 
-                if (firstModule == default) {
+                if (firstModule == null) {
                     firstModule = lastModule;
                 }
 
@@ -81,9 +81,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
             // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != null) {
                 Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
-            } else if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
+            } else if (firstModule != null && !string.IsNullOrEmpty(importNames[0])) {
                 var firstName = moduleImportExpression.Names[0];
                 Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
             }
@@ -141,7 +141,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
             var module = ModuleResolution.GetOrLoadModule(possibleModuleImport.PrecedingModuleFullName);
 
-            if (module == default) {
+            if (module == null) {
                 MakeUnresolvedImport(possibleModuleImport.PrecedingModuleFullName, fullName, location);
                 return false;
             }

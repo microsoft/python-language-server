@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
         private int _version;
 
         public int Version => _version;
-        
+
         public int ChangeValue(in TKey key, in TValue value, in bool isRoot, params TKey[] incomingKeys)
             => ChangeValue(key, value, isRoot, ImmutableArray<TKey>.Create(incomingKeys));
 
@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     index = _keys.Count;
                     _keys[key] = index;
                     _vertices.Add(default);
-                } else if (_vertices[index] != default) {
+                } else if (_vertices[index] != null) {
                     return _version;
                 }
 
@@ -72,14 +72,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 var version = Interlocked.Increment(ref _version);
 
                 var vertex = _vertices[index];
-                if (vertex == default) {
+                if (vertex == null) {
                     return version;
                 }
 
                 _vertices[index] = default;
                 foreach (var incomingIndex in vertex.Incoming) {
                     var incoming = _vertices[incomingIndex];
-                    if (incoming != default && incoming.IsSealed) {
+                    if (incoming != null && incoming.IsSealed) {
                         _vertices[incomingIndex] = new DependencyVertex<TKey, TValue>(incoming, version, false);
                     }
                 }
@@ -87,10 +87,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 if (!vertex.IsSealed) {
                     return version;
                 }
-                
+
                 foreach (var outgoingIndex in vertex.Outgoing) {
                     var outgoing = _vertices[outgoingIndex];
-                    if (outgoing != default && !outgoing.IsNew) {
+                    if (outgoing != null && !outgoing.IsNew) {
                         _vertices[outgoingIndex] = new DependencyVertex<TKey, TValue>(outgoing, version, true);
                     }
                 }
@@ -117,7 +117,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 _vertices.Clear();
 
                 foreach (var oldVertex in oldVertices) {
-                    if (oldVertex == default) {
+                    if (oldVertex == null) {
                         continue;
                     }
 
@@ -131,7 +131,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                         _keys[key] = index;
                         _vertices.Add(default);
                     }
-                    
+
                     Update(key, value, isRoot, incomingKeys, index);
                 }
 
@@ -158,7 +158,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     _vertices.Add(default);
                 } else {
                     var vertex = _vertices[keyIndex];
-                    if (vertex != default && vertex.IsSealed && !vertex.ContainsOutgoing(index)) {
+                    if (vertex != null && vertex.IsSealed && !vertex.ContainsOutgoing(index)) {
                         _vertices[keyIndex] = new DependencyVertex<TKey, TValue>(vertex, version, false);
                     }
                 }
@@ -243,7 +243,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             var outgoingVertices = new HashSet<int>[vertices.Count];
             foreach (var vertex in vertices) {
-                if (vertex == default) {
+                if (vertex == null) {
                     continue;
                 }
 
@@ -252,12 +252,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
 
                 foreach (var incomingIndex in vertex.Incoming) {
-                    if (vertices[incomingIndex] != default) {
+                    if (vertices[incomingIndex] != null) {
                         var outgoing = outgoingVertices[incomingIndex];
-                        if (outgoing == default) {
+                        if (outgoing == null) {
                             outgoing = new HashSet<int>();
                             outgoingVertices[incomingIndex] = outgoing;
-                        } 
+                        }
 
                         outgoing.Add(vertex.Index);
                     }
@@ -270,7 +270,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
 
                 foreach (var vertex in vertices) {
-                    if (vertex != default && !vertex.IsSealed) {
+                    if (vertex != null && !vertex.IsSealed) {
                         vertex.Seal(outgoingVertices[vertex.Index]);
                     }
                 }
@@ -343,7 +343,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     SetDepths(depths, vertices, vertex.Incoming, 1);
                 }
             }
-            
+
             return ImmutableArray<int>.Create(depths);
         }
 
@@ -482,12 +482,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             // First, go through all the vertices and find those that have missing incoming edges
             foreach (var vertex in vertices) {
-                if (vertex == default) {
+                if (vertex == null) {
                     continue;
                 }
 
                 foreach (var incoming in vertex.Incoming) {
-                    if (vertices[incoming] == default) {
+                    if (vertices[incoming] == null) {
                         haveMissingDependencies[vertex.Index] = true;
                         queue.Enqueue(vertex);
                         missingIndicesHashSet.Add(incoming);
@@ -505,7 +505,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 var vertex = queue.Dequeue();
                 foreach (var outgoing in vertex.Outgoing) {
-                    if (vertices[outgoing] == default) {
+                    if (vertices[outgoing] == null) {
                         continue;
                     }
 
@@ -531,7 +531,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
             }
-            
+
             return version == _version;
         }
 
