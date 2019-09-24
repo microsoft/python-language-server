@@ -216,12 +216,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 return false;
             }
 
+            var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
+            
+            walkingGraph = walkingGraph.AddRange(loopNodes);
             foreach (var vertex in walkingGraph) {
                 vertex.Seal();
             }
 
-            var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
-            var startingVertices = walkingGraph.AddRange(loopNodes).Where(v => !v.HasIncoming);
+            var startingVertices = walkingGraph.Where(v => !v.HasIncoming);
             walker = new DependencyChainWalker(this, startingVertices, affectedValues, depths, missingKeys, walkingGraph.Count, version);
             return version == _version;
         }
@@ -431,16 +433,17 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             // Create independent walking vertices for vertex loops
             for (var i = 0; i < loopsCount; i++) {
-                loopVertices = loopVertices.Add(new WalkingVertex<TKey, TValue>(default));
+                loopVertices = loopVertices.Add(new WalkingVertex<TKey, TValue>(i));
             }
-
+            
+            // Break internal loop connections
             foreach (var vertex in graph) {
                 if (vertex.IsInLoop) {
-                    var loopVertex = loopVertices[vertex.LoopNumber];
-
-                    // Break internal loop connections
+                    var loopNumber = vertex.LoopNumber;
+                    var loopVertex = loopVertices[loopNumber];
+                    
                     for (var i = vertex.Outgoing.Count - 1; i >= 0; i--) {
-                        if (vertex.Outgoing[i].LoopNumber == vertex.LoopNumber) {
+                        if (vertex.Outgoing[i].LoopNumber == loopNumber) {
                             vertex.RemoveOutgoingAt(i);
                         }
                     }
@@ -453,13 +456,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 }
             }
 
+            // Connect dependencies to loop vertex
             foreach (var vertex in graph) {
                 for (var i = vertex.Outgoing.Count - 1; i >= 0; i--) {
                     var outgoing = vertex.Outgoing[i];
                     if (outgoing.IsInLoop && outgoing.LoopNumber != vertex.LoopNumber) {
                         var loopVertex = loopVertices[outgoing.LoopNumber];
                         vertex.RemoveOutgoingAt(i);
-                        loopVertex.AddOutgoing(outgoing);
+                        vertex.AddOutgoing(loopVertex);
                     }
                 }
 
@@ -646,7 +650,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             public TValue Value => _vertex.DependencyVertex.Value;
             public int VertexDepth { get; }
             public bool HasMissingDependencies => _vertex.HasMissingDependencies;
-            public bool HasOnlyWalkedDependencies => _vertex.HasOnlyWalkedIncoming && _vertex.SecondPass == default;
+            public bool HasOnlyWalkedDependencies => _vertex.HasOnlyWalkedIncoming;
             public bool IsWalkedWithDependencies => _vertex.HasOnlyWalkedIncoming && _vertex.DependencyVertex.IsWalked;
             public bool IsValidVersion => _walker.IsValidVersion;
 

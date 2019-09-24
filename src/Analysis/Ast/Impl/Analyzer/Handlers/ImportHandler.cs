@@ -23,15 +23,21 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler : StatementHandler {
+        private readonly IImportedVariableHandler _importedVariableHandler;
         private readonly Dictionary<string, PythonVariableModule> _variableModules = new Dictionary<string, PythonVariableModule>();
+        public ImmutableArray<(IndexSpan VariableIndexSpan, IPythonModule Module, string Name)> VariableSources { get; private set; }
 
-        public ImportHandler(AnalysisWalker walker) : base(walker) { }
+        public ImportHandler(AnalysisWalker walker, in IImportedVariableHandler importedVariableHandler) : base(walker) {
+            _importedVariableHandler = importedVariableHandler;
+            VariableSources = ImmutableArray<(IndexSpan VariableIndexSpan, IPythonModule module, string name)>.Empty;
+        }
 
         public bool HandleImport(ImportStatement node) {
             if (Module.ModuleType == ModuleType.Specialized) {
@@ -68,6 +74,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 if (firstModule == default) {
                     firstModule = lastModule;
                 }
+
+                var location = Eval.GetLocationOfName(nameExpression);
+                VariableSources = VariableSources.Add((location.IndexSpan, lastModule.Module, null));
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
@@ -168,7 +177,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private void MakeUnresolvedImport(string variableName, string moduleName, Node location) {
             if (!string.IsNullOrEmpty(variableName)) {
-                Eval.DeclareImportedVariable(variableName, new SentinelModule(moduleName, Eval.Services), location);
+                Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
             }
             Eval.ReportDiagnostics(Eval.Module.Uri, 
                 new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), 

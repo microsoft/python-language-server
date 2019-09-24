@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,17 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis.Dependencies {
-    internal sealed class IndexedLoopResolver<T> {
-        private readonly IComparer<T> _comparer;
+namespace Microsoft.Python.Analysis.Analyzer.Handlers {
+    internal sealed class SimpleImportedVariableHandler : IImportedVariableHandler {
+        public static IImportedVariableHandler Instance { get; } = new SimpleImportedVariableHandler();
 
-        public IndexedLoopResolver(IComparer<T> comparer) => _comparer = comparer;
-
-        public ImmutableArray<T> FindStartingItems(IEnumerable<(T from, int fromIndex, T to, int toIndex)> edges) {
-
-        }
+        private SimpleImportedVariableHandler() {}
+        
+        public IVariable GetVariable(in PythonVariableModule module, in string name) =>
+            module.Analysis?.GlobalScope?.Variables[name];
     }
 }

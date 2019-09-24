@@ -69,11 +69,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
                     if (!string.IsNullOrEmpty(variableName)) {
-                        var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
+                        var location = Eval.GetLocationOfName(nameExpression);
+                        if (variableModule.Module != null) {
+                            VariableSources = VariableSources.Add((location.IndexSpan, variableModule.Module, variableName));
+                        }
+                        
+                        var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
                         var exported = variable ?? variableModule.GetMember(memberName);
                         var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
                         // Do not allow imported variables to override local declarations
-                        Eval.DeclareImportedVariable(variableName, value, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
+                        Eval.DeclareVariable(variableName, value, VariableSource.Import, location, CanOverwriteVariable(variableName, node.StartIndex));
                     }
                 }
             }
@@ -103,9 +108,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     ModuleResolution.GetOrLoadModule(m.Name);
                 }
 
-                var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
+                var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
                 // Do not allow imported variables to override local declarations
-                Eval.DeclareImportedVariable(memberName, variable ?? member, null, CanOverwriteVariable(memberName, importPosition));
+                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, null, CanOverwriteVariable(memberName, importPosition));
             }
         }
 

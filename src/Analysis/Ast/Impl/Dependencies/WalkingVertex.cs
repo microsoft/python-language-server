@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Core.Diagnostics;
@@ -34,8 +33,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
         public bool HasOnlyWalkedIncoming => _walkedIncomingCount == 0;
         public bool HasMissingDependencies { get; private set; }
 
-        public WalkingVertex<TKey, TValue> SecondPass { get; private set; }
-
         public bool IsInLoop => LoopNumber >= 0;
 
         public string DebuggerDisplay => DependencyVertex?.DebuggerDisplay ?? "Loop node";
@@ -44,6 +41,13 @@ namespace Microsoft.Python.Analysis.Dependencies {
             DependencyVertex = vertex;
             Index = -1;
             LoopNumber = -1;
+            _outgoing = new List<WalkingVertex<TKey, TValue>>();
+        }
+
+        public WalkingVertex(int loopNumber) {
+            DependencyVertex = default;
+            Index = -1;
+            LoopNumber = loopNumber;
             _outgoing = new List<WalkingVertex<TKey, TValue>>();
         }
 

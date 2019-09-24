@@ -70,32 +70,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        public void DeclareImportedVariable(string name, IMember value, Node locationNode, bool overwrite = true) {
-            var location = GetLocationOfName(locationNode);
-            const VariableSource source = VariableSource.Import;
-
-            // Duplicate declaration so if variable gets overwritten it can still be retrieved. Consider:
-            //    from X import A
-            //    class A(A): ...
-            CurrentScope.DeclareImported(name, value, location);
-
-            var member = GetInScope(name);
-            if (member != null && !overwrite) {
-                return;
-            }
-
-            if (value is IVariable v) {
-                CurrentScope.LinkVariable(name, v, location);
-                return;
-            }
-
-            if (member == null) {
-                CurrentScope.DeclareVariable(name, value, source, location);
-            } else if (!value.IsUnknown()) {
-                CurrentScope.DeclareVariable(name, value, source, location);
-            }
-        }
-
         public IMember LookupNameInScopes(string name, out IScope scope, out IVariable v, LookupOptions options) {
             scope = null;
             var classMembers = (options & LookupOptions.ClassMembers) == LookupOptions.ClassMembers;

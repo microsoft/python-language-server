@@ -1,4 +1,4 @@
-﻿// Python Tools for Visual Studio
+// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -21,34 +21,46 @@ using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.Python.UnitTests.Core.MSTest {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class PermutationalTestMethodAttribute : DataTestMethodAttribute, ITestDataSource {
-        private readonly int _count;
-        private readonly int[] _fixedPermutation;
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public class PermutationDataRowAttribute : Attribute, ITestDataSource {
+        private readonly object[] _source;
 
-        public string NameFormat { get; set; } = "{0} ({1})";
+        public PermutationDataRowAttribute() {
+            _source = new object[0];
+        }
 
-        public PermutationalTestMethodAttribute(int count, params int[] fixedPermutation) {
-            _count = count;
-            _fixedPermutation = fixedPermutation;
+        public PermutationDataRowAttribute(object data) {
+            _source = new object[1] {data};
+        }
+
+        public PermutationDataRowAttribute(object data, params object[] moreData) {
+            if (moreData == null) {
+                moreData = new object[1];
+            }
+
+            _source = new object[moreData.Length + 1];
+            _source[0] = data;
+            Array.Copy(moreData, 0, _source, 1, moreData.Length);
         }
 
         public IEnumerable<object[]> GetData(MethodInfo methodInfo) {
-            if (_fixedPermutation != null && _fixedPermutation.Length > 0) {
-                yield return new object[] { _fixedPermutation };
-                yield break;
+            var permutationsIndexes = GetPermutationIndexes(_source.Length);
+            var data = new object[permutationsIndexes.Length][];
+            for (var dataIndex = 0; dataIndex < permutationsIndexes.Length; dataIndex++) {
+                var permutationIndexes = permutationsIndexes[dataIndex];
+                var dataRow = new object[_source.Length];
+                for (var i = 0; i < dataRow.Length; i++) {
+                    dataRow[i] = _source[permutationIndexes[i]];
+                }
+
+                data[dataIndex] = dataRow;
             }
 
-            var permutationsIndexes = GetPermutationIndexes(_count);
-            foreach (var permutationIndexes in permutationsIndexes) {
-                yield return new object []{ permutationIndexes };
-            }
+            return data;
         }
-
-        public string GetDisplayName(MethodInfo methodInfo, object[] data) {
-            var names = string.Join(", ", (int[])data[0]);
-            return string.Format(CultureInfo.InvariantCulture, NameFormat, methodInfo.Name, names);
-        }
+        
+        public string GetDisplayName(MethodInfo methodInfo, object[] data) 
+            => data == null ? null : string.Format(CultureInfo.InvariantCulture, "{0} ({1})", methodInfo.Name, string.Join(", ", data));
 
         private int[][] GetPermutationIndexes(int count) {
             if (count == 0) {

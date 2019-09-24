@@ -515,9 +515,9 @@ z.";
             var rdt = Services.GetService<IRunningDocumentTable>();
             var analyzer = Services.GetService<IPythonAnalyzer>();
 
-            rdt.OpenDocument(module1Uri, module1Code);
-            rdt.OpenDocument(module2Uri, module2Code);
             rdt.OpenDocument(module3Uri, module3Code);
+            rdt.OpenDocument(module2Uri, module2Code);
+            rdt.OpenDocument(module1Uri, module1Code);
 
             var app = rdt.OpenDocument(appUri, appCode);
             await analyzer.WaitForCompleteAnalysisAsync();

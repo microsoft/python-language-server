@@ -18,12 +18,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -37,8 +40,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private int _allReferencesCount;
         private bool _allIsUsable = true;
 
-        public ModuleWalker(IServiceContainer services, IPythonModule module, PythonAst ast, CancellationToken cancellationToken)
-            : base(new ExpressionEval(services, module, ast)) {
+        public ModuleWalker(ExpressionEval eval, IImportedVariableHandler importedVariableHandler) : base(eval, importedVariableHandler) {
             _stubAnalysis = Module.Stub is IDocument doc ? doc.GetAnyAnalysis() : null;
             _cancellationToken = CancellationToken.None;
         }
@@ -218,6 +220,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public GlobalScope GlobalScope => Eval.GlobalScope;
+        public ImmutableArray<(IndexSpan VariableIndexSpan, IPythonModule Module, string Name)> ImportedVariableSources => ImportHandler.VariableSources;
         public IReadOnlyList<string> StarImportMemberNames { get; private set; }
     }
 }

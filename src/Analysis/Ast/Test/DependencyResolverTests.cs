@@ -21,11 +21,10 @@ using FluentAssertions;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Core.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
-    //[TestClass]
-    //public class DependencyResolverTests {
+    [TestClass]
+    public class DependencyResolverTests {
     //    public TestContext TestContext { get; set; }
 
     //    [TestInitialize]
@@ -656,5 +655,5 @@ namespace Microsoft.Python.Analysis.Tests {
 
     //        result.ToString().Should().Be("BD");
     //    }
-    //}
+    }
 }
