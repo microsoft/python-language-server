@@ -56,6 +56,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public virtual string ScopeName => $"<comprehension>";
         public IScopeNode Parent { get; set; }
+        
+        public PythonAst GlobalParent => ScopeInfo.GlobalParent;
         public ScopeInfo ScopeInfo => _scopeInfo;
 
         public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);

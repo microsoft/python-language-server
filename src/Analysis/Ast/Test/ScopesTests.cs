@@ -192,8 +192,6 @@ tags = {tag for e in my_obj['Episodes'] for tag in e['Tags']}
             scope.Should().HaveVariable("tag").OfType(BuiltinTypeId.Str);
         }
 
-
-
         [TestMethod, Priority(0)]
         public async Task VariableInDictComprehension() {
             const string code = @"

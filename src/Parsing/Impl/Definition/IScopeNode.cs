@@ -16,6 +16,11 @@ namespace Microsoft.Python.Parsing.Definition {
         IScopeNode Parent { get; set; }
 
         /// <summary>
+        /// Gloabl scope
+        /// </summary>
+        PythonAst GlobalParent { get; }
+
+        /// <summary>
         /// Holds information about the scope gathered from Parser, mainly used in  <see cref="PythonNameBinder"/>
         /// </summary>
         ScopeInfo ScopeInfo { get; }

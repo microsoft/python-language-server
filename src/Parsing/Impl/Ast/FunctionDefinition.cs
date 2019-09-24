@@ -23,9 +23,7 @@ using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
     [DebuggerDisplay("{Name}")]
-    public class FunctionDefinition : Statement, IMaybeAsyncStatement, IScopeStatement {
-        public ScopeInfo ScopeInfo { get; }
-
+    public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement, IScopeStatement {
         internal static readonly object WhitespaceAfterAsync = new object();
 
         private int? _keywordEndIndex;
@@ -62,9 +60,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public int HeaderIndex { get; set; }
 
         public int DefIndex { get; set; }
-
-        public string Name => NameExpression.Name ?? string.Empty;
-
+        
         public NameExpression NameExpression { get; }
 
         public DecoratorStatement Decorators { get; internal set; }
@@ -92,26 +88,19 @@ namespace Microsoft.Python.Parsing.Ast {
         public PythonVariable Variable { get; set; }
 
         #region IScopeStatement
-
-        public Statement Body => _body;
+        
+        public override Statement Body => _body;
         internal void SetBody(Statement body) => _body = body;
-
+        
         #endregion
 
-        #region IScopeNode
-
-        public string ScopeName => Name;
-
-        public IScopeNode Parent { get; set; }
-
-        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
-
-        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
-
-        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
+        #region ScopeStatement
+        
+        public override string Name => NameExpression.Name ?? string.Empty;
+        public override string ScopeName => Name;
+        public override ScopeInfo ScopeInfo { get; }
 
         #endregion
-
 
         public int GetIndexOfDef(PythonAst ast) {
             if (!IsCoroutine) {

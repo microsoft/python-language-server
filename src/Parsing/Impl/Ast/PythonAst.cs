@@ -26,7 +26,7 @@ namespace Microsoft.Python.Parsing.Ast {
     /// <summary>
     /// Top-level ast for all Python code. Holds onto the body and the line mapping information.
     /// </summary>
-    public sealed class PythonAst : Statement, IScopeStatement, ILocationConverter {
+    public sealed class PythonAst : ScopeStatement, IScopeStatement, ILocationConverter {
         private readonly object _lock = new object();
         private readonly Statement _body;
         private readonly Dictionary<Node, Dictionary<object, object>> _attributes = new Dictionary<Node, Dictionary<object, object>>();
@@ -95,21 +95,15 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region IScopeStatement
 
-        public Statement Body => _body;
+        public override Statement Body => _body;
 
         #endregion
 
-        #region IScopeNode
+        #region ScopeStatement
 
-        public string ScopeName => "<module>";
+        public override string ScopeName => "<module>";
 
-        public IScopeNode Parent { get; set; }
-        public ScopeInfo ScopeInfo { get; }
-
-        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
-
-        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
-        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
+        public override ScopeInfo ScopeInfo { get; }
 
         #endregion
 

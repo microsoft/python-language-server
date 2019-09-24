@@ -23,7 +23,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class ClassDefinition : Statement, IScopeStatement {
+    public class ClassDefinition : ScopeStatement, IScopeStatement {
         private readonly NameExpression /*!*/ _name;
 
         private readonly Statement _body;
@@ -35,9 +35,7 @@ namespace Microsoft.Python.Parsing.Ast {
             _body = body;
             ScopeInfo = new ClassScopeInfo(this);
         }
-
-        public string Name => _name?.Name ?? string.Empty;
-
+        
         public override int KeywordLength => 5;
 
         public int HeaderIndex { get; set; }
@@ -47,24 +45,13 @@ namespace Microsoft.Python.Parsing.Ast {
         public ImmutableArray<Arg> Bases { get; }
 
         #region IScopeStatement
-
-        public Statement Body => _body;
-
+        public override Statement Body => _body;
         #endregion
-
-        #region IScopeNode
-
-
-        public string ScopeName => Name;
         
-        public IScopeNode Parent { get; set; }
-        public ScopeInfo ScopeInfo { get; }
-        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
-
-        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
-        
-        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
-
+        #region ScopeStatement
+        public override string Name => _name?.Name ?? string.Empty;
+        public override string ScopeName => Name;
+        public override ScopeInfo ScopeInfo { get; }
         #endregion
 
         public DecoratorStatement Decorators {
