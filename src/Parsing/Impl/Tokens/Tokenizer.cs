@@ -115,6 +115,10 @@ namespace Microsoft.Python.Parsing {
         /// Current state, to be passed to <see cref="Initialize(object, TextReader, SourceLocation)"/>
         /// or <see cref="Initialize(object, TextReader, SourceLocation, int)"/>./>
         /// </summary>
+        /// <remarks>
+        /// This is used by PTVS to initialize a tokenizer with an existing state.
+        /// Do not remove, even though it is unused within language server.
+        /// </remarks>
         public object CurrentState => _state;
 
         public int CurrentLine => _newLineLocations.Count;
