@@ -3039,6 +3039,18 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void NamedExpressionScopeErrors() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseFile("NamedExpressionScopeErrors.py", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(1, 17, 1, 32)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(2, 27, 2, 42)),
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void AssignStmt() {
             foreach (var version in AllVersions) {
                 CheckAst(

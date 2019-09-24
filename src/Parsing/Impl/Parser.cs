@@ -4292,6 +4292,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(start, GetEnd());
+            ValidateComprehensionFor(ret);
             return ret;
         }
 
@@ -4438,6 +4439,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(start, GetEnd());
+            ValidateComprehensionFor(ret);
             return ret;
         }
 
@@ -4957,6 +4959,17 @@ namespace Microsoft.Python.Parsing {
             return expr;
         }
 
+        private void ValidateComprehensionFor(ComprehensionFor cf) {
+            if (_langVersion < PythonLanguageVersion.V38) {
+                return;
+            }
+
+            var named = cf.List.TraverseBreadthFirst<Node>(n => n.GetChildNodes()).OfType<NamedExpression>();
+
+            foreach (var ne in named) {
+                ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInComprehensionIterator);
+            }
+        }
         #endregion
 
         #region Encoding support (PEP 263)

@@ -258,6 +258,9 @@
   <data name="NamedExpressionCtxtErrorMsg" xml:space="preserve">
     <value>Named expression must be parenthesized in this context</value>
   </data>
+  <data name="NamedExpressionInComprehensionIterator" xml:space="preserve">
+    <value>assignment expression cannot be used in a comprehension iterable expression</value>
+  </data>
   <data name="NonKeywordArgAfterKeywordArgErrorMsg" xml:space="preserve">
     <value>non-keyword arg after keyword arg</value>
   </data>

@@ -484,6 +484,15 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to assignment expression cannot be used in a comprehension iterable expression.
+        /// </summary>
+        internal static string NamedExpressionInComprehensionIterator {
+            get {
+                return ResourceManager.GetString("NamedExpressionInComprehensionIterator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to non-keyword arg after keyword arg.
         /// </summary>
         internal static string NonKeywordArgAfterKeywordArgErrorMsg {
