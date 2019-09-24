@@ -3953,6 +3953,7 @@ namespace Microsoft.Python.Parsing {
             var prevIn = _inGeneratorExpression;
             _inGeneratorExpression = true;
             try {
+                // TODO(jakebailey): Check named expression names.
                 var iters = ParseCompIter();
                 ret = new GeneratorExpression(expr, iters);
             } finally {
@@ -4185,6 +4186,7 @@ namespace Microsoft.Python.Parsing {
 
         // comp_iter '}'
         private SetComprehension FinishSetComp(Expression item, out bool ateTerminator) {
+            // TODO(jakebailey): Check named expression names.
             var iters = ParseCompIter();
             ateTerminator = Eat(TokenKind.RightBrace);
             return new SetComprehension(item, iters);
@@ -4192,6 +4194,7 @@ namespace Microsoft.Python.Parsing {
 
         // comp_iter '}'
         private DictionaryComprehension FinishDictComp(SliceExpression value, out bool ateTerminator) {
+            // TODO(jakebailey): Check named expression names.
             var iters = ParseCompIter();
             ateTerminator = Eat(TokenKind.RightBrace);
             return new DictionaryComprehension(value, iters);
@@ -4352,6 +4355,7 @@ namespace Microsoft.Python.Parsing {
 
         // list_iter ']'
         private ListComprehension FinishListComp(Expression item, out bool ateRightBracket) {
+            // TODO(jakebailey): Check named expression names.
             var iters = ParseListCompIter();
             ateRightBracket = Eat(TokenKind.RightBracket);
             return new ListComprehension(item, iters);

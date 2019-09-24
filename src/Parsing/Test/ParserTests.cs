@@ -3046,6 +3046,9 @@ namespace Microsoft.Python.Parsing.Tests {
                 errors.Errors.Should().BeEquivalentTo(new[] {
                     new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(1, 17, 1, 32)),
                     new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(2, 27, 2, 42)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(3, 30, 3, 35)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(4, 17, 4, 32)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(5, 33, 5, 48)),
                 });
             }
         }
