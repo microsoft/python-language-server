@@ -1013,7 +1013,7 @@ os.path.
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 7));
-            result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__", "__spec__", "module1");
+            result.Should().OnlyHaveLabels("__dict__", "__file__", "__doc__", "__package__", "__debug__", "__name__", "__path__", "__spec__");
         }
 
         [TestMethod, Priority(0)]

@@ -75,39 +75,5 @@ namespace Microsoft.Python.Analysis {
         public static bool IsNonUserFile(this IPythonModule module) => module.ModuleType.IsNonUserFile();
         public static bool IsCompiled(this IPythonModule module) => module.ModuleType.IsCompiled();
         public static bool IsTypingModule(this IPythonModule module) => module?.ModuleType == ModuleType.Specialized && module.Name == "typing";
-
-        public static IEnumerable<string> GetSubmoduleNames(this IPythonModule module) {
-            var searchResult = module.Interpreter.ModuleResolution.CurrentPathResolver.FindImports(module.FilePath, Enumerable.Empty<string>(), 1, true);
-            if (searchResult is IImportChildrenSource children) {
-                foreach (var name in children.GetChildrenNames()) {
-                    if (children.TryGetChildImport(name, out var imports)) {
-                        switch (imports) {
-                            case ImplicitPackageImport packageImport:
-                                yield return packageImport.Name;
-                                break;
-                            case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(module.FilePath):
-                                yield return moduleImport.Name;
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-
-        public static IPythonModule GetSubmodule(this IPythonModule module, string subModuleName) {
-            var mres = module.Interpreter.ModuleResolution;
-            var searchResult = mres.CurrentPathResolver.FindImports(module.FilePath, Enumerable.Repeat(subModuleName, 1), 1, true);
-            if (searchResult is IImportChildrenSource children) {
-                if (children.TryGetChildImport(subModuleName, out var imports)) {
-                    switch (imports) {
-                        case ImplicitPackageImport packageImport:
-                            return mres.GetImportedModule(packageImport.FullName);
-                        case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(module.FilePath):
-                            return mres.GetImportedModule(moduleImport.FullName);
-                    }
-                }
-            }
-            return null;
-        }
     }
 }

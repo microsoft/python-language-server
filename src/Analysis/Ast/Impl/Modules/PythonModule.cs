@@ -157,13 +157,11 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IMemberContainer
-        public virtual IMember GetMember(string name)
-            => this.GetSubmodule(name) ?? GlobalScope.Variables[name]?.Value;
+        public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
 
         public virtual IEnumerable<string> GetMemberNames() {
-            var submoduleNames = this.GetSubmoduleNames();
             // drop imported modules and typing.
-            var memberNames = GlobalScope.Variables
+            return GlobalScope.Variables
                 .Where(v => {
                     // Instances are always fine.
                     if (v.Value is IPythonInstance) {
@@ -189,8 +187,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 })
                 .Select(v => v.Name)
                 .ToArray();
-
-            return memberNames.Concat(submoduleNames.Except(memberNames));
         }
         #endregion
 

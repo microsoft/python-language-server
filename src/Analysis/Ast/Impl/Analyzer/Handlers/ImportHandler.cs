@@ -55,9 +55,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // import_module('fob.oar')
             // import_module('fob.oar.baz')
             var importNames = ImmutableArray<string>.Empty;
-            var firstModule = default(PythonVariableModule);
-            var secondModule = default(PythonVariableModule);
             var lastModule = default(PythonVariableModule);
+            var modules = new PythonVariableModule[moduleImportExpression.Names.Count];
             for (var i = 0; i < moduleImportExpression.Names.Count; i++) {
                 var nameExpression = moduleImportExpression.Names[i];
                 importNames = importNames.Add(nameExpression.Name);
@@ -66,14 +65,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     lastModule = default;
                     break;
                 }
-
-                if (i == 1) {
-                    secondModule = lastModule;
-                }
-
-                if (firstModule == null) {
-                    firstModule = lastModule;
-                }
+                modules[i] = lastModule;
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
@@ -82,18 +74,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return;
             }
 
+            var firstModule = modules.Length > 0 ? modules[0] : null;
+            var secondModule = modules.Length > 1 ? modules[1] : null;
+
             // "import fob.oar.baz" when 'fob' is THIS module handled by declaring 'oar' as member.
             // Consider pandas that has 'import pandas.testing' in __init__.py and 'testing'
             // is available as member. See also https://github.com/microsoft/python-language-server/issues/1395
             if (firstModule?.Module == Eval.Module && importNames.Count > 1 && !string.IsNullOrEmpty(importNames[1]) && secondModule != null) {
                 Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
                 Eval.DeclareVariable(importNames[1], secondModule, VariableSource.Import, moduleImportExpression.Names[1]);
-                return;
+            } else {
+                // "import fob.oar.baz" is handled as fob = import_module('fob')
+                if (firstModule != null && !string.IsNullOrEmpty(importNames[0])) {
+                    Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
+                }
             }
 
-            // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (firstModule != null && !string.IsNullOrEmpty(importNames[0])) {
-                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
+            // import a.b.c.d => declares a, b in the current module, c in b, d in c.
+            for (var i = 1; i < modules.Length - 1; i++) {
+                var child = modules[i + 1];
+                if (child != null) {
+                    modules[i]?.AddChildModule(child.Name, child);
+                }
             }
         }
 
