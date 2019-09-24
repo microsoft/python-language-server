@@ -709,7 +709,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             => builder.AppendIf(builder.Length > 0, ".").Append(name);
 
         private static Node UpdateNodesFromEnd(Edge lastEdge, Node newEnd) {
-            while (lastEdge.Start != default) {
+            while (lastEdge.Start != null) {
                 var newStart = lastEdge.Start.ReplaceChildAt(newEnd, lastEdge.EndIndex);
                 lastEdge = lastEdge.Previous;
                 newEnd = newStart;

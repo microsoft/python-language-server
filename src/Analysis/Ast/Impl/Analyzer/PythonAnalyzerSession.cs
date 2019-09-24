@@ -313,8 +313,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Library analysis exists, don't analyze again
                     return false;
                 }
-                if (ast == default) {
-                    if (currentAnalysis == default) {
+                if (ast == null) {
+                    if (currentAnalysis == null) {
                         // Entry doesn't have ast yet. There should be at least one more session.
                         Cancel();
                         _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled (no AST yet).");
