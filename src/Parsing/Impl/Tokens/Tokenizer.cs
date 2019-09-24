@@ -111,6 +111,12 @@ namespace Microsoft.Python.Parsing {
             return tokens;
         }
 
+        /// <summary>
+        /// Current state, to be passed to <see cref="Initialize(object, TextReader, SourceLocation)"/>
+        /// or <see cref="Initialize(object, TextReader, SourceLocation, int)"/>./>
+        /// </summary>
+        public object CurrentState => _state;
+
         public int CurrentLine => _newLineLocations.Count;
         public SourceLocation CurrentPosition => IndexToLocation(CurrentIndex);
 
