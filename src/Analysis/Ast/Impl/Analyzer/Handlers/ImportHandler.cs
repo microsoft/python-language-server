@@ -71,13 +71,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     secondModule = lastModule;
                 }
 
-                if (firstModule == default) {
+                if (firstModule == null) {
                     firstModule = lastModule;
                 }
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
-            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != null) {
                 Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
                 return;
             }
@@ -85,14 +85,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // "import fob.oar.baz" when 'fob' is THIS module handled by declaring 'oar' as member.
             // Consider pandas that has 'import pandas.testing' in __init__.py and 'testing'
             // is available as member. See also https://github.com/microsoft/python-language-server/issues/1395
-            if (firstModule?.Module == Eval.Module && importNames.Count > 1 && !string.IsNullOrEmpty(importNames[1]) && secondModule != default) {
+            if (firstModule?.Module == Eval.Module && importNames.Count > 1 && !string.IsNullOrEmpty(importNames[1]) && secondModule != null) {
                 Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
                 Eval.DeclareVariable(importNames[1], secondModule, VariableSource.Import, moduleImportExpression.Names[1]);
                 return;
             }
 
             // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
+            if (firstModule != null && !string.IsNullOrEmpty(importNames[0])) {
                 Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
             }
         }
@@ -149,7 +149,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
             var module = ModuleResolution.GetOrLoadModule(possibleModuleImport.PrecedingModuleFullName);
 
-            if (module == default) {
+            if (module == null) {
                 MakeUnresolvedImport(possibleModuleImport.PrecedingModuleFullName, fullName, location);
                 return false;
             }

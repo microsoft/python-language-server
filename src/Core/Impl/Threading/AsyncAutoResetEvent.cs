@@ -57,7 +57,7 @@ namespace Microsoft.Python.Core {
                     }
                 }
 
-                if (!_isSignaled && (waiterToRelease == default || waiterToRelease.Task.IsCompleted)) {
+                if (!_isSignaled && (waiterToRelease == null || waiterToRelease.Task.IsCompleted)) {
                     _isSignaled = true;
                 }
             }
