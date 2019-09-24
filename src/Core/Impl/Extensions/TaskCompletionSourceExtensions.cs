@@ -18,8 +18,10 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Core {
     public static class TaskCompletionSourceExtensions {
+        private const int NO_DELAY = -1;
+
         public static CancellationTokenRegistration RegisterForCancellation<T>(this TaskCompletionSource<T> taskCompletionSource, CancellationToken cancellationToken) 
-            => taskCompletionSource.RegisterForCancellation(-1, cancellationToken);
+            => taskCompletionSource.RegisterForCancellation(millisecondsDelay: NO_DELAY, cancellationToken);
 
         public static CancellationTokenRegistration RegisterForCancellation<T>(this TaskCompletionSource<T> taskCompletionSource, int millisecondsDelay, CancellationToken cancellationToken) {
             if (millisecondsDelay >= 0) {
