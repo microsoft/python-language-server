@@ -356,5 +356,21 @@ import top.sub3.sub4
             var analysis = await appDoc.GetAnalysisAsync(Timeout.Infinite);
             analysis.Should().HaveVariable("sub2").Which.Should().HaveType(BuiltinTypeId.Module);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task SubmoduleOverridesVariableStarImport() {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "__init__.py"), string.Empty);
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "__init__.py"), "sub2 = 1");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("top", "sub1", "sub2", "__init__.py"), string.Empty);
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var appDoc = rdt.OpenDocument(appUri, "from top.sub1 import *");
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await appDoc.GetAnalysisAsync(Timeout.Infinite);
+            analysis.Should().HaveVariable("sub2").Which.Should().HaveType(BuiltinTypeId.Module);
+        }
     }
 }

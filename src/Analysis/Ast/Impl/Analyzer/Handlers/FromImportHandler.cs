@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
-                HandleModuleImportStar(variableModule, imports is ImplicitPackageImport, node.StartIndex);
+                HandleModuleImportStar(variableModule, imports, node.StartIndex, names[0]);
                 return;
             }
 
@@ -69,47 +69,51 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
                     if (!string.IsNullOrEmpty(variableName)) {
-                        // First try imports since child modules should win, i.e. in 'from a.b import c'
-                        // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
-                        var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-                        // Now try exported
-                        value = value ?? variableModule.GetMember(memberName);
-                        // If nothing is exported, variables are still accessible.
-                        value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
-                        // Do not allow imported variables to override local declarations
-                        Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, node.StartIndex));
+                        DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
                     }
                 }
             }
         }
 
-        private void HandleModuleImportStar(PythonVariableModule variableModule, bool isImplicitPackage, int importPosition) {
+        private void HandleModuleImportStar(PythonVariableModule variableModule, IImportSearchResult imports, int importPosition, NameExpression nameExpression) {
             if (variableModule.Module == Module) {
                 // from self import * won't define any new members
                 return;
             }
-
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
-            var memberNames = isImplicitPackage
+            var memberNames = imports is ImplicitPackageImport
                 ? variableModule.GetMemberNames()
                 : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
             foreach (var memberName in memberNames) {
-                var member = variableModule.GetMember(memberName);
-                if (member == null) {
-                    Log?.Log(TraceEventType.Verbose, $"Undefined import: {variableModule.Name}, {memberName}");
-                } else if (member.MemberType == PythonMemberType.Unknown) {
-                    Log?.Log(TraceEventType.Verbose, $"Unknown import: {variableModule.Name}, {memberName}");
-                }
+                DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);
+            }
+        }
 
-                member = member ?? Eval.UnknownType;
-                if (member is IPythonModule m) {
-                    ModuleResolution.GetOrLoadModule(m.Name);
-                }
-
-                var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-                // Do not allow imported variables to override local declarations
-                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, Eval.DefaultLocation, CanOverwriteVariable(memberName, importPosition));
+        /// <summary>
+        /// Determines value of the variable and declares it. Value depends if source module has submodule
+        /// that is named the same as the variable and/or it has internal variables named same as the submodule.
+        /// </summary>
+        /// <example>'from a.b import c' when 'c' is both submodule of 'b' and a variable declared inside 'b'.</example>
+        /// <param name="variableModule">Source module of the variable such as 'a.b' in 'from a.b import c as d'.</param>
+        /// <param name="memberName">Module member name such as 'c' in 'from a.b import c as d'.</param>
+        /// <param name="imports">Import search result.</param>
+        /// <param name="variableName">Name of the variable to declare, such as 'd' in 'from a.b import c as d'.</param>
+        /// <param name="importPosition">Position of the import statement.</param>
+        /// <param name="nameExpression">Name expression of the variable.</param>
+        private void DeclareVariable(PythonVariableModule variableModule, string memberName, IImportSearchResult imports, string variableName, int importPosition, Node nameExpression) {
+            // First try imports since child modules should win, i.e. in 'from a.b import c'
+            // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
+            var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+            // Now try exported
+            value = value ?? variableModule.GetMember(memberName);
+            // If nothing is exported, variables are still accessible.
+            value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
+            // Do not allow imported variables to override local declarations
+            Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, importPosition));
+            // Make sure module is loaded and analyzed.
+            if (value is IPythonModule m) {
+                ModuleResolution.GetOrLoadModule(m.Name);
             }
         }
 
