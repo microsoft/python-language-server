@@ -204,8 +204,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var t = GetMemberFromStub(node.Name).GetPythonType();
             if (t is IPythonFunctionType f) {
                 return f.Overloads
-                        .OfType<PythonFunctionOverload>()
-                        .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);
+                    .OfType<PythonFunctionOverload>()
+                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Length);
             }
             return null;
         }
