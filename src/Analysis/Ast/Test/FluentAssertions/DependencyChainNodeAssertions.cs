@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             var actual = ((IDependencyChainSingleNode<T>)Subject).Value;
             Execute.Assertion.ForCondition(Equals(actual, value))
                 .BecauseOf(because, reasonArgs)
-                .FailWith($"Expected [{typeof(T)}] node to have value{value}{{reason}}");
+                .FailWith($"Expected [{typeof(T)}] node to have value {value}{{reason}}, but it has {actual}");
 
             return new AndConstraint<DependencyChainNodeAssertions>(this);
         }
@@ -79,6 +79,56 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             Execute.Assertion.ForCondition(!Subject.HasOnlyWalkedDependencies)
                 .BecauseOf(because, reasonArgs)
                 .FailWith($"Expected {Subject} to have non-walked dependencies{{reason}}");
+            
+            return new AndConstraint<DependencyChainNodeAssertions>(this);
+        }
+
+        [CustomAssertion]
+        public AndConstraint<DependencyChainNodeAssertions> BeWalkedWithDependencies(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Subject.IsWalkedWithDependencies)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject} to be walked with dependencies{{reason}}");
+            
+            return new AndConstraint<DependencyChainNodeAssertions>(this);
+        }
+
+        [CustomAssertion]
+        public AndConstraint<DependencyChainNodeAssertions> NotBeWalkedWithDependencies(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(!Subject.IsWalkedWithDependencies)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject} to not be walked with dependencies{{reason}}");
+            
+            return new AndConstraint<DependencyChainNodeAssertions>(this);
+        }
+
+        public AndConstraint<DependencyChainNodeAssertions> HaveMissingDependencies(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Subject.HasMissingDependencies)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject} to have missing dependencies{{reason}}");
+            
+            return new AndConstraint<DependencyChainNodeAssertions>(this);
+        }
+
+        public AndConstraint<DependencyChainNodeAssertions> HaveNoMissingDependencies(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(!Subject.HasMissingDependencies)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject} to have no missing dependencies{{reason}}");
+            
+            return new AndConstraint<DependencyChainNodeAssertions>(this);
+        }
+
+        public AndConstraint<DependencyChainNodeAssertions> HaveValidVersion(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(Subject.IsValidVersion)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject} to have valid version{{reason}}");
+            
+            return new AndConstraint<DependencyChainNodeAssertions>(this);
+        }
+
+        public AndConstraint<DependencyChainNodeAssertions> HaveInvalidVersion(string because = "", params object[] reasonArgs) {
+            Execute.Assertion.ForCondition(!Subject.IsValidVersion)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {Subject} to have invalid version{{reason}}");
             
             return new AndConstraint<DependencyChainNodeAssertions>(this);
         }
