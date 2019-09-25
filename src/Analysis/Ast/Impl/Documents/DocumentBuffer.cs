@@ -43,7 +43,6 @@ namespace Microsoft.Python.Analysis.Documents {
         /// </summary>
         public void Clear() {
             lock (_lock) {
-                // Content is being dropped to save memory.
                 _content = string.Empty;
                 _sb = null;
                 _contentDropped = true;
@@ -68,7 +67,7 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="content"></param>
         public void Populate(string content) {
             lock (_lock) {
-                Check.InvalidOperation(_populated, "Buffer is already populated.");
+                Check.InvalidOperation(!_populated, "Buffer is already populated.");
                 Check.InvalidOperation(!_contentDropped, "Buffer content was dropped and cannot be updated.");
                 Version = 0;
                 _content = content ?? string.Empty;
