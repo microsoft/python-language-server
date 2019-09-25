@@ -119,7 +119,7 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             IsPersistent = creationOptions.IsPersistent;
-            InitializeContent(creationOptions.Content, 0);
+            InitializeContent(creationOptions.Content);
         }
 
         #region IPythonType
@@ -314,14 +314,11 @@ namespace Microsoft.Python.Analysis.Modules {
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
-        public void Reset(string content) {
+        public void Invalidate() {
             lock (_syncObj) {
-                if (content != Content) {
-                    ContentState = State.None;
-                    InitializeContent(content, _buffer.Version + 1);
-                }
+                ContentState = State.None;
+                Parse();
             }
-
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
@@ -450,7 +447,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzed;
 
                 if (ModuleType != ModuleType.User) {
-                    _buffer.Reset(_buffer.Version, string.Empty);
+                    _buffer.Clear();
                 }
             }
 
@@ -486,7 +483,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void ClearContent() {
             lock (_syncObj) {
                 if (ModuleType != ModuleType.User) {
-                    _buffer.Reset(_buffer.Version, string.Empty);
+                    _buffer.Clear();
                     _astMap.Clear();
                 }
             }
@@ -514,18 +511,21 @@ namespace Microsoft.Python.Analysis.Modules {
             return null; // Keep content as null so module can be loaded later.
         }
 
-        private void InitializeContent(string content, int version) {
+        /// <summary>
+        /// Populates buffer with content. Content can either be provided, such as when
+        /// user opens the document or generated such as when module is compiled and
+        /// scraper will generate the content in the overridden LoadContent().
+        /// </summary>
+        private void InitializeContent(string content) {
             lock (_syncObj) {
-                LoadContent(content, version);
-
-                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
-                if (startParse) {
+                LoadContent(content);
+                if (ContentState < State.Parsing && _parsingTask == null) {
                     Parse();
                 }
             }
         }
 
-        private void LoadContent(string content, int version) {
+        private void LoadContent(string content) {
             if (ContentState < State.Loading) {
                 try {
                     if (IsPersistent) {
@@ -533,7 +533,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     } else {
                         content = content ?? LoadContent();
                     }
-                    _buffer.Reset(version, content);
+                    _buffer.Populate(content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }

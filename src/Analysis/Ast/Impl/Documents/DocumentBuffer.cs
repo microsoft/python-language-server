@@ -13,7 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.Python.Parsing;
@@ -23,6 +25,8 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly object _lock = new object();
         private StringBuilder _sb = new StringBuilder();
         private string _content;
+        private bool _contentDropped;
+        private bool _populated;
 
         public int Version { get; private set; }
 
@@ -34,18 +38,65 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public void Reset(int version, string content) {
+        /// <summary>
+        /// Clear buffer content to save memory.
+        /// The buffer cannot be modified after this point.
+        /// </summary>
+        public void Clear() {
             lock (_lock) {
-                Version = version;
+                // Content is being dropped to save memory.
+                _content = string.Empty;
+                _sb = null;
+                _contentDropped = true;
+            }
+        }
+
+        /// <summary>
+        /// Advances content version of the buffer without changing the contents.
+        /// Typically used to invalidate analysis.
+        /// </summary>
+        public void MarkChanged() {
+            lock (_lock) {
+                if (!_populated) {
+                    throw new InvalidOperationException("Buffer is not populated.");
+                }
+                if (_contentDropped) {
+                    throw new InvalidOperationException("Buffer content was dropped and cannot be updated.");
+                }
+                Version++;
+            }
+        }
+
+        /// <summary>
+        /// Populates buffer with initial content. This can ony happen once.
+        /// </summary>
+        /// <param name="content"></param>
+        public void Populate(string content) {
+            lock (_lock) {
+                // Buffer initial population.
+                if (_populated) {
+                    throw new InvalidOperationException("Buffer is already populated.");
+                }
+                if (_contentDropped) {
+                    throw new InvalidOperationException("Buffer content was dropped and cannot be updated.");
+                }
+                Version = 0;
                 _content = content ?? string.Empty;
                 _sb = null;
+                _populated = true;
             }
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {
             lock (_lock) {
+                if (_contentDropped) {
+                    throw new InvalidOperationException("Buffer content was dropped and cannot be updated.");
+                }
+
                 _sb = _sb ?? new StringBuilder(_content);
 
+                //var lastStart = int.MaxValue;
+                //var lastEnd = int.MaxValue;
                 foreach (var change in changes) {
                     // Every change may change where the lines end so in order 
                     // to correctly determine line/offsets we must re-split buffer
@@ -59,12 +110,21 @@ namespace Microsoft.Python.Analysis.Documents {
 
                     var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
                     var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
+
+                    //Debug.Assert(end >= start);
+                    //Debug.Assert(start < lastStart);
+                    //Debug.Assert(end < lastEnd);
+                    //Debug.Assert(end <= lastStart);
+
                     if (end > start) {
                         _sb.Remove(start, end - start);
                     }
                     if (!string.IsNullOrEmpty(change.InsertedText)) {
                         _sb.Insert(start, change.InsertedText);
                     }
+
+                    //lastStart = start;
+                    //lastEnd = end;
                 }
 
                 Version++;
@@ -98,7 +158,6 @@ namespace Microsoft.Python.Analysis.Documents {
                             if (i == _sb.Length - 1) {
                                 yield return new NewLineLocation(i + 1, NewLineKind.None);
                             }
-
                             break;
                     }
                 }

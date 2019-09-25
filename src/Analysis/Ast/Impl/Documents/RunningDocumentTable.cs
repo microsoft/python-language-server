@@ -106,7 +106,7 @@ namespace Microsoft.Python.Analysis.Documents {
                     };
                     entry = CreateDocument(mco);
                 }
-                justOpened = TryOpenDocument(entry, content);
+                justOpened = TryOpenDocument(entry);
                 document = entry.Document;
             }
 
@@ -217,7 +217,7 @@ namespace Microsoft.Python.Analysis.Documents {
             }
 
             foreach (var (_, entry) in opened) {
-                entry.Document.Reset(null);
+                entry.Document.Invalidate();
             }
         }
 
@@ -277,10 +277,9 @@ namespace Microsoft.Python.Analysis.Documents {
             return true;
         }
 
-        private bool TryOpenDocument(DocumentEntry entry, string content) {
+        private bool TryOpenDocument(DocumentEntry entry) {
             if (!entry.Document.IsOpen) {
                 entry.Document.IsOpen = true;
-                entry.Document.Reset(content);
                 entry.LockCount++;
                 return true;
             }
