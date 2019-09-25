@@ -13,9 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Core.Interpreter;
+using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -754,16 +757,6 @@ with Test() as [a]:
 ";
             var d = await LintAsync(code);
             d.Should().BeEmpty();
-        }
-
-        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
-            var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
-            var a = Services.GetService<IPythonAnalyzer>();
-            return a.LintModule(analysis.Document);
-        }
-
-        private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
-            public AnalysisOptions Options { get; } = new AnalysisOptions();
         }
     }
 }

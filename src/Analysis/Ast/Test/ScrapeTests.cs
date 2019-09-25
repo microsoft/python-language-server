@@ -274,6 +274,7 @@ namespace Microsoft.Python.Analysis.Tests {
             var pathResolver = interpreter.ModuleResolution.CurrentPathResolver;
             var modules = pathResolver.GetAllImportableModuleNames()
                 .Select(n => pathResolver.GetModuleImportFromModuleName(n))
+                .ExcludeDefault()
                 .Where(i => i.RootPath.PathEquals(configuration.SitePackagesPath) || i.RootPath.PathEquals(configuration.LibraryPath))
                 .ToList();
 
