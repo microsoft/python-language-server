@@ -224,7 +224,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             var startingVertices = walkingGraph.Where(v => !v.HasIncoming);
-            walker = new DependencyChainWalker(this, startingVertices, affectedValues, depths, missingKeys, walkingGraph.Count, version);
+            walker = new DependencyChainWalker(this, startingVertices, affectedValues, depths, missingKeys, version);
             return version == _version;
         }
 
@@ -457,14 +457,20 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             // Connect dependencies to loop vertex
+            var outgoingLoopVertices = new HashSet<WalkingVertex<TKey, TValue>>();
             foreach (var vertex in graph) {
+                outgoingLoopVertices.Clear();
                 for (var i = vertex.Outgoing.Count - 1; i >= 0; i--) {
                     var outgoing = vertex.Outgoing[i];
                     if (outgoing.IsInLoop && outgoing.LoopNumber != vertex.LoopNumber) {
                         var loopVertex = loopVertices[outgoing.LoopNumber];
                         vertex.RemoveOutgoingAt(i);
-                        vertex.AddOutgoing(loopVertex);
+                        outgoingLoopVertices.Add(loopVertex);
                     }
+                }
+
+                if (outgoingLoopVertices.Count > 0) {
+                    vertex.AddOutgoing(outgoingLoopVertices);
                 }
 
                 if (version != _version) {
@@ -560,7 +566,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 in ImmutableArray<TValue> affectedValues,
                 in ImmutableArray<int> depths,
                 in ImmutableArray<TKey> missingKeys,
-                in int totalNodesCount,
                 in int version) {
 
                 _syncObj = new object();
@@ -571,7 +576,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 Version = version;
                 MissingKeys = missingKeys;
 
-                _remaining = totalNodesCount;
+                _remaining = affectedValues.Count;
             }
 
             public Task<IDependencyChainNode> GetNextAsync(CancellationToken cancellationToken) {
