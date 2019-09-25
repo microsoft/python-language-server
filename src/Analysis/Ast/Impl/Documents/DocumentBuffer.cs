@@ -81,8 +81,6 @@ namespace Microsoft.Python.Analysis.Documents {
                 Check.InvalidOperation(!_contentDropped, "Buffer content was dropped and cannot be updated.");
                 _sb = _sb ?? new StringBuilder(_content);
 
-                //var lastStart = int.MaxValue;
-                //var lastEnd = int.MaxValue;
                 foreach (var change in changes) {
                     // Every change may change where the lines end so in order 
                     // to correctly determine line/offsets we must re-split buffer
@@ -97,20 +95,13 @@ namespace Microsoft.Python.Analysis.Documents {
                     var start = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.Start, _sb.Length);
                     var end = NewLineLocation.LocationToIndex(lineLoc, change.ReplacedSpan.End, _sb.Length);
 
-                    //Debug.Assert(end >= start);
-                    //Debug.Assert(start < lastStart);
-                    //Debug.Assert(end < lastEnd);
-                    //Debug.Assert(end <= lastStart);
-
                     if (end > start) {
                         _sb.Remove(start, end - start);
                     }
+
                     if (!string.IsNullOrEmpty(change.InsertedText)) {
                         _sb.Insert(start, change.InsertedText);
                     }
-
-                    //lastStart = start;
-                    //lastEnd = end;
                 }
 
                 Version++;
