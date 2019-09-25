@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         #endregion
 
-        protected T[] GetStatements<T>(IScopeStatement s) 
+        protected T[] GetStatements<T>(IScopeStatement s)
             => (s.Body as SuiteStatement)?.Statements.OfType<T>().ToArray() ?? Array.Empty<T>();
     }
 }

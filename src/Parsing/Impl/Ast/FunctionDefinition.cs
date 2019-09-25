@@ -60,7 +60,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public int HeaderIndex { get; set; }
 
         public int DefIndex { get; set; }
-        
+
         public NameExpression NameExpression { get; }
 
         public DecoratorStatement Decorators { get; internal set; }
@@ -88,14 +88,14 @@ namespace Microsoft.Python.Parsing.Ast {
         public PythonVariable Variable { get; set; }
 
         #region IScopeStatement
-        
+
         public override Statement Body => _body;
         internal void SetBody(Statement body) => _body = body;
-        
+
         #endregion
 
         #region ScopeStatement
-        
+
         public override string Name => NameExpression.Name ?? string.Empty;
         public override string ScopeName => Name;
         public override ScopeInfo ScopeInfo { get; }
@@ -200,8 +200,7 @@ namespace Microsoft.Python.Parsing.Ast {
                             ast,
                             commaWhiteSpace,
                             format,
-                            format.SpaceWithinFunctionDeclarationParens != null ?
-                                format.SpaceWithinFunctionDeclarationParens.Value ? " " : "" : null
+                            format.SpaceWithinFunctionDeclarationParens != null ? format.SpaceWithinFunctionDeclarationParens.Value ? " " : "" : null
                         );
                     }
 
@@ -212,7 +211,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
                     format.Append(
                         res,
-                        Parameters.Length != 0 ? format.SpaceWithinFunctionDeclarationParens 
+                        Parameters.Length != 0
+                            ? format.SpaceWithinFunctionDeclarationParens
                             : format.SpaceWithinEmptyParameterList,
                         " ",
                         "",

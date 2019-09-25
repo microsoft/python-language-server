@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
-    [Obsolete("Deprecated, use IScopeNode instead")]
     public abstract class ScopeStatement : Statement, IScopeStatement {
         public virtual string ScopeName => "<unknown>";
         public IScopeNode Parent { get; set; }

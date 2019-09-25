@@ -158,8 +158,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         #region ILocationConverter
+
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
+
         #endregion
 
         internal int GetLineEndFromPosition(int index) {
@@ -167,7 +169,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (loc.Line >= NewLineLocations.Length) {
                 return index;
             }
-            
+
             var res = NewLineLocations[loc.Line - 1];
             switch (res.Kind) {
                 case NewLineKind.LineFeed:

@@ -7,15 +7,19 @@ using Microsoft.Python.Parsing.Definition;
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ScopeInfo {
         // Storing variables due to "exec" or call to dir, locals, eval, vars...
-    
+
         // list of variables accessed from outer scopes
-        private List<PythonVariable> _freeVars; 
+        private List<PythonVariable> _freeVars;
+
         // global variables accessed from this scope
-        private List<string> _globalVars; 
+        private List<string> _globalVars;
+
         // variables accessed from nested scopes
-        private List<string> _cellVars; 
+        private List<string> _cellVars;
+
         // variables declared as nonlocal within this scope
-        private List<NameExpression> _nonLocalVars; 
+        private List<NameExpression> _nonLocalVars;
+
         // names of all variables referenced, null after binding completes
         private Dictionary<string, List<PythonReference>> _references;
 
@@ -24,7 +28,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public string Name => Node.ScopeName;
-        
+
         protected IScopeNode Node { get; }
 
         internal bool ContainsImportStar { get; set; }
@@ -49,7 +53,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// from ... import *.
         /// </summary>
         public bool NeedsLocalsDictionary { get; set; }
-        
+
         /// <summary>
         /// True if variables can be set in a late bound fashion that we don't
         /// know about at code gen time - for example via from fob import *.

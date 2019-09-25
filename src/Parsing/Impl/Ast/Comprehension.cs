@@ -56,7 +56,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public virtual string ScopeName => $"<comprehension>";
         public IScopeNode Parent { get; set; }
-        
+
         public PythonAst GlobalParent => ScopeInfo.GlobalParent;
         public ScopeInfo ScopeInfo => _scopeInfo;
 
@@ -74,7 +74,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Item = item;
             Iterators = iterators;
         }
-        
+
         public override string ScopeName => $"<list comprehension>";
 
         public Expression Item { get; }
@@ -120,8 +120,9 @@ namespace Microsoft.Python.Parsing.Ast {
             Item = item;
             Iterators = iterators;
         }
+
         public override string ScopeName => $"<set comprehension>";
-        
+
         public Expression Item { get; }
 
         public override ImmutableArray<ComprehensionIterator> Iterators { get; }
@@ -167,11 +168,11 @@ namespace Microsoft.Python.Parsing.Ast {
             _value = value;
             Iterators = iterators;
         }
-        
+
         public override string ScopeName => $"<dict comprehension>";
 
         public SliceExpression Slice => _value;
-        
+
         public Expression Key => _value.SliceStart;
 
         public Expression Value => _value.SliceStop;

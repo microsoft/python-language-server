@@ -24,7 +24,7 @@ using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ClassDefinition : ScopeStatement, IScopeStatement {
-        private readonly NameExpression /*!*/ _name;
+        private readonly NameExpression _name;
 
         private readonly Statement _body;
         private DecoratorStatement _decorators;
@@ -35,7 +35,7 @@ namespace Microsoft.Python.Parsing.Ast {
             _body = body;
             ScopeInfo = new ClassScopeInfo(this);
         }
-        
+
         public override int KeywordLength => 5;
 
         public int HeaderIndex { get; set; }
@@ -45,13 +45,17 @@ namespace Microsoft.Python.Parsing.Ast {
         public ImmutableArray<Arg> Bases { get; }
 
         #region IScopeStatement
+
         public override Statement Body => _body;
+
         #endregion
-        
+
         #region ScopeStatement
+
         public override string Name => _name?.Name ?? string.Empty;
         public override string ScopeName => Name;
         public override ScopeInfo ScopeInfo { get; }
+
         #endregion
 
         public DecoratorStatement Decorators {
