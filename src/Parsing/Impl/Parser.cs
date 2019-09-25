@@ -27,7 +27,6 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Extensions;
 
 namespace Microsoft.Python.Parsing {
     public class Parser {
