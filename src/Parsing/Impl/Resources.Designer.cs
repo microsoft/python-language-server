@@ -484,6 +484,15 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to assignment expression within a comprehension cannot be used in a class body.
+        /// </summary>
+        internal static string NamedExpressionInClassBodyErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionInClassBodyErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to assignment expression cannot be used in a comprehension iterable expression.
         /// </summary>
         internal static string NamedExpressionInComprehensionIteratorErrorMsg {

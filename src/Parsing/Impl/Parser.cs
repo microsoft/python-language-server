@@ -247,7 +247,7 @@ namespace Microsoft.Python.Parsing {
 
             ast.SetAttributes(_attributes);
             PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
-
+            NamedExpressionErrorWalker.Check(ast, _langVersion, ReportSyntaxError);
             return ast;
         }
 
@@ -3961,7 +3961,6 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(expr.StartIndex, GetEnd());
-            ValidateComprehension(ret.Iterators, ret.Item);
             return ret;
         }
 
@@ -4086,7 +4085,6 @@ namespace Microsoft.Python.Parsing {
                                 }
                             }
                             dictComp.SetLoc(oStart, GetEnd());
-                            ValidateComprehension(dictComp.Iterators, dictComp.Key, dictComp.Value);
                             return dictComp;
                         }
 
@@ -4136,7 +4134,6 @@ namespace Microsoft.Python.Parsing {
                                     }
                                 }
                                 setComp.SetLoc(oStart, GetEnd());
-                                ValidateComprehension(setComp.Iterators, setComp.Item);
                                 return setComp;
                             }
 
@@ -4350,9 +4347,6 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(oStart, GetEnd());
-            if (ret is ListComprehension lc) {
-                ValidateComprehension(lc.Iterators, lc.Item);
-            }
             return ret;
         }
 
@@ -4963,74 +4957,6 @@ namespace Microsoft.Python.Parsing {
             }
             return expr;
         }
-
-        private void ValidateComprehension(IEnumerable<ComprehensionIterator> iterators, params Expression[] items) {
-            if (_langVersion < PythonLanguageVersion.V38) {
-                return;
-            }
-
-            ImmutableArray<string> seenNamed = ImmutableArray<string>.Empty;
-            ImmutableArray<string> seenIterator = ImmutableArray<string>.Empty;
-
-            foreach (var iterator in iterators) {
-                switch (iterator) {
-                    case ComprehensionFor cf:
-                        if (cf.Left != null) {
-                            foreach (var name in cf.Left.ChildNodesBreadthFirst().OfType<NameExpression>()) {
-                                if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
-                                    continue;
-                                }
-
-                                seenIterator = seenIterator.Add(name.Name);
-                                if (seenNamed.Contains(name.Name)) {
-                                    ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionIteratorRebindsNamedErrorMsg.FormatInvariant(name.Name));
-                                }
-                            }
-                        }
-
-                        if (cf.List != null) {
-                            foreach (var ne in cf.List.ChildNodesBreadthFirst().OfType<NamedExpression>()) {
-                                ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInComprehensionIteratorErrorMsg);
-                            }
-                        }
-
-                        break;
-
-                    case ComprehensionIf ci:
-                        if (ci.Test == null) {
-                            continue;
-                        }
-
-                        foreach (var ne in ci.Test.ChildNodesBreadthFirst().OfType<NamedExpression>()) {
-                            foreach (var name in ne.Target.ChildNodesBreadthFirst().OfType<NameExpression>()) {
-                                if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
-                                    continue;
-                                }
-
-                                seenNamed = seenNamed.Add(name.Name);
-                                if (seenIterator.Contains(name.Name)) {
-                                    ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionRebindIteratorErrorMsg.FormatInvariant(name.Name));
-                                }
-                            }
-                        }
-
-                        break;
-                }
-            }
-
-            foreach (var ne in items.SelectChildNodesBreadthFirst().OfType<NamedExpression>()) {
-                foreach (var name in ne.Target.ChildNodesBreadthFirst().OfType<NameExpression>()) {
-                    if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
-                        continue;
-                    }
-
-                    if (seenIterator.Contains(name.Name)) {
-                        ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionRebindIteratorErrorMsg.FormatInvariant(name.Name));
-                    }
-                }
-            }
-        }
-
         #endregion
 
         #region Encoding support (PEP 263)

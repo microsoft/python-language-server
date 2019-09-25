@@ -258,6 +258,9 @@
   <data name="NamedExpressionCtxtErrorMsg" xml:space="preserve">
     <value>Named expression must be parenthesized in this context</value>
   </data>
+  <data name="NamedExpressionInClassBodyErrorMsg" xml:space="preserve">
+    <value>assignment expression within a comprehension cannot be used in a class body</value>
+  </data>
   <data name="NamedExpressionInComprehensionIteratorErrorMsg" xml:space="preserve">
     <value>assignment expression cannot be used in a comprehension iterable expression</value>
   </data>
