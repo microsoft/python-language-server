@@ -258,8 +258,14 @@
   <data name="NamedExpressionCtxtErrorMsg" xml:space="preserve">
     <value>Named expression must be parenthesized in this context</value>
   </data>
-  <data name="NamedExpressionInComprehensionIterator" xml:space="preserve">
+  <data name="NamedExpressionInComprehensionIteratorErrorMsg" xml:space="preserve">
     <value>assignment expression cannot be used in a comprehension iterable expression</value>
+  </data>
+  <data name="NamedExpressionIteratorRebindsNamedErrorMsg" xml:space="preserve">
+    <value>comprehension inner loop cannot rebind assignment expression target '{0}'</value>
+  </data>
+  <data name="NamedExpressionRebindIteratorErrorMsg" xml:space="preserve">
+    <value>assignment expression cannot rebind comprehension iteration variable '{0}'</value>
   </data>
   <data name="NonKeywordArgAfterKeywordArgErrorMsg" xml:space="preserve">
     <value>non-keyword arg after keyword arg</value>

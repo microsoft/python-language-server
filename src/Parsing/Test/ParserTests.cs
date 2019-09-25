@@ -3046,9 +3046,18 @@ namespace Microsoft.Python.Parsing.Tests {
                 errors.Errors.Should().BeEquivalentTo(new[] {
                     new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(1, 17, 1, 32)),
                     new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(2, 27, 2, 42)),
-                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(3, 30, 3, 35)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(3, 20, 3, 35)),
                     new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(4, 17, 4, 32)),
                     new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(5, 33, 5, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(7, 33, 7, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(8, 33, 8, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(9, 33, 9, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(11, 33, 11, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(12, 33, 12, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(14, 33, 14, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(15, 33, 15, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(16, 33, 16, 48)),
+                    // new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(17, 33, 17, 48)),
                 });
             }
         }

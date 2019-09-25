@@ -486,9 +486,27 @@ namespace Microsoft.Python.Parsing {
         /// <summary>
         ///   Looks up a localized string similar to assignment expression cannot be used in a comprehension iterable expression.
         /// </summary>
-        internal static string NamedExpressionInComprehensionIterator {
+        internal static string NamedExpressionInComprehensionIteratorErrorMsg {
             get {
-                return ResourceManager.GetString("NamedExpressionInComprehensionIterator", resourceCulture);
+                return ResourceManager.GetString("NamedExpressionInComprehensionIteratorErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to comprehension inner loop cannot rebind assignment expression target &apos;{0}&apos;.
+        /// </summary>
+        internal static string NamedExpressionIteratorRebindsNamedErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionIteratorRebindsNamedErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to assignment expression cannot rebind comprehension iteration variable &apos;{0}&apos;.
+        /// </summary>
+        internal static string NamedExpressionRebindIteratorErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionRebindIteratorErrorMsg", resourceCulture);
             }
         }
         

@@ -27,6 +27,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Extensions;
 
 namespace Microsoft.Python.Parsing {
     public class Parser {
@@ -2116,7 +2117,7 @@ namespace Microsoft.Python.Parsing {
                     }
                     seenListArg = true;
                 } else if (p.Kind == ParameterKind.Dictionary) {
-                    if (seenDictArg) {  
+                    if (seenDictArg) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsDoubleArgumentErrorMsg);//duplicate ** args arguments
                     }
                     seenDictArg = true;
@@ -3953,7 +3954,6 @@ namespace Microsoft.Python.Parsing {
             var prevIn = _inGeneratorExpression;
             _inGeneratorExpression = true;
             try {
-                // TODO(jakebailey): Check named expression names.
                 var iters = ParseCompIter();
                 ret = new GeneratorExpression(expr, iters);
             } finally {
@@ -3961,6 +3961,7 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(expr.StartIndex, GetEnd());
+            ValidateComprehension(ret.Iterators, ret.Item);
             return ret;
         }
 
@@ -4085,6 +4086,7 @@ namespace Microsoft.Python.Parsing {
                                 }
                             }
                             dictComp.SetLoc(oStart, GetEnd());
+                            ValidateComprehension(dictComp.Iterators, dictComp.Key, dictComp.Value);
                             return dictComp;
                         }
 
@@ -4134,6 +4136,7 @@ namespace Microsoft.Python.Parsing {
                                     }
                                 }
                                 setComp.SetLoc(oStart, GetEnd());
+                                ValidateComprehension(setComp.Iterators, setComp.Item);
                                 return setComp;
                             }
 
@@ -4186,7 +4189,6 @@ namespace Microsoft.Python.Parsing {
 
         // comp_iter '}'
         private SetComprehension FinishSetComp(Expression item, out bool ateTerminator) {
-            // TODO(jakebailey): Check named expression names.
             var iters = ParseCompIter();
             ateTerminator = Eat(TokenKind.RightBrace);
             return new SetComprehension(item, iters);
@@ -4194,7 +4196,6 @@ namespace Microsoft.Python.Parsing {
 
         // comp_iter '}'
         private DictionaryComprehension FinishDictComp(SliceExpression value, out bool ateTerminator) {
-            // TODO(jakebailey): Check named expression names.
             var iters = ParseCompIter();
             ateTerminator = Eat(TokenKind.RightBrace);
             return new DictionaryComprehension(value, iters);
@@ -4295,7 +4296,6 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(start, GetEnd());
-            ValidateComprehensionFor(ret);
             return ret;
         }
 
@@ -4350,12 +4350,14 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(oStart, GetEnd());
+            if (ret is ListComprehension lc) {
+                ValidateComprehension(lc.Iterators, lc.Item);
+            }
             return ret;
         }
 
         // list_iter ']'
         private ListComprehension FinishListComp(Expression item, out bool ateRightBracket) {
-            // TODO(jakebailey): Check named expression names.
             var iters = ParseListCompIter();
             ateRightBracket = Eat(TokenKind.RightBracket);
             return new ListComprehension(item, iters);
@@ -4443,7 +4445,6 @@ namespace Microsoft.Python.Parsing {
             }
 
             ret.SetLoc(start, GetEnd());
-            ValidateComprehensionFor(ret);
             return ret;
         }
 
@@ -4957,23 +4958,79 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression RemoveParenthesis(Expression expr) {
-            while(expr is ParenthesisExpression parenExpr) {
+            while (expr is ParenthesisExpression parenExpr) {
                 expr = parenExpr.Expression;
             }
             return expr;
         }
 
-        private void ValidateComprehensionFor(ComprehensionFor cf) {
+        private void ValidateComprehension(IEnumerable<ComprehensionIterator> iterators, params Expression[] items) {
             if (_langVersion < PythonLanguageVersion.V38) {
                 return;
             }
 
-            var named = cf.List.TraverseBreadthFirst<Node>(n => n.GetChildNodes()).OfType<NamedExpression>();
+            ImmutableArray<string> seenNamed = ImmutableArray<string>.Empty;
+            ImmutableArray<string> seenIterator = ImmutableArray<string>.Empty;
 
-            foreach (var ne in named) {
-                ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInComprehensionIterator);
+            foreach (var iterator in iterators) {
+                switch (iterator) {
+                    case ComprehensionFor cf:
+                        if (cf.Left != null) {
+                            foreach (var name in cf.Left.ChildNodesBreadthFirst().OfType<NameExpression>()) {
+                                if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
+                                    continue;
+                                }
+
+                                seenIterator = seenIterator.Add(name.Name);
+                                if (seenNamed.Contains(name.Name)) {
+                                    ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionIteratorRebindsNamedErrorMsg.FormatInvariant(name.Name));
+                                }
+                            }
+                        }
+
+                        if (cf.List != null) {
+                            foreach (var ne in cf.List.ChildNodesBreadthFirst().OfType<NamedExpression>()) {
+                                ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInComprehensionIteratorErrorMsg);
+                            }
+                        }
+
+                        break;
+
+                    case ComprehensionIf ci:
+                        if (ci.Test == null) {
+                            continue;
+                        }
+
+                        foreach (var ne in ci.Test.ChildNodesBreadthFirst().OfType<NamedExpression>()) {
+                            foreach (var name in ne.Target.ChildNodesBreadthFirst().OfType<NameExpression>()) {
+                                if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
+                                    continue;
+                                }
+
+                                seenNamed = seenNamed.Add(name.Name);
+                                if (seenIterator.Contains(name.Name)) {
+                                    ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionRebindIteratorErrorMsg.FormatInvariant(name.Name));
+                                }
+                            }
+                        }
+
+                        break;
+                }
+            }
+
+            foreach (var ne in items.SelectChildNodesBreadthFirst().OfType<NamedExpression>()) {
+                foreach (var name in ne.Target.ChildNodesBreadthFirst().OfType<NameExpression>()) {
+                    if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
+                        continue;
+                    }
+
+                    if (seenIterator.Contains(name.Name)) {
+                        ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionRebindIteratorErrorMsg.FormatInvariant(name.Name));
+                    }
+                }
             }
         }
+
         #endregion
 
         #region Encoding support (PEP 263)
