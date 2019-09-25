@@ -18,7 +18,6 @@ using System.Diagnostics;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Definition;
 
-
 /*
  * The name binding:
  *
@@ -45,15 +44,18 @@ using Microsoft.Python.Parsing.Definition;
 namespace Microsoft.Python.Parsing.Ast {
     internal class DefineBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
+
         public DefineBinder(PythonNameBinder binder) {
             _binder = binder;
         }
+
         public override bool Walk(NameExpression node) {
             if (node.Name != null) {
                 _binder.DefineName(node.Name);
             }
             return false;
         }
+
         public override bool Walk(ParenthesisExpression node) => true;
         public override bool Walk(TupleExpression node) => true;
         public override bool Walk(ListExpression node) => true;
@@ -65,6 +67,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public ParameterBinder(PythonNameBinder binder) {
             _binder = binder;
         }
+
         public override bool Walk(Parameter node) {
             node.AddVariable(_binder.GlobalScope, _binder.BindReferences, _binder.DefineParameter(node.Name));
             return false;
@@ -260,71 +263,49 @@ namespace Microsoft.Python.Parsing.Ast {
         // ListComprehension
         public override bool Walk(ListComprehension node) {
             // Only create new scope if 3x
-            if (!LanguageVersion.Is3x()) {
-                return true;
+            if (LanguageVersion.Is3x()) {
+                PushScope(node);
             }
 
-            PushScope(node);
-            node.Item?.Walk(this);
-            foreach (var ci in node.Iterators) {
-                ci.Walk(this);
-            }
-
-            return false;
+            return true;
         }
 
         // ListComprehension
         public override void PostWalk(ListComprehension node) {
-            if (!LanguageVersion.Is3x()) {
-                base.PostWalk(node);
-                return;
+            if (LanguageVersion.Is3x()) {
+                Debug.Assert(node == _currentScope);
+                PopScope();
             }
-
-            Debug.Assert(node == _currentScope);
-            PopScope();
+            base.PostWalk(node);
         }
 
         // DictionaryComprehension
         public override bool Walk(DictionaryComprehension node) {
             // Only create new scope if 3x
-            if (!LanguageVersion.Is3x()) {
-                return true;
+            if (LanguageVersion.Is3x()) {
+                PushScope(node);
             }
 
-            PushScope(node);
-            node.Slice?.Walk(this);
-            foreach (var ci in node.Iterators.MaybeEnumerate()) {
-                ci.Walk(this);
-            }
-
-            return false;
+            return true;
         }
 
         // DictionaryComprehension
         public override void PostWalk(DictionaryComprehension node) {
-            if (!LanguageVersion.Is3x()) {
-                base.PostWalk(node);
-                return;
+            if (LanguageVersion.Is3x()) {
+                Debug.Assert(node == _currentScope);
+                PopScope();
             }
-
-            Debug.Assert(node == _currentScope);
-            PopScope();
+            base.PostWalk(node);
         }
 
         // SetComprehension
         public override bool Walk(SetComprehension node) {
             // Only create new scope if 3x
-            if (!LanguageVersion.Is3x()) {
-                return true;
+            if (LanguageVersion.Is3x()) {
+                PushScope(node);
             }
 
-            PushScope(node);
-            node.Item?.Walk(this);
-            foreach (var ci in node.Iterators.MaybeEnumerate()) {
-                ci.Walk(this);
-            }
-
-            return false;
+            return true;
         }
 
         // SetComprehension
@@ -523,7 +504,6 @@ namespace Microsoft.Python.Parsing.Ast {
                         node);
                 }
 
-
                 // Create the variable in the global context and mark it as global
                 var variable = GlobalScope.ScopeInfo.EnsureGlobalVariable(n);
                 variable.Kind = VariableKind.Global;
@@ -582,7 +562,6 @@ namespace Microsoft.Python.Parsing.Ast {
                         "name '{0}' is used prior to nonlocal declaration".FormatUI(n),
                         node);
                 }
-
 
                 if (conflict == null) {
                     // no previously definied variables, add it to the current scope

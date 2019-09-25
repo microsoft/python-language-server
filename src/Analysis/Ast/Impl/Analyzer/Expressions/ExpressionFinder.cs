@@ -198,13 +198,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     return false;
                 }
 
-                Scope = node;
-
-                node.Item?.Walk(this);
-                foreach (var ci in node.Iterators) {
-                    ci.Walk(this);
+                // Don't set scope if 2x 
+                if (!Tree.LanguageVersion.Is3x()) {
+                    return true;
                 }
-                return false;
+
+                Scope = node;
+                return true;
             }
 
             public override bool Walk(DictionaryComprehension node) {
@@ -218,11 +218,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 }
 
                 Scope = node;
-                node.Slice?.Walk(this);
-                foreach (var ci in node.Iterators.MaybeEnumerate()) {
-                    ci.Walk(this);
-                }
-                return false;
+                return true;
             }
 
             public override bool Walk(SetComprehension node) {
@@ -236,12 +232,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 }
 
                 Scope = node;
-
-                node.Item?.Walk(this);
-                foreach (var ci in node.Iterators.MaybeEnumerate()) {
-                    ci.Walk(this);
-                }
-                return false;
+                return true;
             }
 
             public override bool Walk(Parameter node) {
@@ -455,11 +446,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                             return Save(node.OperatorIndex, true, "in");
                         case PythonOperator.NotIn:
                             return Save(node.OperatorIndex, true, "not") &&
-                                Save(node.GetIndexOfSecondOp(_ast), true, "in");
+                                   Save(node.GetIndexOfSecondOp(_ast), true, "in");
                         case PythonOperator.Is:
                         case PythonOperator.IsNot:
                             return Save(node.OperatorIndex, true, "is") &&
-                                Save(node.GetIndexOfSecondOp(_ast), true, "not");
+                                   Save(node.GetIndexOfSecondOp(_ast), true, "not");
                     }
                     return true;
                 }
@@ -557,7 +548,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                         return false;
                     }
                     return Save(node.GetIndexOfWith(_ast), true, "with") &&
-                        node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
+                           node.Items.MaybeEnumerate().All(item => Save(item.AsIndex, true, "as"));
                 }
                 return false;
             }

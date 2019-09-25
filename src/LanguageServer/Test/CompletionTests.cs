@@ -1298,8 +1298,10 @@ class A:
             names.Should().NotContain(new[] { "x1", "x2", "method1", "method2", "B" });
         }
 
-        [TestMethod, Priority(0)]
-        public async Task VariableInComprehension() {
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod, Priority(0)]
+        public async Task VariableInComprehension(bool is3X) {
             const string code = @"
 class K:
     a = 10
@@ -1310,12 +1312,22 @@ class K:
 A = K()
 AR = [A, A, A]
 b = [a. for a in AR]
+c = {a. : a for a in AR}
+d = {a. for a in AR}
 ";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var analysis = await GetAnalysisAsync(code, is3X ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var comps = cs.GetCompletions(analysis, new SourceLocation(10, 8));
             var names = comps.Completions.Select(c => c.label);
+            names.Should().Contain(new[] { "a", "b", "c" });
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(11, 8));
+            names = comps.Completions.Select(c => c.label);
+            names.Should().Contain(new[] { "a", "b", "c" });
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(12, 8));
+            names = comps.Completions.Select(c => c.label);
             names.Should().Contain(new[] { "a", "b", "c" });
         }
     }

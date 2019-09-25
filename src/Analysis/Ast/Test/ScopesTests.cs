@@ -172,6 +172,29 @@ h = [[float(y) for y in x] for x in l]
             scope.Should().HaveVariable("y").OfType(BuiltinTypeId.Str);
         }
 
+        // TODO fix comprehension assignment
+        [Ignore, TestMethod, Priority(0)]
+        public async Task NestedObjectInListComprehension() {
+            const string code = @"
+class A:
+    a: int
+    b: str
+long_list = [[[A()]]]
+same_long_list = [[[third for third in second] for second in first] for first in long_list]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var scopes = analysis.GlobalScope.Should().HaveChildScopes("<list comprehension>").Which;
+            scopes.Should().HaveCount(3);
+            var scope = scopes[0];
+            scope.Should().HaveVariable("first").OfType(BuiltinTypeId.List);
+
+            scope = scopes[1];
+            scope.Should().HaveVariable("second").OfType(BuiltinTypeId.List);
+
+            scope = scopes[2];
+            scope.Should().HaveVariable("third").OfType("A");
+        }
+
         [TestMethod, Priority(0)]
         public async Task NestedListComprehensionInSetComprehension() {
             const string code = @"
@@ -238,7 +261,7 @@ c = {a for a in AR}
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.GlobalScope.Should().NotHaveChildScopes("<list comprehension>")
-                .And.NotHaveChildScopes("<set comprehension>");
+                    .And.NotHaveChildScopes("<set comprehension>");
         }
     }
 }
