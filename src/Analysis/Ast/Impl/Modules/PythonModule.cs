@@ -317,6 +317,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void Invalidate() {
             lock (_syncObj) {
                 ContentState = State.None;
+                _buffer.MarkChanged();
                 Parse();
             }
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
