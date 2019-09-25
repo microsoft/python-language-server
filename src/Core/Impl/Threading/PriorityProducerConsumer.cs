@@ -25,7 +25,7 @@ namespace Microsoft.Python.Core.Threading {
     public sealed class PriorityProducerConsumer<T> : IDisposable {
         private readonly int _maxPriority;
         private readonly object _syncObj;
-        private readonly List<T>[] _queues;
+        private readonly LinkedList<T>[] _queues;
         private readonly Queue<Pending> _pendingTasks;
         private readonly DisposeToken _disposeToken;
         private readonly bool _excludeDuplicates;
@@ -45,9 +45,9 @@ namespace Microsoft.Python.Core.Threading {
 
         public PriorityProducerConsumer(int maxPriority = 1, bool excludeDuplicates = false, IEqualityComparer<T> comparer = null) {
             _maxPriority = maxPriority;
-            _queues = new List<T>[maxPriority];
+            _queues = new LinkedList<T>[maxPriority];
             for (var i = 0; i < _queues.Length; i++) {
-                _queues[i] = new List<T>();
+                _queues[i] = new LinkedList<T>();
             }
 
             _syncObj = new object();
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Core.Threading {
                         RemoveExistingValue(value, ref priority);
                     }
 
-                    _queues[priority].Add(value);
+                    _queues[priority].AddLast(value);
                     _firstAvailablePriority = Math.Min(_firstAvailablePriority, priority);
                 }
             }
@@ -99,14 +99,17 @@ namespace Microsoft.Python.Core.Threading {
             lock (_syncObj) {
                 for (var i = 0; i < _maxPriority; i++) {
                     var queue = _queues[i];
-                    for (var j = 0; j < queue.Count; j++) {
+                    var current = queue.First;
+                    while (current != null) {
                         // Check if value is scheduled already
-                        // There can be no more than one
-                        if (_comparer.Equals(queue[j], value)) {
+                        // There can be no more than one duplicate
+                        if (_comparer.Equals(current.Value, value)) {
                             priority = Math.Min(i, priority);
-                            queue.RemoveAt(j);
+                            queue.Remove(current);
                             return;
                         }
+
+                        current = current.Next;
                     }
                 }
             }
@@ -127,15 +130,16 @@ namespace Microsoft.Python.Core.Threading {
                 Debug.Assert(_pendingTasks.Count == 0 || _firstAvailablePriority == _maxPriority);
                 if (_firstAvailablePriority < _maxPriority) {
                     var queue = _queues[_firstAvailablePriority];
-                    var result = queue[0];
-                    queue.RemoveAt(0);
+                    var result = queue.First;
+                    queue.RemoveFirst();
+
                     if (queue.Count == 0) {
                         do {
                             _firstAvailablePriority++;
                         } while (_firstAvailablePriority < _maxPriority && _queues[_firstAvailablePriority].Count == 0);
                     }
 
-                    return Task.FromResult(result);
+                    return Task.FromResult(result.Value);
                 }
 
                 pendingTcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -156,7 +160,7 @@ namespace Microsoft.Python.Core.Threading {
             .UnregisterOnCompletion(pendingTcs.Task);
 
         private static void CancelCallback(object state) {
-            var cancelState = (CancelState) state;
+            var cancelState = (CancelState)state;
             cancelState.Pending.Release()?.TrySetCanceled(cancelState.CancellationToken);
         }
 

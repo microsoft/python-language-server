@@ -324,7 +324,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             private readonly PriorityProducerConsumer<QueueItem> _ppc;
 
             public Prioritizer() {
-                _ppc = new PriorityProducerConsumer<QueueItem>(4);
+                _ppc = new PriorityProducerConsumer<QueueItem>(maxPriority: 4);
                 Task.Run(ConsumerLoop).DoNotWait();
             }
 
@@ -346,16 +346,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             public Task<IDisposable> InitializePriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(InitializePriority, true, cancellationToken);
+                => Enqueue(InitializePriority, isAwaitable: true, cancellationToken);
 
             public Task<IDisposable> ConfigurationPriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(ConfigurationPriority, true, cancellationToken);
+                => Enqueue(ConfigurationPriority, isAwaitable: true, cancellationToken);
 
             public Task<IDisposable> DocumentChangePriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(DocumentChangePriority, true, cancellationToken);
+                => Enqueue(DocumentChangePriority, isAwaitable: true, cancellationToken);
 
             public Task DefaultPriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(DefaultPriority, false, cancellationToken);
+                => Enqueue(DefaultPriority, isAwaitable: false, cancellationToken);
 
             private Task<IDisposable> Enqueue(int priority, bool isAwaitable, CancellationToken cancellationToken = default(CancellationToken)) {
                 var item = new QueueItem(isAwaitable, cancellationToken);

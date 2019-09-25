@@ -755,5 +755,15 @@ with Test() as [a]:
             var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
+
+        private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
+            var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
+            var a = Services.GetService<IPythonAnalyzer>();
+            return a.LintModule(analysis.Document);
+        }
+
+        private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
+            public AnalysisOptions Options { get; } = new AnalysisOptions();
+        }
     }
 }

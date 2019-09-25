@@ -46,7 +46,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         protected override IPythonModule CreateModule(string name) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
-            if (moduleImport != default) {
+            if (moduleImport != null) {
                 if (moduleImport.IsCompiled) {
                     Log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", moduleImport.FullName, moduleImport.ModulePath);
                     return null;
