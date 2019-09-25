@@ -178,8 +178,10 @@ namespace Microsoft.Python.Core.Tests {
                 for (var i = 0; i < 3; i++) {
                     var task = ppc.ConsumeAsync();
                     tcsConsumer.TrySetResult(true);
-                    values[i] = await task;
+
+                    // make sure wait for producer first to remove race
                     await tcsProducer.Task;
+                    values[i] = await task;
                 }
             });
 
@@ -194,8 +196,10 @@ namespace Microsoft.Python.Core.Tests {
             await consumerTask;
 
             Assert.AreEqual(TaskStatus.RanToCompletion, consumerTask.Status);
-            Assert.AreEqual(5, values[0]);
-            Assert.AreEqual(7, values[1]);
+
+            // return values follow priority
+            Assert.AreEqual(7, values[0]);
+            Assert.AreEqual(5, values[1]);
             Assert.AreEqual(6, values[2]);
         }
 
