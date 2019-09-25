@@ -63,7 +63,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
             if (finder.GetExpression(context.Position) is CallExpression callExpr && callExpr.GetArgumentAtIndex(context.Ast, context.Position, out _)) {
                 using (context.Analysis.ExpressionEvaluator.OpenScope(context.Analysis.Document, scopeStatement)) {
                     var value = eval.GetValueFromExpression(callExpr.Target);
-                    if (value?.GetPythonType() is IPythonFunctionType ft) {
+                    var ft = value.TryGetFunctionType();
+                    if (ft != null) {
                         var arguments = ft.Overloads.SelectMany(o => o.Parameters).Select(p => p?.Name)
                             .Where(n => !string.IsNullOrEmpty(n))
                             .Distinct()

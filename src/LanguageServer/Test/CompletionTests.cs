@@ -1331,21 +1331,29 @@ class A:
         return content
 
 class B:
+    def __init__(self, ctorParam = 2):
+        pass
+
     def method(self):
         a = A()
         a.method()
 
 a = A()
 a.method()
+
+b = B()
 ";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
-            var comps = cs.GetCompletions(analysis, new SourceLocation(9, 18));
+            var comps = cs.GetCompletions(analysis, new SourceLocation(12, 18));
             comps.Should().HaveLabels("content=");
 
-            comps = cs.GetCompletions(analysis, new SourceLocation(12, 10));
+            comps = cs.GetCompletions(analysis, new SourceLocation(15, 10));
             comps.Should().HaveLabels("content=");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(17, 7));
+            comps.Should().HaveLabels("ctorParam=");
         }
     }
 }
