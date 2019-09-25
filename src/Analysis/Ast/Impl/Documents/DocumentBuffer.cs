@@ -13,11 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Documents {
@@ -57,12 +56,8 @@ namespace Microsoft.Python.Analysis.Documents {
         /// </summary>
         public void MarkChanged() {
             lock (_lock) {
-                if (!_populated) {
-                    throw new InvalidOperationException("Buffer is not populated.");
-                }
-                if (_contentDropped) {
-                    throw new InvalidOperationException("Buffer content was dropped and cannot be updated.");
-                }
+                Check.InvalidOperation(_populated, "Buffer is not populated.");
+                Check.InvalidOperation(!_contentDropped, "Buffer content was dropped and cannot be updated.");
                 Version++;
             }
         }
@@ -73,13 +68,8 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="content"></param>
         public void Populate(string content) {
             lock (_lock) {
-                // Buffer initial population.
-                if (_populated) {
-                    throw new InvalidOperationException("Buffer is already populated.");
-                }
-                if (_contentDropped) {
-                    throw new InvalidOperationException("Buffer content was dropped and cannot be updated.");
-                }
+                Check.InvalidOperation(_populated, "Buffer is already populated.");
+                Check.InvalidOperation(!_contentDropped, "Buffer content was dropped and cannot be updated.");
                 Version = 0;
                 _content = content ?? string.Empty;
                 _sb = null;
@@ -89,10 +79,7 @@ namespace Microsoft.Python.Analysis.Documents {
 
         public void Update(IEnumerable<DocumentChange> changes) {
             lock (_lock) {
-                if (_contentDropped) {
-                    throw new InvalidOperationException("Buffer content was dropped and cannot be updated.");
-                }
-
+                Check.InvalidOperation(!_contentDropped, "Buffer content was dropped and cannot be updated.");
                 _sb = _sb ?? new StringBuilder(_content);
 
                 //var lastStart = int.MaxValue;
