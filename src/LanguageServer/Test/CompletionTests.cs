@@ -1322,5 +1322,30 @@ class A:
             var names = comps.Completions.Select(c => c.label);
             names.Should().Contain(new[] { "sub1" });
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InFunctionParameters() {
+            const string code = @"
+class A:
+    def method(self, content=1):
+        return content
+
+class B:
+    def method(self):
+        a = A()
+        a.method()
+
+a = A()
+a.method()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+
+            var comps = cs.GetCompletions(analysis, new SourceLocation(9, 18));
+            comps.Should().HaveLabels("content=");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(12, 10));
+            comps.Should().HaveLabels("content=");
+        }
     }
 }
