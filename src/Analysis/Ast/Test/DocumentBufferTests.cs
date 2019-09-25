@@ -86,11 +86,6 @@ def g(y):
 
             Assert.AreEqual("text", doc.Text);
             Assert.AreEqual(1, doc.Version);
-
-            doc.Populate(@"abcdef");
-
-            Assert.AreEqual(@"abcdef", doc.Text);
-            Assert.AreEqual(0, doc.Version);
         }
 
         [TestMethod, Priority(0)]
