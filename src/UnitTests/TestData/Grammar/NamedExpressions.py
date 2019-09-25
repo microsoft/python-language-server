@@ -32,3 +32,6 @@ foo(x := 1, cat='vector')
 
 if x := a:
     pass
+
+class LambdaTop:
+	[(lambda: (z := x)) for x in range(1)]

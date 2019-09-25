@@ -3012,6 +3012,30 @@ namespace Microsoft.Python.Parsing.Tests {
                                     CheckSuite(Pass)
                                 )
                             )
+                        ),
+                        CheckClassDef(
+                            "LambdaTop",
+                            CheckSuite(
+                                CheckExprStmt(
+                                    CheckListComp(
+                                        CheckParenExpr(
+                                            CheckLambda(
+                                                NoParameters,
+                                                CheckParenExpr(
+                                                    CheckNamedExpr(
+                                                        CheckNameExpr("z"),
+                                                        CheckNameExpr("x")
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                        CompFor(
+                                            CheckNameExpr("x"),
+                                            CheckCallExpression(CheckNameExpr("range"), PositionalArg(One))
+                                        )
+                                    )
+                                )
+                            )
                         )
                     )
                 );

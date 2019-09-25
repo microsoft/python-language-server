@@ -61,6 +61,16 @@ namespace Microsoft.Python.Parsing.Ast {
             _scopeStack.Pop();
         }
 
+        public override bool Walk(LambdaExpression node) {
+            _scopeStack.Push(false);
+            return base.Walk(node);
+        }
+
+        public override void PostWalk(LambdaExpression node) {
+            base.PostWalk(node);
+            _scopeStack.Pop();
+        }
+
         public override bool Walk(GeneratorExpression node) {
             CheckComprehension(node.Iterators, node.Item);
             return false;
