@@ -99,20 +99,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         /// <param name="imports">Import search result.</param>
         /// <param name="variableName">Name of the variable to declare, such as 'd' in 'from a.b import c as d'.</param>
         /// <param name="importPosition">Position of the import statement.</param>
-        /// <param name="nameExpression">Name expression of the variable.</param>
-        private void DeclareVariable(PythonVariableModule variableModule, string memberName, IImportSearchResult imports, string variableName, int importPosition, Node nameExpression) {
+        /// <param name="nameLocation">Location of the variable name expression.</param>
+        private void DeclareVariable(PythonVariableModule variableModule, string memberName, IImportSearchResult imports, string variableName, int importPosition, Node nameLocation) {
             // First try imports since child modules should win, i.e. in 'from a.b import c'
             // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
             var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+            
             // First try exported or child submodules.
             value = value ?? variableModule.GetMember(memberName);
+            
             // Value may be variable or submodule. If it is variable, we need it in order to add reference.
             var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
             value = variable?.Value?.Equals(value) == true ? variable : value;
+            
             // If nothing is exported, variables are still accessible.
             value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
+            
             // Do not allow imported variables to override local declarations
-            Eval.DeclareVariable(variableName, value, VariableSource.Import, nameExpression, CanOverwriteVariable(variableName, importPosition));
+            var canOverwrite = CanOverwriteVariable(variableName, importPosition);
+            
+            // Do not declare references to '*'
+            var locationExpression = nameLocation is NameExpression nex && nex.Name == "*" ? null : nameLocation;
+            Eval.DeclareVariable(variableName, value, VariableSource.Import, locationExpression, canOverwrite);
+            
             // Make sure module is loaded and analyzed.
             if (value is IPythonModule m) {
                 ModuleResolution.GetOrLoadModule(m.Name);
