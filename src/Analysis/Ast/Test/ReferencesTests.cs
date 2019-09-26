@@ -456,11 +456,11 @@ x = print(VARIABLE1)
             var analysis = await GetAnalysisAsync(code);
             var v1 = analysis.Should().HaveVariable("VARIABLE1").Which;
 
-            v1.Definition.Span.Should().Be(2, 1, 2, 10);
+            v1.Definition.Span.Should().Be(1, 1, 1, 10);
             v1.Definition.DocumentUri.AbsolutePath.Should().Contain("constants.py");
 
             v1.References.Should().HaveCount(4);
-            v1.References[0].Span.Should().Be(2, 1, 2, 10);
+            v1.References[0].Span.Should().Be(1, 1, 1, 10);
             v1.References[0].DocumentUri.AbsolutePath.Should().Contain("constants.py");
 
             v1.References[1].Span.Should().Be(5, 7, 5, 16);
