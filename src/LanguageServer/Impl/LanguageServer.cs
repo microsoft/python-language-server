@@ -287,7 +287,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         #region Custom
         [JsonRpcMethod("python/clearAnalysisCache")]
-        public async Task ClearAnalysisCache(JToken token, CancellationToken cancellationToken) {
+        public async Task ClearAnalysisCache(CancellationToken cancellationToken) {
             using (_requestTimer.Time("python/clearAnalysisCache"))
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
                 _server.ClearAnalysisCache();
