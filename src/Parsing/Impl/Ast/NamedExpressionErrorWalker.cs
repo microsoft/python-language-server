@@ -18,12 +18,15 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Parsing.Extensions;
 
 namespace Microsoft.Python.Parsing.Ast {
     internal class NamedExpressionErrorWalker : PythonWalker {
         private readonly Action<int, int, string> _reportError;
-        private readonly Stack<bool> _scopeStack = new Stack<bool>(new[] { false });
+
+        private NameScope _scope = NameScope.Root;
+        private bool _insideForList = false;
 
         internal static void Check(PythonAst ast, PythonLanguageVersion langVersion, Action<int, int, string> reportError) {
             if (langVersion < PythonLanguageVersion.V38) {
@@ -37,131 +40,175 @@ namespace Microsoft.Python.Parsing.Ast {
             _reportError = reportError;
         }
 
-        private void ReportSyntaxError(int start, int end, string message) => _reportError(start, end, message);
-
-        private bool InClassBody => _scopeStack.Peek();
-
         public override bool Walk(ClassDefinition node) {
-            _scopeStack.Push(true);
+            _scope = new NameScope(_scope, true);
             return base.Walk(node);
         }
 
         public override void PostWalk(ClassDefinition node) {
             base.PostWalk(node);
-            _scopeStack.Pop();
+            _scope = _scope.Prev;
         }
 
         public override bool Walk(FunctionDefinition node) {
-            _scopeStack.Push(false);
+            // LambdaExpression wraps FunctionDefinition, so this handles both functions and lambdas.
+            var parameters = node.Parameters.Select(p => p.Name).Where(IsNotIgnoredName);
+            _scope = new NameScope(_scope, parameters);
             return base.Walk(node);
         }
 
         public override void PostWalk(FunctionDefinition node) {
             base.PostWalk(node);
-            _scopeStack.Pop();
-        }
-
-        public override bool Walk(LambdaExpression node) {
-            _scopeStack.Push(false);
-            return base.Walk(node);
-        }
-
-        public override void PostWalk(LambdaExpression node) {
-            base.PostWalk(node);
-            _scopeStack.Pop();
+            _scope = _scope.Prev;
         }
 
         public override bool Walk(GeneratorExpression node) {
-            CheckComprehension(node.Iterators, node.Item);
+            using (ComprehensionScope()) {
+                foreach (var ci in node.Iterators) {
+                    ci.Walk(this);
+                }
+                node.Item?.Walk(this);
+            }
             return false;
         }
 
         public override bool Walk(DictionaryComprehension node) {
-            CheckComprehension(node.Iterators, node.Key, node.Value);
+            using (ComprehensionScope()) {
+                foreach (var ci in node.Iterators) {
+                    ci.Walk(this);
+                }
+                node.Key?.Walk(this);
+                node.Value?.Walk(this);
+            }
             return false;
         }
 
         public override bool Walk(ListComprehension node) {
-            CheckComprehension(node.Iterators, node.Item);
+            using (ComprehensionScope()) {
+                foreach (var ci in node.Iterators) {
+                    ci.Walk(this);
+                }
+                node.Item?.Walk(this);
+            }
             return false;
         }
 
         public override bool Walk(SetComprehension node) {
-            CheckComprehension(node.Iterators, node.Item);
+            using (ComprehensionScope()) {
+                foreach (var ci in node.Iterators) {
+                    ci.Walk(this);
+                }
+                node.Item?.Walk(this);
+            }
             return false;
         }
 
-        private void CheckComprehension(IEnumerable<ComprehensionIterator> iterators, params Expression[] items) {
-            ImmutableArray<string> seenNamed = ImmutableArray<string>.Empty;
-            ImmutableArray<string> seenIterator = ImmutableArray<string>.Empty;
+        public override bool Walk(ComprehensionFor node) {
+            var names = node.Left?.ChildNodesBreadthFirst().OfType<NameExpression>().Where(IsNotIgnoredName).MaybeEnumerate();
+            _scope.AddIterators(names.Select(name => name.Name).ToImmutableArray());
 
-            foreach (var iterator in iterators) {
-                switch (iterator) {
-                    case ComprehensionFor cf:
-                        if (cf.Left != null) {
-                            foreach (var name in cf.Left.ChildNodesBreadthFirst().OfType<NameExpression>()) {
-                                if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
-                                    continue;
-                                }
+            // Collect this ahead of time, so that walking the list does not modify the list of names.
+            var bad = names.Where(name => _scope.IsNamed(name.Name)).ToImmutableArray();
 
-                                seenIterator = seenIterator.Add(name.Name);
-                                if (seenNamed.Contains(name.Name)) {
-                                    ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionIteratorRebindsNamedErrorMsg.FormatInvariant(name.Name));
-                                }
-                            }
-                        }
+            var old = _insideForList;
+            _insideForList = true;
+            node.List?.Walk(this);
+            _insideForList = old;
 
-                        if (cf.List != null) {
-                            foreach (var ne in cf.List.ChildNodesBreadthFirst().OfType<NamedExpression>()) {
-                                ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInComprehensionIteratorErrorMsg);
-                                if (InClassBody) {
-                                    ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInClassBodyErrorMsg);
-                                }
-                            }
-                        }
+            foreach (var name in bad) {
+                ReportSyntaxError(name, Resources.NamedExpressionIteratorRebindsNamedErrorMsg.FormatInvariant(name.Name));
+            }
 
-                        break;
+            return false;
+        }
 
-                    case ComprehensionIf ci:
-                        if (ci.Test == null) {
-                            continue;
-                        }
+        public override bool Walk(NamedExpression node) {
+            var names = node.Target.ChildNodesBreadthFirst().OfType<NameExpression>().Where(IsNotIgnoredName).MaybeEnumerate();
+            _scope.AddNamed(names.Select(name => name.Name).ToImmutableArray());
 
-                        foreach (var ne in ci.Test.ChildNodesBreadthFirst().OfType<NamedExpression>()) {
-                            if (InClassBody) {
-                                ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInClassBodyErrorMsg);
-                            }
+            if (_insideForList) {
+                ReportSyntaxError(node, Resources.NamedExpressionInComprehensionIteratorErrorMsg);
+                return false;
+            }
 
-                            foreach (var name in ne.Target.ChildNodesBreadthFirst().OfType<NameExpression>()) {
-                                if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
-                                    continue;
-                                }
+            if (_scope.IsClassTarget) {
+                ReportSyntaxError(node, Resources.NamedExpressionInClassBodyErrorMsg);
+                return false;
+            }
 
-                                seenNamed = seenNamed.Add(name.Name);
-                                if (seenIterator.Contains(name.Name)) {
-                                    ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionRebindIteratorErrorMsg.FormatInvariant(name.Name));
-                                }
-                            }
-                        }
-
-                        break;
+            foreach (var name in names) {
+                if (_scope.IsIterator(name.Name)) {
+                    ReportSyntaxError(name, Resources.NamedExpressionRebindIteratorErrorMsg.FormatInvariant(name.Name));
                 }
             }
 
-            foreach (var ne in items.SelectChildNodesBreadthFirst().OfType<NamedExpression>()) {
-                if (InClassBody) {
-                    ReportSyntaxError(ne.StartIndex, ne.EndIndex, Resources.NamedExpressionInClassBodyErrorMsg);
+            node.Value?.Walk(this);
+            return false;
+        }
+
+        private void ReportSyntaxError(Node node, string message) => _reportError(node.StartIndex, node.EndIndex, message);
+
+        private static bool IsNotIgnoredName(NameExpression name) => IsNotIgnoredName(name.Name);
+
+        private static bool IsNotIgnoredName(string name) => !string.IsNullOrWhiteSpace(name) && name != "_";
+
+        private IDisposable ComprehensionScope() {
+            _scope = new NameScope(_scope);
+            return Disposable.Create(() => _scope = _scope.Prev);
+        }
+
+        private class NameScope {
+            public static NameScope Root = new NameScope();
+
+            private readonly bool _isRoot;
+            private readonly bool? _isClassTarget;
+            private ImmutableArray<string> _named = ImmutableArray<string>.Empty;
+            private ImmutableArray<string> _iterators = ImmutableArray<string>.Empty;
+            private readonly ImmutableArray<string> _funcParams = ImmutableArray<string>.Empty;
+
+            private NameScope() {
+                _isRoot = true;
+            }
+
+            public NameScope(NameScope prev, bool? isClassTarget = null) {
+                Prev = prev;
+                _isClassTarget = isClassTarget;
+            }
+
+            public NameScope(NameScope prev, IEnumerable<string> funcParams) : this(prev, false) {
+                _funcParams = funcParams.ToImmutableArray();
+            }
+
+            public NameScope Prev { get; } = null;
+
+            public bool IsClassTarget => _isClassTarget ?? Prev?.IsClassTarget ?? false;
+
+            public void AddIterators(ImmutableArray<string> names) {
+                if (!_isRoot) {
+                    _iterators = _iterators.AddRange(names);
+                }
+            }
+
+            public void AddNamed(ImmutableArray<string> names) {
+                if (!_isRoot) {
+                    _named = _named.AddRange(names);
+                }
+            }
+
+            public bool IsIterator(string name) {
+                if (_isRoot || _funcParams.Contains(name)) {
+                    return false;
                 }
 
-                foreach (var name in ne.Target.ChildNodesBreadthFirst().OfType<NameExpression>()) {
-                    if (string.IsNullOrWhiteSpace(name.Name) || name.Name == "_") {
-                        continue;
-                    }
+                return _iterators.Contains(name) || (Prev?.IsIterator(name) ?? false);
+            }
 
-                    if (seenIterator.Contains(name.Name)) {
-                        ReportSyntaxError(name.StartIndex, name.EndIndex, Resources.NamedExpressionRebindIteratorErrorMsg.FormatInvariant(name.Name));
-                    }
+            public bool IsNamed(string name) {
+                if (_isRoot || _funcParams.Contains(name)) {
+                    return false;
                 }
+
+                return _named.Contains(name) || (Prev?.IsNamed(name) ?? false);
             }
         }
     }

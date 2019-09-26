@@ -34,4 +34,4 @@ if x := a:
     pass
 
 class LambdaTop:
-	[(lambda: (z := x)) for x in range(1)]
+    [(lambda: (z := x)) for x in range(1)]
