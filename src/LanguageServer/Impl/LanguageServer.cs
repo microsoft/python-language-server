@@ -285,6 +285,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
         #endregion
 
+        #region Custom
+        [JsonRpcMethod("python/clearAnalysisCache")]
+        public async Task ClearAnalysisCache(JToken token, CancellationToken cancellationToken) {
+            using (_requestTimer.Time("python/clearAnalysisCache"))
+            using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
+                _server.ClearAnalysisCache();
+            }
+        }
+        #endregion
+
         private T ToObject<T>(JToken token) => token.ToObject<T>(_jsonSerializer);
 
         private T GetSetting<T>(JToken section, string settingName, T defaultValue) {
