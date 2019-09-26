@@ -217,7 +217,7 @@ namespace Microsoft.Python.Analysis.Documents {
             }
 
             foreach (var (_, entry) in opened) {
-                entry.Document.Reset(null);
+                entry.Document.Invalidate();
             }
         }
 
@@ -280,7 +280,7 @@ namespace Microsoft.Python.Analysis.Documents {
         private bool TryOpenDocument(DocumentEntry entry, string content) {
             if (!entry.Document.IsOpen) {
                 entry.Document.IsOpen = true;
-                entry.Document.Reset(content);
+                entry.Document.Invalidate();
                 entry.LockCount++;
                 return true;
             }

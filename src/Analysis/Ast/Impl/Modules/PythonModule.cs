@@ -315,14 +315,12 @@ namespace Microsoft.Python.Analysis.Modules {
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
-        public void Reset(string content) {
+        public void Invalidate() {
             lock (_syncObj) {
-                if (content != Content) {
-                    ContentState = State.None;
-                    InitializeContent(content, _buffer.Version + 1);
-                }
+                ContentState = State.None;
+                _buffer.MarkChanged();
+                Parse();
             }
-
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
@@ -451,7 +449,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzed;
 
                 if (ModuleType != ModuleType.User) {
-                    _buffer.Reset(_buffer.Version, string.Empty);
+                    _buffer.Clear();
                 }
             }
 
@@ -487,7 +485,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void ClearContent() {
             lock (_syncObj) {
                 if (ModuleType != ModuleType.User) {
-                    _buffer.Reset(_buffer.Version, string.Empty);
+                    _buffer.Clear();
                     _astMap.Clear();
                 }
             }
@@ -517,16 +515,14 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private void InitializeContent(string content, int version) {
             lock (_syncObj) {
-                LoadContent(content, version);
-
-                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
-                if (startParse) {
+                SetOrLoadContent(content);
+                if (ContentState < State.Parsing && _parsingTask == null) {
                     Parse();
                 }
             }
         }
 
-        private void LoadContent(string content, int version) {
+        private void SetOrLoadContent(string content) {
             if (ContentState < State.Loading) {
                 try {
                     if (IsPersistent) {
@@ -534,7 +530,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     } else {
                         content = content ?? LoadContent();
                     }
-                    _buffer.Reset(version, content);
+                    _buffer.SetContent(content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }
