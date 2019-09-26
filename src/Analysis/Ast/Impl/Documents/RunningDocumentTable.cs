@@ -280,7 +280,6 @@ namespace Microsoft.Python.Analysis.Documents {
         private bool TryOpenDocument(DocumentEntry entry, string content) {
             if (!entry.Document.IsOpen) {
                 entry.Document.IsOpen = true;
-                entry.Document.Invalidate();
                 entry.LockCount++;
                 return true;
             }
