@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
@@ -109,7 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             value = value ?? variableModule.GetMember(memberName);
             // Value may be variable or submodule. If it is variable, we need it in order to add reference.
             var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-            value = variable?.Value == value ? variable : value;
+            value = variable?.Value?.Equals(value) == true ? variable : value;
             // If nothing is exported, variables are still accessible.
             value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
             // Do not allow imported variables to override local declarations

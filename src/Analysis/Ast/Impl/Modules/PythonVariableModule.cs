@@ -76,6 +76,9 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
 
+        public override bool Equals(object obj) => Equals(obj as IPythonModule);
+        public override int GetHashCode() => 0;
+
         #region ILocationConverter
         public SourceLocation IndexToLocation(int index) => (Module as ILocationConverter)?.IndexToLocation(index) ?? default;
         public int LocationToIndex(SourceLocation location) => (Module as ILocationConverter)?.LocationToIndex(location) ?? default;
