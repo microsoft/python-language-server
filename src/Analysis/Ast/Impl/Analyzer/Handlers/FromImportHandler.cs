@@ -105,8 +105,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // First try imports since child modules should win, i.e. in 'from a.b import c'
             // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
             var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-            // Now try exported
+            // First try exported or child submodules.
             value = value ?? variableModule.GetMember(memberName);
+            // Value may be variable or submodule. If it is variable, we need it in order to add reference.
+            var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
+            value = variable?.Value == value ? variable : value;
             // If nothing is exported, variables are still accessible.
             value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
             // Do not allow imported variables to override local declarations
