@@ -65,8 +65,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public AndWhichConstraint<VariableAssertions, IMember> NotHaveMember(string name, string because = "", params object[] reasonArgs) {
             NotBeNull(because, reasonArgs);
-            var m = Value.GetPythonType().GetMember(name);
-            m.GetPythonType().IsUnknown().Should().BeTrue();
+            Value.GetPythonType().GetMemberNames().Should().NotContain(name);
             return new AndWhichConstraint<VariableAssertions, IMember>(this, Subject);
         }
 
@@ -88,6 +87,11 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             Value.Should().HaveMember<IMember>(name, because, reasonArgs);
             var m = Value.GetPythonType().GetMember(name).GetPythonType<T>();
             return new AndWhichConstraint<VariableAssertions, T>(this, m);
+        }
+
+        public void HaveMemberName(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull(because, reasonArgs);
+            Value.GetPythonType().GetMemberNames().Should().Contain(name);
         }
 
         public AndWhichConstraint<VariableAssertions, IPythonFunctionOverload> HaveOverloadWithParametersAt(int index, string because = "", params object[] reasonArgs) {

@@ -88,11 +88,14 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
             while (items.Count > 0) {
                 var item = items.Dequeue();
-                if (!string.IsNullOrEmpty(item.FullModuleName) && (item.IsModule || includeImplicitPackages)) {
-                    names = names.Add(item.FullModuleName);
-                }
-                foreach (var child in item.Children) {
-                    items.Enqueue(child);
+                if (item != null) {
+                    if (!string.IsNullOrEmpty(item.FullModuleName) && (item.IsModule || includeImplicitPackages)) {
+                        names = names.Add(item.FullModuleName);
+                    }
+
+                    foreach (var child in item.Children.ExcludeDefault()) {
+                        items.Enqueue(child);
+                    }
                 }
             }
 
