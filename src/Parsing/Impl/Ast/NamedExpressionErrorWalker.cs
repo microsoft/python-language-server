@@ -162,9 +162,10 @@ namespace Microsoft.Python.Parsing.Ast {
 
             private readonly bool _isRoot;
             private readonly bool? _isClassTarget;
+            private readonly ImmutableArray<string> _funcParams = ImmutableArray<string>.Empty;
+
             private ImmutableArray<string> _named = ImmutableArray<string>.Empty;
             private ImmutableArray<string> _iterators = ImmutableArray<string>.Empty;
-            private readonly ImmutableArray<string> _funcParams = ImmutableArray<string>.Empty;
 
             private NameScope() {
                 _isRoot = true;
