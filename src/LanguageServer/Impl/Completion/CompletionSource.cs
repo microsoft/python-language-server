@@ -17,6 +17,7 @@ using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -24,9 +25,11 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.LanguageServer.Completion {
     internal sealed class CompletionSource {
         private readonly CompletionItemSource _itemSource;
+        private readonly IServiceContainer _services;
 
-        public CompletionSource(IDocumentationSource docSource, ServerSettings.PythonCompletionOptions completionSettings) {
+        public CompletionSource(IDocumentationSource docSource, ServerSettings.PythonCompletionOptions completionSettings, IServiceContainer services) {
             _itemSource = new CompletionItemSource(docSource, completionSettings);
+            _services = services;
         }
 
         public ServerSettings.PythonCompletionOptions Options {
@@ -39,7 +42,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 return CompletionResult.Empty;
             }
 
-            var context = new CompletionContext(analysis, location, _itemSource);
+            var context = new CompletionContext(analysis, location, _itemSource, _services);
 
             ExpressionLocator.FindExpression(analysis.Ast, location,
                 FindExpressionOptions.Complete, out var expression, out var statement, out var scope);

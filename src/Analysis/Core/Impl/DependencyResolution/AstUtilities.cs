@@ -13,9 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Python.Parsing.Ast;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
     public static class AstUtilities {

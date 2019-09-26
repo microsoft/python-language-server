@@ -13,13 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionCompletion {
@@ -41,19 +43,12 @@ namespace Microsoft.Python.LanguageServer.Completion {
             if (!value.IsUnknown()) {
 
                 var type = value.GetPythonType();
-                if(type is IPythonClassType cls) {
+                if (type is IPythonClassType cls) {
                     return GetClassItems(cls, e, context);
                 }
 
-                var items = new List<CompletionItem>();
-                foreach (var t in type.GetMemberNames().ToArray()) {
-                    var m = type.GetMember(t);
-                    if (m is IVariable v && v.Source != VariableSource.Declaration) {
-                        continue;
-                    }
-                    items.Add(context.ItemSource.CreateCompletionItem(t, m, type));
-                }
-                return items;
+                return type.GetMemberNames()
+                    .Select(name => context.ItemSource.CreateCompletionItem(name, type.GetMember(name), type));
             }
             return Enumerable.Empty<CompletionItem>();
         }

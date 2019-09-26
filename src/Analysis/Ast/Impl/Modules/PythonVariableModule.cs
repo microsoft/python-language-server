@@ -67,8 +67,8 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void AddChildModule(string memberName, PythonVariableModule module) => _children[memberName] = module;
 
-        public IMember GetMember(string name) => Module?.GetMember(name) ?? (_children.TryGetValue(name, out var module) ? module : default);
-        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(_children.Keys) : _children.Keys;
+        public IMember GetMember(string name) => _children.TryGetValue(name, out var module) ? module : Module?.GetMember(name);
+        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(_children.Keys).Distinct() : _children.Keys;
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;

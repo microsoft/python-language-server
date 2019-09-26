@@ -158,6 +158,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IMemberContainer
         public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
+
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
             return GlobalScope.Variables
@@ -166,26 +167,26 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (v.Value is IPythonInstance) {
                         return true;
                     }
+
                     var valueType = v.Value?.GetPythonType();
-                    if (valueType is PythonModule) {
-                        return false; // Do not re-export modules.
+                    switch (valueType) {
+                        case PythonModule _:
+                        case IPythonFunctionType f when f.IsLambda():
+                            return false; // Do not re-export modules.
                     }
-                    if (valueType is IPythonFunctionType f && f.IsLambda()) {
-                        return false;
-                    }
+
                     if (this is TypingModule) {
                         return true; // Let typing module behave normally.
                     }
+
                     // Do not re-export types from typing. However, do export variables
                     // assigned with types from typing. Example:
                     //    from typing import Any # do NOT export Any
                     //    x = Union[int, str] # DO export x
-                    if (valueType?.DeclaringModule is TypingModule && v.Name == valueType.Name) {
-                        return false;
-                    }
-                    return true;
+                    return !(valueType?.DeclaringModule is TypingModule) || v.Name != valueType.Name;
                 })
-                .Select(v => v.Name);
+                .Select(v => v.Name)
+                .ToArray();
         }
         #endregion
 
