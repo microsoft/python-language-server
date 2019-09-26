@@ -1341,5 +1341,38 @@ class A:
             var names = comps.Completions.Select(c => c.label);
             names.Should().Contain(new[] { "sub1" });
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InFunctionParameters() {
+            const string code = @"
+class A:
+    def method(self, content=1):
+        return content
+
+class B:
+    def __init__(self, ctorParam = 2):
+        pass
+
+    def method(self):
+        a = A()
+        a.method()
+
+a = A()
+a.method()
+
+b = B()
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+
+            var comps = cs.GetCompletions(analysis, new SourceLocation(12, 18));
+            comps.Should().HaveLabels("content=");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(15, 10));
+            comps.Should().HaveLabels("content=");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(17, 7));
+            comps.Should().HaveLabels("ctorParam=");
+        }
     }
 }

@@ -116,5 +116,13 @@ namespace Microsoft.Python.Analysis {
             => lm.IsDeclaredAfterOrAt(other.Location);
         public static bool IsDeclaredAfterOrAt(this ILocatedMember lm, Location loc)
             => lm.Location.IndexSpan.Start >= loc.IndexSpan.Start;
+
+        public static IPythonFunctionType TryGetFunctionType(this IMember m) {
+            var t = m.GetPythonType();
+            return t is IPythonClassType cls
+                ? cls.GetMember<IPythonFunctionType>("__init__")
+                : t as IPythonFunctionType;
+        }
+
     }
 }
