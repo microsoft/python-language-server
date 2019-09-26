@@ -3036,6 +3036,25 @@ namespace Microsoft.Python.Parsing.Tests {
                                     )
                                 )
                             )
+                        ),
+                        CheckExprStmt(
+                            CheckListComp(
+                                CheckParenExpr(
+                                    CheckLambda(
+                                        new[] { CheckParameter("x") },
+                                        CheckParenExpr(
+                                            CheckNamedExpr(
+                                                CheckNameExpr("x"),
+                                                CheckNameExpr("x")
+                                            )
+                                        )
+                                    )
+                                ),
+                                CompFor(
+                                    CheckNameExpr("x"),
+                                    CheckCallExpression(CheckNameExpr("range"), PositionalArg(One))
+                                )
+                            )
                         )
                     )
                 );

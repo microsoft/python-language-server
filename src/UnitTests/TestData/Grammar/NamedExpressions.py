@@ -35,3 +35,5 @@ if x := a:
 
 class LambdaTop:
     [(lambda: (z := x)) for x in range(1)]
+
+[(lambda x: (x := x)) for x in range(1)]
