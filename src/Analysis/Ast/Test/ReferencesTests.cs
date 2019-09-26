@@ -449,24 +449,28 @@ from constants import *
 import constants
 
 print(VARIABLE1)
-print(constants.VARIABLE2)
-
-print(VARIABLE2)
 print(constants.VARIABLE1)
+x = print(VARIABLE1)
 ";
-            await TestData.CreateTestSpecificFileAsync("constants.py", @"
-VARIABLE1 = 'afad'
-VARIABLE2 = 'dcef'
-");
+            await TestData.CreateTestSpecificFileAsync("constants.py", @"VARIABLE1 = 'afad'");
             var analysis = await GetAnalysisAsync(code);
-            var all = analysis.Should().HaveVariable("VARIABLE1").Which;
-            all.Definition.Span.Should().Be(9, 1, 9, 8);
-            all.References.Should().HaveCount(5);
-            all.References[0].Span.Should().Be(9, 1, 9, 8);
-            all.References[1].Span.Should().Be(10, 1, 10, 8);
-            all.References[2].Span.Should().Be(11, 1, 11, 8);
-            all.References[3].Span.Should().Be(12, 1, 12, 8);
-            all.References[4].Span.Should().Be(13, 1, 13, 8);
+            var v1 = analysis.Should().HaveVariable("VARIABLE1").Which;
+
+            v1.Definition.Span.Should().Be(2, 1, 2, 10);
+            v1.Definition.DocumentUri.AbsolutePath.Should().Contain("constants.py");
+
+            v1.References.Should().HaveCount(4);
+            v1.References[0].Span.Should().Be(2, 1, 2, 10);
+            v1.References[0].DocumentUri.AbsolutePath.Should().Contain("constants.py");
+
+            v1.References[1].Span.Should().Be(5, 7, 5, 16);
+            v1.References[1].DocumentUri.AbsolutePath.Should().Contain("module.py");
+
+            v1.References[2].Span.Should().Be(6, 17, 6, 26);
+            v1.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
+
+            v1.References[3].Span.Should().Be(7, 11, 7, 20);
+            v1.References[3].DocumentUri.AbsolutePath.Should().Contain("module.py");
         }
     }
 }
