@@ -385,6 +385,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         internal void ProcessCallForReferences(CallExpression callExpr) {
+            if (Module.ModuleType != ModuleType.User) {
+                return;
+            }
+
             switch (callExpr.Target) {
                 case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                     // Add reference to the function
@@ -396,6 +400,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
                 }
             }
+
             // Add references to all arguments.
             foreach (var arg in callExpr.Args) {
                 GetValueFromExpression(arg.Expression);

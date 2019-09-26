@@ -472,5 +472,28 @@ x = print(VARIABLE1)
             v1.References[3].Span.Should().Be(7, 11, 7, 20);
             v1.References[3].DocumentUri.AbsolutePath.Should().Contain("module.py");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task LibraryFunction() {
+            const string code = @"
+print(1)
+print(2)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var b = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
+            var print = b.Analysis.Should().HaveVariable("print").Which;
+
+            print.Definition.Span.Should().Be(1, 1, 1, 1);
+
+            print.References.Should().HaveCount(3);
+            print.References[0].Span.Should().Be(1, 1, 1, 1);
+            print.References[0].DocumentUri.AbsolutePath.Should().Contain("python.pyi");
+
+            print.References[1].Span.Should().Be(2, 1, 2, 6);
+            print.References[1].DocumentUri.AbsolutePath.Should().Contain("module.py");
+
+            print.References[2].Span.Should().Be(3, 1, 3, 6);
+            print.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
+        }
     }
 }
