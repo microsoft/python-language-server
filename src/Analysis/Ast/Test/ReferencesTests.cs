@@ -441,5 +441,32 @@ x_h = 8
             all.References[3].Span.Should().Be(12, 1, 12, 8);
             all.References[4].Span.Should().Be(13, 1, 13, 8);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task VariableInCallParameters() {
+            const string code = @"
+from constants import *
+import constants
+
+print(VARIABLE1)
+print(constants.VARIABLE2)
+
+print(VARIABLE2)
+print(constants.VARIABLE1)
+";
+            await TestData.CreateTestSpecificFileAsync("constants.py", @"
+VARIABLE1 = 'afad'
+VARIABLE2 = 'dcef'
+");
+            var analysis = await GetAnalysisAsync(code);
+            var all = analysis.Should().HaveVariable("VARIABLE1").Which;
+            all.Definition.Span.Should().Be(9, 1, 9, 8);
+            all.References.Should().HaveCount(5);
+            all.References[0].Span.Should().Be(9, 1, 9, 8);
+            all.References[1].Span.Should().Be(10, 1, 10, 8);
+            all.References[2].Span.Should().Be(11, 1, 11, 8);
+            all.References[3].Span.Should().Be(12, 1, 12, 8);
+            all.References[4].Span.Should().Be(13, 1, 13, 8);
+        }
     }
 }
