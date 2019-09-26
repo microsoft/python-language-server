@@ -83,6 +83,20 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
         public AndWhichConstraint<MemberAssertions, PythonFunctionType> HaveMethod(string name, string because = "", params object[] reasonArgs)
             => HaveMember<PythonFunctionType>(name, because, reasonArgs).OfMemberType(PythonMemberType.Method);
 
+        public void HaveMemberName(string name, string because = "", params object[] reasonArgs) {
+            NotBeNull();
+
+            var t = Subject.GetPythonType();
+            var mc = (IMemberContainer)t;
+            Execute.Assertion.ForCondition(mc != null)
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName(t)} to be a member container{{reason}}.");
+
+            Execute.Assertion.ForCondition(mc.GetMemberNames().Contains(name))
+                .BecauseOf(because, reasonArgs)
+                .FailWith($"Expected {GetName(t)} to have a member named '{name}'{{reason}}.");
+        }
+
         public AndWhichConstraint<MemberAssertions, TMember> HaveMember<TMember>(string name,
             string because = "", params object[] reasonArgs)
             where TMember : class, IMember {
@@ -125,7 +139,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
             Debug.Assert(missingNames.Length == 0);
             missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
-            
+
             Debug.Assert(extraNames.Length == 0);
             extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
 
@@ -147,7 +161,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     var otherClass = otherMemberType as IPythonClassType;
                     otherClass.Should().NotBeNull();
 
-                    if(subjectClass is IGenericType gt) {
+                    if (subjectClass is IGenericType gt) {
                         otherClass.Should().BeAssignableTo<IGenericType>();
                         otherClass.IsGeneric.Should().Be(gt.IsGeneric, $"Class name: {subjectClass.Name}");
                     }
