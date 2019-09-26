@@ -104,7 +104,7 @@ namespace Microsoft.Python.LanguageServer.Telemetry {
                     }
                 }
 
-                _telemetryService.SendTelemetryAsync(e).DoNotWait();
+                _telemetryService?.SendTelemetryAsync(e).DoNotWait();
             }
         }
     }

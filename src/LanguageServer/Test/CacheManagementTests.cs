@@ -13,11 +13,15 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
+using StreamJsonRpc;
 using TestUtilities;
 
 namespace Microsoft.Python.LanguageServer.Tests {
@@ -44,6 +48,24 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
             using (var s = new Implementation.Server(sm)) {
                 s.ClearAnalysisCache();
+                fs.Received().DeleteDirectory("CacheFolder", true);
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LsDeleteAnalysisCache() {
+            var sm = new ServiceManager();
+            var fs = Substitute.For<IFileSystem>();
+            sm.AddService(fs);
+
+            var mdc = Substitute.For<IModuleDatabaseCache>();
+            mdc.CacheFolder.Returns(c => "CacheFolder");
+            sm.AddService(mdc);
+
+            using (var ls = new Implementation.LanguageServer())
+            using (var ms = new MemoryStream()) {
+                ls.Start(sm, new JsonRpc(ms));
+                await ls.ClearAnalysisCache(CancellationToken.None);
                 fs.Received().DeleteDirectory("CacheFolder", true);
             }
         }
