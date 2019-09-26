@@ -1363,7 +1363,7 @@ a.method()
 b = B()
 ";
             var analysis = await GetAnalysisAsync(code);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
 
             var comps = cs.GetCompletions(analysis, new SourceLocation(12, 18));
             comps.Should().HaveLabels("content=");
