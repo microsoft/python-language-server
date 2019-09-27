@@ -19,15 +19,15 @@ using Microsoft.Python.Core.Idle;
 
 namespace Microsoft.Python.Core.Services {
     public sealed class IdleTimeService : IIdleTimeService, IIdleTimeTracker, IDisposable {
-        private static readonly TimeSpan s_initialDelay = TimeSpan.FromMilliseconds(50);
-        private static readonly TimeSpan s_interval = TimeSpan.FromMilliseconds(50);
-        private static readonly TimeSpan s_idleInterval = TimeSpan.FromMilliseconds(100);
+        private static readonly TimeSpan InitialDelay = TimeSpan.FromMilliseconds(50);
+        private static readonly TimeSpan Interval = TimeSpan.FromMilliseconds(50);
+        private static readonly TimeSpan IdleInterval = TimeSpan.FromMilliseconds(100);
 
         private Timer _timer;
         private DateTime _lastActivityTime;
 
         public IdleTimeService() {
-            _timer = new Timer(OnTimer, state: this, s_initialDelay, s_interval);
+            _timer = new Timer(OnTimer, this, InitialDelay, Interval);
             NotifyUserActivity();
         }
 
@@ -41,7 +41,7 @@ namespace Microsoft.Python.Core.Services {
         }
 
         private void OnTimer(object state) {
-            if (_timer != null && (DateTime.Now - _lastActivityTime) >= s_idleInterval) {
+            if (_timer != null && (DateTime.Now - _lastActivityTime) >= IdleInterval) {
                 Idle?.Invoke(this, EventArgs.Empty);
             }
         }

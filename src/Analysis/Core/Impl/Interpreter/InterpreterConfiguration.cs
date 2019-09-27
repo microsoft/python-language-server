@@ -22,7 +22,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
         /// Constructs a new interpreter configuration based on the provided values.
         /// </summary>
         public InterpreterConfiguration(string interpreterPath = null, Version version = null) :
-            this(interpreterPath, pathVar: string.Empty, libPath: null, sitePackagesPath: null, architecture: default, version: version) { }
+            this(interpreterPath, string.Empty, null, null, default, version) { }
 
         // Tests only
         internal InterpreterConfiguration(

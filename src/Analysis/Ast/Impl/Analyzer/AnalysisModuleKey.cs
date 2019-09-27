@@ -31,11 +31,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public AnalysisModuleKey(IPythonModule module) : this(
             module.Name,
             module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath,
-            module is StubPythonModule && ((StubPythonModule)module).IsTypeshed,
-            (module.IsNonUserFile() || module.IsCompiled()) && module is IDocument && ((IDocument)module).IsOpen) { }
+            IsTypeshedModule(module),
+            IsNonUserAsDocumentModule(module)) { }
 
         public AnalysisModuleKey(string name, string filePath, bool isTypeshed)
-            : this(name, filePath, isTypeshed, isNonUserAsDocument: false) { }
+            : this(name, filePath, isTypeshed, false) { }
 
         private AnalysisModuleKey(string name, string filePath, bool isTypeshed, bool isNonUserAsDocument) {
             Name = name;
@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             IsNonUserAsDocument = isNonUserAsDocument;
         }
 
-        public AnalysisModuleKey GetNonUserAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, IsTypeshed, isNonUserAsDocument: true);
+        public AnalysisModuleKey GetNonUserAsDocumentKey() => new AnalysisModuleKey(Name, FilePath, IsTypeshed, true);
 
         public bool Equals(AnalysisModuleKey other)
             => Name.EqualsOrdinal(other.Name) && FilePath.PathEquals(other.FilePath) && IsTypeshed == other.IsTypeshed && IsNonUserAsDocument == other.IsNonUserAsDocument;
@@ -72,5 +72,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public override string ToString() => $"{Name}({FilePath})";
+
+        private static bool IsTypeshedModule(IPythonModule module)
+            => module is StubPythonModule stubPythonModule && stubPythonModule.IsTypeshed;
+        private static bool IsNonUserAsDocumentModule(IPythonModule module)
+            => (module.IsNonUserFile() || module.IsCompiled()) && module is IDocument document && document.IsOpen;
     }
 }
