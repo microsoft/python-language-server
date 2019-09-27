@@ -253,10 +253,10 @@
     <value>named arguments must follow bare *</value>
   </data>
   <data name="NamedAssignmentWithErrorMsg" xml:space="preserve">
-    <value>Cannot use named assignment with {0}</value>
+    <value>cannot use named assignment with {0}</value>
   </data>
   <data name="NamedExpressionCtxtErrorMsg" xml:space="preserve">
-    <value>Named expression must be parenthesized in this context</value>
+    <value>named expression must be parenthesized in this context</value>
   </data>
   <data name="NamedExpressionInClassBodyErrorMsg" xml:space="preserve">
     <value>assignment expression within a comprehension cannot be used in a class body</value>

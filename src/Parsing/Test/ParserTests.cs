@@ -3068,15 +3068,15 @@ namespace Microsoft.Python.Parsing.Tests {
                 var errors = new CollectingErrorSink();
                 ParseFile("NamedExpressionsErrors.py", errors, version);
                 errors.Errors.Should().BeEquivalentTo(new[] {
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(1, 3, 1, 5)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(2, 11, 2, 13)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(3, 7, 3, 9)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(4, 19, 4, 21)),
-                    new ErrorResult("Cannot use named assignment with subscript", new SourceSpan(8, 2, 8, 6)),
-                    new ErrorResult("Cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(1, 3, 1, 5)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(2, 11, 2, 13)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(3, 7, 3, 9)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(4, 19, 4, 21)),
+                    new ErrorResult("cannot use named assignment with subscript", new SourceSpan(8, 2, 8, 6)),
+                    new ErrorResult("cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
                 });
             }
         }

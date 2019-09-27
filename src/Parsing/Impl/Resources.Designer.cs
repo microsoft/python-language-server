@@ -466,7 +466,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cannot use named assignment with {0}.
+        ///   Looks up a localized string similar to cannot use named assignment with {0}.
         /// </summary>
         internal static string NamedAssignmentWithErrorMsg {
             get {
@@ -475,7 +475,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Named expression must be parenthesized in this context.
+        ///   Looks up a localized string similar to named expression must be parenthesized in this context.
         /// </summary>
         internal static string NamedExpressionCtxtErrorMsg {
             get {
