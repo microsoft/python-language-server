@@ -19,11 +19,15 @@ using Microsoft.Python.Core.Idle;
 
 namespace Microsoft.Python.Core.Services {
     public sealed class IdleTimeService : IIdleTimeService, IIdleTimeTracker, IDisposable {
+        private static readonly TimeSpan s_initialDelay = TimeSpan.FromMilliseconds(50);
+        private static readonly TimeSpan s_interval = TimeSpan.FromMilliseconds(50);
+        private static readonly TimeSpan s_idleInterval = TimeSpan.FromMilliseconds(100);
+
         private Timer _timer;
         private DateTime _lastActivityTime;
 
         public IdleTimeService() {
-            _timer = new Timer(OnTimer, this, 50, 50);
+            _timer = new Timer(OnTimer, state: this, s_initialDelay, s_interval);
             NotifyUserActivity();
         }
 
@@ -32,11 +36,12 @@ namespace Microsoft.Python.Core.Services {
         public void Dispose() {
             _timer?.Dispose();
             _timer = null;
+
             Closing?.Invoke(this, EventArgs.Empty);
         }
 
         private void OnTimer(object state) {
-            if ((DateTime.Now - _lastActivityTime).TotalMilliseconds >= 100 && _timer != null) {
+            if (_timer != null && (DateTime.Now - _lastActivityTime) >= s_idleInterval) {
                 Idle?.Invoke(this, EventArgs.Empty);
             }
         }

@@ -51,19 +51,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 var autoComplete = pythonSection["autoComplete"];
-                settings.completion.showAdvancedMembers = GetSetting(autoComplete, "showAdvancedMembers", true);
-                settings.completion.addBrackets = GetSetting(autoComplete, "addBrackets", false);
+                settings.completion.showAdvancedMembers = GetSetting(autoComplete, "showAdvancedMembers", defaultValue: true);
+                settings.completion.addBrackets = GetSetting(autoComplete, "addBrackets", defaultValue: false);
 
                 var analysis = pythonSection["analysis"];
-                settings.symbolsHierarchyDepthLimit = GetSetting(analysis, "symbolsHierarchyDepthLimit", 10);
-                settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", 1000);
+                settings.symbolsHierarchyDepthLimit = GetSetting(analysis, "symbolsHierarchyDepthLimit", defaultValue: 10);
+                settings.symbolsHierarchyMaxSymbols = GetSetting(analysis, "symbolsHierarchyMaxSymbols", defaultValue: 1000);
 
                 _logger.LogLevel = GetLogLevel(analysis).ToTraceEventType();
 
                 var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 HandleUserConfiguredPathsChanges(userConfiguredPaths);
-                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
+                HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", defaultValue: true));
                 HandleDiagnosticsChanges(pythonSection, settings);
 
                 _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
@@ -73,23 +73,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private void HandleDiagnosticsChanges(JToken pythonSection, LanguageServerSettings settings) {
             var analysis = pythonSection["analysis"];
 
-            settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", 1000);
+            settings.diagnosticPublishDelay = GetSetting(analysis, "diagnosticPublishDelay", defaultValue: 1000);
             var ds = _services.GetService<IDiagnosticsService>();
             ds.PublishingDelay = settings.diagnosticPublishDelay;
 
             ds.DiagnosticsSeverityMap = new DiagnosticsSeverityMap(
-                GetSetting(analysis, "errors", Array.Empty<string>()),
-                GetSetting(analysis, "warnings", Array.Empty<string>()),
-                GetSetting(analysis, "information", Array.Empty<string>()),
-                GetSetting(analysis, "disabled", Array.Empty<string>()));
+                GetSetting(analysis, "errors", defaultValue: Array.Empty<string>()),
+                GetSetting(analysis, "warnings", defaultValue: Array.Empty<string>()),
+                GetSetting(analysis, "information", defaultValue: Array.Empty<string>()),
+                GetSetting(analysis, "disabled", defaultValue: Array.Empty<string>()));
 
             var linting = pythonSection["linting"];
-            HandleLintingOnOff(_services, GetSetting(linting, "enabled", true));
+            HandleLintingOnOff(_services, GetSetting(linting, "enabled", defaultValue: true));
 
             var memory = analysis["memory"];
             var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", false);
-            optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", false);
+            optionsProvider.Options.KeepLibraryLocalVariables = GetSetting(memory, "keepLibraryLocalVariables", defaultValue: false);
+            optionsProvider.Options.KeepLibraryAst = GetSetting(memory, "keepLibraryAst", defaultValue: false);
             optionsProvider.Options.AnalysisCachingLevel = GetAnalysisCachingLevel(analysis);
 
             _logger?.Log(TraceEventType.Information, Resources.AnalysisCacheLevel.FormatInvariant(optionsProvider.Options.AnalysisCachingLevel));
@@ -135,10 +135,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 // The values of these may not be null even if the value is "unset", depending on
                 // what the client uses as a default. Use null as a default anyway until the
                 // extension uses a null default (and/or extraPaths is dropped entirely).
-                var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", null);
-                var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", null);
-                var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", true);
-                var analayisAutoSearchPaths = GetSetting(analysis, "autoSearchPaths", true);
+                var autoCompleteExtraPaths = GetSetting<IReadOnlyList<string>>(autoComplete, "extraPaths", defaultValue: null);
+                var analysisSearchPaths = GetSetting<IReadOnlyList<string>>(analysis, "searchPaths", defaultValue: null);
+                var analysisUsePYTHONPATH = GetSetting(analysis, "usePYTHONPATH", defaultValue: true);
+                var analayisAutoSearchPaths = GetSetting(analysis, "autoSearchPaths", defaultValue: true);
 
                 if (analysisSearchPaths != null) {
                     set = true;
@@ -181,7 +181,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
-            var s = GetSetting(analysisKey, "cachingLevel", "None");
+            var s = GetSetting(analysisKey, "cachingLevel", defaultValue: "None");
             if (s.EqualsIgnoreCase("System")) {
                 return AnalysisCachingLevel.System;
             }

@@ -90,7 +90,7 @@ namespace Microsoft.Python.LanguageServer {
             // if there is massive change to the file structure.
             lock (_lock) {
                 _changedSinceLastTick = true;
-                _throttleTimer = _throttleTimer ?? new Timer(TimerProc, null, 500, 500);
+                _throttleTimer = _throttleTimer ?? new Timer(TimerProc, state: null, dueTime: 500, period: 500);
             }
         }
 

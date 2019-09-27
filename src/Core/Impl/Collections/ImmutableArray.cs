@@ -91,6 +91,10 @@ namespace Microsoft.Python.Core.Collections {
             var newItems = _items;
             var newRef = _ref;
 
+            // _ref indicates whether the array "_items" can be re-used when creating new ImmutableArray.
+            // this is an optimization to reduce array allocation while new elements are kept added at the end of the list
+            // this is an alternative design compared to Builder model 
+            // (https://docs.microsoft.com/en-us/dotnet/api/system.collections.immutable.immutablearray-1.builder)
             if (Interlocked.CompareExchange(ref newRef.Count, newCount, _count) != _count || newCount > _items.Length) {
                 var capacity = GetCapacity(newCount);
                 newItems = new T[capacity];

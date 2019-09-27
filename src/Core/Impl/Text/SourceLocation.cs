@@ -49,7 +49,7 @@ namespace Microsoft.Python.Core.Text {
         /// <param name="column">The column in the source stream the location represents (1-based).</param>
         [DebuggerStepThrough]
         public SourceLocation(int line, int column) {
-            ValidateLocation(0, line, column);
+            ValidateLocation(index: 0, line, column);
 
             _index = -1;
             Line = line;
