@@ -18,9 +18,15 @@ using System.Collections.Generic;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public abstract class ScopeStatement : Statement, IScopeStatement {
+    public abstract class ScopeStatement : Statement, IScopeNode {
+        private Statement _body;
+
+        public ScopeStatement() {
+            _body = new EmptyStatement();
+        }
+        
         public IScopeNode Parent { get; set; }
-        public abstract Statement Body { get; }
+        public virtual Statement Body => _body;
 
         public bool IsClosure => ScopeInfo.IsClosure;
 

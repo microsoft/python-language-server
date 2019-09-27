@@ -19,11 +19,10 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     [DebuggerDisplay("{Name}")]
-    public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement, IScopeStatement {
+    public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement, IScopeNode {
         internal static readonly object WhitespaceAfterAsync = new object();
 
         private int? _keywordEndIndex;

@@ -20,13 +20,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     /// <summary>
     /// Top-level ast for all Python code. Holds onto the body and the line mapping information.
     /// </summary>
-    public sealed class PythonAst : ScopeStatement, IScopeStatement, ILocationConverter {
+    public sealed class PythonAst : ScopeStatement, IScopeNode, ILocationConverter {
         private readonly object _lock = new object();
         private readonly Statement _body;
         private readonly Dictionary<Node, Dictionary<object, object>> _attributes = new Dictionary<Node, Dictionary<object, object>>();

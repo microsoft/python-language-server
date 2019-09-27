@@ -16,6 +16,11 @@ namespace Microsoft.Python.Parsing {
         IScopeNode Parent { get; set; }
 
         /// <summary>
+        /// Body of the scope node, empty statement if not applicable 
+        /// </summary>
+        Statement Body { get; }
+
+        /// <summary>
         /// Gloabl scope
         /// </summary>
         PythonAst GlobalParent { get; }

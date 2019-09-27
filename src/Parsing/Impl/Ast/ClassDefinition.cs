@@ -23,7 +23,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class ClassDefinition : ScopeStatement, IScopeStatement {
+    public class ClassDefinition : ScopeStatement, IScopeNode {
         private readonly NameExpression _name;
 
         private readonly Statement _body;

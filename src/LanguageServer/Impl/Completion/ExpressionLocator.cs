@@ -36,7 +36,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             finder.Get(index, index, out expression, out statement, out scope);
 
             var col = position.Column;
-            while (CanBackUp(ast, expression, statement, scope as IScopeStatement, col)) {
+            while (CanBackUp(ast, expression, statement, scope, col)) {
                 col -= 1;
                 index -= 1;
                 finder.Get(index, index, out expression, out statement, out scope);
@@ -46,7 +46,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             scope = scope ?? ast;
         }
 
-        private static bool CanBackUp(PythonAst ast, Node node, Node statement, IScopeStatement scope, int column) {
+        private static bool CanBackUp(PythonAst ast, Node node, Node statement, IScopeNode scope, int column) {
             if (node != null || !((statement as ExpressionStatement)?.Expression is ErrorExpression)) {
                 return false;
             }

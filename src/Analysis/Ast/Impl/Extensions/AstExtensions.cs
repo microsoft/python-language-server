@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis {
         public static Expression FindExpression(this PythonAst ast, SourceLocation location, FindExpressionOptions options)
             => new ExpressionFinder(ast, options).GetExpression(location) as Expression;
 
-        public static string GetDocumentation(this IScopeStatement node) {
+        public static string GetDocumentation(this IScopeNode node) {
             var docExpr = (node?.Body as SuiteStatement)?.Statements?.FirstOrDefault() as ExpressionStatement;
             var ce = docExpr?.Expression as ConstantExpression;
             return ce?.GetStringValue();
