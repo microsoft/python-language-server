@@ -110,7 +110,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 var results = ImmutableArray<string>.Empty;
 
                 foreach (var edge in _edges) {
-                    var children = edge.End.Children;
+                    var children = edge.Node.Children;
                     foreach (var child in children) {
                         if (IsNotInitPy(child)) {
                             results = results.Add(child.Name);
@@ -123,7 +123,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
             public bool TryGetChildImport(string name, out IImportSearchResult child) {
                 foreach (var edge in _edges) {
-                    var index = edge.End.GetChildIndex(name);
+                    var index = edge.Node.GetChildIndex(name);
                     if (index == -1) {
                         continue;
                     }
@@ -132,7 +132,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                     if (_snapshot.TryCreateModuleImport(childEdge, out var moduleImport)) {
                         child = moduleImport;
                     } else {
-                        child = new ImplicitPackageImport(new ChildrenSource(_snapshot, childEdge), childEdge.End.Name, childEdge.End.FullModuleName);
+                        child = new ImplicitPackageImport(new ChildrenSource(_snapshot, childEdge), childEdge.Node.Name, childEdge.Node.FullModuleName);
                     }
 
                     return true;

@@ -20,6 +20,9 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.Analysis.Core.DependencyResolution {
     public sealed class PathResolver {
         public PathResolver(in PythonLanguageVersion pythonLanguageVersion, in string root, in ImmutableArray<string> interpreterSearchPaths, in ImmutableArray<string> userSearchPaths) {
+            // need to audit whether CurrentSnapshot ever get updated concurrently
+            // thread safety is probably fine but serialization is another issue where if 2 callers do TryAddModulePath or other calls concurrently, 
+            // they will use same CurrentSnapshot to update which ends up with 2 different snapshots with same version.
             CurrentSnapshot = new PathResolverSnapshot(pythonLanguageVersion, root, interpreterSearchPaths, userSearchPaths);
         }
 

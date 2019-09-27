@@ -35,55 +35,69 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             //  ┌─╚═╗
             // [x] [y] 
             //
-            // will be stored as list of pairs: (2, a), (0, i), (1, y)
+            // will be stored as list of pairs: (2, c), (0, i), (1, y)
             // 
             // To provide immutability, it must be changed only by calling List<T>.Add
-            private readonly ImmutableArray<(int index, Node node)> _vertices;
-            private readonly int _index;
+            private readonly ImmutableArray<(int nodeIndexInParent, Node node)> _pathFromRoot;
 
-            public Node Start => IsFirst ? default : _vertices[_index - 1].node;
-            public int EndIndex => _vertices[_index].index;
-            public Node End => _vertices[_index].node;
-            public Edge Previous => IsFirst ? default : new Edge(_vertices, _index - 1);
-            public Edge Next => IsLast ? default : new Edge(_vertices, _index + 1);
-            public int PathLength => _vertices.Count;
-            public bool IsFirst => _index == 0;
-            public bool IsNonRooted => _vertices.Count > 0 && _vertices[0].node.Name == "*";
-            public bool IsEmpty => _vertices.Count == 0;
-            private bool IsLast => _index == _vertices.Count - 1;
+            // indicates which entry in the _pathFromRoot correspond to this edge.
+            private readonly int _indexInPath;
+
+            public Node ParentNode => IsFirst ? default : _pathFromRoot[_indexInPath - 1].node;
+            public int NodeIndexInParent => _pathFromRoot[_indexInPath].nodeIndexInParent;
+            public Node Node => _pathFromRoot[_indexInPath].node;
+            public Edge Previous => IsFirst ? default : new Edge(_pathFromRoot, _indexInPath - 1);
+            public Edge Next => IsLast ? default : new Edge(_pathFromRoot, _indexInPath + 1);
+            public int PathLength => _pathFromRoot.Count;
+            public bool IsFirst => _indexInPath == 0;
+            public bool IsNonRooted => _pathFromRoot.Count > 0 && _pathFromRoot[0].node.Name == "*";
+            public bool IsEmpty => _pathFromRoot.Count == 0;
+            private bool IsLast => _indexInPath == _pathFromRoot.Count - 1;
 
             public Edge(int startIndex, Node start) {
-                _vertices = ImmutableArray<(int, Node)>.Empty.Add((startIndex, start));
-                _index = 0;
+                _pathFromRoot = ImmutableArray<(int, Node)>.Empty.Add((startIndex, start));
+                _indexInPath = 0;
             }
 
-            public Edge FirstEdge => new Edge(_vertices, 0);
-            public Edge GetPrevious(int count) => count > _index ? default : new Edge(_vertices, _index - count);
-            public Edge GetNext(int count) => _index + count > _vertices.Count - 1 ? default : new Edge(_vertices, _index + count);
+            public Edge FirstEdge => new Edge(_pathFromRoot, indexInVertices: 0);
+            public Edge GetPrevious(int count) => count > _indexInPath ? default : new Edge(_pathFromRoot, _indexInPath - count);
+            public Edge GetNext(int count) => _indexInPath + count > _pathFromRoot.Count - 1 ? default : new Edge(_pathFromRoot, _indexInPath + count);
 
-            private Edge(ImmutableArray<(int index, Node node)> vertices, int index) {
-                _vertices = vertices;
-                _index = index;
+            private Edge(ImmutableArray<(int index, Node node)> vertices, int indexInVertices) {
+                // Node has only down pointers for the immutable tree so that when tree needs to be updated
+                // it can update only spine of the tree and reuse all other tree nodes. basically making
+                // the tree incrementally updatable.
+                // but not having Parent pointer makes using the tree data structure hard. so 
+                // Edge tracks the spine (provide Back/Parent pointer) but only created on demand for
+                // a specific node requested.
+                // 
+                // concept is similar to green-red tree.
+                // see https://blog.yaakov.online/red-green-trees/
+                //     https://blogs.msdn.microsoft.com/ericlippert/2012/06/08/persistence-facades-and-roslyns-red-green-trees/
+                //     https://github.com/KirillOsenkov/Bliki/wiki/Roslyn-Immutable-Trees
+
+                _pathFromRoot = vertices;
+                _indexInPath = indexInVertices;
             }
 
             /// <summary>
             /// Appends new arc to the end vertex of current arc
             /// </summary>
-            /// <param name="nextVertexIndex"></param>
+            /// <param name="childVertexIndexToAppened"></param>
             /// <returns>New last arc</returns>
-            public Edge Append(int nextVertexIndex) {
-                var nextVertex = End.Children[nextVertexIndex];
-                var trimLength = _vertices.Count - _index - 1;
-                var vertices = _vertices.ReplaceAt(_index + 1, trimLength, (nextVertexIndex, nextVertex));
-                return new Edge(vertices, _index + 1);
+            public Edge Append(int childVertexIndexToAppened) {
+                var nextVertex = Node.Children[childVertexIndexToAppened];
+                var trimLength = _pathFromRoot.Count - _indexInPath - 1;
+                var vertices = _pathFromRoot.ReplaceAt(_indexInPath + 1, trimLength, (childVertexIndexToAppened, nextVertex));
+                return new Edge(vertices, _indexInPath + 1);
             }
 
             public override bool Equals(object obj) => obj is Edge other && Equals(other);
-            public bool Equals(Edge other) => Equals(_vertices, other._vertices) && _index == other._index;
+            public bool Equals(Edge other) => Equals(_pathFromRoot, other._pathFromRoot) && _indexInPath == other._indexInPath;
 
             public override int GetHashCode() {
                 unchecked {
-                    return (_vertices.GetHashCode() * 397) ^ _index;
+                    return (_pathFromRoot.GetHashCode() * 397) ^ _indexInPath;
                 }
             }
 
@@ -92,9 +106,9 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
             private string DebuggerDisplay {
                 get {
-                    var start = _index > 0 ? _vertices[_index - 1].node.Name : "null";
-                    var endIndex = _vertices[_index].index.ToString();
-                    var end = _vertices[_index].node.Name;
+                    var start = _indexInPath > 0 ? _pathFromRoot[_indexInPath - 1].node.Name : "null";
+                    var endIndex = _pathFromRoot[_indexInPath].nodeIndexInParent.ToString();
+                    var end = _pathFromRoot[_indexInPath].node.Name;
                     return $"[{start}]-{endIndex}-[{end}]";
                 }
             }
