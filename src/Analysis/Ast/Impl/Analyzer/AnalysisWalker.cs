@@ -53,7 +53,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         #region AST walker overrides
-
         public override bool Walk(AssignmentStatement node) {
             AssignmentHandler.HandleAssignment(node);
             return base.Walk(node);
@@ -106,7 +105,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             WithHandler.HandleWith(node);
             return base.Walk(node);
         }
-
         #endregion
 
         protected T[] GetStatements<T>(IScopeStatement s)

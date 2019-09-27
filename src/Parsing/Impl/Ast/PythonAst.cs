@@ -94,17 +94,13 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         #region IScopeStatement
-
         public override Statement Body => _body;
-
         #endregion
 
         #region ScopeStatement
-
         public override string ScopeName => "<module>";
 
         public override ScopeInfo ScopeInfo { get; }
-
         #endregion
 
         public PythonLanguageVersion LanguageVersion { get; }
@@ -158,10 +154,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         #region ILocationConverter
-
         public SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(NewLineLocations, index);
         public int LocationToIndex(SourceLocation location) => NewLineLocation.LocationToIndex(NewLineLocations, location, EndIndex);
-
         #endregion
 
         internal int GetLineEndFromPosition(int index) {

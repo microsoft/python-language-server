@@ -48,7 +48,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (!(target is IPythonInstance instance)) {
                     instance = type.CreateInstance(ArgumentSet.Empty(expr, this));
                 }
-
                 var index = GetValueFromExpression(expr.Index);
                 if (index != null) {
                     return type.Index(instance, new ArgumentSet(new[] { index }, expr, this));
@@ -64,7 +63,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-
             return PythonCollectionType.CreateList(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -75,7 +73,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
                 contents[key] = value;
             }
-
             return new PythonDictionary(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -85,7 +82,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-
             return PythonCollectionType.CreateTuple(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -95,7 +91,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 var value = GetValueFromExpression(item) ?? UnknownType;
                 contents.Add(value);
             }
-
             return PythonCollectionType.CreateSet(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
@@ -104,7 +99,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (iter != null) {
                 return GetValueFromExpression(iter.List) ?? UnknownType;
             }
-
             return UnknownType;
         }
 
@@ -134,7 +128,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     var v = GetValueFromExpression(dc.Value) ?? UnknownType;
                     return new PythonDictionary(new PythonDictionaryType(Interpreter.ModuleResolution.BuiltinsModule), new Dictionary<IMember, IMember> { { k, v } });
             }
-
             return UnknownType;
         }
 
@@ -146,7 +139,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return;
                 }
             }
-
             ProcessComprehension(node);
         }
 
@@ -165,22 +157,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                             if (tex.Items[0] is NameExpression nx0 && !string.IsNullOrEmpty(nx0.Name)) {
                                 DeclareVariable(nx0.Name, dict.Keys.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx0);
                             }
-
                             if (tex.Items.Count > 1 && tex.Items[1] is NameExpression nx1 && !string.IsNullOrEmpty(nx1.Name)) {
                                 DeclareVariable(nx1.Name, dict.Values.FirstOrDefault() ?? UnknownType, VariableSource.Declaration, nx1);
                             }
-
                             foreach (var item in tex.Items.Skip(2).OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
                                 DeclareVariable(item.Name, UnknownType, VariableSource.Declaration, item);
                             }
-
                             break;
                         case TupleExpression tex when value is IPythonCollection c2 && tex.Items.Count > 0:
                             var iter = c2.GetIterator();
                             foreach (var item in tex.Items.OfType<NameExpression>().Where(x => !string.IsNullOrEmpty(x.Name))) {
                                 DeclareVariable(item.Name, iter.Next, VariableSource.Declaration, item);
                             }
-
                             break;
                     }
                 }

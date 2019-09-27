@@ -53,13 +53,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     return;
                 }
             }
-
             if (Options.MemberTarget) {
                 walker = new MemberTargetExpressionWalker(Ast, startIndex);
             } else {
                 walker = new NormalExpressionWalker(Ast, startIndex, endIndex, Options);
             }
-
             Ast.Walk(walker);
             node = walker.Expression;
             statement = walker.Statement;
@@ -99,13 +97,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (node == null || baseWalk && !(node.StartIndex <= _endLocation && _endLocation <= node.EndIndex)) {
                     return false;
                 }
-
                 if (baseWalk && ifTrue) {
                     Expression = node is ModuleName m
                         ? m.Names.FirstOrDefault(n => n.StartIndex <= _endLocation && _endLocation <= n.EndIndex)
                         : node;
                 }
-
                 return baseWalk;
             }
 
@@ -242,7 +238,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                     }
                     return true;
                 }
-
                 return false;
             }
 
@@ -272,16 +267,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 if (_options.ClassDefinition && BeforeBody(node.Body)) {
                     Expression = node;
                 }
-
                 if (_options.ClassDefinitionName) {
                     node.NameExpression?.Walk(this);
                 }
-
                 node.Decorators?.Walk(this);
                 foreach (var b in node.Bases) {
                     b.Walk(this);
                 }
-
                 ClearStmt(node, node.Body, node.HeaderIndex);
                 node.Body?.Walk(this);
 
@@ -307,19 +299,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 }
 
                 SaveStmt(node, true);
-
                 if (_options.ImportNames) {
                     foreach (var n in node.Names) {
                         n?.Walk(this);
                     }
                 }
-
                 if (_options.ImportAsNames) {
                     foreach (var n in node.AsNames) {
                         n?.Walk(this);
                     }
                 }
-
                 return false;
             }
 

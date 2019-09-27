@@ -188,7 +188,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 case IPythonFunctionType ct:
                     return ct.FunctionDefinition;
             }
-
             return null;
         }
 
@@ -247,7 +246,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     }
                     break;
             }
-
             return specificTypes;
         }
     }

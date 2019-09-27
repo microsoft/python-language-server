@@ -44,18 +44,15 @@ using Microsoft.Python.Parsing.Definition;
 namespace Microsoft.Python.Parsing.Ast {
     internal class DefineBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
-
         public DefineBinder(PythonNameBinder binder) {
             _binder = binder;
         }
-
         public override bool Walk(NameExpression node) {
             if (node.Name != null) {
                 _binder.DefineName(node.Name);
             }
             return false;
         }
-
         public override bool Walk(ParenthesisExpression node) => true;
         public override bool Walk(TupleExpression node) => true;
         public override bool Walk(ListExpression node) => true;
@@ -96,7 +93,6 @@ namespace Microsoft.Python.Parsing.Ast {
 
     class DeleteBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
-
         public DeleteBinder(PythonNameBinder binder) {
             _binder = binder;
         }
@@ -324,7 +320,6 @@ namespace Microsoft.Python.Parsing.Ast {
             foreach (var e in node.Expressions) {
                 e.Walk(_delete);
             }
-
             return true;
         }
 
@@ -402,14 +397,12 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (BindReferences) {
                     references = new PythonReference[node.Names.Count];
                 }
-
                 for (var i = 0; i < node.Names.Count; i++) {
                     variables[i] = DefineName(node.AsNames[i] != null ? node.AsNames[i].Name : node.Names[i].Name);
                     if (references != null) {
                         references[i] = Reference(variables[i].Name);
                     }
                 }
-
                 node.Variables = variables;
                 node.AddVariableReference(_ast, BindReferences, references);
             } else {
@@ -430,7 +423,6 @@ namespace Microsoft.Python.Parsing.Ast {
                 node.Variable = DefineName(node.Name);
                 node.AddVariableReference(GlobalScope, BindReferences, Reference(node.Name));
             }
-
             // process the default arg values and annotations in the outer
             // context
             foreach (var p in node.Parameters) {
@@ -515,7 +507,6 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
             }
-
             return true;
         }
 
