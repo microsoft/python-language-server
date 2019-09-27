@@ -69,7 +69,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     AssignmentHandler.HandleAnnotatedExpression(ea, null);
                     return false;
                 case Comprehension comp:
-                    Eval.ProcessComprehensionInScope(comp);
+                    Eval.ProcessComprehension(comp);
                     return false;
                 case CallExpression callex:
                     Eval.ProcessCallForReferences(callex);

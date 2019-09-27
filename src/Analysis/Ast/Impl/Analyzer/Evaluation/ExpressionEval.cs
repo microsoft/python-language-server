@@ -172,7 +172,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     m = GetValueFromGenerator(genex);
                     break;
                 case Comprehension comp:
-                    m = GetValueFromComprehensionInScope(comp);
+                    m = GetValueFromComprehension(comp);
                     break;
                 case LambdaExpression lambda:
                     m = GetValueFromLambda(lambda);
