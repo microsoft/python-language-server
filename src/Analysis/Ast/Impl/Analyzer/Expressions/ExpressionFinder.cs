@@ -188,36 +188,27 @@ namespace Microsoft.Python.Analysis.Analyzer.Expressions {
                 return false;
             }
 
-            public override bool Walk(ListComprehension node) {
-                if (!base.Walk(node)) {
-                    return false;
+            public override bool Walk(ListComprehension node) => Walk(node);
+            
+            public override bool Walk(SetComprehension node) => Walk(node);
+            
+            public override bool Walk(DictionaryComprehension node) => Walk(node);
+
+            private bool Walk(Comprehension node) {
+                var shouldWalk = false;
+                switch (node) {
+                    case ListComprehension l:
+                        shouldWalk = base.Walk(l);
+                        break;
+                    case DictionaryComprehension d:
+                        shouldWalk = base.Walk(d);
+                        break;
+                    case SetComprehension s:
+                        shouldWalk = base.Walk(s);
+                        break;
                 }
 
-                // Don't set scope if 2x 
-                if (!Tree.LanguageVersion.Is3x()) {
-                    return true;
-                }
-
-                Scope = node;
-                return true;
-            }
-
-            public override bool Walk(DictionaryComprehension node) {
-                if (!base.Walk(node)) {
-                    return false;
-                }
-
-                // Don't set scope if 2x 
-                if (!Tree.LanguageVersion.Is3x()) {
-                    return true;
-                }
-
-                Scope = node;
-                return true;
-            }
-
-            public override bool Walk(SetComprehension node) {
-                if (!base.Walk(node)) {
+                if (!shouldWalk) {
                     return false;
                 }
 
