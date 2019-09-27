@@ -2749,6 +2749,29 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void PositionalOnly() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("PositionalOnly.py", errors, version),
+                    CheckSuite(
+                        CheckFuncDef("f", new[] {
+                            CheckParameter("a", ParameterKind.PositionalOnly),
+                            CheckParameter("b", ParameterKind.PositionalOnly),
+                            CheckParameter(null, ParameterKind.PositionalMarker),
+                            CheckParameter("c", ParameterKind.Normal),
+                            CheckParameter("d", ParameterKind.Normal),
+                            CheckParameter(null, ParameterKind.List),
+                            CheckParameter("e", ParameterKind.KeywordOnly),
+                            CheckParameter("f", ParameterKind.KeywordOnly),
+                        }, CheckSuite(Pass))
+                    )
+                );
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void CoroutineDef() {
             foreach (var version in V35AndUp) {
                 CheckAst(

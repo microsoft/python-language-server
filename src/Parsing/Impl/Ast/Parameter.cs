@@ -52,7 +52,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool IsKeywordOnly => Kind == ParameterKind.KeywordOnly;
 
-        public ParameterKind Kind { get; }
+        public ParameterKind Kind { get; internal set; }
 
         public override IEnumerable<Node> GetChildNodes() {
             if (NameExpression != null) yield return NameExpression;

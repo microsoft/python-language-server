@@ -1988,6 +1988,7 @@ namespace Microsoft.Python.Parsing {
 
             var namedOnly = false;
             var lastComma = true;
+            int? posOnlyEnd = null;
 
             var lastStart = -1;
 
@@ -2018,6 +2019,11 @@ namespace Microsoft.Python.Parsing {
                         start = GetStart();
                         kind = ParameterKind.Dictionary;
                         preStarWhitespace = _tokenWhiteSpace;
+                    } else if (_langVersion >= PythonLanguageVersion.V38 && MaybeEat(TokenKind.Divide)) {
+                        start = GetStart();
+                        posOnlyEnd = posOnlyEnd ?? pos;
+                        kind = ParameterKind.PositionalMarker;
+                        preStarWhitespace = _tokenWhiteSpace;
                     }
 
                     var name = TokenToName(PeekToken());
@@ -2030,8 +2036,7 @@ namespace Microsoft.Python.Parsing {
                             AddPreceedingWhiteSpace(ne);
                         }
                         p = new Parameter(ne, kind);
-                    } else if (kind == ParameterKind.List) {
-                        // bare lists are allowed
+                    } else if (kind == ParameterKind.List || kind == ParameterKind.PositionalMarker) {
                         p = new Parameter(null, kind);
                     } else {
                         var expr = ParseExpression();
@@ -2063,6 +2068,19 @@ namespace Microsoft.Python.Parsing {
                 if (lastComma) {
                     commaWhiteSpace?.Add(_tokenWhiteSpace);
                 }
+            }
+
+            if (posOnlyEnd.HasValue) {
+                for (var pos = 0; pos < posOnlyEnd.Value; pos++) {
+                    var p = parameters[pos];
+                    if (p.Kind != ParameterKind.Normal) {
+                        // uh oh
+                        continue;
+                    }
+                    p.Kind = ParameterKind.PositionalOnly;
+                }
+
+                // TODO: Check error cases.
             }
 
             // Now we validate the parameters
@@ -2102,7 +2120,7 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 if (string.IsNullOrEmpty(p.Name)) {
-                    if (p.Kind != ParameterKind.List || !(_stubFile || _langVersion.Is3x())) {
+                    if (!(p.Kind == ParameterKind.List || p.Kind == ParameterKind.PositionalMarker) || !(_stubFile || _langVersion.Is3x())) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                         continue;
                     }
