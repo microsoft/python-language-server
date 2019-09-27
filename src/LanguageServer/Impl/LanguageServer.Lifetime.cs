@@ -24,6 +24,8 @@ using StreamJsonRpc;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     public partial class LanguageServer {
+        private static readonly TimeSpan s_cancelAfter = TimeSpan.FromMilliseconds(200);
+
         private InitializeParams _initParams;
         private bool _shutdown;
 
@@ -31,19 +33,23 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("initialize")]
         public async Task<InitializeResult> Initialize(JToken token, CancellationToken cancellationToken) {
-            _initParams = token.ToObject<InitializeParams>();
+            _initParams = ToObject<InitializeParams>(token);
             MonitorParentProcess(_initParams);
             using (await _prioritizer.InitializePriorityAsync(cancellationToken)) {
                 // Force the next handled request to be "initialized", where the work actually happens.
-                _initializedPriorityTask = _prioritizer.InitializePriorityAsync(default);
+                // Note - if Initialized call get lost somehow, server will hang since nobody will complete
+                // _initializedPriorityTask and request queue will be blocked until the task is completed.
+                _initializedPriorityTask = _prioritizer.InitializePriorityAsync(CancellationToken.None);
                 return await _server.InitializeAsync(_initParams, cancellationToken);
             }
         }
 
         [JsonRpcMethod("initialized")]
         public async Task Initialized(JToken token, CancellationToken cancellationToken) {
+            // make sure all requests after "Initialize" to be blocked until 
+            // we get "Initialized" request which will finish LS initialization.
             using (await _initializedPriorityTask) {
-                var pythonSection = await GetPythonConfigurationAsync(cancellationToken, 200);
+                var pythonSection = await GetPythonConfigurationAsync(cancellationToken, s_cancelAfter);
                 var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 await _server.InitializedAsync(ToObject<InitializedParams>(token), cancellationToken, userConfiguredPaths);
@@ -51,28 +57,27 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        private async Task<JToken> GetPythonConfigurationAsync(CancellationToken cancellationToken = default, int? cancelAfterMilli = null) {
+        private async Task<JToken> GetPythonConfigurationAsync(CancellationToken cancellationToken = default, TimeSpan? cancelAfter = null) {
             if (_initParams?.capabilities?.workspace?.configuration != true) {
                 return null;
             }
 
             try {
                 using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) {
-                    if (cancelAfterMilli.HasValue) {
-                        cts.CancelAfter(cancelAfterMilli.Value);
+                    if (cancelAfter.HasValue) {
+                        cts.CancelAfter(cancelAfter.Value);
                     }
                     var args = new ConfigurationParams {
                         items = new[] {
                             new ConfigurationItem { section = "python" }
                         }
                     };
-                    var configs = await _rpc.InvokeWithParameterObjectAsync<JToken>("workspace/configuration", args, cancellationToken);
+                    var configs = await _rpc.InvokeWithParameterObjectAsync<JToken>("workspace/configuration", args, cts.Token);
                     return configs?[0];
                 }
+            } catch (OperationCanceledException ex) when (ex.CancellationToken != cancellationToken) {
             } catch (Exception) { }
 
-            // The cancellation of this token could have been caught above instead of the timeout, so rethrow it.
-            cancellationToken.ThrowIfCancellationRequested();
             return null;
         }
 
@@ -109,7 +114,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (parentProcess != null) {
                 Task.Run(async () => {
                     while (!_sessionTokenSource.IsCancellationRequested) {
-                        await Task.Delay(2000);
+                        await Task.Delay(TimeSpan.FromSeconds(2));
                         if (parentProcess.HasExited) {
                             _sessionTokenSource.Cancel();
                         }

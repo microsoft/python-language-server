@@ -40,7 +40,7 @@ namespace Microsoft.Python.Analysis.Documents {
         private IModuleManagement _moduleManagement;
         private IModuleManagement ModuleManagement => _moduleManagement ?? (_moduleManagement = _services.GetService<IPythonInterpreter>().ModuleResolution);
 
-        private class DocumentEntry {
+        private sealed class DocumentEntry {
             public readonly IDocument Document;
             public int LockCount;
 
@@ -89,7 +89,7 @@ namespace Microsoft.Python.Analysis.Documents {
             lock (_lock) {
                 var entry = FindDocument(uri);
                 if (entry == null) {
-                    var resolver = _services.GetService<IPythonInterpreter>().ModuleResolution.CurrentPathResolver;
+                    var resolver = ModuleManagement.CurrentPathResolver;
 
                     var moduleType = ModuleType.User;
                     var path = uri.ToAbsolutePath();
@@ -212,6 +212,7 @@ namespace Microsoft.Python.Analysis.Documents {
             }
 
             foreach (var (_, entry) in closed) {
+                // closed and removed event always raise events with already disposed documents.
                 Closed?.Invoke(this, new DocumentEventArgs(entry.Document));
                 Removed?.Invoke(this, new DocumentEventArgs(entry.Document));
             }
@@ -223,7 +224,8 @@ namespace Microsoft.Python.Analysis.Documents {
 
         public void Dispose() {
             lock (_lock) {
-                foreach (var d in _documentsByUri.Values.OfType<IDisposable>()) {
+                // DocumentEntry is not disposable. it is Document that is disposable.
+                foreach (var d in _documentsByUri.Values.Select(v => v.Document)) {
                     d.Dispose();
                 }
             }
@@ -268,7 +270,7 @@ namespace Microsoft.Python.Analysis.Documents {
                 throw new InvalidOperationException("Can't create document with no file path or URI specified");
             }
 
-            if (!ModuleManagement.TryAddModulePath(filePath, 0, true, out var fullName)) {
+            if (!ModuleManagement.TryAddModulePath(filePath, fileSize: 0, allowNonRooted: true, out var fullName)) {
                 return false;
             }
 

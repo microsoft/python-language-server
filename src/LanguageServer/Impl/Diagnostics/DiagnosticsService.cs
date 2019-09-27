@@ -36,11 +36,18 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             public bool Changed { get; set; }
 
             public void Clear(DiagnosticSource source) {
-                Changed = Entries.Count > 0;
+                if (!_entries.TryGetValue(source, out _)) {
+                    return;
+                }
+
+                Changed = true;
                 _entries[source] = Array.Empty<DiagnosticsEntry>();
             }
 
-            public void ClearAll() => _entries.Clear();
+            public void ClearAll() {
+                Changed = true;
+                _entries.Clear();
+            }
 
             public void SetDiagnostics(DiagnosticSource source, IReadOnlyList<DiagnosticsEntry> entries) {
                 if (_entries.TryGetValue(source, out var existing)) {
@@ -64,7 +71,12 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private IRunningDocumentTable _rdt;
         private DateTime _lastChangeTime;
 
-        private IRunningDocumentTable Rdt => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
+        private IRunningDocumentTable Rdt {
+            get {
+                ConnectToRdt();
+                return _rdt;
+            }
+        }
 
         public DiagnosticsService(IServiceContainer services) {
             _services = services;
@@ -126,9 +138,11 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                     _severityMap = value;
                     foreach (var d in _diagnostics) {
                         d.Value.Changed = true;
-                        _lastChangeTime = DateTime.Now;
                     }
+
                     PublishDiagnostics();
+
+                    _lastChangeTime = DateTime.Now;
                 }
             }
         }
@@ -215,17 +229,19 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 ).ToArray();
 
         private void ConnectToRdt() {
-            if (_rdt == null) {
-                _rdt = _services.GetService<IRunningDocumentTable>();
-                if (_rdt != null) {
-                    _rdt.Opened += OnOpenDocument;
-                    _rdt.Closed += OnCloseDocument;
-                    _rdt.Removed += OnRemoveDocument;
+            lock (_lock) {
+                if (_rdt == null) {
+                    _rdt = _services.GetService<IRunningDocumentTable>();
+                    if (_rdt != null) {
+                        _rdt.Opened += OnOpenDocument;
+                        _rdt.Closed += OnCloseDocument;
+                        _rdt.Removed += OnRemoveDocument;
 
-                    _disposables
-                        .Add(() => _rdt.Opened -= OnOpenDocument)
-                        .Add(() => _rdt.Closed -= OnCloseDocument)
-                        .Add(() => _rdt.Removed -= OnRemoveDocument);
+                        _disposables
+                            .Add(() => _rdt.Opened -= OnOpenDocument)
+                            .Add(() => _rdt.Closed -= OnCloseDocument)
+                            .Add(() => _rdt.Removed -= OnRemoveDocument);
+                    }
                 }
             }
         }
@@ -238,12 +254,12 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             }
         }
 
-        private void OnCloseDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, false);
-        private void OnRemoveDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, true);
+        private void OnCloseDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, remove: false);
+        private void OnRemoveDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, remove: true);
 
         private void ClearDiagnostics(Uri uri, bool remove) {
             lock (_lock) {
-                if (_diagnostics.TryGetValue(uri, out var _)) {
+                if (_diagnostics.ContainsKey(uri)) {
                     PublishDiagnostics();
                     if (remove) {
                         _diagnostics.Remove(uri);

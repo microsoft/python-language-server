@@ -43,7 +43,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly CancellationTokenSource _sessionTokenSource = new CancellationTokenSource();
         private readonly Prioritizer _prioritizer = new Prioritizer();
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
-        private readonly AnalysisOptionsProvider _optionsProvider = new AnalysisOptionsProvider();
 
         private IServiceContainer _services;
         private Server _server;
@@ -74,7 +73,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 .Add(_prioritizer)
                 .Add(() => _rpc.TraceSource.Listeners.Remove(rpcTraceListener));
 
-            services.AddService(_optionsProvider);
+            services.AddService(new AnalysisOptionsProvider());
             return _sessionTokenSource.Token;
         }
 
@@ -290,7 +289,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private T GetSetting<T>(JToken section, string settingName, T defaultValue) {
             var value = section?[settingName];
             try {
-                return value != null ? value.ToObject<T>() : defaultValue;
+                return value != null ? ToObject<T>(value) : defaultValue;
             } catch (JsonException ex) {
                 _logger?.Log(TraceEventType.Warning, $"Exception retrieving setting '{settingName}': {ex.Message}");
             }
@@ -298,7 +297,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private MessageType GetLogLevel(JToken analysisKey) {
-            var s = GetSetting(analysisKey, "logLevel", "Error");
+            var s = GetSetting(analysisKey, settingName: "logLevel", defaultValue: "Error");
             if (s.EqualsIgnoreCase("Warning")) {
                 return MessageType.Warning;
             }
@@ -376,6 +375,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             private class PrioritizerDisposable : IDisposable {
+                private const int not_used = 0;
                 private readonly TaskCompletionSource<int> _tcs;
 
                 public PrioritizerDisposable(CancellationToken cancellationToken) {
@@ -384,7 +384,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
 
                 public Task Task => _tcs.Task;
-                public void Dispose() => _tcs.TrySetResult(0);
+                public void Dispose() => _tcs.TrySetResult(not_used);
             }
 
             public void Dispose() => _ppc.Dispose();
