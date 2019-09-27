@@ -20,8 +20,8 @@ using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal sealed class ProgressReporter : IProgressReporter, IDisposable {
-        private const int _initialDelay = 50;
-        private const int _reportingInterval = 100;
+        private readonly static TimeSpan s_initialDelay = TimeSpan.FromMilliseconds(50);
+        private readonly static TimeSpan s_reportingInterval = TimeSpan.FromMilliseconds(100);
 
         private readonly IProgressService _progressService;
         private readonly object _lock = new object();
@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public void ReportRemaining(int count) {
             lock (_lock) {
                 if (count == 0) {
-                   EndReport();
+                    EndReport();
                     return;
                 }
 
@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     // Delay reporting a bit in case the analysis is short in order to reduce UI flicker.
                     _running = true;
                     _reportTimer?.Dispose();
-                    _reportTimer = new Timer(OnReportTimer, null, _initialDelay, _reportingInterval);
+                    _reportTimer = new Timer(OnReportTimer, state: null, s_initialDelay, s_reportingInterval);
                 }
                 _lastReportedCount = count;
             }
