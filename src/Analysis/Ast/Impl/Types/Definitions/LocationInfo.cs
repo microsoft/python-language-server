@@ -33,7 +33,7 @@ namespace Microsoft.Python.Analysis.Types {
             this(path, documentUri, start.Line, start.Column, end.Line, end.Column) {
         }
 
-        private LocationInfo() : this(string.Empty, null, 1, 1) { }
+        private LocationInfo() : this(path: string.Empty, documentUri: null, line: 1, column: 1) { }
 
         private LocationInfo(string path, Uri documentUri, int line, int column, int? endLine = null, int? endColumn = null) {
             FilePath = path;

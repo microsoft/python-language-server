@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Caching {
             // File name depends on the content so we can distinguish between different versions.
             using (var hash = SHA256.Create()) {
                 return Convert
-                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
+                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(content)))
                     .Replace('/', '_').Replace('+', '-');
             }
         }
