@@ -24,7 +24,6 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     /// <summary>

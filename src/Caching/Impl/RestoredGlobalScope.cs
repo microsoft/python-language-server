@@ -19,7 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class RestoredGlobalScope : IRestoredGlobalScope {

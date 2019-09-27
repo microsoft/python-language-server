@@ -16,7 +16,7 @@
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Values {
     internal sealed class GlobalScope: Scope, IGlobalScope {

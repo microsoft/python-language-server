@@ -16,7 +16,7 @@
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionLocator {

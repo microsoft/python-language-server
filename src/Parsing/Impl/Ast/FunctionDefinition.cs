@@ -19,7 +19,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     [DebuggerDisplay("{Name}")]

@@ -15,7 +15,7 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ScopeStatement : Statement, IScopeStatement {

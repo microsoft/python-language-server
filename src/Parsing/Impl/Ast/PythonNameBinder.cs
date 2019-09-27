@@ -16,7 +16,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 /*
  * The name binding:

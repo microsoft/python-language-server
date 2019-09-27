@@ -20,7 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class ClassDefinition : ScopeStatement, IScopeStatement {

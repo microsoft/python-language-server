@@ -1,6 +1,6 @@
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Parsing.Definition {
+namespace Microsoft.Python.Parsing {
     /// <summary>
     /// Represents a <see cref="Node"/> with a Scope
     /// </summary>

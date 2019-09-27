@@ -24,7 +24,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Sources {

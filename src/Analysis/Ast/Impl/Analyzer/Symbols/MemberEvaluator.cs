@@ -18,7 +18,7 @@ using System.Diagnostics;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
     [DebuggerDisplay("{Target.Name}")]

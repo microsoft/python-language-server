@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Linting {
     internal abstract class LinterWalker : PythonWalker {

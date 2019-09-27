@@ -1,4 +1,4 @@
-using Microsoft.Python.Parsing.Definition;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     public class AstScopeInfo : ScopeInfo {

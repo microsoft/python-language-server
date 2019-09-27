@@ -21,7 +21,6 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
-using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ErrorExpressionCompletion {
