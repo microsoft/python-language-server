@@ -1,4 +1,4 @@
-// Python Tools for Visual Studio
+﻿// Python Tools for Visual Studio
 // Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
@@ -1579,7 +1579,7 @@ def f(): pass");
                 ImmutableArray<string>.Empty);
             var pathResolverSnapshot = pathResolver.CurrentSnapshot;
 
-            var modules = pathResolverSnapshot.GetAllModuleNames()
+            var modules = pathResolverSnapshot.GetAllImportableModuleNames()
                 .Select(n => pathResolverSnapshot.GetModuleImportFromModuleName(n))
                 .Where(i => i.RootPath.PathEquals(configuration.SitePackagesPath))
                 .ToList();

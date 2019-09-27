@@ -15,6 +15,7 @@
 
 using System.Linq;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
@@ -28,12 +29,14 @@ namespace Microsoft.Python.LanguageServer.Completion {
         public int Position { get; }
         public TokenSource TokenSource => _ts ?? (_ts = new TokenSource(Analysis.Document, Position));
         public CompletionItemSource ItemSource { get; }
+        public IServiceContainer Services { get; }
 
-        public CompletionContext(IDocumentAnalysis analysis, SourceLocation location, CompletionItemSource itemSource) {
+        public CompletionContext(IDocumentAnalysis analysis, SourceLocation location, CompletionItemSource itemSource, IServiceContainer services) {
             Location = location;
             Analysis = analysis;
             Position = Ast.LocationToIndex(location);
             ItemSource = itemSource;
+            Services = services;
         }
 
         public SourceLocation IndexToLocation(int index) => Ast.IndexToLocation(index);

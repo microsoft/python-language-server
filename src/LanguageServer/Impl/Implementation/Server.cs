@@ -168,7 +168,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _completionSource = new CompletionSource(
                 ChooseDocumentationSource(textDocCaps?.completion?.completionItem?.documentationFormat),
-                Settings.completion
+                Settings.completion, Services
             );
 
             _hoverSource = new HoverSource(

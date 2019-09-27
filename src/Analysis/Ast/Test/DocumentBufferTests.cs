@@ -29,7 +29,7 @@ namespace Microsoft.Python.Analysis.Tests {
         [TestMethod, Priority(0)]
         public void BasicDocumentBuffer() {
             var doc = new DocumentBuffer();
-            doc.Reset(0, @"def f(x):
+            doc.SetContent(@"def f(x):
     return
 
 def g(y):
@@ -77,7 +77,7 @@ def g(y):
         public void ResetDocumentBuffer() {
             var doc = new DocumentBuffer();
 
-            doc.Reset(0, string.Empty);
+            doc.SetContent(string.Empty);
             Assert.AreEqual(string.Empty, doc.Text);
 
             doc.Update(new[] {
@@ -86,18 +86,13 @@ def g(y):
 
             Assert.AreEqual("text", doc.Text);
             Assert.AreEqual(1, doc.Version);
-
-            doc.Reset(0, @"abcdef");
-
-            Assert.AreEqual(@"abcdef", doc.Text);
-            Assert.AreEqual(0, doc.Version);
         }
 
         [TestMethod, Priority(0)]
         public void ReplaceAllDocumentBuffer() {
             var doc = new DocumentBuffer();
 
-            doc.Reset(0, string.Empty);
+            doc.SetContent(string.Empty);
             Assert.AreEqual(string.Empty, doc.Text);
 
             doc.Update(new[] {
@@ -134,7 +129,7 @@ def g(y):
         [TestMethod, Priority(0)]
         public void DeleteMultipleDisjoint() {
             var doc = new DocumentBuffer();
-            doc.Reset(0, @"
+            doc.SetContent(@"
 line1
 line2
 line3
@@ -157,7 +152,7 @@ line
         [TestMethod, Priority(0)]
         public void InsertMultipleDisjoint() {
             var doc = new DocumentBuffer();
-            doc.Reset(0, @"
+            doc.SetContent(@"
 line
 line
 line
@@ -180,7 +175,7 @@ line4
         [TestMethod, Priority(0)]
         public void DeleteAcrossLines() {
             var doc = new DocumentBuffer();
-            doc.Reset(0, @"
+            doc.SetContent(@"
 line1
 line2
 line3
@@ -199,7 +194,7 @@ line4
         [TestMethod, Priority(0)]
         public void SequentialChanges() {
             var doc = new DocumentBuffer();
-            doc.Reset(0, @"
+            doc.SetContent(@"
 line1
 line2
 line3
@@ -218,7 +213,7 @@ line4
         [TestMethod, Priority(0)]
         public void InsertTopToBottom() {
             var doc = new DocumentBuffer();
-            doc.Reset(0, @"linelinelineline");
+            doc.SetContent(@"linelinelineline");
             doc.Update(new[] {
                 DocumentChange.Insert("\n", new SourceLocation(1, 1)),
                 DocumentChange.Insert("1\n", new SourceLocation(2, 5)),
@@ -233,7 +228,7 @@ line4
         [DataTestMethod, Priority(0)]
         public void NewLines(string s, NewLineLocation[] expected) {
             var doc = new DocumentBuffer();
-            doc.Reset(0, s);
+            doc.SetContent(s);
             var nls = doc.GetNewLineLocations().ToArray();
             for (var i = 0; i < nls.Length; i++) {
                 Assert.AreEqual(nls[i].Kind, expected[i].Kind);

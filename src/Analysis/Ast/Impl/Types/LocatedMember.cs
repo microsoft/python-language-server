@@ -54,7 +54,11 @@ namespace Microsoft.Python.Analysis.Types {
 
         public virtual void AddReference(Location location) {
             lock (this) {
-                if(this.DeclaringModule == null || this.DeclaringModule?.ModuleType == ModuleType.Builtins) {
+                // In order to limit memory consumption we normally don't track references
+                // to builtin types such as int or list. Exception is functions like 'print'
+                // since it user may want to find all references to them.
+                if (this.DeclaringModule == null || 
+                    (this.DeclaringModule?.ModuleType == ModuleType.Builtins && MemberType != PythonMemberType.Function)) {
                     return;
                 }
                 // Don't add references to library code.

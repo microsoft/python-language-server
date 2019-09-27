@@ -56,27 +56,47 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // import_module('fob.oar.baz')
             var importNames = ImmutableArray<string>.Empty;
             var lastModule = default(PythonVariableModule);
-            var firstModule = default(PythonVariableModule);
-            foreach (var nameExpression in moduleImportExpression.Names) {
+            var resolvedModules = new (string name, PythonVariableModule module)[moduleImportExpression.Names.Count];
+            for (var i = 0; i < moduleImportExpression.Names.Count; i++) {
+                var nameExpression = moduleImportExpression.Names[i];
                 importNames = importNames.Add(nameExpression.Name);
                 var imports = ModuleResolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, importNames, forceAbsolute);
                 if (!HandleImportSearchResult(imports, lastModule, asNameExpression, moduleImportExpression, out lastModule)) {
                     lastModule = default;
                     break;
                 }
-
-                if (firstModule == default) {
-                    firstModule = lastModule;
-                }
+                resolvedModules[i] = (nameExpression.Name, lastModule);
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
-            // "import fob.oar.baz" is handled as fob = import_module('fob')
-            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != default) {
+            if (!string.IsNullOrEmpty(asNameExpression?.Name) && lastModule != null) {
                 Eval.DeclareVariable(asNameExpression.Name, lastModule, VariableSource.Import, asNameExpression);
-            } else if (firstModule != default && !string.IsNullOrEmpty(importNames[0])) {
-                var firstName = moduleImportExpression.Names[0];
-                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, firstName);
+                return;
+            }
+
+            var firstModule = resolvedModules.Length > 0 ? resolvedModules[0].module : null;
+            var secondModule = resolvedModules.Length > 1 ? resolvedModules[1].module : null;
+
+            // "import fob.oar.baz" when 'fob' is THIS module handled by declaring 'oar' as member.
+            // Consider pandas that has 'import pandas.testing' in __init__.py and 'testing'
+            // is available as member. See also https://github.com/microsoft/python-language-server/issues/1395
+            if (firstModule?.Module == Eval.Module && importNames.Count > 1 && !string.IsNullOrEmpty(importNames[1]) && secondModule != null) {
+                Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
+                Eval.DeclareVariable(importNames[1], secondModule, VariableSource.Import, moduleImportExpression.Names[1]);
+            } else {
+                // "import fob.oar.baz" is handled as fob = import_module('fob')
+                if (firstModule != null && !string.IsNullOrEmpty(importNames[0])) {
+                    Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
+                }
+            }
+
+            // import a.b.c.d => declares a, b in the current module, c in b, d in c.
+            for (var i = 1; i < resolvedModules.Length - 1; i++) {
+                var (childName, childModule) = resolvedModules[i + 1];
+                if (!string.IsNullOrEmpty(childName) && childModule != null) {
+                    var parent = resolvedModules[i].module;
+                    parent?.AddChildModule(childName, childModule);
+                }
             }
         }
 
@@ -92,7 +112,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return TryGetPackageFromImport(packageImport, parent, out variableModule);
                 case RelativeImportBeyondTopLevel importBeyondTopLevel:
                     var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
-                    Eval.ReportDiagnostics(Eval.Module.Uri, 
+                    Eval.ReportDiagnostics(Eval.Module.Uri,
                         new DiagnosticsEntry(message, location.GetLocation(Eval).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
                     variableModule = default;
                     return false;
@@ -132,7 +152,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var fullName = possibleModuleImport.PrecedingModuleFullName;
             var module = ModuleResolution.GetOrLoadModule(possibleModuleImport.PrecedingModuleFullName);
 
-            if (module == default) {
+            if (module == null) {
                 MakeUnresolvedImport(possibleModuleImport.PrecedingModuleFullName, fullName, location);
                 return false;
             }
@@ -157,7 +177,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         return false;
                 }
             }
-            
+
             return true;
         }
 
@@ -170,8 +190,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (!string.IsNullOrEmpty(variableName)) {
                 Eval.DeclareVariable(variableName, new SentinelModule(moduleName, Eval.Services), VariableSource.Import, location);
             }
-            Eval.ReportDiagnostics(Eval.Module.Uri, 
-                new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName), 
+            Eval.ReportDiagnostics(Eval.Module.Uri,
+                new DiagnosticsEntry(Resources.ErrorUnresolvedImport.FormatInvariant(moduleName),
                     Eval.GetLocationInfo(location).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
         }
 

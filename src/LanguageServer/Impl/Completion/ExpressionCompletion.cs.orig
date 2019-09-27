@@ -14,13 +14,20 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core.IO;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
+<<<<<<< HEAD
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Parsing.Definition;
+=======
+>>>>>>> 2ad7dd4e5ef30aa6b980e7477b585b8c95e9c58b
 
 namespace Microsoft.Python.LanguageServer.Completion {
     internal static class ExpressionCompletion {

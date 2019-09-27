@@ -1318,6 +1318,7 @@ class A:
             names.Should().NotContain(new[] { "x1", "x2", "method1", "method2", "B" });
         }
 
+<<<<<<< HEAD
         [DataRow(true)]
         [DataRow(false)]
         [DataTestMethod, Priority(0)]
@@ -1336,7 +1337,7 @@ c = {a. : a for a in AR}
 d = {a. for a in AR}
 ";
             var analysis = await GetAnalysisAsync(code, is3X ? PythonVersions.LatestAvailable3X : PythonVersions.LatestAvailable2X);
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
 
             var comps = cs.GetCompletions(analysis, new SourceLocation(10, 8));
             var names = comps.Completions.Select(c => c.label);
@@ -1349,8 +1350,7 @@ d = {a. for a in AR}
             comps = cs.GetCompletions(analysis, new SourceLocation(12, 8));
             names = comps.Completions.Select(c => c.label);
             names.Should().Contain(new[] { "a", "b", "c" });
-        }
-
+=======
         [TestMethod, Priority(0)]
         public async Task FromImportPackageNoInitPy() {
             var appUri = TestData.GetTestSpecificUri("app.py");
@@ -1400,6 +1400,7 @@ b = B()
 
             comps = cs.GetCompletions(analysis, new SourceLocation(17, 7));
             comps.Should().HaveLabels("ctorParam=");
+>>>>>>> 2ad7dd4e5ef30aa6b980e7477b585b8c95e9c58b
         }
     }
 }

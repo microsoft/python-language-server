@@ -67,14 +67,17 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public void AddChildModule(string memberName, PythonVariableModule module) => _children[memberName] = module;
 
-        public IMember GetMember(string name) => Module?.GetMember(name) ?? (_children.TryGetValue(name, out var module) ? module : default);
-        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(_children.Keys) : _children.Keys;
+        public IMember GetMember(string name) => _children.TryGetValue(name, out var module) ? module : Module?.GetMember(name);
+        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(_children.Keys).Distinct() : _children.Keys;
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
         public IPythonInstance CreateInstance(IArgumentSet args = null) => new PythonInstance(this);
 
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
+
+        public override bool Equals(object obj) => Equals(obj as IPythonModule);
+        public override int GetHashCode() => 0;
 
         #region ILocationConverter
         public SourceLocation IndexToLocation(int index) => (Module as ILocationConverter)?.IndexToLocation(index) ?? default;

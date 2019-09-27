@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Documents {
@@ -23,6 +24,8 @@ namespace Microsoft.Python.Analysis.Documents {
         private readonly object _lock = new object();
         private StringBuilder _sb = new StringBuilder();
         private string _content;
+        private bool _cleared;
+        private bool _initialized;
 
         public int Version { get; private set; }
 
@@ -34,16 +37,38 @@ namespace Microsoft.Python.Analysis.Documents {
             }
         }
 
-        public void Reset(int version, string content) {
+        public void SetContent(string content) {
             lock (_lock) {
-                Version = version;
+                Check.InvalidOperation(!_initialized, "Buffer is already initialized.");
+                Check.InvalidOperation(!_cleared, "Buffer cannot be updated since its content was dropped.");
+                Version = 0;
                 _content = content ?? string.Empty;
                 _sb = null;
+                _initialized = true;
+            }
+        }
+
+        public void Clear() {
+            lock (_lock) {
+                _content = string.Empty;
+                _sb = null;
+                _cleared = true;
+            }
+        }
+
+        public void MarkChanged() {
+            lock (_lock) {
+                Check.InvalidOperation(_initialized, "Buffer is not initialized.");
+                Check.InvalidOperation(!_cleared, "Buffer cannot be updated since its content was dropped.");
+                Version++;
             }
         }
 
         public void Update(IEnumerable<DocumentChange> changes) {
             lock (_lock) {
+                Check.InvalidOperation(_initialized, "Buffer is not initialized.");
+                Check.InvalidOperation(!_cleared, "Buffer cannot be updated since its content was dropped.");
+                
                 _sb = _sb ?? new StringBuilder(_content);
 
                 foreach (var change in changes) {
@@ -98,7 +123,6 @@ namespace Microsoft.Python.Analysis.Documents {
                             if (i == _sb.Length - 1) {
                                 yield return new NewLineLocation(i + 1, NewLineKind.None);
                             }
-
                             break;
                     }
                 }
