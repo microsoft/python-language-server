@@ -102,8 +102,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        public IMember GetValueFromComprehensionInScope(Comprehension node, bool is3X = true) {
-            if (is3X) {
+        public IMember GetValueFromComprehensionInScope(Comprehension node) {
+            if (Interpreter.LanguageVersion.Is3x()) {
                 using (OpenScope(Module, node)) {
                     ProcessComprehension(node);
                     return GetValueFromComprehension(node);
@@ -131,9 +131,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        internal void ProcessComprehensionInScope(Comprehension node, bool is3X = true) {
-            // In 2X there is a bug where comprehension variables get leaked to outer scopes, fixed in 3X
-            if (is3X) {
+        internal void ProcessComprehensionInScope(Comprehension node) {
+            // In 2X comprehension variables get leaked to outer scopes, variables are kept in their own scopes for 3X
+            if (Interpreter.LanguageVersion.Is3x()) {
                 using (OpenScope(Module, node)) {
                     ProcessComprehension(node);
                     return;
