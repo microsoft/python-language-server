@@ -246,7 +246,7 @@ namespace Microsoft.Python.Parsing {
 
             ast.SetAttributes(_attributes);
             PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
-
+            NamedExpressionErrorWalker.Check(ast, _langVersion, ReportSyntaxError);
             return ast;
         }
 
@@ -2116,7 +2116,7 @@ namespace Microsoft.Python.Parsing {
                     }
                     seenListArg = true;
                 } else if (p.Kind == ParameterKind.Dictionary) {
-                    if (seenDictArg) {  
+                    if (seenDictArg) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsDoubleArgumentErrorMsg);//duplicate ** args arguments
                     }
                     seenDictArg = true;
@@ -4951,12 +4951,11 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression RemoveParenthesis(Expression expr) {
-            while(expr is ParenthesisExpression parenExpr) {
+            while (expr is ParenthesisExpression parenExpr) {
                 expr = parenExpr.Expression;
             }
             return expr;
         }
-
         #endregion
 
         #region Encoding support (PEP 263)
