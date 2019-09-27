@@ -6,9 +6,9 @@ namespace Microsoft.Python.Parsing.Definition {
     /// </summary>
     public interface IScopeNode : INode {
         /// <summary>
-        /// Name of the scope
+        /// Scope node name
         /// </summary>
-        string ScopeName { get; }
+        string Name { get; }
 
         /// <summary>
         /// Parent of the current scope

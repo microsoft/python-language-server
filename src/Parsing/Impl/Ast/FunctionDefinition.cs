@@ -97,7 +97,6 @@ namespace Microsoft.Python.Parsing.Ast {
         #region ScopeStatement
 
         public override string Name => NameExpression.Name ?? string.Empty;
-        public override string ScopeName => Name;
         public override ScopeInfo ScopeInfo { get; }
 
         #endregion

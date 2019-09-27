@@ -27,7 +27,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Node = node;
         }
 
-        public string Name => Node.ScopeName;
+        public string Name => Node.Name;
 
         protected IScopeNode Node { get; }
 

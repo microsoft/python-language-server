@@ -19,7 +19,6 @@ using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ScopeStatement : Statement, IScopeStatement {
-        public virtual string ScopeName => "<unknown>";
         public IScopeNode Parent { get; set; }
         public abstract Statement Body { get; }
 
@@ -29,7 +28,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool NeedsLocalsDictionary => ScopeInfo.NeedsLocalsDictionary;
 
-        public virtual string Name => ScopeName;
+        public virtual string Name => "<unknown>";
 
         public ICollection<PythonVariable> ScopeVariables => ScopeInfo.ScopeVariables;
 

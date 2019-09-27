@@ -98,8 +98,7 @@ namespace Microsoft.Python.Parsing.Ast {
         #endregion
 
         #region ScopeStatement
-        public override string ScopeName => "<module>";
-
+        public override string Name => "<module>";
         public override ScopeInfo ScopeInfo { get; }
         #endregion
 

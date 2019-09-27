@@ -53,7 +53,6 @@ namespace Microsoft.Python.Parsing.Ast {
         #region ScopeStatement
 
         public override string Name => _name?.Name ?? string.Empty;
-        public override string ScopeName => Name;
         public override ScopeInfo ScopeInfo { get; }
 
         #endregion

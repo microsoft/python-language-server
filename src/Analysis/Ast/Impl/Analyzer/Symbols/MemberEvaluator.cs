@@ -21,7 +21,7 @@ using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Definition;
 
 namespace Microsoft.Python.Analysis.Analyzer.Symbols {
-    [DebuggerDisplay("{Target.ScopeName}")]
+    [DebuggerDisplay("{Target.Name}")]
     internal abstract class MemberEvaluator : AnalysisWalker {
         protected MemberEvaluator(ExpressionEval eval, IScopeNode target) : base(eval) {
             Target = target ?? throw new ArgumentNullException(nameof(target));
