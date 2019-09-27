@@ -261,7 +261,33 @@ c = {a for a in AR}
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
             analysis.GlobalScope.Should().NotHaveChildScopes("<list comprehension>")
-                    .And.NotHaveChildScopes("<set comprehension>");
+                .And.NotHaveChildScopes("<set comprehension>");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VariablesLeakInNestedComprehension2X() {
+            const string code = @"
+class A:
+    a: int
+    b: str
+long_list = [A()]
+same_long_list = [first for first in long_list]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            analysis.Should().HaveVariable("first").OfType("A");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VariablesNoLeakInNestedComprehension3X() {
+            const string code = @"
+class A:
+    a: int
+    b: str
+long_list = [A()]
+same_long_list = [first for first in long_list]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            analysis.Should().NotHaveVariable("first");
         }
     }
 }
