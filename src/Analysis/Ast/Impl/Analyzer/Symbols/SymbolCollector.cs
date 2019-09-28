@@ -94,50 +94,43 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             base.PostWalk(fd);
         }
 
-        public override bool Walk(DictionaryComprehension comprehension) {
+        private bool Walk(Comprehension node) {
             if (_eval.Interpreter.LanguageVersion.Is3x()) {
                 // Open comprehension scope
-                _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
+                _scopes.Push(_eval.OpenScope(_eval.Module, node, out _));
             }
             return true;
         }
 
-        public override void PostWalk(DictionaryComprehension comprehension) {
+        private void PostWalk(Comprehension node) {
             if (_eval.Interpreter.LanguageVersion.Is3x()) {
                 _scopes.Pop().Dispose();
             }
-            base.PostWalk(comprehension);
+            
+            switch (node) {
+                case DictionaryComprehension d:
+                    base.PostWalk(d);
+                    break;
+                case ListComprehension l:
+                    base.PostWalk(l);
+                    break;
+                case SetComprehension s:
+                    base.PostWalk(s);
+                    break;
+            }
         }
 
-        public override bool Walk(ListComprehension comprehension) {
-            if (_eval.Interpreter.LanguageVersion.Is3x()) {
-                // Open comprehension scope
-                _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
-            }
-            return true;
-        }
+        public override bool Walk(DictionaryComprehension comprehension) => Walk(comprehension);
 
-        public override void PostWalk(ListComprehension comprehension) {
-            if (_eval.Interpreter.LanguageVersion.Is3x()) {
-                _scopes.Pop().Dispose();
-            }
-            base.PostWalk(comprehension);
-        }
+        public override void PostWalk(DictionaryComprehension comprehension) => PostWalk(comprehension);
 
-        public override bool Walk(SetComprehension comprehension) {
-            if (_eval.Interpreter.LanguageVersion.Is3x()) {
-                // Open comprehension scope
-                _scopes.Push(_eval.OpenScope(_eval.Module, comprehension, out _));
-            }
-            return true;
-        }
+        public override bool Walk(ListComprehension comprehension) => Walk(comprehension);
 
-        public override void PostWalk(SetComprehension comprehension) {
-            if (_eval.Interpreter.LanguageVersion.Is3x()) {
-                _scopes.Pop().Dispose();
-            }
-            base.PostWalk(comprehension);
-        }
+        public override void PostWalk(ListComprehension comprehension) => PostWalk(comprehension);
+
+        public override bool Walk(SetComprehension comprehension) => Walk(comprehension);
+
+        public override void PostWalk(SetComprehension comprehension) => PostWalk(comprehension);
 
         private PythonClassType CreateClass(ClassDefinition cd) {
             PythonType declaringType = null;
