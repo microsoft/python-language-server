@@ -13,7 +13,7 @@ namespace Microsoft.Python.Parsing {
         /// <summary>
         /// Parent of the current scope
         /// </summary>
-        IScopeNode Parent { get; set; }
+        IScopeNode ParentNode { get; set; }
 
         /// <summary>
         /// Body of the scope node, empty statement if not applicable 

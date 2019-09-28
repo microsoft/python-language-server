@@ -32,7 +32,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 return false;
             }
 
-            if (function.Parent is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
+            if (function.ParentNode is ClassDefinition cd && function.NameExpression != null && context.Position > function.NameExpression.StartIndex) {
                 var loc = function.GetStart(context.Ast);
                 var overrideable = GetOverrideable(context, location).ToArray();
                 overrideable = !string.IsNullOrEmpty(function.Name)

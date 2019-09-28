@@ -134,9 +134,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private PythonClassType CreateClass(ClassDefinition cd) {
             PythonType declaringType = null;
-            if (!(cd.Parent is PythonAst)) {
-                Debug.Assert(_typeMap.ContainsKey(cd.Parent));
-                _typeMap.TryGetValue(cd.Parent, out declaringType);
+            if (!(cd.ParentNode is PythonAst)) {
+                Debug.Assert(_typeMap.ContainsKey(cd.ParentNode));
+                _typeMap.TryGetValue(cd.ParentNode, out declaringType);
             }
 
             var cls = new PythonClassType(cd, declaringType, _eval.GetLocationOfName(cd),
@@ -148,7 +148,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private void AddFunctionOrProperty(FunctionDefinition fd) {
-            var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
+            var declaringType = fd.ParentNode != null && _typeMap.TryGetValue(fd.ParentNode, out var t) ? t : null;
             if (!TryAddProperty(fd, declaringType)) {
                 AddFunction(fd, declaringType);
             }

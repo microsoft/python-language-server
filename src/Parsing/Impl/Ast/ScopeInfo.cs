@@ -76,7 +76,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 var cur = Node;
                 while (!(cur is PythonAst)) {
                     Debug.Assert(cur != null);
-                    cur = cur.Parent;
+                    cur = cur.ParentNode;
                 }
 
                 return (PythonAst) cur;
@@ -152,7 +152,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
                         // Accessing outer scope variable which is being deleted?
                         if (variable != null) {
-                            if (variable.Deleted && variable.Scope != Node && !variable.IsGlobal && binder.LanguageVersion < PythonLanguageVersion.V32) {
+                            if (variable.Deleted && variable.ScopeNode != Node && !variable.IsGlobal && binder.LanguageVersion < PythonLanguageVersion.V32) {
                                 // report syntax error
                                 binder.ReportSyntaxError(
                                     "can not delete variable '{0}' referenced in nested scope"
@@ -171,7 +171,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (_nonLocalVars != null) {
                 foreach (var variableName in _nonLocalVars) {
                     var bound = false;
-                    for (var parent = Node.Parent; parent != null; parent = parent.Parent) {
+                    for (var parent = Node.ParentNode; parent != null; parent = parent.ParentNode) {
                         if (parent.ScopeInfo.TryBindOuter(Node, variableName.Name, false, out var variable)) {
                             bound = !variable.IsGlobal;
                             break;
@@ -205,7 +205,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     }
 
                     if (variable.Kind == VariableKind.Local) {
-                        Debug.Assert(variable.Scope == Node);
+                        Debug.Assert(variable.ScopeNode == Node);
                     }
                 }
             }

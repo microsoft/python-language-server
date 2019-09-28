@@ -57,7 +57,7 @@ namespace Microsoft.Python.Parsing.Ast {
         #region IScopeNode
 
         public virtual string Name => "<comprehension>";
-        public IScopeNode Parent { get; set; }
+        public IScopeNode ParentNode { get; set; }
 
         public Statement Body => _body;
         

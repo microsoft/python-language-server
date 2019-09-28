@@ -230,7 +230,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Attempt to evaluate with specific arguments but prevent recursion.
             result = UnknownType;
             if (fd != null && !_callEvalStack.Contains(fd)) {
-                using (OpenScope(module, fd.Parent, out _)) {
+                using (OpenScope(module, fd.ParentNode, out _)) {
                     _callEvalStack.Push(fd);
                     try {
                         // TODO: cache results per function + argument set?

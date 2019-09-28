@@ -24,8 +24,14 @@ namespace Microsoft.Python.Parsing.Ast {
         public ScopeStatement() {
             _body = new EmptyStatement();
         }
+
+        /// <summary>
+        /// For backwards compatibility, the closest Scope statement this scope statement was declared in
+        /// </summary>
+        public ScopeStatement Parent => this.FindClosestScopeStatement();
         
-        public IScopeNode Parent { get; set; }
+        public IScopeNode ParentNode { get; set; }
+        
         public virtual Statement Body => _body;
 
         public bool IsClosure => ScopeInfo.IsClosure;

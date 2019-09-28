@@ -167,7 +167,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             var constructors = SymbolTable.Evaluators
-                .Where(kvp => kvp.Key.Parent == cd && (kvp.Key.Name == "__init__" || kvp.Key.Name == "__new__"))
+                .Where(kvp => kvp.Key.ParentNode == cd && (kvp.Key.Name == "__init__" || kvp.Key.Name == "__new__"))
                 .Select(c => c.Value)
                 .ExcludeDefault()
                 .ToArray();
@@ -181,7 +181,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             var innerClasses = SymbolTable.Evaluators
-                .Where(kvp => kvp.Key.Parent == cd && (kvp.Key is ClassDefinition))
+                .Where(kvp => kvp.Key.ParentNode == cd && (kvp.Key is ClassDefinition))
                 .Select(c => c.Value)
                 .ExcludeDefault()
                 .ToArray();

@@ -17,7 +17,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 if (variable.Kind == VariableKind.Local || variable.Kind == VariableKind.Parameter) {
                     from.ScopeInfo.AddFreeVariable(variable, true);
 
-                    for (var scope = from.Parent; scope != Node; scope = scope.Parent) {
+                    for (var scope = from.ParentNode; scope != Node; scope = scope.ParentNode) {
                         scope.ScopeInfo.AddFreeVariable(variable, false);
                     }
 
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             // Try to bind in outer scopes
-            for (var parent = Node.Parent; parent != null; parent = parent.Parent) {
+            for (var parent = Node.ParentNode; parent != null; parent = parent.ParentNode) {
                 if (parent.ScopeInfo.TryBindOuter(Node, name, true, out variable)) {
                     return variable;
                 }
@@ -66,7 +66,7 @@ namespace Microsoft.Python.Parsing.Ast {
                                          Node);
             }
 
-            if (ContainsImportStar && Node.Parent is FunctionDefinition) {
+            if (ContainsImportStar && Node.ParentNode is FunctionDefinition) {
                 binder.ReportSyntaxError(
                                          "import * is not allowed in function '{0}' because it is a nested function"
                                             .FormatUI(Name),
