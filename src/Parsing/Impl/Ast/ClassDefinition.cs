@@ -35,6 +35,8 @@ namespace Microsoft.Python.Parsing.Ast {
             _body = body;
             ScopeInfo = new ClassScopeInfo(this);
         }
+        
+        public override string Name => _name?.Name ?? string.Empty;
 
         public override int KeywordLength => 5;
 
@@ -51,8 +53,6 @@ namespace Microsoft.Python.Parsing.Ast {
         #endregion
 
         #region ScopeStatement
-
-        public override string Name => _name?.Name ?? string.Empty;
         public override ScopeInfo ScopeInfo { get; }
 
         #endregion
