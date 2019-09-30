@@ -33,14 +33,6 @@
         <PackageReference Include="NewtonSoft.Json" Version="12.0.2" />
         <PackageReference Include="StreamJsonRpc" Version="2.1.55" />
     </ItemGroup>
-    <ItemGroup Condition="$(AnalysisReference) != ''">
-        <Reference Include="Microsoft.Python.Analysis.Engine">
-            <HintPath>$(AnalysisReference)/Microsoft.Python.Analysis.Engine.dll</HintPath>
-        </Reference>
-        <Content Include="$(AnalysisReference)/**/*">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-    </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\Analysis\Ast\Impl\Microsoft.Python.Analysis.csproj" />
       <ProjectReference Include="..\..\Caching\Impl\Microsoft.Python.Analysis.Caching.csproj" />
