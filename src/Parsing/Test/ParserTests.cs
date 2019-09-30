@@ -2764,10 +2764,36 @@ namespace Microsoft.Python.Parsing.Tests {
                             CheckParameter(null, ParameterKind.List),
                             CheckParameter("e", ParameterKind.KeywordOnly),
                             CheckParameter("f", ParameterKind.KeywordOnly),
+                        }, CheckSuite(Pass)),
+                        CheckFuncDef("pow2", new[] {
+                            CheckParameter("x", ParameterKind.PositionalOnly),
+                            CheckParameter("y", ParameterKind.PositionalOnly),
+                            CheckParameter("z", ParameterKind.PositionalOnly, None),
+                            CheckParameter(null, ParameterKind.PositionalMarker),
+                        }, CheckSuite(Pass)),
+                        CheckFuncDef("foo", new[] {
+                            CheckParameter("name", ParameterKind.PositionalOnly),
+                            CheckParameter(null, ParameterKind.PositionalMarker),
+                            CheckParameter("kwds", ParameterKind.Dictionary),
                         }, CheckSuite(Pass))
                     )
                 );
                 errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void PositionalOnlyErrors() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseFile("PositionalOnlyErrors.py", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("positional marker after * args not allowed", new SourceSpan(1, 14, 1, 15)),
+                    new ErrorResult("positional marker after * args not allowed", new SourceSpan(4, 16, 4, 17)),
+                    new ErrorResult("positional marker after * args not allowed", new SourceSpan(7, 26, 7, 27)),
+                    new ErrorResult("positional marker after ** args not allowed", new SourceSpan(10, 20, 10, 21)),
+                    new ErrorResult("duplicate positional marker", new SourceSpan(13, 16, 13, 17)),
+                });
             }
         }
 

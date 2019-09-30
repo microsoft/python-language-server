@@ -2071,20 +2071,18 @@ namespace Microsoft.Python.Parsing {
             }
 
             if (posOnlyEnd.HasValue) {
+                // Re-kind parameters before '/' as positional only.
                 for (var pos = 0; pos < posOnlyEnd.Value; pos++) {
                     var p = parameters[pos];
-                    if (p.Kind != ParameterKind.Normal) {
-                        // uh oh
-                        continue;
+                    // Not having the "Normal" kind means the '/' is misplaced, which will be errored below.
+                    if (p.Kind == ParameterKind.Normal) {
+                        p.Kind = ParameterKind.PositionalOnly;
                     }
-                    p.Kind = ParameterKind.PositionalOnly;
                 }
-
-                // TODO: Check error cases.
             }
 
             // Now we validate the parameters
-            bool seenListArg = false, seenDictArg = false, seenDefault = false;
+            bool seenListArg = false, seenDictArg = false, seenDefault = false, seenPositional = false;
             var seenNames = new HashSet<string>();
             foreach (var p in parameters) {
                 if (p.Annotation != null) {
@@ -2138,6 +2136,15 @@ namespace Microsoft.Python.Parsing {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsDoubleArgumentErrorMsg);//duplicate ** args arguments
                     }
                     seenDictArg = true;
+                } else if (p.Kind == ParameterKind.PositionalMarker) {
+                    if (seenPositional) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerDuplicate);
+                    } else if (seenListArg) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAfterListArgsErrorMsg);
+                    } else if (seenDictArg) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAfterDictArgsErrorMsg);
+                    }
+                    seenPositional = true;
                 } else if (seenListArg && p.Kind != ParameterKind.KeywordOnly) {
                     ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalParameterNotAllowedErrorMsg);//positional parameter after * args not allowed
                 } else if (seenDictArg) {

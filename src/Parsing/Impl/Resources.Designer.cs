@@ -610,6 +610,33 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to positional marker after ** args not allowed.
+        /// </summary>
+        internal static string PositionalMarkerAfterDictArgsErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalMarkerAfterDictArgsErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to positional marker after * args not allowed.
+        /// </summary>
+        internal static string PositionalMarkerAfterListArgsErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalMarkerAfterListArgsErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to duplicate positional marker.
+        /// </summary>
+        internal static string PositionalMarkerDuplicate {
+            get {
+                return ResourceManager.GetString("PositionalMarkerDuplicate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to positional parameter after * args not allowed.
         /// </summary>
         internal static string PositionalParameterNotAllowedErrorMsg {

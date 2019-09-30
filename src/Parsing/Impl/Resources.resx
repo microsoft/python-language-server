@@ -300,6 +300,15 @@
   <data name="PositionalArgumentKeywardArgumentUnpackingErrorMsg" xml:space="preserve">
     <value>positional argument follows keyword argument unpacking</value>
   </data>
+  <data name="PositionalMarkerAfterDictArgsErrorMsg" xml:space="preserve">
+    <value>positional marker after ** args not allowed</value>
+  </data>
+  <data name="PositionalMarkerAfterListArgsErrorMsg" xml:space="preserve">
+    <value>positional marker after * args not allowed</value>
+  </data>
+  <data name="PositionalMarkerDuplicate" xml:space="preserve">
+    <value>duplicate positional marker</value>
+  </data>
   <data name="PositionalParameterNotAllowedErrorMsg" xml:space="preserve">
     <value>positional parameter after * args not allowed</value>
   </data>

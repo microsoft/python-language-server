@@ -15,11 +15,11 @@
 
 namespace Microsoft.Python.Parsing.Ast {
     public enum ParameterKind {
-        Normal, // Positional or keword
+        Normal, // Positional or keyword
         List, // *args, or just '*' with a null name for a marker
         Dictionary, // **kwargs
         KeywordOnly, // after '*'
-        PositionalOnly, // Before '/' marker
+        PositionalOnly, // Before '/'
         PositionalMarker // '/' marker itself
     }
 }

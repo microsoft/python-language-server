@@ -52,6 +52,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool IsKeywordOnly => Kind == ParameterKind.KeywordOnly;
 
+        public bool IsPositionalOnly => Kind == ParameterKind.PositionalOnly;
+
         public ParameterKind Kind { get; internal set; }
 
         public override IEnumerable<Node> GetChildNodes() {
