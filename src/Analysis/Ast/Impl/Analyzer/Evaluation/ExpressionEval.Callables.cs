@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        public IMember GetValueFromLambda(LambdaExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
+        public IMember GetValueFromLambda(LambdaExpression expr) {
             if (expr == null) {
                 return null;
             }
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var location = GetLocationOfName(fd);
             var ft = new PythonFunctionType(fd, null, location);
             var overload = new PythonFunctionOverload(ft, fd, location, expr.Function.ReturnAnnotation?.ToCodeString(Ast));
-            overload.SetParameters(CreateFunctionParameters(null, ft, fd, false, lookupOptions));
+            overload.SetParameters(CreateFunctionParameters(null, ft, fd, false));
             ft.AddOverload(overload);
             return ft;
         }
@@ -320,8 +320,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             IPythonClassType self, 
             IPythonClassMember function, 
             FunctionDefinition fd, 
-            bool declareVariables,
-            LookupOptions lookupOptions) {
+            bool declareVariables) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
             // For regular bound methods add first parameter and set it to the class.
@@ -351,8 +350,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             for (var i = skip; i < fd.Parameters.Length; i++) {
                 var p = fd.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
-                    var defaultValue = GetValueFromExpression(p.DefaultValue, lookupOptions);
-                    var paramType = GetTypeFromAnnotation(p.Annotation, out var isGeneric, lookupOptions) ?? UnknownType;
+                    var defaultValue = GetValueFromExpression(p.DefaultValue);
+                    var paramType = GetTypeFromAnnotation(p.Annotation, out var isGeneric) ?? UnknownType;
                     if (paramType.IsUnknown()) {
                         // If parameter has default value, look for the annotation locally first
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...

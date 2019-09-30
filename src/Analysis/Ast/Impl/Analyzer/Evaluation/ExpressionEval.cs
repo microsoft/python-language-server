@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     m = GetValueFromComprehension(comp, lookupOptions);
                     break;
                 case LambdaExpression lambda:
-                    m = GetValueFromLambda(lambda, lookupOptions);
+                    m = GetValueFromLambda(lambda);
                     break;
                 case FString fString:
                     m = GetValueFromFString(fString);

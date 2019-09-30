@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 var returnType = TryDetermineReturnValue();
 
-                var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub, LookupOptions.All);
+                var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub);
                 CheckValidOverload(parameters);
                 _overload.SetParameters(parameters);
 
