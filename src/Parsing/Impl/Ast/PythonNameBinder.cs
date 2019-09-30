@@ -236,7 +236,7 @@ namespace Microsoft.Python.Parsing.Ast {
             node.ModuleNameVariable = GlobalScope.ScopeInfo.EnsureGlobalVariable("__name__");
 
             // define the __doc__ and the __module__
-            if (node.Body.Documentation != null) {
+            if (node.Body?.Documentation != null) {
                 node.DocVariable = DefineName("__doc__");
             }
 
@@ -246,7 +246,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             // Walk the body
-            node.Body.Walk(this);
+            node.Body?.Walk(this);
             return false;
         }
 

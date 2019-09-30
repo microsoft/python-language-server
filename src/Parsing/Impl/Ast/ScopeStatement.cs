@@ -19,20 +19,14 @@ using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ScopeStatement : Statement, IScopeNode {
-        private Statement _body;
-
-        public ScopeStatement() {
-            _body = new EmptyStatement();
-        }
-
         /// <summary>
         /// For backwards compatibility, the closest Scope statement this scope statement was declared in
         /// </summary>
         public ScopeStatement Parent => this.FindClosestScopeStatement();
-        
+
         public IScopeNode ParentNode { get; set; }
-        
-        public virtual Statement Body => _body;
+
+        public virtual Statement Body { get; }
 
         public bool IsClosure => ScopeInfo.IsClosure;
 
@@ -57,5 +51,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
 
         public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
+
+        protected void Clear() => ScopeInfo.Clear();
     }
 }

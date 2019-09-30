@@ -16,7 +16,7 @@ namespace Microsoft.Python.Parsing {
         IScopeNode ParentNode { get; set; }
 
         /// <summary>
-        /// Body of the scope node, empty statement if not applicable 
+        /// Body of the scope node, null if not applicable 
         /// </summary>
         Statement Body { get; }
 

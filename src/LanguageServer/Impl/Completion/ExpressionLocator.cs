@@ -55,7 +55,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
             if (scope != null) {
                 var scopeStart = scope.GetStart(ast);
                 if (scope.Body != null) {
-                    top = scope.Body.GetEnd(ast).Line == scopeStart.Line
+                    top = scope.Body?.GetEnd(ast).Line == scopeStart.Line
                         ? scope.Body.GetStart(ast).Column
                         : scopeStart.Column;
                 } else {

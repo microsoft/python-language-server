@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis {
                 return false; // before the node
             }
 
-            if (fd.Body != null && index >= fd.Body.StartIndex) {
+            if (fd.Body != null && index >= fd.Body?.StartIndex) {
                 return false; // in the body of the function
             }
 

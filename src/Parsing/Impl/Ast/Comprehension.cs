@@ -25,12 +25,10 @@ namespace Microsoft.Python.Parsing.Ast {
     public abstract class ComprehensionIterator : Node { }
 
     public abstract class Comprehension : Expression, IScopeNode {
-        private Statement _body;
         private readonly ScopeInfo _scopeInfo;
 
         public Comprehension() {
             _scopeInfo = new FunctionScopeInfo(this);
-            _body = new EmptyStatement();
         }
 
         public abstract ImmutableArray<ComprehensionIterator> Iterators { get; }
@@ -59,7 +57,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public virtual string Name => "<comprehension>";
         public IScopeNode ParentNode { get; set; }
 
-        public Statement Body => _body;
+        public Statement Body => null;
         
         public PythonAst GlobalParent => ScopeInfo.GlobalParent;
         public ScopeInfo ScopeInfo => _scopeInfo;

@@ -27,7 +27,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         private int? _keywordEndIndex;
 
-        private Statement _body;
+        protected Statement _body;
 
         public FunctionDefinition(NameExpression name, Parameter[] parameters)
             : this(name, parameters, null) { }
