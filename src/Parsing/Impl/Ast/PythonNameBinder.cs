@@ -107,7 +107,7 @@ namespace Microsoft.Python.Parsing.Ast {
         }
     }
 
-    public class PythonNameBinder : PythonWalker {
+    internal class PythonNameBinder : PythonWalker {
         private IScopeNode _currentScope;
         private readonly PythonAst _ast;
         private readonly List<IScopeNode> _scopes = new List<IScopeNode>();
