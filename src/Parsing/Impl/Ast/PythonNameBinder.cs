@@ -44,15 +44,18 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.Parsing.Ast {
     internal class DefineBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
+
         public DefineBinder(PythonNameBinder binder) {
             _binder = binder;
         }
+
         public override bool Walk(NameExpression node) {
             if (node.Name != null) {
                 _binder.DefineName(node.Name);
             }
             return false;
         }
+
         public override bool Walk(ParenthesisExpression node) => true;
         public override bool Walk(TupleExpression node) => true;
         public override bool Walk(ListExpression node) => true;
@@ -93,6 +96,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
     class DeleteBinder : PythonWalkerNonRecursive {
         private readonly PythonNameBinder _binder;
+
         public DeleteBinder(PythonNameBinder binder) {
             _binder = binder;
         }
@@ -112,11 +116,9 @@ namespace Microsoft.Python.Parsing.Ast {
         public PythonAst GlobalScope { get; private set; }
 
         #region Recursive binders
-
         private readonly DefineBinder _define;
         private readonly DeleteBinder _delete;
         private readonly ParameterBinder _parameter;
-
         #endregion
 
         private readonly ErrorSink _errorSink;
@@ -132,12 +134,10 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         #region Public surface
-
         internal static void BindAst(PythonLanguageVersion langVersion, PythonAst ast, ErrorSink context, bool bindReferences) {
             var binder = new PythonNameBinder(langVersion, ast, context, bindReferences);
             binder.Bind(ast);
         }
-
         #endregion
 
         public PythonLanguageVersion LanguageVersion { get; }
@@ -195,7 +195,6 @@ namespace Microsoft.Python.Parsing.Ast {
         internal void ReportSyntaxError(string message, INode node) => _errorSink.Add(message, _ast.NewLineLocations, node.StartIndex, node.EndIndex, ErrorCodes.SyntaxError, Severity.Error);
 
         #region AstBinder Overrides
-
         // AssignmentStatement
         public override bool Walk(AssignmentStatement node) {
             foreach (var e in node.Left) {
@@ -256,8 +255,7 @@ namespace Microsoft.Python.Parsing.Ast {
             PopScope();
         }
 
-        // ListComprehension
-        public override bool Walk(ListComprehension node) {
+        private bool Walk(Comprehension node) {
             // Only create new scope if 3x
             if (LanguageVersion.Is3x()) {
                 PushScope(node);
@@ -266,54 +264,41 @@ namespace Microsoft.Python.Parsing.Ast {
             return true;
         }
 
-        // ListComprehension
-        public override void PostWalk(ListComprehension node) {
+        private void PostWalk(Comprehension node) {
             if (LanguageVersion.Is3x()) {
                 Debug.Assert(node == _currentScope);
                 PopScope();
             }
-            base.PostWalk(node);
+            switch (node) {
+                case ListComprehension l:
+                    base.PostWalk(l);
+                    break;
+                case DictionaryComprehension d:
+                    base.PostWalk(d);
+                    break;
+                case SetComprehension s:
+                    base.PostWalk(s);
+                    break;
+            }
         }
+
+        // ListComprehension
+        public override bool Walk(ListComprehension node) => Walk(node);
+
+        // ListComprehension
+        public override void PostWalk(ListComprehension node) => PostWalk(node);
 
         // DictionaryComprehension
-        public override bool Walk(DictionaryComprehension node) {
-            // Only create new scope if 3x
-            if (LanguageVersion.Is3x()) {
-                PushScope(node);
-            }
-
-            return true;
-        }
+        public override bool Walk(DictionaryComprehension node) => Walk(node);
 
         // DictionaryComprehension
-        public override void PostWalk(DictionaryComprehension node) {
-            if (LanguageVersion.Is3x()) {
-                Debug.Assert(node == _currentScope);
-                PopScope();
-            }
-            base.PostWalk(node);
-        }
+        public override void PostWalk(DictionaryComprehension node) => PostWalk(node);
 
         // SetComprehension
-        public override bool Walk(SetComprehension node) {
-            // Only create new scope if 3x
-            if (LanguageVersion.Is3x()) {
-                PushScope(node);
-            }
-
-            return true;
-        }
+        public override bool Walk(SetComprehension node) => Walk(node);
 
         // SetComprehension
-        public override void PostWalk(SetComprehension node) {
-            if (!LanguageVersion.Is3x()) {
-                base.PostWalk(node);
-                return;
-            }
-
-            Debug.Assert(node == _currentScope);
-            PopScope();
-        }
+        public override void PostWalk(SetComprehension node) => PostWalk(node);
 
         // DelStatement
         public override bool Walk(DelStatement node) {
@@ -647,7 +632,6 @@ namespace Microsoft.Python.Parsing.Ast {
             node.Left.Walk(_define);
             return true;
         }
-
         #endregion
     }
 }
