@@ -2138,11 +2138,15 @@ namespace Microsoft.Python.Parsing {
                     seenDictArg = true;
                 } else if (p.Kind == ParameterKind.PositionalMarker) {
                     if (seenPositional) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerDuplicate);
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerDuplicateErrorMsg);
                     } else if (seenListArg) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAfterListArgsErrorMsg);
                     } else if (seenDictArg) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAfterDictArgsErrorMsg);
+                    } else if (p.Annotation != null) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAnnotationErrorMsg);
+                    } else if (p.DefaultValue != null) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerDefaultErrorMsg);
                     }
                     seenPositional = true;
                 } else if (seenListArg && p.Kind != ParameterKind.KeywordOnly) {

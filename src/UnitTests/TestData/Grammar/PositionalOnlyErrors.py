@@ -12,3 +12,9 @@ def f(a, **kwargs, /):
 
 def f(a, /, b, /, c):
     pass
+
+def f(a, /:int):
+    pass
+
+def f(a, / =123):
+    pass

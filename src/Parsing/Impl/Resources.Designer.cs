@@ -628,11 +628,29 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to positional marker may not have annotation.
+        /// </summary>
+        internal static string PositionalMarkerAnnotationErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalMarkerAnnotationErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to positional marker may not have default.
+        /// </summary>
+        internal static string PositionalMarkerDefaultErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalMarkerDefaultErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to duplicate positional marker.
         /// </summary>
-        internal static string PositionalMarkerDuplicate {
+        internal static string PositionalMarkerDuplicateErrorMsg {
             get {
-                return ResourceManager.GetString("PositionalMarkerDuplicate", resourceCulture);
+                return ResourceManager.GetString("PositionalMarkerDuplicateErrorMsg", resourceCulture);
             }
         }
         
