@@ -52,6 +52,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool IsKeywordOnly => Kind == ParameterKind.KeywordOnly;
 
+        public bool IsPositionalMarker => Kind == ParameterKind.PositionalMarker;
+
         public bool IsPositionalOnly => Kind == ParameterKind.PositionalOnly;
 
         public ParameterKind Kind { get; internal set; }
@@ -118,6 +120,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     leadingWhiteSpace = null;
                     res.Append('*');
                     break;
+                case ParameterKind.PositionalOnly:
                 case ParameterKind.Normal:
                     if (this.IsAltForm(ast)) {
                         res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? string.Empty);
@@ -132,6 +135,11 @@ namespace Microsoft.Python.Parsing.Ast {
                     }
                     break;
                 case ParameterKind.KeywordOnly:
+                    break;
+                case ParameterKind.PositionalMarker:
+                    res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? string.Empty);
+                    leadingWhiteSpace = null;
+                    res.Append('/');
                     break;
                 default: throw new InvalidOperationException();
             }

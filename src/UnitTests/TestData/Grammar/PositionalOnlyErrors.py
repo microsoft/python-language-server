@@ -18,3 +18,6 @@ def f(a, /:int):
 
 def f(a, / =123):
     pass
+
+def f(/):
+    pass
