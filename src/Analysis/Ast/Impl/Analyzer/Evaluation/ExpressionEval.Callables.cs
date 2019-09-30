@@ -27,15 +27,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
         private readonly Stack<FunctionDefinition> _callEvalStack = new Stack<FunctionDefinition>();
 
-        public IMember GetValueFromCallable(CallExpression expr) {
+        public IMember GetValueFromCallable(CallExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (expr?.Target == null) {
                 return null;
             }
 
-            var target = GetValueFromExpression(expr.Target);
+            var target = GetValueFromExpression(expr.Target, lookupOptions);
             target?.AddReference(GetLocationOfName(expr.Target));
 
-            var result = GetValueFromGeneric(target, expr);
+            var result = GetValueFromGeneric(target, expr, lookupOptions);
             if (result != null) {
                 return result;
             }
@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return value;
         }
 
-        public IMember GetValueFromLambda(LambdaExpression expr) {
+        public IMember GetValueFromLambda(LambdaExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (expr == null) {
                 return null;
             }
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             var location = GetLocationOfName(fd);
             var ft = new PythonFunctionType(fd, null, location);
             var overload = new PythonFunctionOverload(ft, fd, location, expr.Function.ReturnAnnotation?.ToCodeString(Ast));
-            overload.SetParameters(CreateFunctionParameters(null, ft, fd, false));
+            overload.SetParameters(CreateFunctionParameters(null, ft, fd, false, lookupOptions));
             ft.AddOverload(overload);
             return ft;
         }
@@ -316,7 +316,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        public IReadOnlyList<IParameterInfo> CreateFunctionParameters(IPythonClassType self, IPythonClassMember function, FunctionDefinition fd, bool declareVariables) {
+        public IReadOnlyList<IParameterInfo> CreateFunctionParameters(
+            IPythonClassType self, 
+            IPythonClassMember function, 
+            FunctionDefinition fd, 
+            bool declareVariables,
+            LookupOptions lookupOptions) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
             // For regular bound methods add first parameter and set it to the class.
@@ -346,8 +351,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             for (var i = skip; i < fd.Parameters.Length; i++) {
                 var p = fd.Parameters[i];
                 if (!string.IsNullOrEmpty(p.Name)) {
-                    var defaultValue = GetValueFromExpression(p.DefaultValue);
-                    var paramType = GetTypeFromAnnotation(p.Annotation, out var isGeneric) ?? UnknownType;
+                    var defaultValue = GetValueFromExpression(p.DefaultValue, lookupOptions);
+                    var paramType = GetTypeFromAnnotation(p.Annotation, out var isGeneric, lookupOptions) ?? UnknownType;
                     if (paramType.IsUnknown()) {
                         // If parameter has default value, look for the annotation locally first
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
@@ -384,7 +389,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 VariableSource.Declaration, p.NameExpression);
         }
 
-        internal void ProcessCallForReferences(CallExpression callExpr) {
+        internal void ProcessCallForReferences(CallExpression callExpr, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (Module.ModuleType != ModuleType.User) {
                 return;
             }
@@ -392,10 +397,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             switch (callExpr.Target) {
                 case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
                     // Add reference to the function
-                    this.LookupNameInScopes(nex.Name)?.AddReference(GetLocationOfName(nex));
+                    this.LookupNameInScopes(nex.Name, lookupOptions)?.AddReference(GetLocationOfName(nex));
                     break;
                 case MemberExpression mex when !string.IsNullOrEmpty(mex.Name): {
-                    var t = GetValueFromExpression(mex.Target)?.GetPythonType();
+                    var t = GetValueFromExpression(mex.Target, lookupOptions)?.GetPythonType();
                     t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
                     break;
                 }
@@ -403,7 +408,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // Add references to all arguments.
             foreach (var arg in callExpr.Args) {
-                GetValueFromExpression(arg.Expression);
+                GetValueFromExpression(arg.Expression, lookupOptions);
             }
         }
     }

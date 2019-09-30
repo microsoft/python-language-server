@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             using (Eval.OpenScope(_function.DeclaringModule, FunctionDefinition, out _)) {
                 var returnType = TryDetermineReturnValue();
 
-                var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub);
+                var parameters = Eval.CreateFunctionParameters(_self, _function, FunctionDefinition, !stub, LookupOptions.All);
                 CheckValidOverload(parameters);
                 _overload.SetParameters(parameters);
 
@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private IPythonType TryDetermineReturnValue() {
-            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation, LookupOptions.All);
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].

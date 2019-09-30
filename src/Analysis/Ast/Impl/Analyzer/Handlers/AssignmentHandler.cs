@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class AssignmentHandler : StatementHandler {
         public AssignmentHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleAssignment(AssignmentStatement node) {
+        public void HandleAssignment(AssignmentStatement node, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (node.Right is ErrorExpression) {
                 return;
             }
@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             // TODO: Assigning like this is wrong; the assignment needs to be considering the
             // right side's unpacking for what's on the left, not just apply it to every case.
-            var value = ExtractRhs(node.Right, lhs.FirstOrDefault());
+            var value = ExtractRhs(node.Right, lhs.FirstOrDefault(), lookupOptions);
             if (value != null) {
                 foreach (var expr in lhs) {
                     AssignToExpr(expr, value);
@@ -55,8 +55,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private IMember ExtractRhs(Expression rhs, Expression typed) {
-            var value = Eval.GetValueFromExpression(rhs) ?? Eval.UnknownType;
+        private IMember ExtractRhs(Expression rhs, Expression typed, LookupOptions lookupOptions = LookupOptions.Normal) {
+            var value = Eval.GetValueFromExpression(rhs, lookupOptions) ?? Eval.UnknownType;
 
             // Check PEP hint first
             var valueType = Eval.GetTypeFromPepHint(rhs);
@@ -117,12 +117,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value) {
+        public void HandleAnnotatedExpression(ExpressionWithAnnotation expr, IMember value, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (expr?.Annotation == null) {
                 return;
             }
 
-            var variableType = Eval.GetTypeFromAnnotation(expr.Annotation);
+            var variableType = Eval.GetTypeFromAnnotation(expr.Annotation, lookupOptions);
             // If value is null, then this is a pure declaration like 
             //   x: List[str]
             // without a value. If value is provided, then this is

@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// and the specific type arguments, such as Generic[T] or constructor
         /// of a generic class.
         /// </summary>
-        private IMember GetValueFromGeneric(IMember target, Expression expr) {
+        private IMember GetValueFromGeneric(IMember target, Expression expr, LookupOptions lookupOptions) {
             if (!(target is IGenericType t && t.IsGeneric())) {
                 return null;
             }
@@ -48,13 +48,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // Indexing returns type as from A[int]
                     case IndexExpression indexExpr when target is IGenericType gt:
                         // Generic[T1, T2, ...]
-                        var indices = EvaluateIndex(indexExpr);
+                        var indices = EvaluateIndex(indexExpr, lookupOptions);
                         return CreateSpecificTypeFromIndex(gt, indices, expr);
                     case CallExpression callExpr when target is PythonClassType c1:
                         // Alternative instantiation:
                         //  class A(Generic[T]): ...
                         //  x = A(1234)
-                        var arguments = EvaluateCallArgs(callExpr).ToArray();
+                        var arguments = EvaluateCallArgs(callExpr, lookupOptions).ToArray();
                         return CreateClassInstance(c1, arguments, callExpr);
                 }
             }
@@ -111,17 +111,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // For other types just use supplied arguments	
             return args.Count > 0 ? gt.CreateSpecificType(new ArgumentSet(args, expr, this)) : UnknownType;
         }
-        private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr) {
+        private IReadOnlyList<IMember> EvaluateIndex(IndexExpression expr, LookupOptions lookupOptions) {
             var indices = new List<IMember>();
             if (expr.Index is TupleExpression tex) {
                 foreach (var item in tex.Items) {
-                    var e = GetValueFromExpression(item);
-                    var forwardRef = GetValueFromForwardRef(e);
+                    var e = GetValueFromExpression(item, lookupOptions);
+                    var forwardRef = GetValueFromForwardRef(e, lookupOptions);
                     indices.Add(forwardRef ?? e);
                 }
             } else {
-                var index = GetValueFromExpression(expr.Index);
-                var forwardRef = GetValueFromForwardRef(index);
+                var index = GetValueFromExpression(expr.Index, lookupOptions);
+                var forwardRef = GetValueFromForwardRef(index, lookupOptions);
 
                 if (forwardRef != null) {
                     indices.Add(forwardRef);
@@ -140,20 +140,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         /// List['str'] => List[str]
         /// 'A[int]' => A[int]
         /// </summary>
-        private IMember GetValueFromForwardRef(IMember index) {
+        private IMember GetValueFromForwardRef(IMember index, LookupOptions lookupOptions) {
             index.TryGetConstant(out string forwardRefStr);
             if (string.IsNullOrEmpty(forwardRefStr)) {
                 return null;
             }
 
             var forwardRefExpr = AstUtilities.TryCreateExpression(forwardRefStr, Interpreter.LanguageVersion);
-            return GetValueFromExpression(forwardRefExpr);
+            return GetValueFromExpression(forwardRefExpr, lookupOptions);
         }
 
-        private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr) {
+        private IReadOnlyList<IMember> EvaluateCallArgs(CallExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             var indices = new List<IMember>();
             foreach (var e in expr.Args.Select(a => a.Expression)) {
-                var value = GetValueFromExpression(e) ?? UnknownType;
+                var value = GetValueFromExpression(e, lookupOptions) ?? UnknownType;
                 indices.Add(value);
             }
             return indices;
