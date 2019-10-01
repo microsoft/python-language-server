@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
@@ -351,6 +352,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
+        [DebuggerDisplay("{Name}")]
         private sealed class Argument : IArgument {
             /// <summary>
             /// Argument name.
