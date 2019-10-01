@@ -13,7 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
@@ -34,6 +34,9 @@ namespace Microsoft.Python.Analysis.Types {
             DefaultValue = defaultValue;
             Type = type;
             Kind = kind ?? ParameterKind.Normal;
+#if DEBUG
+            Debug.Assert(Kind != ParameterKind.PositionalMarker);
+#endif
         }
 
         public string Name { get; }

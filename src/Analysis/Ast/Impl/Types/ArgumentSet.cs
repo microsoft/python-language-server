@@ -129,16 +129,20 @@ namespace Microsoft.Python.Analysis.Types {
             // the value of the argument assigned to that parameter. Slots which have
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
-            // The positional marker is skipped.
-            var overloadParamCount = overload.Parameters.Count(p => p.Kind != ParameterKind.PositionalMarker);
 
-            var slots = new List<Argument>(overloadParamCount);
+            var slots = new Argument[overload.Parameters.Count];
+            var seenPositional = false;
+
             for (var i = 0; i < overload.Parameters.Count; i++) {
-                var node = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
-                if (node?.Kind == ParameterKind.PositionalMarker) {
-                    continue;
-                }
-                slots.Add(new Argument(overload.Parameters[i], node));
+                var p = overload.Parameters[i];
+
+                // If the current parameter is not positional only, and we've seen a positional only parameter,
+                // then we've passed the positional marker in the AST and need to offset our fd.Parameter access by one.
+                seenPositional = seenPositional || p.Kind == ParameterKind.PositionalOnly;
+                var fdI = seenPositional && p.Kind != ParameterKind.PositionalOnly ? i + 1 : i;
+
+                var node = fd != null && fdI < fd.Parameters.Length ? fd.Parameters[fdI] : null;
+                slots[i] = new Argument(overload.Parameters[i], node);
             }
 
             // Locate sequence argument, if any
@@ -159,7 +163,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             // Class methods
             var formalParamIndex = 0;
-            if (fn.DeclaringType != null && fn.HasClassFirstArgument() && slots.Count > 0) {
+            if (fn.DeclaringType != null && fn.HasClassFirstArgument() && slots.Length > 0) {
                 slots[0].Value = instanceType ?? fn.DeclaringType;
                 formalParamIndex++;
             }
@@ -175,7 +179,7 @@ namespace Microsoft.Python.Analysis.Types {
                         break;
                     }
 
-                    if (formalParamIndex >= overloadParamCount) {
+                    if (formalParamIndex >= overload.Parameters.Count) {
                         // We ran out of formal parameters and yet haven't seen
                         // any sequence or dictionary ones. This looks like an error.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, callLocation.Span,

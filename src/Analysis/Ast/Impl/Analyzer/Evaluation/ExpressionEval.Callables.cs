@@ -317,9 +317,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         public IReadOnlyList<IParameterInfo> CreateFunctionParameters(
-            IPythonClassType self, 
-            IPythonClassMember function, 
-            FunctionDefinition fd, 
+            IPythonClassType self,
+            IPythonClassMember function,
+            FunctionDefinition fd,
             bool declareVariables) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
@@ -368,7 +368,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         DeclareParameter(p, pi);
                     }
                     parameters.Add(pi);
-                } else if (p.IsList || p.IsDictionary || p.IsPositionalMarker) {
+                } else if (p.IsList || p.IsDictionary) {
                     parameters.Add(new ParameterInfo(Ast, p, null, null, false));
                 }
             }
@@ -399,10 +399,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     this.LookupNameInScopes(nex.Name, lookupOptions)?.AddReference(GetLocationOfName(nex));
                     break;
                 case MemberExpression mex when !string.IsNullOrEmpty(mex.Name): {
-                    var t = GetValueFromExpression(mex.Target, lookupOptions)?.GetPythonType();
-                    t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
-                    break;
-                }
+                        var t = GetValueFromExpression(mex.Target, lookupOptions)?.GetPythonType();
+                        t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
+                        break;
+                    }
             }
 
             // Add references to all arguments.
