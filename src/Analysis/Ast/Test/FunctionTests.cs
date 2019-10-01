@@ -667,7 +667,7 @@ def f(a, b, /, c, d):
             var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             analysis.Should().HaveFunction("f")
                     .Which.Should().HaveSingleOverload()
-                    .Which.Should().HaveParameters("a", "b", "", "c", "d");
+                    .Which.Should().HaveParameters("a", "b", "c", "d");
         }
     }
 }
