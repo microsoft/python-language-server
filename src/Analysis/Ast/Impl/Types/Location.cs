@@ -20,10 +20,9 @@ namespace Microsoft.Python.Analysis.Types {
     public readonly struct Location {
         public Location(IPythonModule module) : this(module, default) { }
 
-        public Location(IPythonModule module, IndexSpan indexSpan) {
-            Module = module;
-            IndexSpan = indexSpan;
-        }
+        public Location(IPythonModule module, IndexSpan indexSpan) => (Module, IndexSpan) = (module, indexSpan);
+
+        public void Deconstruct(out IPythonModule module, out IndexSpan indexSpan) => (module, indexSpan) = (Module, IndexSpan);
 
         public IPythonModule Module { get; }
         public IndexSpan IndexSpan { get; }

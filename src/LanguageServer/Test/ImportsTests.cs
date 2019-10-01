@@ -476,6 +476,62 @@ a3.";
         }
 
         [TestMethod, Priority(0)]
+        public async Task LoopImports_Variables() {
+            var module1Code = @"
+class A1: 
+    def M1(self): return 0; pass
+
+from module2 import y3
+x = y3.M3()
+";
+            var module2Code = @"
+from module1 import A1
+y1 = A1()
+from module3 import A3
+y3 = A3()
+";
+            var module3Code = @"
+class A3:
+    def M3(self): return '0'; pass
+
+from module2 import y1
+z = y1.M1()
+";
+
+            var appCode = @"
+from module1 import x
+from module3 import z
+
+x.
+z.";
+
+            var module1Uri = TestData.GetTestSpecificUri("module1.py");
+            var module2Uri = TestData.GetTestSpecificUri("module2.py");
+            var module3Uri = TestData.GetTestSpecificUri("module3.py");
+            var appUri = TestData.GetTestSpecificUri("app.py");
+
+            var root = Path.GetDirectoryName(appUri.AbsolutePath);
+            await CreateServicesAsync(root, PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var analyzer = Services.GetService<IPythonAnalyzer>();
+
+            rdt.OpenDocument(module3Uri, module3Code);
+            rdt.OpenDocument(module2Uri, module2Code);
+            rdt.OpenDocument(module1Uri, module1Code);
+
+            var app = rdt.OpenDocument(appUri, appCode);
+            await analyzer.WaitForCompleteAnalysisAsync();
+            var analysis = await app.GetAnalysisAsync(-1);
+
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var comps = cs.GetCompletions(analysis, new SourceLocation(5, 3));
+            comps.Should().HaveLabels("capitalize");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(6, 3));
+            comps.Should().HaveLabels("bit_length");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task TypingModule() {
             var analysis = await GetAnalysisAsync(@"from typing import ");
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);

@@ -339,7 +339,7 @@ namespace Microsoft.Python.Analysis.Modules {
             int version;
             Parser parser;
 
-            //Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name}");
+            // Log?.Log(TraceEventType.Verbose, $"Parse begins: {Name} ({ModuleType})");
 
             lock (_syncObj) {
                 version = _buffer.Version;
@@ -355,7 +355,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
             var ast = parser.ParseFile(Uri);
 
-            //Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name}");
+            // Log?.Log(TraceEventType.Verbose, $"Parse complete: {Name} ({ModuleType})");
 
             lock (_syncObj) {
                 cancellationToken.ThrowIfCancellationRequested();

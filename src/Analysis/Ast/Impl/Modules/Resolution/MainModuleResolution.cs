@@ -172,7 +172,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
-            var value = (builtinModuleNamesMember as IVariable)?.Value ?? builtinModuleNamesMember;
+            var value = builtinModuleNamesMember is IVariable variable ? variable.Value : builtinModuleNamesMember;
             if (value.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
                 PathResolver.SetBuiltins(builtinModuleNames);

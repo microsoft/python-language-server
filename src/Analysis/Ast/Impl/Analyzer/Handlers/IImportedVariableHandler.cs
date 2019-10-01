@@ -1,4 +1,4 @@
-﻿// Copyright(c) Microsoft Corporation
+// Copyright(c) Microsoft Corporation
 // All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the License); you may not use
@@ -13,10 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.Analysis {
-    public static class VariableExtensions {
-        public static T GetValue<T>(this IVariable v) where T : class => v.Value as T;
+namespace Microsoft.Python.Analysis.Analyzer.Handlers {
+    internal interface IImportedVariableHandler {
+        IVariable GetVariable(in PythonVariableModule module, in string name);
     }
 }

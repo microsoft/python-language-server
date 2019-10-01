@@ -348,7 +348,7 @@ namespace Microsoft.Python.Analysis.Types {
                         // Get locally declared variable, make sure it is a declaration
                         // and that it declared a class.
                         var lv = scope.Variables[b.Name];
-                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(this.Location)) {
+                        if (lv.Source != VariableSource.Import && lv.Value is IPythonClassType cls && cls.IsDeclaredAfterOrAt(Location)) {
                             // There is a declaration with the same name, but it appears later in the module. Use the import.
                             if (!importedType.IsUnknown()) {
                                 newBases.Add(importedType);

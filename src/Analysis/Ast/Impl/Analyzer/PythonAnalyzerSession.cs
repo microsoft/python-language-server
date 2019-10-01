@@ -14,23 +14,29 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime;
 using System.Runtime.ExceptionServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Testing;
+using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -186,7 +192,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private async Task<int> AnalyzeAffectedEntriesAsync(Stopwatch stopWatch) {
-            IDependencyChainNode<PythonAnalyzerEntry> node;
+            IDependencyChainNode node;
             var remaining = 0;
             var ace = new AsyncCountdownEvent(0);
 
@@ -196,13 +202,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     isCanceled = _isCanceled;
                 }
 
-                if (isCanceled && !node.Value.NotAnalyzed) {
-                    remaining++;
-                    node.MoveNext();
-                    continue;
+                if (isCanceled) {
+                    switch (node) {
+                        case IDependencyChainLoopNode<PythonAnalyzerEntry> loop when loop.Values.All(e => !e.NotAnalyzed):
+                        case IDependencyChainSingleNode<PythonAnalyzerEntry> single when !single.Value.NotAnalyzed:
+                            remaining++;
+                            node.MoveNext();
+                            continue;
+                    }
                 }
-
-                ActivityTracker.OnEnqueueModule(node.Value.Module.FilePath);
 
                 var taskLimitReached = false;
                 lock (_syncObj) {
@@ -230,26 +238,50 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             return remaining;
         }
-
-
-        private bool IsAnalyzedLibraryInLoop(IDependencyChainNode<PythonAnalyzerEntry> node, IDocumentAnalysis currentAnalysis)
-            => !node.HasMissingDependencies && currentAnalysis is LibraryAnalysis && node.IsWalkedWithDependencies && node.IsValidVersion;
-
-        private void RunAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, Stopwatch stopWatch)
+        
+        private void RunAnalysis(IDependencyChainNode node, Stopwatch stopWatch) 
             => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
 
-        private Task StartAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch)
+        private Task StartAnalysis(IDependencyChainNode node, AsyncCountdownEvent ace, Stopwatch stopWatch)
             => Task.Run(() => Analyze(node, ace, stopWatch));
+
+        private void Analyze(IDependencyChainNode node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
+            try {
+                switch (node) {
+                    case IDependencyChainSingleNode<PythonAnalyzerEntry> single:
+                        Analyze(single, stopWatch);
+                        break;
+                    case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
+                        AnalyzeLoop(loop, stopWatch);
+                        break;
+                }
+            } finally {
+                node.MoveNext();
+
+                bool isCanceled;
+                lock (_syncObj) {
+                    isCanceled = _isCanceled;
+                }
+
+                if (!isCanceled) {
+                    _progress.ReportRemaining(_walker.Remaining);
+                }
+
+                Interlocked.Decrement(ref _runningTasks);
+                ace?.Signal();
+            }
+        }
 
         /// <summary>
         /// Performs analysis of the document. Returns document global scope
         /// with declared variables and inner scopes. Does not analyze chain
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
-        private void Analyze(IDependencyChainNode<PythonAnalyzerEntry> node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
+        private void Analyze(IDependencyChainSingleNode<PythonAnalyzerEntry> node, Stopwatch stopWatch) {
             try {
+                ActivityTracker.OnEnqueueModule(node.Value.Module.FilePath);
                 var entry = node.Value;
-                if (!CanUpdateAnalysis(entry, node, _walker.Version, out var module, out var ast, out var currentAnalysis)) {
+                if (!CanUpdateAnalysis(entry, _walker.Version, out var module, out var ast)) {
                     return;
                 }
                 var startTime = stopWatch.Elapsed;
@@ -263,29 +295,19 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 node.Value.TrySetException(exception, _walker.Version);
                 node.MarkWalked();
                 LogException(node.Value.Module, exception);
-            } finally {
-                node.MoveNext();
-
-                lock (_syncObj) {
-                    if (!_isCanceled) {
-                        _progress.ReportRemaining(_walker.Remaining);
-                    }
-                    _runningTasks--;
-                    ace?.Signal();
-                }
             }
         }
 
         private void AnalyzeEntry() {
             var stopWatch = _log != null ? Stopwatch.StartNew() : null;
             try {
-                if (!CanUpdateAnalysis(_entry, null, Version, out var module, out var ast, out var currentAnalysis)) {
+                if (!CanUpdateAnalysis(_entry, Version, out var module, out var ast)) {
                     return;
                 }
                 var startTime = stopWatch?.Elapsed ?? TimeSpan.Zero;
                 AnalyzeEntry(null, _entry, module, ast, Version);
 
-                LogCompleted(null, module, stopWatch, startTime);
+                LogCompleted(module, stopWatch, startTime);
             } catch (OperationCanceledException oce) {
                 _entry.TryCancel(oce, Version);
                 LogCanceled(_entry.Module);
@@ -297,69 +319,185 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private bool CanUpdateAnalysis(
-            PythonAnalyzerEntry entry,
-            IDependencyChainNode<PythonAnalyzerEntry> node,
-            int version,
-            out IPythonModule module,
-            out PythonAst ast,
-            out IDocumentAnalysis currentAnalysis) {
-
-            if (!entry.CanUpdateAnalysis(version, out module, out ast, out currentAnalysis)) {
-                if (IsAnalyzedLibraryInLoop(node, currentAnalysis)) {
-                    // Library analysis exists, don't analyze again
-                    return false;
+        private void AnalyzeLoop(IDependencyChainLoopNode<PythonAnalyzerEntry> loopNode, Stopwatch stopWatch) {
+            var entries = new Dictionary<IPythonModule, PythonAnalyzerEntry>();
+            var variables = new Dictionary<(IPythonModule Module, string Name), int>();
+            var importNames = new List<(IPythonModule From, int FromPosition, IPythonModule To, string ToName)>();
+            var cachedVariables = new List<(IPythonModule Module, IVariableCollection Variables)>();
+            var asts = new List<(IPythonModule Module, PythonAst Ast)>();
+            var startTime = stopWatch.Elapsed;
+            
+            foreach (var entry in loopNode.Values) {
+                if (!CanUpdateAnalysis(entry, Version, out var module, out var ast)) {
+                    _log?.Log(TraceEventType.Verbose, $"Analysis of loop canceled.");
+                    return;
                 }
-                if (ast == null) {
-                    if (currentAnalysis == null) {
-                        // Entry doesn't have ast yet. There should be at least one more session.
-                        Cancel();
-                        _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled (no AST yet).");
-                        return false;
+
+                entries[module] = entry;
+                var analysis = TryRestoreCachedAnalysis(module);
+                if (analysis != default) {
+                    AddLoopImportsFromCachedAnalysis(importNames, variables, module, analysis);
+                    cachedVariables.Add((module, analysis.GlobalScope.Variables));
+                } else {
+                    AddLoopImportsFromAst(importNames, variables, module, ast);
+                    asts.Add((module, ast));
+                }
+
+                lock (_syncObj) {
+                    if (_isCanceled) {
+                        return;
                     }
-                    //Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
-                    return false;
                 }
-
-                _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled. Version: {version}, current: {module.Analysis.Version}.");
-                return false;
             }
-            return true;
+
+            if (asts.Count == 0) {
+                if (_log != null && _log.LogLevel == TraceEventType.Verbose) {
+                    var qualifiedNames = string.Join(", ", cachedVariables.Select(v => v.Module.QualifiedName));
+                    _log?.Log(TraceEventType.Verbose, $"Attempt to reanalyze fully cached modules cycle: {qualifiedNames}");
+                }
+            }
+            
+            var imports = new List<(IPythonModule From, int FromPosition, IPythonModule To, int ToPosition)>();
+            foreach (var (fromModule, fromPosition, toModule, toName) in importNames) {
+                if (toName == null) {
+                    imports.Add((fromModule, fromPosition, toModule, int.MaxValue));
+                } else if (variables.TryGetValue((toModule, toName), out var toPosition)) {
+                    imports.Add((fromModule, fromPosition, toModule, toPosition));
+                }
+            }
+            
+            var startingModule = LocationLoopResolver<IPythonModule>.FindStartingItem(imports);
+            lock (_syncObj) {
+                if (_isCanceled) {
+                    return;
+                }
+            }
+
+            var startingAst = asts.FirstOrDefault(a => a.Module.Equals(startingModule)).Ast;
+            if (startingModule == default || startingAst == default) {
+                // Use any random module
+                (startingModule, startingAst) = asts.First();
+            }
+            
+            var importedVariableResolver = new LoopImportedVariableHandler(_services, asts, cachedVariables);
+            var startingWalker = importedVariableResolver.CreateWalker(startingModule, startingAst);
+            startingAst.Walk(startingWalker);
+            startingWalker.Complete();
+
+            var version = _walker.Version;
+            foreach (var walker in importedVariableResolver.Walkers) {
+                var module = (IDocument)walker.Module;
+                
+                var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
+                if (analysis != null) {
+                    CompleteAnalysis(entries[module], module, version, analysis);
+                }
+            }
+
+            if (MarkNodeWalked(loopNode)) {
+                LogCompleted(loopNode, entries.Keys, stopWatch, startTime);
+            }
         }
 
-        private void AnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version) {
+        private void AddLoopImportsFromCachedAnalysis(in List<(IPythonModule From, int FromPosition, IPythonModule To, string ToName)> unresolvedImports, 
+            in Dictionary<(IPythonModule Module, string Name), int> variables, 
+            in IPythonModule module, 
+            in IDocumentAnalysis analysis) {
+            
+            foreach (var variable in analysis.GlobalScope.Variables) {
+                var key = (module, variable.Name);
+                var location = variable.Location.IndexSpan.Start;
+                if (!variables.TryGetValue(key, out var currentLocation) || currentLocation > location) {
+                    variables[key] = location;
+                }
+            }
+        }
+
+        private void AddLoopImportsFromAst(in List<(IPythonModule From, int FromPosition, IPythonModule To, string ToName)> imports,
+            in Dictionary<(IPythonModule Module, string Name), int> variables,
+            in IPythonModule module,
+            in PythonAst ast) {
+            
+            // TODO: Use simpler version of walker, we need only global scope variables and imports
+            var eval = new ExpressionEval(_services, module, ast);
+            var walker = new ModuleWalker(eval, SimpleImportedVariableHandler.Instance);
+            ast.Walk(walker);
+            
+            foreach (var variable in walker.Eval.GlobalScope.Variables) {
+                var key = (module, variable.Name);
+                var location = variable.Location.IndexSpan.Start;
+                if (!variables.TryGetValue(key, out var currentLocation) || currentLocation > location) {
+                    variables[key] = location;
+                }
+            }
+
+            foreach (var (fromSpan, toModule, name) in walker.ImportedVariableSources) {
+                imports.Add((module, fromSpan.Start, toModule, name));
+            }
+        }
+
+        private bool CanUpdateAnalysis(PythonAnalyzerEntry entry, int version, out IPythonModule module, out PythonAst ast) {
+            if (entry.CanUpdateAnalysis(version, out module, out ast, out var currentAnalysis)) {
+                return true;
+            }
+
+            if (ast == default) {
+                if (currentAnalysis == default) {
+                    // Entry doesn't have ast yet. There should be at least one more session.
+                    Cancel();
+                    _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled (no AST yet).");
+                    return false;
+                }
+                //Debug.Fail($"Library module {module.Name} of type {module.ModuleType} has been analyzed already!");
+                return false;
+            }
+
+            _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled. Version: {version}, current: {module.Analysis.Version}.");
+            return false;
+        }
+
+        private void AnalyzeEntry(IDependencyChainSingleNode<PythonAnalyzerEntry> node, PythonAnalyzerEntry entry, IPythonModule module, PythonAst ast, int version) {
             // Now run the analysis.
             var analyzable = module as IAnalyzable;
             analyzable?.NotifyAnalysisBegins();
 
             Debug.Assert(ast != null);
-            var analysis = DoAnalyzeEntry(node, module, ast, version);
+            var analysis = RestoreOrAnalyzeModule(node, module, ast, version);
             _analyzerCancellationToken.ThrowIfCancellationRequested();
 
             if (analysis != null) {
-                analyzable?.NotifyAnalysisComplete(analysis);
-                entry.TrySetAnalysis(analysis, version);
-
-                if (module.ModuleType == ModuleType.User) {
-                    var linterDiagnostics = _analyzer.LintModule(module);
-                    _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
-                }
+                CompleteAnalysis(entry, module, version, analysis);
             }
         }
 
-        private IDocumentAnalysis DoAnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, PythonAst ast, int version) {
-            var analysis = TryRestoreCachedAnalysis(node, module);
+        private void CompleteAnalysis(PythonAnalyzerEntry entry, IPythonModule module, int version, IDocumentAnalysis analysis) {
+            var analyzable = module as IAnalyzable;
+            analyzable?.NotifyAnalysisComplete(analysis);
+            entry.TrySetAnalysis(analysis, version);
+
+            if (module.ModuleType != ModuleType.User) {
+                return;
+            }
+            
+            var linterDiagnostics = _analyzer.LintModule(module);
+            _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
+        }
+
+        private IDocumentAnalysis RestoreOrAnalyzeModule(IDependencyChainSingleNode<PythonAnalyzerEntry> node, IPythonModule module, PythonAst ast, int version) {
+            var analysis = TryRestoreCachedAnalysis(module);
             if (analysis != null) {
+                MarkNodeWalked(node);
                 return analysis;
             }
 
-            var walker = new ModuleWalker(_services, module, ast, _analyzerCancellationToken);
+            var eval = new ExpressionEval(_services, module, ast);
+            var walker = new ModuleWalker(eval, SimpleImportedVariableHandler.Instance);
             ast.Walk(walker);
             walker.Complete();
             return CreateAnalysis(node, (IDocument)module, ast, version, walker);
         }
 
-        private bool MarkNodeWalked(IDependencyChainNode<PythonAnalyzerEntry> node) {
+        private bool MarkNodeWalked(IDependencyChainNode node) {
             bool isCanceled;
             lock (_syncObj) {
                 isCanceled = _isCanceled;
@@ -370,27 +508,25 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return isCanceled;
         }
 
-        private IDocumentAnalysis TryRestoreCachedAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module) {
+        private IDocumentAnalysis TryRestoreCachedAnalysis(IPythonModule module) {
             var moduleType = module.ModuleType;
-            if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(module.Name, module.FilePath) == true) {
-                if (_moduleDatabaseService.TryRestoreGlobalScope(module, out var gs)) {
-                    if (_log != null) {
-                        _log.Log(TraceEventType.Verbose, "Restored from database: ", module.Name);
-                    }
-                    var analysis = new DocumentAnalysis((IDocument)module, 1, gs, new ExpressionEval(_services, module, module.GetAst()), Array.Empty<string>());
-                    gs.ReconstructVariables();
-                    MarkNodeWalked(node);
-                    return analysis;
-                } else {
-                    if (_log != null) {
-                        _log.Log(TraceEventType.Verbose, "Restore from database failed for module ", module.Name);
-                    }
-                }
+            if (!moduleType.CanBeCached() || _moduleDatabaseService == null || !_moduleDatabaseService.ModuleExistsInStorage(module.Name, module.FilePath)) {
+                return null;
             }
+
+            if (_moduleDatabaseService.TryRestoreGlobalScope(module, out var gs)) {
+                _log?.Log(TraceEventType.Verbose, "Restored from database: ", module.Name);
+                var analysis = new DocumentAnalysis((IDocument)module, 1, gs, new ExpressionEval(_services, module, module.GetAst()), Array.Empty<string>());
+                gs.ReconstructVariables();
+                return analysis;
+            }
+
+            _log?.Log(TraceEventType.Verbose, "Restore from database failed for module ", module.Name);
+
             return null;
         }
 
-        private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker) {
+        private IDocumentAnalysis CreateAnalysis(IDependencyChainSingleNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker) {
             var canHaveLibraryAnalysis = false;
 
             // Don't try to drop builtins; it causes issues elsewhere.
@@ -429,13 +565,37 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
 
-        private void LogCompleted(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
+        private void LogCompleted(IDependencyChainLoopNode<PythonAnalyzerEntry> node, IEnumerable<IPythonModule> modules, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
-                var completed = node != null && module.Analysis is LibraryAnalysis ? "completed for library" : "completed";
+                var moduleNames = new StringBuilder();
+                var first = true;
+                foreach (var module in modules) {
+                    var type = module.Analysis is LibraryAnalysis ? "Library" : "User";
+                    moduleNames
+                        .AppendIf(!first, ", ")
+                        .AppendFormat("{0} ({1})", module.Name, type);
+                    first = false;
+                }
+                
                 var elapsed = Math.Round((stopWatch.Elapsed - startTime).TotalMilliseconds, 2);
-                var message = node != null
-                    ? $"Analysis of {module.Name} ({module.ModuleType}) on depth {node.VertexDepth} {completed} in {elapsed} ms."
-                    : $"Out of order analysis of {module.Name}({module.ModuleType}) completed in {elapsed} ms.";
+                var message = $"Analysis of modules [{moduleNames}] on depth {node.VertexDepth} in {elapsed} ms.";
+                _log.Log(TraceEventType.Verbose, message);
+            }
+        }
+
+        private void LogCompleted(IDependencyChainSingleNode<PythonAnalyzerEntry> node, IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
+            if (_log != null) {
+                var completed = module.Analysis is LibraryAnalysis ? "completed for library" : "completed";
+                var elapsed = Math.Round((stopWatch.Elapsed - startTime).TotalMilliseconds, 2);
+                var message = $"Analysis of {module.Name} ({module.ModuleType}) on depth {node.VertexDepth} {completed} in {elapsed} ms.";
+                _log.Log(TraceEventType.Verbose, message);
+            }
+        }
+
+        private void LogCompleted(IPythonModule module, Stopwatch stopWatch, TimeSpan startTime) {
+            if (_log != null) {
+                var elapsed = Math.Round((stopWatch.Elapsed - startTime).TotalMilliseconds, 2);
+                var message = $"Out of order analysis of {module.Name}({module.ModuleType}) completed in {elapsed} ms.";
                 _log.Log(TraceEventType.Verbose, message);
             }
         }

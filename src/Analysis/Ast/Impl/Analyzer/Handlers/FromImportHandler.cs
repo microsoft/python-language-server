@@ -68,7 +68,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
                     if (!string.IsNullOrEmpty(variableName)) {
-                        DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
+                        var location = Eval.GetLocationOfName(nameExpression);
+                        if (variableModule.Module != null) {
+                            VariableSources = VariableSources.Add((location.IndexSpan, variableModule.Module, variableName));
+                        }
+                        
+                        var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
+                        var exported = variable ?? variableModule.GetMember(memberName);
+                        var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+                        // Do not allow imported variables to override local declarations
+                        Eval.DeclareVariable(variableName, value, VariableSource.Import, location, CanOverwriteVariable(variableName, node.StartIndex));
+                        //DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
                     }
                 }
             }
@@ -85,7 +95,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
             foreach (var memberName in memberNames) {
-                DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);
+                var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
+                // Do not allow imported variables to override local declarations
+                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, null, CanOverwriteVariable(memberName, importPosition));
+                //DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);
             }
         }
 
@@ -125,6 +138,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // Make sure module is loaded and analyzed.
             if (value is IPythonModule m) {
                 ModuleResolution.GetOrLoadModule(m.Name);
+                member = member ?? Eval.UnknownType;
+                if (member is IPythonModule m) {
+                    ModuleResolution.GetOrLoadModule(m.Name);
+                }
             }
         }
 

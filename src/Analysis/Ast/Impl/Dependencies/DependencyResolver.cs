@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -204,7 +205,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 return false;
             }
 
-            if (!TryResolveLoops(walkingGraph, loopsCount, version, out var totalNodesCount)) {
+            if (!TryResolveLoops(walkingGraph, loopsCount, version, out var loopNodes)) {
                 walker = default;
                 return false;
             }
@@ -215,14 +216,15 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 return false;
             }
 
+            var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
+            
+            walkingGraph = walkingGraph.AddRange(loopNodes);
             foreach (var vertex in walkingGraph) {
                 vertex.Seal();
-                vertex.SecondPass?.Seal();
             }
 
-            var affectedValues = walkingGraph.Select(v => v.DependencyVertex.Value);
             var startingVertices = walkingGraph.Where(v => !v.HasIncoming);
-            walker = new DependencyChainWalker(this, startingVertices, affectedValues, depths, missingKeys, totalNodesCount, version);
+            walker = new DependencyChainWalker(this, startingVertices, affectedValues, depths, missingKeys, version);
             return version == _version;
         }
 
@@ -423,107 +425,60 @@ namespace Microsoft.Python.Analysis.Dependencies {
             return false;
         }
 
-        private bool TryResolveLoops(in ImmutableArray<WalkingVertex<TKey, TValue>> graph, int loopsCount, int version, out int totalNodesCount) {
+        private bool TryResolveLoops(in ImmutableArray<WalkingVertex<TKey, TValue>> graph, int loopsCount, int version, out ImmutableArray<WalkingVertex<TKey, TValue>> loopVertices) {
+            loopVertices = ImmutableArray<WalkingVertex<TKey, TValue>>.Empty;
             if (loopsCount == 0) {
-                totalNodesCount = graph.Count;
                 return true;
             }
 
-            // Create vertices for second pass
-            var inLoopsCount = 0;
-            var secondPassLoops = new List<WalkingVertex<TKey, TValue>>[loopsCount];
+            // Create independent walking vertices for vertex loops
+            for (var i = 0; i < loopsCount; i++) {
+                loopVertices = loopVertices.Add(new WalkingVertex<TKey, TValue>(i));
+            }
+            
+            // Break internal loop connections
             foreach (var vertex in graph) {
                 if (vertex.IsInLoop) {
-                    var secondPassVertex = vertex.CreateSecondPassVertex();
                     var loopNumber = vertex.LoopNumber;
-                    if (secondPassLoops[loopNumber] == null) {
-                        secondPassLoops[loopNumber] = new List<WalkingVertex<TKey, TValue>> { secondPassVertex };
-                    } else {
-                        secondPassLoops[loopNumber].Add(secondPassVertex);
-                    }
-
-                    inLoopsCount++;
-                }
-
-                if (version != _version) {
-                    totalNodesCount = default;
-                    return false;
-                }
-
-                vertex.Index = -1; // Reset index, will use later
-            }
-
-            // Break the loops so that its items can be iterated
-            foreach (var loop in secondPassLoops) {
-                // Sort loop items by amount of incoming connections
-                loop.Sort(WalkingVertex<TKey, TValue>.FirstPassIncomingComparison);
-
-                var counter = 0;
-                foreach (var secondPassVertex in loop) {
-                    var vertex = secondPassVertex.FirstPass;
-                    if (vertex.Index == -1) {
-                        RemoveOutgoingLoopEdges(vertex, ref counter);
-                    }
-
-                    if (version != _version) {
-                        totalNodesCount = default;
-                        return false;
-                    }
-                }
-            }
-
-            // Make first vertex from second pass loop (loop is sorted at this point) have incoming edges from vertices from first pass loop and set unique loop numbers
-            var outgoingVertices = new HashSet<WalkingVertex<TKey, TValue>>();
-            foreach (var loop in secondPassLoops) {
-                outgoingVertices.Clear();
-                var startVertex = loop[0];
-
-                foreach (var secondPassVertex in loop) {
-                    var firstPassVertex = secondPassVertex.FirstPass;
-                    firstPassVertex.AddOutgoing(startVertex);
-
-                    foreach (var outgoingVertex in firstPassVertex.Outgoing) {
-                        if (outgoingVertex.LoopNumber != firstPassVertex.LoopNumber) {
-                            // Collect outgoing vertices to reference them from loop
-                            outgoingVertices.Add(outgoingVertex);
-                        } else if (outgoingVertex.SecondPass != null) {
-                            // Copy outgoing edges to the second pass vertex
-                            secondPassVertex.AddOutgoing(outgoingVertex.SecondPass);
+                    var loopVertex = loopVertices[loopNumber];
+                    
+                    for (var i = vertex.Outgoing.Count - 1; i >= 0; i--) {
+                        if (vertex.Outgoing[i].LoopNumber == loopNumber) {
+                            vertex.RemoveOutgoingAt(i);
                         }
                     }
-                }
 
-                // Add outgoing edges to all second pass vertices to ensure that further analysis won't start until loop is fully analyzed
-                foreach (var secondPassVertex in loop) {
-                    secondPassVertex.AddOutgoing(outgoingVertices);
+                    loopVertex.AddOutgoing(vertex);
                 }
 
                 if (version != _version) {
-                    totalNodesCount = default;
                     return false;
                 }
-
-                loopsCount++;
             }
 
-            totalNodesCount = graph.Count + inLoopsCount;
+            // Connect dependencies to loop vertex
+            var outgoingLoopVertices = new HashSet<WalkingVertex<TKey, TValue>>();
+            foreach (var vertex in graph) {
+                outgoingLoopVertices.Clear();
+                for (var i = vertex.Outgoing.Count - 1; i >= 0; i--) {
+                    var outgoing = vertex.Outgoing[i];
+                    if (outgoing.IsInLoop && outgoing.LoopNumber != vertex.LoopNumber) {
+                        var loopVertex = loopVertices[outgoing.LoopNumber];
+                        vertex.RemoveOutgoingAt(i);
+                        outgoingLoopVertices.Add(loopVertex);
+                    }
+                }
+
+                if (outgoingLoopVertices.Count > 0) {
+                    vertex.AddOutgoing(outgoingLoopVertices);
+                }
+
+                if (version != _version) {
+                    return false;
+                }
+            }
+
             return true;
-        }
-
-        private static void RemoveOutgoingLoopEdges(WalkingVertex<TKey, TValue> vertex, ref int counter) {
-            vertex.Index = counter++;
-            for (var i = vertex.Outgoing.Count - 1; i >= 0; i--) {
-                var outgoing = vertex.Outgoing[i];
-                if (outgoing.LoopNumber != vertex.LoopNumber) {
-                    continue;
-                }
-
-                if (outgoing.Index == -1) {
-                    RemoveOutgoingLoopEdges(outgoing, ref counter);
-                } else if (outgoing.Index < vertex.Index) {
-                    vertex.RemoveOutgoingAt(i);
-                }
-            }
         }
 
         private bool TryFindMissingDependencies(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices, in ImmutableArray<WalkingVertex<TKey, TValue>> walkingGraph, int version, out ImmutableArray<TKey> missingKeys) {
@@ -570,9 +525,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             foreach (var walkingVertex in walkingGraph) {
-                if (haveMissingDependencies[walkingVertex.DependencyVertex.Index]) {
+                if (walkingVertex.DependencyVertex != default && haveMissingDependencies[walkingVertex.DependencyVertex.Index]) {
                     walkingVertex.MarkHasMissingDependencies();
-                    walkingVertex.SecondPass?.MarkHasMissingDependencies();
                 }
             }
 
@@ -593,7 +547,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private readonly ImmutableArray<int> _depths;
             private readonly object _syncObj;
             private int _remaining;
-            private PriorityProducerConsumer<IDependencyChainNode<TValue>> _ppc;
+            private PriorityProducerConsumer<IDependencyChainNode> _ppc;
 
             public ImmutableArray<TKey> MissingKeys { get; }
             public ImmutableArray<TValue> AffectedValues { get; }
@@ -612,7 +566,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 in ImmutableArray<TValue> affectedValues,
                 in ImmutableArray<int> depths,
                 in ImmutableArray<TKey> missingKeys,
-                in int totalNodesCount,
                 in int version) {
 
                 _syncObj = new object();
@@ -623,17 +576,17 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 Version = version;
                 MissingKeys = missingKeys;
 
-                _remaining = totalNodesCount;
+                _remaining = affectedValues.Count;
             }
 
-            public Task<IDependencyChainNode<TValue>> GetNextAsync(CancellationToken cancellationToken) {
-                PriorityProducerConsumer<IDependencyChainNode<TValue>> ppc;
+            public Task<IDependencyChainNode> GetNextAsync(CancellationToken cancellationToken) {
+                PriorityProducerConsumer<IDependencyChainNode> ppc;
                 lock (_syncObj) {
                     if (_ppc == null) {
-                        _ppc = new PriorityProducerConsumer<IDependencyChainNode<TValue>>();
+                        _ppc = new PriorityProducerConsumer<IDependencyChainNode>();
 
                         foreach (var vertex in _startingVertices) {
-                            _ppc.Produce(new DependencyChainNode(this, vertex, _depths[vertex.DependencyVertex.Index]));
+                            _ppc.Produce(CreateNode(vertex));
                         }
                     }
 
@@ -670,7 +623,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     _ppc.Produce(null);
                 } else {
                     foreach (var toProduce in verticesToProduce) {
-                        _ppc.Produce(new DependencyChainNode(this, toProduce, _depths[toProduce.DependencyVertex.Index]));
+                        _ppc.Produce(CreateNode(toProduce));
                     }
                 }
             }
@@ -682,31 +635,66 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     }
                 }
             }
+
+            private IDependencyChainNode CreateNode(WalkingVertex<TKey, TValue> vertex) {
+                if (vertex.DependencyVertex != default) { 
+                    return new SingleNode(this, vertex, _depths[vertex.DependencyVertex.Index]);
+                }
+
+                var vertices = vertex.Outgoing;
+                var values = vertices.Select(v => v.DependencyVertex.Value).ToImmutableArray();
+                var depth = vertices.Min(v => _depths[v.DependencyVertex.Index]);
+                var hasMissingDependencies = vertices.Any(v => v.HasMissingDependencies);
+                return new LoopNode(this, vertices, values, depth, hasMissingDependencies);
+            }
         }
 
-        private sealed class DependencyChainNode : IDependencyChainNode<TValue> {
+        private sealed class SingleNode : IDependencyChainSingleNode<TValue> {
             private readonly WalkingVertex<TKey, TValue> _vertex;
             private DependencyChainWalker _walker;
             public TValue Value => _vertex.DependencyVertex.Value;
             public int VertexDepth { get; }
             public bool HasMissingDependencies => _vertex.HasMissingDependencies;
-            public bool HasOnlyWalkedDependencies => _vertex.HasOnlyWalkedIncoming && _vertex.SecondPass == null;
+            public bool HasOnlyWalkedDependencies => _vertex.HasOnlyWalkedIncoming;
             public bool IsWalkedWithDependencies => _vertex.HasOnlyWalkedIncoming && _vertex.DependencyVertex.IsWalked;
             public bool IsValidVersion => _walker.IsValidVersion;
 
-            public DependencyChainNode(DependencyChainWalker walker, WalkingVertex<TKey, TValue> vertex, int depth) {
-                _walker = walker;
-                _vertex = vertex;
-                VertexDepth = depth;
-            }
+            public SingleNode(DependencyChainWalker walker, WalkingVertex<TKey, TValue> vertex, int depth) => (_walker, _vertex, VertexDepth) = (walker, vertex, depth);
+
+            public void MarkWalked() => _vertex.DependencyVertex.MarkWalked();
+
+            public void MoveNext() => Interlocked.Exchange(ref _walker, null)?.MoveNext(_vertex);
+        }
+
+        private sealed class LoopNode : IDependencyChainLoopNode<TValue> {
+            private readonly IReadOnlyList<WalkingVertex<TKey, TValue>> _vertices;
+            private DependencyChainWalker _walker;
+
+            public int VertexDepth { get; }
+            public bool HasMissingDependencies { get; }
+            public bool HasOnlyWalkedDependencies => _vertices.All(v => v.HasOnlyWalkedIncoming);
+            public bool IsWalkedWithDependencies => _vertices.All(v => v.HasOnlyWalkedIncoming && v.DependencyVertex.IsWalked);
+            public bool IsValidVersion => _walker.IsValidVersion;
+
+            public ImmutableArray<TValue> Values { get; }
+
+            public LoopNode(DependencyChainWalker walker, IReadOnlyList<WalkingVertex<TKey, TValue>> vertices, ImmutableArray<TValue> values, int depth, bool hasMissingDependencies) 
+                => (_walker, _vertices, Values, VertexDepth, HasMissingDependencies) = (walker, vertices, values, depth, hasMissingDependencies);
 
             public void MarkWalked() {
-                if (_vertex.SecondPass == null) {
-                    _vertex.DependencyVertex.MarkWalked();
+                foreach (var vertex in _vertices) {
+                    vertex.DependencyVertex.MarkWalked();
                 }
             }
 
-            public void MoveNext() => Interlocked.Exchange(ref _walker, null)?.MoveNext(_vertex);
+            public void MoveNext() {
+                var walker = Interlocked.Exchange(ref _walker, null);
+                if (walker != null) {
+                    foreach (var vertex in _vertices) {
+                        walker.MoveNext(vertex);
+                    }
+                }
+            }
         }
     }
 }
