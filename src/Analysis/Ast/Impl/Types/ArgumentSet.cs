@@ -291,25 +291,25 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public ArgumentSet Evaluate() {
+        public ArgumentSet Evaluate(LookupOptions lookupOptions = LookupOptions.Normal) {
             if (_evaluated || Eval == null) {
                 return this;
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = GetArgumentValue(a);
+                a.Value = GetArgumentValue(a, lookupOptions);
             }
 
             if (_listArgument != null) {
                 foreach (var e in _listArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e) ?? Eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e, lookupOptions) ?? Eval.UnknownType;
                     _listArgument._Values.Add(value);
                 }
             }
 
             if (_dictArgument != null) {
                 foreach (var e in _dictArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e.Value) ?? Eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e.Value, lookupOptions) ?? Eval.UnknownType;
                     _dictArgument._Args[e.Key] = value;
                 }
             }
@@ -318,7 +318,7 @@ namespace Microsoft.Python.Analysis.Types {
             return this;
         }
 
-        private IMember GetArgumentValue(Argument arg) {
+        private IMember GetArgumentValue(Argument arg, LookupOptions lookupOptions) {
             if (arg.Value is IMember m) {
                 return m;
             }
@@ -331,10 +331,10 @@ namespace Microsoft.Python.Analysis.Types {
 
             if (arg.ValueIsDefault) {
                 using (Eval.OpenScope(DeclaringModule.GlobalScope)) {
-                    return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+                    return Eval.GetValueFromExpression(arg.ValueExpression, lookupOptions) ?? Eval.UnknownType;
                 }
             }
-            return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+            return Eval.GetValueFromExpression(arg.ValueExpression, lookupOptions) ?? Eval.UnknownType;
         }
 
         private Expression CreateExpression(string paramName, string defaultValue) {

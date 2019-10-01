@@ -19,17 +19,17 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins)
+        public IPythonType GetTypeFromAnnotation(Expression expr, LookupOptions options = LookupOptions.Normal)
             => GetTypeFromAnnotation(expr, out _, options);
 
-        public IPythonType GetTypeFromAnnotation(Expression expr, out bool isGeneric, LookupOptions options = LookupOptions.Global | LookupOptions.Builtins) {
+        public IPythonType GetTypeFromAnnotation(Expression expr, out bool isGeneric, LookupOptions lookupOptions = LookupOptions.Normal) {
             isGeneric = false;
             switch (expr) {
                 case null:
                     return null;
                 case NameExpression nameExpr:
                     // x: T
-                    var name = GetValueFromExpression(nameExpr);
+                    var name = GetValueFromExpression(nameExpr, lookupOptions);
                     if(name is IGenericTypeParameter gtp) {
                         isGeneric = true;
                         return gtp;
@@ -37,11 +37,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     break;
                 case CallExpression callExpr:
                     // x: NamedTuple(...)
-                    return GetValueFromCallable(callExpr)?.GetPythonType() ?? UnknownType;
+                    return GetValueFromCallable(callExpr, lookupOptions)?.GetPythonType() ?? UnknownType;
                 case IndexExpression indexExpr:
                     // Try generics
-                    var target = GetValueFromExpression(indexExpr.Target);
-                    var result = GetValueFromGeneric(target, indexExpr);
+                    var target = GetValueFromExpression(indexExpr.Target, lookupOptions);
+                    var result = GetValueFromGeneric(target, indexExpr, lookupOptions);
                     if (result != null) {
                         isGeneric = true;
                         return result.GetPythonType();
@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // Look at specialization and typing first
             var ann = new TypeAnnotation(Ast.LanguageVersion, expr);
-            return ann.GetValue(new TypeAnnotationConverter(this, expr, options));
+            return ann.GetValue(new TypeAnnotationConverter(this, expr, lookupOptions));
         }
     }
 }
