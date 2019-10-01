@@ -15,6 +15,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Core.IO;
 
@@ -24,7 +25,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var mdc = Services.GetService<IModuleDatabaseCache>();
             var fs = Services.GetService<IFileSystem>();
             try {
-                fs.DeleteDirectory(mdc.CacheFolder, recursive: true);
+                var cachesRoot = Path.GetDirectoryName(mdc.CacheFolder);
+                foreach (var dir in fs
+                    .GetFileSystemEntries(cachesRoot, $"{mdc.CacheFolderBaseName}*", SearchOption.TopDirectoryOnly)
+                    .Where(e => fs.GetFileAttributes(e).HasFlag(FileAttributes.Directory))) {
+                    fs.DeleteDirectory(dir, recursive: true);
+                }
             } catch(IOException) { } catch(UnauthorizedAccessException) { }
         }
     }
