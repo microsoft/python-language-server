@@ -461,6 +461,18 @@ f(1, 2, 3, 4, e='a', f=False)
             argSet.DictionaryArgument.Should().BeNull();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task PositionalOnlyNamed() {
+            const string code = @"
+def f(a, /): ...
+f(a=1)
+";
+            var argSet = await GetArgSetAsync(code);
+            argSet.Arguments.Count.Should().Be(1);
+            argSet.Errors.Count.Should().Be(1);
+            argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.PositionalOnlyNamed);
+        }
+
         private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveFunction(funcName).Which;

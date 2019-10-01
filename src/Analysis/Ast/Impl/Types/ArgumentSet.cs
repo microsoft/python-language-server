@@ -224,8 +224,6 @@ namespace Microsoft.Python.Analysis.Types {
                     slots[formalParamIndex].ValueExpression = arg.Expression;
                 }
 
-                // TODO: If a slot is positional only and is not yet filled, then it's an error.
-
                 // Keyword arguments
                 for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
                     var arg = callExpr.Args[callParamIndex];
@@ -256,6 +254,12 @@ namespace Microsoft.Python.Analysis.Types {
 
                         _dictArgument._Expressions[arg.Name] = arg.Expression;
                         continue;
+                    }
+
+                    if (nvp.Kind == ParameterKind.PositionalOnly) {
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_PositionalOnlyArgumentNamed.FormatInvariant(arg.Name), arg.GetLocation(eval).Span,
+                            ErrorCodes.PositionalOnlyNamed, Severity.Warning, DiagnosticSource.Analysis));
+                        return;
                     }
 
                     if (nvp.ValueExpression != null || nvp.Value != null) {
