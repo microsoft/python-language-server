@@ -2083,9 +2083,17 @@ namespace Microsoft.Python.Parsing {
             }
 
             // Now we validate the parameters
-            bool seenListArg = false, seenDictArg = false, seenDefault = false, seenPositional = false;
+            bool seenListArg = false, seenDictArg = false, seenDefault = false, seenPositional = false, first = true;
             var seenNames = new HashSet<string>();
             foreach (var p in parameters) {
+                var isFirst = first;
+                first = false;
+
+                if (isFirst && p.IsPositionalMarker) {
+                    ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerFirstParamErrorMessage);
+                    continue;
+                }
+
                 if (p.Annotation != null) {
                     if (!_stubFile && _langVersion.Is2x()) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.ParameterAnnotationsRequire3dotXErrorMsg);//invalid syntax, parameter annotations require 3.x
@@ -2139,15 +2147,15 @@ namespace Microsoft.Python.Parsing {
                     seenDictArg = true;
                 } else if (p.Kind == ParameterKind.PositionalMarker) {
                     if (seenPositional) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerDuplicateErrorMsg);
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerDuplicateErrorMsg);
                     } else if (seenListArg) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAfterListArgsErrorMsg);
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerAfterListArgsErrorMsg);
                     } else if (seenDictArg) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAfterDictArgsErrorMsg);
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerAfterDictArgsErrorMsg);
                     } else if (p.Annotation != null) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerAnnotationErrorMsg);
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerAnnotationErrorMsg);
                     } else if (p.DefaultValue != null) {
-                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalMarkerDefaultErrorMsg);
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerDefaultErrorMsg);
                     }
                     seenPositional = true;
                 } else if (seenListArg && p.Kind != ParameterKind.KeywordOnly) {

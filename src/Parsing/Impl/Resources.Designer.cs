@@ -610,47 +610,56 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to positional marker after ** args not allowed.
+        ///   Looks up a localized string similar to positional only marker after ** args not allowed.
         /// </summary>
-        internal static string PositionalMarkerAfterDictArgsErrorMsg {
+        internal static string PositionalOnlyMarkerAfterDictArgsErrorMsg {
             get {
-                return ResourceManager.GetString("PositionalMarkerAfterDictArgsErrorMsg", resourceCulture);
+                return ResourceManager.GetString("PositionalOnlyMarkerAfterDictArgsErrorMsg", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to positional marker after * args not allowed.
+        ///   Looks up a localized string similar to positional only marker after * args not allowed.
         /// </summary>
-        internal static string PositionalMarkerAfterListArgsErrorMsg {
+        internal static string PositionalOnlyMarkerAfterListArgsErrorMsg {
             get {
-                return ResourceManager.GetString("PositionalMarkerAfterListArgsErrorMsg", resourceCulture);
+                return ResourceManager.GetString("PositionalOnlyMarkerAfterListArgsErrorMsg", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to positional marker may not have annotation.
+        ///   Looks up a localized string similar to positional only marker may not have annotation.
         /// </summary>
-        internal static string PositionalMarkerAnnotationErrorMsg {
+        internal static string PositionalOnlyMarkerAnnotationErrorMsg {
             get {
-                return ResourceManager.GetString("PositionalMarkerAnnotationErrorMsg", resourceCulture);
+                return ResourceManager.GetString("PositionalOnlyMarkerAnnotationErrorMsg", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to positional marker may not have default.
+        ///   Looks up a localized string similar to positional only marker may not have default.
         /// </summary>
-        internal static string PositionalMarkerDefaultErrorMsg {
+        internal static string PositionalOnlyMarkerDefaultErrorMsg {
             get {
-                return ResourceManager.GetString("PositionalMarkerDefaultErrorMsg", resourceCulture);
+                return ResourceManager.GetString("PositionalOnlyMarkerDefaultErrorMsg", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to duplicate positional marker.
+        ///   Looks up a localized string similar to duplicate positional only marker.
         /// </summary>
-        internal static string PositionalMarkerDuplicateErrorMsg {
+        internal static string PositionalOnlyMarkerDuplicateErrorMsg {
             get {
-                return ResourceManager.GetString("PositionalMarkerDuplicateErrorMsg", resourceCulture);
+                return ResourceManager.GetString("PositionalOnlyMarkerDuplicateErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to positional only marker may not be first parameter.
+        /// </summary>
+        internal static string PositionalOnlyMarkerFirstParamErrorMessage {
+            get {
+                return ResourceManager.GetString("PositionalOnlyMarkerFirstParamErrorMessage", resourceCulture);
             }
         }
         

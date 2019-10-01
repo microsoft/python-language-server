@@ -2788,13 +2788,14 @@ namespace Microsoft.Python.Parsing.Tests {
                 var errors = new CollectingErrorSink();
                 ParseFile("PositionalOnlyErrors.py", errors, version);
                 errors.Errors.Should().BeEquivalentTo(new[] {
-                    new ErrorResult("positional marker after * args not allowed", new SourceSpan(1, 14, 1, 15)),
-                    new ErrorResult("positional marker after * args not allowed", new SourceSpan(4, 16, 4, 17)),
-                    new ErrorResult("positional marker after * args not allowed", new SourceSpan(7, 26, 7, 27)),
-                    new ErrorResult("positional marker after ** args not allowed", new SourceSpan(10, 20, 10, 21)),
-                    new ErrorResult("duplicate positional marker", new SourceSpan(13, 16, 13, 17)),
-                    new ErrorResult("positional marker may not have annotation", new SourceSpan(16, 10, 16, 15)),
-                    new ErrorResult("positional marker may not have default", new SourceSpan(19, 10, 19, 16)),
+                    new ErrorResult("positional only marker after * args not allowed", new SourceSpan(1, 14, 1, 15)),
+                    new ErrorResult("positional only marker after * args not allowed", new SourceSpan(4, 16, 4, 17)),
+                    new ErrorResult("positional only marker after * args not allowed", new SourceSpan(7, 26, 7, 27)),
+                    new ErrorResult("positional only marker after ** args not allowed", new SourceSpan(10, 20, 10, 21)),
+                    new ErrorResult("duplicate positional only marker", new SourceSpan(13, 16, 13, 17)),
+                    new ErrorResult("positional only marker may not have annotation", new SourceSpan(16, 10, 16, 15)),
+                    new ErrorResult("positional only marker may not have default", new SourceSpan(19, 10, 19, 16)),
+                    new ErrorResult("positional only marker may not be first parameter", new SourceSpan(22, 7, 22, 8)),
                 });
             }
         }
