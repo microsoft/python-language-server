@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Types {
                 var fdI = seenPositional && p.Kind != ParameterKind.PositionalOnly ? i + 1 : i;
 
                 var node = fd != null && fdI < fd.Parameters.Length ? fd.Parameters[fdI] : null;
-                slots[i] = new Argument(overload.Parameters[i], node);
+                slots[i] = new Argument(p, node);
             }
 
             // Locate sequence argument, if any
