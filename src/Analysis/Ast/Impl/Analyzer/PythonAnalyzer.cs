@@ -329,7 +329,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _forceGCOnNextSession = false;
             }
 
-            return new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
+            return new PythonAnalyzerSession(_services, _progress, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
         }
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {

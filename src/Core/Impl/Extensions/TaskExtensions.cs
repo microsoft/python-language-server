@@ -105,7 +105,16 @@ namespace Microsoft.Python.Core {
         /// </summary>
         public static T WaitAndUnwrapExceptions<T>(this Task<T> task) => task.GetAwaiter().GetResult();
 
+        /// <summary>
+        /// Attach new <see cref="CancellationToken" /> to the given task.
+        /// 
+        /// this allows caller to have its own cancellation without aborting underlying work.
+        /// 
+        /// if <paramref name="task"/> uses different cancellation token than one given <paramref name="cancellationToken"/>
+        /// it will throw <see cref="AggregateException" /> instead of <see cref="OperationCanceledException" /> and
+        /// Task will be set to faulted rather than cancelled.
+        /// </summary>
         public static Task<T> WaitAsync<T>(this Task<T> task, CancellationToken cancellationToken) 
-            => task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default);
+            => task.ContinueWith(t => t.WaitAndUnwrapExceptions(), cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default);
     }
 }
