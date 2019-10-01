@@ -25,14 +25,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
         private const int MaxCollectionSize = 1000;
 
-        public IMember GetValueFromIndex(IndexExpression expr) {
+        public IMember GetValueFromIndex(IndexExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (expr?.Target == null) {
                 return null;
             }
 
-            var target = GetValueFromExpression(expr.Target);
+            var target = GetValueFromExpression(expr.Target, lookupOptions);
             // Try generics first since this may be an expression like Dict[int, str]
-            var result = GetValueFromGeneric(target, expr);
+            var result = GetValueFromGeneric(target, expr, lookupOptions);
             if (result != null) {
                 return result;
             }
@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (!(target is IPythonInstance instance)) {
                     instance = type.CreateInstance(ArgumentSet.Empty(expr, this));
                 }
-                var index = GetValueFromExpression(expr.Index);
+                var index = GetValueFromExpression(expr.Index, lookupOptions);
                 if (index != null) {
                     return type.Index(instance, new ArgumentSet(new[] { index }, expr, this));
                 }
@@ -56,52 +56,52 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        public IMember GetValueFromList(ListExpression expression) {
+        public IMember GetValueFromList(ListExpression expression, LookupOptions lookupOptions = LookupOptions.Normal) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items.Take(MaxCollectionSize)) {
-                var value = GetValueFromExpression(item) ?? UnknownType;
+                var value = GetValueFromExpression(item, lookupOptions) ?? UnknownType;
                 contents.Add(value);
             }
             return PythonCollectionType.CreateList(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
-        public IMember GetValueFromDictionary(DictionaryExpression expression) {
+        public IMember GetValueFromDictionary(DictionaryExpression expression, LookupOptions lookupOptions = LookupOptions.Normal) {
             var contents = new Dictionary<IMember, IMember>();
             foreach (var item in expression.Items.Take(MaxCollectionSize)) {
-                var key = GetValueFromExpression(item.SliceStart) ?? UnknownType;
-                var value = GetValueFromExpression(item.SliceStop) ?? UnknownType;
+                var key = GetValueFromExpression(item.SliceStart, lookupOptions) ?? UnknownType;
+                var value = GetValueFromExpression(item.SliceStop, lookupOptions) ?? UnknownType;
                 contents[key] = value;
             }
             return new PythonDictionary(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
-        private IMember GetValueFromTuple(TupleExpression expression) {
+        private IMember GetValueFromTuple(TupleExpression expression, LookupOptions lookupOptions = LookupOptions.Normal) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items.Take(MaxCollectionSize)) {
-                var value = GetValueFromExpression(item) ?? UnknownType;
+                var value = GetValueFromExpression(item, lookupOptions) ?? UnknownType;
                 contents.Add(value);
             }
             return PythonCollectionType.CreateTuple(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
-        public IMember GetValueFromSet(SetExpression expression) {
+        public IMember GetValueFromSet(SetExpression expression, LookupOptions lookupOptions = LookupOptions.Normal) {
             var contents = new List<IMember>();
             foreach (var item in expression.Items.Take(MaxCollectionSize)) {
-                var value = GetValueFromExpression(item) ?? UnknownType;
+                var value = GetValueFromExpression(item, lookupOptions) ?? UnknownType;
                 contents.Add(value);
             }
             return PythonCollectionType.CreateSet(Module, contents, exact: expression.Items.Count <= MaxCollectionSize);
         }
 
-        public IMember GetValueFromGenerator(GeneratorExpression expression) {
+        public IMember GetValueFromGenerator(GeneratorExpression expression, LookupOptions lookupOptions = LookupOptions.Normal) {
             var iter = expression.Iterators.OfType<ComprehensionFor>().FirstOrDefault();
             if (iter != null) {
-                return GetValueFromExpression(iter.List) ?? UnknownType;
+                return GetValueFromExpression(iter.List, lookupOptions) ?? UnknownType;
             }
             return UnknownType;
         }
 
-        public IMember GetValueFromComprehension(Comprehension node) {
+        public IMember GetValueFromComprehension(Comprehension node, LookupOptions lookupOptions = LookupOptions.Normal) {
             var oldVariables = CurrentScope.Variables.OfType<Variable>().ToDictionary(k => k.Name, v => v);
             try {
                 ProcessComprehension(node);
@@ -109,14 +109,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 // TODO: Evaluate comprehensions to produce exact contents, if possible.
                 switch (node) {
                     case ListComprehension lc:
-                        var v1 = GetValueFromExpression(lc.Item) ?? UnknownType;
+                        var v1 = GetValueFromExpression(lc.Item, lookupOptions) ?? UnknownType;
                         return PythonCollectionType.CreateList(Module, new[] { v1 });
                     case SetComprehension sc:
-                        var v2 = GetValueFromExpression(sc.Item) ?? UnknownType;
+                        var v2 = GetValueFromExpression(sc.Item, lookupOptions) ?? UnknownType;
                         return PythonCollectionType.CreateSet(Module, new[] { v2 });
                     case DictionaryComprehension dc:
-                        var k = GetValueFromExpression(dc.Key) ?? UnknownType;
-                        var v = GetValueFromExpression(dc.Value) ?? UnknownType;
+                        var k = GetValueFromExpression(dc.Key, lookupOptions) ?? UnknownType;
+                        var v = GetValueFromExpression(dc.Value, lookupOptions) ?? UnknownType;
                         return new PythonDictionary(new PythonDictionaryType(Interpreter.ModuleResolution.BuiltinsModule), new Dictionary<IMember, IMember> { { k, v } });
                 }
 
@@ -134,9 +134,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        internal void ProcessComprehension(Comprehension node) {
+        internal void ProcessComprehension(Comprehension node, LookupOptions lookupOptions = LookupOptions.Normal) {
             foreach (var cfor in node.Iterators.OfType<ComprehensionFor>().Where(c => c.Left != null)) {
-                var value = GetValueFromExpression(cfor.List);
+                var value = GetValueFromExpression(cfor.List, lookupOptions);
                 if (value != null) {
                     switch (cfor.Left) {
                         case NameExpression nex when value is IPythonCollection c1:
