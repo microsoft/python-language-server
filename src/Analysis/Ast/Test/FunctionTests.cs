@@ -657,5 +657,17 @@ class B:
                 .Which.Should().HaveType("A")
                 .Which.Should().BeOfType(a.GetType());
         }
+
+        [TestMethod, Priority(0)]
+        public async Task PositionalOnlyParameters() {
+            const string code = @"
+def f(a, b, /, c, d):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            analysis.Should().HaveFunction("f")
+                    .Which.Should().HaveSingleOverload()
+                    .Which.Should().HaveParameters("a", "b", "", "c", "d");
+        }
     }
 }

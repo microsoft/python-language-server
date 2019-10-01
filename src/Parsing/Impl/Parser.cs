@@ -1982,6 +1982,7 @@ namespace Microsoft.Python.Parsing {
         //varargslist: (fpdef ['=' expression ] ',')* ('*' NAME [',' '**' NAME] | '**' NAME) | fpdef ['=' expression] (',' fpdef ['=' expression])* [',']
         //fpdef: NAME | '(' fplist ')'
         //fplist: fpdef (',' fpdef)* [',']
+        // Not above: the 3.8+'s positional marker.
         private Parameter[] ParseVarArgsList(TokenKind terminator, bool allowAnnotations, out List<string> commaWhiteSpace, out bool ateTerminator) {
             var parameters = new List<Parameter>();
             commaWhiteSpace = MakeWhiteSpaceList();

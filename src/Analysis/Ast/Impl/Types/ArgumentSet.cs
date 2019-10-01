@@ -128,11 +128,16 @@ namespace Microsoft.Python.Analysis.Types {
             // the value of the argument assigned to that parameter. Slots which have
             // had values assigned to them are marked as 'filled'.Slots which have
             // no value assigned to them yet are considered 'empty'.
+            // The positional marker is skipped.
+            var overloadParamCount = overload.Parameters.Count(p => p.Kind != ParameterKind.PositionalMarker);
 
-            var slots = new Argument[overload.Parameters.Count];
+            var slots = new List<Argument>(overloadParamCount);
             for (var i = 0; i < overload.Parameters.Count; i++) {
                 var node = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
-                slots[i] = new Argument(overload.Parameters[i], node);
+                if (node?.Kind == ParameterKind.PositionalMarker) {
+                    continue;
+                }
+                slots.Add(new Argument(overload.Parameters[i], node));
             }
 
             // Locate sequence argument, if any
@@ -153,7 +158,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             // Class methods
             var formalParamIndex = 0;
-            if (fn.DeclaringType != null && fn.HasClassFirstArgument() && slots.Length > 0) {
+            if (fn.DeclaringType != null && fn.HasClassFirstArgument() && slots.Count > 0) {
                 slots[0].Value = instanceType ?? fn.DeclaringType;
                 formalParamIndex++;
             }
@@ -169,7 +174,7 @@ namespace Microsoft.Python.Analysis.Types {
                         break;
                     }
 
-                    if (formalParamIndex >= overload.Parameters.Count) {
+                    if (formalParamIndex >= overloadParamCount) {
                         // We ran out of formal parameters and yet haven't seen
                         // any sequence or dictionary ones. This looks like an error.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_TooManyFunctionArguments, callLocation.Span,

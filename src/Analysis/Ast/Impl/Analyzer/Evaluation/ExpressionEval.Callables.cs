@@ -364,7 +364,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         DeclareParameter(p, pi);
                     }
                     parameters.Add(pi);
-                } else if (p.IsList || p.IsDictionary) {
+                } else if (p.IsList || p.IsDictionary || p.IsPositionalMarker) {
                     parameters.Add(new ParameterInfo(Ast, p, null, null, false));
                 }
             }
