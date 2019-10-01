@@ -224,6 +224,8 @@ namespace Microsoft.Python.Analysis.Types {
                     slots[formalParamIndex].ValueExpression = arg.Expression;
                 }
 
+                // TODO: If a slot is positional only and is not yet filled, then it's an error.
+
                 // Keyword arguments
                 for (; callParamIndex < callExpr.Args.Count; callParamIndex++) {
                     var arg = callExpr.Args[callParamIndex];
