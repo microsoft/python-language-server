@@ -101,7 +101,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             var overload = fn.Overloads[overloadIndex];
-            var fd = overload.FunctionDefinition;
+            var fdParameters = overload.FunctionDefinition?.Parameters.Where(p => !p.IsPositionalMarker).ToArray();
 
             // Some specialized functions have more complicated definitions, so we pass
             // parameters to those, TypeVar() is an example, so we allow the latter logic to handle
@@ -116,7 +116,7 @@ namespace Microsoft.Python.Analysis.Types {
                     if (string.IsNullOrEmpty(name)) {
                         name = i < overload.Parameters.Count ? overload.Parameters[i].Name : $"arg{i}";
                     }
-                    var node = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
+                    var node = fdParameters?.ElementAtOrDefault(i);
                     _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, node));
                 }
                 return;
@@ -131,18 +131,9 @@ namespace Microsoft.Python.Analysis.Types {
             // no value assigned to them yet are considered 'empty'.
 
             var slots = new Argument[overload.Parameters.Count];
-            var seenPositional = false;
-
             for (var i = 0; i < overload.Parameters.Count; i++) {
-                var p = overload.Parameters[i];
-
-                // If the current parameter is not positional only, and we've seen a positional only parameter,
-                // then we've passed the positional marker in the AST and need to offset our fd.Parameter access by one.
-                seenPositional = seenPositional || p.Kind == ParameterKind.PositionalOnly;
-                var fdI = seenPositional && p.Kind != ParameterKind.PositionalOnly ? i + 1 : i;
-
-                var node = fd != null && fdI < fd.Parameters.Length ? fd.Parameters[fdI] : null;
-                slots[i] = new Argument(p, node);
+                var node = fdParameters?.ElementAtOrDefault(i);
+                slots[i] = new Argument(overload.Parameters[i], node);
             }
 
             // Locate sequence argument, if any
