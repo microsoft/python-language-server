@@ -1382,12 +1382,31 @@ def func(a, b, /, c, d, *, e, f):
     pass
 
 ";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var result = cs.GetCompletions(analysis, new SourceLocation(4, 1));
 
             result.Should().HaveItem("func")
                 .Which.Should().HaveDocumentation("func(a, b, /, c, d, *, e, f)");
+        }
+
+        [TestMethod]
+        public async Task PositionalOnlyOverride() {
+            const string code = @"
+class A:
+    def foo(self, x, y, /, *args):
+        pass
+
+class B(A):
+    def 
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var result = cs.GetCompletions(analysis, new SourceLocation(7, 9));
+
+            result.Should().HaveItem("foo")
+                .Which.Should().HaveInsertText($"foo(self, x, y, /, *args):{Environment.NewLine}    return super().foo(x, y, *args)")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
     }
 }
