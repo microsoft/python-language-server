@@ -17,6 +17,7 @@ using System.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
+    [DebuggerDisplay("{Name} : {Kind}")]
     internal sealed class ParameterInfo : IParameterInfo {
         public ParameterInfo(PythonAst ast, Parameter p, IPythonType type, IMember defaultValue, bool isGeneric)
             : this(p?.Name, type, p?.Kind, defaultValue) {

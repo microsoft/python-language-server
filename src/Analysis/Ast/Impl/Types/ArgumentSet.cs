@@ -353,7 +353,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        [DebuggerDisplay("{Name}")]
+        [DebuggerDisplay("{Name} : {Kind}")]
         private sealed class Argument : IArgument {
             /// <summary>
             /// Argument name.
