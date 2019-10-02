@@ -47,7 +47,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 if (p.Kind == ParameterKind.PositionalOnly) {
                     addMarker = true;
                 } else if (addMarker && p.Kind != ParameterKind.PositionalOnly) {
-                    builder.Append(", /, ");
+                    builder.Append("/, ");
                     addMarker = false;
                 }
 
