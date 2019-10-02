@@ -32,6 +32,8 @@ namespace Microsoft.Python.LanguageServer.Sources {
             builder.Append('(');
 
             var addComma = false;
+            var addMarker = false;
+
             foreach (var p in o.Parameters.Skip(ft.IsStatic || ft.IsUnbound ? 0 : 1)) {
                 if (addComma) {
                     builder.Append(", ");
@@ -39,10 +41,17 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     addComma = true;
                 }
 
+                // Positional only markers are not included in the parameters, so keep track
+                // of whether or not positional only parameters have been seen then add the marker
+                // once the positional only section ends.
+                if (p.Kind == ParameterKind.PositionalOnly) {
+                    addMarker = true;
+                } else if (addMarker && p.Kind != ParameterKind.PositionalOnly) {
+                    builder.Append(", /, ");
+                    addMarker = false;
+                }
+
                 switch (p.Kind) {
-                    case ParameterKind.PositionalMarker:
-                        builder.Append("/");
-                        continue;
                     case ParameterKind.List:
                         builder.Append("*");
                         if (string.IsNullOrEmpty(p.Name)) {
@@ -65,6 +74,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
                     builder.Append(": ");
                     builder.Append(p.Type.Name);
                 }
+            }
+
+            if (addMarker) {
+                builder.Append(", /");
             }
 
             builder.Append(')');

@@ -101,7 +101,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             var overload = fn.Overloads[overloadIndex];
-            var fdParameters = overload.FunctionDefinition?.Parameters.Where(p => !p.IsPositionalMarker).ToArray();
+            var fdParameters = overload.FunctionDefinition?.Parameters.Where(p => !p.IsPositionalOnlyMarker).ToArray();
 
             // Some specialized functions have more complicated definitions, so we pass
             // parameters to those, TypeVar() is an example, so we allow the latter logic to handle

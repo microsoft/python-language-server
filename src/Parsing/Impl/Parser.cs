@@ -2023,7 +2023,7 @@ namespace Microsoft.Python.Parsing {
                     } else if (_langVersion >= PythonLanguageVersion.V38 && MaybeEat(TokenKind.Divide)) {
                         start = GetStart();
                         posOnlyEnd = posOnlyEnd ?? pos;
-                        kind = ParameterKind.PositionalMarker;
+                        kind = ParameterKind.PositionalOnlyMarker;
                         preStarWhitespace = _tokenWhiteSpace;
                     }
 
@@ -2037,7 +2037,7 @@ namespace Microsoft.Python.Parsing {
                             AddPreceedingWhiteSpace(ne);
                         }
                         p = new Parameter(ne, kind);
-                    } else if (kind == ParameterKind.List || kind == ParameterKind.PositionalMarker) {
+                    } else if (kind == ParameterKind.List || kind == ParameterKind.PositionalOnlyMarker) {
                         p = new Parameter(null, kind);
                     } else {
                         var expr = ParseExpression();
@@ -2089,7 +2089,7 @@ namespace Microsoft.Python.Parsing {
                 var isFirst = first;
                 first = false;
 
-                if (isFirst && p.IsPositionalMarker) {
+                if (isFirst && p.IsPositionalOnlyMarker) {
                     ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerFirstParamErrorMessage);
                     continue;
                 }
@@ -2127,7 +2127,7 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 if (string.IsNullOrEmpty(p.Name)) {
-                    if (!(p.Kind == ParameterKind.List || p.Kind == ParameterKind.PositionalMarker) || !(_stubFile || _langVersion.Is3x())) {
+                    if (!(p.Kind == ParameterKind.List || p.Kind == ParameterKind.PositionalOnlyMarker) || !(_stubFile || _langVersion.Is3x())) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                         continue;
                     }
@@ -2145,7 +2145,7 @@ namespace Microsoft.Python.Parsing {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsDoubleArgumentErrorMsg);//duplicate ** args arguments
                     }
                     seenDictArg = true;
-                } else if (p.Kind == ParameterKind.PositionalMarker) {
+                } else if (p.Kind == ParameterKind.PositionalOnlyMarker) {
                     if (seenPositional) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerDuplicateErrorMsg);
                     } else if (seenListArg) {

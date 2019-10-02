@@ -157,7 +157,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (t is IPythonFunctionType f) {
                 return f.Overloads
                     .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Where(p => !p.IsPositionalMarker).Count());
+                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Where(p => !p.IsPositionalOnlyMarker).Count());
             }
             return null;
         }

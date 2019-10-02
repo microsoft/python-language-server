@@ -2758,7 +2758,7 @@ namespace Microsoft.Python.Parsing.Tests {
                         CheckFuncDef("f", new[] {
                             CheckParameter("a", ParameterKind.PositionalOnly),
                             CheckParameter("b", ParameterKind.PositionalOnly),
-                            CheckParameter(null, ParameterKind.PositionalMarker),
+                            CheckParameter(null, ParameterKind.PositionalOnlyMarker),
                             CheckParameter("c", ParameterKind.Normal),
                             CheckParameter("d", ParameterKind.Normal),
                             CheckParameter(null, ParameterKind.List),
@@ -2769,11 +2769,11 @@ namespace Microsoft.Python.Parsing.Tests {
                             CheckParameter("x", ParameterKind.PositionalOnly),
                             CheckParameter("y", ParameterKind.PositionalOnly),
                             CheckParameter("z", ParameterKind.PositionalOnly, None),
-                            CheckParameter(null, ParameterKind.PositionalMarker),
+                            CheckParameter(null, ParameterKind.PositionalOnlyMarker),
                         }, CheckSuite(Pass)),
                         CheckFuncDef("foo", new[] {
                             CheckParameter("name", ParameterKind.PositionalOnly),
-                            CheckParameter(null, ParameterKind.PositionalMarker),
+                            CheckParameter(null, ParameterKind.PositionalOnlyMarker),
                             CheckParameter("kwds", ParameterKind.Dictionary),
                         }, CheckSuite(Pass))
                     )

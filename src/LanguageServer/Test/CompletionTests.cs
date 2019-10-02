@@ -1374,5 +1374,27 @@ b = B()
             comps = cs.GetCompletions(analysis, new SourceLocation(17, 7));
             comps.Should().HaveLabels("ctorParam=");
         }
+
+        [TestMethod]
+        [Ignore]
+        public async Task PositionalOnly() {
+            const string code = @"
+def f(a, b, /, c, d, *, e, f):
+    pass
+
+def pow2(x, y, z=None, /):
+    pass
+
+def foo(name, /, **kwds):
+	pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var result = cs.GetCompletions(analysis, new SourceLocation(3, 10));
+
+            result.Should().HaveItem("__init__")
+                .Which.Should().HaveInsertText($"__init__(self, *args, **kwargs):{Environment.NewLine}    super().__init__(*args, **kwargs)")
+                .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
+        }
     }
 }

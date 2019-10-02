@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
             Type = type;
             Kind = kind ?? ParameterKind.Normal;
 #if DEBUG
-            Debug.Assert(Kind != ParameterKind.PositionalMarker);
+            Debug.Assert(Kind != ParameterKind.PositionalOnlyMarker);
 #endif
         }
 

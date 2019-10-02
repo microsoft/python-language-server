@@ -52,7 +52,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool IsKeywordOnly => Kind == ParameterKind.KeywordOnly;
 
-        public bool IsPositionalMarker => Kind == ParameterKind.PositionalMarker;
+        public bool IsPositionalOnlyMarker => Kind == ParameterKind.PositionalOnlyMarker;
 
         public bool IsPositionalOnly => Kind == ParameterKind.PositionalOnly;
 
@@ -136,7 +136,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     break;
                 case ParameterKind.KeywordOnly:
                     break;
-                case ParameterKind.PositionalMarker:
+                case ParameterKind.PositionalOnlyMarker:
                     res.Append(leadingWhiteSpace ?? this.GetPreceedingWhiteSpaceDefaultNull(ast) ?? string.Empty);
                     leadingWhiteSpace = null;
                     res.Append('/');

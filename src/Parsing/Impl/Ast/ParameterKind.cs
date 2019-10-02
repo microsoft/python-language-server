@@ -20,6 +20,6 @@ namespace Microsoft.Python.Parsing.Ast {
         Dictionary, // **kwargs
         KeywordOnly, // after '*'
         PositionalOnly, // Before '/'
-        PositionalMarker // '/' marker itself
+        PositionalOnlyMarker // '/' marker itself
     }
 }
