@@ -398,11 +398,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // Add reference to the function
                     this.LookupNameInScopes(nex.Name, lookupOptions)?.AddReference(GetLocationOfName(nex));
                     break;
-                case MemberExpression mex when !string.IsNullOrEmpty(mex.Name): {
-                        var t = GetValueFromExpression(mex.Target, lookupOptions)?.GetPythonType();
-                        t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
-                        break;
-                    }
+                case MemberExpression mex when !string.IsNullOrEmpty(mex.Name):
+                    var t = GetValueFromExpression(mex.Target, lookupOptions)?.GetPythonType();
+                    t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
+                    break;
             }
 
             // Add references to all arguments.
