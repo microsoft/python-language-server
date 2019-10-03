@@ -299,6 +299,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// or location of unrelated types such as coming from the base object type.
         /// </remarks>
         private bool IsFromThisModuleOrSubmodules(IPythonType type) {
+            if(type.IsUnknown()) {
+                return false;
+            }
             var thisModule = _eval.Module;
             var typeModule = type.DeclaringModule;
             var typeMainModuleName = typeModule.Name.Split('.').FirstOrDefault();
