@@ -35,9 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
             DefaultValue = defaultValue;
             Type = type;
             Kind = kind ?? ParameterKind.Normal;
-#if DEBUG
             Debug.Assert(Kind != ParameterKind.PositionalOnlyMarker);
-#endif
         }
 
         public string Name { get; }
