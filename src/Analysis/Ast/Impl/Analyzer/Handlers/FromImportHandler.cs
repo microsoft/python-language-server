@@ -112,12 +112,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             // First try exported or child submodules.
             value = value ??_importedVariableHandler.GetVariable(variableModule, memberName);
-            // Value may be variable or submodule. If it is variable, we need it in order to add reference.
-            var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-            value = variable?.Value?.Equals(value) == true ? variable : value;
-            
-            // If nothing is exported, variables are still accessible.
-            value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
             
             // Do not allow imported variables to override local declarations
             var canOverwrite = CanOverwriteVariable(variableName, importPosition, value);

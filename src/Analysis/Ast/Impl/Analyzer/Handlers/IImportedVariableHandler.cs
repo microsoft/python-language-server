@@ -14,10 +14,10 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal interface IImportedVariableHandler {
-        IVariable GetVariable(in PythonVariableModule module, in string name);
+        IMember GetVariable(in PythonVariableModule module, in string name);
     }
 }

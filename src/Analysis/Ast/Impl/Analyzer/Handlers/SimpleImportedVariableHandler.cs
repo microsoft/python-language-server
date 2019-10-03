@@ -14,15 +14,23 @@
 // permissions and limitations under the License.
 
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class SimpleImportedVariableHandler : IImportedVariableHandler {
         public static IImportedVariableHandler Instance { get; } = new SimpleImportedVariableHandler();
 
         private SimpleImportedVariableHandler() {}
-        
-        public IVariable GetVariable(in PythonVariableModule module, in string name) =>
-            module.Analysis?.GlobalScope?.Variables[name];
+
+        public IMember GetVariable(in PythonVariableModule module, in string memberName) {
+            // First try exported or child submodules.
+            var value = module.GetMember(memberName);
+
+            // Value may be variable or submodule. If it is variable, we need it in order to add reference.
+            var variable = module.Analysis?.GlobalScope?.Variables[memberName];
+            value = variable?.Value?.Equals(value) == true ? variable : value;
+
+            return value ?? module.Interpreter.UnknownType;
+        }
     }
 }

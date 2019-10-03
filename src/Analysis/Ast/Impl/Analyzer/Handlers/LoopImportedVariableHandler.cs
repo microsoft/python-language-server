@@ -30,17 +30,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         private readonly IServiceContainer _services;
 
         public IEnumerable<ModuleWalker> Walkers => _walkers.Values;
-        
+
         public LoopImportedVariableHandler(in IServiceContainer services,
             in IEnumerable<(IPythonModule Module, PythonAst Ast)> asts,
             in IEnumerable<(IPythonModule Module, IVariableCollection Variables)> cachedVariables) {
-            
+
             _services = services;
             _asts = asts.ToDictionary(kvp => new AnalysisModuleKey(kvp.Module), kvp => kvp.Ast);
             _cachedVariables = cachedVariables.ToDictionary(kvp => new AnalysisModuleKey(kvp.Module), kvp => kvp.Variables);
         }
-        
-        public IVariable GetVariable(in PythonVariableModule variableModule, in string name) {
+
+        public IMember GetVariable(in PythonVariableModule variableModule, in string name) {
             var module = variableModule.Module;
             if (module == null) {
                 return default;
@@ -50,11 +50,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (_walkers.TryGetValue(key, out var walker)) {
                 return walker.Eval.GlobalScope?.Variables[name];
             }
-            
+
             if (!_asts.TryGetValue(key, out var ast)) {
                 return _cachedVariables.TryGetValue(key, out var variables) ? variables[name] : default;
             }
-            
+
             walker = CreateWalker(module, ast);
             ast.Walk(walker);
             walker.Complete();
