@@ -300,6 +300,24 @@
   <data name="PositionalArgumentKeywardArgumentUnpackingErrorMsg" xml:space="preserve">
     <value>positional argument follows keyword argument unpacking</value>
   </data>
+  <data name="PositionalOnlyMarkerAfterDictArgsErrorMsg" xml:space="preserve">
+    <value>positional only marker after ** args not allowed</value>
+  </data>
+  <data name="PositionalOnlyMarkerAfterListArgsErrorMsg" xml:space="preserve">
+    <value>positional only marker after * args not allowed</value>
+  </data>
+  <data name="PositionalOnlyMarkerAnnotationErrorMsg" xml:space="preserve">
+    <value>positional only marker may not have annotation</value>
+  </data>
+  <data name="PositionalOnlyMarkerDefaultErrorMsg" xml:space="preserve">
+    <value>positional only marker may not have default</value>
+  </data>
+  <data name="PositionalOnlyMarkerDuplicateErrorMsg" xml:space="preserve">
+    <value>duplicate positional only marker</value>
+  </data>
+  <data name="PositionalOnlyMarkerFirstParamErrorMessage" xml:space="preserve">
+    <value>positional only marker may not be first parameter</value>
+  </data>
   <data name="PositionalParameterNotAllowedErrorMsg" xml:space="preserve">
     <value>positional parameter after * args not allowed</value>
   </data>

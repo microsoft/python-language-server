@@ -437,6 +437,42 @@ def func(a = A()): ...
             t.MemberType.Should().Be(PythonMemberType.Class);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task PositionalOnly() {
+            const string code = @"
+def f(a, b, /, c, d, *, e, f): ...
+f(1, 2, 3, 4, e='a', f=False)
+";
+            var argSet = await GetArgSetAsync(code);
+            argSet.Arguments.Count.Should().Be(6);
+            argSet.Arguments[0].Name.Should().Be("a");
+            argSet.Arguments[0].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(1);
+            argSet.Arguments[1].Name.Should().Be("b");
+            argSet.Arguments[1].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(2);
+            argSet.Arguments[2].Name.Should().Be("c");
+            argSet.Arguments[2].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(3);
+            argSet.Arguments[3].Name.Should().Be("d");
+            argSet.Arguments[3].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(4);
+            argSet.Arguments[4].Name.Should().Be("e");
+            argSet.Arguments[4].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be("a");
+            argSet.Arguments[5].Name.Should().Be("f");
+            argSet.Arguments[5].ValueExpression.Should().BeOfType<ConstantExpression>().Which.Value.Should().Be(false);
+            argSet.ListArgument.Should().BeNull();
+            argSet.DictionaryArgument.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task PositionalOnlyNamed() {
+            const string code = @"
+def f(a, /): ...
+f(a=1)
+";
+            var argSet = await GetArgSetAsync(code);
+            argSet.Arguments.Count.Should().Be(1);
+            argSet.Errors.Count.Should().Be(1);
+            argSet.Errors[0].ErrorCode.Should().Be(ErrorCodes.PositionalOnlyNamed);
+        }
+
         private async Task<ArgumentSet> GetArgSetAsync(string code, string funcName = "f") {
             var analysis = await GetAnalysisAsync(code);
             var f = analysis.Should().HaveFunction(funcName).Which;

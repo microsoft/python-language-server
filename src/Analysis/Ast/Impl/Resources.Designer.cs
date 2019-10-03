@@ -88,6 +88,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Positional only argument &apos;{0}&apos; may not be named..
+        /// </summary>
+        internal static string Analysis_PositionalOnlyArgumentNamed {
+            get {
+                return ResourceManager.GetString("Analysis_PositionalOnlyArgumentNamed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Too many function arguments..
         /// </summary>
         internal static string Analysis_TooManyFunctionArguments {

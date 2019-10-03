@@ -180,7 +180,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var fn = new PythonFunctionType("print", new Location(Module), null, string.Empty);
                 var o = new PythonFunctionOverload(fn, new Location(Module));
                 var parameters = new List<ParameterInfo> {
-                    new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
+                    new ParameterInfo("values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
                     new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
                     new ParameterInfo("end", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
                     new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null)

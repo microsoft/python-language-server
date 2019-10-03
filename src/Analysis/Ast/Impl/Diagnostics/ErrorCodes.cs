@@ -21,6 +21,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string ParameterAlreadySpecified = "parameter-already-specified";
         public const string ParameterMissing = "parameter-missing";
         public const string PositionalArgumentAfterKeyword = "positional-argument-after-keyword";
+        public const string PositionalOnlyNamed = "positional-only-named";
         public const string ReturnInInit = "return-in-init";
         public const string TypingGenericArguments = "typing-generic-arguments";
         public const string TypingNewTypeArguments = "typing-newtype-arguments";

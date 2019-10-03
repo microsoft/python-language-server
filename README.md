@@ -33,6 +33,7 @@ The following diagnostics are supported:
 | `parameter-already-specified` | A argument with this name has already been specified. |
 | `parameter-missing` | A required positional argument is missing. |
 | `positional-argument-after-keyword` | A positional argument has been provided after a keyword argument. |
+| `positional-only-named` | A positional-only argument (3.8+) has been named in a function call. |
 | `return-in-init` | Encountered an explicit return in `__init__` function. |
 | `typing-generic-arguments` | An error occurred while constructing `Generic`. |
 | `typing-newtype-arguments` | An error occurred while constructing `NewType`. |

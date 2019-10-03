@@ -1566,6 +1566,11 @@ def f(): pass");
             TestOneString(PythonLanguageVersion.V35, "\nclass {{ invalid_name }}MyClass:\n");
         }
 
+        [TestMethod, Priority(0)]
+        public void RoundTripPositionalOnly() {
+            TestOneString(PythonLanguageVersion.V38, "def f(a, b, /, c, d, *, e, f): ...");
+        }
+
 
         private static void RoundTripStdLibTest(InterpreterConfiguration configuration) {
             configuration.AssertInstalled();
@@ -1602,16 +1607,19 @@ def f(): pass");
         }
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib27() => RoundTripStdLibTest(PythonVersions.Python27 ?? PythonVersions.Python27_x64);
+        public void RoundTripStdLib27() => RoundTripStdLibTest(PythonVersions.Required_Python27X);
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib35() => RoundTripStdLibTest(PythonVersions.Python35 ?? PythonVersions.Python35_x64);
+        public void RoundTripStdLib35() => RoundTripStdLibTest(PythonVersions.Required_Python35X);
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib36() => RoundTripStdLibTest(PythonVersions.Python36 ?? PythonVersions.Python36_x64);
+        public void RoundTripStdLib36() => RoundTripStdLibTest(PythonVersions.Required_Python36X);
 
         [TestMethod, Priority(0)]
-        public void RoundTripStdLib37() => RoundTripStdLibTest(PythonVersions.Python37 ?? PythonVersions.Python37_x64);
+        public void RoundTripStdLib37() => RoundTripStdLibTest(PythonVersions.Required_Python37X);
+
+        [TestMethod, Priority(0)]
+        public void RoundTripStdLib38() => RoundTripStdLibTest(PythonVersions.Required_Python38X);
 
         [TestMethod, Priority(0)]
         public void GroupingRecovery() {
