@@ -30,8 +30,10 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
-        public void TestInitialize()
-            => TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        public void TestInitialize() {
+            AnalysisTimeout = TimeSpan.FromMinutes(5);
+            TestEnvironmentImpl.TestInitialize($"{TestContext.FullyQualifiedTestClassName}.{TestContext.TestName}");
+        }
 
         [TestCleanup]
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();

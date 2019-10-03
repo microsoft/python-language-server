@@ -110,8 +110,8 @@ R_A3 = R_A1.r_A()";
             var analysis = await GetAnalysisAsync(@"import sys");
 
             analysis.Should().HaveVariable("sys")
-                 .Which.Should().HaveType(BuiltinTypeId.Module)
-                 .And.HaveMember("platform");
+                .Which.Should().HaveType(BuiltinTypeId.Module)
+                .And.HaveMember("platform");
         }
 
         [TestMethod, Priority(0)]
@@ -324,7 +324,7 @@ import top.sub3.sub4
 
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await appDoc.GetAnalysisAsync(Timeout.Infinite);
-            
+
             var topModule = analysis.Should().HaveVariable("top")
                 .Which.Should().HaveType<IPythonModule>().Which;
 
@@ -371,6 +371,12 @@ import top.sub3.sub4
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await appDoc.GetAnalysisAsync(Timeout.Infinite);
             analysis.Should().HaveVariable("sub2").Which.Should().HaveType(BuiltinTypeId.Module);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task CircularDependencyFunctools() {
+            var analysis = await GetAnalysisAsync(@"from _functools import partial");
+            analysis.Should().HaveClass("partial");
         }
     }
 }
