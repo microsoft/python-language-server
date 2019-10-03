@@ -71,14 +71,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     lastModule = default;
                     break;
                 }
-
-                if (firstModule == null) {
-                    firstModule = lastModule;
-                }
-
                 var location = Eval.GetLocationOfName(nameExpression);
                 VariableSources = VariableSources.Add((location.IndexSpan, lastModule.Module, null));
-                //resolvedModules[i] = (nameExpression.Name, lastModule);
+                resolvedModules[i] = (nameExpression.Name, lastModule);
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')

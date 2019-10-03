@@ -525,7 +525,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             foreach (var walkingVertex in walkingGraph) {
-                if (walkingVertex.DependencyVertex != default && haveMissingDependencies[walkingVertex.DependencyVertex.Index]) {
+                if (walkingVertex.DependencyVertex != null && haveMissingDependencies[walkingVertex.DependencyVertex.Index]) {
                     walkingVertex.MarkHasMissingDependencies();
                 }
             }
@@ -637,7 +637,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             private IDependencyChainNode CreateNode(WalkingVertex<TKey, TValue> vertex) {
-                if (vertex.DependencyVertex != default) { 
+                if (vertex.DependencyVertex != null) { 
                     return new SingleNode(this, vertex, _depths[vertex.DependencyVertex.Index]);
                 }
 

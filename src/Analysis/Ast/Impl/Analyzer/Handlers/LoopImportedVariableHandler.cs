@@ -42,7 +42,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         
         public IVariable GetVariable(in PythonVariableModule variableModule, in string name) {
             var module = variableModule.Module;
-            if (module == default) {
+            if (module == null) {
                 return default;
             }
 

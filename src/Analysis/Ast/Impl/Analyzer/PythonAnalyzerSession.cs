@@ -335,7 +335,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 entries[module] = entry;
                 var analysis = TryRestoreCachedAnalysis(module);
-                if (analysis != default) {
+                if (analysis != null) {
                     AddLoopImportsFromCachedAnalysis(importNames, variables, module, analysis);
                     cachedVariables.Add((module, analysis.GlobalScope.Variables));
                 } else {
@@ -374,7 +374,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var startingAst = asts.FirstOrDefault(a => a.Module.Equals(startingModule)).Ast;
-            if (startingModule == default || startingAst == default) {
+            if (startingModule == null || startingAst == null) {
                 // Use any random module
                 (startingModule, startingAst) = asts.First();
             }
@@ -441,8 +441,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return true;
             }
 
-            if (ast == default) {
-                if (currentAnalysis == default) {
+            if (ast == null) {
+                if (currentAnalysis == null) {
                     // Entry doesn't have ast yet. There should be at least one more session.
                     Cancel();
                     _log?.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) canceled (no AST yet).");

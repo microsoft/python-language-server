@@ -68,17 +68,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     var nameExpression = asNames[i] ?? names[i];
                     var variableName = nameExpression?.Name ?? memberName;
                     if (!string.IsNullOrEmpty(variableName)) {
-                        var location = Eval.GetLocationOfName(nameExpression);
-                        if (variableModule.Module != null) {
-                            VariableSources = VariableSources.Add((location.IndexSpan, variableModule.Module, variableName));
-                        }
-                        
-                        var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
-                        var exported = variable ?? variableModule.GetMember(memberName);
-                        var value = exported ?? GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-                        // Do not allow imported variables to override local declarations
-                        Eval.DeclareVariable(variableName, value, VariableSource.Import, location, CanOverwriteVariable(variableName, node.StartIndex));
-                        //DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
+                        DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
                     }
                 }
             }
@@ -95,10 +85,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
             foreach (var memberName in memberNames) {
-                var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
-                // Do not allow imported variables to override local declarations
-                Eval.DeclareVariable(memberName, variable ?? member, VariableSource.Import, null, CanOverwriteVariable(memberName, importPosition));
-                //DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);
+                DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);
             }
         }
 
@@ -114,13 +101,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         /// <param name="importPosition">Position of the import statement.</param>
         /// <param name="nameLocation">Location of the variable name expression.</param>
         private void DeclareVariable(PythonVariableModule variableModule, string memberName, IImportSearchResult imports, string variableName, int importPosition, Node nameLocation) {
+            var location = Eval.GetLocationOfName(nameLocation);
+            if (variableModule.Module != null) {
+                VariableSources = VariableSources.Add((location.IndexSpan, variableModule.Module, variableName));
+            }
+
             // First try imports since child modules should win, i.e. in 'from a.b import c'
             // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
             var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-            
+
             // First try exported or child submodules.
-            value = value ?? variableModule.GetMember(memberName);
-            
+            value = value ??_importedVariableHandler.GetVariable(variableModule, memberName);
             // Value may be variable or submodule. If it is variable, we need it in order to add reference.
             var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
             value = variable?.Value?.Equals(value) == true ? variable : value;
@@ -138,10 +129,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // Make sure module is loaded and analyzed.
             if (value is IPythonModule m) {
                 ModuleResolution.GetOrLoadModule(m.Name);
-                member = member ?? Eval.UnknownType;
-                if (member is IPythonModule m) {
-                    ModuleResolution.GetOrLoadModule(m.Name);
-                }
             }
         }
 

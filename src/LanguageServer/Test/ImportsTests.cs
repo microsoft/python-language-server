@@ -523,7 +523,7 @@ z.";
             await analyzer.WaitForCompleteAnalysisAsync();
             var analysis = await app.GetAnalysisAsync(-1);
 
-            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(5, 3));
             comps.Should().HaveLabels("capitalize");
 
