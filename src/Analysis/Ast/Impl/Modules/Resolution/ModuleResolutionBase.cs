@@ -63,7 +63,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected abstract IPythonModule CreateModule(string name);
 
         public IPythonModule GetImportedModule(string name) {
-            if (name == "__builtin__") {
+            if (name == Interpreter.ModuleResolution.BuiltinsModule.Name) {
                 return Interpreter.ModuleResolution.BuiltinsModule;
             }
             return Modules.TryGetValue(name, out var moduleRef)
