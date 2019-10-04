@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public AnalysisModuleKey(IPythonModule module) : this(
             module.Name,
             module.ModuleType == ModuleType.CompiledBuiltin ? null : module.FilePath,
-            IsTypeshedModule(module),
+            module.IsTypeshed,
             IsNonUserAsDocumentModule(module)) { }
 
         public AnalysisModuleKey(string name, string filePath, bool isTypeshed)
@@ -73,8 +73,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public override string ToString() => $"{Name}({FilePath})";
 
-        private static bool IsTypeshedModule(IPythonModule module)
-            => module is StubPythonModule stubPythonModule && stubPythonModule.IsTypeshed;
         private static bool IsNonUserAsDocumentModule(IPythonModule module)
             => (module.IsNonUserFile() || module.IsCompiled()) && module is IDocument document && document.IsOpen;
     }

@@ -52,5 +52,11 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Indicates if module is restored from database.
         /// </summary>
         public bool IsPersistent { get; set; }
+
+        /// <summary>
+        /// Defines if module belongs to Typeshed and hence resolved
+        /// via typeshed module resolution service.
+        /// </summary>
+        public bool IsTypeshed { get; set; }
     }
 }

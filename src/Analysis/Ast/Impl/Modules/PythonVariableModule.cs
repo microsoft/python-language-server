@@ -52,6 +52,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public bool IsPersistent => Module?.IsPersistent == true;
+        public bool IsTypeshed => Module?.IsTypeshed == true;
 
         public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 
             Name = name;
