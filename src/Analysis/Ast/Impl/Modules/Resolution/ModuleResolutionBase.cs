@@ -62,8 +62,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         protected abstract IPythonModule CreateModule(string name);
 
-        public IPythonModule GetImportedModule(string name)
-            => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : Interpreter.ModuleResolution.GetSpecializedModule(name);
+        public IPythonModule GetImportedModule(string name) {
+            if (name == Interpreter.ModuleResolution.BuiltinsModule.Name) {
+                return Interpreter.ModuleResolution.BuiltinsModule;
+            }
+            return Modules.TryGetValue(name, out var moduleRef)
+                ? moduleRef.Value
+                : Interpreter.ModuleResolution.GetSpecializedModule(name);
+        }
 
         public IPythonModule GetOrLoadModule(string name) {
             // Specialized should always win. However, we don't want
