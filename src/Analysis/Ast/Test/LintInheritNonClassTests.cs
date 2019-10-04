@@ -489,5 +489,39 @@ class C(Enum): ...
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromNone() {
+            const string code = @"
+class C(None):
+    def method(self):
+        return 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(2, 9, 2, 13);
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("None"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task InheritFromNoneVar() {
+            const string code = @"
+x = None
+
+class C(x):
+    def method(self):
+        return 'test'
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().HaveCount(1);
+
+            var diagnostic = analysis.Diagnostics.ElementAt(0);
+            diagnostic.SourceSpan.Should().Be(4, 9, 4, 10);
+            diagnostic.Message.Should().Be(Resources.InheritNonClass.FormatInvariant("x"));
+            diagnostic.ErrorCode.Should().Be(ErrorCodes.InheritNonClass);
+        }
     }
 }
