@@ -1408,5 +1408,14 @@ class B(A):
                 .Which.Should().HaveInsertText($"foo(self, x, y, /, *args):{Environment.NewLine}    return super().foo(x, y, *args)")
                 .And.HaveInsertTextFormat(InsertTextFormat.PlainText);
         }
+
+        [TestMethod]
+        public async Task OnlyOneNone() {
+            var analysis = await GetAnalysisAsync("", PythonVersions.Required_Python38X);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 1));
+
+            result.Completions.Where(item => item.insertText == "None").Should().HaveCount(1);
+        }
     }
 }
