@@ -110,5 +110,37 @@ else:
             var json = ToJson(model);
             Baseline.CompareToFile(GetBaselineFileNameWithSuffix(is3x ? "3" : "2"), json);
         }
+
+        [TestMethod, Priority(0)]
+        public async Task PositionalOnly() {
+            const string code = @"
+x = 'str'
+
+class C:
+    x: int
+    def __init__(self):
+        self.y = 1
+
+    def method(self, x, /, y=True):
+        return func()
+
+    @property
+    def prop(self) -> int:
+        return x
+
+def func():
+    return 2.0
+
+c = C()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            //var json = ToJson(model);
+            //Baseline.CompareToFile(BaselineFileName, json);
+
+            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
+                dbModule.Should().HaveSameMembersAs(analysis.Document);
+            }
+        }
     }
 }

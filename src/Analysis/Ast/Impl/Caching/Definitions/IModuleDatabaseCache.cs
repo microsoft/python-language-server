@@ -19,6 +19,19 @@ namespace Microsoft.Python.Analysis.Caching {
     /// Provides location of the analysis database cache.
     /// </summary>
     public interface IModuleDatabaseCache {
+        /// <summary>
+        /// Cache folder base name without version, such as 'analysis.v'.
+        /// </summary>
+        string CacheFolderBaseName { get; }
+
+        /// <summary>
+        /// Database format version.
+        /// </summary>
+        int DatabaseFormatVersion { get; }
+
+        /// <summary>
+        /// Full path to the cache folder includding version.
+        /// </summary>
         string CacheFolder { get; }
     }
 }

@@ -37,7 +37,7 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase {
-        private static readonly TimeSpan AnalysisTimeout = TimeSpan.FromMinutes(1);
+        protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
         protected TestLogger TestLogger { get; } = new TestLogger();
         protected ServiceManager Services { get; private set; }

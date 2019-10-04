@@ -32,8 +32,6 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private const int DatabaseFormatVersion = 1;
-
         private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
         private readonly object _lock = new object();
 
@@ -47,9 +45,11 @@ namespace Microsoft.Python.Analysis.Caching {
             _fs = services.GetService<IFileSystem>();
 
             var cfs = services.GetService<ICacheFolderService>();
-            CacheFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{DatabaseFormatVersion}");
+            CacheFolder = Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
         }
 
+        public string CacheFolderBaseName => "analysis.v";
+        public int DatabaseFormatVersion => 1;
         public string CacheFolder { get; }
 
         /// <summary>

@@ -330,6 +330,19 @@ z = u[0]
         }
 
         [TestMethod, Priority(0)]
+        public async Task TupleOfNones() {
+            const string code = @"
+from typing import Tuple
+
+x: Tuple[None, None, None]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("Tuple[None, None, None]");
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");
             AssertTransform("List[Int]", "NameOp:List", "NameOp:Int", "MakeGenericOp");

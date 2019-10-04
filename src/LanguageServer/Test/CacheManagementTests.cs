@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,37 +38,46 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
-        public void DeleteAnalysisCache() {
-            var sm = new ServiceManager();
-            var fs = Substitute.For<IFileSystem>();
-            sm.AddService(fs);
-
-            var mdc = Substitute.For<IModuleDatabaseCache>();
-            mdc.CacheFolder.Returns(c => "CacheFolder");
-            sm.AddService(mdc);
-
-            using (var s = new Implementation.Server(sm)) {
-                s.ClearAnalysisCache();
-                fs.Received().DeleteDirectory("CacheFolder", true);
-            }
-        }
+        public Task DeleteAnalysisCache()
+            => RunTest(sm => {
+                using (var s = new Implementation.Server(sm)) {
+                    s.ClearAnalysisCache();
+                    return Task.CompletedTask;
+                }
+            });
 
         [TestMethod, Priority(0)]
-        public async Task LsDeleteAnalysisCache() {
-            var sm = new ServiceManager();
-            var fs = Substitute.For<IFileSystem>();
-            sm.AddService(fs);
+        public Task LsDeleteAnalysisCache()
+            => RunTest(sm => {
+                using (var ls = new Implementation.LanguageServer())
+                using (var ms = new MemoryStream()) {
+                    ls.Start(sm, new JsonRpc(ms));
+                    return ls.ClearAnalysisCache(CancellationToken.None);
+                }
+            });
 
-            var mdc = Substitute.For<IModuleDatabaseCache>();
-            mdc.CacheFolder.Returns(c => "CacheFolder");
-            sm.AddService(mdc);
+        public async Task RunTest(Func<ServiceManager, Task> test) {
+            using (var sm = new ServiceManager()) {
+                var fs = Substitute.For<IFileSystem>();
+                sm.AddService(fs);
 
-            using (var ls = new Implementation.LanguageServer())
-            using (var ms = new MemoryStream()) {
-                ls.Start(sm, new JsonRpc(ms));
-                await ls.ClearAnalysisCache(CancellationToken.None);
-                fs.Received().DeleteDirectory("CacheFolder", true);
+                const string baseName = "analysis.v";
+                SetupDirectories(fs, new[] { $"{baseName}1", $"{baseName}3" });
+
+                var mdc = Substitute.For<IModuleDatabaseCache>();
+                mdc.CacheFolder.Returns(c => "CacheFolder");
+                sm.AddService(mdc);
+
+                await test(sm);
+                fs.Received().DeleteDirectory($"{baseName}1", true);
+                fs.Received().DeleteDirectory($"{baseName}3", true);
             }
+        }
+        private static void SetupDirectories(IFileSystem fs, string[] names) {
+            fs.GetFileSystemEntries(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<SearchOption>())
+                .ReturnsForAnyArgs(c => names);
+            fs.GetFileAttributes(Arg.Any<string>())
+                .ReturnsForAnyArgs(c => FileAttributes.Directory);
         }
     }
 }

@@ -181,7 +181,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
-            var s = GetSetting(analysisKey, "cachingLevel", "None");
+            var s = GetSetting(analysisKey, "cachingLevel", "System");
             if (s.EqualsIgnoreCase("System")) {
                 return AnalysisCachingLevel.System;
             }
