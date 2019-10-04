@@ -17,7 +17,7 @@ namespace Microsoft.Python.Analysis.Types {
     /// <summary>
     /// Represents a built-in Python module.  The built-in module needs to respond to
     /// some extra requests for members by name which supports getting hidden members
-    /// such as "NoneType" which logically live in the built-in module but don't actually
+    /// which logically live in the built-in module but don't actually
     /// exist there by name.
     /// 
     /// The full list of types which will be accessed through GetAnyMember but don't exist

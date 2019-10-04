@@ -181,7 +181,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (value != null) {
 
                 // although technically legal, __init__ in a constructor should not have a not-none return value
-                if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.NoneType)) {
+                if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.None)) {
                     Eval.ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                             Resources.ReturnInInit,
                             node.GetLocation(Eval).Span,

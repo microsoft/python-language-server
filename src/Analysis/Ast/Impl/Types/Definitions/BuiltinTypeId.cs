@@ -21,7 +21,7 @@ namespace Microsoft.Python.Analysis.Types {
         Unknown,
         Object,
         Type,
-        NoneType,
+        None,
 
         Bool,
         Int,
