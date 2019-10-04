@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Python-Language-Server$os$</id>
+    <id>Microsoft-Python-Analysis</id>
     <version>$version$</version>
-    <title>Python Language Server</title>
+    <title>Microsoft Python Static Analysis</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
     <license type="expression">Apache-2.0</license>
     <projectUrl>https://github.com/Microsoft/python-language-server</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Microsoft Python Language Server</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
+    <description>Microsoft Python Static Analysis Engine</description>
+    <releaseNotes>Initial release.</releaseNotes>
     <copyright>Copyright (c) 2018-2019</copyright>
-    <tags>Python;VS Code</tags>
+    <tags>Python</tags>
   </metadata>
   <files>
-    <file src="**/*" exclude="nuget/*;Python-Language-Server.nuspec" />
+    <file src="**/*" exclude="nuget/*;*.py;*.ps1;*.nupkg;Microsoft-Python-Analysis.nuspec" />
   </files>
 </package>
