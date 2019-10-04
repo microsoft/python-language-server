@@ -9,12 +9,15 @@
     <license type="expression">Apache-2.0</license>
     <projectUrl>https://github.com/Microsoft/python-language-server</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Microsoft Python Static Analysis Engine</description>
+    <description>Microsoft Python Static Code Analysis Engine</description>
     <releaseNotes>Initial release.</releaseNotes>
     <copyright>Copyright (c) 2018-2019</copyright>
     <tags>Python</tags>
   </metadata>
   <files>
-    <file src="**/*" exclude="nuget/*;*.py;*.ps1;*.nupkg;Microsoft-Python-Analysis.nuspec" />
+    <file src="Microsoft.Python.Core.dll" target="lib/netstandard2.0/Microsoft.Python.Core.dll" />
+    <file src="Microsoft.Python.Analysis.Core.dll" target="lib/netstandard2.0/Microsoft.Python.Analysis.Core.dll" />
+    <file src="Microsoft.Python.Parsing.dll" target="lib/netstandard2.0/Microsoft.Python.Parsing.dll" />
+    <file src="Microsoft.Python.Analysis.dll" target="lib/netstandard2.0/Microsoft.Python.Analysis.dll" />
   </files>
 </package>
