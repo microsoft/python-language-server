@@ -72,7 +72,34 @@ namespace Microsoft.Python.LanguageServer.Completion {
             var fn = overload.ClassMember as IPythonFunctionType;
             var skipFirstParameters = fn?.IsStatic == true ? overload.Parameters : overload.Parameters.Skip(1);
 
-            sb.AppendLine(overload.Name + "(" + string.Join(", ", overload.Parameters.Select(p => MakeOverrideParameter(p, p.DefaultValueString))) + "):");
+            var addComma = false;
+            var addMarker = false;
+
+            sb.Append(overload.Name);
+            sb.Append('(');
+
+            foreach (var p in overload.Parameters) {
+                if (addComma) {
+                    sb.Append(", ");
+                } else {
+                    addComma = true;
+                }
+
+                if (p.Kind == ParameterKind.PositionalOnly) {
+                    addMarker = true;
+                } else if (addMarker && p.Kind != ParameterKind.PositionalOnly) {
+                    sb.Append("/, ");
+                    addMarker = false;
+                }
+
+                sb.Append(MakeOverrideParameter(p, p.DefaultValueString));
+            }
+
+            if (addMarker) {
+                sb.Append(", /");
+            }
+
+            sb.AppendLine("):");
             sb.Append(indentation);
 
             if (overload.Parameters.Count > 0) {

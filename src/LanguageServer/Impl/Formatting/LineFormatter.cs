@@ -261,6 +261,11 @@ namespace Microsoft.Python.LanguageServer.Formatting {
                         }
                         break;
 
+                    // Positional marker
+                    case TokenKind.Divide when next?.Kind == TokenKind.Comma:
+                        builder.Append(token);
+                        break;
+
                     // Operators
                     case TokenKind.MatMultiply:
                     case TokenKind.FloorDivide:

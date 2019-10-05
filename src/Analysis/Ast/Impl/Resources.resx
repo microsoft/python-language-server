@@ -219,4 +219,7 @@
   <data name="NoMethodArgument" xml:space="preserve">
     <value>Method '{0}' has no argument.</value>
   </data>
+  <data name="Analysis_PositionalOnlyArgumentNamed" xml:space="preserve">
+    <value>Positional only argument '{0}' may not be named.</value>
+  </data>
 </root>
