@@ -156,7 +156,8 @@ namespace Microsoft.Python.Analysis.Tests {
             TestLogger.Log(TraceEventType.Information, "Test: Analysis begin.");
 
             IDocumentAnalysis analysis;
-            using (var cts = new CancellationTokenSource(AnalysisTimeout)) {
+            var timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : AnalysisTimeout;
+            using (var cts = new CancellationTokenSource(timeout)) {
                 await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync(cts.Token);
                 analysis = await doc.GetAnalysisAsync(-1, cts.Token);
             }
