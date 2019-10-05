@@ -198,7 +198,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var addedRoots = new HashSet<string> { Root };
             addedRoots.UnionWith(InterpreterPaths);
             addedRoots.UnionWith(UserPaths);
-            ReloadModulePaths(addedRoots);
+            ReloadModulePaths(addedRoots, cancellationToken);
 
             if (!builtinsIsCreated) {
                 var builtinsModule = CreateBuiltinsModule(Services, Interpreter, StubCache);
