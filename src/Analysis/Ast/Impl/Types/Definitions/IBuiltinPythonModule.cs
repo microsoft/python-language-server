@@ -22,7 +22,6 @@ namespace Microsoft.Python.Analysis.Types {
     /// 
     /// The full list of types which will be accessed through GetAnyMember but don't exist
     /// in the built-in module includes:
-    ///     NoneType
     ///     generator
     ///     builtin_function
     ///     builtin_method_descriptor

@@ -201,8 +201,6 @@ namespace Microsoft.Python.Analysis.Caching {
             switch (memberName) {
                 case "None":
                     return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.None);
-                case "NoneType": // For backwards compatibility.
-                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.None);
                 case "Unknown":
                     return builtins.Interpreter.UnknownType;
             }

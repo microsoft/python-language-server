@@ -1408,7 +1408,7 @@ def add_builtin_objects(state):
         state.members.append(mi)
         state.members.append(MemberInfo(alias, None, literal=mi.name))
 
-	# We don't need these anymore, as Unknown and None are specialized in the analysis.
+    # We don't need these anymore, as Unknown and None are specialized in the analysis.
     #add_simple('__Unknown__', '<unknown>', MemberInfo("__name__", None, literal='"<unknown>"'))
     #add_simple('__NoneType__', 'the type of the None object', MemberInfo.NO_VALUE)
 
