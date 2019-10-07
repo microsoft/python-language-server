@@ -169,5 +169,15 @@ class Test(type):
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task LambdaInClassScope() {
+            const string code = @"
+class C:
+    [lambda x, y: x+y+z for z in range(10)]
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }

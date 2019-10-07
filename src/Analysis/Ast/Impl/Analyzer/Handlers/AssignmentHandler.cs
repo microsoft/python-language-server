@@ -32,8 +32,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // Filter out parenthesis expression in assignment because it makes no difference.
             var lhs = node.Left.Select(s => s.RemoveParenthesis());
 
-            // TODO: Assigning like this is wrong; the assignment needs to be considering the
-            // right side's unpacking for what's on the left, not just apply it to every case.
+            // Note that this is handling assignments of the same value to multiple variables,
+            // i.e. with "x = y = z = value", x/y/z are the items in lhs. If an expression looks
+            // like "x, y, z = value", then "x, y, z" is a *single* lhs value and its unpacking
+            // will be handled by AssignToExpr.
             var value = ExtractRhs(node.Right, lhs.FirstOrDefault(), lookupOptions);
             if (value != null) {
                 foreach (var expr in lhs) {
@@ -49,6 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var lhs = node.Target.RemoveParenthesis();
 
+            // This is fine, as named expression targets are not allowed to be anything but simple names.
             var value = ExtractRhs(node.Value, lhs);
             if (value != null) {
                 AssignToExpr(lhs, value);
