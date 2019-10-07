@@ -6,8 +6,7 @@
     <title>Python Language Server</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
-    <!--<license type="expression">Apache-2.0</license> Nuget 5.x-->
-    <licenseUrl>https://github.com/Microsoft/python-language-server/blob/master/LICENSE</licenseUrl>
+    <license type="expression">Apache-2.0</license>
     <projectUrl>https://github.com/Microsoft/python-language-server</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Microsoft Python Language Server</description>
