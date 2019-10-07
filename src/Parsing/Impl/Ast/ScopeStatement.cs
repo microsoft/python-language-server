@@ -13,9 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ScopeStatement : Statement, IScopeNode {
@@ -44,13 +42,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public IReadOnlyList<PythonVariable> FreeVariables => ScopeInfo.FreeVariables;
 
-        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
-
         public abstract ScopeInfo ScopeInfo { get; }
-
-        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
-
-        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
 
         protected void Clear() => ScopeInfo.Clear();
     }

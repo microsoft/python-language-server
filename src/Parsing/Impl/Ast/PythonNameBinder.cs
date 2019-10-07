@@ -151,19 +151,19 @@ namespace Microsoft.Python.Parsing.Ast {
 
             // Bind
             foreach (var scope in _scopes) {
-                scope.Bind(this);
+                scope.ScopeInfo.Bind(this);
             }
 
             // Finish the globals
-            unboundAst.Bind(this);
+            unboundAst.ScopeInfo.Bind(this);
 
             // Finish Binding w/ outer most scopes first.
             for (var i = _scopes.Count - 1; i >= 0; i--) {
-                _scopes[i].FinishBind(this);
+                _scopes[i].ScopeInfo.FinishBind(this);
             }
 
             // Finish the globals
-            unboundAst.FinishBind(this);
+            unboundAst.ScopeInfo.FinishBind(this);
         }
 
         private void PushScope(IScopeNode node) {
@@ -448,7 +448,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 // Check current scope for conflicting variable
                 var assignedGlobal = false;
-                if (_currentScope.TryGetVariable(n, out var conflict)) {
+                if (_currentScope.ScopeInfo.TryGetVariable(n, out var conflict)) {
                     // conflict?
                     switch (conflict.Kind) {
                         case VariableKind.Global:
@@ -504,7 +504,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 // Check current scope for conflicting variable
                 var assignedLocal = false;
-                if (_currentScope.TryGetVariable(n, out var conflict)) {
+                if (_currentScope.ScopeInfo.TryGetVariable(n, out var conflict)) {
                     // conflict?
                     switch (conflict.Kind) {
                         case VariableKind.Global:

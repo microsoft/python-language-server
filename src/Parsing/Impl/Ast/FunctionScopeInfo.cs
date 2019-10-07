@@ -52,7 +52,6 @@ namespace Microsoft.Python.Parsing.Ast {
             return null;
         }
 
-
         internal override void Bind(PythonNameBinder binder) {
             base.Bind(binder);
             Verify(binder);

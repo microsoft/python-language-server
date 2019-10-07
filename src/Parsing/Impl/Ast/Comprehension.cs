@@ -62,12 +62,6 @@ namespace Microsoft.Python.Parsing.Ast {
         public PythonAst GlobalParent => ScopeInfo.GlobalParent;
         public ScopeInfo ScopeInfo => _scopeInfo;
 
-        public void Bind(PythonNameBinder binder) => ScopeInfo.Bind(binder);
-
-        public void FinishBind(PythonNameBinder binder) => ScopeInfo.FinishBind(binder);
-
-        public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
-
         #endregion
     }
 
