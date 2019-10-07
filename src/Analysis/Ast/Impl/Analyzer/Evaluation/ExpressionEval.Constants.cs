@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IPythonType GetTypeFromLiteral(Expression expr) {
             if (expr is ConstantExpression ce) {
                 if (ce.Value == null) {
-                    return Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
+                    return Interpreter.GetBuiltinType(BuiltinTypeId.None);
                 }
 
                 switch (Type.GetTypeCode(ce.Value.GetType())) {

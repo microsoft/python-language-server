@@ -18,7 +18,7 @@ using Microsoft.Python.Analysis.Values.Collections;
 
 namespace Microsoft.Python.Analysis.Values {
     internal sealed class PythonNone : PythonType, IPythonInstance {
-        public PythonNone(IBuiltinsPythonModule builtins) : base("None", new Location(builtins), string.Empty, BuiltinTypeId.NoneType) { }
+        public PythonNone(IBuiltinsPythonModule builtins) : base("None", new Location(builtins), string.Empty, BuiltinTypeId.None) { }
 
         public override IPythonInstance CreateInstance(IArgumentSet args) => this;
 

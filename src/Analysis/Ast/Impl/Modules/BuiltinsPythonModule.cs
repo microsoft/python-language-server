@@ -57,7 +57,6 @@ namespace Microsoft.Python.Analysis.Modules {
         }
 
         private void SpecializeTypes() {
-            IPythonType noneType = null;
             var isV3 = Interpreter.LanguageVersion.Is3x();
 
             foreach (BuiltinTypeId typeId in Enum.GetValues(typeof(BuiltinTypeId))) {
@@ -112,9 +111,6 @@ namespace Microsoft.Python.Analysis.Modules {
                             case BuiltinTypeId.Bool:
                                 _boolType = _boolType ?? biType;
                                 break;
-                            case BuiltinTypeId.NoneType:
-                                noneType = noneType ?? biType;
-                                break;
                         }
                         break;
                 }
@@ -128,9 +124,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 Analysis.GlobalScope.DeclareVariable("False", _boolType, VariableSource.Builtin, location);
             }
 
-            if (noneType != null) {
-                Analysis.GlobalScope.DeclareVariable("None", noneType, VariableSource.Builtin, location);
-            }
+            Analysis.GlobalScope.DeclareVariable("None", new PythonNone(this), VariableSource.Builtin, location);
 
             foreach (var n in GetMemberNames()) {
                 var t = GetMember(n).GetPythonType();
@@ -186,9 +180,9 @@ namespace Microsoft.Python.Analysis.Modules {
                     new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
                     new ParameterInfo("mode", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant("r", Interpreter.GetBuiltinType(BuiltinTypeId.Str))),
                     new ParameterInfo("buffering", Interpreter.GetBuiltinType(BuiltinTypeId.Int), ParameterKind.Normal, new PythonConstant(-1, Interpreter.GetBuiltinType(BuiltinTypeId.Int))),
-                    new ParameterInfo("encoding", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
-                    new ParameterInfo("errors", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
-                    new ParameterInfo("newline", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.NoneType))),
+                    new ParameterInfo("encoding", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
+                    new ParameterInfo("errors", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
+                    new ParameterInfo("newline", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
                     new ParameterInfo("closefd", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.Normal, new PythonConstant(true, Interpreter.GetBuiltinType(BuiltinTypeId.Bool))),
                     new ParameterInfo("opener", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.Str)))
                 };

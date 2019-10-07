@@ -357,7 +357,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                         paramType = GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
                         // Default value of None does not mean the parameter is None, just says it can be missing.
-                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
+                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.None) ? null : defaultValue;
                         if (paramType == null && defaultValue != null) {
                             paramType = defaultValue.GetPythonType();
                         }

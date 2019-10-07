@@ -186,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null)
                 };
                 o.SetParameters(parameters);
-                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), true);
+                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.None), true);
                 fn.AddOverload(o);
                 Eval.DeclareVariable("print", fn, VariableSource.Import, printNameExpression);
             }
