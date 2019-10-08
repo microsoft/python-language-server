@@ -669,5 +669,19 @@ def f(a, b, /, c, d):
                     .Which.Should().HaveSingleOverload()
                     .Which.Should().HaveParameters("a", "b", "c", "d");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task LiteralParameter() {
+            const string code = @"
+from typing import Literal
+
+def f(handle: int, overlapped: Literal[True]):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveFunction("f")
+                    .Which.Should().HaveSingleOverload()
+                    .Which.Should().HaveParameters("handle", "overlapped");
+        }
     }
 }
