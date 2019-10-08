@@ -478,8 +478,10 @@ a3.";
         [TestMethod, Priority(0)]
         public async Task LoopImports_Variables() {
             var module1Code = @"
+from module3 import A3
+
 class A1: 
-    def M1(self): return 0; pass
+    def M1(self) -> A3: pass
 
 from module2 import y3
 x = y3.M3()
@@ -491,8 +493,10 @@ from module3 import A3
 y3 = A3()
 ";
             var module3Code = @"
+from module1 import A1
+
 class A3:
-    def M3(self): return '0'; pass
+    def M3(self) -> A1: pass
 
 from module2 import y1
 z = y1.M1()
@@ -503,7 +507,11 @@ from module1 import x
 from module3 import z
 
 x.
-z.";
+z.
+
+x.M1().
+z.M3().
+";
 
             var module1Uri = TestData.GetTestSpecificUri("module1.py");
             var module2Uri = TestData.GetTestSpecificUri("module2.py");
@@ -525,10 +533,16 @@ z.";
 
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
             var comps = cs.GetCompletions(analysis, new SourceLocation(5, 3));
-            comps.Should().HaveLabels("capitalize");
+            comps.Should().HaveLabels("M1");
 
             comps = cs.GetCompletions(analysis, new SourceLocation(6, 3));
-            comps.Should().HaveLabels("bit_length");
+            comps.Should().HaveLabels("M3");
+            
+            comps = cs.GetCompletions(analysis, new SourceLocation(8, 8));
+            comps.Should().HaveLabels("M3");
+
+            comps = cs.GetCompletions(analysis, new SourceLocation(9, 8));
+            comps.Should().HaveLabels("M1");
         }
 
         [TestMethod, Priority(0)]

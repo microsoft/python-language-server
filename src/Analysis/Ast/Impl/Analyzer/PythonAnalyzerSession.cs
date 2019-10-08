@@ -158,6 +158,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         totalMilliseconds = Math.Round(totalMilliseconds, 2);
                         (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
                         _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
+//#if DEBUG
+//                        var notReady = _analyzer.LoadedModules.Where(m => (m.ModuleType == ModuleType.Library || m.ModuleType == ModuleType.Stub) && m.Analysis is EmptyAnalysis).ToArray();
+//                        Debug.Assert(notReady.Length == 0);
+//#endif
                     }
                 }
             }
@@ -204,7 +208,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 if (isCanceled) {
                     switch (node) {
-                        case IDependencyChainLoopNode<PythonAnalyzerEntry> loop when loop.Values.All(e => !e.NotAnalyzed):
+                        case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
+                            remaining += loop.Values.Count(e => !e.NotAnalyzed);
+                            node.MoveNext();
+                            continue;
                         case IDependencyChainSingleNode<PythonAnalyzerEntry> single when !single.Value.NotAnalyzed:
                             remaining++;
                             node.MoveNext();

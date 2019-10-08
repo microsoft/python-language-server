@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return _cachedVariables.TryGetValue(key, out var variables) ? variables[name] : default;
             }
 
-            walker = CreateWalker(module, ast);
+            _walkers[key] = walker = CreateWalker(module, ast);
             ast.Walk(walker);
             walker.Complete();
 

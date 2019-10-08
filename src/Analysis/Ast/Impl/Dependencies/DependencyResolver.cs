@@ -242,11 +242,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
 
             var outgoingVertices = new HashSet<int>[vertices.Count];
-            foreach (var vertex in vertices) {
-                if (vertex == null) {
-                    continue;
-                }
-
+            foreach (var vertex in vertices.Where(vertex => vertex != null)) {
                 if (version != _version) {
                     return false;
                 }
@@ -269,10 +265,8 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     return false;
                 }
 
-                foreach (var vertex in vertices) {
-                    if (vertex != null && !vertex.IsSealed) {
-                        vertex.Seal(outgoingVertices[vertex.Index]);
-                    }
+                foreach (var vertex in vertices.Where(vertex => vertex != null && !vertex.IsSealed)) {
+                    vertex.Seal(outgoingVertices[vertex.Index]);
                 }
 
                 return true;
@@ -545,7 +539,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private readonly DependencyResolver<TKey, TValue> _dependencyResolver;
             private readonly ImmutableArray<WalkingVertex<TKey, TValue>> _startingVertices;
             private readonly ImmutableArray<int> _depths;
-            private readonly object _syncObj;
+            private readonly object _syncObj = new object();
             private int _remaining;
             private PriorityProducerConsumer<IDependencyChainNode> _ppc;
 
@@ -568,7 +562,6 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 in ImmutableArray<TKey> missingKeys,
                 in int version) {
 
-                _syncObj = new object();
                 _dependencyResolver = dependencyResolver;
                 _startingVertices = startingVertices;
                 _depths = depths;
