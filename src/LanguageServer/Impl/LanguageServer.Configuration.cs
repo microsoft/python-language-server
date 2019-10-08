@@ -185,7 +185,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
             var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
             
-            if (string.IsNullOrWhiteSpace(s)) {
+            if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
                 s = DefaultCachingLevel;
             }
 
