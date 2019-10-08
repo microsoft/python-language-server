@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 
 namespace Microsoft.Python.Core {
     public static class ArrayExtensions {
@@ -35,6 +36,22 @@ namespace Microsoft.Python.Core {
             }
 
             return -1;
+        }
+
+        public static List<T> AddIfNotNull<T>(this List<T> list, T item) where T : class {
+            if (item == null) {
+                return list;
+            }
+
+            list.Add(item);
+            return list;
+        }
+        public static List<T> AddIfNotNull<T>(this List<T> list, params T[] items) where T : class {
+            foreach (var item in items) {
+                list.AddIfNotNull(item);
+            }
+
+            return list;
         }
     }
 }

@@ -98,6 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     firstTriggerCharacter = "\n",
                     moreTriggerCharacter = new[] { ";", ":" }
                 },
+                codeActionProvider = true,
             }
         };
 
@@ -191,11 +192,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _disposableBag.ThrowIfDisposed();
             switch (@params.settings) {
                 case ServerSettings settings: {
-                        Settings = settings;
-                        _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
-                        _completionSource.Options = Settings.completion;
-                        break;
-                    }
+                    Settings = settings;
+                    _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
+                    _completionSource.Options = Settings.completion;
+                    break;
+                }
                 default:
                     _log?.Log(TraceEventType.Error, "change configuration notification sent unsupported settings");
                     break;

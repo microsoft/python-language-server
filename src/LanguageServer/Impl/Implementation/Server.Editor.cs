@@ -98,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
             var reference = new DeclarationSource(Services).FindDefinition(analysis, @params.position, out _);
-            return reference != null ? new Location { uri = reference.uri, range = reference.range} : null;
+            return reference != null ? new Location { uri = reference.uri, range = reference.range } : null;
         }
 
         public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
@@ -111,6 +111,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Rename in {uri} at {@params.position}");
             return new RenameSource(Services).RenameAsync(uri, @params.position, @params.newName, cancellationToken);
+        }
+
+        public async Task<CodeAction[]> CodeAction(CodeActionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Code Action in {uri} at {@params.range}");
+
+            if (@params.context.diagnostics?.Length == 0) {
+                return Array.Empty<CodeAction>();
+            }
+
+            // * NOTE * CodeActionParams.CodeActionContext._version is always null. PublishDiagnostic doesn't send version
+            //          so not sure where that version is supposed to come from. and not sure whether what version it is 
+            //          supposed to be. text version? analysis version?
+            //          we might want to check version at some point and return no code action if we are called with
+            //          staled diagnostics
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
+            var codeActions = await new CodeActionSource(Services).GetCodeActionsAsync(analysis, @params.range, @params.context.diagnostics, cancellationToken);
+            return codeActions ?? Array.Empty<CodeAction>();
         }
     }
 }

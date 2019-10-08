@@ -741,4 +741,25 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         [JsonProperty]
         public Diagnostic[] diagnostics;
     }
+
+    //
+    // Summary:
+    //     A class representing a change that can be performed in code. A CodeAction must
+    //     either set "edit" or "command". 
+    //     If both are supplied, the edit will be applied first, then the command will be executed.
+    [Serializable]
+    public sealed class CodeAction {
+        //
+        // Summary:
+        //     Gets or sets the human readable title for this code action.
+        public string title;
+        //
+        // Summary:
+        //     Gets or sets the workspace edit that this code action performs.
+        public WorkspaceEdit edit;
+        //
+        // Summary:
+        //     Gets or sets the command that this code action executes.
+        public Command command;
+    }
 }

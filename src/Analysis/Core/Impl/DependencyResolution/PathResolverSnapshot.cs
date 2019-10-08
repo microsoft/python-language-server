@@ -82,6 +82,14 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         public ImmutableArray<string> GetAllImportableModuleNames(bool includeImplicitPackages = true) {
+            return GetAllImportableModuleFullName(n => !string.IsNullOrEmpty(n.FullModuleName), includeImplicitPackages);
+        }
+
+        public ImmutableArray<string> GetAllImportableModuleByName(string name, bool includeImplicitPackages = true) {
+            return GetAllImportableModuleFullName(n => string.Equals(n.Name, name), includeImplicitPackages);
+        }
+
+        private ImmutableArray<string> GetAllImportableModuleFullName(Func<Node, bool> predicate, bool includeImplicitPackages = true) {
             var roots = _roots.Prepend(_nonRooted);
             var items = new Queue<Node>(roots);
             var names = ImmutableArray<string>.Empty;
@@ -89,7 +97,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             while (items.Count > 0) {
                 var item = items.Dequeue();
                 if (item != null) {
-                    if (!string.IsNullOrEmpty(item.FullModuleName) && (item.IsModule || includeImplicitPackages)) {
+                    if (predicate(item) && (item.IsModule || includeImplicitPackages)) {
                         names = names.Add(item.FullModuleName);
                     }
 
@@ -101,7 +109,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
 
             return names.AddRange(
                 _builtins.Children
-                    .Where(b => !string.IsNullOrEmpty(b.FullModuleName))
+                    .Where(b => predicate(b))
                     .Select(b => b.FullModuleName)
             );
         }

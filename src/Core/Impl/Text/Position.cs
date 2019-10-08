@@ -18,7 +18,7 @@ using System;
 
 namespace Microsoft.Python.Core.Text {
     [Serializable]
-    public struct Position {
+    public struct Position : IEquatable<Position> {
         /// <summary>
         /// Line position in a document (zero-based).
         /// </summary>
@@ -39,7 +39,20 @@ namespace Microsoft.Python.Core.Text {
 
         public static bool operator >(Position p1, Position p2) => p1.line > p2.line || p1.line == p2.line && p1.character > p2.character;
         public static bool operator <(Position p1, Position p2) => p1.line < p2.line || p1.line == p2.line && p1.character < p2.character;
+        public static bool operator ==(Position p1, Position p2) => p1.Equals(p2);
+        public static bool operator !=(Position p1, Position p2) => !p1.Equals(p2);
 
+        public bool Equals(Position other) => line == other.line && character == other.character;
+
+        public override bool Equals(object obj) {
+            if (obj is Position other) {
+                return Equals(other);
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode() => 0;
         public override string ToString() => $"({line}, {character})";
     }
 }
