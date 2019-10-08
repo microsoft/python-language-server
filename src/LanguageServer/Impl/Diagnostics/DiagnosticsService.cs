@@ -235,6 +235,15 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private void OnCloseDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, false);
         private void OnRemoveDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, true);
 
+        /// <summary>
+        /// Removes document diagnostics (publishes empty set to the client).
+        /// If the document is still open, URI remains in the document diagnostics map.
+        /// </summary>
+        /// <param name="uri">Document URI.</param>
+        /// <param name="remove">
+        /// True means the document is closed and its diagnostics should be
+        /// removed from the map (as opposed to document is still open and has no diagnostics).
+        /// </param>
         private void ClearDiagnostics(Uri uri, bool remove) {
             lock (_lock) {
                 if (_diagnostics.TryGetValue(uri, out var d)) {
