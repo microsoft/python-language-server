@@ -284,7 +284,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
             class MakeUnknownOp : Op {
                 public override bool Apply<T>(TypeAnnotationConverter<T> converter, Stack<KeyValuePair<string, T>> stack) {
-                    stack.Push(new KeyValuePair<string, T>("Unknown", default));
+                    stack.Push(new KeyValuePair<string, T>(null, default));
                     return true;
                 }
             }
