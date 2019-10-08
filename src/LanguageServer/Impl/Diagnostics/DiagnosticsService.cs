@@ -40,7 +40,10 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 _entries[source] = Array.Empty<DiagnosticsEntry>();
             }
 
-            public void ClearAll() => _entries.Clear();
+            public void ClearAll() {
+                Changed = Entries.Count > 0;
+                _entries.Clear();
+            }
 
             public void SetDiagnostics(DiagnosticSource source, IReadOnlyList<DiagnosticsEntry> entries) {
                 if (_entries.TryGetValue(source, out var existing)) {
@@ -106,16 +109,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             }
         }
 
-        public void Remove(Uri documentUri) {
-            lock (_lock) {
-                // Before removing the document, make sure we clear its diagnostics.
-                if (_diagnostics.TryGetValue(documentUri, out var d)) {
-                    d.ClearAll();
-                    PublishDiagnostics();
-                    _diagnostics.Remove(documentUri);
-                }
-            }
-        }
+        public void Remove(Uri documentUri) => ClearDiagnostics(documentUri, true);
 
         public int PublishingDelay { get; set; } = 1000;
 
@@ -243,7 +237,8 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
 
         private void ClearDiagnostics(Uri uri, bool remove) {
             lock (_lock) {
-                if (_diagnostics.TryGetValue(uri, out var _)) {
+                if (_diagnostics.TryGetValue(uri, out var d)) {
+                    d.ClearAll();
                     PublishDiagnostics();
                     if (remove) {
                         _diagnostics.Remove(uri);

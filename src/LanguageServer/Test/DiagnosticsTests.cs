@@ -148,7 +148,9 @@ namespace Microsoft.Python.LanguageServer.Tests {
             clientApp.When(x => x.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", Arg.Any<object>()))
                 .Do(x => reported.Add(x.Args()[1] as PublishDiagnosticsParams));
 
-            doc.Dispose();
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            rdt.CloseDocument(doc.Uri);
+
             ds.Diagnostics.TryGetValue(doc.Uri, out _).Should().BeFalse();
             reported.Count.Should().Be(1);
             reported[0].uri.Should().Be(doc.Uri);
