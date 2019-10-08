@@ -73,15 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
         public async Task<IDocumentAnalysis> GetAnalysisAsync(IPythonModule module, int waitTime, CancellationToken cancellationToken) {
-            PythonAnalyzerEntry entry;
-            lock (_syncObj) {
-                var key = new AnalysisModuleKey(module);
-                if (!_analysisEntries.TryGetValue(key, out entry)) {
-                    var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
-                    entry = new PythonAnalyzerEntry(emptyAnalysis);
-                    _analysisEntries[key] = entry;
-                }
-            }
+            var entry = GetOrCreateAnalysisEntry(module, out _);
 
             if (waitTime < 0 || Debugger.IsAttached) {
                 return await GetAnalysisAsync(entry, default, cancellationToken);
@@ -114,13 +106,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public void InvalidateAnalysis(IPythonModule module) {
             lock (_syncObj) {
-                var key = new AnalysisModuleKey(module);
-                if (_analysisEntries.TryGetValue(key, out var entry)) {
-                    entry.Invalidate(_version + 1);
-                } else {
-                    _analysisEntries[key] = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
-                    _analysisCompleteEvent.Reset();
-                }
+                var entry = GetOrCreateAnalysisEntry(module, out _);
+                entry.Invalidate(_version + 1);
             }
         }
 
@@ -142,7 +129,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (!_analysisEntries.TryGetValue(key, out entry)) {
                     return;
                 }
-
                 version = _version + 1;
             }
 
@@ -157,26 +143,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
             int version;
 
             lock (_syncObj) {
-                key = new AnalysisModuleKey(module);
+                entry = GetOrCreateAnalysisEntry(module, out key);
                 version = _version + 1;
-                if (_analysisEntries.TryGetValue(key, out entry)) {
-                    if (entry.BufferVersion >= bufferVersion) {
-                        return;
-                    }
-
-                    // It is possible that parsing request for the library has been started when document is open,
-                    // but it is closed at the moment of analysis and then become open again.
-                    // In this case, we still need to analyze the document, but using correct entry.
-                    var nonUserAsDocumentKey = key.GetNonUserAsDocumentKey();
-                    if (entry.PreviousAnalysis is LibraryAnalysis && _analysisEntries.TryGetValue(nonUserAsDocumentKey, out var documentEntry)) {
-                        key = nonUserAsDocumentKey;
-                        entry = documentEntry;
-                    }
-
-                } else {
-                    entry = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
-                    _analysisEntries[key] = entry;
-                    _analysisCompleteEvent.Reset();
+                if (entry.BufferVersion >= bufferVersion) {
+                    return;
+                }
+                // It is possible that parsing request for the library has been started when document is open,
+                // but it is closed at the moment of analysis and then become open again.
+                // In this case, we still need to analyze the document, but using correct entry.
+                var nonUserAsDocumentKey = key.GetNonUserAsDocumentKey();
+                if (entry.PreviousAnalysis is LibraryAnalysis && _analysisEntries.TryGetValue(nonUserAsDocumentKey, out var documentEntry)) {
+                    key = nonUserAsDocumentKey;
+                    entry = documentEntry;
                 }
             }
 
@@ -329,7 +307,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _forceGCOnNextSession = false;
             }
 
-            return new PythonAnalyzerSession(_services, _progress, _analysisCompleteEvent, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
+            return new PythonAnalyzerSession(_services, _progress, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
         }
 
         private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
@@ -338,32 +316,37 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var foundKeys = ImmutableArray<AnalysisModuleKey>.Empty;
-            foreach (var missingKey in missingKeys) {
+            foreach (var key in missingKeys) {
                 lock (_syncObj) {
-                    if (_analysisEntries.TryGetValue(missingKey, out _)) {
+                    if (_analysisEntries.TryGetValue(key, out _)) {
                         continue;
                     }
                 }
 
-                var (moduleName, _, isTypeshed) = missingKey;
+                var (moduleName, _, isTypeshed) = key;
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
                 var module = moduleResolution.GetOrLoadModule(moduleName);
                 if (module != null && module.ModuleType != ModuleType.Unresolved) {
-                    foundKeys = foundKeys.Add(missingKey);
+                    var entry = GetOrCreateAnalysisEntry(module, out _);
+                    _dependencyResolver.TryAddValue(key, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
                 }
             }
+        }
 
-            if (foundKeys.Count > 0) {
-                foreach (var foundKey in foundKeys) {
-                    PythonAnalyzerEntry entry;
-                    lock (_syncObj) {
-                        if (!_analysisEntries.TryGetValue(foundKey, out entry)) {
-                            continue;
-                        }
-                    }
+        private PythonAnalyzerEntry GetOrCreateAnalysisEntry(IPythonModule module, out AnalysisModuleKey key) {
+            key = new AnalysisModuleKey(module);
+            return GetOrCreateAnalysisEntry(module, key);
+        }
 
-                    _dependencyResolver.TryAddValue(foundKey, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
+        private PythonAnalyzerEntry GetOrCreateAnalysisEntry(IPythonModule module, AnalysisModuleKey key) {
+            lock (_syncObj) {
+                if (!_analysisEntries.TryGetValue(key, out var entry)) {
+                    var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
+                    entry = new PythonAnalyzerEntry(emptyAnalysis);
+                    _analysisEntries[key] = entry;
+                    _analysisCompleteEvent.Reset();
                 }
+                return entry;
             }
         }
     }

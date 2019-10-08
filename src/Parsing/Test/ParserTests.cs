@@ -2749,6 +2749,58 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void PositionalOnly() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("PositionalOnly.py", errors, version),
+                    CheckSuite(
+                        CheckFuncDef("f", new[] {
+                            CheckParameter("a", ParameterKind.PositionalOnly),
+                            CheckParameter("b", ParameterKind.PositionalOnly),
+                            CheckParameter(null, ParameterKind.PositionalOnlyMarker),
+                            CheckParameter("c", ParameterKind.Normal),
+                            CheckParameter("d", ParameterKind.Normal),
+                            CheckParameter(null, ParameterKind.List),
+                            CheckParameter("e", ParameterKind.KeywordOnly),
+                            CheckParameter("f", ParameterKind.KeywordOnly),
+                        }, CheckSuite(Pass)),
+                        CheckFuncDef("pow2", new[] {
+                            CheckParameter("x", ParameterKind.PositionalOnly),
+                            CheckParameter("y", ParameterKind.PositionalOnly),
+                            CheckParameter("z", ParameterKind.PositionalOnly, None),
+                            CheckParameter(null, ParameterKind.PositionalOnlyMarker),
+                        }, CheckSuite(Pass)),
+                        CheckFuncDef("foo", new[] {
+                            CheckParameter("name", ParameterKind.PositionalOnly),
+                            CheckParameter(null, ParameterKind.PositionalOnlyMarker),
+                            CheckParameter("kwds", ParameterKind.Dictionary),
+                        }, CheckSuite(Pass))
+                    )
+                );
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void PositionalOnlyErrors() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseFile("PositionalOnlyErrors.py", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("positional only marker after * args not allowed", new SourceSpan(1, 14, 1, 15)),
+                    new ErrorResult("positional only marker after * args not allowed", new SourceSpan(4, 16, 4, 17)),
+                    new ErrorResult("positional only marker after * args not allowed", new SourceSpan(7, 26, 7, 27)),
+                    new ErrorResult("positional only marker after ** args not allowed", new SourceSpan(10, 20, 10, 21)),
+                    new ErrorResult("duplicate positional only marker", new SourceSpan(13, 16, 13, 17)),
+                    new ErrorResult("positional only marker may not have annotation", new SourceSpan(16, 10, 16, 15)),
+                    new ErrorResult("positional only marker may not have default", new SourceSpan(19, 10, 19, 16)),
+                    new ErrorResult("positional only marker may not be first parameter", new SourceSpan(22, 7, 22, 8)),
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void CoroutineDef() {
             foreach (var version in V35AndUp) {
                 CheckAst(
@@ -3012,6 +3064,49 @@ namespace Microsoft.Python.Parsing.Tests {
                                     CheckSuite(Pass)
                                 )
                             )
+                        ),
+                        CheckClassDef(
+                            "LambdaTop",
+                            CheckSuite(
+                                CheckExprStmt(
+                                    CheckListComp(
+                                        CheckParenExpr(
+                                            CheckLambda(
+                                                NoParameters,
+                                                CheckParenExpr(
+                                                    CheckNamedExpr(
+                                                        CheckNameExpr("z"),
+                                                        CheckNameExpr("x")
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                        CompFor(
+                                            CheckNameExpr("x"),
+                                            CheckCallExpression(CheckNameExpr("range"), PositionalArg(One))
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        CheckExprStmt(
+                            CheckListComp(
+                                CheckParenExpr(
+                                    CheckLambda(
+                                        new[] { CheckParameter("x") },
+                                        CheckParenExpr(
+                                            CheckNamedExpr(
+                                                CheckNameExpr("x"),
+                                                CheckNameExpr("x")
+                                            )
+                                        )
+                                    )
+                                ),
+                                CompFor(
+                                    CheckNameExpr("x"),
+                                    CheckCallExpression(CheckNameExpr("range"), PositionalArg(One))
+                                )
+                            )
                         )
                     )
                 );
@@ -3025,15 +3120,41 @@ namespace Microsoft.Python.Parsing.Tests {
                 var errors = new CollectingErrorSink();
                 ParseFile("NamedExpressionsErrors.py", errors, version);
                 errors.Errors.Should().BeEquivalentTo(new[] {
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(1, 3, 1, 5)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(2, 11, 2, 13)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(3, 7, 3, 9)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(4, 19, 4, 21)),
-                    new ErrorResult("Cannot use named assignment with subscript", new SourceSpan(8, 2, 8, 6)),
-                    new ErrorResult("Cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
-                    new ErrorResult("Named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(1, 3, 1, 5)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(2, 11, 2, 13)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(3, 7, 3, 9)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(4, 19, 4, 21)),
+                    new ErrorResult("cannot use named assignment with subscript", new SourceSpan(8, 2, 8, 6)),
+                    new ErrorResult("cannot use named assignment with attribute", new SourceSpan(9, 2, 9, 5)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(12, 9, 12, 11)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(14, 21, 14, 23)),
+                    new ErrorResult("named expression must be parenthesized in this context", new SourceSpan(17, 9, 17, 11)),
+                });
+            }
+        }
+
+        [TestMethod, Priority(0)]
+        public void NamedExpressionScopeErrors() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                ParseFile("NamedExpressionScopeErrors.py", errors, version);
+                errors.Errors.Should().BeEquivalentTo(new[] {
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(1, 17, 1, 32)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(2, 27, 2, 42)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(3, 20, 3, 35)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(4, 17, 4, 32)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(5, 33, 5, 48)),
+                    new ErrorResult("assignment expression cannot rebind comprehension iteration variable 'j'", new SourceSpan(7, 4, 7, 5)),
+                    new ErrorResult("assignment expression cannot rebind comprehension iteration variable 'i'", new SourceSpan(8, 2, 8, 3)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(9, 16, 9, 26)),
+                    new ErrorResult("assignment expression cannot rebind comprehension iteration variable 'i'", new SourceSpan(11, 13, 11, 14)),
+                    new ErrorResult("assignment expression cannot rebind comprehension iteration variable 'j'", new SourceSpan(12, 34, 12, 35)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(14, 16, 14, 26)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(15, 34, 15, 44)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(16, 28, 16, 38)),
+                    new ErrorResult("assignment expression cannot be used in a comprehension iterable expression", new SourceSpan(17, 25, 17, 35)),
+                    new ErrorResult("assignment expression within a comprehension cannot be used in a class body", new SourceSpan(20, 7, 20, 13)),
+                    new ErrorResult("comprehension inner loop cannot rebind assignment expression target 'j'", new SourceSpan(22, 43, 22, 44)),
                 });
             }
         }

@@ -336,5 +336,22 @@ x = boxedint.get()
             sig.signatures.Length.Should().Be(1);
             sig.signatures[0].label.Should().Be("get() -> List[X]");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task PositionalOnly() {
+            const string code = @"
+def f(a, b, /, c, d, *, e, f):
+    pass
+
+f()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var src = new SignatureSource(new PlainTextDocumentationSource());
+
+            var sig = src.GetSignature(analysis, new SourceLocation(5, 3));
+            sig.signatures.Should().NotBeNull();
+            sig.signatures.Length.Should().Be(1);
+            sig.signatures[0].label.Should().Be("f(a, b, /, c, d, *, e, f)");
+        }
     }
 }

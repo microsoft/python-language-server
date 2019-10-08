@@ -253,10 +253,22 @@
     <value>named arguments must follow bare *</value>
   </data>
   <data name="NamedAssignmentWithErrorMsg" xml:space="preserve">
-    <value>Cannot use named assignment with {0}</value>
+    <value>cannot use named assignment with {0}</value>
   </data>
   <data name="NamedExpressionCtxtErrorMsg" xml:space="preserve">
-    <value>Named expression must be parenthesized in this context</value>
+    <value>named expression must be parenthesized in this context</value>
+  </data>
+  <data name="NamedExpressionInClassBodyErrorMsg" xml:space="preserve">
+    <value>assignment expression within a comprehension cannot be used in a class body</value>
+  </data>
+  <data name="NamedExpressionInComprehensionIteratorErrorMsg" xml:space="preserve">
+    <value>assignment expression cannot be used in a comprehension iterable expression</value>
+  </data>
+  <data name="NamedExpressionIteratorRebindsNamedErrorMsg" xml:space="preserve">
+    <value>comprehension inner loop cannot rebind assignment expression target '{0}'</value>
+  </data>
+  <data name="NamedExpressionRebindIteratorErrorMsg" xml:space="preserve">
+    <value>assignment expression cannot rebind comprehension iteration variable '{0}'</value>
   </data>
   <data name="NonKeywordArgAfterKeywordArgErrorMsg" xml:space="preserve">
     <value>non-keyword arg after keyword arg</value>
@@ -287,6 +299,24 @@
   </data>
   <data name="PositionalArgumentKeywardArgumentUnpackingErrorMsg" xml:space="preserve">
     <value>positional argument follows keyword argument unpacking</value>
+  </data>
+  <data name="PositionalOnlyMarkerAfterDictArgsErrorMsg" xml:space="preserve">
+    <value>positional only marker after ** args not allowed</value>
+  </data>
+  <data name="PositionalOnlyMarkerAfterListArgsErrorMsg" xml:space="preserve">
+    <value>positional only marker after * args not allowed</value>
+  </data>
+  <data name="PositionalOnlyMarkerAnnotationErrorMsg" xml:space="preserve">
+    <value>positional only marker may not have annotation</value>
+  </data>
+  <data name="PositionalOnlyMarkerDefaultErrorMsg" xml:space="preserve">
+    <value>positional only marker may not have default</value>
+  </data>
+  <data name="PositionalOnlyMarkerDuplicateErrorMsg" xml:space="preserve">
+    <value>duplicate positional only marker</value>
+  </data>
+  <data name="PositionalOnlyMarkerFirstParamErrorMessage" xml:space="preserve">
+    <value>positional only marker may not be first parameter</value>
   </data>
   <data name="PositionalParameterNotAllowedErrorMsg" xml:space="preserve">
     <value>positional parameter after * args not allowed</value>

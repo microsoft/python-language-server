@@ -361,7 +361,7 @@ x = t
 from MultiValues import *
 x = t
 ";
-            var analysis = await GetAnalysisAsync(code);
+            var analysis = await GetAnalysisAsync(code, runIsolated: true);
             var t = analysis.Should().HaveVariable("t").Which;
             t.Definition.Span.Should().Be(3, 1, 3, 2);
             t.Definition.DocumentUri.AbsolutePath.Should().Contain("MultiValues.py");
@@ -441,6 +441,60 @@ x_h = 8
             all.References[2].Span.Should().Be(11, 1, 11, 8);
             all.References[3].Span.Should().Be(12, 1, 12, 8);
             all.References[4].Span.Should().Be(13, 1, 13, 8);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task VariableInCallParameters() {
+            const string code = @"
+from constants import *
+import constants
+
+print(VARIABLE1)
+print(constants.VARIABLE1)
+x = print(VARIABLE1)
+";
+            await TestData.CreateTestSpecificFileAsync("constants.py", @"VARIABLE1 = 'afad'");
+            var analysis = await GetAnalysisAsync(code);
+            var v1 = analysis.Should().HaveVariable("VARIABLE1").Which;
+
+            v1.Definition.Span.Should().Be(1, 1, 1, 10);
+            v1.Definition.DocumentUri.AbsolutePath.Should().Contain("constants.py");
+
+            v1.References.Should().HaveCount(4);
+            v1.References[0].Span.Should().Be(1, 1, 1, 10);
+            v1.References[0].DocumentUri.AbsolutePath.Should().Contain("constants.py");
+
+            v1.References[1].Span.Should().Be(5, 7, 5, 16);
+            v1.References[1].DocumentUri.AbsolutePath.Should().Contain("module.py");
+
+            v1.References[2].Span.Should().Be(6, 17, 6, 26);
+            v1.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
+
+            v1.References[3].Span.Should().Be(7, 11, 7, 20);
+            v1.References[3].DocumentUri.AbsolutePath.Should().Contain("module.py");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task LibraryFunction() {
+            const string code = @"
+print(1)
+print(2)
+";
+            var analysis = await GetAnalysisAsync(code, runIsolated: true);
+            var b = analysis.Document.Interpreter.ModuleResolution.BuiltinsModule;
+            var print = b.Analysis.Should().HaveVariable("print").Which;
+
+            print.Definition.Span.Should().Be(1, 1, 1, 1);
+
+            print.References.Should().HaveCount(3);
+            print.References[0].Span.Should().Be(1, 1, 1, 1);
+            print.References[0].DocumentUri.AbsolutePath.Should().Contain("python.pyi");
+
+            print.References[1].Span.Should().Be(2, 1, 2, 6);
+            print.References[1].DocumentUri.AbsolutePath.Should().Contain("module.py");
+
+            print.References[2].Span.Should().Be(3, 1, 3, 6);
+            print.References[2].DocumentUri.AbsolutePath.Should().Contain("module.py");
         }
     }
 }

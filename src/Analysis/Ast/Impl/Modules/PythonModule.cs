@@ -86,12 +86,13 @@ namespace Microsoft.Python.Analysis.Modules {
             SetDeclaringModule(this);
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, bool isTypeshed, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
                 ModuleType = moduleType,
                 Stub = stub,
+                IsTypeshed = isTypeshed,
                 IsPersistent = isPersistent
             }, services) { }
 
@@ -119,6 +120,8 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             IsPersistent = creationOptions.IsPersistent;
+            IsTypeshed = creationOptions.IsTypeshed;
+
             InitializeContent(creationOptions.Content, 0);
         }
 
@@ -158,6 +161,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IMemberContainer
         public virtual IMember GetMember(string name) => GlobalScope.Variables[name]?.Value;
+
         public virtual IEnumerable<string> GetMemberNames() {
             // drop imported modules and typing.
             return GlobalScope.Variables
@@ -166,26 +170,26 @@ namespace Microsoft.Python.Analysis.Modules {
                     if (v.Value is IPythonInstance) {
                         return true;
                     }
+
                     var valueType = v.Value?.GetPythonType();
-                    if (valueType is PythonModule) {
-                        return false; // Do not re-export modules.
+                    switch (valueType) {
+                        case PythonModule _:
+                        case IPythonFunctionType f when f.IsLambda():
+                            return false; // Do not re-export modules.
                     }
-                    if (valueType is IPythonFunctionType f && f.IsLambda()) {
-                        return false;
-                    }
+
                     if (this is TypingModule) {
                         return true; // Let typing module behave normally.
                     }
+
                     // Do not re-export types from typing. However, do export variables
                     // assigned with types from typing. Example:
                     //    from typing import Any # do NOT export Any
                     //    x = Union[int, str] # DO export x
-                    if (valueType?.DeclaringModule is TypingModule && v.Name == valueType.Name) {
-                        return false;
-                    }
-                    return true;
+                    return !(valueType?.DeclaringModule is TypingModule) || v.Name != valueType.Name;
                 })
-                .Select(v => v.Name);
+                .Select(v => v.Name)
+                .ToArray();
         }
         #endregion
 
@@ -221,6 +225,12 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Indicates if module is restored from database.
         /// </summary>
         public bool IsPersistent { get; }
+
+        /// <summary>
+        /// Defines if module belongs to Typeshed and hence resolved
+        /// via typeshed module resolution service.
+        /// </summary>
+        public bool IsTypeshed { get; }
         #endregion
 
         #region IDisposable
@@ -310,18 +320,15 @@ namespace Microsoft.Python.Analysis.Modules {
 
                 Parse();
             }
-
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
-        public void Reset(string content) {
+        public void Invalidate() {
             lock (_syncObj) {
-                if (content != Content) {
-                    ContentState = State.None;
-                    InitializeContent(content, _buffer.Version + 1);
-                }
+                ContentState = State.None;
+                _buffer.MarkChanged();
+                Parse();
             }
-
             Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
@@ -450,7 +457,7 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzed;
 
                 if (ModuleType != ModuleType.User) {
-                    _buffer.Reset(_buffer.Version, string.Empty);
+                    _buffer.Clear();
                 }
             }
 
@@ -486,7 +493,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void ClearContent() {
             lock (_syncObj) {
                 if (ModuleType != ModuleType.User) {
-                    _buffer.Reset(_buffer.Version, string.Empty);
+                    _buffer.Clear();
                     _astMap.Clear();
                 }
             }
@@ -516,16 +523,15 @@ namespace Microsoft.Python.Analysis.Modules {
 
         private void InitializeContent(string content, int version) {
             lock (_syncObj) {
-                LoadContent(content, version);
-
-                var startParse = ContentState < State.Parsing && (_parsingTask == null || version > 0);
-                if (startParse) {
+                SetOrLoadContent(content);
+                if (ContentState < State.Parsing && _parsingTask == null) {
                     Parse();
                 }
             }
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
-        private void LoadContent(string content, int version) {
+        private void SetOrLoadContent(string content) {
             if (ContentState < State.Loading) {
                 try {
                     if (IsPersistent) {
@@ -533,7 +539,7 @@ namespace Microsoft.Python.Analysis.Modules {
                     } else {
                         content = content ?? LoadContent();
                     }
-                    _buffer.Reset(version, content);
+                    _buffer.SetContent(content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }
             }

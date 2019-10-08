@@ -332,6 +332,52 @@ z = u[0]
         }
 
         [TestMethod, Priority(0)]
+        public async Task TupleOfNones() {
+            const string code = @"
+from typing import Tuple
+
+x: Tuple[None, None, None]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("Tuple[None, None, None]");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnionOfTuples() {
+            const string code = @"
+from typing import Union, Tuple, Type
+
+class TracebackType: ...
+
+_ExcInfo = Tuple[Type[BaseException], BaseException, TracebackType]
+_OptExcInfo = Union[_ExcInfo, Tuple[None, None, None]]
+
+x: _ExcInfo
+y: _OptExcInfo
+
+a, b, c = y
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType("Tuple[Type[BaseException], BaseException, TracebackType]");
+
+            analysis.Should().HaveVariable("y")
+                .Which.Should().HaveType("Union[Tuple[Type[BaseException], BaseException, TracebackType], Tuple[None, None, None]]");
+
+            analysis.Should().HaveVariable("a")
+                .Which.Should().HaveType("Union[Type[BaseException], None]");
+
+            analysis.Should().HaveVariable("b")
+                .Which.Should().HaveType("Union[BaseException, None]");
+
+            analysis.Should().HaveVariable("c")
+                .Which.Should().HaveType("Union[TracebackType, None]");
+        }
+
+        [TestMethod, Priority(0)]
         public void AnnotationParsing() {
             AssertTransform("List", "NameOp:List");
             AssertTransform("List[Int]", "NameOp:List", "NameOp:Int", "MakeGenericOp");

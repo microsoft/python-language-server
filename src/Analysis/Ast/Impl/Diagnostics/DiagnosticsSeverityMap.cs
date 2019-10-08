@@ -25,18 +25,17 @@ namespace Microsoft.Python.Analysis.Diagnostics {
 
         public DiagnosticsSeverityMap(string[] errors, string[] warnings, string[] information, string[] disabled) {
             _map.Clear();
+
             // disabled > error > warning > information
-            foreach (var x in information.MaybeEnumerate()) {
-                _map[x] = Severity.Information;
-            }
-            foreach (var x in warnings.MaybeEnumerate()) {
-                _map[x] = Severity.Warning;
-            }
-            foreach (var x in errors.MaybeEnumerate()) {
-                _map[x] = Severity.Error;
-            }
-            foreach (var x in disabled.MaybeEnumerate()) {
-                _map[x] = Severity.Suppressed;
+            PopulateMap(information, Severity.Information);
+            PopulateMap(warnings, Severity.Warning);
+            PopulateMap(errors, Severity.Error);
+            PopulateMap(disabled, Severity.Suppressed);
+
+            void PopulateMap(string[] codes, Severity severity) {
+                foreach (var code in codes.MaybeEnumerate()) {
+                    _map[code] = severity;
+                }
             }
         }
         public Severity GetEffectiveSeverity(string code, Severity defaultSeverity)

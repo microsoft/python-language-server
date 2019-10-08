@@ -20,6 +20,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Extensions;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class ExpressionWalker : PythonWalker {
@@ -126,8 +127,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         private bool IsSpanInComprehension(SourceSpan span) {
             var start = span.Start.ToIndex(_walker.Analysis.Ast);
             var end = span.End.ToIndex(_walker.Analysis.Ast);
-            return ((Node)_walker.Analysis.ExpressionEvaluator.CurrentScope.Node)
-                .TraverseDepthFirst(n => n.GetChildNodes())
+            return _walker.Analysis.ExpressionEvaluator.CurrentScope.Node.ChildNodesDepthFirst()
                 .OfType<Comprehension>()
                 .Any(n => n.StartIndex <= start && end < n.EndIndex);
         }

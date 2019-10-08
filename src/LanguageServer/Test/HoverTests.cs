@@ -189,8 +189,8 @@ from os.path import join as JOIN
             var name = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"ntpath" : @"posixpath";
             AssertHover(hs, analysis, new SourceLocation(2, 10), $"module {name}*", new SourceSpan(2, 9, 2, 13));
 
-            AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(path: str, paths: str) -> str", new SourceSpan(2, 21, 2, 25));
-            AssertHover(hs, analysis, new SourceLocation(2, 30), @"join(path: str, paths: str) -> str", new SourceSpan(2, 29, 2, 33));
+            AssertHover(hs, analysis, new SourceLocation(2, 22), @"join(path: str, *paths: str) -> str", new SourceSpan(2, 21, 2, 25));
+            AssertHover(hs, analysis, new SourceLocation(2, 30), @"join(path: str, *paths: str) -> str", new SourceSpan(2, 29, 2, 33));
         }
 
         [TestMethod, Priority(0)]

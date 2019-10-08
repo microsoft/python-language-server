@@ -27,15 +27,15 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
         private readonly Stack<FunctionDefinition> _callEvalStack = new Stack<FunctionDefinition>();
 
-        public IMember GetValueFromCallable(CallExpression expr) {
+        public IMember GetValueFromCallable(CallExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (expr?.Target == null) {
                 return null;
             }
 
-            var target = GetValueFromExpression(expr.Target);
+            var target = GetValueFromExpression(expr.Target, lookupOptions);
             target?.AddReference(GetLocationOfName(expr.Target));
 
-            var result = GetValueFromGeneric(target, expr);
+            var result = GetValueFromGeneric(target, expr, lookupOptions);
             if (result != null) {
                 return result;
             }
@@ -316,7 +316,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        public IReadOnlyList<IParameterInfo> CreateFunctionParameters(IPythonClassType self, IPythonClassMember function, FunctionDefinition fd, bool declareVariables) {
+        public IReadOnlyList<IParameterInfo> CreateFunctionParameters(
+            IPythonClassType self,
+            IPythonClassMember function,
+            FunctionDefinition fd,
+            bool declareVariables) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
             // For regular bound methods add first parameter and set it to the class.
@@ -353,7 +357,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                         paramType = GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
                         // Default value of None does not mean the parameter is None, just says it can be missing.
-                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
+                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.None) ? null : defaultValue;
                         if (paramType == null && defaultValue != null) {
                             paramType = defaultValue.GetPythonType();
                         }
@@ -382,6 +386,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
             DeclareVariable(p.Name, paramType.CreateInstance(ArgumentSet.Empty(p.NameExpression, this)),
                 VariableSource.Declaration, p.NameExpression);
+        }
+
+        internal void ProcessCallForReferences(CallExpression callExpr, LookupOptions lookupOptions = LookupOptions.Normal) {
+            if (Module.ModuleType != ModuleType.User) {
+                return;
+            }
+
+            switch (callExpr.Target) {
+                case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
+                    // Add reference to the function
+                    this.LookupNameInScopes(nex.Name, lookupOptions)?.AddReference(GetLocationOfName(nex));
+                    break;
+                case MemberExpression mex when !string.IsNullOrEmpty(mex.Name):
+                    var t = GetValueFromExpression(mex.Target, lookupOptions)?.GetPythonType();
+                    t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
+                    break;
+            }
+
+            // Add references to all arguments.
+            foreach (var arg in callExpr.Args) {
+                GetValueFromExpression(arg.Expression, lookupOptions);
+            }
         }
     }
 }

@@ -217,7 +217,7 @@ namespace Microsoft.Python.Analysis.Documents {
             }
 
             foreach (var (_, entry) in opened) {
-                entry.Document.Reset(null);
+                entry.Document.Invalidate();
             }
         }
 
@@ -241,7 +241,7 @@ namespace Microsoft.Python.Analysis.Documents {
             IDocument document;
             switch (mco.ModuleType) {
                 case ModuleType.Compiled when TryAddModulePath(mco):
-                    document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, mco.IsPersistent, _services);
+                    document = new CompiledPythonModule(mco.ModuleName, ModuleType.Compiled, mco.FilePath, mco.Stub, mco.IsPersistent, mco.IsTypeshed, _services);
                     break;
                 case ModuleType.CompiledBuiltin:
                     document = new CompiledBuiltinPythonModule(mco.ModuleName, mco.Stub, mco.IsPersistent, _services);
@@ -280,7 +280,6 @@ namespace Microsoft.Python.Analysis.Documents {
         private bool TryOpenDocument(DocumentEntry entry, string content) {
             if (!entry.Document.IsOpen) {
                 entry.Document.IsOpen = true;
-                entry.Document.Reset(content);
                 entry.LockCount++;
                 return true;
             }

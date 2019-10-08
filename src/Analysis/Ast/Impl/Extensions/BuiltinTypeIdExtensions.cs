@@ -65,7 +65,7 @@ namespace Microsoft.Python.Analysis.Types {
                 case BuiltinTypeId.DictItems: name = "dict_items"; break;
                 case BuiltinTypeId.Function: name = "function"; break;
                 case BuiltinTypeId.Generator: name = "generator"; break;
-                case BuiltinTypeId.NoneType: name = "NoneType"; break;
+                case BuiltinTypeId.None: name = "None"; break;
                 case BuiltinTypeId.Ellipsis: name = "ellipsis"; break;
                 case BuiltinTypeId.Module: name = "module_type"; break;
                 case BuiltinTypeId.ListIterator: name = "list_iterator"; break;
@@ -114,7 +114,7 @@ namespace Microsoft.Python.Analysis.Types {
 
                 case "function": return BuiltinTypeId.Function;
                 case "generator": return BuiltinTypeId.Generator;
-                case "NoneType": return BuiltinTypeId.NoneType;
+                case "None": return BuiltinTypeId.None;
                 case "ellipsis": return BuiltinTypeId.Ellipsis;
                 case "module_type": return BuiltinTypeId.Module;
 
@@ -143,7 +143,7 @@ namespace Microsoft.Python.Analysis.Types {
                 case BuiltinTypeId.Long:
                 case BuiltinTypeId.Str:
                 case BuiltinTypeId.Unicode:
-                case BuiltinTypeId.NoneType:
+                case BuiltinTypeId.None:
                 case BuiltinTypeId.Ellipsis:
                 case BuiltinTypeId.Dict:
                 case BuiltinTypeId.List:

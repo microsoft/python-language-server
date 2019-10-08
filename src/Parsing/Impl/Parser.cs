@@ -246,7 +246,7 @@ namespace Microsoft.Python.Parsing {
 
             ast.SetAttributes(_attributes);
             PythonNameBinder.BindAst(_langVersion, ast, _errors, _bindReferences);
-
+            NamedExpressionErrorWalker.Check(ast, _langVersion, ReportSyntaxError);
             return ast;
         }
 
@@ -1982,12 +1982,14 @@ namespace Microsoft.Python.Parsing {
         //varargslist: (fpdef ['=' expression ] ',')* ('*' NAME [',' '**' NAME] | '**' NAME) | fpdef ['=' expression] (',' fpdef ['=' expression])* [',']
         //fpdef: NAME | '(' fplist ')'
         //fplist: fpdef (',' fpdef)* [',']
+        // Not above: the 3.8+'s positional marker.
         private Parameter[] ParseVarArgsList(TokenKind terminator, bool allowAnnotations, out List<string> commaWhiteSpace, out bool ateTerminator) {
             var parameters = new List<Parameter>();
             commaWhiteSpace = MakeWhiteSpaceList();
 
             var namedOnly = false;
             var lastComma = true;
+            int? posOnlyEnd = null;
 
             var lastStart = -1;
 
@@ -2018,6 +2020,11 @@ namespace Microsoft.Python.Parsing {
                         start = GetStart();
                         kind = ParameterKind.Dictionary;
                         preStarWhitespace = _tokenWhiteSpace;
+                    } else if (_langVersion >= PythonLanguageVersion.V38 && MaybeEat(TokenKind.Divide)) {
+                        start = GetStart();
+                        posOnlyEnd = posOnlyEnd ?? pos;
+                        kind = ParameterKind.PositionalOnlyMarker;
+                        preStarWhitespace = _tokenWhiteSpace;
                     }
 
                     var name = TokenToName(PeekToken());
@@ -2030,8 +2037,7 @@ namespace Microsoft.Python.Parsing {
                             AddPreceedingWhiteSpace(ne);
                         }
                         p = new Parameter(ne, kind);
-                    } else if (kind == ParameterKind.List) {
-                        // bare lists are allowed
+                    } else if (kind == ParameterKind.List || kind == ParameterKind.PositionalOnlyMarker) {
                         p = new Parameter(null, kind);
                     } else {
                         var expr = ParseExpression();
@@ -2065,10 +2071,29 @@ namespace Microsoft.Python.Parsing {
                 }
             }
 
+            if (posOnlyEnd.HasValue) {
+                // Re-kind parameters before '/' as positional only.
+                for (var pos = 0; pos < posOnlyEnd.Value; pos++) {
+                    var p = parameters[pos];
+                    // Not having the "Normal" kind means the '/' is misplaced, which will be errored below.
+                    if (p.Kind == ParameterKind.Normal) {
+                        p.Kind = ParameterKind.PositionalOnly;
+                    }
+                }
+            }
+
             // Now we validate the parameters
-            bool seenListArg = false, seenDictArg = false, seenDefault = false;
+            bool seenListArg = false, seenDictArg = false, seenDefault = false, seenPositional = false, first = true;
             var seenNames = new HashSet<string>();
             foreach (var p in parameters) {
+                var isFirst = first;
+                first = false;
+
+                if (isFirst && p.IsPositionalOnlyMarker) {
+                    ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerFirstParamErrorMessage);
+                    continue;
+                }
+
                 if (p.Annotation != null) {
                     if (!_stubFile && _langVersion.Is2x()) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.ParameterAnnotationsRequire3dotXErrorMsg);//invalid syntax, parameter annotations require 3.x
@@ -2102,7 +2127,7 @@ namespace Microsoft.Python.Parsing {
                 }
 
                 if (string.IsNullOrEmpty(p.Name)) {
-                    if (p.Kind != ParameterKind.List || !(_stubFile || _langVersion.Is3x())) {
+                    if ((p.Kind != ParameterKind.List && p.Kind != ParameterKind.PositionalOnlyMarker) || !(_stubFile || _langVersion.Is3x())) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.InvalidSyntaxErrorMsg);//Invalid Syntax
                         continue;
                     }
@@ -2116,10 +2141,23 @@ namespace Microsoft.Python.Parsing {
                     }
                     seenListArg = true;
                 } else if (p.Kind == ParameterKind.Dictionary) {
-                    if (seenDictArg) {  
+                    if (seenDictArg) {
                         ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.DuplicateArgsDoubleArgumentErrorMsg);//duplicate ** args arguments
                     }
                     seenDictArg = true;
+                } else if (p.Kind == ParameterKind.PositionalOnlyMarker) {
+                    if (seenPositional) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerDuplicateErrorMsg);
+                    } else if (seenListArg) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerAfterListArgsErrorMsg);
+                    } else if (seenDictArg) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerAfterDictArgsErrorMsg);
+                    } else if (p.Annotation != null) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerAnnotationErrorMsg);
+                    } else if (p.DefaultValue != null) {
+                        ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalOnlyMarkerDefaultErrorMsg);
+                    }
+                    seenPositional = true;
                 } else if (seenListArg && p.Kind != ParameterKind.KeywordOnly) {
                     ReportSyntaxError(p.StartIndex, p.EndIndex, Resources.PositionalParameterNotAllowedErrorMsg);//positional parameter after * args not allowed
                 } else if (seenDictArg) {
@@ -4951,12 +4989,11 @@ namespace Microsoft.Python.Parsing {
         }
 
         private Expression RemoveParenthesis(Expression expr) {
-            while(expr is ParenthesisExpression parenExpr) {
+            while (expr is ParenthesisExpression parenExpr) {
                 expr = parenExpr.Expression;
             }
             return expr;
         }
-
         #endregion
 
         #region Encoding support (PEP 263)

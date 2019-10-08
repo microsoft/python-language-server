@@ -836,5 +836,28 @@ x = func()
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("x").OfType("A").Which.Should().HaveMember("methodABase");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task InnerClassAsClassMember() {
+            const string code = @"
+class test():
+    class Test2():
+        def Z(self):
+            return
+    A = Test2()
+
+    def X(self) -> Test2:
+        return Test2()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var test = analysis.Should().HaveClass("test").Which;
+            
+            test.Should().HaveMember<IPythonInstance>("A").Which
+                .Should().HaveMethod("Z");
+            
+            test.Should().HaveMethod("X").Which
+                .Should().HaveSingleOverload().Which
+                .Should().HaveReturnType("Test2");
+        }
     }
 }

@@ -117,11 +117,11 @@ def f(s: s = 123):
     return s
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType);
+            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.None);
             analysis.Should().HaveFunction("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()
-                .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.NoneType);
+                .Which.Should().HaveName("s").And.HaveType(BuiltinTypeId.None);
         }
 
         [TestMethod, Priority(0)]
@@ -132,7 +132,7 @@ def f(s: lambda s: s > 0 = 123):
     return s
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.NoneType)
+            analysis.Should().HaveVariable("s").OfType(BuiltinTypeId.None)
                 .And.HaveFunction("f")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveSingleParameter()
@@ -371,7 +371,7 @@ z = f('s')
             var f = analysis.Should().HaveFunction("f").Which;
 
             f.Should().HaveOverloadAt(0)
-                .Which.Should().HaveReturnType(BuiltinTypeId.NoneType)
+                .Which.Should().HaveReturnType(BuiltinTypeId.None)
                 .Which.Should().HaveSingleParameter()
                 .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Bool);
 
@@ -385,7 +385,7 @@ z = f('s')
                 .Which.Should().HaveSingleParameter()
                 .Which.Should().HaveName("a").And.HaveType(BuiltinTypeId.Str);
 
-            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.NoneType)
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.None)
                 .And.HaveVariable("y").OfType(BuiltinTypeId.Float)
                 .And.HaveVariable("z").OfType(BuiltinTypeId.Bytes);
         }
@@ -658,6 +658,18 @@ class B:
                 .Which.Should().HaveParameterAt(1)
                 .Which.Should().HaveType("A")
                 .Which.Should().BeOfType(a.GetType());
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task PositionalOnlyParameters() {
+            const string code = @"
+def f(a, b, /, c, d):
+    pass
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            analysis.Should().HaveFunction("f")
+                    .Which.Should().HaveSingleOverload()
+                    .Which.Should().HaveParameters("a", "b", "c", "d");
         }
     }
 }

@@ -15,7 +15,6 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +31,6 @@ using Microsoft.Python.LanguageServer.Telemetry;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
-using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.Implementation {
     /// <summary>
@@ -283,6 +281,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task ExtensionCommand(JToken token, CancellationToken cancellationToken) {
             using (var timer = _requestTimer.Time("python/extensionCommand")) {
                 await _server.ExtensionCommandAsync(ToObject<ExtensionCommandParams>(token), cancellationToken);
+            }
+        }
+        #endregion
+
+        #region Custom
+        [JsonRpcMethod("python/clearAnalysisCache")]
+        public async Task ClearAnalysisCache(CancellationToken cancellationToken) {
+            using (_requestTimer.Time("python/clearAnalysisCache"))
+            using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
+                _server.ClearAnalysisCache();
             }
         }
         #endregion
