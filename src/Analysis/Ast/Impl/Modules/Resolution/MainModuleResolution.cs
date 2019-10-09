@@ -57,12 +57,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken) {
             foreach (var moduleRef in Modules.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (moduleRef.Value != null) {
                     yield return moduleRef.Value;
                 }
             }
 
             foreach (var module in _specialized.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
                 yield return module;
             }
         }

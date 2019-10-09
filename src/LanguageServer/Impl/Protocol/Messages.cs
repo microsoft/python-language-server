@@ -190,12 +190,6 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     [Serializable]
     public sealed class CodeActionContext {
         public Diagnostic[] diagnostics;
-
-        /// <summary>
-        /// The intended version that diagnostic locations apply to. The request may
-        /// fail if the server cannot map correctly.
-        /// </summary>
-        public int? _version;
     }
 
     [Serializable]

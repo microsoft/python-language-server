@@ -82,14 +82,14 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         public ImmutableArray<string> GetAllImportableModuleNames(bool includeImplicitPackages = true) {
-            return GetAllImportableModuleFullName(n => !string.IsNullOrEmpty(n.FullModuleName), includeImplicitPackages);
+            return GetAllImportableModuleFullNames(n => !string.IsNullOrEmpty(n.FullModuleName), includeImplicitPackages);
         }
 
-        public ImmutableArray<string> GetAllImportableModuleByName(string name, bool includeImplicitPackages = true) {
-            return GetAllImportableModuleFullName(n => string.Equals(n.Name, name), includeImplicitPackages);
+        public ImmutableArray<string> GetAllImportableModulesByName(string name, bool includeImplicitPackages = true) {
+            return GetAllImportableModuleFullNames(n => string.Equals(n.Name, name), includeImplicitPackages);
         }
 
-        private ImmutableArray<string> GetAllImportableModuleFullName(Func<Node, bool> predicate, bool includeImplicitPackages = true) {
+        private ImmutableArray<string> GetAllImportableModuleFullNames(Func<Node, bool> predicate, bool includeImplicitPackages = true) {
             var roots = _roots.Prepend(_nonRooted);
             var items = new Queue<Node>(roots);
             var names = ImmutableArray<string>.Empty;

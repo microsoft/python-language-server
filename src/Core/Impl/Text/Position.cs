@@ -44,13 +44,7 @@ namespace Microsoft.Python.Core.Text {
 
         public bool Equals(Position other) => line == other.line && character == other.character;
 
-        public override bool Equals(object obj) {
-            if (obj is Position other) {
-                return Equals(other);
-            }
-
-            return false;
-        }
+        public override bool Equals(object obj) => obj is Position other ? Equals(other) : false;
 
         public override int GetHashCode() => 0;
         public override string ToString() => $"({line}, {character})";

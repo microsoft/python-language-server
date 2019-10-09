@@ -121,11 +121,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return Array.Empty<CodeAction>();
             }
 
-            // * NOTE * CodeActionParams.CodeActionContext._version is always null. PublishDiagnostic doesn't send version
-            //          so not sure where that version is supposed to come from. and not sure whether what version it is 
-            //          supposed to be. text version? analysis version?
-            //          we might want to check version at some point and return no code action if we are called with
-            //          staled diagnostics
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
             var codeActions = await new CodeActionSource(Services).GetCodeActionsAsync(analysis, @params.range, @params.context.diagnostics, cancellationToken);
             return codeActions ?? Array.Empty<CodeAction>();

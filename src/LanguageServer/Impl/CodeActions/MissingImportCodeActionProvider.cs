@@ -68,7 +68,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var fullyQualifiedNames = new HashSet<string>();
 
             // find modules matching the given name. this will include submodules
-            var fullModuleNames = pathResolver.GetAllImportableModuleByName(name, includeImplicit);
+            var fullModuleNames = pathResolver.GetAllImportableModulesByName(name, includeImplicit);
             fullyQualifiedNames.UnionWith(fullModuleNames);
 
             // find members matching the given name from module already imported.
