@@ -1,21 +1,21 @@
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class AstScopeInfo : ScopeInfo {
-        public AstScopeInfo(IScopeNode node) : base(node) { }
+    internal class AstScopeDelegate : ScopeDelegate {
+        public AstScopeDelegate(IBindableNode node) : base(node) { }
 
         internal override bool IsGlobal => true;
 
-        protected override bool ExposesLocalVariable => true;
+        internal override bool ExposesLocalVariable(PythonVariable name) => true;
 
         internal override PythonVariable BindReference(PythonNameBinder binder, string name) => EnsureVariable(name);
 
-        internal override bool TryBindOuter(IScopeNode from, string name, bool allowGlobals, out PythonVariable variable) {
+        internal override bool TryBindOuter(IBindableNode from, string name, bool allowGlobals, out PythonVariable variable) {
             if (allowGlobals) {
                 // Unbound variable
-                from.ScopeInfo.AddReferencedGlobal(name);
+                from.AddReferencedGlobal(name);
 
-                if (from.ScopeInfo.HasLateBoundVariableSets) {
+                if (from.HasLateBoundVariableSets) {
                     // If the context contains unqualified exec, new locals can be introduced
                     // Therefore we need to turn this into a fully late-bound lookup which
                     // happens when we don't have a PythonVariable.

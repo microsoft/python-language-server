@@ -33,9 +33,9 @@ namespace Microsoft.Python.Parsing.Ast {
             _name = name;
             Bases = bases;
             _body = body;
-            ScopeInfo = new ClassScopeInfo(this);
+            ScopeDelegate = new ClassScopeDelegate(this);
         }
-        
+
         public override string Name => _name?.Name ?? string.Empty;
 
         public override int KeywordLength => 5;
@@ -47,14 +47,11 @@ namespace Microsoft.Python.Parsing.Ast {
         public ImmutableArray<Arg> Bases { get; }
 
         #region IScopeStatement
-
         public override Statement Body => _body;
-
         #endregion
 
         #region ScopeStatement
-        public override ScopeInfo ScopeInfo { get; }
-
+        internal override ScopeDelegate ScopeDelegate { get; }
         #endregion
 
         public DecoratorStatement Decorators {
@@ -126,7 +123,7 @@ namespace Microsoft.Python.Parsing.Ast {
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public SourceLocation Header => ScopeInfo.GlobalParent.IndexToLocation(HeaderIndex);
+        public SourceLocation Header => ScopeDelegate.GlobalParent.IndexToLocation(HeaderIndex);
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             if (Decorators != null) {
@@ -192,6 +189,11 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             _body.AppendCodeString(res, ast, format);
+        }
+
+        public override bool HasLateBoundVariableSets {
+            get => base.HasLateBoundVariableSets || NeedsLocalsDictionary;
+            set => base.HasLateBoundVariableSets = value;
         }
     }
 }

@@ -25,7 +25,7 @@ namespace Microsoft.Python.Parsing.Ast {
     /// <summary>
     /// Top-level ast for all Python code. Holds onto the body and the line mapping information.
     /// </summary>
-    public sealed class PythonAst : ScopeStatement, IScopeNode, ILocationConverter {
+    public sealed class PythonAst : ScopeStatement, IBindableNode, ILocationConverter {
         private readonly object _lock = new object();
         private readonly Statement _body;
         private readonly Dictionary<Node, Dictionary<object, object>> _attributes = new Dictionary<Node, Dictionary<object, object>>();
@@ -36,7 +36,7 @@ namespace Microsoft.Python.Parsing.Ast {
             LanguageVersion = langVersion;
             NewLineLocations = lineLocations;
             CommentLocations = commentLocations;
-            ScopeInfo = new AstScopeInfo(this);
+            ScopeDelegate = new AstScopeDelegate(this);
         }
 
         public PythonAst(IEnumerable<PythonAst> existingAst) {
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 offset += a.NewLineLocations.Length + 1;
             }
             CommentLocations = comments.ToArray();
-            ScopeInfo = new AstScopeInfo(this);
+            ScopeDelegate = new AstScopeDelegate(this);
         }
 
         public Uri Module { get; }
@@ -98,7 +98,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region ScopeStatement
         public override string Name => "<module>";
-        public override ScopeInfo ScopeInfo { get; }
+        internal override ScopeDelegate ScopeDelegate { get; }
         #endregion
 
         public PythonLanguageVersion LanguageVersion { get; }
@@ -107,11 +107,11 @@ namespace Microsoft.Python.Parsing.Ast {
             lock (_lock) {
                 (Body as SuiteStatement)?.FilterStatements(filter);
                 _attributes?.Clear();
-                ScopeInfo.Variables?.Clear();
+                ScopeDelegate.Variables?.Clear();
                 CommentLocations = Array.Empty<SourceLocation>();
                 // DO keep NewLineLocations as they are required
                 // to calculate node positions for navigation;
-                ScopeInfo.Clear();
+                ScopeDelegate.Clear();
             }
         }
 

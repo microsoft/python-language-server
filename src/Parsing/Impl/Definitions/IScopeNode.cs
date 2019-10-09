@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
@@ -24,10 +25,18 @@ namespace Microsoft.Python.Parsing {
         /// Gloabl scope
         /// </summary>
         PythonAst GlobalParent { get; }
+        bool ContainsNestedFreeVariables { get; set; }
+        
+        bool NeedsLocalsDictionary { get; set; }
+        
+        bool IsClosure { get; }
+        
+        IReadOnlyList<PythonVariable> ScopeVariables { get; }
+        
+        IReadOnlyList<PythonVariable> FreeVariables { get; }
 
-        /// <summary>
-        /// Holds information about the scope gathered from Parser, mainly used in  <see cref="PythonNameBinder"/>
-        /// </summary>
-        ScopeInfo ScopeInfo { get; }
+        bool TryGetVariable(string name, out PythonVariable variable);
+        
+        bool IsGlobal { get; }
     }
 }

@@ -24,11 +24,11 @@ using Microsoft.Python.Parsing;
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ComprehensionIterator : Node { }
 
-    public abstract class Comprehension : Expression, IScopeNode {
-        private readonly ScopeInfo _scopeInfo;
+    public abstract class Comprehension : Expression, IBindableNode {
+        private readonly ScopeDelegate _scopeDelegate;
 
         public Comprehension() {
-            _scopeInfo = new FunctionScopeInfo(this);
+            _scopeDelegate = new FunctionScopeDelegate(this);
         }
 
         public abstract ImmutableArray<ComprehensionIterator> Iterators { get; }
@@ -59,9 +59,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public Statement Body => null;
         
-        public PythonAst GlobalParent => ScopeInfo.GlobalParent;
-        public ScopeInfo ScopeInfo => _scopeInfo;
-
+        public PythonAst GlobalParent => _scopeDelegate.GlobalParent;
         #endregion
     }
 

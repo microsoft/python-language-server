@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
+using Microsoft.Python.Core.Collections;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public abstract class ScopeInfo {
+    internal abstract class ScopeDelegate {
         // Storing variables due to "exec" or call to dir, locals, eval, vars...
 
         // list of variables accessed from outer scopes
@@ -23,57 +24,30 @@ namespace Microsoft.Python.Parsing.Ast {
         // names of all variables referenced, null after binding completes
         private Dictionary<string, List<PythonReference>> _references;
 
-        protected ScopeInfo(IScopeNode node) {
+        protected ScopeDelegate(IBindableNode node) {
+            Check.ArgumentNotNull(nameof(node), node);
             Node = node;
         }
 
-        public string Name => Node.Name;
-
-        protected IScopeNode Node { get; }
-
-        internal bool ContainsImportStar { get; set; }
-        internal bool ContainsExceptionHandling { get; set; }
-
-        internal bool ContainsUnqualifiedExec { get; set; }
+        protected IBindableNode Node { get; }
 
         /// <summary>
         /// True if this scope accesses a variable from an outer scope.
         /// </summary>
         public bool IsClosure => FreeVariables != null && FreeVariables.Count > 0;
 
-        /// <summary>
-        /// True if an inner scope is accessing a variable defined in this scope.
-        /// </summary>
-        public bool ContainsNestedFreeVariables { get; set; }
-
-        /// <summary>
-        /// True if we are forcing the creation of a dictionary for storing locals.
-        /// 
-        /// This occurs for calls to locals(), dir(), vars(), unqualified exec, and
-        /// from ... import *.
-        /// </summary>
-        public bool NeedsLocalsDictionary { get; set; }
-
-        /// <summary>
-        /// True if variables can be set in a late bound fashion that we don't
-        /// know about at code gen time - for example via from fob import *.
-        /// 
-        /// This is tracked independently of the ContainsUnqualifiedExec/NeedsLocalsDictionary
-        /// </summary>
-        internal virtual bool HasLateBoundVariableSets { get; set; }
-
         internal Dictionary<string, PythonVariable> Variables { get; private set; }
 
         /// <summary>
         /// Gets the variables for this scope.
         /// </summary>
-        public ICollection<PythonVariable> ScopeVariables => Variables?.Values ?? Array.Empty<PythonVariable>() as ICollection<PythonVariable>;
+        public IReadOnlyList<PythonVariable> ScopeVariables => Variables?.Values.ToImmutableArray() ?? ImmutableArray<PythonVariable>.Empty;
 
         internal virtual bool IsGlobal => false;
 
         public PythonAst GlobalParent {
             get {
-                var cur = Node;
+                var cur = Node as IScopeNode;
                 while (!(cur is PythonAst)) {
                     Debug.Assert(cur != null);
                     cur = cur.ParentNode;
@@ -124,7 +98,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public IReadOnlyList<PythonVariable> FreeVariables => _freeVars;
 
-        protected virtual bool ExposesLocalVariable { get; }
+        internal abstract bool ExposesLocalVariable(PythonVariable name);
 
         internal bool TryGetVariable(string name, out PythonVariable variable) {
             if (Variables != null && name != null) {
@@ -135,7 +109,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
         }
 
-        internal virtual bool TryBindOuter(IScopeNode from, string name, bool allowGlobals, out PythonVariable variable) {
+        internal virtual bool TryBindOuter(IBindableNode from, string name, bool allowGlobals, out PythonVariable variable) {
             // Hide scope contents by default (only functions expose their locals)
             variable = null;
             return false;
@@ -172,7 +146,8 @@ namespace Microsoft.Python.Parsing.Ast {
                 foreach (var variableName in _nonLocalVars) {
                     var bound = false;
                     for (var parent = Node.ParentNode; parent != null; parent = parent.ParentNode) {
-                        if (parent.ScopeInfo.TryBindOuter(Node, variableName.Name, false, out var variable)) {
+                        PythonVariable variable = null;
+                        if ((parent as IBindableNode)?.TryBindOuter(Node, variableName.Name, false, out variable) ?? false) {
                             bound = !variable.IsGlobal;
                             break;
                         }
@@ -200,7 +175,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 foreach (var variable in Variables.Values) {
                     if (!HasClosureVariable(closureVariables, variable) &&
-                        !variable.IsGlobal && (variable.AccessedInNestedScope || ExposesLocalVariable)) {
+                        !variable.IsGlobal && (variable.AccessedInNestedScope || Node.ExposesLocalVariable(variable))) {
                         closureVariables.Add(new ClosureInfo(variable, true));
                     }
 

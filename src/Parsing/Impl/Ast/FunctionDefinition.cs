@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Parsing.Ast {
     [DebuggerDisplay("{Name}")]
-    public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement, IScopeNode {
+    public class FunctionDefinition : ScopeStatement, IMaybeAsyncStatement {
         internal static readonly object WhitespaceAfterAsync = new object();
 
         private int? _keywordEndIndex;
@@ -43,7 +43,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Parameters = parameters ?? Array.Empty<Parameter>();
             _body = body;
             Decorators = decorators;
-            ScopeInfo = new FunctionScopeInfo(this);
+            ScopeDelegate = new FunctionScopeDelegate(this);
         }
 
         public bool IsLambda { get; }
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Parsing.Ast {
         #region ScopeStatement
 
         public override string Name => NameExpression.Name ?? string.Empty;
-        public override ScopeInfo ScopeInfo { get; }
+        internal override ScopeDelegate ScopeDelegate { get; }
 
         #endregion
 
@@ -262,5 +262,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append(",");
             }
         }
+        
+        bool ExposesLocalVariable(PythonVariable name) => NeedsLocalsDictionary;
     }
 }

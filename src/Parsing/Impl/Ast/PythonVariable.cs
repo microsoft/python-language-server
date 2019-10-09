@@ -39,7 +39,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// True if the variable is a global variable (either referenced from an inner scope, or referenced from the global scope);
         /// </summary>
-        internal bool IsGlobal => Kind == VariableKind.Global || ScopeNode.ScopeInfo.IsGlobal;
+        internal bool IsGlobal => Kind == VariableKind.Global || ScopeNode.IsGlobal;
 
         internal VariableKind Kind { get; set; }
 

@@ -1,29 +1,29 @@
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public class FunctionScopeInfo : ScopeInfo {
-        public FunctionScopeInfo(IScopeNode node) : base(node) { }
+    internal class FunctionScopeDelegate : ScopeDelegate {
+        public FunctionScopeDelegate(IBindableNode node) : base(node) { }
 
-        protected override bool ExposesLocalVariable => NeedsLocalsDictionary;
+        internal override bool ExposesLocalVariable(PythonVariable name) => Node.NeedsLocalsDictionary;
 
-        internal override bool TryBindOuter(IScopeNode from, string name, bool allowGlobals,
+        internal override bool TryBindOuter(IBindableNode from, string name, bool allowGlobals,
                                             out PythonVariable variable) {
             // Functions expose their locals to direct access
-            ContainsNestedFreeVariables = true;
+            Node.ContainsNestedFreeVariables = true;
             if (TryGetVariable(name, out variable)) {
                 variable.AccessedInNestedScope = true;
 
+                var boundScope = from as IBindableNode;
                 if (variable.Kind == VariableKind.Local || variable.Kind == VariableKind.Parameter) {
-                    from.ScopeInfo.AddFreeVariable(variable, true);
+                    boundScope?.AddFreeVariable(variable, true);
 
                     for (var scope = from.ParentNode; scope != Node; scope = scope.ParentNode) {
-                        scope.ScopeInfo.AddFreeVariable(variable, false);
+                        (scope as IBindableNode)?.AddFreeVariable(variable, false);
                     }
 
                     AddCellVariable(variable);
                 } else if (allowGlobals) {
-                    from.ScopeInfo.AddReferencedGlobal(name);
+                    boundScope?.AddReferencedGlobal(name);
                 }
 
                 return true;
@@ -44,7 +44,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
             // Try to bind in outer scopes
             for (var parent = Node.ParentNode; parent != null; parent = parent.ParentNode) {
-                if (parent.ScopeInfo.TryBindOuter(Node, name, true, out variable)) {
+                if ((parent as IBindableNode)?.TryBindOuter(Node, name, true, out variable) ?? false) {
                     return variable;
                 }
             }
@@ -58,38 +58,38 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         private void Verify(PythonNameBinder binder) {
-            if (ContainsImportStar && IsClosure) {
+            if (Node.ContainsImportStar && IsClosure) {
                 binder.ReportSyntaxError(
                                          "import * is not allowed in function '{0}' because it is a nested function"
-                                            .FormatUI(Name),
+                                            .FormatUI(Node.Name),
                                          Node);
             }
 
-            if (ContainsImportStar && Node.ParentNode is FunctionDefinition) {
+            if (Node.ContainsImportStar && Node.ParentNode is FunctionDefinition) {
                 binder.ReportSyntaxError(
                                          "import * is not allowed in function '{0}' because it is a nested function"
-                                            .FormatUI(Name),
+                                            .FormatUI(Node.Name),
                                          Node);
             }
 
-            if (ContainsImportStar && ContainsNestedFreeVariables) {
+            if (Node.ContainsImportStar && Node.ContainsNestedFreeVariables) {
                 binder.ReportSyntaxError(
                                          "import * is not allowed in function '{0}' because it contains a nested function with free variables"
-                                            .FormatUI(Name),
+                                            .FormatUI(Node.Name),
                                          Node);
             }
 
-            if (ContainsUnqualifiedExec && ContainsNestedFreeVariables) {
+            if (Node.ContainsUnqualifiedExec && Node.ContainsNestedFreeVariables) {
                 binder.ReportSyntaxError(
                                          "unqualified exec is not allowed in function '{0}' because it contains a nested function with free variables"
-                                            .FormatUI(Name),
+                                            .FormatUI(Node.Name),
                                          Node);
             }
 
-            if (ContainsUnqualifiedExec && IsClosure) {
+            if (Node.ContainsUnqualifiedExec && IsClosure) {
                 binder.ReportSyntaxError(
                                          "unqualified exec is not allowed in function '{0}' because it is a nested function"
-                                            .FormatUI(Name),
+                                            .FormatUI(Node.Name),
                                          Node);
             }
         }

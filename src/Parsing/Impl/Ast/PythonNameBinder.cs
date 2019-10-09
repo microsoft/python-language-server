@@ -16,7 +16,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
 
 /*
  * The name binding:
@@ -121,6 +120,10 @@ namespace Microsoft.Python.Parsing.Ast {
         private readonly ParameterBinder _parameter;
         #endregion
 
+        #region Scope
+        private IBindableNode BoundScope => _currentScope as IBindableNode;
+        #endregion
+
         private readonly ErrorSink _errorSink;
 
         private PythonNameBinder(PythonLanguageVersion langVersion, PythonAst ast, ErrorSink context, bool bindReferences) {
@@ -151,19 +154,19 @@ namespace Microsoft.Python.Parsing.Ast {
 
             // Bind
             foreach (var scope in _scopes) {
-                scope.ScopeInfo.Bind(this);
+                (scope as IBindableNode)?.Bind(this);
             }
 
             // Finish the globals
-            unboundAst.ScopeInfo.Bind(this);
+            unboundAst.ScopeDelegate.Bind(this);
 
             // Finish Binding w/ outer most scopes first.
             for (var i = _scopes.Count - 1; i >= 0; i--) {
-                _scopes[i].ScopeInfo.FinishBind(this);
+                (_scopes[i] as IBindableNode)?.FinishBind(this);
             }
 
             // Finish the globals
-            unboundAst.ScopeInfo.FinishBind(this);
+            unboundAst.ScopeDelegate.FinishBind(this);
         }
 
         private void PushScope(IScopeNode node) {
@@ -178,15 +181,17 @@ namespace Microsoft.Python.Parsing.Ast {
             _finallyCount.RemoveAt(_finallyCount.Count - 1);
         }
 
-        internal PythonReference Reference(string name) => _currentScope.ScopeInfo.Reference(name);
+        internal PythonReference Reference(string name) => BoundScope?.Reference(name);
 
-        internal PythonVariable DefineName(string name) => _currentScope.ScopeInfo.EnsureVariable(name);
+        internal PythonVariable DefineName(string name) => BoundScope?.EnsureVariable(name);
 
-        internal PythonVariable DefineParameter(string name) => _currentScope.ScopeInfo.DefineParameter(name);
+        internal PythonVariable DefineParameter(string name) => BoundScope?.DefineParameter(name);
 
         internal PythonVariable DefineDeleted(string name) {
-            var variable = _currentScope.ScopeInfo.EnsureVariable(name);
-            variable.Deleted = true;
+            var variable = BoundScope?.EnsureVariable(name);
+            if (variable != null) {
+                variable.Deleted = true;
+            }
             return variable;
         }
 
@@ -209,8 +214,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         public override void PostWalk(CallExpression node) {
-            if (node.NeedsLocalsDictionary()) {
-                _currentScope.ScopeInfo.NeedsLocalsDictionary = true;
+            if (node.NeedsLocalsDictionary() && BoundScope != null) {
+                _currentScope.NeedsLocalsDictionary = true;
             }
         }
 
@@ -232,7 +237,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             PushScope(node);
-            node.ModuleNameVariable = GlobalScope.ScopeInfo.EnsureGlobalVariable("__name__");
+            node.ModuleNameVariable = GlobalScope.ScopeDelegate.EnsureGlobalVariable("__name__");
 
             // define the __doc__ and the __module__
             if (node.Body?.Documentation != null) {
@@ -310,19 +315,19 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // ExecStatement
         public override bool Walk(ExecStatement node) {
-            if (node.Locals == null && node.Globals == null) {
+            if (node.Locals == null && node.Globals == null && BoundScope != null) {
                 Debug.Assert(_currentScope != null);
-                _currentScope.ScopeInfo.ContainsUnqualifiedExec = true;
+                BoundScope.ContainsUnqualifiedExec = true;
             }
             return true;
         }
 
         public override void PostWalk(ExecStatement node) {
             if (node.NeedsLocalsDictionary()) {
-                _currentScope.ScopeInfo.NeedsLocalsDictionary = true;
+                _currentScope.NeedsLocalsDictionary = true;
             }
-            if (node.Locals == null) {
-                _currentScope.ScopeInfo.HasLateBoundVariableSets = true;
+            if (node.Locals == null && BoundScope != null) {
+                BoundScope.HasLateBoundVariableSets = true;
             }
         }
 
@@ -363,7 +368,9 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // WithStatement
         public override bool Walk(WithStatement node) {
-            _currentScope.ScopeInfo.ContainsExceptionHandling = true;
+            if (BoundScope != null) {
+                BoundScope.ContainsExceptionHandling = true;
+            }
 
             for (var i = 0; i < node.Items.Count; i++) {
                 if (node.Items[i].Variable != null) {
@@ -392,16 +399,18 @@ namespace Microsoft.Python.Parsing.Ast {
                 node.AddVariableReference(_ast, BindReferences, references);
             } else {
                 Debug.Assert(_currentScope != null);
-                _currentScope.ScopeInfo.ContainsImportStar = true;
-                _currentScope.ScopeInfo.NeedsLocalsDictionary = true;
-                _currentScope.ScopeInfo.HasLateBoundVariableSets = true;
+                if (BoundScope != null) {
+                    BoundScope.ContainsImportStar = true;
+                    BoundScope.HasLateBoundVariableSets = true;
+                }
+                _currentScope.NeedsLocalsDictionary = true;
             }
             return true;
         }
 
         // FunctionDefinition
         public override bool Walk(FunctionDefinition node) {
-            GlobalScope.ScopeInfo.EnsureGlobalVariable("__name__");
+            GlobalScope.ScopeDelegate.EnsureGlobalVariable("__name__");
 
             // Name is defined in the enclosing context
             if (!node.IsLambda) {
@@ -448,7 +457,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 // Check current scope for conflicting variable
                 var assignedGlobal = false;
-                if (_currentScope.ScopeInfo.TryGetVariable(n, out var conflict)) {
+                PythonVariable conflict = null;
+                if (BoundScope?.TryGetVariable(n, out conflict) ?? false) {
                     // conflict?
                     switch (conflict.Kind) {
                         case VariableKind.Global:
@@ -474,20 +484,20 @@ namespace Microsoft.Python.Parsing.Ast {
                     }
                 }
 
-                // Check for the name being referenced previously. If it has been, issue warning.
-                if (_currentScope.ScopeInfo.IsReferenced(n) && !assignedGlobal) {
+                // Check for name being referenced previously. If it has been, issue warning.
+                if ((BoundScope?.IsReferenced(n) ?? false) && !assignedGlobal) {
                     ReportSyntaxWarning(
                         "name '{0}' is used prior to global declaration".FormatUI(n),
                         node);
                 }
 
                 // Create the variable in the global context and mark it as global
-                var variable = GlobalScope.ScopeInfo.EnsureGlobalVariable(n);
+                var variable = ((IBindableNode) GlobalScope).EnsureGlobalVariable(n);
                 variable.Kind = VariableKind.Global;
 
                 if (conflict == null) {
                     // no previously definied variables, add it to the current scope
-                    _currentScope.ScopeInfo.AddVariable(variable);
+                    BoundScope?.AddVariable(variable);
                 }
 
                 nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
@@ -504,7 +514,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 // Check current scope for conflicting variable
                 var assignedLocal = false;
-                if (_currentScope.ScopeInfo.TryGetVariable(n, out var conflict)) {
+                PythonVariable conflict = null;
+                if (BoundScope?.TryGetVariable(n, out conflict) ?? false) {
                     // conflict?
                     switch (conflict.Kind) {
                         case VariableKind.Global:
@@ -533,7 +544,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
 
                 // Check for the name being referenced previously. If it has been, issue warning.
-                if (_currentScope.ScopeInfo.IsReferenced(n) && !assignedLocal) {
+                if ((BoundScope?.IsReferenced(n) ?? false) && !assignedLocal) {
                     ReportSyntaxWarning(
                         "name '{0}' is used prior to nonlocal declaration".FormatUI(n),
                         node);
@@ -541,10 +552,10 @@ namespace Microsoft.Python.Parsing.Ast {
 
                 if (conflict == null) {
                     // no previously definied variables, add it to the current scope
-                    _currentScope.ScopeInfo.CreateVariable(n, VariableKind.Nonlocal);
+                    BoundScope?.CreateVariable(n, VariableKind.Nonlocal);
                 }
 
-                _currentScope.ScopeInfo.AddNonLocalVariable(nameNode);
+                BoundScope?.AddNonLocalVariable(nameNode);
                 nameNode.AddVariableReference(GlobalScope, BindReferences, Reference(n));
             }
             return true;
@@ -601,7 +612,9 @@ namespace Microsoft.Python.Parsing.Ast {
         // TryStatement
         public override bool Walk(TryStatement node) {
             // we manually walk the TryStatement so we can track finally blocks.
-            _currentScope.ScopeInfo.ContainsExceptionHandling = true;
+            if (BoundScope != null) {
+                BoundScope.ContainsExceptionHandling = true;
+            }
 
             node.Body.Walk(this);
 

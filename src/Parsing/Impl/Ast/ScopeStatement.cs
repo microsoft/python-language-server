@@ -16,7 +16,7 @@
 using System.Collections.Generic;
 
 namespace Microsoft.Python.Parsing.Ast {
-    public abstract class ScopeStatement : Statement, IScopeNode {
+    public abstract class ScopeStatement : Statement, IBindableNode {
         /// <summary>
         /// For backwards compatibility, the closest Scope statement this scope statement was declared in
         /// </summary>
@@ -26,24 +26,85 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public virtual Statement Body { get; }
 
-        public bool IsClosure => ScopeInfo.IsClosure;
+        public virtual bool HasLateBoundVariableSets { get; set; }
+        
+        Dictionary<string, PythonVariable> IBindableNode.Variables { get; set; }
+        
+        public bool IsClosure => ScopeDelegate.IsClosure;
 
-        public bool ContainsNestedFreeVariables => ScopeInfo.ContainsNestedFreeVariables;
+        IReadOnlyList<PythonVariable> IScopeNode.ScopeVariables => ScopeDelegate.ScopeVariables;
 
-        public bool NeedsLocalsDictionary => ScopeInfo.NeedsLocalsDictionary;
+        public bool ContainsNestedFreeVariables { get; set; }
+
+        public bool NeedsLocalsDictionary { get; set; }
 
         public virtual string Name => "<unknown>";
 
-        public ICollection<PythonVariable> ScopeVariables => ScopeInfo.ScopeVariables;
+        public bool TryGetVariable(string name, out PythonVariable variable) {
+            throw new System.NotImplementedException();
+        }
 
-        public bool IsGlobal => ScopeInfo.IsGlobal;
+        public bool IsGlobal => ScopeDelegate.IsGlobal;
 
-        public PythonAst GlobalParent => ScopeInfo.GlobalParent;
+        public PythonAst GlobalParent => ScopeDelegate.GlobalParent;
+        bool IScopeNode.ContainsNestedFreeVariables { get; set; }
 
-        public IReadOnlyList<PythonVariable> FreeVariables => ScopeInfo.FreeVariables;
+        public IReadOnlyList<PythonVariable> FreeVariables => ScopeDelegate.FreeVariables;
 
-        public abstract ScopeInfo ScopeInfo { get; }
+        protected void Clear() => ScopeDelegate.Clear();
 
-        protected void Clear() => ScopeInfo.Clear();
+        internal abstract ScopeDelegate ScopeDelegate { get; }
+
+        void IBindableNode.Bind(PythonNameBinder binder) => ScopeDelegate.Bind(binder);
+
+        void IBindableNode.FinishBind(PythonNameBinder binder) => ScopeDelegate.FinishBind(binder);
+
+        bool IBindableNode.TryBindOuter(IBindableNode from, string name, bool allowGlobals, out PythonVariable variable)
+            => ScopeDelegate.TryBindOuter(from, name, allowGlobals, out variable);
+
+        void IBindableNode.AddFreeVariable(PythonVariable variable, bool accessedInScope) {
+            throw new System.NotImplementedException();
+        }
+
+        string IBindableNode.AddReferencedGlobal(string name) {
+            throw new System.NotImplementedException();
+        }
+
+        void IBindableNode.AddNonLocalVariable(NameExpression name) {
+            throw new System.NotImplementedException();
+        }
+
+        void IBindableNode.AddCellVariable(PythonVariable variable) {
+            throw new System.NotImplementedException();
+        }
+
+        bool IBindableNode.ExposesLocalVariable(PythonVariable name) => ScopeDelegate.ExposesLocalVariable(name);
+
+        PythonVariable IBindableNode.BindReference(PythonNameBinder binder, string name) {
+            throw new System.NotImplementedException();
+        }
+
+        void IBindableNode.AddVariable(PythonVariable variable) => ScopeDelegate.AddVariable(variable);
+
+        PythonReference IBindableNode.Reference(string name) => ScopeDelegate.Reference(name);
+
+        bool IBindableNode.IsReferenced(string name) => ScopeDelegate.IsReferenced(name);
+
+        PythonVariable IBindableNode.CreateVariable(string name, VariableKind kind) => ScopeDelegate.CreateVariable(name, kind);
+
+        PythonVariable IBindableNode.EnsureVariable(string name) => ScopeDelegate.EnsureVariable(name);
+
+        PythonVariable IBindableNode.DefineParameter(string name) => ScopeDelegate.DefineParameter(name);
+
+        bool IBindableNode.ContainsImportStar { get; set; }
+        bool IBindableNode.ContainsExceptionHandling { get; set; }
+        bool IBindableNode.ContainsUnqualifiedExec { get; set; }
+
+        /// <summary>
+        /// Creates a variable at the global level.  Called for known globals (e.g. __name__),
+        /// for variables explicitly declared global by the user, and names accessed
+        /// but not defined in the lexical scope.
+        /// </summary>
+        PythonVariable IBindableNode.EnsureGlobalVariable(string name) => ScopeDelegate.EnsureGlobalVariable(name);
     }
 }
