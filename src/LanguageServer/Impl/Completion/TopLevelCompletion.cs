@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Completion {
@@ -61,16 +62,19 @@ namespace Microsoft.Python.LanguageServer.Completion {
             // Add possible function arguments.
             var finder = new ExpressionFinder(context.Ast, new FindExpressionOptions { Calls = true });
             if (finder.GetExpression(context.Position) is CallExpression callExpr && callExpr.GetArgumentAtIndex(context.Ast, context.Position, out _)) {
-                var value = eval.GetValueFromExpression(callExpr.Target);
-                if (value?.GetPythonType() is IPythonFunctionType ft) {
-                    var arguments = ft.Overloads.SelectMany(o => o.Parameters).Select(p => p?.Name)
-                        .Where(n => !string.IsNullOrEmpty(n))
-                        .Distinct()
-                        .Except(callExpr.Args.MaybeEnumerate().Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n)))
-                        .Select(n => CompletionItemSource.CreateCompletionItem($"{n}=", CompletionItemKind.Variable))
-                        .ToArray();
+                using (context.Analysis.ExpressionEvaluator.OpenScope(context.Analysis.Document, scopeStatement)) {
+                    var value = eval.GetValueFromExpression(callExpr.Target);
+                    var ft = value.TryGetFunctionType();
+                    if (ft != null) {
+                        var arguments = ft.Overloads.SelectMany(o => o.Parameters).Select(p => p?.Name)
+                            .Where(n => !string.IsNullOrEmpty(n))
+                            .Distinct()
+                            .Except(callExpr.Args.MaybeEnumerate().Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n)))
+                            .Select(n => CompletionItemSource.CreateCompletionItem($"{n}=", CompletionItemKind.Variable))
+                            .ToArray();
 
-                    items = items.Concat(arguments).ToArray();
+                        items = items.Concat(arguments).ToArray();
+                    }
                 }
             }
 

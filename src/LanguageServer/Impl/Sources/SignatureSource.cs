@@ -64,14 +64,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
             }
 
-            IPythonFunctionType ft;
-
-            if (value is IPythonClassType cls) {
-                ft = cls.GetMember<IPythonFunctionType>("__init__");
-            } else {
-                ft = value?.GetPythonType<IPythonFunctionType>();
-            }
-
+            var ft = value.TryGetFunctionType();
             if (ft == null) {
                 return null;
             }

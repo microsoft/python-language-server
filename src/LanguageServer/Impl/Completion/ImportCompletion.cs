@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -43,7 +42,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 if (name != null && context.Position >= name.StartIndex) {
                     if (context.Position > name.EndIndex && name.EndIndex > name.StartIndex) {
                         var applicableSpan = context.GetApplicableSpanFromLastToken(import);
-                        return new CompletionResult(new []{ CompletionItemSource.AsKeyword }, applicableSpan);
+                        return new CompletionResult(new[] { CompletionItemSource.AsKeyword }, applicableSpan);
                     }
 
                     if (name.Names.Count == 0 || name.Names[0].EndIndex >= context.Position) {
@@ -62,7 +61,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
         public static CompletionResult GetCompletionsInFromImport(FromImportStatement fromImport, CompletionContext context) {
             // No more completions after '*', ever!
-            if (fromImport.Names != null && fromImport.Names.Any(n => n?.Name == "*" && context.Position > n.EndIndex)) {
+            if (fromImport.Names.Any(n => n?.Name == "*" && context.Position > n.EndIndex)) {
                 return CompletionResult.Empty;
             }
 
@@ -164,16 +163,15 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 default:
                     return CompletionResult.Empty;
             }
-            
+
             var completions = new List<CompletionItem>();
             if (prependStar) {
                 completions.Add(CompletionItemSource.Star);
             }
 
+            var memberNames = (module?.GetMemberNames().Where(n => !string.IsNullOrEmpty(n)) ?? Enumerable.Empty<string>()).ToHashSet();
             if (module != null) {
-                completions.AddRange(module.GetMemberNames()
-                    .Where(n => !string.IsNullOrEmpty(n))
-                    .Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
+                completions.AddRange(memberNames.Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
             }
 
             if (importSearchResult is IImportChildrenSource children) {
@@ -182,13 +180,18 @@ namespace Microsoft.Python.LanguageServer.Completion {
                         continue;
                     }
 
+                    string name = null;
                     switch (imports) {
                         case ImplicitPackageImport packageImport:
-                            completions.Add(CompletionItemSource.CreateCompletionItem(packageImport.Name, CompletionItemKind.Module));
+                            name = packageImport.Name;
                             break;
                         case ModuleImport moduleImport when !moduleImport.ModulePath.PathEquals(document.FilePath):
-                            completions.Add(CompletionItemSource.CreateCompletionItem(moduleImport.Name, CompletionItemKind.Module));
+                            name = moduleImport.Name;
                             break;
+                    }
+
+                    if (name != null && !memberNames.Contains(name)) {
+                        completions.Add(CompletionItemSource.CreateCompletionItem(name, CompletionItemKind.Module));
                     }
                 }
             }

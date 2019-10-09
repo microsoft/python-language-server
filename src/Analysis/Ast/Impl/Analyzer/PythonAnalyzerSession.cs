@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Caching;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -34,6 +35,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Testing;
 using Microsoft.Python.Core.Text;
@@ -49,8 +51,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly Action<Task> _startNextSession;
         private readonly CancellationToken _analyzerCancellationToken;
         private readonly IServiceManager _services;
-        private readonly AsyncManualResetEvent _analysisCompleteEvent;
         private readonly IDiagnosticsService _diagnosticsService;
+        private readonly IOSPlatform _platformService;
         private readonly IProgressReporter _progress;
         private readonly IPythonAnalyzer _analyzer;
         private readonly ILogger _log;
@@ -60,6 +62,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private State _state;
         private bool _isCanceled;
         private int _runningTasks;
+        private PathResolverSnapshot _modulesPathResolver;
+        private PathResolverSnapshot _typeshedPathResolver;
 
         public bool IsCompleted {
             get {
@@ -74,7 +78,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public PythonAnalyzerSession(IServiceManager services,
             IProgressReporter progress,
-            AsyncManualResetEvent analysisCompleteEvent,
             Action<Task> startNextSession,
             CancellationToken analyzerCancellationToken,
             IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker,
@@ -83,8 +86,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             bool forceGC = false) {
 
             _services = services;
-            _analysisCompleteEvent = analysisCompleteEvent;
             _startNextSession = startNextSession;
+
             _analyzerCancellationToken = analyzerCancellationToken;
             Version = version;
             AffectedEntriesCount = walker?.AffectedValues.Count ?? 1;
@@ -94,10 +97,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _forceGC = forceGC;
 
             _diagnosticsService = _services.GetService<IDiagnosticsService>();
+            _platformService = _services.GetService<IOSPlatform>();
             _analyzer = _services.GetService<IPythonAnalyzer>();
             _log = _services.GetService<ILogger>();
             _moduleDatabaseService = _services.GetService<IModuleDatabaseService>();
             _progress = progress;
+
+            var interpreter = _services.GetService<IPythonInterpreter>();
+            _modulesPathResolver = interpreter.ModuleResolution.CurrentPathResolver;
+            _typeshedPathResolver = interpreter.TypeshedResolution.CurrentPathResolver;
         }
 
         public void Start(bool analyzeEntry) {
@@ -252,10 +260,30 @@ namespace Microsoft.Python.Analysis.Analyzer {
             try {
                 switch (node) {
                     case IDependencyChainSingleNode<PythonAnalyzerEntry> single:
-                        Analyze(single, stopWatch);
+                        try {
+                            Analyze(single, stopWatch);
+                        } catch (OperationCanceledException oce) {
+                            single.Value.TryCancel(oce, _walker.Version);
+                            LogCanceled(single.Value.Module);
+                        } catch (Exception exception) {
+                            single.Value.TrySetException(exception, _walker.Version);
+                            node.MarkWalked();
+                            LogException(single.Value, exception);
+                        }
+                        
                         break;
                     case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
-                        AnalyzeLoop(loop, stopWatch);
+                        try {
+                            AnalyzeLoop(loop, stopWatch);
+                        } catch (OperationCanceledException oce) {
+                            //loop.Value.TryCancel(oce, _walker.Version);
+                            //LogCanceled(single.Value.Module);
+                        } catch (Exception exception) {
+                            //loop.Value.TrySetException(exception, _walker.Version);
+                            node.MarkWalked();
+                            LogException(loop, exception);
+                        }
+
                         break;
                 }
             } finally {
@@ -281,24 +309,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// of dependencies, it is intended for the single file analysis.
         /// </summary>
         private void Analyze(IDependencyChainSingleNode<PythonAnalyzerEntry> node, Stopwatch stopWatch) {
-            try {
-                ActivityTracker.OnEnqueueModule(node.Value.Module.FilePath);
-                var entry = node.Value;
-                if (!CanUpdateAnalysis(entry, _walker.Version, out var module, out var ast)) {
-                    return;
-                }
-                var startTime = stopWatch.Elapsed;
-                AnalyzeEntry(node, entry, module, ast, _walker.Version);
-
-                LogCompleted(node, module, stopWatch, startTime);
-            } catch (OperationCanceledException oce) {
-                node.Value.TryCancel(oce, _walker.Version);
-                LogCanceled(node.Value.Module);
-            } catch (Exception exception) {
-                node.Value.TrySetException(exception, _walker.Version);
-                node.MarkWalked();
-                LogException(node.Value.Module, exception);
+            ActivityTracker.OnEnqueueModule(node.Value.Module.FilePath);
+            var entry = node.Value;
+            if (!CanUpdateAnalysis(entry, _walker.Version, out var module, out var ast)) {
+                return;
             }
+            var startTime = stopWatch.Elapsed;
+            AnalyzeEntry(node, entry, module, ast, _walker.Version);
+
+            LogCompleted(node, module, stopWatch, startTime);
         }
 
         private void AnalyzeEntry() {
@@ -316,99 +335,118 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 LogCanceled(_entry.Module);
             } catch (Exception exception) {
                 _entry.TrySetException(exception, Version);
-                LogException(_entry.Module, exception);
+                LogException(_entry, exception);
             } finally {
                 stopWatch?.Stop();
             }
         }
 
         private void AnalyzeLoop(IDependencyChainLoopNode<PythonAnalyzerEntry> loopNode, Stopwatch stopWatch) {
-            var entries = new Dictionary<IPythonModule, PythonAnalyzerEntry>();
-            var variables = new Dictionary<(IPythonModule Module, string Name), int>();
-            var importNames = new List<(IPythonModule From, int FromPosition, IPythonModule To, string ToName)>();
-            var cachedVariables = new List<(IPythonModule Module, IVariableCollection Variables)>();
-            var asts = new List<(IPythonModule Module, PythonAst Ast)>();
+            var version = _walker.Version;
+            var entries = new Dictionary<AnalysisModuleKey, (IPythonModule Module, PythonAnalyzerEntry Entry)>();
+            var variables = new Dictionary<(AnalysisModuleKey Module, string Name), int>();
+            var importNames = new List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)>();
+            var cachedVariables = new Dictionary<AnalysisModuleKey, IVariableCollection>();
+            var asts = new Dictionary<AnalysisModuleKey, PythonAst>();
             var startTime = stopWatch.Elapsed;
-            
+
             foreach (var entry in loopNode.Values) {
                 if (!CanUpdateAnalysis(entry, Version, out var module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of loop canceled.");
                     return;
                 }
 
-                entries[module] = entry;
+                var moduleKey = new AnalysisModuleKey(module);
+                entries[moduleKey] = (module, entry);
                 var analysis = TryRestoreCachedAnalysis(module);
                 if (analysis != default) {
-                    AddLoopImportsFromCachedAnalysis(importNames, variables, module, analysis);
-                    cachedVariables.Add((module, analysis.GlobalScope.Variables));
+                    AddLoopImportsFromCachedAnalysis(importNames, variables, moduleKey, analysis);
+                    cachedVariables.Add(new AnalysisModuleKey(module), analysis.GlobalScope.Variables);
                 } else {
-                    AddLoopImportsFromAst(importNames, variables, module, ast);
-                    asts.Add((module, ast));
-                }
-
-                lock (_syncObj) {
-                    if (_isCanceled) {
-                        return;
-                    }
+                    AddLoopImportsFromAst(importNames, variables, moduleKey, ast, module.ModuleType == ModuleType.Compiled || module.ModuleType == ModuleType.CompiledBuiltin);
+                    asts.Add(new AnalysisModuleKey(module), ast);
                 }
             }
 
-            if (asts.Count == 0) {
-                if (_log != null && _log.LogLevel == TraceEventType.Verbose) {
-                    var qualifiedNames = string.Join(", ", cachedVariables.Select(v => v.Module.QualifiedName));
-                    _log?.Log(TraceEventType.Verbose, $"Attempt to reanalyze fully cached modules cycle: {qualifiedNames}");
-                }
-            }
-            
-            var imports = new List<(IPythonModule From, int FromPosition, IPythonModule To, int ToPosition)>();
-            foreach (var (fromModule, fromPosition, toModule, toName) in importNames) {
-                if (toName == null) {
-                    imports.Add((fromModule, fromPosition, toModule, int.MaxValue));
-                } else if (variables.TryGetValue((toModule, toName), out var toPosition)) {
-                    imports.Add((fromModule, fromPosition, toModule, toPosition));
-                }
-            }
-            
-            var startingModule = LocationLoopResolver<IPythonModule>.FindStartingItem(imports);
             lock (_syncObj) {
                 if (_isCanceled) {
                     return;
                 }
             }
 
-            var startingAst = asts.FirstOrDefault(a => a.Module.Equals(startingModule)).Ast;
-            if (startingModule == default || startingAst == default) {
-                // Use any random module
-                (startingModule, startingAst) = asts.First();
-            }
-            
-            var importedVariableResolver = new LoopImportedVariableHandler(_services, asts, cachedVariables);
-            var startingWalker = importedVariableResolver.CreateWalker(startingModule, startingAst);
-            startingAst.Walk(startingWalker);
-            startingWalker.Complete();
-
-            var version = _walker.Version;
-            foreach (var walker in importedVariableResolver.Walkers) {
-                var module = (IDocument)walker.Module;
-                
-                var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
-                if (analysis != null) {
-                    CompleteAnalysis(entries[module], module, version, analysis);
+            if (asts.Count == 0) {
+                if (_log != null && _log.LogLevel == TraceEventType.Verbose) {
+                    var names = string.Join(", ", cachedVariables.Select(v => v.Key.Name));
+                    _log?.Log(TraceEventType.Verbose, $"Attempt to reanalyze fully cached modules cycle: {names}");
                 }
             }
 
-            if (MarkNodeWalked(loopNode)) {
-                LogCompleted(loopNode, entries.Keys, stopWatch, startTime);
+            var imports = new List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, int ToPosition)>();
+            foreach (var (fromModule, fromPosition, toModule, toName) in importNames) {
+                if (!entries.ContainsKey(toModule)) {
+                    continue;
+                }
+
+                if (toName == null) {
+                    imports.Add((fromModule, fromPosition, toModule, 0));
+                } else if (variables.TryGetValue((toModule, toName), out var toPosition)) {
+                    imports.Add((fromModule, fromPosition, toModule, toPosition));
+                }
+            }
+            
+            var startingKeys = LocationLoopResolver<AnalysisModuleKey>.FindStartingItems(imports);
+            lock (_syncObj) {
+                if (_isCanceled) {
+                    return;
+                }
+            }
+
+            var variableHandler = new LoopImportedVariableHandler(_services, asts, cachedVariables, IsCanceled);
+            foreach (var key in startingKeys) {
+                if (asts.TryGetValue(key, out var startingAst) && entries.TryGetValue(key, out var me)) {
+                    variableHandler.WalkModule(me.Module, startingAst);
+                }
+            }
+
+            foreach (var walker in variableHandler.Walkers) {
+                asts.Remove(new AnalysisModuleKey(walker.Module));
+            }
+
+            while (asts.Count > 0) {
+                var (moduleKey, ast) = asts.First();
+                variableHandler.WalkModule(entries[moduleKey].Module, ast);
+                
+                foreach (var walker in variableHandler.Walkers) {
+                    asts.Remove(new AnalysisModuleKey(walker.Module));
+                }
+            }
+
+            foreach (var walker in variableHandler.Walkers) {
+                var module = (IDocument)walker.Module;
+                var entry = entries[new AnalysisModuleKey(module)].Entry;
+
+                var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
+                CompleteAnalysis(entry, module, version, analysis);
+            }
+
+            if (!MarkNodeWalked(loopNode)) {
+                LogCompleted(loopNode, entries.Values.Select(v => v.Module), stopWatch, startTime);
+            }
+
+            bool IsCanceled() {
+                lock (_syncObj) {
+                    return _isCanceled;
+                }
             }
         }
 
-        private void AddLoopImportsFromCachedAnalysis(in List<(IPythonModule From, int FromPosition, IPythonModule To, string ToName)> unresolvedImports, 
-            in Dictionary<(IPythonModule Module, string Name), int> variables, 
-            in IPythonModule module, 
+        private void AddLoopImportsFromCachedAnalysis(in List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)> unresolvedImports, 
+            in Dictionary<(AnalysisModuleKey Module, string Name), int> variables, 
+            in AnalysisModuleKey moduleKey, 
             in IDocumentAnalysis analysis) {
             
             foreach (var variable in analysis.GlobalScope.Variables) {
-                var key = (module, variable.Name);
+                var key = (moduleKey, variable.Name);
                 var location = variable.Location.IndexSpan.Start;
                 if (!variables.TryGetValue(key, out var currentLocation) || currentLocation > location) {
                     variables[key] = location;
@@ -416,26 +454,32 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void AddLoopImportsFromAst(in List<(IPythonModule From, int FromPosition, IPythonModule To, string ToName)> imports,
-            in Dictionary<(IPythonModule Module, string Name), int> variables,
-            in IPythonModule module,
-            in PythonAst ast) {
-            
-            // TODO: Use simpler version of walker, we need only global scope variables and imports
-            var eval = new ExpressionEval(_services, module, ast);
-            var walker = new ModuleWalker(eval, SimpleImportedVariableHandler.Instance);
-            ast.Walk(walker);
-            
-            foreach (var variable in walker.Eval.GlobalScope.Variables) {
-                var key = (module, variable.Name);
-                var location = variable.Location.IndexSpan.Start;
+        private void AddLoopImportsFromAst(
+            in List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)> imports,
+            in Dictionary<(AnalysisModuleKey Module, string Name), int> variables,
+            in AnalysisModuleKey moduleKey,
+            in PythonAst ast, 
+            in bool isCompiledModule) {
+
+            var pathResolver = moduleKey.IsTypeshed ? _typeshedPathResolver : _modulesPathResolver;
+            var walker = new ImportExportWalker(ast, _platformService, pathResolver, moduleKey.FilePath, moduleKey.IsTypeshed);
+            walker.Walk();
+
+            foreach (var export in walker.Exports) {
+                var key = (moduleKey, export.Name);
+                var location = export.Location.Start;
                 if (!variables.TryGetValue(key, out var currentLocation) || currentLocation > location) {
                     variables[key] = location;
                 }
             }
 
-            foreach (var (fromSpan, toModule, name) in walker.ImportedVariableSources) {
-                imports.Add((module, fromSpan.Start, toModule, name));
+            // Don't add imports from compiled modules
+            if (isCompiledModule) {
+                return;
+            }
+
+            foreach (var (toModule, name, location) in walker.Imports) {
+                imports.Add((moduleKey, location.Start, toModule, name));
             }
         }
 
@@ -567,21 +611,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return analysis;
         }
 
-
         private void LogCompleted(IDependencyChainLoopNode<PythonAnalyzerEntry> node, IEnumerable<IPythonModule> modules, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
-                var moduleNames = new StringBuilder();
-                var first = true;
-                foreach (var module in modules) {
-                    var type = module.Analysis is LibraryAnalysis ? "Library" : "User";
-                    moduleNames
-                        .AppendIf(!first, ", ")
-                        .AppendFormat("{0} ({1})", module.Name, type);
-                    first = false;
-                }
-                
+                var moduleNames = string.Join(", ", modules.Select(m => "{0}({1})".FormatInvariant(m.Name, m.Analysis is LibraryAnalysis ? "Library" : m.ModuleType.ToString())));
                 var elapsed = Math.Round((stopWatch.Elapsed - startTime).TotalMilliseconds, 2);
-                var message = $"Analysis of modules [{moduleNames}] on depth {node.VertexDepth} in {elapsed} ms.";
+                var message = $"Analysis of modules loop on depth {node.VertexDepth} in {elapsed} ms: [{moduleNames}]";
                 _log.Log(TraceEventType.Verbose, message);
             }
         }
@@ -609,9 +643,21 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void LogException(IPythonModule module, Exception exception) {
+        private void LogException(PythonAnalyzerEntry entry, Exception exception) {
             if (_log != null) {
-                _log.Log(TraceEventType.Verbose, $"Analysis of {module.Name}({module.ModuleType}) failed. {exception}");
+                _log.Log(TraceEventType.Verbose, $"Analysis of {entry.Module.Name}({entry.Module.ModuleType}) failed. {exception}");
+            }
+
+            if (TestEnvironment.Current != null) {
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
+        }
+
+        private void LogException(IDependencyChainLoopNode<PythonAnalyzerEntry> node, Exception exception) {
+            if (_log != null) {
+                var moduleNames = string.Join(", ", node.Values.Select(e => $"{e.Module.Name}({e.Module.ModuleType})"));
+                var message = $"Analysis of modules loop [{moduleNames}] failed. {exception}";
+                _log.Log(TraceEventType.Verbose, message);
             }
 
             if (TestEnvironment.Current != null) {

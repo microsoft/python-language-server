@@ -16,13 +16,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Parsing;
 
-namespace Microsoft.Python.LanguageServer.Completion {
+namespace Microsoft.Python.Parsing {
     /// <summary>
     /// The canonical source of keyword names for Python.
     /// </summary>
-    internal static class PythonKeywords {
+    public static class PythonKeywords {
         /// <summary>
         /// Returns true if the specified identifier is a keyword in a
         /// particular version of Python.

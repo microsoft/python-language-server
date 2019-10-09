@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
 
@@ -21,8 +22,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         public static IImportedVariableHandler Instance { get; } = new SimpleImportedVariableHandler();
 
         private SimpleImportedVariableHandler() {}
-        
-        public IVariable GetVariable(in PythonVariableModule module, in string name) =>
-            module.Analysis?.GlobalScope?.Variables[name];
+
+        public IReadOnlyList<string> GetMemberNames(PythonVariableModule variableModule) 
+            => variableModule.Analysis?.StarImportMemberNames;
+
+        public IVariable GetVariable(in PythonVariableModule module, in string name) 
+            => module.Analysis?.GlobalScope?.Variables[name];
+
+        public void EnsureModule(in PythonVariableModule module) { }
     }
 }

@@ -18,6 +18,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Testing;
+using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Core {
     public static class TaskExtensions {
@@ -105,7 +106,19 @@ namespace Microsoft.Python.Core {
         /// </summary>
         public static T WaitAndUnwrapExceptions<T>(this Task<T> task) => task.GetAwaiter().GetResult();
 
-        public static Task<T> WaitAsync<T>(this Task<T> task, CancellationToken cancellationToken) 
-            => task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default);
+        /// <summary>
+        /// Attach new <see cref="CancellationToken" /> to the given task.
+        /// This allows caller to have its own cancellation without aborting underlying work.
+        /// </summary>
+        public static Task<T> WaitAsync<T>(this Task<T> task, CancellationToken cancellationToken) {
+            if (task.IsCompleted || !cancellationToken.CanBeCanceled) {
+                return task;
+            }
+
+            var tcs = new TaskCompletionSource<T>();
+            tcs.RegisterForCancellation(cancellationToken).UnregisterOnCompletion(task);
+            task.SetCompletionResultTo(tcs);
+            return tcs.Task;
+        }
     }
 }

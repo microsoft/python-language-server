@@ -31,8 +31,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
             string libPath = null,
             string sitePackagesPath = null,
             InterpreterArchitecture architecture = default,
-            Version version = null
-        ) {
+            Version version = null) {
             InterpreterPath = interpreterPath;
             PathEnvironmentVariable = pathVar;
             Architecture = architecture ?? InterpreterArchitecture.Unknown;

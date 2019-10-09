@@ -466,7 +466,7 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cannot use named assignment with {0}.
+        ///   Looks up a localized string similar to cannot use named assignment with {0}.
         /// </summary>
         internal static string NamedAssignmentWithErrorMsg {
             get {
@@ -475,11 +475,47 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Named expression must be parenthesized in this context.
+        ///   Looks up a localized string similar to named expression must be parenthesized in this context.
         /// </summary>
         internal static string NamedExpressionCtxtErrorMsg {
             get {
                 return ResourceManager.GetString("NamedExpressionCtxtErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to assignment expression within a comprehension cannot be used in a class body.
+        /// </summary>
+        internal static string NamedExpressionInClassBodyErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionInClassBodyErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to assignment expression cannot be used in a comprehension iterable expression.
+        /// </summary>
+        internal static string NamedExpressionInComprehensionIteratorErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionInComprehensionIteratorErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to comprehension inner loop cannot rebind assignment expression target &apos;{0}&apos;.
+        /// </summary>
+        internal static string NamedExpressionIteratorRebindsNamedErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionIteratorRebindsNamedErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to assignment expression cannot rebind comprehension iteration variable &apos;{0}&apos;.
+        /// </summary>
+        internal static string NamedExpressionRebindIteratorErrorMsg {
+            get {
+                return ResourceManager.GetString("NamedExpressionRebindIteratorErrorMsg", resourceCulture);
             }
         }
         

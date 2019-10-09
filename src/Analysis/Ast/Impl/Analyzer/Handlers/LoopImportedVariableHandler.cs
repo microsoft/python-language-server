@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -25,24 +26,46 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class LoopImportedVariableHandler : IImportedVariableHandler {
         private readonly Dictionary<AnalysisModuleKey, ModuleWalker> _walkers = new Dictionary<AnalysisModuleKey, ModuleWalker>();
-        private readonly Dictionary<AnalysisModuleKey, PythonAst> _asts;
-        private readonly Dictionary<AnalysisModuleKey, IVariableCollection> _cachedVariables;
+        private readonly IReadOnlyDictionary<AnalysisModuleKey, PythonAst> _asts;
+        private readonly IReadOnlyDictionary<AnalysisModuleKey, IVariableCollection> _cachedVariables;
         private readonly IServiceContainer _services;
+        private readonly Func<bool> _isCanceled;
 
-        public IEnumerable<ModuleWalker> Walkers => _walkers.Values;
+        public IReadOnlyCollection<ModuleWalker> Walkers => _walkers.Values;
         
         public LoopImportedVariableHandler(in IServiceContainer services,
-            in IEnumerable<(IPythonModule Module, PythonAst Ast)> asts,
-            in IEnumerable<(IPythonModule Module, IVariableCollection Variables)> cachedVariables) {
+            in IReadOnlyDictionary<AnalysisModuleKey, PythonAst> asts,
+            in IReadOnlyDictionary<AnalysisModuleKey, IVariableCollection> cachedVariables,
+            in Func<bool> isCanceled) {
             
             _services = services;
-            _asts = asts.ToDictionary(kvp => new AnalysisModuleKey(kvp.Module), kvp => kvp.Ast);
-            _cachedVariables = cachedVariables.ToDictionary(kvp => new AnalysisModuleKey(kvp.Module), kvp => kvp.Variables);
+            _isCanceled = isCanceled;
+            _asts = asts;
+            _cachedVariables = cachedVariables;
         }
-        
+
+        public IReadOnlyList<string> GetMemberNames(PythonVariableModule variableModule) {
+            var module = variableModule.Module;
+            if (module == null || _isCanceled()) {
+                return default;
+            }
+
+            var key = new AnalysisModuleKey(module);
+            if (_walkers.TryGetValue(key, out var walker)) {
+                return walker.StarImportMemberNames;
+            }
+
+            if (!_asts.TryGetValue(key, out var ast)) {
+                return _cachedVariables.TryGetValue(key, out var variables) ? variables.Names : default;
+            }
+
+            walker = WalkModule(module, ast);
+            return walker.StarImportMemberNames;
+        }
+
         public IVariable GetVariable(in PythonVariableModule variableModule, in string name) {
             var module = variableModule.Module;
-            if (module == default) {
+            if (module == null || _isCanceled()) {
                 return default;
             }
 
@@ -55,17 +78,29 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return _cachedVariables.TryGetValue(key, out var variables) ? variables[name] : default;
             }
             
-            walker = CreateWalker(module, ast);
-            ast.Walk(walker);
-            walker.Complete();
-
+            walker = WalkModule(module, ast);
             return walker.Eval.GlobalScope?.Variables[name];
         }
 
-        public ModuleWalker CreateWalker(IPythonModule module, PythonAst ast) {
+        public void EnsureModule(in PythonVariableModule variableModule) {
+            var module = variableModule.Module;
+            if (module == null || _isCanceled()) {
+                return;
+            }
+
+            var key = new AnalysisModuleKey(module);
+            if (!_walkers.ContainsKey(key) && _asts.TryGetValue(key, out var ast)) {
+                WalkModule(module, ast);
+            }
+        }
+
+        public ModuleWalker WalkModule(IPythonModule module, PythonAst ast) {
             var eval = new ExpressionEval(_services, module, ast);
             var walker = new ModuleWalker(eval, this);
+
             _walkers[new AnalysisModuleKey(module)] = walker;
+            ast.Walk(walker);
+            walker.Complete();
             return walker;
         }
     }

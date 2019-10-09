@@ -383,5 +383,28 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             DeclareVariable(p.Name, paramType.CreateInstance(ArgumentSet.Empty(p.NameExpression, this)),
                 VariableSource.Declaration, p.NameExpression);
         }
+
+        internal void ProcessCallForReferences(CallExpression callExpr) {
+            if (Module.ModuleType != ModuleType.User) {
+                return;
+            }
+
+            switch (callExpr.Target) {
+                case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
+                    // Add reference to the function
+                    this.LookupNameInScopes(nex.Name)?.AddReference(GetLocationOfName(nex));
+                    break;
+                case MemberExpression mex when !string.IsNullOrEmpty(mex.Name): {
+                    var t = GetValueFromExpression(mex.Target)?.GetPythonType();
+                    t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
+                    break;
+                }
+            }
+
+            // Add references to all arguments.
+            foreach (var arg in callExpr.Args) {
+                GetValueFromExpression(arg.Expression);
+            }
+        }
     }
 }

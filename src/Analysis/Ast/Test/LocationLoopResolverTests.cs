@@ -39,7 +39,7 @@ namespace Microsoft.Python.Analysis.Tests {
         [DataTestMethod]
         public void FindStartingItem(params string[] input) {
             var edges = input.Select(s => (s[0], (int)s[1] - 0x30, s[2], (int)s[3] - 0x30));
-            LocationLoopResolver<char>.FindStartingItem(edges).Should().Be('A');
+            LocationLoopResolver<char>.FindStartingItems(edges).Should().Equal('A');
         }
         
         // ReSharper disable StringLiteralTypo
@@ -49,7 +49,17 @@ namespace Microsoft.Python.Analysis.Tests {
         [DataTestMethod]
         public void NoStartingItem(params string[] input) {
             var edges = input.Select(s => (s[0], (int)s[1] - 0x30, s[2], (int)s[3] - 0x30));
-            LocationLoopResolver<char>.FindStartingItem(edges).Should().Be(default);
+            LocationLoopResolver<char>.FindStartingItems(edges).Should().BeEmpty();
+        }
+
+        // ReSharper disable StringLiteralTypo
+        [PermutationDataRow("A2B4", "B2A0", "C3B4")]
+        [PermutationDataRow("A2B4", "B2A0", "C2D4", "D2C0")]
+        // ReSharper restore StringLiteralTypo
+        [DataTestMethod]
+        public void TwoStartingItems(params string[] input) {
+            var edges = input.Select(s => (s[0], (int)s[1] - 0x30, s[2], (int)s[3] - 0x30));
+            LocationLoopResolver<char>.FindStartingItems(edges).Should().BeEquivalentTo('A', 'C');
         }
     }
 }
