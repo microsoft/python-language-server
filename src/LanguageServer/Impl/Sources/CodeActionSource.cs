@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -27,6 +28,7 @@ using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
@@ -44,7 +46,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _services = services;
         }
 
-        public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, Core.Text.Range range, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
+        public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, Range range, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
             cancellationToken.ThrowIfCancellationRequested();
 
             var results = new List<CodeAction>();
@@ -119,7 +121,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 var visited = new HashSet<IPythonModule>();
                 var fullyQualifiedNames = new HashSet<string>();
 
-                // find modules matching the given name
+                // find modules matching the given name. this will include submodules
                 var fullModuleNames = pathResolver.GetAllImportableModuleByName(name, includeImplicit);
                 fullyQualifiedNames.UnionWith(fullModuleNames);
 
@@ -127,18 +129,40 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 var nameParts = new List<string>();
                 foreach (var module in interpreter.ModuleResolution.GetImportedModules(cancellationToken)) {
                     nameParts.Add(module.Name);
-                    CollectCandidates(module, name, visited, nameParts, fullyQualifiedNames);
+                    CollectCandidates(module, name, visited, nameParts, fullyQualifiedNames, cancellationToken);
                     nameParts.RemoveAt(nameParts.Count - 1);
                 }
 
                 var codeActions = new List<CodeAction>();
-                foreach (var fullyQualifiedName in fullyQualifiedNames) {
+                foreach (var fullyQualifiedName in fullyQualifiedNames.OrderBy(n => n, ModuleNameComparer.Instance)) {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     codeActions.AddIfNotNull(
                         CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: false, cancellationToken),
                         CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: true, cancellationToken));
                 }
 
                 return Task.FromResult<IEnumerable<CodeAction>>(codeActions);
+            }
+
+            private class ModuleNameComparer : IComparer<string> {
+                public static readonly ModuleNameComparer Instance = new ModuleNameComparer();
+
+                private ModuleNameComparer() { }
+
+                public int Compare(string x, string y) {
+                    if (x.StartsWith("_") && y.StartsWith("_")) {
+                        return x.CompareTo(y);
+                    }
+                    if (x.StartsWith("_")) {
+                        return 1;
+                    }
+                    if (y.StartsWith("_")) {
+                        return -1;
+                    }
+
+                    return x.CompareTo(y);
+                }
             }
 
             private CodeAction CreateCodeAction(IDocumentAnalysis analysis,
@@ -221,14 +245,14 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         indentation);
             }
 
-            public string GetInsertionText(FromImportStatement fromImportStatement, string rootModuleName, string moduleNameToAdd) {
+            private string GetInsertionText(FromImportStatement fromImportStatement, string rootModuleName, string moduleNameToAdd) {
                 var imports = fromImportStatement.Names.Select(n => n.Name)
                     .Concat(new string[] { moduleNameToAdd })
                     .OrderBy(n => n).ToList();
                 return $"from {rootModuleName} import {string.Join(", ", imports)}";
             }
 
-            public Range GetRange(PythonAst ast, Statement body, Node lastImportNode) {
+            private Range GetRange(PythonAst ast, Statement body, Node lastImportNode) {
                 var position = GetPosition(ast, body, lastImportNode);
                 return new Range() { start = position, end = position };
             }
@@ -304,28 +328,71 @@ namespace Microsoft.Python.LanguageServer.Sources {
                                            string name,
                                            HashSet<IPythonModule> visited,
                                            List<string> nameParts,
-                                           HashSet<string> fullyQualifiedNames) {
+                                           HashSet<string> fullyQualifiedNames,
+                                           CancellationToken cancellationToken) {
                 if (module == null || !visited.Add(module)) {
                     return;
                 }
 
-                foreach (var memberName in module.GetMemberNames()) {
+                // add non module (imported) member
+                AddNonImportedMemberWithName(module, name, nameParts, fullyQualifiedNames);
 
-                    // for now, skip any protected or private member
-                    if (memberName.StartsWith("_")) {
+                // add module (imported) members if it shows up in __all__
+                foreach (var memberName in GetAllVariables(module.Analysis)) {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var pythonModule = module.GetMember(memberName) as IPythonModule;
+                    if (pythonModule == null) {
                         continue;
                     }
 
                     nameParts.Add(memberName);
-                    var pythonType = module.GetMember(memberName) as IPythonType;
-
-                    if (pythonType != null && string.Equals(memberName, name)) {
-                        fullyQualifiedNames.Add(string.Join('.', nameParts));
+                    if (string.Equals(memberName, name)) {
+                        AddNameParts(nameParts, fullyQualifiedNames);
                     }
 
-                    CollectCandidates(pythonType as IPythonModule, name, visited, nameParts, fullyQualifiedNames);
+                    CollectCandidates(pythonModule, name, visited, nameParts, fullyQualifiedNames, cancellationToken);
                     nameParts.RemoveAt(nameParts.Count - 1);
                 }
+            }
+
+            private void AddNonImportedMemberWithName(IPythonModule module, string name, List<string> nameParts, HashSet<string> fullyQualifiedNames) {
+                // for now, skip any protected or private member
+                if (name.StartsWith("_")) {
+                    return;
+                }
+
+                var pythonType = module.GetMember<IPythonType>(name);
+                if (pythonType == null || pythonType is IPythonModule || pythonType.IsUnknown()) {
+                    return;
+                }
+
+                // skip any imported member unless it is explicitly on __all__
+                if (module.Analysis.GlobalScope.Imported.TryGetVariable(name, out var imported) &&
+                    object.Equals(pythonType, imported.Value) &&
+                    GetAllVariables(module.Analysis).All(s => !string.Equals(s, name))) {
+                    return;
+                }
+
+                nameParts.Add(name);
+                AddNameParts(nameParts, fullyQualifiedNames);
+                nameParts.RemoveAt(nameParts.Count - 1);
+            }
+
+            private static bool AddNameParts(List<string> nameParts, HashSet<string> fullyQualifiedNames) {
+                return fullyQualifiedNames.Add(string.Join('.', nameParts));
+            }
+
+            private IEnumerable<string> GetAllVariables(IDocumentAnalysis analysis) {
+                if (analysis.GlobalScope.Variables.TryGetVariable("__all__", out var variable) &&
+                    variable?.Value is IPythonCollection collection) {
+                    return collection.Contents
+                        .OfType<IPythonConstant>()
+                        .Select(c => c.GetString())
+                        .Where(s => !string.IsNullOrEmpty(s));
+                }
+
+                return Array.Empty<string>();
             }
         }
     }
