@@ -14,8 +14,10 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class SimpleImportedVariableHandler : IImportedVariableHandler {
@@ -23,8 +25,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         private SimpleImportedVariableHandler() {}
 
-        public IReadOnlyList<string> GetMemberNames(PythonVariableModule variableModule) 
-            => variableModule.Analysis?.StarImportMemberNames;
+        public IEnumerable<string> GetMemberNames(PythonVariableModule variableModule)
+            => variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
         public IVariable GetVariable(in PythonVariableModule module, in string name) 
             => module.Analysis?.GlobalScope?.Variables[name];

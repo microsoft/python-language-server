@@ -19,7 +19,7 @@ using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal interface IImportedVariableHandler {
-        IReadOnlyList<string> GetMemberNames(PythonVariableModule variableModule);
+        IEnumerable<string> GetMemberNames(PythonVariableModule variableModule);
         IVariable GetVariable(in PythonVariableModule module, in string name);
         void EnsureModule(in PythonVariableModule module);
     }

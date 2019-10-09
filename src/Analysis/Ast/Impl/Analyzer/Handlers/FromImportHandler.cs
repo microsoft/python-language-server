@@ -92,7 +92,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
             var memberNames = imports is ImplicitPackageImport
                 ? variableModule.GetMemberNames()
-                : _importedVariableHandler.GetMemberNames(variableModule) ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_")).ToList();
+                : _importedVariableHandler.GetMemberNames(variableModule).ToArray();
 
             foreach (var memberName in memberNames) {
                 DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);

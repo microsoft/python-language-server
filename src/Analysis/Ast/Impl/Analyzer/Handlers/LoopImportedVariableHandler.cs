@@ -44,7 +44,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             _cachedVariables = cachedVariables;
         }
 
-        public IReadOnlyList<string> GetMemberNames(PythonVariableModule variableModule) {
+        public IEnumerable<string> GetMemberNames(PythonVariableModule variableModule) {
             var module = variableModule.Module;
             if (module == null || _isCanceled()) {
                 return default;
@@ -52,15 +52,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var key = new AnalysisModuleKey(module);
             if (_walkers.TryGetValue(key, out var walker)) {
-                return walker.StarImportMemberNames;
+                return GetMemberNames(walker, variableModule);
             }
 
             if (!_asts.TryGetValue(key, out var ast)) {
-                return _cachedVariables.TryGetValue(key, out var variables) ? variables.Names : default;
+                return _cachedVariables.TryGetValue(key, out var variables) 
+                    ? variables.Names 
+                    : variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
             }
 
-            walker = WalkModule(module, ast);
-            return walker.StarImportMemberNames;
+            return GetMemberNames(WalkModule(module, ast), variableModule);
         }
 
         public IVariable GetVariable(in PythonVariableModule variableModule, in string name) {
@@ -103,5 +104,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             walker.Complete();
             return walker;
         }
+
+        private static IEnumerable<string> GetMemberNames(ModuleWalker walker, PythonVariableModule variableModule) 
+            => walker.StarImportMemberNames ?? walker.GlobalScope.GetExportableVariableNames().Concat(variableModule.ChildrenNames).Distinct().Where(s => !s.StartsWithOrdinal("_"));
     }
 }

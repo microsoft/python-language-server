@@ -52,6 +52,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public bool IsPersistent => Module?.IsPersistent == true;
+        public IEnumerable<string> ChildrenNames => _children.Keys;
 
         public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 
             Name = name;
@@ -68,7 +69,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void AddChildModule(string memberName, PythonVariableModule module) => _children[memberName] = module;
 
         public IMember GetMember(string name) => _children.TryGetValue(name, out var module) ? module : Module?.GetMember(name);
-        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(_children.Keys).Distinct() : _children.Keys;
+        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(ChildrenNames).Distinct() : ChildrenNames;
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
