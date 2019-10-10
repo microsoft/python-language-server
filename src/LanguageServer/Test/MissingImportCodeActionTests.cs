@@ -125,13 +125,130 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task SubModuleFromFunctionInsertTop() {
-
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}def TestMethod():
     from ctypes import util
     {|diagnostic:test|}",
                 title: "from ctypes import test",
                 newText: "from ctypes import test" + Environment.NewLine + Environment.NewLine);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AfterExistingImport() {
+            await TestCodeActionAsync(
+                @"from os import path
+{|insertionSpan:|}
+{|diagnostic:util|}",
+                title: "from ctypes import util",
+                newText: "from ctypes import util" + Environment.NewLine);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReplaceExistingImport() {
+            await TestCodeActionAsync(
+                @"from os import path
+{|insertionSpan:from ctypes import test|}
+import socket
+
+{|diagnostic:util|}",
+                title: "from ctypes import test, util",
+                newText: "from ctypes import test, util");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AfterExistingImportLocally() {
+            await TestCodeActionAsync(
+                @"def TestMethod():
+    from os import path
+{|insertionSpan:|}
+    {|diagnostic:util|}",
+                title: string.Format(Resources.ImportLocally, "from ctypes import util"),
+                newText: "    from ctypes import util" + Environment.NewLine);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReplaceExistingImportLocally() {
+            await TestCodeActionAsync(
+                @"def TestMethod():
+    from os import path
+    {|insertionSpan:from ctypes import test|}
+    import socket
+
+    {|diagnostic:util|}",
+                title: string.Format(Resources.ImportLocally, "from ctypes import test, util"),
+                newText: "from ctypes import test, util");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task CodeActionOrdering() {
+            MarkupUtils.GetSpan(@"def TestMethod():
+    [|test|]", out var code, out var span);
+
+            var analysis = await GetAnalysisAsync(code);
+            var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            diagnostics.Should().NotBeEmpty();
+
+            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+
+            var list = codeActions.Select(c => c.title).ToList();
+            var zipList = Enumerable.Range(0, list.Count).Zip(list);
+
+            var locallyImportedPrefix = Resources.ImportLocally.Substring(0, Resources.ImportLocally.IndexOf("'"));
+            var maxIndexOfTopAddImports = zipList.Where(t => !t.Second.StartsWith(locallyImportedPrefix)).Max(t => t.First);
+            var minIndexOfLocalAddImports = zipList.Where(t => t.Second.StartsWith(locallyImportedPrefix)).Min(t => t.First);
+
+            maxIndexOfTopAddImports.Should().BeLessThan(minIndexOfLocalAddImports);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task PreserveComment() {
+            await TestCodeActionAsync(
+                @"{|insertionSpan:from os import pathconf|} # test
+
+{|diagnostic:path|}",
+                title: "from os import path, pathconf",
+                newText: "from os import path, pathconf");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MemberSymbol() {
+            await TestCodeActionAsync(
+                @"from os import path
+{|insertionSpan:|}
+{|diagnostic:socket|}",
+                title: "from socket import socket",
+                newText: "from socket import socket" + Environment.NewLine);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoMemberSymbol() {
+            var markup = @"{|insertionSpan:|}{|diagnostic:socket|}";
+
+            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+
+            codeActions.Select(c => c.title).Should().NotContain("from socket import socket");
+
+            var title = "import socket";
+            var codeAction = codeActions.Single(c => c.title == title);
+            var newText = "import socket" + Environment.NewLine + Environment.NewLine;
+            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SymbolOrdering() {
+            var markup = @"from os import path
+{|insertionSpan:|}
+{|diagnostic:socket|}";
+
+            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+
+            var list = codeActions.Select(c => c.title).ToList();
+            var zipList = Enumerable.Range(0, list.Count).Zip(list);
+
+            var maxIndexOfPublicSymbol = zipList.Where(t => !t.Second.StartsWith("from _")).Max(t => t.First);
+            var minIndexOfPrivateSymbol = zipList.Where(t => t.Second.StartsWith("from _")).Min(t => t.First);
+
+            maxIndexOfPublicSymbol.Should().BeLessThan(minIndexOfPrivateSymbol);
         }
 
         private async Task TestCodeActionAsync(string markup, string title, string newText) {

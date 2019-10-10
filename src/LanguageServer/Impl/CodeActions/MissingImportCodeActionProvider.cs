@@ -80,15 +80,15 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             var codeActions = new List<CodeAction>();
+            var localCodeActions = new List<CodeAction>();
             foreach (var fullyQualifiedName in fullyQualifiedNames.OrderBy(n => n, ModuleNameComparer.Instance)) {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                codeActions.AddIfNotNull(
-                    CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: false, cancellationToken),
-                    CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: true, cancellationToken));
+                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: false, cancellationToken));
+                localCodeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: true, cancellationToken));
             }
 
-            return Task.FromResult<IEnumerable<CodeAction>>(codeActions);
+            return Task.FromResult(codeActions.Concat(localCodeActions));
         }
 
         private CodeAction CreateCodeAction(IDocumentAnalysis analysis,
