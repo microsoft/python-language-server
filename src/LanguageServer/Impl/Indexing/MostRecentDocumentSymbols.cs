@@ -68,7 +68,11 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
         }
 
-        public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) => _fileTcs.Task;
+        public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
+            lock (_syncObj) {
+                return _fileTcs.Task;
+            }
+        }
 
         public void MarkAsPending() {
             lock (_syncObj) {
