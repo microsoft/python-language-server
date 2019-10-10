@@ -143,7 +143,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         private async Task<(IDocumentAnalysis analysis, CodeAction[] diagnostics, SourceSpan insertionSpan)> GetAnalysisAndCodeActionsAndSpanAsync(
             string markup, IEnumerable<string> codes) {
-            MarkupUtiles.GetNamedSpans(markup, out var code, out var spans);
+            MarkupUtils.GetNamedSpans(markup, out var code, out var spans);
 
             var analysis = await GetAnalysisAsync(code);
             var insertionSpan = spans["insertionSpan"].First().ToSourceSpan(analysis.Ast);

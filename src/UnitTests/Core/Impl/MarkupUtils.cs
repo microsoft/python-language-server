@@ -43,7 +43,7 @@ namespace Microsoft.Python.UnitTests.Core {
     /// 
     /// Additional encoded features can be added on a case by case basis.
     /// </summary>
-    public static class MarkupUtiles {
+    public static class MarkupUtils {
         private const string PositionString = "$$";
         private const string SpanStartString = "[|";
         private const string SpanEndString = "|]";
