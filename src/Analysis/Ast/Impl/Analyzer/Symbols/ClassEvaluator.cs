@@ -90,10 +90,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             foreach (var s in GetStatements<Statement>(_classDef)) {
                 switch (s) {
                     case AssignmentStatement assignment:
-                        AssignmentHandler.HandleAssignment(assignment);
+                        AssignmentHandler.HandleAssignment(assignment, LookupOptions.All);
                         break;
                     case ExpressionStatement e:
-                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null);
+                        AssignmentHandler.HandleAnnotatedExpression(e.Expression as ExpressionWithAnnotation, null, LookupOptions.All);
                         break;
                 }
             }
@@ -113,7 +113,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             using (Eval.OpenScope(Eval.CurrentScope.OuterScope)) {
                 var bases = new List<IPythonType>();
                 foreach (var a in _classDef.Bases.Where(a => string.IsNullOrEmpty(a.Name))) {
-                    if (IsValidBase(a)) {
+                    if (IsValidBase(a, LookupOptions.Normal)) {
                         TryAddBase(bases, a);
                     } else {
                         ReportInvalidBase(a);
@@ -123,9 +123,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             }
         }
 
-        private bool IsValidBase(Arg a) {
+        private bool IsValidBase(Arg a, LookupOptions lookupOptions) {
             var expr = a.Expression;
-            var m = Eval.GetValueFromExpression(expr);
+            var m = Eval.GetValueFromExpression(expr, lookupOptions);
 
             // Allow any unknown members
             if (m.IsUnknown()) {

@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         public IDisposable OpenScope(IPythonModule module, ScopeStatement scope) => OpenScope(module, scope, out _);
         #endregion
 
-        public IMember GetValueFromExpression(Expression expr, LookupOptions options = LookupOptions.Normal) {
+        public IMember GetValueFromExpression(Expression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (expr == null) {
                 return null;
             }
@@ -134,43 +134,43 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             IMember m;
             switch (expr) {
                 case NameExpression nex:
-                    m = GetValueFromName(nex, options);
+                    m = GetValueFromName(nex, lookupOptions);
                     break;
                 case MemberExpression mex:
-                    m = GetValueFromMember(mex);
+                    m = GetValueFromMember(mex, lookupOptions);
                     break;
                 case CallExpression cex:
-                    m = GetValueFromCallable(cex);
+                    m = GetValueFromCallable(cex, lookupOptions);
                     break;
                 case UnaryExpression uex:
-                    m = GetValueFromUnaryOp(uex);
+                    m = GetValueFromUnaryOp(uex, lookupOptions);
                     break;
                 case IndexExpression iex:
-                    m = GetValueFromIndex(iex);
+                    m = GetValueFromIndex(iex, lookupOptions);
                     break;
                 case ConditionalExpression coex:
-                    m = GetValueFromConditional(coex);
+                    m = GetValueFromConditional(coex, lookupOptions);
                     break;
                 case ListExpression listex:
-                    m = GetValueFromList(listex);
+                    m = GetValueFromList(listex, lookupOptions);
                     break;
                 case DictionaryExpression dictex:
-                    m = GetValueFromDictionary(dictex);
+                    m = GetValueFromDictionary(dictex, lookupOptions);
                     break;
                 case SetExpression setex:
-                    m = GetValueFromSet(setex);
+                    m = GetValueFromSet(setex, lookupOptions);
                     break;
                 case TupleExpression tex:
-                    m = GetValueFromTuple(tex);
+                    m = GetValueFromTuple(tex, lookupOptions);
                     break;
                 case YieldExpression yex:
-                    m = GetValueFromExpression(yex.Expression);
+                    m = GetValueFromExpression(yex.Expression, lookupOptions);
                     break;
                 case GeneratorExpression genex:
-                    m = GetValueFromGenerator(genex);
+                    m = GetValueFromGenerator(genex, lookupOptions);
                     break;
                 case Comprehension comp:
-                    m = GetValueFromComprehension(comp);
+                    m = GetValueFromComprehension(comp, lookupOptions);
                     break;
                 case LambdaExpression lambda:
                     m = GetValueFromLambda(lambda);
@@ -182,14 +182,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     m = GetValueFromFormatSpecifier(formatSpecifier);
                     break;
                 case NamedExpression namedExpr:
-                    m = GetValueFromExpression(namedExpr.Value);
+                    m = GetValueFromExpression(namedExpr.Value, lookupOptions);
                     break;
                 // indexing with nothing, e.g Generic[]
                 case ErrorExpression error:
                     m = null;
                     break;
                 default:
-                    m = GetValueFromBinaryOp(expr) ?? GetConstantFromLiteral(expr);
+                    m = GetValueFromBinaryOp(expr, lookupOptions) ?? GetConstantFromLiteral(expr);
                     break;
             }
             if (m == null) {
@@ -232,13 +232,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        private IMember GetValueFromMember(MemberExpression expr) {
+        private IMember GetValueFromMember(MemberExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             var memberName = expr?.Name;
             if (expr?.Target == null || string.IsNullOrEmpty(memberName)) {
                 return null;
             }
 
-            var m = GetValueFromExpression(expr.Target);
+            var m = GetValueFromExpression(expr.Target, lookupOptions);
             if (m == null) {
                 return UnknownType;
             }
@@ -288,13 +288,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             }
         }
 
-        private IMember GetValueFromConditional(ConditionalExpression expr) {
+        private IMember GetValueFromConditional(ConditionalExpression expr, LookupOptions lookupOptions = LookupOptions.Normal) {
             if (expr == null) {
                 return null;
             }
 
-            var trueValue = GetValueFromExpression(expr.TrueExpression);
-            var falseValue = GetValueFromExpression(expr.FalseExpression);
+            var trueValue = GetValueFromExpression(expr.TrueExpression, lookupOptions);
+            var falseValue = GetValueFromExpression(expr.FalseExpression, lookupOptions);
 
             return trueValue ?? falseValue ?? UnknownType;
         }

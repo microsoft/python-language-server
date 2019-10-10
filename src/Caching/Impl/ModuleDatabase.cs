@@ -26,22 +26,18 @@ using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private const int DatabaseFormatVersion = 1;
-
         private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
         private readonly object _lock = new object();
 
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
-        private readonly string _databaseFolder;
 
         public ModuleDatabase(IServiceContainer services) {
             _services = services;
@@ -49,8 +45,12 @@ namespace Microsoft.Python.Analysis.Caching {
             _fs = services.GetService<IFileSystem>();
 
             var cfs = services.GetService<ICacheFolderService>();
-            _databaseFolder = Path.Combine(cfs.CacheFolder, $"analysis.v{DatabaseFormatVersion}");
+            CacheFolder = Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
         }
+
+        public string CacheFolderBaseName => "analysis.v";
+        public int DatabaseFormatVersion => 2;
+        public string CacheFolder { get; }
 
         /// <summary>
         /// Retrieves dependencies from the module persistent state.
@@ -149,12 +149,12 @@ namespace Microsoft.Python.Analysis.Caching {
                 lock (_lock) {
                     cancellationToken.ThrowIfCancellationRequested();
                     try {
-                        if (!_fs.DirectoryExists(_databaseFolder)) {
-                            _fs.CreateDirectory(_databaseFolder);
+                        if (!_fs.DirectoryExists(CacheFolder)) {
+                            _fs.CreateDirectory(CacheFolder);
                         }
 
                         cancellationToken.ThrowIfCancellationRequested();
-                        using (var db = new LiteDatabase(Path.Combine(_databaseFolder, $"{model.UniqueId}.db"))) {
+                        using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
                             var modules = db.GetCollection<ModuleModel>("modules");
                             modules.Upsert(model);
                             return;
@@ -190,7 +190,7 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             // Try module name as is.
-            var dbPath = Path.Combine(_databaseFolder, $"{uniqueId}.db");
+            var dbPath = Path.Combine(CacheFolder, $"{uniqueId}.db");
             if (_fs.FileExists(dbPath)) {
                 return dbPath;
             }
@@ -199,13 +199,13 @@ namespace Microsoft.Python.Analysis.Caching {
             // Try with the major.minor Python version.
             var pythonVersion = interpreter.Configuration.Version;
 
-            dbPath = Path.Combine(_databaseFolder, $"{uniqueId}({pythonVersion.Major}.{pythonVersion.Minor}).db");
+            dbPath = Path.Combine(CacheFolder, $"{uniqueId}({pythonVersion.Major}.{pythonVersion.Minor}).db");
             if (_fs.FileExists(dbPath)) {
                 return dbPath;
             }
 
             // Try with just the major Python version.
-            dbPath = Path.Combine(_databaseFolder, $"{uniqueId}({pythonVersion.Major}).db");
+            dbPath = Path.Combine(CacheFolder, $"{uniqueId}({pythonVersion.Major}).db");
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
 

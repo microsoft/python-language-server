@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         public override bool Walk(ReturnStatement node) {
-            var value = Eval.GetValueFromExpression(node.Expression);
+            var value = Eval.GetValueFromExpression(node.Expression, LookupOptions.Normal);
             if (!value.IsUnknown()) {
                 _result = value;
                 return false;

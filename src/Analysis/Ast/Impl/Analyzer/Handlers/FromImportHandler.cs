@@ -125,7 +125,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             value = value ?? member as PythonVariableModule ?? variable?.Value ?? member ?? Eval.UnknownType;
             
             // Do not allow imported variables to override local declarations
-            var canOverwrite = CanOverwriteVariable(variableName, importPosition);
+            var canOverwrite = CanOverwriteVariable(variableName, importPosition, value);
             
             // Do not declare references to '*'
             var locationExpression = nameLocation is NameExpression nex && nex.Name == "*" ? null : nameLocation;
@@ -137,11 +137,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
         }
 
-        private bool CanOverwriteVariable(string name, int importPosition) {
+        private bool CanOverwriteVariable(string name, int importPosition, IMember newValue) {
             var v = Eval.CurrentScope.Variables[name];
             if (v == null) {
                 return true; // Variable does not exist
             }
+            
+            if(newValue.IsUnknown()) {
+                return false; // Do not overwrite potentially good value with unknowns.
+            }
+
             // Allow overwrite if import is below the variable. Consider
             //   x = 1
             //   x = 2
@@ -153,6 +158,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // is imported from another module. OK to overwrite.
                 return true;
             }
+
             var firstAssignmentPosition = references.Min(r => r.Span.ToIndexSpan(Ast).Start);
             return firstAssignmentPosition < importPosition;
         }
@@ -183,13 +189,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 var fn = new PythonFunctionType("print", new Location(Module), null, string.Empty);
                 var o = new PythonFunctionOverload(fn, new Location(Module));
                 var parameters = new List<ParameterInfo> {
-                    new ParameterInfo("*values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
+                    new ParameterInfo("values", Interpreter.GetBuiltinType(BuiltinTypeId.Object), ParameterKind.List, null),
                     new ParameterInfo("sep", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
                     new ParameterInfo("end", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null),
                     new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null)
                 };
                 o.SetParameters(parameters);
-                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), true);
+                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.None), true);
                 fn.AddOverload(o);
                 Eval.DeclareVariable("print", fn, VariableSource.Import, printNameExpression);
             }

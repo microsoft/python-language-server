@@ -610,6 +610,60 @@ namespace Microsoft.Python.Parsing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to positional only marker after ** args not allowed.
+        /// </summary>
+        internal static string PositionalOnlyMarkerAfterDictArgsErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalOnlyMarkerAfterDictArgsErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to positional only marker after * args not allowed.
+        /// </summary>
+        internal static string PositionalOnlyMarkerAfterListArgsErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalOnlyMarkerAfterListArgsErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to positional only marker may not have annotation.
+        /// </summary>
+        internal static string PositionalOnlyMarkerAnnotationErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalOnlyMarkerAnnotationErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to positional only marker may not have default.
+        /// </summary>
+        internal static string PositionalOnlyMarkerDefaultErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalOnlyMarkerDefaultErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to duplicate positional only marker.
+        /// </summary>
+        internal static string PositionalOnlyMarkerDuplicateErrorMsg {
+            get {
+                return ResourceManager.GetString("PositionalOnlyMarkerDuplicateErrorMsg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to positional only marker may not be first parameter.
+        /// </summary>
+        internal static string PositionalOnlyMarkerFirstParamErrorMessage {
+            get {
+                return ResourceManager.GetString("PositionalOnlyMarkerFirstParamErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to positional parameter after * args not allowed.
         /// </summary>
         internal static string PositionalParameterNotAllowedErrorMsg {

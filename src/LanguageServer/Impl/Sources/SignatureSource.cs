@@ -69,19 +69,15 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 return null;
             }
 
-            var skip = ft.IsStatic || ft.IsUnbound ? 0 : 1;
-
             var signatures = new SignatureInformation[ft.Overloads.Count];
             for (var i = 0; i < ft.Overloads.Count; i++) {
                 var o = ft.Overloads[i];
 
                 var signatureLabel = _docSource.GetSignatureString(ft, selfType, out var parameterSpans, i, name);
 
-                var visibleParameterCount = o.Parameters.Count - skip;
-                var parameterInfo = new ParameterInformation[visibleParameterCount];
-                for (var j = 0; j < visibleParameterCount; j++) {
-                    var p = o.Parameters[j + skip];
-                    var ps = parameterSpans[j];
+                var parameterInfo = new ParameterInformation[parameterSpans.Length];
+                for (var j = 0; j < parameterSpans.Length; j++) {
+                    var (ps, p) = parameterSpans[j];
 
                     parameterInfo[j] = new ParameterInformation {
                         label = _labelOffsetSupport ? new[] { ps.Start, ps.End } : (object)p.Name,

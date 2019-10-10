@@ -17,20 +17,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching {
-    /// <summary>
-    /// Represents global scope that has been restored from
-    /// the database but has not been fully populated yet.
-    /// Used to attach to analysis so variables can be
-    /// accessed during classes and methods restoration.
-    /// </summary>
-    internal interface IRestoredGlobalScope : IGlobalScope {
-        void ReconstructVariables();
-    }
-
-    internal interface IModuleDatabaseService {
+    internal interface IModuleDatabaseService: IModuleDatabaseCache {
         /// <summary>
         /// Creates global scope from module persistent state.
         /// Global scope is then can be used to construct module analysis.

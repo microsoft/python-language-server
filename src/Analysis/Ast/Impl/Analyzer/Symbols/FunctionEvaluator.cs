@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         private IPythonType TryDetermineReturnValue() {
-            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation);
+            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation, LookupOptions.All);
             if (!annotationType.IsUnknown()) {
                 // Annotations are typically types while actually functions return
                 // instances unless specifically annotated to a type such as Type[T].
@@ -125,6 +125,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Static methods don't need any diagnostics
             if (function.IsStatic) {
+                return;
+            }
+
+            // Lambdas never get a self/cls argument.
+            if (function.IsLambda()) {
                 return;
             }
 
@@ -181,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (value != null) {
 
                 // although technically legal, __init__ in a constructor should not have a not-none return value
-                if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.NoneType)) {
+                if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.None)) {
                     Eval.ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                             Resources.ReturnInInit,
                             node.GetLocation(Eval).Span,

@@ -13,10 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
+using System.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
+    [DebuggerDisplay("{Name} : {Kind}")]
     internal sealed class ParameterInfo : IParameterInfo {
         public ParameterInfo(PythonAst ast, Parameter p, IPythonType type, IMember defaultValue, bool isGeneric)
             : this(p?.Name, type, p?.Kind, defaultValue) {
@@ -34,6 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
             DefaultValue = defaultValue;
             Type = type;
             Kind = kind ?? ParameterKind.Normal;
+            Debug.Assert(Kind != ParameterKind.PositionalOnlyMarker);
         }
 
         public string Name { get; }

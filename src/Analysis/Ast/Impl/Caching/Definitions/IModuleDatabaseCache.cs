@@ -12,17 +12,26 @@
 //
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
+// using System;
 
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Protocol;
+namespace Microsoft.Python.Analysis.Caching {
+    /// <summary>
+    /// Provides location of the analysis database cache.
+    /// </summary>
+    public interface IModuleDatabaseCache {
+        /// <summary>
+        /// Cache folder base name without version, such as 'analysis.v'.
+        /// </summary>
+        string CacheFolderBaseName { get; }
 
-namespace Microsoft.Python.LanguageServer {
-    public interface IDocumentationSource {
-        InsertTextFormat DocumentationFormat { get; }
-        MarkupContent GetHover(string name, IMember member, IPythonType self = null);
-        string GetSignatureString(IPythonFunctionType ft, IPythonType self, out (IndexSpan, IParameterInfo)[] parameterSpans, int overloadIndex = 0, string name = null);
-        MarkupContent FormatParameterDocumentation(IParameterInfo parameter);
-        MarkupContent FormatDocumentation(string documentation);
+        /// <summary>
+        /// Database format version.
+        /// </summary>
+        int DatabaseFormatVersion { get; }
+
+        /// <summary>
+        /// Full path to the cache folder includding version.
+        /// </summary>
+        string CacheFolder { get; }
     }
 }

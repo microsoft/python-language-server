@@ -13,16 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Core.Text;
-using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.Analysis.Values;
 
-namespace Microsoft.Python.LanguageServer {
-    public interface IDocumentationSource {
-        InsertTextFormat DocumentationFormat { get; }
-        MarkupContent GetHover(string name, IMember member, IPythonType self = null);
-        string GetSignatureString(IPythonFunctionType ft, IPythonType self, out (IndexSpan, IParameterInfo)[] parameterSpans, int overloadIndex = 0, string name = null);
-        MarkupContent FormatParameterDocumentation(IParameterInfo parameter);
-        MarkupContent FormatDocumentation(string documentation);
+namespace Microsoft.Python.Analysis.Caching {
+    /// <summary>
+    /// Represents global scope that has been restored from
+    /// the database but has not been fully populated yet.
+    /// Used to attach to analysis so variables can be
+    /// accessed during classes and methods restoration.
+    /// </summary>
+    internal interface IRestoredGlobalScope : IGlobalScope {
+        void ReconstructVariables();
     }
 }
