@@ -84,6 +84,63 @@ namespace Microsoft.Python.LanguageServer.Tests {
             TestCodeAction(analysis.Document.Uri, codeAction, title: string.Format(Resources.ImportLocally, "import ntpath"), insertionSpan, newText);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task SubModule() {
+            const string markup = @"{|insertionSpan:|}{|diagnostic:util|}";
+
+            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+
+            var title = "from ctypes import util";
+            var codeAction = codeActions.Single(c => c.title == title);
+            var newText = "from ctypes import util" + Environment.NewLine + Environment.NewLine;
+
+            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SubModuleUpdate() {
+            const string markup = @"{|insertionSpan:from ctypes import util|}
+{|diagnostic:test|}";
+
+            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+
+            var title = "from ctypes import test, util";
+            var codeAction = codeActions.Single(c => c.title == title);
+            var newText = "from ctypes import test, util";
+
+            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SubModuleFunctionDefinitionUpdateLocally() {
+            const string markup = @"def TestMethod():
+    {|insertionSpan:from ctypes import util|}
+    {|diagnostic:test|}";
+
+            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+
+            var title = string.Format(Resources.ImportLocally, "from ctypes import test, util");
+            var codeAction = codeActions.Single(c => c.title == title);
+            var newText = "from ctypes import test, util";
+
+            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SubModuleFunctionDefinition() {
+            const string markup = @"{|insertionSpan:|}def TestMethod():
+    from ctypes import util
+    {|diagnostic:test|}";
+
+            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+
+            var title = "from ctypes import test";
+            var codeAction = codeActions.Single(c => c.title == title);
+            var newText = "from ctypes import test" + Environment.NewLine + Environment.NewLine;
+
+            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+        }
+
         private async Task<(IDocumentAnalysis analysis, CodeAction[] diagnostics, SourceSpan insertionSpan)> GetAnalysisAndCodeActionsAndSpanAsync(
             string markup, IEnumerable<string> codes) {
             MarkupUtiles.GetNamedSpans(markup, out var code, out var spans);

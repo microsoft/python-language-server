@@ -105,7 +105,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var titleText = locallyInserted ? string.Format(Resources.ImportLocally, insertionText) : insertionText;
 
             var sb = new StringBuilder();
-            sb.Append(insertionPoint.Value.indentation);
+            sb.AppendIf(insertionPoint.Value.range.start == insertionPoint.Value.range.end, insertionPoint.Value.indentation);
             sb.Append(insertionPoint.Value.addBlankLine ? insertionText + Environment.NewLine : insertionText);
             sb.AppendIf(insertionPoint.Value.range.start == insertionPoint.Value.range.end, Environment.NewLine);
 
