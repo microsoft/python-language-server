@@ -170,14 +170,14 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         private void PushScope(IScopeNode node) {
-            node.ParentNode = _currentScope;
+            node.ParentScopeNode = _currentScope;
             _currentScope = node;
             _finallyCount.Add(0);
         }
 
         private void PopScope() {
             _scopes.Add(_currentScope);
-            _currentScope = _currentScope.ParentNode;
+            _currentScope = _currentScope.ParentScopeNode;
             _finallyCount.RemoveAt(_finallyCount.Count - 1);
         }
 
@@ -574,7 +574,7 @@ namespace Microsoft.Python.Parsing.Ast {
             // Do not add the global suite to the list of processed nodes,
             // the publishing must be done after the class local binding.
             Debug.Assert(_currentScope == node);
-            _currentScope = _currentScope.ParentNode;
+            _currentScope = _currentScope.ParentScopeNode;
             _finallyCount.RemoveAt(_finallyCount.Count - 1);
         }
 

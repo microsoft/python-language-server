@@ -41,7 +41,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
             // Try to bind in outer scopes, if we have an unqualified exec we need to leave the
             // variables as free for the same reason that locals are accessed by name.
-            for (var parent = Node.ParentNode; parent != null; parent = parent.ParentNode) {
+            for (var parent = Node.ParentScopeNode; parent != null; parent = parent.ParentScopeNode) {
                 if ((parent as IBindableNode)?.TryBindOuter(_classDefinition, name, true, out variable) ?? false) {
                     return variable;
                 }

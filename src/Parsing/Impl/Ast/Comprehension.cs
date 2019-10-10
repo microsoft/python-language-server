@@ -19,17 +19,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
-using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
     public abstract class ComprehensionIterator : Node { }
 
-    public abstract class Comprehension : Expression, IBindableNode {
+    public abstract class Comprehension : ScopeExpression, IBindableNode {
         private readonly ScopeDelegate _scopeDelegate;
 
         public Comprehension() {
             _scopeDelegate = new FunctionScopeDelegate(this);
         }
+        internal override ScopeDelegate ScopeDelegate => _scopeDelegate;
 
         public abstract ImmutableArray<ComprehensionIterator> Iterators { get; }
         public abstract override string NodeName { get; }
@@ -54,12 +54,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region IScopeNode
 
-        public virtual string Name => "<comprehension>";
-        public IScopeNode ParentNode { get; set; }
-
-        public Statement Body => null;
-        
-        public PythonAst GlobalParent => _scopeDelegate.GlobalParent;
+        public override string Name => "<comprehension>";
+        public override Statement Body => null;
         #endregion
     }
 

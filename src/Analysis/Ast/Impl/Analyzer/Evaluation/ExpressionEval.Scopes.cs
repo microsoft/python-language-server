@@ -151,12 +151,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 return Disposable.Empty;
             }
 
-            if (node.ParentNode != null) {
-                if (!_scopeLookupCache.TryGetValue(node.ParentNode, out outerScope)) {
+            if (node.ParentScopeNode != null) {
+                if (!_scopeLookupCache.TryGetValue(node.ParentScopeNode, out outerScope)) {
                     outerScope = gs
                         .TraverseDepthFirst(s => s.Children.OfType<Scope>())
-                        .FirstOrDefault(s => s.Node == node.ParentNode);
-                    _scopeLookupCache[node.ParentNode] = outerScope;
+                        .FirstOrDefault(s => s.Node == node.ParentScopeNode);
+                    _scopeLookupCache[node.ParentScopeNode] = outerScope;
                 }
             }
 

@@ -21,11 +21,11 @@ namespace Microsoft.Python.Parsing.Ast {
                     // happens when we don't have a PythonVariable.
                     variable = null;
                     return false;
-                } else {
-                    // Create a global variable to bind to.
-                    variable = EnsureGlobalVariable(name);
-                    return true;
                 }
+                
+                // Create a global variable to bind to.
+                variable = EnsureGlobalVariable(name);
+                return true;
             }
 
             variable = null;

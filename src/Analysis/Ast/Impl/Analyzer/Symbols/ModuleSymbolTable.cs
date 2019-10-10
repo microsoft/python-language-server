@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         public void EvaluateAll() {
             // Evaluate top-level functions first.
             while (_evaluators.Count > 0) {
-                var walker = _evaluators.FirstOrDefault(e => e.Value.Target is FunctionDefinition fd && fd.ParentNode == null).Value;
+                var walker = _evaluators.FirstOrDefault(e => e.Value.Target is FunctionDefinition fd && fd.ParentScopeNode == null).Value;
                 if (walker == null) {
                     break;
                 }
@@ -75,7 +75,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             // Do not use foreach since walker list is dynamically modified and walkers are removed
             // after processing. Handle __init__ and __new__ first so class variables are initialized.
             while (_evaluators.Count > 0) {
-                var member = _evaluators.Keys.FirstOrDefault(w => w.ParentNode == target);
+                var member = _evaluators.Keys.FirstOrDefault(w => w.ParentScopeNode == target);
                 if (member == null) {
                     break;
                 }

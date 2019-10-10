@@ -50,7 +50,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 var cur = Node as IScopeNode;
                 while (!(cur is PythonAst)) {
                     Debug.Assert(cur != null);
-                    cur = cur.ParentNode;
+                    cur = cur.ParentScopeNode;
                 }
 
                 return (PythonAst) cur;
@@ -145,7 +145,7 @@ namespace Microsoft.Python.Parsing.Ast {
             if (_nonLocalVars != null) {
                 foreach (var variableName in _nonLocalVars) {
                     var bound = false;
-                    for (var parent = Node.ParentNode; parent != null; parent = parent.ParentNode) {
+                    for (var parent = Node.ParentScopeNode; parent != null; parent = parent.ParentScopeNode) {
                         PythonVariable variable = null;
                         if ((parent as IBindableNode)?.TryBindOuter(Node, variableName.Name, false, out variable) ?? false) {
                             bound = !variable.IsGlobal;
@@ -236,7 +236,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Variables[variable.Name] = variable;
         }
 
-        internal PythonVariable /*!*/ EnsureVariable(string /*!*/ name) {
+        internal PythonVariable EnsureVariable(string name) {
             if (!TryGetVariable(name, out var variable)) {
                 return CreateVariable(name, VariableKind.Local);
             }
@@ -249,7 +249,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// for variables explicitly declared global by the user, and names accessed
         /// but not defined in the lexical scope.
         /// </summary>
-        internal PythonVariable /*!*/ EnsureGlobalVariable(string name) {
+        internal PythonVariable EnsureGlobalVariable(string name) {
             if (!TryGetVariable(name, out var variable)) {
                 variable = CreateVariable(name, VariableKind.Global);
             }

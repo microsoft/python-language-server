@@ -262,7 +262,5 @@ namespace Microsoft.Python.Parsing.Ast {
                 res.Append(",");
             }
         }
-        
-        bool ExposesLocalVariable(PythonVariable name) => NeedsLocalsDictionary;
     }
 }

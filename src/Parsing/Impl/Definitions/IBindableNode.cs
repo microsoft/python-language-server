@@ -1,14 +1,17 @@
-using System.Collections.Generic;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
     internal interface IBindableNode : IScopeNode {
+        #region Binding
         void Bind(PythonNameBinder binder);
 
         void FinishBind(PythonNameBinder binder);
 
         bool TryBindOuter(IBindableNode from, string name, bool allowGlobals, out PythonVariable variable);
+        #endregion
 
+        #region Add variables
+        void AddVariable(PythonVariable variable);
         void AddFreeVariable(PythonVariable variable, bool accessedInScope);
 
         string AddReferencedGlobal(string name);
@@ -16,17 +19,17 @@ namespace Microsoft.Python.Parsing {
         void AddNonLocalVariable(NameExpression name);
 
         void AddCellVariable(PythonVariable variable);
+        #endregion
 
-        bool ExposesLocalVariable(PythonVariable name);
-
+        #region References
         PythonVariable BindReference(PythonNameBinder binder, string name);
-
-        void AddVariable(PythonVariable variable);
 
         PythonReference Reference(string name);
 
         bool IsReferenced(string name);
+        #endregion
 
+        #region Create Variables
         PythonVariable CreateVariable(string name, VariableKind kind);
 
         PythonVariable EnsureVariable(string name);
@@ -34,13 +37,14 @@ namespace Microsoft.Python.Parsing {
         PythonVariable EnsureGlobalVariable(string name);
 
         PythonVariable DefineParameter(string name);
-        
-        
+        #endregion
+
+        #region Contains
         bool ContainsImportStar { get; set; }
         bool ContainsExceptionHandling { get; set; }
 
         bool ContainsUnqualifiedExec { get; set; }
-        
+
         /// <summary>
         /// True if variables can be set in a late bound fashion that we don't
         /// know about at code gen time - for example via from fob import *.
@@ -49,6 +53,7 @@ namespace Microsoft.Python.Parsing {
         /// </summary>
         bool HasLateBoundVariableSets { get; set; }
 
-        Dictionary<string, PythonVariable> Variables { get; set; }
+        bool ExposesLocalVariable(PythonVariable name);
+        # endregion
     }
 }

@@ -5,7 +5,7 @@ namespace Microsoft.Python.Parsing {
         public static ScopeStatement FindClosestScopeStatement(this IScopeNode node) {
             var scope = node;
             while (scope != null && !(scope is ScopeStatement)) {
-                scope = scope.ParentNode;
+                scope = scope.ParentScopeNode;
             }
             return scope as ScopeStatement;
         }
