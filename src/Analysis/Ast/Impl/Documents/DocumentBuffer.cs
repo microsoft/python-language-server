@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Documents {
         public void MarkChanged() {
             lock (_lock) {
                 Check.InvalidOperation(_initialized, "Buffer is not initialized.");
-                if(_cleared) {
+                if (_cleared) {
                     return; // User may try and edit library file where we have already dropped the content.
                 }
                 Version++;
