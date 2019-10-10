@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -44,13 +45,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             var results = new List<CodeAction>();
 
-            // * NOTE * this always re-calculate whole document for all linters.
-            //          consider creating linter result cache somewhere (MRU?) and 
-            //          add error code as optional argument to run only that linter rather
-            //          than always running all linters.
-            //          also, current LintModule implementation always run all linters
-            //          even if the linter option is off to set references in the given
-            //          modules. this code path should use different code path to prevent that.
             foreach (var diagnostic in GetMatchingDiagnostics(analysis, diagnostics, cancellationToken)) {
                 foreach (var codeActionProvider in _codeActionProviders) {
                     if (codeActionProvider.FixableDiagnostics.Any(code => code == diagnostic.ErrorCode)) {
@@ -63,8 +57,14 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         private IEnumerable<DiagnosticsEntry> GetMatchingDiagnostics(IDocumentAnalysis analysis, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
-            var analyzer = _services.GetService<IPythonAnalyzer>();
-            foreach (var diagnostic in analysis.Diagnostics.Concat(analyzer.LintModule(analysis.Document))) {
+            var diagnosticService = _services.GetService<IDiagnosticsService>();
+
+            // we assume diagnostic service has the latest results
+            if (diagnosticService == null || !diagnosticService.Diagnostics.TryGetValue(analysis.Document.Uri, out var latestDiagnostics)) {
+                yield break;
+            }
+
+            foreach (var diagnostic in latestDiagnostics) {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (diagnostics.Any(d => AreEqual(d, diagnostic))) {
