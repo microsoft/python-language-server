@@ -492,7 +492,6 @@ namespace Microsoft.Python.Analysis.Modules {
                     Parse();
                 }
             }
-            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(this);
         }
 
         private void SetOrLoadContent(string content) {

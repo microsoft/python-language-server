@@ -45,23 +45,40 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         }
 
         protected override IPythonModule CreateModule(string name) {
+            if (!TryCreateStubModule(name, out var module)) {
+                return null;
+            }
+
+            Analyzer.InvalidateAnalysis(module);
+            return module;
+
+        }
+
+        private bool TryCreateStubModule(string name, out IPythonModule module) {
+            module = null;
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport != null) {
                 if (moduleImport.IsCompiled) {
                     Log?.Log(TraceEventType.Warning, "Unsupported native module in stubs", moduleImport.FullName, moduleImport.ModulePath);
-                    return null;
+                    return false;
                 }
-                return new StubPythonModule(moduleImport.FullName, moduleImport.ModulePath, true, Services);
+
+                module = new StubPythonModule(moduleImport.FullName, moduleImport.ModulePath, true, Services);
+                return true;
             }
 
             var i = name.IndexOf('.');
             if (i == 0) {
                 Debug.Fail("Invalid module name");
-                return null;
+                return false;
             }
 
             var stubPath = CurrentPathResolver.GetPossibleModuleStubPaths(name).FirstOrDefault(p => FileSystem.FileExists(p));
-            return stubPath != null ? new StubPythonModule(name, stubPath, true, Services) : null;
+            if (stubPath != null) {
+                module = new StubPythonModule(name, stubPath, true, Services);
+                return true;
+            } 
+            return false;
         }
 
         public Task ReloadAsync(CancellationToken cancellationToken = default) {
