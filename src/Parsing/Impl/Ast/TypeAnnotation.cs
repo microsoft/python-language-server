@@ -81,6 +81,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             public override bool Walk(ConstantExpression node) {
+                // TODO: Do not perform recursive string parsing.
                 switch (node.Value) {
                     case string s:
                         _parse(s)?.Walk(this);
@@ -90,6 +91,9 @@ namespace Microsoft.Python.Parsing.Ast {
                         break;
                     case null:
                         _ops.Add(new NameOp { Name = "None" });
+                        break;
+                    default:
+                        _ops.Add(new MakeUnknownOp());
                         break;
                 }
 
@@ -274,6 +278,13 @@ namespace Microsoft.Python.Parsing.Ast {
                         return false;
                     }
                     stack.Push(t);
+                    return true;
+                }
+            }
+
+            class MakeUnknownOp : Op {
+                public override bool Apply<T>(TypeAnnotationConverter<T> converter, Stack<KeyValuePair<string, T>> stack) {
+                    stack.Push(new KeyValuePair<string, T>(null, default));
                     return true;
                 }
             }

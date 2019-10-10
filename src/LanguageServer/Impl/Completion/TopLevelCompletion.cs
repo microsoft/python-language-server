@@ -78,7 +78,8 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 }
             }
 
-            var keywords = GetKeywordItems(context, options, scopeStatement);
+            var keywords = GetKeywordItems(context, options, scopeStatement).ToArray();
+            items = items.Where(item => !keywords.Any(i => i.insertText == item.insertText));
             items = items.Concat(keywords);
 
             return new CompletionResult(items, applicableSpan);

@@ -128,6 +128,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 return;
             }
 
+            // Lambdas never get a self/cls argument.
+            if (function.IsLambda()) {
+                return;
+            }
+
             // Otherwise, functions defined in classes must have at least one argument
             if (parameters.IsNullOrEmpty()) {
                 var funcLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
@@ -181,7 +186,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (value != null) {
 
                 // although technically legal, __init__ in a constructor should not have a not-none return value
-                if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.NoneType)) {
+                if (_function.IsDunderInit() && !value.IsOfType(BuiltinTypeId.None)) {
                     Eval.ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
                             Resources.ReturnInInit,
                             node.GetLocation(Eval).Span,

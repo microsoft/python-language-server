@@ -14,7 +14,6 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
@@ -30,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         internal static void Assign(SequenceExpression seq, IMember value, ExpressionEval eval) {
-            var typeEnum = new ValueEnumerator(value, eval.UnknownType);
+            var typeEnum = new ValueEnumerator(value, eval.UnknownType, eval.Module);
             Assign(seq, typeEnum, eval);
         }
 
@@ -38,19 +37,19 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             foreach (var item in seq.Items) {
                 switch (item) {
                     case StarredExpression stx when stx.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
+                        eval.DeclareVariable(nex.Name, valueEnum.Next(), VariableSource.Declaration, nex);
                         break;
                     case ParenthesisExpression pex when pex.Expression is NameExpression nex && !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
+                        eval.DeclareVariable(nex.Name, valueEnum.Next(), VariableSource.Declaration, nex);
                         break;
                     case NameExpression nex when !string.IsNullOrEmpty(nex.Name):
-                        eval.DeclareVariable(nex.Name, valueEnum.Next, VariableSource.Declaration, nex);
+                        eval.DeclareVariable(nex.Name, valueEnum.Next(), VariableSource.Declaration, nex);
                         break;
                     // Nested sequence expression in sequence, Tuple[Tuple[int, str], int], List[Tuple[int], str]
                     // TODO: Because of bug with how collection types are constructed, they don't make nested collection types
                     // into instances, meaning we have to create it here
                     case SequenceExpression se when valueEnum.Peek is IPythonCollection || valueEnum.Peek is IPythonCollectionType:
-                        var collection = valueEnum.Next;
+                        var collection = valueEnum.Next();
                         var pc = collection as IPythonCollection;
                         var pct = collection as IPythonCollectionType;
                         Assign(se, pc ?? pct.CreateInstance(ArgumentSet.Empty(se, eval)), eval);

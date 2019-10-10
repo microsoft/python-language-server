@@ -317,9 +317,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         public IReadOnlyList<IParameterInfo> CreateFunctionParameters(
-            IPythonClassType self, 
-            IPythonClassMember function, 
-            FunctionDefinition fd, 
+            IPythonClassType self,
+            IPythonClassMember function,
+            FunctionDefinition fd,
             bool declareVariables) {
             // For class method no need to add extra parameters, but first parameter type should be the class.
             // For static and unbound methods do not add or set anything.
@@ -357,7 +357,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                         // since outer type may be getting redefined. Consider 's = None; def f(s: s = 123): ...
                         paramType = GetTypeFromAnnotation(p.Annotation, out isGeneric, LookupOptions.Local | LookupOptions.Builtins);
                         // Default value of None does not mean the parameter is None, just says it can be missing.
-                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.NoneType) ? null : defaultValue;
+                        defaultValue = defaultValue.IsUnknown() || defaultValue.IsOfType(BuiltinTypeId.None) ? null : defaultValue;
                         if (paramType == null && defaultValue != null) {
                             paramType = defaultValue.GetPythonType();
                         }
@@ -398,11 +398,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     // Add reference to the function
                     this.LookupNameInScopes(nex.Name, lookupOptions)?.AddReference(GetLocationOfName(nex));
                     break;
-                case MemberExpression mex when !string.IsNullOrEmpty(mex.Name): {
+                case MemberExpression mex when !string.IsNullOrEmpty(mex.Name):
                     var t = GetValueFromExpression(mex.Target, lookupOptions)?.GetPythonType();
                     t?.GetMember(mex.Name)?.AddReference(GetLocationOfName(mex));
                     break;
-                }
             }
 
             // Add references to all arguments.

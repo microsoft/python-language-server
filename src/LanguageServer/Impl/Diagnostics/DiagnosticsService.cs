@@ -40,7 +40,10 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 _entries[source] = Array.Empty<DiagnosticsEntry>();
             }
 
-            public void ClearAll() => _entries.Clear();
+            public void ClearAll() {
+                Changed = Entries.Count > 0;
+                _entries.Clear();
+            }
 
             public void SetDiagnostics(DiagnosticSource source, IReadOnlyList<DiagnosticsEntry> entries) {
                 if (_entries.TryGetValue(source, out var existing)) {
@@ -106,16 +109,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             }
         }
 
-        public void Remove(Uri documentUri) {
-            lock (_lock) {
-                // Before removing the document, make sure we clear its diagnostics.
-                if (_diagnostics.TryGetValue(documentUri, out var d)) {
-                    d.ClearAll();
-                    PublishDiagnostics();
-                    _diagnostics.Remove(documentUri);
-                }
-            }
-        }
+        public void Remove(Uri documentUri) => ClearDiagnostics(documentUri, true);
 
         public int PublishingDelay { get; set; } = 1000;
 
@@ -215,9 +209,19 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private void OnCloseDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, false);
         private void OnRemoveDocument(object sender, DocumentEventArgs e) => ClearDiagnostics(e.Document.Uri, true);
 
+        /// <summary>
+        /// Removes document diagnostics (publishes empty set to the client).
+        /// If the document is still open, URI remains in the document diagnostics map.
+        /// </summary>
+        /// <param name="uri">Document URI.</param>
+        /// <param name="remove">
+        /// True means the document is closed and its diagnostics should be
+        /// removed from the map (as opposed to document is still open and has no diagnostics).
+        /// </param>
         private void ClearDiagnostics(Uri uri, bool remove) {
             lock (_lock) {
-                if (_diagnostics.TryGetValue(uri, out var _)) {
+                if (_diagnostics.TryGetValue(uri, out var d)) {
+                    d.ClearAll();
                     PublishDiagnostics();
                     if (remove) {
                         _diagnostics.Remove(uri);

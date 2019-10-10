@@ -109,7 +109,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             if (moduleImport.IsCompiled) {
                 Log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, moduleImport.IsPersistent, Services);
+                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, moduleImport.IsPersistent, false, Services);
             }
 
             Log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
@@ -212,7 +212,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             var addedRoots = new HashSet<string> { Root };
             addedRoots.UnionWith(InterpreterPaths);
             addedRoots.UnionWith(UserPaths);
-            ReloadModulePaths(addedRoots);
+            ReloadModulePaths(addedRoots, cancellationToken);
 
             if (!builtinsIsCreated) {
                 var builtinsModule = CreateBuiltinsModule(Services, Interpreter, StubCache);

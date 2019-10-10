@@ -717,7 +717,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         private static void AppendName(StringBuilder builder, string name)
-            => builder.AppendIf(builder.Length > 0, ".").Append(name);
+            => builder.AppendIf(builder.Length > 0 && builder[builder.Length - 1] != '.', ".").Append(name);
 
         private static Node UpdateNodesFromEnd(Edge lastEdge, Node newEnd) {
             while (lastEdge.Start != null) {

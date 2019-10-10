@@ -168,7 +168,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
                 if (mc is IBuiltinsPythonModule builtins) {
                     // Builtins require special handling since there may be 'hidden' names
-                    // like __NoneType__ which need to be mapped to visible types.
+                    // which need to be mapped to visible types.
                     member = GetBuiltinMember(builtins, memberName) ?? builtins.Interpreter.UnknownType;
                 } else {
                     member = mc?.GetMember(memberName);
@@ -199,8 +199,8 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             switch (memberName) {
-                case "NoneType":
-                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType);
+                case "None":
+                    return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.None);
                 case "Unknown":
                     return builtins.Interpreter.UnknownType;
             }

@@ -429,6 +429,11 @@ limit { limit_num}; """"""", line: 5);
         }
 
         [TestMethod, Priority(0)]
+        public void PositionalMarker() {
+            AssertSingleLineFormat("def foo(x,y,/,z,*args,**kwargs)", "def foo(x, y, /, z, *args, **kwargs)");
+        }
+
+        [TestMethod, Priority(0)]
         public void GrammarFile() {
             var src = TestData.GetPath("TestData", "Formatting", "pythonGrammar.py");
 
