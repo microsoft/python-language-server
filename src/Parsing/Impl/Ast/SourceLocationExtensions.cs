@@ -30,15 +30,16 @@ namespace Microsoft.Python.Parsing.Ast {
         }
     }
 
+    public static class RangeExtensions {
+        public static IndexSpan ToIndexSpan(this Range range, ILocationConverter lc)
+            => IndexSpan.FromBounds(lc.LocationToIndex(range.start), lc.LocationToIndex(range.end));
+        public static SourceSpan ToSourceSpan(this Range range, ILocationConverter lc = null)
+            => new SourceSpan(range.start.ToSourceLocation(lc), range.end.ToSourceLocation(lc));
+    }
+
     public static class SourceSpanExtensions {
         public static IndexSpan ToIndexSpan(this SourceSpan span, ILocationConverter lc)
             => IndexSpan.FromBounds(lc.LocationToIndex(span.Start), lc.LocationToIndex(span.End));
-        public static IndexSpan ToIndexSpan(this Range range, ILocationConverter lc)
-            => IndexSpan.FromBounds(lc.LocationToIndex(range.start), lc.LocationToIndex(range.end));
-
-        public static SourceSpan ToSourceSpan(this Range range, ILocationConverter lc = null) {
-            return new SourceSpan(range.start.ToSourceLocation(lc), range.end.ToSourceLocation(lc));
-        }
     }
 
     public static class IndexSpanExtensions {

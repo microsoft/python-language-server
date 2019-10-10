@@ -39,7 +39,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             _services = services;
         }
 
-        public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, Range range, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
+        public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
             cancellationToken.ThrowIfCancellationRequested();
 
             var results = new List<CodeAction>();

@@ -122,7 +122,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
 
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
-            var codeActions = await new CodeActionSource(Services).GetCodeActionsAsync(analysis, @params.range, @params.context.diagnostics, cancellationToken);
+            var codeActions = await new CodeActionSource(Services).GetCodeActionsAsync(analysis, @params.context.diagnostics, cancellationToken);
             return codeActions ?? Array.Empty<CodeAction>();
         }
     }
