@@ -10,7 +10,7 @@ using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
-    class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
+    internal sealed class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
         private readonly object _syncObj = new object();
         private readonly IIndexParser _indexParser;
         private readonly string _path;
@@ -54,9 +54,9 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             try {
                 var result = await asyncWork(currentCts.Token);
                 currentTcs.TrySetResult(result);
-            } catch(OperationCanceledException) {
+            } catch (OperationCanceledException) {
                 currentTcs.TrySetCanceled();
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 currentTcs.TrySetException(ex);
             } finally {
                 lock (_syncObj) {
