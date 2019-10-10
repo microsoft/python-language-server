@@ -58,12 +58,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly ILogger _log;
         private readonly bool _forceGC;
         private readonly IModuleDatabaseService _moduleDatabaseService;
+        private readonly PathResolverSnapshot _modulesPathResolver;
+        private readonly PathResolverSnapshot _typeshedPathResolver;
 
         private State _state;
         private bool _isCanceled;
         private int _runningTasks;
-        private PathResolverSnapshot _modulesPathResolver;
-        private PathResolverSnapshot _typeshedPathResolver;
 
         public bool IsCompleted {
             get {
@@ -406,6 +406,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (asts.TryGetValue(key, out var startingAst) && entries.TryGetValue(key, out var me)) {
                     variableHandler.WalkModule(me.Module, startingAst);
                 }
+
+                lock (_syncObj) {
+                    if (_isCanceled) {
+                        return;
+                    }
+                }
             }
 
             foreach (var walker in variableHandler.Walkers) {
@@ -416,6 +422,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var (moduleKey, ast) = asts.First();
                 variableHandler.WalkModule(entries[moduleKey].Module, ast);
                 
+                lock (_syncObj) {
+                    if (_isCanceled) {
+                        return;
+                    }
+                }
+
                 foreach (var walker in variableHandler.Walkers) {
                     asts.Remove(new AnalysisModuleKey(walker.Module));
                 }
