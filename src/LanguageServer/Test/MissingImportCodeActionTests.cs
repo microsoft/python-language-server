@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ using FluentAssertions;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.CodeActions;
+using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
@@ -29,9 +32,6 @@ using Microsoft.Python.Parsing.Tests;
 using Microsoft.Python.UnitTests.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
-using Microsoft.Python.LanguageServer.Diagnostics;
-using Microsoft.Python.LanguageServer.CodeActions;
-using System.Collections.Generic;
 
 namespace Microsoft.Python.LanguageServer.Tests {
     [TestClass]
@@ -46,6 +46,18 @@ namespace Microsoft.Python.LanguageServer.Tests {
         public void Cleanup() => TestEnvironmentImpl.TestCleanup();
 
         [TestMethod, Priority(0)]
+        public async Task Missing() {
+            MarkupUtils.GetSpan(@"[|missingModule|]", out var code, out var span);
+
+            var analysis = await GetAnalysisAsync(code);
+            var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            diagnostics.Should().NotBeEmpty();
+
+            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            codeActions.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
         public async Task TopModule() {
             const string markup = @"{|insertionSpan:|}{|diagnostic:ntpath|}";
 
@@ -57,7 +69,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task TopModuleFunctionDefinition() {
+        public async Task TopModuleFromFunctionInsertTop() {
             const string markup = @"{|insertionSpan:|}def TestMethod():
     {|diagnostic:ntpath|}";
 
@@ -71,7 +83,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0)]
-        public async Task TopModuleFunctionDefinitionLocally() {
+        public async Task TopModuleLocally() {
             const string markup = @"def TestMethod():
 {|insertionSpan:|}    {|diagnostic:ntpath|}";
 
@@ -86,58 +98,47 @@ namespace Microsoft.Python.LanguageServer.Tests {
 
         [TestMethod, Priority(0)]
         public async Task SubModule() {
-            const string markup = @"{|insertionSpan:|}{|diagnostic:util|}";
-
-            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-
-            var title = "from ctypes import util";
-            var codeAction = codeActions.Single(c => c.title == title);
-            var newText = "from ctypes import util" + Environment.NewLine + Environment.NewLine;
-
-            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:util|}",
+                title: "from ctypes import util",
+                newText: "from ctypes import util" + Environment.NewLine + Environment.NewLine);
         }
 
         [TestMethod, Priority(0)]
         public async Task SubModuleUpdate() {
-            const string markup = @"{|insertionSpan:from ctypes import util|}
-{|diagnostic:test|}";
-
-            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-
-            var title = "from ctypes import test, util";
-            var codeAction = codeActions.Single(c => c.title == title);
-            var newText = "from ctypes import test, util";
-
-            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+            await TestCodeActionAsync(
+                @"{|insertionSpan:from ctypes import util|}
+{|diagnostic:test|}",
+                title: "from ctypes import test, util",
+                newText: "from ctypes import test, util");
         }
 
         [TestMethod, Priority(0)]
-        public async Task SubModuleFunctionDefinitionUpdateLocally() {
-            const string markup = @"def TestMethod():
+        public async Task SubModuleUpdateLocally() {
+            await TestCodeActionAsync(
+                @"def TestMethod():
     {|insertionSpan:from ctypes import util|}
-    {|diagnostic:test|}";
-
-            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-
-            var title = string.Format(Resources.ImportLocally, "from ctypes import test, util");
-            var codeAction = codeActions.Single(c => c.title == title);
-            var newText = "from ctypes import test, util";
-
-            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+    {|diagnostic:test|}",
+                title: string.Format(Resources.ImportLocally, "from ctypes import test, util"),
+                newText: "from ctypes import test, util");
         }
 
         [TestMethod, Priority(0)]
-        public async Task SubModuleFunctionDefinition() {
-            const string markup = @"{|insertionSpan:|}def TestMethod():
+        public async Task SubModuleFromFunctionInsertTop() {
+
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}def TestMethod():
     from ctypes import util
-    {|diagnostic:test|}";
+    {|diagnostic:test|}",
+                title: "from ctypes import test",
+                newText: "from ctypes import test" + Environment.NewLine + Environment.NewLine);
+        }
 
-            var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+        private async Task TestCodeActionAsync(string markup, string title, string newText) {
+            var (analysis, codeActions, insertionSpan) =
+                await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
 
-            var title = "from ctypes import test";
             var codeAction = codeActions.Single(c => c.title == title);
-            var newText = "from ctypes import test" + Environment.NewLine + Environment.NewLine;
-
             TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
         }
 
