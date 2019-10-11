@@ -69,7 +69,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                 if (!string.IsNullOrEmpty(p.DefaultValueString)) {
                     builder.Append('=');
-                    builder.Append(p.DefaultValue);
+                    builder.Append(p.DefaultValueString);
                 } else if (!p.Type.IsUnknown()) {
                     builder.Append(": ");
                     builder.Append(p.Type.Name);
