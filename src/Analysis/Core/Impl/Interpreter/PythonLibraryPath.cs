@@ -174,7 +174,7 @@ namespace Microsoft.Python.Analysis.Core.Interpreter {
 
             var output = await ps.ExecuteAndCaptureOutputAsync(startInfo, cancellationToken);
             return output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-                .Skip(1).Select(s => {
+                .Select(s => {
                     try {
                         return Parse(s);
                     } catch (ArgumentException) {
