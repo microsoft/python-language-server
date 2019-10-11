@@ -10,7 +10,7 @@ using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
-    class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
+    internal sealed class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
         private readonly object _syncObj = new object();
         private readonly IIndexParser _indexParser;
         private readonly string _path;
@@ -18,26 +18,22 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private CancellationTokenSource _fileCts = new CancellationTokenSource();
 
         private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
-        private WorkQueueState state = WorkQueueState.WaitingForWork;
+        private WorkQueueState _state = WorkQueueState.WaitingForWork;
 
         public MostRecentDocumentSymbols(string path, IIndexParser indexParser) {
             _path = path;
             _indexParser = indexParser;
         }
 
-        public void Parse() {
-            WorkAndSetTcs(ParseAsync);
-        }
+        public void Parse() => WorkAndSetTcs(ParseAsync).DoNotWait();
 
-        public void Index(IDocument doc) {
-            WorkAndSetTcs(ct => IndexAsync(doc, ct));
-        }
+        public void Index(IDocument doc) => WorkAndSetTcs(ct => IndexAsync(doc, ct)).DoNotWait();
 
-        public void WorkAndSetTcs(Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> asyncWork) {
+        public async Task WorkAndSetTcs(Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> asyncWork) {
             CancellationTokenSource currentCts;
             TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> currentTcs;
             lock (_syncObj) {
-                switch (state) {
+                switch (_state) {
                     case WorkQueueState.Working:
                         CancelExistingWork();
                         RenewTcs();
@@ -50,40 +46,37 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     default:
                         throw new InvalidOperationException();
                 }
-                state = WorkQueueState.Working;
+                _state = WorkQueueState.Working;
                 currentCts = _fileCts;
                 currentTcs = _fileTcs;
             }
 
-            DoWork(currentCts, asyncWork).SetCompletionResultTo(currentTcs);
-        }
-
-        private async Task<IReadOnlyList<HierarchicalSymbol>> DoWork(CancellationTokenSource tcs, Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> asyncWork) {
-            var token = tcs.Token;
-
             try {
-                return await asyncWork(token);
+                var result = await asyncWork(currentCts.Token);
+                currentTcs.TrySetResult(result);
+            } catch (OperationCanceledException) {
+                currentTcs.TrySetCanceled();
+            } catch (Exception ex) {
+                currentTcs.TrySetException(ex);
             } finally {
                 lock (_syncObj) {
-                    tcs.Dispose();
-                    if (!token.IsCancellationRequested) {
-                        state = WorkQueueState.FinishedWork;
+                    if (!currentCts.Token.IsCancellationRequested) {
+                        _state = WorkQueueState.FinishedWork;
                     }
+                    currentCts.Dispose();
                 }
             }
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
-            TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> currentTcs;
             lock (_syncObj) {
-                currentTcs = _fileTcs;
+                return _fileTcs.Task;
             }
-            return currentTcs.Task.ContinueWith(t => t.GetAwaiter().GetResult(), ct);
         }
 
         public void MarkAsPending() {
             lock (_syncObj) {
-                switch (state) {
+                switch (_state) {
                     case WorkQueueState.WaitingForWork:
                         break;
                     case WorkQueueState.Working:
@@ -96,13 +89,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     default:
                         throw new InvalidOperationException();
                 }
-                state = WorkQueueState.WaitingForWork;
+                _state = WorkQueueState.WaitingForWork;
             }
         }
 
         public void Dispose() {
             lock (_syncObj) {
-                switch (state) {
+                switch (_state) {
                     case WorkQueueState.Working:
                         CancelExistingWork();
                         break;
@@ -116,7 +109,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     default:
                         throw new InvalidOperationException();
                 }
-                state = WorkQueueState.FinishedWork;
+                _state = WorkQueueState.FinishedWork;
             }
         }
 
