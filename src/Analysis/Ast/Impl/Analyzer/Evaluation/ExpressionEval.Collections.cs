@@ -104,7 +104,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         public IMember GetValueFromComprehension(Comprehension node) {
-            using (Interpreter.LanguageVersion.Is3x() ? OpenScope(Module, node) : Disposable.Empty) {
+            using (OpenScope(Module, node)) {
                 ProcessComprehension(node);
                 // TODO: Evaluate comprehensions to produce exact contents, if possible.
                 switch (node) {
@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         }
 
         public void ProcessComprehension(Comprehension node) {
-            using (Interpreter.LanguageVersion.Is3x() ? OpenScope(Module, node) : Disposable.Empty) {
+            using (OpenScope(Module, node)) {
                 foreach (var cfor in node.Iterators.OfType<ComprehensionFor>().Where(c => c.Left != null)) {
                     var value = GetValueFromExpression(cfor.List);
                     if (value != null) {

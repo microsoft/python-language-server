@@ -117,12 +117,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             if (!(scope is Scope s)) {
                 return Disposable.Empty;
             }
+            
             _openScopes.Push(s);
             CurrentScope = s;
             return new ScopeTracker(this);
         }
 
-        public IDisposable OpenScope(IPythonModule module, IScopeNode scope) => OpenScope(module, scope, out _);
+        public IDisposable OpenScope(IPythonModule module, IScopeNode scope) {
+            if (scope is Comprehension && Interpreter.LanguageVersion.Is2x()) {
+                return Disposable.Empty;
+            }
+            return OpenScope(module, scope, out _);
+        }
         #endregion
 
         public IMember GetValueFromExpression(Expression expr, LookupOptions options = LookupOptions.Normal) {
