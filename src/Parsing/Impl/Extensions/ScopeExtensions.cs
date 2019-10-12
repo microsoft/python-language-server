@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing {
@@ -8,6 +9,12 @@ namespace Microsoft.Python.Parsing {
                 scope = scope.ParentScopeNode;
             }
             return scope as ScopeStatement;
+        }
+
+        public static IEnumerable<IScopeNode> EnumerateTowardsGlobal(this IScopeNode node) {
+            for (var parent = node.ParentScopeNode; parent != null; parent = parent.ParentScopeNode) {
+                yield return parent;
+            }
         }
     }
 }

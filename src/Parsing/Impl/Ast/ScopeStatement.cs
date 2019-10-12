@@ -44,7 +44,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool IsGlobal => ScopeDelegate.IsGlobal;
 
-        public PythonAst GlobalParent => ScopeDelegate.GlobalParent;
+        public PythonAst GlobalParent => ScopeDelegate.Ast;
         public bool TryGetVariable(string name, out PythonVariable variable) => ScopeDelegate.TryGetVariable(name, out variable);
 
         public IReadOnlyList<PythonVariable> FreeVariables => ScopeDelegate.FreeVariables;

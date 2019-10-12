@@ -62,8 +62,11 @@ namespace Microsoft.Python.Core {
         }
 
         private static T GetKey<T, U>(KeyValuePair<T, U> keyValue) => keyValue.Key;
+        
+        private static U GetValue<T, U>(KeyValuePair<T, U> keyValue) => keyValue.Value;
 
         public static IEnumerable<T> Keys<T, U>(this IEnumerable<KeyValuePair<T, U>> source) => source.Select(GetKey);
+        public static IEnumerable<U> Values<T, U>(this IEnumerable<KeyValuePair<T, U>> source) => source.Select(GetValue);
 
         public static IEnumerable<T> ExcludeDefault<T>(this IEnumerable<T> source) =>
             source.Where(i => !Equals(i, default(T)));

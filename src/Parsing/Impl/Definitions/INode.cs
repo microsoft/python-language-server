@@ -5,9 +5,9 @@ using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.Parsing.Ast {
     public interface INode {
-        int EndIndex { get; set; }
+        int EndIndex { get; }
 
-        int StartIndex { get; set; }
+        int StartIndex { get; }
 
         IEnumerable<Node> GetChildNodes();
         void Walk(PythonWalker walker);
@@ -16,8 +16,6 @@ namespace Microsoft.Python.Parsing.Ast {
         string NodeName { get; }
 
         string ToCodeString(PythonAst ast);
-
-        string ToCodeString(PythonAst ast, CodeFormattingOptions format);
 
         SourceLocation GetStart(PythonAst ast);
 
@@ -28,17 +26,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// <summary>
         /// Returns the proceeding whitespace (newlines and comments) that
         /// shows up before this node.
-        /// 
-        /// New in 1.1.
         /// </summary>
         string GetLeadingWhiteSpace(PythonAst ast);
-
-        /// <summary>
-        /// Sets the proceeding whitespace (newlines and comments) that shows up
-        /// before this node.
-        /// </summary>
-        /// <param name="ast"></param>
-        /// <param name="whiteSpace"></param>
-        void SetLeadingWhiteSpace(PythonAst ast, string whiteSpace);
     }
 }

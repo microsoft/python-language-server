@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
@@ -45,17 +46,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal virtual bool IsGlobal => false;
 
-        public PythonAst GlobalParent {
-            get {
-                var cur = Node as IScopeNode;
-                while (!(cur is PythonAst)) {
-                    Debug.Assert(cur != null);
-                    cur = cur.ParentScopeNode;
-                }
-
-                return (PythonAst) cur;
-            }
-        }
+        public PythonAst Ast => (PythonAst) Node.EnumerateTowardsGlobal().Last();
 
         internal void Clear() {
             _references?.Clear();
@@ -118,22 +109,18 @@ namespace Microsoft.Python.Parsing.Ast {
         internal abstract PythonVariable BindReference(PythonNameBinder binder, string name);
 
         internal virtual void Bind(PythonNameBinder binder) {
-            if (_references != null) {
-                foreach (var refList in _references.Values) {
-                    foreach (var reference in refList) {
-                        PythonVariable variable;
-                        reference.Variable = variable = BindReference(binder, reference.Name);
+            foreach (var reference in _references.MaybeEnumerate().Values().SelectMany(v => v)) {
+                PythonVariable variable;
+                reference.Variable = variable = BindReference(binder, reference.Name);
 
-                        // Accessing outer scope variable which is being deleted?
-                        if (variable != null) {
-                            if (variable.Deleted && variable.ScopeNode != Node && !variable.IsGlobal && binder.LanguageVersion < PythonLanguageVersion.V32) {
-                                // report syntax error
-                                binder.ReportSyntaxError(
-                                    "can not delete variable '{0}' referenced in nested scope"
-                                        .FormatUI(reference.Name),
-                                    Node);
-                            }
-                        }
+                // Accessing outer scope variable which is being deleted?
+                if (variable != null) {
+                    if (variable.Deleted && variable.ScopeNode != Node && !variable.IsGlobal && binder.LanguageVersion < PythonLanguageVersion.V32) {
+                        // report syntax error
+                        binder.ReportSyntaxError(
+                            "can not delete variable '{0}' referenced in nested scope"
+                                .FormatUI(reference.Name),
+                            Node);
                     }
                 }
             }
@@ -145,9 +132,9 @@ namespace Microsoft.Python.Parsing.Ast {
             if (_nonLocalVars != null) {
                 foreach (var variableName in _nonLocalVars) {
                     var bound = false;
-                    for (var parent = Node.ParentScopeNode; parent != null; parent = parent.ParentScopeNode) {
-                        PythonVariable variable = null;
-                        if ((parent as IBindableNode)?.TryBindOuter(Node, variableName.Name, false, out variable) ?? false) {
+                    foreach (var scope in Node.EnumerateTowardsGlobal()) {
+                        PythonVariable variable;
+                        if (scope is IBindableNode b && b.TryBindOuter(Node, variableName.Name, false, out variable)) {
                             bound = !variable.IsGlobal;
                             break;
                         }
