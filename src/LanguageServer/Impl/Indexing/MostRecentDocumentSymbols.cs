@@ -69,7 +69,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
             lock (_syncObj) {
-                return _fileTcs.Task;
+                return _fileTcs.Task.WaitAsync(ct);
             }
         }
 
@@ -110,6 +110,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 }
                 _state = WorkQueueState.FinishedWork;
             }
+            _fileCts?.Dispose();
         }
 
         private async Task<IReadOnlyList<HierarchicalSymbol>> IndexAsync(IDocument doc, CancellationToken indexCt) {
@@ -149,7 +150,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private void RenewTcs() {
             Check.InvalidOperation(Monitor.IsEntered(_syncObj));
-            _fileCts.Dispose();
+            _fileCts?.Dispose();
             _fileCts = new CancellationTokenSource();
             _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
         }
