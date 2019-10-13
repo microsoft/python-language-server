@@ -15,7 +15,7 @@
 
 using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal interface IImportedVariableHandler {

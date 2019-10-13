@@ -218,7 +218,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             var moduleKey = new AnalysisModuleKey(import.Name, import.ModulePath, _isTypeshed);
             IImportChildrenSource childrenSource = _pathResolver.GetModuleImportFromModuleName(moduleKey.Name);
-            if (childrenSource == default) {
+            if (childrenSource == null) {
                 return;
             }
 

@@ -366,7 +366,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var moduleKey = new AnalysisModuleKey(module);
                 entries[moduleKey] = (module, entry);
                 var analysis = TryRestoreCachedAnalysis(module);
-                if (analysis != default) {
+                if (analysis != null) {
                     AddLoopImportsFromCachedAnalysis(importNames, variables, moduleKey, analysis);
                     cachedVariables.Add(new AnalysisModuleKey(module), analysis.GlobalScope.Variables);
                 } else {

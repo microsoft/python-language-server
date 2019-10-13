@@ -111,11 +111,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         /// <param name="importPosition">Position of the import statement.</param>
         /// <param name="nameLocation">Location of the variable name expression.</param>
         private void DeclareVariable(PythonVariableModule variableModule, string memberName, IImportSearchResult imports, string variableName, int importPosition, Node nameLocation) {
-            var location = Eval.GetLocationOfName(nameLocation);
-            if (variableModule.Module != null) {
-                VariableSources = VariableSources.Add((location.IndexSpan, variableModule.Module, variableName));
-            }
-
             // First try imports since child modules should win, i.e. in 'from a.b import c'
             // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
             var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);

@@ -28,16 +28,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         public IEnumerable<string> GetMemberNames(PythonVariableModule variableModule)
             => variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
-        public IMember GetVariable(in PythonVariableModule module, in string memberName) {
-            // First try exported or child submodules.
-            var value = module.GetMember(memberName);
-
-            // Value may be variable or submodule. If it is variable, we need it in order to add reference.
-            var variable = module.Analysis?.GlobalScope?.Variables[memberName];
-            value = variable?.Value?.Equals(value) == true ? variable : value;
-
-            return value ?? module.Interpreter.UnknownType;
-        }
+        public IVariable GetVariable(in PythonVariableModule module, in string memberName)
+            => module.Analysis?.GlobalScope?.Variables[memberName];
 
         public void EnsureModule(in PythonVariableModule module) { }
     }
