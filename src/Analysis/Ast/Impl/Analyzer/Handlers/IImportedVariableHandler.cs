@@ -13,11 +13,14 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal interface IImportedVariableHandler {
-        IMember GetVariable(in PythonVariableModule module, in string name);
+        IEnumerable<string> GetMemberNames(PythonVariableModule variableModule);
+        IVariable GetVariable(in PythonVariableModule module, in string name);
+        void EnsureModule(in PythonVariableModule module);
     }
 }

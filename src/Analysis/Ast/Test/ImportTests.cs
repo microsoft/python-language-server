@@ -320,7 +320,8 @@ import top.sub3.sub4
 
             await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
-            var appDoc = rdt.OpenDocument(appUri, "import top.sub1.sub2.sub3.sub4");
+            var appDoc = rdt.OpenDocument(appUri, @"import top.sub1.sub2.sub3.sub4
+x = top.sub1.sub2.sub3.sub4.f");
 
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await appDoc.GetAnalysisAsync(Timeout.Infinite);

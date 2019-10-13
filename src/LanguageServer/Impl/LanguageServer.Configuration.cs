@@ -180,11 +180,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return ImmutableArray<string>.Empty;
         }
 
+        private const string DefaultCachingLevel = "System";
+
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
-            var s = GetSetting(analysisKey, "cachingLevel", "System");
+            var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
+            
+            if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
+                s = DefaultCachingLevel;
+            }
+
             if (s.EqualsIgnoreCase("System")) {
                 return AnalysisCachingLevel.System;
             }
+
             return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
         }
     }

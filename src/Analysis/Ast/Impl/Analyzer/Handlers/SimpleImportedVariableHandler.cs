@@ -13,14 +13,20 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Modules;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class SimpleImportedVariableHandler : IImportedVariableHandler {
         public static IImportedVariableHandler Instance { get; } = new SimpleImportedVariableHandler();
 
         private SimpleImportedVariableHandler() {}
+
+        public IEnumerable<string> GetMemberNames(PythonVariableModule variableModule)
+            => variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
 
         public IMember GetVariable(in PythonVariableModule module, in string memberName) {
             // First try exported or child submodules.
@@ -32,5 +38,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             return value ?? module.Interpreter.UnknownType;
         }
+
+        public void EnsureModule(in PythonVariableModule module) { }
     }
 }

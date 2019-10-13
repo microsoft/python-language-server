@@ -64,12 +64,21 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             for (var i = 0; i < names.Count; i++) {
                 var memberName = names[i].Name;
-                if (!string.IsNullOrEmpty(memberName)) {
-                    var nameExpression = asNames[i] ?? names[i];
-                    var variableName = nameExpression?.Name ?? memberName;
-                    if (!string.IsNullOrEmpty(variableName)) {
-                        DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
-                    }
+                if (string.IsNullOrEmpty(memberName)) {
+                    continue;
+                }
+
+                var nameExpression = asNames[i] ?? names[i];
+                var variableName = nameExpression?.Name ?? memberName;
+                if (!string.IsNullOrEmpty(variableName)) {
+                    DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
+                }
+
+                if (imports is IImportChildrenSource cs 
+                    && cs.TryGetChildImport(memberName, out var csr) 
+                    && HandleImportSearchResult(csr, variableModule, null, names[i], out var childModule)) {
+
+                    _importedVariableHandler.EnsureModule(childModule);
                 }
             }
         }
@@ -79,10 +88,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // from self import * won't define any new members
                 return;
             }
+
             // If __all__ is present, take it, otherwise declare all members from the module that do not begin with an underscore.
             var memberNames = imports is ImplicitPackageImport
                 ? variableModule.GetMemberNames()
-                : variableModule.Analysis.StarImportMemberNames ?? variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
+                : _importedVariableHandler.GetMemberNames(variableModule).ToArray();
 
             foreach (var memberName in memberNames) {
                 DeclareVariable(variableModule, memberName, imports, memberName, importPosition, nameExpression);
@@ -111,7 +121,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
 
             // First try exported or child submodules.
-            value = value ??_importedVariableHandler.GetVariable(variableModule, memberName);
+            var member = variableModule.GetMember(memberName);
+
+            // Value may be variable or submodule. If it is variable, we need it in order to add reference.
+            var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
+            
+            // If nothing is exported, variables are still accessible.
+            value = value ?? member as PythonVariableModule ?? variable?.Value ?? member ?? Eval.UnknownType;
             
             // Do not allow imported variables to override local declarations
             var canOverwrite = CanOverwriteVariable(variableName, importPosition, value);
@@ -184,7 +200,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.KeywordOnly, null)
                 };
                 o.SetParameters(parameters);
-                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), true);
+                o.SetReturnValue(Interpreter.GetBuiltinType(BuiltinTypeId.None), true);
                 fn.AddOverload(o);
                 Eval.DeclareVariable("print", fn, VariableSource.Import, printNameExpression);
             }

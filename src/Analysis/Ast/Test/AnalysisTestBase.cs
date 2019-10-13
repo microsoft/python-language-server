@@ -39,6 +39,8 @@ namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase {
         protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
+        private TimeSpan GetAnalysisTimeout() => Debugger.IsAttached ? Timeout.InfiniteTimeSpan : AnalysisTimeout;
+
         protected TestLogger TestLogger { get; } = new TestLogger();
         protected ServiceManager Services { get; private set; }
 
@@ -156,8 +158,7 @@ namespace Microsoft.Python.Analysis.Tests {
             TestLogger.Log(TraceEventType.Information, "Test: Analysis begin.");
 
             IDocumentAnalysis analysis;
-            var timeout = Debugger.IsAttached ? TimeSpan.FromHours(1) : AnalysisTimeout;
-            using (var cts = new CancellationTokenSource(timeout)) {
+            using (var cts = new CancellationTokenSource(GetAnalysisTimeout())) {
                 await services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync(cts.Token);
                 analysis = await doc.GetAnalysisAsync(-1, cts.Token);
             }
@@ -170,7 +171,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
         protected async Task<IDocumentAnalysis> GetDocumentAnalysisAsync(IDocument document) {
             var analyzer = Services.GetService<IPythonAnalyzer>();
-            using (var cts = new CancellationTokenSource(AnalysisTimeout)) {
+            using (var cts = new CancellationTokenSource(GetAnalysisTimeout())) {
                 await analyzer.WaitForCompleteAnalysisAsync(cts.Token);
                 return await document.GetAnalysisAsync(Timeout.Infinite, cts.Token);
             }

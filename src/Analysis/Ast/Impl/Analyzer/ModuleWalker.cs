@@ -220,7 +220,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public GlobalScope GlobalScope => Eval.GlobalScope;
-        public ImmutableArray<(IndexSpan VariableIndexSpan, IPythonModule Module, string Name)> ImportedVariableSources => ImportHandler.VariableSources;
         public IReadOnlyList<string> StarImportMemberNames { get; private set; }
     }
 }

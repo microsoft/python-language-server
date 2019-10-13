@@ -18,6 +18,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Core.Testing;
+using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Core {
     public static class TaskExtensions {
@@ -107,14 +108,17 @@ namespace Microsoft.Python.Core {
 
         /// <summary>
         /// Attach new <see cref="CancellationToken" /> to the given task.
-        /// 
-        /// this allows caller to have its own cancellation without aborting underlying work.
-        /// 
-        /// if <paramref name="task"/> uses different cancellation token than one given <paramref name="cancellationToken"/>
-        /// it will throw <see cref="AggregateException" /> instead of <see cref="OperationCanceledException" /> and
-        /// Task will be set to faulted rather than cancelled.
+        /// This allows caller to have its own cancellation without aborting underlying work.
         /// </summary>
-        public static Task<T> WaitAsync<T>(this Task<T> task, CancellationToken cancellationToken) 
-            => task.ContinueWith(t => t.WaitAndUnwrapExceptions(), cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default);
+        public static Task<T> WaitAsync<T>(this Task<T> task, CancellationToken cancellationToken) {
+            if (task.IsCompleted || !cancellationToken.CanBeCanceled) {
+                return task;
+            }
+
+            var tcs = new TaskCompletionSource<T>();
+            tcs.RegisterForCancellation(cancellationToken).UnregisterOnCompletion(task);
+            task.SetCompletionResultTo(tcs);
+            return tcs.Task;
+        }
     }
 }

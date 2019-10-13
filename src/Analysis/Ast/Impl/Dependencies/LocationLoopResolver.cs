@@ -13,12 +13,16 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     internal static class LocationLoopResolver<T> {
-        public static T FindStartingItem(IEnumerable<(T From, int FromLocation, T To, int ToLocation)> edges) {
+        public static ImmutableArray<T> FindStartingItems(IEnumerable<(T From, int FromLocation, T To, int ToLocation)> edges) {
             var itemToIndex = new Dictionary<T, int>();
             var groupedEdges = new List<List<(int FromLocation, int ToIndex, int ToLocation)>>();
             var index = 0;
@@ -42,31 +46,52 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 group.Sort(SortByFromLocation);
             }
 
-            var startingIndex = FindStartingIndices(groupedEdges);
-            return startingIndex == -1 ? default : itemToIndex.First(i => i.Value == startingIndex).Key;
+            var startingIndices = FindStartingIndices(groupedEdges);
+            return startingIndices.Select(i => itemToIndex.First(j => j.Value == i).Key).ToImmutableArray();
             
             int SortByFromLocation((int FromLocation, int, int) x, (int FromLocation, int, int) y) => x.FromLocation.CompareTo(y.FromLocation);
         }
 
-        private static int FindStartingIndices(in List<List<(int FromLocation, int ToIndex, int ToLocation)>> groupedEdges) {
+        private static IEnumerable<int> FindStartingIndices(List<List<(int FromLocation, int ToIndex, int ToLocation)>> groupedEdges) {
             var walkedIndices = new int[groupedEdges.Count];
+            var visited = new bool[groupedEdges.Count];
             var path = new Stack<int>();
+            var startingIndex = 0;
+            var allVisitedBeforeIndex = 0;
 
-            for (var startingIndex = 0; startingIndex < groupedEdges.Count; startingIndex++) {
+            while (startingIndex < groupedEdges.Count) {
+                if (visited[startingIndex]) {
+                    if (startingIndex == allVisitedBeforeIndex) {
+                        allVisitedBeforeIndex++;
+                    }
+
+                    startingIndex++;
+                    continue;
+                }
+
                 for (var i = 0; i < walkedIndices.Length; i++) {
                     walkedIndices[i] = -1;
                 }
-                path.Clear();
-                
-                if (IsWalkable(groupedEdges, startingIndex, walkedIndices, path)) {
-                    return startingIndex;
-                }
-            }
 
-            return -1;
+                path.Clear();
+
+                if (!IsWalkable(groupedEdges, startingIndex, walkedIndices, visited, path)) {
+                    startingIndex++;
+                    continue;
+                }
+
+                for (var i = 0; i < walkedIndices.Length; i++) {
+                    if (walkedIndices[i] != -1) {
+                        visited[i] = true;
+                    }
+                }
+
+                yield return startingIndex;
+                startingIndex = allVisitedBeforeIndex;
+            }
         }
 
-        private static bool IsWalkable(in List<List<(int FromLocation, int ToIndex, int ToLocation)>> groupedEdges, in int startGroupIndex, in int[] walkedIndices, in Stack<int> path) {
+        private static bool IsWalkable(in List<List<(int FromLocation, int ToIndex, int ToLocation)>> groupedEdges, in int startGroupIndex, in int[] walkedIndices, in bool[] visited, in Stack<int> path) {
             const int notVisited = -1;
             var fromGroupIndex = startGroupIndex;
             
@@ -84,6 +109,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
                 var edge = fromGroup[indexInFromGroup];
                 var toGroupIndex = edge.ToIndex;
+                if (visited[toGroupIndex]) {
+                    continue;
+                }
+
                 var indexInToGroup = walkedIndices[toGroupIndex];
                 if (indexInToGroup == notVisited) {
                     path.Push(fromGroupIndex);

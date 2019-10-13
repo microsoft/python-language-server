@@ -138,20 +138,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return type;
                 }
 
-                if (id == BuiltinTypeId.NoneType) {
-                    type = new PythonNone(_moduleResolution.BuiltinsModule);
-                } else {
-                    var bm = _moduleResolution.BuiltinsModule;
-                    var typeName = id.GetTypeName(LanguageVersion);
-                    if (typeName != null) {
-                        type = _moduleResolution.BuiltinsModule.GetMember(typeName) as IPythonType;
-                    }
+                var bm = _moduleResolution.BuiltinsModule;
+                var typeName = id.GetTypeName(LanguageVersion);
+                if (typeName != null) {
+                    type = _moduleResolution.BuiltinsModule.GetMember(typeName) as IPythonType;
+                }
 
+                if (type == null) {
+                    type = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
                     if (type == null) {
-                        type = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
-                        if (type == null) {
-                            return UnknownType;
-                        }
+                        return UnknownType;
                     }
                 }
 
