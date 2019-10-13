@@ -63,7 +63,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                     if (!currentCts.Token.IsCancellationRequested) {
                         _state = WorkQueueState.FinishedWork;
                     }
-                    currentCts.Dispose();
                 }
             }
         }
@@ -150,6 +149,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private void RenewTcs() {
             Check.InvalidOperation(Monitor.IsEntered(_syncObj));
+            _fileCts.Dispose();
             _fileCts = new CancellationTokenSource();
             _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
         }
