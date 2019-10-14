@@ -61,7 +61,15 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 _workCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
 
                 // Start the task and set the result to _tcs if the task doesn't get canceled.
-                work(_workCts.Token).SetCompletionResultTo(_tcs, skipIfCanceled: true).DoNotWait();
+                UsingCts(_workCts, work).SetCompletionResultTo(_tcs, skipIfCanceled: true).DoNotWait();
+            }
+
+            async Task<IReadOnlyList<HierarchicalSymbol>> UsingCts(
+                CancellationTokenSource cts,
+                Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> fn) {
+                using (cts) {
+                    return await fn(cts.Token);
+                }
             }
         }
 
@@ -85,15 +93,24 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Dispose() {
             lock (_lock) {
                 _tcs.TrySetCanceled();
-                CancelWork();
+                
+                try {
+                    _workCts?.Dispose();
+                } catch (ObjectDisposedException) {
+                    // The task with this CTS completed and disposed already, ignore.
+                }
+
                 _cts?.Dispose();
             }
         }
 
         private void CancelWork() {
             if (_workCts != null) {
-                _workCts.Cancel();
-                _workCts.Dispose();
+                try {
+                    _workCts.Cancel();
+                } catch (ObjectDisposedException) {
+                    // The task with this CTS completed and disposed already, ignore.
+                }
                 _workCts = null;
             }
         }
