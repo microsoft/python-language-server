@@ -99,8 +99,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         public ModuleWalker WalkModule(IPythonModule module, PythonAst ast) {
             // If module has stub, make sure it is processed too.
             if(module.Stub?.Analysis is EmptyAnalysis) {
-                Debug.Assert(false, "Stub module does not have analysis yet.");
-                // WalkModule(module.Stub, module.GetAst());
+                WalkModule(module.Stub, module.GetAst());
             }
 
             var eval = new ExpressionEval(_services, module, ast);
