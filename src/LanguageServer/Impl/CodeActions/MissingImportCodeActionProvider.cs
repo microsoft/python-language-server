@@ -105,11 +105,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var pathResolver = analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver;
             foreach (var moduleName in symbolsWithName.Select(s => s.DocumentPath).Distinct().Select(p => pathResolver.GetModuleNameByPath(p))) {
                 var module = analysis.Document.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
-                
+
                 // TODO - module never get analyzed. it stays in "analyzing" state forever. the reason looks liek a version checking code in analyzer bail out
                 //        living things in analyzing state (bug?)
                 //        it is comparing analysis version against graph version which seems controlled independently so not sure how two version can be compared?
                 //        need to figure out how to make the module analyzed
+
+                await analyzer.GetAnalysisAsync(module, cancellationToken: cancellationToken);
             }
         }
 
