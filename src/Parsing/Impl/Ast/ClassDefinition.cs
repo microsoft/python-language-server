@@ -123,7 +123,7 @@ namespace Microsoft.Python.Parsing.Ast {
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public SourceLocation Header => ScopeDelegate.Ast.IndexToLocation(HeaderIndex);
+        public SourceLocation Header => ScopeDelegate.GlobalParent.IndexToLocation(HeaderIndex);
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             if (Decorators != null) {

@@ -46,7 +46,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         internal virtual bool IsGlobal => false;
 
-        public PythonAst Ast => (PythonAst) Node.EnumerateTowardsGlobal().Last();
+        public PythonAst GlobalParent => (PythonAst) Node.EnumerateTowardsGlobal().Last();
 
         internal void Clear() {
             _references?.Clear();

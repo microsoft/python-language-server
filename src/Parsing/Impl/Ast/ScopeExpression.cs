@@ -40,7 +40,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool IsGlobal => ScopeDelegate.IsGlobal;
 
-        public PythonAst GlobalParent => ScopeDelegate.Ast;
+        public PythonAst GlobalParent => ScopeDelegate.GlobalParent;
         bool IScopeNode.ContainsNestedFreeVariables { get; set; }
 
         public IReadOnlyList<PythonVariable> FreeVariables => ScopeDelegate.FreeVariables;
