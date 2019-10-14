@@ -24,7 +24,6 @@ namespace Microsoft.Python.LanguageServer.Telemetry {
         private const int MaxEvents = 10;
 
         private readonly ITelemetryService _telemetryService;
-
         private readonly Dictionary<string, int> _events = new Dictionary<string, int>();
         private readonly object _lock = new object();
 
@@ -87,24 +86,25 @@ namespace Microsoft.Python.LanguageServer.Telemetry {
                 }
 
                 _stopwatch.Stop();
+                if (_telemetryService != null) {
+                    var e = Telemetry.CreateEvent("rpc.request");
+                    e.Properties["method"] = _method;
+                    e.Measurements["elapsedMs"] = _stopwatch.Elapsed.TotalMilliseconds;
 
-                var e = Telemetry.CreateEvent("rpc.request");
-                e.Properties["method"] = _method;
-                e.Measurements["elapsedMs"] = _stopwatch.Elapsed.TotalMilliseconds;
-
-                if (_extraProperties != null) {
-                    foreach (var (key, value) in _extraProperties) {
-                        e.Properties[key] = value;
+                    if (_extraProperties != null) {
+                        foreach (var (key, value) in _extraProperties) {
+                            e.Properties[key] = value;
+                        }
                     }
-                }
 
-                if (_extraMeasures != null) {
-                    foreach (var (key, value) in _extraMeasures) {
-                        e.Measurements[key] = value;
+                    if (_extraMeasures != null) {
+                        foreach (var (key, value) in _extraMeasures) {
+                            e.Measurements[key] = value;
+                        }
                     }
-                }
 
-                _telemetryService.SendTelemetryAsync(e).DoNotWait();
+                    _telemetryService.SendTelemetryAsync(e).DoNotWait();
+                }
             }
         }
     }

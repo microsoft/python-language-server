@@ -22,7 +22,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        private IMember GetValueFromUnaryOp(UnaryExpression expr) {
+        private IMember GetValueFromUnaryOp(UnaryExpression expr, LookupOptions lookupOptions) {
             switch (expr.Op) {
                 case PythonOperator.Not:
                 case PythonOperator.Is:
@@ -31,17 +31,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
 
                 case PythonOperator.Invert:
-                    return GetValueFromUnaryOp(expr, "__invert__");
+                    return GetValueFromUnaryOp(expr, "__invert__", lookupOptions);
                 case PythonOperator.Negate:
-                    return GetValueFromUnaryOp(expr, "__neg__");
+                    return GetValueFromUnaryOp(expr, "__neg__", lookupOptions);
                 case PythonOperator.Pos:
-                    return GetValueFromUnaryOp(expr, "__pos__");
+                    return GetValueFromUnaryOp(expr, "__pos__", lookupOptions);
             }
             return UnknownType;
         }
 
-        private IMember GetValueFromUnaryOp(UnaryExpression expr, string op) {
-            var target = GetValueFromExpression(expr.Expression);
+        private IMember GetValueFromUnaryOp(UnaryExpression expr, string op, LookupOptions lookupOptions) {
+            var target = GetValueFromExpression(expr.Expression, lookupOptions);
             if (target is IPythonInstance instance) {
                 var fn = instance.GetPythonType()?.GetMember<IPythonFunctionType>(op);
                 // Process functions declared in code modules. Scraped/compiled/stub modules do not actually perform any operations.
@@ -58,20 +58,20 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        private IMember GetValueFromBinaryOp(Expression expr) {
+        private IMember GetValueFromBinaryOp(Expression expr, LookupOptions lookupOptions) {
             if (expr is AndExpression a) {
-                GetValueFromExpression(a.Left);
-                GetValueFromExpression(a.Right);
+                GetValueFromExpression(a.Left, lookupOptions);
+                GetValueFromExpression(a.Right, lookupOptions);
                 return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
             }
 
             if (expr is OrExpression orexp) {
                 // Consider 'self.__params = types.MappingProxyType(params or {})'
-                var leftSide = GetValueFromExpression(orexp.Left);
+                var leftSide = GetValueFromExpression(orexp.Left, lookupOptions);
                 if (!leftSide.IsUnknown()) {
                     return leftSide;
                 }
-                var rightSide = GetValueFromExpression(orexp.Right);
+                var rightSide = GetValueFromExpression(orexp.Right, lookupOptions);
                 return rightSide.IsUnknown() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : rightSide;
             }
 
@@ -81,8 +81,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             var op = binop.Operator;
 
-            var left = GetValueFromExpression(binop.Left) ?? UnknownType;
-            var right = GetValueFromExpression(binop.Right) ?? UnknownType;
+            var left = GetValueFromExpression(binop.Left, lookupOptions) ?? UnknownType;
+            var right = GetValueFromExpression(binop.Right, lookupOptions) ?? UnknownType;
 
             if (left.IsUnknown() && right.IsUnknown()) {
                 // Fast path for when nothing below will give any results.

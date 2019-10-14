@@ -23,7 +23,7 @@ using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.OS;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class CacheFolderService: ICacheFolderService {
+    internal sealed class CacheFolderService : ICacheFolderService {
         public CacheFolderService(IServiceContainer services, string cacheRootFolder) {
             CacheFolder = cacheRootFolder ?? GetCacheFolder(services);
         }
@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Caching {
             // File name depends on the content so we can distinguish between different versions.
             using (var hash = SHA256.Create()) {
                 return Convert
-                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(false).GetBytes(content)))
+                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(content)))
                     .Replace('/', '_').Replace('+', '-');
             }
         }
@@ -47,18 +47,18 @@ namespace Microsoft.Python.Analysis.Caching {
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var plsSubfolder = $"Microsoft{Path.DirectorySeparatorChar}Python Language Server";
             var defaultCachePath = Path.Combine(localAppData, plsSubfolder);
-            
+
             string cachePath = null;
             try {
                 const string homeVarName = "HOME";
                 var homeFolderPath = Environment.GetEnvironmentVariable(homeVarName);
 
-                if(platform.IsWindows) {
+                if (platform.IsWindows) {
                     cachePath = defaultCachePath;
                 }
 
                 if (platform.IsMac) {
-                    if (CheckVariableSet(homeVarName, homeFolderPath, logger) 
+                    if (CheckVariableSet(homeVarName, homeFolderPath, logger)
                         && CheckPathRooted(homeVarName, homeFolderPath, logger)
                         && !string.IsNullOrWhiteSpace(homeFolderPath)) {
                         cachePath = Path.Combine(homeFolderPath, "Library/Caches", plsSubfolder);

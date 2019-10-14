@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Python.Core.Threading {
     public class SingleThreadSynchronizationContext : SynchronizationContext, IDisposable {
-        private readonly ConcurrentQueue<Tuple<SendOrPostCallback, object>> _queue = new ConcurrentQueue<Tuple<SendOrPostCallback, object>>();
+        private readonly ConcurrentQueue<(SendOrPostCallback callback, object state)> _queue = new ConcurrentQueue<(SendOrPostCallback, object)>();
         private readonly ManualResetEventSlim _workAvailable = new ManualResetEventSlim(false);
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
@@ -29,7 +29,7 @@ namespace Microsoft.Python.Core.Threading {
         }
 
         public override void Post(SendOrPostCallback d, object state) {
-            _queue.Enqueue(new Tuple<SendOrPostCallback, object>(d, state));
+            _queue.Enqueue((d, state));
             _workAvailable.Set();
         }
 
@@ -41,9 +41,10 @@ namespace Microsoft.Python.Core.Threading {
                 if (_cts.IsCancellationRequested) {
                     break;
                 }
-                while (_queue.TryDequeue(out var t)) {
-                    t.Item1(t.Item2);
+                while (_queue.TryDequeue(out var entry)) {
+                    entry.callback(entry.state);
                 }
+
                 _workAvailable.Reset();
             }
         }

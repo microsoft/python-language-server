@@ -22,6 +22,7 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Modules.Resolution;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Services;
@@ -137,20 +138,16 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     return type;
                 }
 
-                if (id == BuiltinTypeId.NoneType) {
-                    type = new PythonType("NoneType", new Location(_moduleResolution.BuiltinsModule), string.Empty, BuiltinTypeId.NoneType);
-                } else {
-                    var bm = _moduleResolution.BuiltinsModule;
-                    var typeName = id.GetTypeName(LanguageVersion);
-                    if (typeName != null) {
-                        type = _moduleResolution.BuiltinsModule.GetMember(typeName) as IPythonType;
-                    }
+                var bm = _moduleResolution.BuiltinsModule;
+                var typeName = id.GetTypeName(LanguageVersion);
+                if (typeName != null) {
+                    type = _moduleResolution.BuiltinsModule.GetMember(typeName) as IPythonType;
+                }
 
+                if (type == null) {
+                    type = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
                     if (type == null) {
-                        type = bm.GetAnyMember("__{0}__".FormatInvariant(id)) as IPythonType;
-                        if (type == null) {
-                            return UnknownType;
-                        }
+                        return UnknownType;
                     }
                 }
 

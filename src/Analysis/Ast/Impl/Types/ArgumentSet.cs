@@ -15,6 +15,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
@@ -100,7 +101,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             var overload = fn.Overloads[overloadIndex];
-            var fd = overload.FunctionDefinition;
+            var fdParameters = overload.FunctionDefinition?.Parameters.Where(p => !p.IsPositionalOnlyMarker).ToArray();
 
             // Some specialized functions have more complicated definitions, so we pass
             // parameters to those, TypeVar() is an example, so we allow the latter logic to handle
@@ -115,7 +116,7 @@ namespace Microsoft.Python.Analysis.Types {
                     if (string.IsNullOrEmpty(name)) {
                         name = i < overload.Parameters.Count ? overload.Parameters[i].Name : $"arg{i}";
                     }
-                    var node = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
+                    var node = fdParameters?.ElementAtOrDefault(i);
                     _arguments.Add(new Argument(name, ParameterKind.Normal, callExpr.Args[i].Expression, null, node));
                 }
                 return;
@@ -131,7 +132,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             var slots = new Argument[overload.Parameters.Count];
             for (var i = 0; i < overload.Parameters.Count; i++) {
-                var node = fd != null && i < fd.Parameters.Length ? fd.Parameters[i] : null;
+                var node = fdParameters?.ElementAtOrDefault(i);
                 slots[i] = new Argument(overload.Parameters[i], node);
             }
 
@@ -250,6 +251,12 @@ namespace Microsoft.Python.Analysis.Types {
                         continue;
                     }
 
+                    if (nvp.Kind == ParameterKind.PositionalOnly) {
+                        _errors.Add(new DiagnosticsEntry(Resources.Analysis_PositionalOnlyArgumentNamed.FormatInvariant(arg.Name), arg.GetLocation(eval).Span,
+                            ErrorCodes.PositionalOnlyNamed, Severity.Warning, DiagnosticSource.Analysis));
+                        return;
+                    }
+
                     if (nvp.ValueExpression != null || nvp.Value != null) {
                         // Slot is already filled.
                         _errors.Add(new DiagnosticsEntry(Resources.Analysis_ParameterAlreadySpecified.FormatUI(arg.Name), arg.GetLocation(eval).Span,
@@ -286,25 +293,25 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
-        public ArgumentSet Evaluate() {
+        public ArgumentSet Evaluate(LookupOptions lookupOptions = LookupOptions.Normal) {
             if (_evaluated || Eval == null) {
                 return this;
             }
 
             foreach (var a in _arguments.Where(x => x.Value == null)) {
-                a.Value = GetArgumentValue(a);
+                a.Value = GetArgumentValue(a, lookupOptions);
             }
 
             if (_listArgument != null) {
                 foreach (var e in _listArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e) ?? Eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e, lookupOptions) ?? Eval.UnknownType;
                     _listArgument._Values.Add(value);
                 }
             }
 
             if (_dictArgument != null) {
                 foreach (var e in _dictArgument.Expressions) {
-                    var value = Eval.GetValueFromExpression(e.Value) ?? Eval.UnknownType;
+                    var value = Eval.GetValueFromExpression(e.Value, lookupOptions) ?? Eval.UnknownType;
                     _dictArgument._Args[e.Key] = value;
                 }
             }
@@ -313,7 +320,7 @@ namespace Microsoft.Python.Analysis.Types {
             return this;
         }
 
-        private IMember GetArgumentValue(Argument arg) {
+        private IMember GetArgumentValue(Argument arg, LookupOptions lookupOptions) {
             if (arg.Value is IMember m) {
                 return m;
             }
@@ -326,10 +333,10 @@ namespace Microsoft.Python.Analysis.Types {
 
             if (arg.ValueIsDefault) {
                 using (Eval.OpenScope(DeclaringModule.GlobalScope)) {
-                    return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+                    return Eval.GetValueFromExpression(arg.ValueExpression, lookupOptions) ?? Eval.UnknownType;
                 }
             }
-            return Eval.GetValueFromExpression(arg.ValueExpression) ?? Eval.UnknownType;
+            return Eval.GetValueFromExpression(arg.ValueExpression, lookupOptions) ?? Eval.UnknownType;
         }
 
         private Expression CreateExpression(string paramName, string defaultValue) {
@@ -346,6 +353,7 @@ namespace Microsoft.Python.Analysis.Types {
             }
         }
 
+        [DebuggerDisplay("{Name} : {Kind}")]
         private sealed class Argument : IArgument {
             /// <summary>
             /// Argument name.

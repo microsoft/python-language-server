@@ -43,7 +43,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly Action<Task> _startNextSession;
         private readonly CancellationToken _analyzerCancellationToken;
         private readonly IServiceManager _services;
-        private readonly AsyncManualResetEvent _analysisCompleteEvent;
         private readonly IDiagnosticsService _diagnosticsService;
         private readonly IProgressReporter _progress;
         private readonly IPythonAnalyzer _analyzer;
@@ -68,7 +67,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         public PythonAnalyzerSession(IServiceManager services,
             IProgressReporter progress,
-            AsyncManualResetEvent analysisCompleteEvent,
             Action<Task> startNextSession,
             CancellationToken analyzerCancellationToken,
             IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker,
@@ -77,7 +75,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             bool forceGC = false) {
 
             _services = services;
-            _analysisCompleteEvent = analysisCompleteEvent;
             _startNextSession = startNextSession;
             _analyzerCancellationToken = analyzerCancellationToken;
             Version = version;

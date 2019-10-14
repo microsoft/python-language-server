@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsSpecialized => true;
 
         public IEnumerator<IPythonType> GetEnumerator()
-            => Enumerable.Repeat(DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.NoneType), 1)
+            => Enumerable.Repeat(DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.None), 1)
                 .Concat(Enumerable.Repeat(InnerType, 1)).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

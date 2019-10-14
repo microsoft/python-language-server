@@ -17,6 +17,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -62,8 +63,14 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         protected abstract IPythonModule CreateModule(string name);
 
-        public IPythonModule GetImportedModule(string name) 
-            => Modules.TryGetValue(name, out var moduleRef) ? moduleRef.Value : Interpreter.ModuleResolution.GetSpecializedModule(name);
+        public IPythonModule GetImportedModule(string name) {
+            if (name == Interpreter.ModuleResolution.BuiltinsModule.Name) {
+                return Interpreter.ModuleResolution.BuiltinsModule;
+            }
+            return Modules.TryGetValue(name, out var moduleRef)
+                ? moduleRef.Value
+                : Interpreter.ModuleResolution.GetSpecializedModule(name);
+        }
 
         public IPythonModule GetOrLoadModule(string name) {
             // Specialized should always win. However, we don't want
@@ -101,19 +108,21 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             return ModulePath.FromFullPath(filePath, bestLibraryPath);
         }
 
-        protected void ReloadModulePaths(in IEnumerable<string> rootPaths) {
+        protected void ReloadModulePaths(in IEnumerable<string> rootPaths, CancellationToken cancellationToken) {
             foreach (var root in rootPaths) {
                 foreach (var moduleFile in PathUtils.EnumerateFiles(FileSystem, root)) {
-                    PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, false, out _);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    PathResolver.TryAddModulePath(moduleFile.FullName, moduleFile.Length, allowNonRooted: false, out _);
                 }
 
                 if (PathUtils.TryGetZipFilePath(root, out var zipFilePath, out var _) && File.Exists(zipFilePath)) {
                     foreach (var moduleFile in PathUtils.EnumerateZip(zipFilePath)) {
+                        cancellationToken.ThrowIfCancellationRequested();
                         if (!PathUtils.PathStartsWith(moduleFile.FullName, "EGG-INFO")) {
                             PathResolver.TryAddModulePath(
                                 Path.Combine(zipFilePath,
                                 PathUtils.NormalizePath(moduleFile.FullName)),
-                                moduleFile.Length, false, out _
+                                moduleFile.Length, allowNonRooted: false, out _
                             );
                         }
                     }

@@ -18,7 +18,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Nuget.CommandLine" Version="4.5.1" />
+    <PackageReference Include="Nuget.CommandLine" Version="5.2.0" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
@@ -40,6 +40,7 @@
 
   <ItemGroup Condition="$(SignPackage)">
     <SignFiles Include="$(OutputPath)\Python-Language-Server-*.nupkg" />
+    <SignFiles Include="$(OutputPath)\Microsoft-Python-Analysis-*.nupkg" />
   </ItemGroup>
 
   <Target Name="_CheckFiles" BeforeTargets="SignFiles">

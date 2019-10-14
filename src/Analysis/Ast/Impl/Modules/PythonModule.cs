@@ -86,12 +86,13 @@ namespace Microsoft.Python.Analysis.Modules {
             SetDeclaringModule(this);
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, bool isTypeshed, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
                 ModuleType = moduleType,
                 Stub = stub,
+                IsTypeshed = isTypeshed,
                 IsPersistent = isPersistent
             }, services) { }
 
@@ -119,6 +120,8 @@ namespace Microsoft.Python.Analysis.Modules {
             }
 
             IsPersistent = creationOptions.IsPersistent;
+            IsTypeshed = creationOptions.IsTypeshed;
+
             InitializeContent(creationOptions.Content, 0);
         }
 
@@ -222,6 +225,12 @@ namespace Microsoft.Python.Analysis.Modules {
         /// Indicates if module is restored from database.
         /// </summary>
         public bool IsPersistent { get; }
+
+        /// <summary>
+        /// Defines if module belongs to Typeshed and hence resolved
+        /// via typeshed module resolution service.
+        /// </summary>
+        public bool IsTypeshed { get; }
         #endregion
 
         #region IDisposable

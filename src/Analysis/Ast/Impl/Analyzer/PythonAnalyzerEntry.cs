@@ -21,6 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Parsing.Ast;
 
@@ -93,7 +94,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public Task<IDocumentAnalysis> GetAnalysisAsync(CancellationToken cancellationToken)
-            => _analysisTcs.Task.ContinueWith(t => t.GetAwaiter().GetResult(), cancellationToken);
+            => _analysisTcs.Task.WaitAsync(cancellationToken);
 
         public bool CanUpdateAnalysis(int version, out IPythonModule module, out PythonAst ast, out IDocumentAnalysis currentAnalysis) {
             lock (_syncObj) {
@@ -271,7 +272,5 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 _analysisTcs = new TaskCompletionSource<IDocumentAnalysis>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
         }
-
-
     }
 }
