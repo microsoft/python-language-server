@@ -21,19 +21,19 @@ using Microsoft.Python.Core.Testing;
 
 namespace Microsoft.Python.Core {
     public static class TaskExtensions {
-        public static Task SetCompletionResultTo<T>(this Task<T> task, TaskCompletionSource<T> tcs, bool skipCancel = false)
+        public static Task SetCompletionResultTo<T>(this Task<T> task, TaskCompletionSource<T> tcs, bool skipIfCanceled = false)
             => task.ContinueWith(t => {
-                SetCompletionResultToContinuation(t, tcs, skipCancel);
+                SetCompletionResultToContinuation(t, tcs, skipIfCanceled);
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
-        private static void SetCompletionResultToContinuation<T>(Task<T> task, TaskCompletionSource<T> tcs, bool skipCancel) {
+        private static void SetCompletionResultToContinuation<T>(Task<T> task, TaskCompletionSource<T> tcs, bool skipIfCanceled) {
             switch (task.Status) {
                 case TaskStatus.RanToCompletion:
                     tcs.TrySetResult(task.Result);
                     break;
-                case TaskStatus.Canceled when skipCancel:
+                case TaskStatus.Canceled when skipIfCanceled:
                     break;
-                case TaskStatus.Canceled when !skipCancel:
+                case TaskStatus.Canceled when !skipIfCanceled:
                     try {
                         task.GetAwaiter().GetResult();
                     } catch (OperationCanceledException ex) {

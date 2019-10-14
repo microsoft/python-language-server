@@ -55,17 +55,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private void DoWork(Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> work) {
             lock (_lock) {
                 // Invalidate any existing work.
-                Invalidate();
+                MarkAsPending();
 
                 // Create a new token for this specific work.
                 _workCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
 
                 // Start the task and set the result to _tcs if the task doesn't get canceled.
-                work(_workCts.Token).SetCompletionResultTo(_tcs, skipCancel: true).DoNotWait();
+                work(_workCts.Token).SetCompletionResultTo(_tcs, skipIfCanceled: true).DoNotWait();
             }
         }
 
-        public void Invalidate() {
+        public void MarkAsPending() {
             lock (_lock) {
                 // Cancel the existing work, if any.
                 CancelWork();
