@@ -21,9 +21,13 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Core.Idle;
+using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.CodeActions;
 using Microsoft.Python.LanguageServer.Diagnostics;
+using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
@@ -251,19 +255,45 @@ import socket
             maxIndexOfPublicSymbol.Should().BeLessThan(minIndexOfPrivateSymbol);
         }
 
-        private async Task TestCodeActionAsync(string markup, string title, string newText) {
+        [TestMethod, Priority(0)]
+        public async Task ModuleNotReachableFromUserDocument() {
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:path|}",
+                title: "from os import path",
+                newText: "from os import path" + Environment.NewLine + Environment.NewLine,
+                enableIndexManager: true);
+        }
+
+        private async Task TestCodeActionAsync(string markup, string title, string newText, bool enableIndexManager = false) {
             var (analysis, codeActions, insertionSpan) =
-                await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+                await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics, enableIndexManager);
 
             var codeAction = codeActions.Single(c => c.title == title);
             TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
         }
 
         private async Task<(IDocumentAnalysis analysis, CodeAction[] diagnostics, SourceSpan insertionSpan)> GetAnalysisAndCodeActionsAndSpanAsync(
-            string markup, IEnumerable<string> codes) {
+            string markup, IEnumerable<string> codes, bool enableIndexManager = false) {
             MarkupUtils.GetNamedSpans(markup, out var code, out var spans);
 
             var analysis = await GetAnalysisAsync(code);
+
+            if (enableIndexManager) {
+                var serviceManager = (IServiceManager)analysis.ExpressionEvaluator.Services;
+                var indexManager = new IndexManager(
+                    serviceManager.GetService<IFileSystem>(),
+                    analysis.Document.Interpreter.LanguageVersion,
+                    rootPath: null,
+                    Array.Empty<string>(),
+                    Array.Empty<string>(),
+                    serviceManager.GetService<IIdleTimeService>());
+
+                // make sure index is done
+                await indexManager.IndexWorkspace(analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver);
+
+                serviceManager.AddService(indexManager);
+            }
+
             var insertionSpan = spans["insertionSpan"].First().ToSourceSpan(analysis.Ast);
 
             var diagnostics = GetDiagnostics(analysis, spans["diagnostic"].First().ToSourceSpan(analysis.Ast), codes);

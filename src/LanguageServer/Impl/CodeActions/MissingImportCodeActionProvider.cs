@@ -100,6 +100,11 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                                                               string name,
                                                               CancellationToken cancellationToken) {
             var indexManager = analysis.ExpressionEvaluator.Services.GetService<IIndexManager>();
+            if (indexManager == null) {
+                // indexing is not supported
+                return;
+            }
+
             var symbolsIncludingName = await indexManager.WorkspaceSymbolsAsync(name, maxLength: int.MaxValue, includeLibraries: true, cancellationToken);
             var symbolsWithName = symbolsIncludingName.Where(s => s.Name == name && s.Kind != Indexing.SymbolKind.Variable);
 
