@@ -138,24 +138,24 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                                             string fullyQualifiedName,
                                             bool locallyInserted,
                                             CancellationToken cancellationToken) {
-            var insertionPoint = GetInsertionPoint(analysis, node, fullyQualifiedName, locallyInserted, cancellationToken);
+            var insertionPoint = GetInsertionInfo(analysis, node, fullyQualifiedName, locallyInserted, cancellationToken);
             if (insertionPoint == null) {
                 return null;
             }
 
-            var insertionText = insertionPoint.Value.insertionText;
+            var insertionText = insertionPoint.Value.InsertionText;
             var titleText = locallyInserted ? string.Format(Resources.ImportLocally, insertionText) : insertionText;
 
             var sb = new StringBuilder();
-            sb.AppendIf(insertionPoint.Value.range.start == insertionPoint.Value.range.end, insertionPoint.Value.indentation);
-            sb.Append(insertionPoint.Value.addBlankLine ? insertionText + Environment.NewLine : insertionText);
-            sb.AppendIf(insertionPoint.Value.range.start == insertionPoint.Value.range.end, Environment.NewLine);
+            sb.AppendIf(insertionPoint.Value.Range.start == insertionPoint.Value.Range.end, insertionPoint.Value.Indentation);
+            sb.Append(insertionPoint.Value.AddBlankLine ? insertionText + Environment.NewLine : insertionText);
+            sb.AppendIf(insertionPoint.Value.Range.start == insertionPoint.Value.Range.end, Environment.NewLine);
 
             var changes = new Dictionary<Uri, TextEdit[]> {{
                         analysis.Document.Uri,
                         new TextEdit[] {
                             new TextEdit() {
-                                range = insertionPoint.Value.range,
+                                range = insertionPoint.Value.Range,
                                 newText = sb.ToString()
                         }}
                 }};
@@ -168,11 +168,11 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             };
         }
 
-        private (bool addBlankLine, string insertionText, Range range, string indentation)? GetInsertionPoint(IDocumentAnalysis analysis,
-                                                                                                              Node node,
-                                                                                                              string fullyQualifiedModuleName,
-                                                                                                              bool locallyInserted,
-                                                                                                              CancellationToken cancellationToken) {
+        private InsertionInfo? GetInsertionInfo(IDocumentAnalysis analysis,
+                                                Node node,
+                                                string fullyQualifiedName,
+                                                bool locallyInserted,
+                                                CancellationToken cancellationToken) {
             var (body, indentation) = GetStartingPoint(analysis, node, locallyInserted, cancellationToken);
             if (body == null) {
                 // no insertion point
@@ -183,32 +183,32 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var lastImportNode = importNodes.LastOrDefault();
 
             // first check whether module name is dotted or not
-            var dotIndex = fullyQualifiedModuleName.LastIndexOf('.');
+            var dotIndex = fullyQualifiedName.LastIndexOf('.');
             if (dotIndex < 0) {
                 // there can't be existing import since we have the error
-                return (addBlankLine: lastImportNode == null,
-                        $"import {fullyQualifiedModuleName}",
-                        GetRange(analysis.Ast, body, lastImportNode),
-                        indentation);
+                return new InsertionInfo(addBlankLine: lastImportNode == null,
+                                         $"import {fullyQualifiedName}",
+                                         GetRange(analysis.Ast, body, lastImportNode),
+                                         indentation);
             }
 
             // see whether there is existing from * import * statement.
-            var fromPart = fullyQualifiedModuleName.Substring(startIndex: 0, dotIndex);
-            var moduleNameToAdd = fullyQualifiedModuleName.Substring(dotIndex + 1);
+            var fromPart = fullyQualifiedName.Substring(startIndex: 0, dotIndex);
+            var nameToAdd = fullyQualifiedName.Substring(dotIndex + 1);
             foreach (var current in importNodes.Reverse<Node>().OfType<FromImportStatement>()) {
                 if (current.Root.MakeString() == fromPart) {
-                    return (addBlankLine: false,
-                            GetInsertionText(current, fromPart, moduleNameToAdd),
-                            current.GetSpan(analysis.Ast),
-                            indentation);
+                    return new InsertionInfo(addBlankLine: false,
+                                             GetInsertionText(current, fromPart, nameToAdd),
+                                             current.GetSpan(analysis.Ast),
+                                             indentation);
                 }
             }
 
             // add new from * import * statement
-            return (addBlankLine: lastImportNode == null,
-                    $"from {fromPart} import {moduleNameToAdd}",
-                    GetRange(analysis.Ast, body, lastImportNode),
-                    indentation);
+            return new InsertionInfo(addBlankLine: lastImportNode == null,
+                                     $"from {fromPart} import {nameToAdd}",
+                                     GetRange(analysis.Ast, body, lastImportNode),
+                                     indentation);
         }
 
         private string GetInsertionText(FromImportStatement fromImportStatement, string rootModuleName, string moduleNameToAdd) {
@@ -382,6 +382,20 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 }
 
                 return x.CompareTo(y);
+            }
+        }
+
+        private struct InsertionInfo {
+            public bool AddBlankLine;
+            public string InsertionText;
+            public Range Range;
+            public string Indentation;
+
+            public InsertionInfo(bool addBlankLine, string insertionText, Range range, string indentation) {
+                AddBlankLine = addBlankLine;
+                InsertionText = insertionText;
+                Range = range;
+                Indentation = indentation;
             }
         }
     }
