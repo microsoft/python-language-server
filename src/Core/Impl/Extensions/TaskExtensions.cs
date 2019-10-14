@@ -22,16 +22,19 @@ using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Core {
     public static class TaskExtensions {
-        public static void SetCompletionResultTo<T>(this Task<T> task, TaskCompletionSource<T> tcs)
-            => task.ContinueWith(SetCompletionResultToContinuation, tcs, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        public static Task SetCompletionResultTo<T>(this Task<T> task, TaskCompletionSource<T> tcs, bool skipIfCanceled = false)
+            => task.ContinueWith(t => {
+                SetCompletionResultToContinuation(t, tcs, skipIfCanceled);
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
-        private static void SetCompletionResultToContinuation<T>(Task<T> task, object state) {
-            var tcs = (TaskCompletionSource<T>)state;
+        private static void SetCompletionResultToContinuation<T>(Task<T> task, TaskCompletionSource<T> tcs, bool skipIfCanceled) {
             switch (task.Status) {
                 case TaskStatus.RanToCompletion:
                     tcs.TrySetResult(task.Result);
                     break;
-                case TaskStatus.Canceled:
+                case TaskStatus.Canceled when skipIfCanceled:
+                    break;
+                case TaskStatus.Canceled when !skipIfCanceled:
                     try {
                         task.GetAwaiter().GetResult();
                     } catch (OperationCanceledException ex) {
@@ -65,7 +68,7 @@ namespace Microsoft.Python.Core {
             }
 
             var synchronizationContext = SynchronizationContext.Current;
-            if (synchronizationContext != null && synchronizationContext.GetType() != typeof (SynchronizationContext)) {
+            if (synchronizationContext != null && synchronizationContext.GetType() != typeof(SynchronizationContext)) {
                 task.ContinueWith(DoNotWaitSynchronizationContextContinuation, synchronizationContext, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             } else {
                 task.ContinueWith(DoNotWaitThreadContinuation, TaskContinuationOptions.ExecuteSynchronously);
@@ -88,7 +91,7 @@ namespace Microsoft.Python.Core {
         }
 
         private static void DoNotWaitSynchronizationContextContinuation(Task task, object state) {
-            var context = (SynchronizationContext) state;
+            var context = (SynchronizationContext)state;
             context.Post(ReThrowTaskException, task);
         }
 
