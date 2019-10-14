@@ -64,6 +64,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 UsingCts(_workCts, work).SetCompletionResultTo(_tcs, skipIfCanceled: true).DoNotWait();
             }
 
+            // Because _workCts is created via CreateLinkedTokenSource, disposing of it sooner
+            // rather than later is important (as there are real unmanaged resources behind linked CTSs).
             async Task<IReadOnlyList<HierarchicalSymbol>> UsingCts(
                 CancellationTokenSource cts,
                 Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> fn) {
