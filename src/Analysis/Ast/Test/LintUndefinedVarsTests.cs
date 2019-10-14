@@ -200,7 +200,6 @@ func1(func2(a) for a, b in {} if a < 0)
             d.Should().BeEmpty();
         }
 
-
         [TestMethod, Priority(0)]
         public async Task ListComprehension() {
             const string code = @"
@@ -226,7 +225,6 @@ def foo(m):
             var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
-
 
         [TestMethod, Priority(0)]
         public async Task AssignmentBefore() {
@@ -363,12 +361,23 @@ for a, b in enumerate(x):
         }
 
         [TestMethod, Priority(0)]
-        public async Task ListComprehensionStatement() {
+        public async Task ListComprehensionStatement3X() {
             const string code = @"
 [a == 1 for a in {}]
 x = a
 ";
             var d = await LintAsync(code);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(3, 5, 3, 6);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ListComprehensionStatement2X() {
+            const string code = @"
+[a == 1 for a in {}]
+x = a
+";
+            var d = await LintAsync(code, PythonVersions.Required_Python27X);
             d.Should().BeEmpty();
         }
 
@@ -480,7 +489,6 @@ class XXX:
             var d = await LintAsync(code);
             d.Should().BeEmpty();
         }
-
 
         [TestMethod, Priority(0)]
         public async Task Various() {

@@ -36,11 +36,8 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         public override bool Walk(SuiteStatement node) {
             foreach (var statement in node.Statements) {
                 switch (statement) {
-                    case ClassDefinition cd:
-                        HandleScope(cd);
-                        break;
-                    case FunctionDefinition fd:
-                        HandleScope(fd);
+                    case ScopeStatement scopeStatement:
+                        HandleScope(scopeStatement);
                         break;
                     case GlobalStatement gs:
                         HandleGlobal(gs);

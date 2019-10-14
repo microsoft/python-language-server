@@ -19,8 +19,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
-using Microsoft.Python.Core.Disposables;
-using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
@@ -103,7 +101,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return UnknownType;
         }
 
-        public IMember GetValueFromComprehension(Comprehension node) {
+        public IMember GetValueFromComprehension(Comprehension node, LookupOptions lookupOptions = LookupOptions.Normal) {
             using (OpenScope(Module, node)) {
                 ProcessComprehension(node);
                 // TODO: Evaluate comprehensions to produce exact contents, if possible.

@@ -20,16 +20,16 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Parsing.Extensions {
     public static class AstExtensions {
-        public static IEnumerable<Node> ChildNodesDepthFirst(this Node node)
+        public static IEnumerable<INode> ChildNodesDepthFirst(this INode node)
             => node.TraverseDepthFirst(n => n.GetChildNodes());
 
-        public static IEnumerable<Node> SelectChildNodesDepthFirst(this IEnumerable<Node> nodes)
+        public static IEnumerable<INode> SelectChildNodesDepthFirst(this IEnumerable<INode> nodes)
             => nodes.SelectMany(n => n.ChildNodesDepthFirst());
 
-        public static IEnumerable<Node> ChildNodesBreadthFirst(this Node node)
+        public static IEnumerable<INode> ChildNodesBreadthFirst(this INode node)
             => node.TraverseBreadthFirst(n => n.GetChildNodes());
 
-        public static IEnumerable<Node> SelectChildNodesBreadthFirst(this IEnumerable<Node> nodes)
+        public static IEnumerable<INode> SelectChildNodesBreadthFirst(this IEnumerable<INode> nodes)
             => nodes.SelectMany(n => n.ChildNodesBreadthFirst());
     }
 }
