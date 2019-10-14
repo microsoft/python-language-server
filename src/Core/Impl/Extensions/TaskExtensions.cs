@@ -23,7 +23,7 @@ namespace Microsoft.Python.Core {
     public static class TaskExtensions {
         public static Task SetCompletionResultTo<T>(this Task<T> task, TaskCompletionSource<T> tcs, bool skipCancel = false)
             => task.ContinueWith(t => {
-                SetCompletionResultToContinuation(task, tcs, skipCancel);
+                SetCompletionResultToContinuation(t, tcs, skipCancel);
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
         private static void SetCompletionResultToContinuation<T>(Task<T> task, TaskCompletionSource<T> tcs, bool skipCancel) {
