@@ -122,7 +122,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
             
             // If nothing is exported, variables are still accessible.
-            value = value ?? member as PythonVariableModule ?? variable?.Value ?? member ?? Eval.UnknownType;
+            value = value ?? member as PythonVariableModule ?? (variable?.Value != null ? variable : member) ?? Eval.UnknownType;
             
             // Do not allow imported variables to override local declarations
             var canOverwrite = CanOverwriteVariable(variableName, importPosition, value);
