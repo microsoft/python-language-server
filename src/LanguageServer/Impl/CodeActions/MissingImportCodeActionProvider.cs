@@ -386,10 +386,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private struct InsertionInfo {
-            public bool AddBlankLine;
-            public string InsertionText;
-            public Range Range;
-            public string Indentation;
+            public readonly bool AddBlankLine;
+            public readonly string InsertionText;
+            public readonly Range Range;
+            public readonly string Indentation;
 
             public InsertionInfo(bool addBlankLine, string insertionText, Range range, string indentation) {
                 AddBlankLine = addBlankLine;
