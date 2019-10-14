@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Modules;
@@ -51,6 +50,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return default;
             }
 
+            if(module.Analysis is DocumentAnalysis) {
+                return module.GetMemberNames();
+            }
+
             var key = new AnalysisModuleKey(module);
             if (_walkers.TryGetValue(key, out var walker)) {
                 return GetMemberNames(walker, variableModule);
@@ -62,13 +65,18 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     : variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
             }
 
-            return GetMemberNames(WalkModule(module, ast), variableModule);
+            walker = WalkModule(module, ast);
+            return walker != null ? GetMemberNames(walker, variableModule) : variableModule.GetMemberNames();
         }
 
         public IVariable GetVariable(in PythonVariableModule variableModule, in string name) {
             var module = variableModule.Module;
             if (module == null || _isCanceled()) {
                 return default;
+            }
+
+            if (module.Analysis is DocumentAnalysis) {
+                return module.Analysis.GlobalScope.Variables[name];
             }
 
             var key = new AnalysisModuleKey(module);
@@ -81,7 +89,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             walker = WalkModule(module, ast);
-            return walker.Eval.GlobalScope?.Variables[name];
+            var gs = walker != null ? walker.Eval.GlobalScope : module.Analysis.GlobalScope;
+            return gs?.Variables[name];
         }
 
         public void EnsureModule(in PythonVariableModule variableModule) {
@@ -97,6 +106,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         public ModuleWalker WalkModule(IPythonModule module, PythonAst ast) {
+            var analyzer = _services.GetService<IPythonAnalyzer>();
+            
+            var analysis = analyzer.TryRestoreCachedAnalysis(module);
+            if(analysis != null) {
+                return null;
+            }
+
             // If module has stub, make sure it is processed too.
             if(module.Stub?.Analysis is EmptyAnalysis) {
                 WalkModule(module.Stub, module.GetAst());
@@ -108,6 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             _walkers[new AnalysisModuleKey(module)] = walker;
             ast.Walk(walker);
             walker.Complete();
+
             return walker;
         }
 
