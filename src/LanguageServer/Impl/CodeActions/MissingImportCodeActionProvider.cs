@@ -37,6 +37,8 @@ using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.CodeActions {
     internal sealed class MissingImportCodeActionProvider : ICodeActionProvider {
+        private const int ModuleLoadTimeout = 10 * 1000; // 10 seconds
+
         public static readonly ICodeActionProvider Instance = new MissingImportCodeActionProvider();
 
         private MissingImportCodeActionProvider() {
@@ -103,15 +105,26 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
             var analyzer = analysis.ExpressionEvaluator.Services.GetService<IPythonAnalyzer>();
             var pathResolver = analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver;
+
+            var modules = ImmutableArray<IPythonModule>.Empty;
             foreach (var moduleName in symbolsWithName.Select(s => s.DocumentPath).Distinct().Select(p => pathResolver.GetModuleNameByPath(p))) {
                 var module = analysis.Document.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                if (module.Analysis is EmptyAnalysis) {
+                    // once module is analyzed, this analysis result will be kept in memory
+                    // even if graph for current document (modified) changed.
+                    // so this will let us to analyze these modules only once
+                    modules = modules.Add(module);
+                }
+            }
 
-                // TODO - module never get analyzed. it stays in "analyzing" state forever. the reason looks liek a version checking code in analyzer bail out
-                //        living things in analyzing state (bug?)
-                //        it is comparing analysis version against graph version which seems controlled independently so not sure how two version can be compared?
-                //        need to figure out how to make the module analyzed
+            if (modules.Count > 0) {
+                // declares given modules to be dependent to current document. otherwise, our optimization will drop
+                // analyzing these modules. this dependency will go away when user change the document
+                analyzer.EnqueueDocumentForAnalysis(analysis.Document, modules);
 
-                await analyzer.GetAnalysisAsync(module, cancellationToken: cancellationToken);
+                // this will make those modules to be loaded. we don't care about return analysis since we only
+                // care those modules being loaded and analyzed. but not new current document's analysis
+                await analysis.Document.GetAnalysisAsync(ModuleLoadTimeout, cancellationToken);
             }
         }
 
@@ -316,7 +329,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return;
             }
 
-            // skip any imported member unless it is explicitly on __all__
+            // skip any imported member (non module member) unless it is explicitly on __all__
             if (module.Analysis.GlobalScope.Imported.TryGetVariable(name, out var imported) &&
                 object.Equals(pythonType, imported.Value) &&
                 GetAllVariables(module.Analysis).All(s => !string.Equals(s, name))) {
