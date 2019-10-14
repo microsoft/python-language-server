@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Python.Core.Text;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
@@ -58,6 +59,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
     }
 
     // Analagous to LSP's DocumentSymbol.
+    [DebuggerDisplay("{Name}, {Kind}")]
     internal class HierarchicalSymbol {
         public string Name;
         public string Detail;
@@ -87,6 +89,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
     }
 
     // Analagous to LSP's SymbolInformation.
+    [DebuggerDisplay("{ContainerName}:{Name}, {Kind}")]
     internal class FlatSymbol {
         public string Name;
         public SymbolKind Kind;

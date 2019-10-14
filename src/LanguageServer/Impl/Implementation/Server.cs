@@ -161,7 +161,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                                             initializationOptions?.includeFiles,
                                             initializationOptions?.excludeFiles,
                                             _services.GetService<IIdleTimeService>());
-            _indexManager.IndexWorkspace().DoNotWait();
+            _indexManager.IndexWorkspace(_interpreter.ModuleResolution.CurrentPathResolver).DoNotWait();
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
 

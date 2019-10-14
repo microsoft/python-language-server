@@ -14,15 +14,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly object _syncObj = new object();
         private readonly IIndexParser _indexParser;
         private readonly string _path;
+        private readonly bool _library;
 
         private CancellationTokenSource _fileCts = new CancellationTokenSource();
 
         private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
         private WorkQueueState state = WorkQueueState.WaitingForWork;
 
-        public MostRecentDocumentSymbols(string path, IIndexParser indexParser) {
+        public MostRecentDocumentSymbols(string path, IIndexParser indexParser, bool library) {
             _path = path;
             _indexParser = indexParser;
+            _library = library;
         }
 
         public void Parse() {
@@ -136,7 +138,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
 
             indexCt.ThrowIfCancellationRequested();
-            var walker = new SymbolIndexWalker(ast);
+            var walker = new SymbolIndexWalker(ast, _library);
             ast.Walk(walker);
             return walker.Symbols;
         }

@@ -25,10 +25,12 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private static readonly Regex ConstantLike = new Regex(@"^[\p{Lu}\p{N}_]+$", RegexOptions.Compiled);
 
         private readonly PythonAst _ast;
+        private readonly bool _libraryMode;
         private readonly SymbolStack _stack = new SymbolStack();
 
-        public SymbolIndexWalker(PythonAst ast) {
+        public SymbolIndexWalker(PythonAst ast, bool libraryMode = false) {
             _ast = ast;
+            _libraryMode = libraryMode;
         }
 
         public IReadOnlyList<HierarchicalSymbol> Symbols => _stack.Root;
@@ -50,12 +52,24 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return false;
         }
 
+        private void WalkIfNotLibraryMode(Node node) {
+            if (_libraryMode) {
+                return;
+            }
+
+            node?.Walk(this);
+        }
+
         public override bool Walk(FunctionDefinition node) {
             _stack.Enter(SymbolKind.Function);
             foreach (var p in node.Parameters) {
                 AddVarSymbol(p.NameExpression);
             }
-            node.Body?.Walk(this);
+
+            // don't bother to walk down locals for libraries
+            // we don't care those for libraries
+            WalkIfNotLibraryMode(node.Body);
+
             var children = _stack.Exit();
 
             var span = node.GetSpan(_ast);
@@ -123,7 +137,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public override bool Walk(AssignmentStatement node) {
-            node.Right?.Walk(this);
+            WalkIfNotLibraryMode(node.Right);
+
             foreach (var exp in node.Left) {
                 AddVarSymbolRecursive(exp);
             }
@@ -132,18 +147,24 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public override bool Walk(NamedExpression node) {
-            node.Value?.Walk(this);
+            WalkIfNotLibraryMode(node.Value);
+
             AddVarSymbolRecursive(node.Target);
             return false;
         }
 
         public override bool Walk(AugmentedAssignStatement node) {
-            node.Right?.Walk(this);
+            WalkIfNotLibraryMode(node.Right);
+
             AddVarSymbol(node.Left as NameExpression);
             return false;
         }
 
         public override bool Walk(IfStatement node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             WalkAndDeclareAll(node.Tests);
             WalkAndDeclare(node.ElseStatement);
 
@@ -151,6 +172,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public override bool Walk(TryStatement node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             WalkAndDeclare(node.Body);
             WalkAndDeclareAll(node.Handlers);
             WalkAndDeclare(node.Else);
@@ -160,6 +185,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public override bool Walk(ForStatement node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             _stack.EnterDeclared();
             AddVarSymbolRecursive(node.Left);
             node.List?.Walk(this);
@@ -174,11 +203,19 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public override bool Walk(ComprehensionFor node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             AddVarSymbolRecursive(node.Left);
             return base.Walk(node);
         }
 
         public override bool Walk(ListComprehension node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             _stack.Enter(SymbolKind.None);
             return base.Walk(node);
         }

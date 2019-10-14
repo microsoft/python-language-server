@@ -29,11 +29,13 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private readonly DisposableBag _disposables = new DisposableBag(nameof(SymbolIndex));
         private readonly ConcurrentDictionary<string, IMostRecentDocumentSymbols> _index;
         private readonly IIndexParser _indexParser;
+        private readonly bool _libraryMode;
 
-        public SymbolIndex(IFileSystem fileSystem, PythonLanguageVersion version) {
-            var comparer = PathEqualityComparer.Instance;
-            _index = new ConcurrentDictionary<string, IMostRecentDocumentSymbols>(comparer);
+        public SymbolIndex(IFileSystem fileSystem, PythonLanguageVersion version, bool libraryMode = false) {
+            _index = new ConcurrentDictionary<string, IMostRecentDocumentSymbols>(PathEqualityComparer.Instance);
             _indexParser = new IndexParser(fileSystem, version);
+            _libraryMode = libraryMode;
+
             _disposables
                 .Add(_indexParser)
                 .Add(() => {
@@ -106,7 +108,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         private IMostRecentDocumentSymbols MakeMostRecentDocSymbols(string path) {
-            return new MostRecentDocumentSymbols(path, _indexParser);
+            return new MostRecentDocumentSymbols(path, _indexParser, _libraryMode);
         }
 
         public void Dispose() {

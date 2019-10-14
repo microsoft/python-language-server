@@ -21,6 +21,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
@@ -29,6 +30,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 using Range = Microsoft.Python.Core.Text.Range;
@@ -43,14 +45,14 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         public ImmutableArray<string> FixableDiagnostics => ImmutableArray<string>.Create(
             ErrorCodes.UndefinedVariable, ErrorCodes.VariableNotDefinedGlobally, ErrorCodes.VariableNotDefinedNonLocal);
 
-        public Task<IEnumerable<CodeAction>> GetCodeActionAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
+        public async Task<IEnumerable<CodeAction>> GetCodeActionAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
             // * TODO * for now, complete. since I don't know what each option mean. 
             var finder = new ExpressionFinder(analysis.Ast, FindExpressionOptions.Complete);
 
             // * TODO * need to check whether it is expected node kind or add code context check to verify it is a place where module/type can appear
             var node = finder.GetExpression(diagnostic.SourceSpan);
             if (!(node is NameExpression)) {
-                return Task.FromResult<IEnumerable<CodeAction>>(Array.Empty<CodeAction>());
+                return Enumerable.Empty<CodeAction>();
             }
 
             var interpreter = analysis.Document.Interpreter;
@@ -58,20 +60,21 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
             var name = node.ToCodeString(analysis.Ast);
             if (string.IsNullOrEmpty(name)) {
-                return Task.FromResult<IEnumerable<CodeAction>>(Array.Empty<CodeAction>());
+                return Enumerable.Empty<CodeAction>();
             }
 
-            var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
-            var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
+            // find path to module that might have symbols for us
+            await EnsureCandidateModulesAsync(analysis, name, cancellationToken);
 
-            var visited = new HashSet<IPythonModule>();
             var fullyQualifiedNames = new HashSet<string>();
 
             // find modules matching the given name. this will include submodules
-            var fullModuleNames = pathResolver.GetAllImportableModulesByName(name, includeImplicit);
-            fullyQualifiedNames.UnionWith(fullModuleNames);
+            var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
+            var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
+            fullyQualifiedNames.UnionWith(pathResolver.GetAllImportableModulesByName(name, includeImplicit));
 
             // find members matching the given name from module already imported.
+            var visited = new HashSet<IPythonModule>();
             var nameParts = new List<string>();
             foreach (var module in interpreter.ModuleResolution.GetImportedModules(cancellationToken)) {
                 nameParts.Add(module.Name);
@@ -88,7 +91,26 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 localCodeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: true, cancellationToken));
             }
 
-            return Task.FromResult(codeActions.Concat(localCodeActions));
+            return codeActions.Concat(localCodeActions);
+        }
+
+        private static async Task EnsureCandidateModulesAsync(IDocumentAnalysis analysis,
+                                                              string name,
+                                                              CancellationToken cancellationToken) {
+            var indexManager = analysis.ExpressionEvaluator.Services.GetService<IIndexManager>();
+            var symbolsIncludingName = await indexManager.WorkspaceSymbolsAsync(name, maxLength: int.MaxValue, includeLibraries: true, cancellationToken);
+            var symbolsWithName = symbolsIncludingName.Where(s => s.Name == name && s.Kind != Indexing.SymbolKind.Variable);
+
+            var analyzer = analysis.ExpressionEvaluator.Services.GetService<IPythonAnalyzer>();
+            var pathResolver = analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver;
+            foreach (var moduleName in symbolsWithName.Select(s => s.DocumentPath).Distinct().Select(p => pathResolver.GetModuleNameByPath(p))) {
+                var module = analysis.Document.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
+                
+                // TODO - module never get analyzed. it stays in "analyzing" state forever. the reason looks liek a version checking code in analyzer bail out
+                //        living things in analyzing state (bug?)
+                //        it is comparing analysis version against graph version which seems controlled independently so not sure how two version can be compared?
+                //        need to figure out how to make the module analyzed
+            }
         }
 
         private CodeAction CreateCodeAction(IDocumentAnalysis analysis,

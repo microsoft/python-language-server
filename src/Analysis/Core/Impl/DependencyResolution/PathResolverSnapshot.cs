@@ -82,23 +82,27 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         public ImmutableArray<string> GetAllImportableModuleNames(bool includeImplicitPackages = true) {
-            return GetAllImportableModuleFullNames(n => !string.IsNullOrEmpty(n.FullModuleName), includeImplicitPackages);
+            return GetAllImportableModuleInfo(n => !string.IsNullOrEmpty(n.FullModuleName), n => n.FullModuleName, includeImplicitPackages);
         }
 
         public ImmutableArray<string> GetAllImportableModulesByName(string name, bool includeImplicitPackages = true) {
-            return GetAllImportableModuleFullNames(n => string.Equals(n.Name, name), includeImplicitPackages);
+            return GetAllImportableModuleInfo(n => string.Equals(n.Name, name), n => n.FullModuleName, includeImplicitPackages);
         }
 
-        private ImmutableArray<string> GetAllImportableModuleFullNames(Func<Node, bool> predicate, bool includeImplicitPackages = true) {
+        public ImmutableArray<string> GetAllImportableModuleFilePaths(bool includeImplicitPackages = true) {
+            return GetAllImportableModuleInfo(n => !string.IsNullOrEmpty(n.ModulePath), n => n.ModulePath, includeImplicitPackages);
+        }
+
+        private ImmutableArray<T> GetAllImportableModuleInfo<T>(Func<Node, bool> predicate, Func<Node, T> valueGetter, bool includeImplicitPackages = true) {
             var roots = _roots.Prepend(_nonRooted);
             var items = new Queue<Node>(roots);
-            var names = ImmutableArray<string>.Empty;
+            var stringValues = ImmutableArray<T>.Empty;
 
             while (items.Count > 0) {
                 var item = items.Dequeue();
                 if (item != null) {
                     if (predicate(item) && (item.IsModule || includeImplicitPackages)) {
-                        names = names.Add(item.FullModuleName);
+                        stringValues = stringValues.Add(valueGetter(item));
                     }
 
                     foreach (var child in item.Children.ExcludeDefault()) {
@@ -107,11 +111,19 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 }
             }
 
-            return names.AddRange(
+            return stringValues.AddRange(
                 _builtins.Children
                     .Where(b => predicate(b))
-                    .Select(b => b.FullModuleName)
+                    .Select(b => valueGetter(b))
             );
+        }
+
+        public string GetModuleNameByPath(string modulePath) {
+            if (TryFindModule(modulePath, out var edge, out _)) {
+                return edge.End.FullModuleName;
+            }
+
+            return null;
         }
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {
