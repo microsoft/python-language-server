@@ -70,9 +70,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 // Cancel the existing work, if any.
                 CancelWork();
 
-                // Create a new token for this specific work.
-                _workCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-
                 // If the previous task was completed, then every task returned from GetSymbolsAsync
                 // will also be completed and it's too late to give them updated data.
                 // Create a new _tcs for future calls to GetSymbolsAsync to use.
