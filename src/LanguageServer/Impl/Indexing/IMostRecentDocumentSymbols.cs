@@ -24,6 +24,6 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         void Parse();
         void Index(IDocument doc);
         Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default);
-        void MarkAsPending();
+        void Invalidate();
     }
 }

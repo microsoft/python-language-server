@@ -85,7 +85,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         public void MarkAsPending(string path) {
             if (_index.TryGetValue(path, out var mostRecentDocSymbols)) {
-                mostRecentDocSymbols.MarkAsPending();
+                mostRecentDocSymbols.Invalidate();
             }
         }
 

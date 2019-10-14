@@ -1,124 +1,112 @@
-﻿using System;
+﻿// Copyright(c) Microsoft Corporation
+// All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the License); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+//
+// THIS CODE IS PROVIDED ON AN  *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS
+// OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY
+// IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+// MERCHANTABILITY OR NON-INFRINGEMENT.
+//
+// See the Apache Version 2.0 License for specific language governing
+// permissions and limitations under the License.
+
+using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
-        private readonly object _syncObj = new object();
         private readonly IIndexParser _indexParser;
         private readonly string _path;
 
-        private CancellationTokenSource _fileCts = new CancellationTokenSource();
+        // Only used to cancel all work when this object gets disposed.
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
-        private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
-        private WorkQueueState _state = WorkQueueState.WaitingForWork;
+        // Objects for the currently running task.
+        private readonly object _lock = new object();
+        private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _tcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
+        private CancellationTokenSource _workCts;
 
         public MostRecentDocumentSymbols(string path, IIndexParser indexParser) {
             _path = path;
             _indexParser = indexParser;
         }
 
-        public void Parse() => WorkAndSetTcs(ParseAsync).DoNotWait();
-
-        public void Index(IDocument doc) => WorkAndSetTcs(ct => IndexAsync(doc, ct)).DoNotWait();
-
-        public async Task WorkAndSetTcs(Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> asyncWork) {
-            CancellationTokenSource currentCts;
-            TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> currentTcs;
-            lock (_syncObj) {
-                switch (_state) {
-                    case WorkQueueState.Working:
-                        CancelExistingWork();
-                        RenewTcs();
-                        break;
-                    case WorkQueueState.WaitingForWork:
-                        break;
-                    case WorkQueueState.FinishedWork:
-                        RenewTcs();
-                        break;
-                    default:
-                        throw new InvalidOperationException();
-                }
-                _state = WorkQueueState.Working;
-                currentCts = _fileCts;
-                currentTcs = _fileTcs;
-            }
-
-            try {
-                var result = await asyncWork(currentCts.Token);
-                currentTcs.TrySetResult(result);
-            } catch (OperationCanceledException) {
-                currentTcs.TrySetCanceled();
-            } catch (Exception ex) {
-                currentTcs.TrySetException(ex);
-            } finally {
-                lock (_syncObj) {
-                    if (!currentCts.Token.IsCancellationRequested) {
-                        _state = WorkQueueState.FinishedWork;
-                    }
-                    currentCts.Dispose();
-                }
-            }
-        }
-
         public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
-            lock (_syncObj) {
-                return _fileTcs.Task.WaitAsync(ct);
+            lock (_lock) {
+                return _tcs.Task.WaitAsync(ct);
             }
         }
 
-        public void MarkAsPending() {
-            lock (_syncObj) {
-                switch (_state) {
-                    case WorkQueueState.WaitingForWork:
-                        break;
-                    case WorkQueueState.Working:
-                        CancelExistingWork();
-                        RenewTcs();
-                        break;
-                    case WorkQueueState.FinishedWork:
-                        RenewTcs();
-                        break;
-                    default:
-                        throw new InvalidOperationException();
+        public void Parse() => DoWork(ParseAsync);
+
+        public void Index(IDocument doc) => DoWork(ct => IndexAsync(doc, ct));
+
+        private void DoWork(Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> work) {
+            lock (_lock) {
+                // Invalidate any existing work.
+                Invalidate();
+
+                // Create a new token for this specific work.
+                _workCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+
+                // Start the task and set the result to _tcs if the task doesn't get canceled.
+                work(_workCts.Token).SetCompletionResultTo(_tcs, skipCancel: true).DoNotWait();
+            }
+        }
+
+        public void Invalidate() {
+            lock (_lock) {
+                // Cancel the existing work, if any.
+                CancelWork();
+
+                // Create a new token for this specific work.
+                _workCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+
+                // If the previous task was completed, then every task returned from GetSymbolsAsync
+                // will also be completed and it's too late to give them updated data.
+                // Create a new _tcs for future calls to GetSymbolsAsync to use.
+                //
+                // If the previous task wasn't completed, then we want to give the previous calls to
+                // GetSymbolsAsync the new result, so keep _tcs the same.
+                if (_tcs.Task.IsCompleted) {
+                    _tcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
                 }
-                _state = WorkQueueState.WaitingForWork;
             }
         }
 
         public void Dispose() {
-            lock (_syncObj) {
-                switch (_state) {
-                    case WorkQueueState.Working:
-                        CancelExistingWork();
-                        break;
-                    case WorkQueueState.WaitingForWork:
-                        CancelExistingWork();
-                        // Manually cancel tcs, in case any task is awaiting
-                        _fileTcs.TrySetCanceled();
-                        break;
-                    case WorkQueueState.FinishedWork:
-                        break;
-                    default:
-                        throw new InvalidOperationException();
-                }
-                _state = WorkQueueState.FinishedWork;
+            lock (_lock) {
+                _tcs.TrySetCanceled();
+                CancelWork();
+                _cts?.Dispose();
             }
-            _fileCts?.Dispose();
         }
 
-        private async Task<IReadOnlyList<HierarchicalSymbol>> IndexAsync(IDocument doc, CancellationToken indexCt) {
+        private void CancelWork() {
+            if (_workCts != null) {
+                _workCts.Cancel();
+                _workCts.Dispose();
+                _workCts = null;
+            }
+        }
+
+        private async Task<IReadOnlyList<HierarchicalSymbol>> IndexAsync(IDocument doc, CancellationToken cancellationToken) {
             PythonAst ast = null;
 
             for (var i = 0; i < 5; i++) {
-                ast = await doc.GetAstAsync(indexCt);
+                cancellationToken.ThrowIfCancellationRequested();
+                ast = await doc.GetAstAsync(cancellationToken);
                 if (ast != null) {
                     break;
                 }
@@ -126,19 +114,19 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
 
             if (ast == null) {
-                return Array.Empty<HierarchicalSymbol>();
+                return ImmutableArray<HierarchicalSymbol>.Empty;
             }
 
-            indexCt.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             var walker = new SymbolIndexWalker(ast);
             ast.Walk(walker);
             return walker.Symbols;
         }
 
-        private async Task<IReadOnlyList<HierarchicalSymbol>> ParseAsync(CancellationToken parseCancellationToken) {
+        private async Task<IReadOnlyList<HierarchicalSymbol>> ParseAsync(CancellationToken cancellationToken) {
             try {
-                var ast = await _indexParser.ParseAsync(_path, parseCancellationToken);
-                parseCancellationToken.ThrowIfCancellationRequested();
+                var ast = await _indexParser.ParseAsync(_path, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 var walker = new SymbolIndexWalker(ast);
                 ast.Walk(walker);
                 return walker.Symbols;
@@ -146,23 +134,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 Trace.TraceError(e.Message);
             }
 
-            return new List<HierarchicalSymbol>();
+            return ImmutableArray<HierarchicalSymbol>.Empty;
         }
-
-        private void RenewTcs() {
-            Check.InvalidOperation(Monitor.IsEntered(_syncObj));
-            _fileCts?.Dispose();
-            _fileCts = new CancellationTokenSource();
-            _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
-        }
-
-        private void CancelExistingWork() {
-            Check.InvalidOperation(Monitor.IsEntered(_syncObj));
-            _fileCts.Cancel();
-        }
-
-        /* It's easier to think of it as a queue of work
-         * but it maintains only one item at a time in the queue */
-        private enum WorkQueueState { WaitingForWork, Working, FinishedWork };
     }
 }
