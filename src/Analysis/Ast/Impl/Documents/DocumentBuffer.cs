@@ -40,7 +40,9 @@ namespace Microsoft.Python.Analysis.Documents {
         public void SetContent(string content) {
             lock (_lock) {
                 Check.InvalidOperation(!_initialized, "Buffer is already initialized.");
-                Check.InvalidOperation(!_cleared, "Buffer cannot be updated since its content was dropped.");
+                if (_cleared) {
+                    return; // User may try and edit library file where we have already dropped the content.
+                }
                 Version = 0;
                 _content = content ?? string.Empty;
                 _sb = null;
@@ -59,7 +61,9 @@ namespace Microsoft.Python.Analysis.Documents {
         public void MarkChanged() {
             lock (_lock) {
                 Check.InvalidOperation(_initialized, "Buffer is not initialized.");
-                Check.InvalidOperation(!_cleared, "Buffer cannot be updated since its content was dropped.");
+                if (_cleared) {
+                    return; // User may try and edit library file where we have already dropped the content.
+                }
                 Version++;
             }
         }
@@ -67,8 +71,10 @@ namespace Microsoft.Python.Analysis.Documents {
         public void Update(IEnumerable<DocumentChange> changes) {
             lock (_lock) {
                 Check.InvalidOperation(_initialized, "Buffer is not initialized.");
-                Check.InvalidOperation(!_cleared, "Buffer cannot be updated since its content was dropped.");
-                
+                if (_cleared) {
+                    return; // User may try and edit library file where we have already dropped the content.
+                }
+
                 _sb = _sb ?? new StringBuilder(_content);
 
                 foreach (var change in changes) {

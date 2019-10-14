@@ -44,6 +44,7 @@ def clean(path):
 
 BEFORE_SITE = set(clean(p) for p in BEFORE_SITE)
 AFTER_SITE = set(clean(p) for p in AFTER_SITE)
+SCRIPT_DIR = clean(os.path.dirname(os.path.realpath(__file__)))
 
 try:
     SITE_PKGS = set(clean(p) for p in site.getsitepackages())
@@ -72,9 +73,12 @@ import zipfile
 
 for p in sys.path:
     p = clean(p)
+    
+    if p == SCRIPT_DIR or p.startswith(SCRIPT_DIR + os.sep):
+        continue
 
     if not os.path.isdir(p) and not (os.path.isfile(p) and zipfile.is_zipfile(p)):
-	    continue
+        continue
 
     if p in BEFORE_SITE:
         print("%s|stdlib|" % p)
