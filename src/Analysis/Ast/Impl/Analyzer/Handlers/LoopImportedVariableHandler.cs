@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Modules;
@@ -32,12 +33,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         private readonly Func<bool> _isCanceled;
 
         public IReadOnlyCollection<ModuleWalker> Walkers => _walkers.Values;
-        
+
         public LoopImportedVariableHandler(in IServiceContainer services,
             in IReadOnlyDictionary<AnalysisModuleKey, PythonAst> asts,
             in IReadOnlyDictionary<AnalysisModuleKey, IVariableCollection> cachedVariables,
             in Func<bool> isCanceled) {
-            
+
             _services = services;
             _isCanceled = isCanceled;
             _asts = asts;
@@ -56,8 +57,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             if (!_asts.TryGetValue(key, out var ast)) {
-                return _cachedVariables.TryGetValue(key, out var variables) 
-                    ? variables.Names 
+                return _cachedVariables.TryGetValue(key, out var variables)
+                    ? variables.Names
                     : variableModule.GetMemberNames().Where(s => !s.StartsWithOrdinal("_"));
             }
 
@@ -78,7 +79,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (!_asts.TryGetValue(key, out var ast)) {
                 return _cachedVariables.TryGetValue(key, out var variables) ? variables[name] : default;
             }
-            
+
             walker = WalkModule(module, ast);
             return walker.Eval.GlobalScope?.Variables[name];
         }
@@ -96,6 +97,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         public ModuleWalker WalkModule(IPythonModule module, PythonAst ast) {
+            // If module has stub, make sure it is processed too.
+            if(module.Stub?.Analysis is EmptyAnalysis) {
+                Debug.Assert(false, "Stub module does not have analysis yet.");
+                // WalkModule(module.Stub, module.GetAst());
+            }
+
             var eval = new ExpressionEval(_services, module, ast);
             var walker = new ModuleWalker(eval, this);
 
@@ -105,7 +112,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             return walker;
         }
 
-        private static IEnumerable<string> GetMemberNames(ModuleWalker walker, PythonVariableModule variableModule) 
+        private static IEnumerable<string> GetMemberNames(ModuleWalker walker, PythonVariableModule variableModule)
             => walker.StarImportMemberNames ?? walker.GlobalScope.GetExportableVariableNames().Concat(variableModule.ChildrenNames).Distinct().Where(s => !s.StartsWithOrdinal("_"));
     }
 }

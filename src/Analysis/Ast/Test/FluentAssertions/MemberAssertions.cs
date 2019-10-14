@@ -137,7 +137,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             var errorMessage = GetAssertCollectionOnlyContainsMessage(actualNames, expectedNames, GetQuotedName(Subject), "member", "members");
 
             var assertion = Execute.Assertion.BecauseOf(because, becauseArgs);
-            
+
             assertion.ForCondition(errorMessage == null).FailWith(errorMessage);
 
             foreach (var n in actualNames.Except(Enumerable.Repeat("__base__", 1))) {
@@ -147,27 +147,27 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 var expectedMemberType = expectedMember.GetPythonType();
 
                 // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
-                if (expectedMember is IPythonInstance) {
+                if (expectedMember is IPythonInstance && !expectedMember.IsUnknown()) {
                     assertion.ForCondition(actualMember is IPythonInstance)
-                        .FailWith($"Expected '{GetName(Subject)}.{n}' to implement IPythonInstance{{reason}}, but its type is {actualMember.GetType().FullName}");
+                        .FailWith($"Expected '{GetName(subjectType)}.{n}' to implement IPythonInstance{{reason}}, but its type is {actualMember.GetType().FullName}");
                 }
 
                 assertion.ForCondition(actualMemberType.MemberType == expectedMemberType.MemberType)
-                    .FailWith($"Expected '{GetName(Subject)}.{n}' to have MemberType {expectedMemberType.MemberType}{{reason}}, but it has MemberType {actualMemberType.MemberType}");
+                    .FailWith($"Expected '{GetName(subjectType)}.{n}' to have MemberType {expectedMemberType.MemberType}{{reason}}, but it has MemberType {actualMemberType.MemberType}");
 
                 if (expectedMemberType is IPythonClassType) {
                     assertion.ForCondition(actualMemberType is IPythonClassType)
-                        .FailWith($"Expected python type of '{GetName(actualMemberType)}.{n}' to implement IPythonClassType{{reason}}, but python type is {actualMemberType.GetType().FullName}");
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to implement IPythonClassType{{reason}}, but python type is {actualMemberType.GetType().FullName}");
                 }
-                
+
                 if (expectedMemberType is IGenericType expectedGenericType) {
                     assertion.ForCondition(actualMemberType is IGenericType)
-                        .FailWith($"Expected python type of '{GetName(actualMemberType)}.{n}' to implement IGenericType{{reason}}, but python type is {actualMemberType.GetType().FullName}");
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to implement IGenericType{{reason}}, but python type is {actualMemberType.GetType().FullName}");
 
-                    var expectedIsGeneric = expectedGenericType.IsGeneric ? "be generic" : "not be generic";
-                    var actualIsNotGeneric = expectedGenericType.IsGeneric ? "is not" : "is generic";
-                    assertion.ForCondition(expectedGenericType.IsGeneric == ((IGenericType)actualMemberType).IsGeneric)
-                        .FailWith($"Expected python type of '{GetName(actualMemberType)}.{n}' to {expectedIsGeneric}{{reason}}, but it {actualIsNotGeneric}.");
+                    //var expectedIsGeneric = expectedGenericType.IsGeneric ? "be generic" : "not be generic";
+                    //var actualIsNotGeneric = expectedGenericType.IsGeneric ? "is not" : "is generic";
+                    //assertion.ForCondition(expectedGenericType.IsGeneric == ((IGenericType)actualMemberType).IsGeneric)
+                    //    .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to {expectedIsGeneric}{{reason}}, but it {actualIsNotGeneric}.");
 
                     // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
                     //Debug.Assert(subjectClass.Bases.Count == otherClass.Bases.Count);
@@ -176,10 +176,10 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
                 if (string.IsNullOrEmpty(expectedMemberType.Documentation)) {
                     assertion.ForCondition(string.IsNullOrEmpty(actualMemberType.Documentation))
-                        .FailWith($"Expected python type of '{GetName(actualMemberType)}.{n}' to have no documentation{{reason}}, but it has '{actualMemberType.Documentation}'");
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have no documentation{{reason}}, but it has '{actualMemberType.Documentation}'");
                 } else {
                     assertion.ForCondition(actualMemberType.Documentation.EqualsOrdinal(expectedMemberType.Documentation))
-                        .FailWith($"Expected python type of '{GetName(actualMemberType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualMemberType.Documentation}'");
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualMemberType.Documentation}'");
                 }
 
                 switch (actualMemberType.MemberType) {

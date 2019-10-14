@@ -19,7 +19,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
@@ -33,12 +32,10 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Testing;
-using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
@@ -632,10 +629,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private void LogCompleted(IDependencyChainLoopNode<PythonAnalyzerEntry> node, IEnumerable<IPythonModule> modules, Stopwatch stopWatch, TimeSpan startTime) {
             if (_log != null) {
-                var moduleNames = string.Join(", ", modules.Select(m => "{0}({1})".FormatInvariant(m.Name, m.Analysis is LibraryAnalysis ? "Library" : m.ModuleType.ToString())));
+                var moduleNames = modules.Select(m => "{0}({1})".FormatInvariant(m.Name, m.Analysis is LibraryAnalysis ? "Library" : m.ModuleType.ToString()));
                 var elapsed = Math.Round((stopWatch.Elapsed - startTime).TotalMilliseconds, 2);
-                var message = $"Analysis of modules loop on depth {node.VertexDepth} in {elapsed} ms: [{moduleNames}]";
+                var message = $"Analysis of modules loop on depth {node.VertexDepth} in {elapsed} ms:";
                 _log.Log(TraceEventType.Verbose, message);
+                foreach (var name in moduleNames) {
+                    _log.Log(TraceEventType.Verbose, $"    {name}");
+                }
             }
         }
 
