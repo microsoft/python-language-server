@@ -64,6 +64,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                         _state = WorkQueueState.FinishedWork;
                     }
                 }
+                currentCts.Dispose();
             }
         }
 
@@ -150,7 +151,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
         private void RenewTcs() {
             Check.InvalidOperation(Monitor.IsEntered(_syncObj));
-            _fileCts?.Dispose();
+            // CancellationTokenSource is disposed when currently running task is done.
             _fileCts = new CancellationTokenSource();
             _fileTcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
         }
