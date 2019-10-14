@@ -43,7 +43,7 @@ namespace Microsoft.Python.Parsing.Ast {
             Parameters = parameters ?? Array.Empty<Parameter>();
             _body = body;
             Decorators = decorators;
-            ScopeDelegate = new FunctionScopeDelegate(this);
+            ScopeInfo = new FunctionScopeInfo(this);
         }
 
         public bool IsLambda { get; }
@@ -96,7 +96,7 @@ namespace Microsoft.Python.Parsing.Ast {
         #region ScopeStatement
 
         public override string Name => NameExpression.Name ?? string.Empty;
-        internal override ScopeDelegate ScopeDelegate { get; }
+        internal override ScopeInfo ScopeInfo { get; }
 
         #endregion
 

@@ -36,7 +36,7 @@ namespace Microsoft.Python.Parsing.Ast {
             LanguageVersion = langVersion;
             NewLineLocations = lineLocations;
             CommentLocations = commentLocations;
-            ScopeDelegate = new AstScopeDelegate(this);
+            ScopeInfo = new AstScopeInfo(this);
         }
 
         public PythonAst(IEnumerable<PythonAst> existingAst) {
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 offset += a.NewLineLocations.Length + 1;
             }
             CommentLocations = comments.ToArray();
-            ScopeDelegate = new AstScopeDelegate(this);
+            ScopeInfo = new AstScopeInfo(this);
         }
 
         public Uri Module { get; }
@@ -98,7 +98,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         #region ScopeStatement
         public override string Name => "<module>";
-        internal override ScopeDelegate ScopeDelegate { get; }
+        internal override ScopeInfo ScopeInfo { get; }
         #endregion
 
         public PythonLanguageVersion LanguageVersion { get; }
@@ -107,11 +107,11 @@ namespace Microsoft.Python.Parsing.Ast {
             lock (_lock) {
                 (Body as SuiteStatement)?.FilterStatements(filter);
                 _attributes?.Clear();
-                ScopeDelegate.Variables?.Clear();
+                ScopeInfo.Variables?.Clear();
                 CommentLocations = Array.Empty<SourceLocation>();
                 // DO keep NewLineLocations as they are required
                 // to calculate node positions for navigation;
-                ScopeDelegate.Clear();
+                ScopeInfo.Clear();
             }
         }
 

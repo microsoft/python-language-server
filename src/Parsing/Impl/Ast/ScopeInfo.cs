@@ -7,7 +7,7 @@ using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Parsing.Ast {
-    internal abstract class ScopeDelegate {
+    internal abstract class ScopeInfo {
         // Storing variables due to "exec" or call to dir, locals, eval, vars...
 
         // list of variables accessed from outer scopes
@@ -25,7 +25,7 @@ namespace Microsoft.Python.Parsing.Ast {
         // names of all variables referenced, null after binding completes
         private Dictionary<string, List<PythonReference>> _references;
 
-        protected ScopeDelegate(IBindableNode node) {
+        protected ScopeInfo(IBindableNode node) {
             Check.ArgumentNotNull(nameof(node), node);
             Node = node;
         }

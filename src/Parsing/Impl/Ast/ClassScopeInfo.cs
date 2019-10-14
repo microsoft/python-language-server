@@ -1,10 +1,10 @@
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
-    internal class ClassScopeDelegate : ScopeDelegate {
+    internal class ClassScopeInfo : ScopeInfo {
         private readonly ClassDefinition _classDefinition;
         
-        public ClassScopeDelegate(ClassDefinition node) : base(node) {
+        public ClassScopeInfo(ClassDefinition node) : base(node) {
             _classDefinition = node;
         }
 

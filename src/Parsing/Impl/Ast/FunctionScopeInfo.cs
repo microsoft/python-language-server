@@ -1,8 +1,8 @@
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Parsing.Ast {
-    internal class FunctionScopeDelegate : ScopeDelegate {
-        public FunctionScopeDelegate(IBindableNode node) : base(node) { }
+    internal class FunctionScopeInfo : ScopeInfo {
+        public FunctionScopeInfo(IBindableNode node) : base(node) { }
 
         internal override bool ExposesLocalVariable(PythonVariable name) => Node.NeedsLocalsDictionary;
 

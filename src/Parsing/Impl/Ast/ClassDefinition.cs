@@ -33,7 +33,7 @@ namespace Microsoft.Python.Parsing.Ast {
             _name = name;
             Bases = bases;
             _body = body;
-            ScopeDelegate = new ClassScopeDelegate(this);
+            ScopeInfo = new ClassScopeInfo(this);
         }
 
         public override string Name => _name?.Name ?? string.Empty;
@@ -51,7 +51,7 @@ namespace Microsoft.Python.Parsing.Ast {
         #endregion
 
         #region ScopeStatement
-        internal override ScopeDelegate ScopeDelegate { get; }
+        internal override ScopeInfo ScopeInfo { get; }
         #endregion
 
         public DecoratorStatement Decorators {
@@ -123,7 +123,7 @@ namespace Microsoft.Python.Parsing.Ast {
             await walker.PostWalkAsync(this, cancellationToken);
         }
 
-        public SourceLocation Header => ScopeDelegate.GlobalParent.IndexToLocation(HeaderIndex);
+        public SourceLocation Header => ScopeInfo.GlobalParent.IndexToLocation(HeaderIndex);
 
         internal override void AppendCodeStringStmt(StringBuilder res, PythonAst ast, CodeFormattingOptions format) {
             if (Decorators != null) {

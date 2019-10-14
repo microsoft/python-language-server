@@ -158,7 +158,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             // Finish the globals
-            unboundAst.ScopeDelegate.Bind(this);
+            ((IBindableNode) unboundAst).Bind(this);
 
             // Finish Binding w/ outer most scopes first.
             for (var i = _scopes.Count - 1; i >= 0; i--) {
@@ -166,7 +166,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             // Finish the globals
-            unboundAst.ScopeDelegate.FinishBind(this);
+            ((IBindableNode) unboundAst).FinishBind(this);
         }
 
         private void PushScope(IScopeNode node) {
@@ -237,7 +237,7 @@ namespace Microsoft.Python.Parsing.Ast {
             }
 
             PushScope(node);
-            node.ModuleNameVariable = GlobalScope.ScopeDelegate.EnsureGlobalVariable("__name__");
+            node.ModuleNameVariable = ((IBindableNode) GlobalScope).EnsureGlobalVariable("__name__");
 
             // define the __doc__ and the __module__
             if (node.Body?.Documentation != null) {
@@ -410,7 +410,7 @@ namespace Microsoft.Python.Parsing.Ast {
 
         // FunctionDefinition
         public override bool Walk(FunctionDefinition node) {
-            GlobalScope.ScopeDelegate.EnsureGlobalVariable("__name__");
+            ((IBindableNode) GlobalScope).EnsureGlobalVariable("__name__");
 
             // Name is defined in the enclosing context
             if (!node.IsLambda) {

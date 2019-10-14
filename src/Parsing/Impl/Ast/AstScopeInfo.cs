@@ -1,8 +1,8 @@
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Parsing.Ast {
-    internal class AstScopeDelegate : ScopeDelegate {
-        public AstScopeDelegate(IBindableNode node) : base(node) { }
+    internal class AstScopeInfo : ScopeInfo {
+        public AstScopeInfo(IBindableNode node) : base(node) { }
 
         internal override bool IsGlobal => true;
 

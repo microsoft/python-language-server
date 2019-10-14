@@ -24,12 +24,12 @@ namespace Microsoft.Python.Parsing.Ast {
     public abstract class ComprehensionIterator : Node { }
 
     public abstract class Comprehension : ScopeExpression, IBindableNode {
-        private readonly ScopeDelegate _scopeDelegate;
+        private readonly ScopeInfo _scopeInfo;
 
         public Comprehension() {
-            _scopeDelegate = new FunctionScopeDelegate(this);
+            _scopeInfo = new FunctionScopeInfo(this);
         }
-        internal override ScopeDelegate ScopeDelegate => _scopeDelegate;
+        internal override ScopeInfo ScopeInfo => _scopeInfo;
 
         public abstract ImmutableArray<ComprehensionIterator> Iterators { get; }
         public abstract override string NodeName { get; }
