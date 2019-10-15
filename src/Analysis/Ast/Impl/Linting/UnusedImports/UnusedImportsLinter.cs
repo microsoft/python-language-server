@@ -64,7 +64,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         private static void ReportUnusedImports(IVariable variable, ref ImmutableArray<DiagnosticsEntry> result) {
-            var message = Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatInvariant(variable.Value.MemberType, variable.Name);
+            var message = Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatUI(variable.Value.MemberType, variable.Name);
             result = result.Add(new DiagnosticsEntry(message, variable.Definition.Span, ErrorCodes.UnusedImport, Parsing.Severity.Hint, DiagnosticSource.Linter));
         }
     }
