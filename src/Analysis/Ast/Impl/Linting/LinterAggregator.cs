@@ -27,7 +27,10 @@ namespace Microsoft.Python.Analysis.Linting {
         public LinterAggregator() {
             // TODO: develop mechanism for dynamic and external linter discovery.
             _linters.Add(new UndefinedVariablesLinter());
+            _linters.Add(new UnusedImportsLinter());
         }
+
+        // * NOTE * linter is not cancellable? is this by design?
         public IReadOnlyList<DiagnosticsEntry> Lint(IPythonModule module, IServiceContainer services)
             => _linters.SelectMany(l => l.Lint(module.Analysis, services)).Where(d => d.ShouldReport(module)).ToArray();
     }
