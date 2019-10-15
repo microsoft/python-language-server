@@ -144,7 +144,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             var insertionText = insertionPoint.Value.InsertionText;
-            var titleText = locallyInserted ? string.Format(Resources.ImportLocally, insertionText) : insertionText;
+            var titleText = locallyInserted ? Resources.ImportLocally.FormatUI(insertionText) : insertionText;
 
             var sb = new StringBuilder();
             sb.AppendIf(insertionPoint.Value.Range.start == insertionPoint.Value.Range.end, insertionPoint.Value.Indentation);
