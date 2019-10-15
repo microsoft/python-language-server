@@ -222,4 +222,7 @@
   <data name="Analysis_PositionalOnlyArgumentNamed" xml:space="preserve">
     <value>Positional only argument '{0}' may not be named.</value>
   </data>
+  <data name="0_1_is_declared_but_it_is_never_used_within_the_current_file" xml:space="preserve">
+    <value>'{0} {1}' is declared but it's never used within the current file.</value>
+  </data>
 </root>

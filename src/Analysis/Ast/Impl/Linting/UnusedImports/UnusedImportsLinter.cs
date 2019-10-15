@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 // we have variable from import statement, but we don't have any variable declared from actual
                 // usage. meaning the import is not used.
                 if (!variableDeclared.TryGetVariable(name, out var variableFromVariableCollection)) {
-                    AppendDiagnostic(variableFromImportCollection, ref result);
+                    ReportUnusedImports(variableFromImportCollection, ref result);
                     continue;
                 }
 
@@ -57,14 +57,15 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                     continue;
                 }
 
-                AppendDiagnostic(variableFromImportCollection, ref result);
+                ReportUnusedImports(variableFromImportCollection, ref result);
             }
 
             return result;
         }
 
-        private static void AppendDiagnostic(IVariable variable, ref ImmutableArray<DiagnosticsEntry> result) {
-            result = result.Add(new DiagnosticsEntry("unused imports", variable.Definition.Span, "unused imports", Parsing.Severity.Hint, DiagnosticSource.Linter));
+        private static void ReportUnusedImports(IVariable variable, ref ImmutableArray<DiagnosticsEntry> result) {
+            var message = Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatInvariant(variable.Value.MemberType, variable.Name);
+            result = result.Add(new DiagnosticsEntry(message, variable.Definition.Span, ErrorCodes.UnusedImport, Parsing.Severity.Hint, DiagnosticSource.Linter));
         }
     }
 }

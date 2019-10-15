@@ -28,6 +28,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         public const string TypingTypeVarArguments = "typing-typevar-arguments";
         public const string UnknownParameterName = "unknown-parameter-name";
         public const string UnresolvedImport = "unresolved-import";
+        public const string UnusedImport = "unused-import";
         public const string UndefinedVariable = "undefined-variable";
         public const string VariableNotDefinedGlobally= "variable-not-defined-globally";
         public const string VariableNotDefinedNonLocal = "variable-not-defined-nonlocal";
