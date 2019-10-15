@@ -377,6 +377,28 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         [Serializable]
         public sealed class RenameCapabilities { public bool dynamicRegistration; }
         public RenameCapabilities rename;
+
+        [Serializable]
+        public sealed class PublishDiagnosticsClientCapabilities {
+            /// <summary>
+            /// Whether the clients accepts diagnostics with related information.
+            /// </summary>
+            public bool? relatedInformation;
+
+            public sealed class TagSupport {
+                /// <summary>
+                /// The tags supported by the client.
+                /// </summary>
+                public DiagnosticTag[] valueSet;
+            }
+            /// <summary>
+            /// Client supports the tag property to provide meta data about a diagnostic.
+            /// Clients supporting tags have to handle unknown tags gracefully.
+            /// </summary>
+            public TagSupport tagSupport;
+        }
+
+        public PublishDiagnosticsClientCapabilities publishDiagnostics;
     }
 
     [Serializable]
