@@ -24,6 +24,8 @@ using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UnusedImportsLinter : ILinter {
+        private readonly static DiagnosticsEntry.DiagnosticTags[] tags = new[] { DiagnosticsEntry.DiagnosticTags.Unnecessary };
+
         public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services) {
             var result = ImmutableArray<DiagnosticsEntry>.Empty;
 
@@ -72,7 +74,13 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         private static void ReportUnusedImports(IVariable variable, ref ImmutableArray<DiagnosticsEntry> result) {
             var message = Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatUI(variable.Value.MemberType, variable.Name);
-            result = result.Add(new DiagnosticsEntry(message, variable.Definition.Span, ErrorCodes.UnusedImport, Parsing.Severity.Hint, DiagnosticSource.Linter));
+            result = result.Add(new DiagnosticsEntry(
+                message,
+                variable.Definition.Span,
+                ErrorCodes.UnusedImport,
+                Parsing.Severity.Hint,
+                DiagnosticSource.Linter,
+                tags));
         }
     }
 }

@@ -120,7 +120,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task InitializedAsync(InitializedParams @params, CancellationToken cancellationToken = default, IReadOnlyList<string> userConfiguredPaths = null) {
             var initializationOptions = _initParams?.initializationOptions;
 
-            _services.AddService(new DiagnosticsService(_services));
+            var textDocCaps = _initParams?.capabilities?.textDocument;
+            _services.AddService(new DiagnosticsService(_services, textDocCaps.publishDiagnostics.tagSupport?.valueSet));
 
             var cacheFolderPath = initializationOptions?.cacheFolderPath;
             var fs = _services.GetService<IFileSystem>();
@@ -163,8 +164,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _indexManager.IndexWorkspace().DoNotWait();
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
-
-            var textDocCaps = _initParams?.capabilities?.textDocument;
 
             _completionSource = new CompletionSource(
                 ChooseDocumentationSource(textDocCaps?.completion?.completionItem?.documentationFormat),

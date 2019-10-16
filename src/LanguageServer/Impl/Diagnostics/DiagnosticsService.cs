@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Disposables;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.Services;
@@ -62,16 +63,20 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
         private readonly IServiceContainer _services;
         private readonly IClientApplication _clientApp;
+        private readonly ImmutableArray<DiagnosticTag> _supportedDiagnosticTags;
+
         private readonly object _lock = new object();
+
         private DiagnosticsSeverityMap _severityMap = new DiagnosticsSeverityMap();
         private IRunningDocumentTable _rdt;
         private DateTime _lastChangeTime;
 
         private IRunningDocumentTable Rdt => _rdt ?? (_rdt = _services.GetService<IRunningDocumentTable>());
 
-        public DiagnosticsService(IServiceContainer services) {
+        public DiagnosticsService(IServiceContainer services, DiagnosticTag[] supportedDiagnosticTags = null) {
             _services = services;
             _clientApp = services.GetService<IClientApplication>();
+            _supportedDiagnosticTags = supportedDiagnosticTags?.ToImmutableArray() ?? ImmutableArray<DiagnosticTag>.Empty;
 
             var idleTimeService = services.GetService<IIdleTimeService>();
             if (idleTimeService != null) {
