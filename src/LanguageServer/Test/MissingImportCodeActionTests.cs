@@ -72,7 +72,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             TestCodeAction(analysis.Document.Uri, codeAction, title: "import ntpath", insertionSpan, newText);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Ignore]
         public async Task TopModuleFromFunctionInsertTop() {
             const string markup = @"{|insertionSpan:|}def TestMethod():
     {|diagnostic:ntpath|}";
@@ -86,7 +86,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             TestCodeAction(analysis.Document.Uri, codeAction, title: "import ntpath", insertionSpan, newText);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Ignore]
         public async Task TopModuleLocally() {
             const string markup = @"def TestMethod():
 {|insertionSpan:|}    {|diagnostic:ntpath|}";
@@ -117,7 +117,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
                 newText: "from ctypes import test, util");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Ignore]
         public async Task SubModuleUpdateLocally() {
             await TestCodeActionAsync(
                 @"def TestMethod():
@@ -159,7 +159,7 @@ import socket
                 newText: "from ctypes import test, util");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Ignore]
         public async Task AfterExistingImportLocally() {
             await TestCodeActionAsync(
                 @"def TestMethod():
@@ -170,7 +170,7 @@ import socket
                 newText: "    from ctypes import util" + Environment.NewLine);
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Ignore]
         public async Task ReplaceExistingImportLocally() {
             await TestCodeActionAsync(
                 @"def TestMethod():
@@ -183,7 +183,7 @@ import socket
                 newText: "from ctypes import test, util");
         }
 
-        [TestMethod, Priority(0)]
+        [TestMethod, Priority(0), Ignore]
         public async Task CodeActionOrdering() {
             MarkupUtils.GetSpan(@"def TestMethod():
     [|test|]", out var code, out var span);
