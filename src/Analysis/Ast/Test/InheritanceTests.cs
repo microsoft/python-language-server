@@ -113,5 +113,65 @@ a = A()
                 .Which.Value.Should().BeAssignableTo<IPythonInstance>()
                 .Which.Type.Name.Should().Be("A");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task SingleInheritanceSuperShouldReturnBaseClassType() {
+            const string code = @"
+class Baze:
+  def base_func(self):
+    return 1234
+
+class Derived(Baze):
+  def foo(self):
+    x = super()
+";
+
+            var analysis = await GetAnalysisAsync(code);
+
+            // the class, for which we know parameter type initially
+            analysis.Should().HaveClass("Derived").Which.Should().HaveMethod("foo")
+                .Which.Should().HaveVariable("x");
+
+            analysis.Should().HaveClass("Derived").Which.Should().HaveMethod("foo")
+                .Which.Should().HaveVariable("x")
+                .Which.Value.Should().BeAssignableTo<IPythonClassType>()
+                .Which.Name.Should().Be("Baze");
+      
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SingleInheritanceSuperWithNoBaseShouldReturnObject() {
+            const string code = @"
+class A():
+  def foo(self):
+    x = super()
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            // the class, for which we know parameter type initially
+            analysis.Should().HaveClass("A").Which.Should().HaveMethod("foo")
+                .Which.Should().HaveVariable("x");
+
+            analysis.Should().HaveClass("A").Which.Should().HaveMethod("foo")
+                .Which.Should().HaveVariable("x")
+                .Which.Value.Should().BeAssignableTo<IPythonClassType>()
+                .Which.Name.Should().Be("object");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task FunctionWithNoClassCallingSuperShouldFail() {
+            const string code = @"
+def foo(self):
+  x = super()
+";
+
+            var analysis = await GetAnalysisAsync(code);
+          
+            analysis.Should().HaveFunction("foo")
+                .Which.Should().HaveVariable("x")
+                .Which.Name.Should().Be("x");
+        }
+
+
     }
 }

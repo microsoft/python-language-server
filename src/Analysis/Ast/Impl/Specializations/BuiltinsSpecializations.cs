@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations {
     public static class BuiltinsSpecializations {
@@ -91,6 +92,17 @@ namespace Microsoft.Python.Analysis.Specializations {
             return args.Count > 0 && args[0] is PythonCollection c ? c.Contents.FirstOrDefault() : null;
         }
 
+        public static IMember SuperKeyword(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
+            foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
+                if (s.Node is ClassDefinition) {
+                    var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
+                    var baseClassType = classType?.Mro?.Skip(1).FirstOrDefault();
+                    return baseClassType;
+                }
+            }
+            return null;
+        }
+
         public static IMember Open(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
             var mode = argSet.GetArgumentValue<IPythonConstant>("mode");
 
@@ -141,7 +153,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             // getattr(a, 3.14)
             if (name == null) {
                 // TODO diagnostic error when second arg of getattr is not a string
-                return  module.Interpreter.UnknownType;
+                return module.Interpreter.UnknownType;
             }
 
             return o?.GetPythonType().GetMember(name) ?? def;
