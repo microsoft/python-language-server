@@ -23,7 +23,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class PlainTextDocumentationSource : DocumentationSource, IDocumentationSource {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
-        public MarkupContent GetHover(string name, IMember member, IPythonType self) {
+        public MarkupContent GetHover(string name, IMember member, IPythonType self, bool includeClassInit = false) {
             // We need to tell between instance and type.
             var type = member.GetPythonType();
             if (type.IsUnknown()) {
@@ -50,7 +50,17 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                 case IPythonClassType cls:
                     var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n\n{cls.PlaintextDoc()}" : string.Empty;
-                    text = $"class {cls.Name}{clsDoc}";
+
+                    var sig = string.Empty;
+
+                    if (includeClassInit) {
+                        var init = cls.GetMember<IPythonFunctionType>("__init__");
+                        if (init != null) {
+                            sig = GetSignatureString(init, null, out var _, 0, "", true);
+                        }
+                    }
+
+                    text = $"class {cls.Name}{sig}{clsDoc}";
                     break;
 
                 case IPythonModule mod:
@@ -67,7 +77,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             };
         }
 
-        public MarkupContent FormatDocumentation(string documentation) 
+        public MarkupContent FormatDocumentation(string documentation)
             => new MarkupContent { kind = MarkupKind.PlainText, value = documentation };
 
         public MarkupContent FormatParameterDocumentation(IParameterInfo parameter) {

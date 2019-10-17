@@ -23,7 +23,7 @@ using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class StubCache : IStubCache {
-        private const int _stubCacheFormatVersion = 3;
+        private const int _stubCacheFormatVersion = 4;
 
         private readonly IFileSystem _fs;
         private readonly ILogger _log;

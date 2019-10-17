@@ -165,7 +165,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
             switch (v.Value) {
                 case IPythonClassType cls when cls.ClassDefinition == scope:
-                    return hoverPosition  > cls.ClassDefinition.HeaderIndex;
+                    return hoverPosition > cls.ClassDefinition.HeaderIndex;
                 case IPythonFunctionType ft when ft.FunctionDefinition == scope:
                     return hoverPosition > ft.FunctionDefinition.HeaderIndex;
                 case IPythonPropertyType prop when prop.FunctionDefinition == scope:

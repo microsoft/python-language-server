@@ -127,12 +127,16 @@ class oar(list):
         [TestMethod]
         public async Task OverrideInit3X() {
             const string code = @"
-class Test():
+class A:
+    def __init__(self, *args, **kwargs):
+        pass
+
+class Test(A):
     def __
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            var result = cs.GetCompletions(analysis, new SourceLocation(3, 10));
+            var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
 
             result.Should().HaveItem("__init__")
                 .Which.Should().HaveInsertText($"__init__(self, *args, **kwargs):{Environment.NewLine}    super().__init__(*args, **kwargs)")
