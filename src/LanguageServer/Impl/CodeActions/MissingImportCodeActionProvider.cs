@@ -16,6 +16,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -25,6 +27,7 @@ using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -65,7 +68,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return Enumerable.Empty<CodeAction>();
             }
 
-            // find path to module that might have symbols for us
+            // find path to module that might have symbols for us and load them
             await EnsureCandidateModulesAsync(analysis, name, cancellationToken);
 
             var fullyQualifiedNames = new HashSet<string>();
@@ -79,9 +82,17 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var visited = new HashSet<IPythonModule>();
             var nameParts = new List<string>();
             foreach (var module in interpreter.ModuleResolution.GetImportedModules(cancellationToken)) {
+                if (module.ModuleType == ModuleType.Unresolved) {
+                    continue;
+                }
+
+                // module name is full module name that you can use in import xxxx directly
                 nameParts.Add(module.Name);
                 CollectCandidates(module, name, visited, nameParts, fullyQualifiedNames, cancellationToken);
                 nameParts.RemoveAt(nameParts.Count - 1);
+
+                Debug.Assert(visited.Count == 0);
+                Debug.Assert(nameParts.Count == 0);
             }
 
             var codeActions = new List<CodeAction>();
@@ -295,6 +306,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                                        HashSet<string> fullyQualifiedNames,
                                        CancellationToken cancellationToken) {
             if (module == null || !visited.Add(module)) {
+                // bail out on circular imports
                 return;
             }
 
@@ -302,6 +314,15 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             AddNonImportedMemberWithName(module, name, nameParts, fullyQualifiedNames);
 
             // add module (imported) members if it shows up in __all__
+            //
+            // we are doing recursive dig down rather than just going through all modules loaded linearly
+            // since path to how to get to a module is important.
+            // for example, "join" is defined in "ntpath" or "macpath" and etc, but users are supposed to
+            // use it through "os.path" which will automatically point to right module ex, "ntpath" based on
+            // environment rather than "ntpath" directly. if we just go through module in flat list, then
+            // we can miss "os.path" since it won't show in the module list.
+            // for these modules that are supposed to be used with indirect path (imported name of the module),
+            // we need to dig down to collect those with right path.
             foreach (var memberName in GetAllVariables(module.Analysis)) {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -318,6 +339,11 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 CollectCandidates(pythonModule, name, visited, nameParts, fullyQualifiedNames, cancellationToken);
                 nameParts.RemoveAt(nameParts.Count - 1);
             }
+
+            // pop this module out so we can get to this module from
+            // different path. 
+            // ex) A -> B -> [C] and A -> D -> [C]
+            visited.Remove(module);
         }
 
         private void AddNonImportedMemberWithName(IPythonModule module, string name, List<string> nameParts, HashSet<string> fullyQualifiedNames) {
