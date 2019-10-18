@@ -71,7 +71,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // find path to module that might have symbols for us and load them
             await EnsureCandidateModulesAsync(analysis, name, cancellationToken);
 
-            var moduleFullNameMap = new Dictionary<string, ImportInfo>();
+            var importFullNameMap = new Dictionary<string, ImportInfo>();
 
             // find modules matching the given name. this will include submodules
             var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
@@ -82,7 +82,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                     continue;
                 }
 
-                moduleFullNameMap[moduleFullName] = new ImportInfo(moduleImported: false, memberImported: false, module);
+                importFullNameMap[moduleFullName] = new ImportInfo(moduleImported: false, memberImported: false, module);
             }
 
             // find members matching the given name from module already imported.
@@ -93,20 +93,79 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 }
 
                 // module name is full module name that you can use in import xxxx directly
-                CollectCandidates(moduleInfo.Reset(module), name, moduleFullNameMap, cancellationToken);
+                CollectCandidates(moduleInfo.Reset(module), name, importFullNameMap, cancellationToken);
                 Debug.Assert(moduleInfo.NameParts.Count == 1 && moduleInfo.NameParts[0] == module.Name);
             }
 
-            // TODO: improve on hueristic on how to order code fixes
-            // var groups = moduleFullNameMap.GroupBy(kv => kv.Value.Symbol.Definition, LocationInfo.FullComparer).ToDictionary(g => g.Key, g => g.ToDictionary(kv => kv.Key, kv => kv.Value));
-
             var codeActions = new List<CodeAction>();
-            foreach (var kv in moduleFullNameMap.OrderBy(n => n, ModuleNameComparer.Instance)) {
+            foreach (var fullName in OrderFullNames(importFullNameMap)) {
                 cancellationToken.ThrowIfCancellationRequested();
-                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, kv.Key, locallyInserted: false, cancellationToken));
+                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullName, locallyInserted: false, cancellationToken));
             }
 
             return codeActions;
+        }
+
+        private IEnumerable<string> OrderFullNames(Dictionary<string, ImportInfo> importFullNameMap) {
+            // use some heuristic to improve code fix ordering
+
+            // heuristic is we put entries with decl without any exports at the top
+            // such as array
+            var sourceDeclarationFullNames = importFullNameMap.GroupBy(kv => kv.Value.Symbol.Definition, LocationInfo.FullComparer)
+                                                              .Where(FilterSourceDeclarations)
+                                                              .Select(g => g.First().Key);
+
+            foreach (var fullName in OrderImportNames(sourceDeclarationFullNames)) {
+                importFullNameMap.Remove(fullName);
+                yield return fullName;
+            }
+
+            // put modules that are imported next
+            foreach (var fullName in OrderImportNames(importFullNameMap.Where(FilterImportedModules).Select(kv => kv.Key))) {
+                importFullNameMap.Remove(fullName);
+                yield return fullName;
+            }
+
+            // put members that are imported next
+            foreach (var fullName in OrderImportNames(importFullNameMap.Where(FilterImportedMembers).Select(kv => kv.Key))) {
+                importFullNameMap.Remove(fullName);
+                yield return fullName;
+            }
+
+            // put members whose module is imported next
+            foreach (var fullName in OrderImportNames(importFullNameMap.Where(FilterImportedModuleMembers).Select(kv => kv.Key))) {
+                importFullNameMap.Remove(fullName);
+                yield return fullName;
+            }
+
+            // put things left here.
+            foreach (var fullName in OrderImportNames(importFullNameMap.Select(kv => kv.Key))) {
+                yield return fullName;
+            }
+
+            List<string> OrderImportNames(IEnumerable<string> fullNames) {
+                return fullNames.OrderBy(n => n, ImportNameComparer.Instance).ToList();
+            }
+
+            bool FilterImportedMembers(KeyValuePair<string, ImportInfo> kv) => kv.Value.Symbol.MemberType != PythonMemberType.Module && kv.Value.MemberImported;
+            bool FilterImportedModuleMembers(KeyValuePair<string, ImportInfo> kv) => kv.Value.Symbol.MemberType != PythonMemberType.Module && kv.Value.ModuleImported;
+            bool FilterImportedModules(KeyValuePair<string, ImportInfo> kv) => kv.Value.Symbol.MemberType == PythonMemberType.Module && kv.Value.MemberImported;
+
+            bool FilterSourceDeclarations(IGrouping<LocationInfo, KeyValuePair<string, ImportInfo>> group) {
+                var count = 0;
+                foreach (var entry in group) {
+                    if (count++ > 0) {
+                        return false;
+                    }
+
+                    var value = entry.Value;
+                    if (value.ModuleImported || value.ModuleImported) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         }
 
         private static async Task EnsureCandidateModulesAsync(IDocumentAnalysis analysis,
@@ -306,7 +365,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
         private void CollectCandidates(ModuleInfo moduleInfo,
                                        string name,
-                                       Dictionary<string, ImportInfo> moduleFullNameMap,
+                                       Dictionary<string, ImportInfo> importFullNameMap,
                                        CancellationToken cancellationToken) {
             if (!moduleInfo.CheckCircularImports()) {
                 // bail out on circular imports
@@ -314,7 +373,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             // add non module (imported) member
-            AddNonImportedMemberWithName(moduleInfo, name, moduleFullNameMap);
+            AddNonImportedMemberWithName(moduleInfo, name, importFullNameMap);
 
             // add module (imported) members if it shows up in __all__
             //
@@ -337,10 +396,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 moduleInfo.AddName(memberName);
                 if (string.Equals(memberName, name)) {
                     // nested module are all imported
-                    AddNameParts(moduleInfo.FullName, moduleImported: true, memberImported: true, pythonModule, moduleFullNameMap);
+                    AddNameParts(moduleInfo.FullName, moduleImported: true, memberImported: true, pythonModule, importFullNameMap);
                 }
 
-                CollectCandidates(moduleInfo.With(pythonModule), name, moduleFullNameMap, cancellationToken);
+                CollectCandidates(moduleInfo.With(pythonModule), name, importFullNameMap, cancellationToken);
                 moduleInfo.PopName();
             }
 
@@ -350,7 +409,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             moduleInfo.ForgetModule();
         }
 
-        private void AddNonImportedMemberWithName(ModuleInfo moduleInfo, string name, Dictionary<string, ImportInfo> moduleFullNameMap) {
+        private void AddNonImportedMemberWithName(ModuleInfo moduleInfo, string name, Dictionary<string, ImportInfo> importFullNameMap) {
             // for now, skip any protected or private member
             if (name.StartsWith("_")) {
                 return;
@@ -369,7 +428,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             moduleInfo.AddName(name);
-            AddNameParts(moduleInfo.FullName, moduleInfo.ModuleImported, importedVariable != null, pythonType, moduleFullNameMap);
+            AddNameParts(moduleInfo.FullName, moduleInfo.ModuleImported, importedVariable != null, pythonType, importFullNameMap);
             moduleInfo.PopName();
         }
 
@@ -399,16 +458,12 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             return Array.Empty<string>();
         }
 
-        private class ModuleNameComparer : IComparer<KeyValuePair<string, ImportInfo>> {
-            public static readonly ModuleNameComparer Instance = new ModuleNameComparer();
+        private class ImportNameComparer : IComparer<string> {
+            public static readonly ImportNameComparer Instance = new ImportNameComparer();
 
-            private ModuleNameComparer() { }
+            private ImportNameComparer() { }
 
-            public int Compare(KeyValuePair<string, ImportInfo> x, KeyValuePair<string, ImportInfo> y) {
-                return CompareModuleFullName(x.Key, y.Key);
-            }
-
-            private int CompareModuleFullName(string x, string y) {
+            public int Compare(string x, string y) {
                 const string underscore = "_";
 
                 // move "_" to back of the list
