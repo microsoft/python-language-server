@@ -25,7 +25,6 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
-using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -82,6 +81,8 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
             var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
             foreach (var moduleFullName in pathResolver.GetAllImportableModulesByName(name, includeImplicit)) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var module = interpreter.ModuleResolution.GetOrLoadModule(moduleFullName);
                 if (module == null) {
                     continue;
@@ -103,6 +104,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             // filter member found based on context
+            FilterOnConext(analysis, node, importFullNameMap, cancellationToken);
 
             // this will create actual code fix with certain orders
             var codeActions = new List<CodeAction>();
@@ -112,6 +114,29 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             return codeActions;
+        }
+
+        private void FilterOnConext(IDocumentAnalysis analysis, Node node, Dictionary<string, ImportInfo> importFullNameMap, CancellationToken cancellationToken) {
+            var ancestors = GetAncestorsOrThis(analysis.Ast.Body, node, cancellationToken);
+            var index = ancestors.LastIndexOf(node);
+            if (index <= 0) {
+                // nothing to filter on
+                return;
+            }
+
+            var parent = ancestors[index - 1];
+            if (!(parent is CallExpression)) {
+                // nothing to filter on
+                return;
+            }
+
+            // do simple filtering
+            // remove all modules from candidates
+            foreach (var kv in importFullNameMap.ToList()) {
+                if (kv.Value.Symbol.MemberType == PythonMemberType.Module) {
+                    importFullNameMap.Remove(kv.Key);
+                }
+            }
         }
 
         private IEnumerable<string> OrderFullNames(Dictionary<string, ImportInfo> importFullNameMap) {
@@ -201,6 +226,8 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
             var modules = ImmutableArray<IPythonModule>.Empty;
             foreach (var moduleName in symbolsWithName.Select(s => s.DocumentPath).Distinct().Select(p => pathResolver.GetModuleNameByPath(p))) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var module = analysis.Document.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
                 if (module.Analysis is EmptyAnalysis) {
                     // once module is analyzed, this analysis result will be kept in memory
@@ -335,7 +362,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return (analysis.Ast.Body, string.Empty);
             }
 
-            var candidate = GetParents(analysis.Ast.Body, node, cancellationToken).Where(p => p is FunctionDefinition).LastOrDefault();
+            var candidate = GetAncestorsOrThis(analysis.Ast.Body, node, cancellationToken).Where(p => p is FunctionDefinition).LastOrDefault();
 
             // for now, only stop at FunctionDefinition. 
             // we can expand it to more scope if we want but this seems what other tool also provide as well.
@@ -358,7 +385,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             return new string(' ', firstToken.GetStart(ast).Column - 1);
         }
 
-        private List<Node> GetParents(Node root, Node node, CancellationToken cancellationToken) {
+        private List<Node> GetAncestorsOrThis(Node root, Node node, CancellationToken cancellationToken) {
             var parentChain = new List<Node>();
 
             // there seems no way to go up the parent chain. always has to go down from the top

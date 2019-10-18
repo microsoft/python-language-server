@@ -310,6 +310,25 @@ import socket
             insertEdit.range.Should().Be(spans["insertionSpan"].First().ToSourceSpan(analysis.Ast));
         }
 
+        [TestMethod, Priority(0)]
+        public async Task ContextBasedSuggestion() {
+            var markup =
+                @"from os import path
+{|insertionSpan:|}
+{|diagnostic:socket|}()";
+
+            var (analysis, codeActions, insertionSpan) =
+                await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+
+            codeActions.Should().NotContain(c => c.title == "import socket");
+
+            var title = "from socket import socket";
+            var newText = "from socket import socket" + Environment.NewLine;
+
+            var codeAction = codeActions.Single(c => c.title == title);
+            TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
+        }
+
         private async Task TestCodeActionAsync(string markup, string title, string newText, bool enableIndexManager = false) {
             var (analysis, codeActions, insertionSpan) =
                 await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics, enableIndexManager);
