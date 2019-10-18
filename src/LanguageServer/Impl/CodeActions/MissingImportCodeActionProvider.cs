@@ -60,10 +60,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             ErrorCodes.UndefinedVariable, ErrorCodes.VariableNotDefinedGlobally, ErrorCodes.VariableNotDefinedNonLocal);
 
         public async Task<IEnumerable<CodeAction>> GetCodeActionAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
-            // * TODO * for now, complete. since I don't know what each option mean. 
             var finder = new ExpressionFinder(analysis.Ast, FindExpressionOptions.Complete);
-
-            // * TODO * need to check whether it is expected node kind or add code context check to verify it is a place where module/type can appear
             var node = finder.GetExpression(diagnostic.SourceSpan);
             if (!(node is NameExpression)) {
                 return Enumerable.Empty<CodeAction>();
@@ -77,12 +74,11 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return Enumerable.Empty<CodeAction>();
             }
 
-            // find path to module that might have symbols for us and load them
-            await EnsureCandidateModulesAsync(analysis, name, cancellationToken);
+            await EnsureCandidateModulesLoadedAsync(analysis, name, cancellationToken);
 
             var importFullNameMap = new Dictionary<string, ImportInfo>();
 
-            // find modules matching the given name. this will include submodules
+            // find installed modules matching the given name. this will include submodules
             var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
             var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
             foreach (var moduleFullName in pathResolver.GetAllImportableModulesByName(name, includeImplicit)) {
@@ -94,7 +90,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 importFullNameMap[moduleFullName] = new ImportInfo(moduleImported: false, memberImported: false, module);
             }
 
-            // find members matching the given name from module already imported.
+            // find members matching the given name from modules already loaded.
             var moduleInfo = new ModuleInfo(module: null);
             foreach (var module in interpreter.ModuleResolution.GetImportedModules(cancellationToken)) {
                 if (module.ModuleType == ModuleType.Unresolved) {
@@ -106,6 +102,9 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 Debug.Assert(moduleInfo.NameParts.Count == 1 && moduleInfo.NameParts[0] == module.Name);
             }
 
+            // filter member found based on context
+
+            // this will create actual code fix with certain orders
             var codeActions = new List<CodeAction>();
             foreach (var fullName in OrderFullNames(importFullNameMap)) {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -119,7 +118,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // use some heuristic to improve code fix ordering
 
             // heuristic is we put entries with decl without any exports at the top
-            // such as array
+            // such as array. another example will be chararray. 
+            // this will make numpy chararray at the top and numpy defchararray at the bottom.
+            // if we want, we can add more info to hide intermediate ones. 
+            // for example, numpy.chararry is __all__.extended from numpy.core.chararray and etc.
+            // so we could leave only numpy.chararray and remove ones like numpy.core.chararray and etc. but for now,
+            // we show all those but in certain order so that numpy.chararray shows up top
+            // this heuristic still has issue with something like os.path.join since no one import macpath, macpath join shows up high
             var sourceDeclarationFullNames = importFullNameMap.GroupBy(kv => kv.Value.Symbol.Definition, LocationInfo.FullComparer)
                                                               .Where(FilterSourceDeclarations)
                                                               .Select(g => g.First().Key);
@@ -177,9 +182,9 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
         }
 
-        private static async Task EnsureCandidateModulesAsync(IDocumentAnalysis analysis,
-                                                              string name,
-                                                              CancellationToken cancellationToken) {
+        private static async Task EnsureCandidateModulesLoadedAsync(IDocumentAnalysis analysis,
+                                                                    string name,
+                                                                    CancellationToken cancellationToken) {
             var indexManager = analysis.ExpressionEvaluator.Services.GetService<IIndexManager>();
             if (indexManager == null) {
                 // indexing is not supported
@@ -187,6 +192,8 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             var symbolsIncludingName = await indexManager.WorkspaceSymbolsAsync(name, maxLength: int.MaxValue, includeLibraries: true, cancellationToken);
+
+            // we only consider exact matches rather than partial matches
             var symbolsWithName = symbolsIncludingName.Where(s => s.Name == name && s.Kind != Indexing.SymbolKind.Variable);
 
             var analyzer = analysis.ExpressionEvaluator.Services.GetService<IPythonAnalyzer>();
@@ -557,7 +564,9 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         [DebuggerDisplay("{Symbol.Name} {Symbol.MemberType} {ModuleImported} {MemberImported}")]
         private struct ImportInfo {
             // only one that shows up in "__all__" will be imported
+            // containing module is imported
             public readonly bool ModuleImported;
+            // containing symbol is imported
             public readonly bool MemberImported;
 
             public readonly IPythonType Symbol;
