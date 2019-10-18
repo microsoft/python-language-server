@@ -15,60 +15,34 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Python.Analysis.Specializations.Typing;
-using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal sealed class PythonSuperType : PythonType, IPythonClassType, IPythonInstance {
+    internal sealed class PythonSuperType : PythonType {
         private IReadOnlyList<IPythonType> _mro;
         public PythonSuperType(Location location, IReadOnlyList<IPythonType> mro) 
             : base("super", location, string.Empty, BuiltinTypeId.Type) {
             _mro = mro;
         }
 
-        public override IPythonInstance CreateInstance(IArgumentSet args) => this;
-
         public IPythonType Type => this;
-
-        public ClassDefinition ClassDefinition => throw new System.NotImplementedException();
-
-        public IReadOnlyList<IPythonType> Mro => throw new System.NotImplementedException();
-
-        public IReadOnlyList<IPythonType> Bases => throw new System.NotImplementedException();
-
-        public IReadOnlyDictionary<string, IPythonType> GenericParameters => throw new System.NotImplementedException();
-
-        public IPythonType DeclaringType => throw new System.NotImplementedException();
-
-        public IReadOnlyList<IGenericTypeParameter> Parameters => throw new System.NotImplementedException();
-
-        public bool IsGeneric => false;
-
-        public IMember Call(string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
-
-        public IPythonIterator GetIterator() => new EmptyIterator(DeclaringModule.Interpreter.UnknownType);
-
-        public IMember Index(IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
-
-        public IPythonType CreateSpecificType(IArgumentSet typeArguments) {
-            throw new System.NotImplementedException();
-        }
-
+        
         public override IMember GetMember(string name) {
-            foreach (var cls in Mro?.Skip(1).MaybeEnumerate()) {
+            foreach (var cls in _mro?.Skip(1).MaybeEnumerate()) {
                 var member = cls.GetMember(name);
                 if (member != null) {
                     return member;
                 }
             }
-
             return null;
         }
-        public override IEnumerable<string> GetMemberNames() {
 
+        public override IEnumerable<string> GetMemberNames() {
+            foreach (var cls in _mro?.Skip(1).MaybeEnumerate()) {
+                foreach (var name in cls.GetMemberNames()) {
+                    yield return name;
+                }
+            }
         }
     }
 }
