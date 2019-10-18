@@ -92,12 +92,18 @@ namespace Microsoft.Python.Analysis.Specializations {
             return args.Count > 0 && args[0] is PythonCollection c ? c.Contents.FirstOrDefault() : null;
         }
 
-        public static IMember SuperKeyword(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
+        public static IMember Super(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
             foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
                 if (s.Node is ClassDefinition) {
                     var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
-                    var baseClassType = classType?.Mro?.Skip(1).FirstOrDefault();
-                    return baseClassType;
+
+                    if (classType?.Mro != null) {
+                        var proxySuper = new PythonSuperType(new Location(declaringModule, indexSpan), classType.Mro);
+                        return proxySuper.CreateInstance(argSet);
+                    }
+
+                    //var baseClassType = classType?.Mro?.Skip(1).FirstOrDefault();
+                    //return baseClassType;
                 }
             }
             return null;

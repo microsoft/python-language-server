@@ -163,7 +163,7 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis.SpecializeFunction("type", BuiltinsSpecializations.TypeInfo);
             Analysis.SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
 
-            Analysis.SpecializeFunction("super", BuiltinsSpecializations.SuperKeyword);
+            Analysis.SpecializeFunction("super", BuiltinsSpecializations.Super);
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
         }

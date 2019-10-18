@@ -118,12 +118,12 @@ a = A()
         public async Task SingleInheritanceSuperShouldReturnBaseClassType() {
             const string code = @"
 class Baze:
-  def base_func(self):
-    return 1234
+    def base_func(self):
+        return 1234
 
 class Derived(Baze):
-  def foo(self):
-    x = super()
+    def foo(self):
+        x = super()
 ";
 
             var analysis = await GetAnalysisAsync(code);
@@ -135,16 +135,21 @@ class Derived(Baze):
             analysis.Should().HaveClass("Derived").Which.Should().HaveMethod("foo")
                 .Which.Should().HaveVariable("x")
                 .Which.Value.Should().BeAssignableTo<IPythonClassType>()
-                .Which.Name.Should().Be("Baze");
-      
+                .Which.Name.Should().Be("super");
+
+            analysis.Should().HaveClass("Derived").Which.Should().HaveMethod("foo")
+                .Which.Should().HaveVariable("x")
+                .Which.Value.Should().HaveMemberName("base_func");
+                
+
         }
 
         [TestMethod, Priority(0)]
         public async Task SingleInheritanceSuperWithNoBaseShouldReturnObject() {
             const string code = @"
 class A():
-  def foo(self):
-    x = super()
+    def foo(self):
+        x = super()
 ";
             var analysis = await GetAnalysisAsync(code);
 
@@ -155,14 +160,14 @@ class A():
             analysis.Should().HaveClass("A").Which.Should().HaveMethod("foo")
                 .Which.Should().HaveVariable("x")
                 .Which.Value.Should().BeAssignableTo<IPythonClassType>()
-                .Which.Name.Should().Be("object");
+                .Which.Name.Should().Be("super");
         }
 
         [TestMethod, Priority(0)]
         public async Task FunctionWithNoClassCallingSuperShouldFail() {
             const string code = @"
 def foo(self):
-  x = super()
+    x = super()
 ";
 
             var analysis = await GetAnalysisAsync(code);
@@ -172,6 +177,19 @@ def foo(self):
                 .Which.Name.Should().Be("x");
         }
 
+        [TestMethod, Priority(0)]
+        public async Task FunctionAssigningIntToSuperShouldBeInt() {
+            const string code = @"
+def foo(self):
+    super = 1
+";
+
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveFunction("foo")
+                .Which.Should().HaveVariable("super")
+                .Which.Value.IsOfType(BuiltinTypeId.Int);
+        }
 
     }
 }

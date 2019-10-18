@@ -31,6 +31,7 @@ using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.Python.Parsing;
+using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -1421,6 +1422,49 @@ class B(A):
 
             result.Completions.Where(item => item.insertText == "None").Should().HaveCount(1);
         }
+
+
+
+        [TestMethod]
+        public async Task SingleInheritanceSuperCheckCompletion() {
+            const string code = @"
+class A:
+    def base_func(self):
+        return 1234
+
+class B(A):
+    def foo(self):
+        x = super()
+        x.
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var result = cs.GetCompletions(analysis, new SourceLocation(9, 9));
+
+            Console.WriteLine(result.ToString());
+        }
+
+
+        [TestMethod]
+        public async Task SingleInheritanceSuperCheckCompletion2() {
+            const string code = @"
+class A:
+    def base_func(self):
+        return 1234
+
+class B(A):
+    def foo(self):
+        super()
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var result = cs.GetCompletions(analysis, new SourceLocation(8, 6));
+
+            Console.WriteLine(result.ToString());
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task ImportDotMembers() {
