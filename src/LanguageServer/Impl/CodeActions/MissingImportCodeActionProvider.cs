@@ -71,34 +71,39 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // find path to module that might have symbols for us and load them
             await EnsureCandidateModulesAsync(analysis, name, cancellationToken);
 
-            var fullyQualifiedNames = new HashSet<string>();
+            var moduleFullNameMap = new Dictionary<string, ImportInfo>();
 
             // find modules matching the given name. this will include submodules
             var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
             var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
-            fullyQualifiedNames.UnionWith(pathResolver.GetAllImportableModulesByName(name, includeImplicit));
+            foreach (var moduleFullName in pathResolver.GetAllImportableModulesByName(name, includeImplicit)) {
+                var module = interpreter.ModuleResolution.GetOrLoadModule(moduleFullName);
+                if (module == null) {
+                    continue;
+                }
+
+                moduleFullNameMap[moduleFullName] = new ImportInfo(moduleImported: false, memberImported: false, module);
+            }
 
             // find members matching the given name from module already imported.
-            var visited = new HashSet<IPythonModule>();
-            var nameParts = new List<string>();
+            var moduleInfo = new ModuleInfo(module: null);
             foreach (var module in interpreter.ModuleResolution.GetImportedModules(cancellationToken)) {
                 if (module.ModuleType == ModuleType.Unresolved) {
                     continue;
                 }
 
                 // module name is full module name that you can use in import xxxx directly
-                nameParts.Add(module.Name);
-                CollectCandidates(module, name, visited, nameParts, fullyQualifiedNames, cancellationToken);
-                nameParts.RemoveAt(nameParts.Count - 1);
-
-                Debug.Assert(visited.Count == 0);
-                Debug.Assert(nameParts.Count == 0);
+                CollectCandidates(moduleInfo.Reset(module), name, moduleFullNameMap, cancellationToken);
+                Debug.Assert(moduleInfo.NameParts.Count == 1 && moduleInfo.NameParts[0] == module.Name);
             }
 
+            // TODO: improve on hueristic on how to order code fixes
+            // var groups = moduleFullNameMap.GroupBy(kv => kv.Value.Symbol.Definition, LocationInfo.FullComparer).ToDictionary(g => g.Key, g => g.ToDictionary(kv => kv.Key, kv => kv.Value));
+
             var codeActions = new List<CodeAction>();
-            foreach (var fullyQualifiedName in fullyQualifiedNames.OrderBy(n => n, ModuleNameComparer.Instance)) {
+            foreach (var kv in moduleFullNameMap.OrderBy(n => n, ModuleNameComparer.Instance)) {
                 cancellationToken.ThrowIfCancellationRequested();
-                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullyQualifiedName, locallyInserted: false, cancellationToken));
+                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, kv.Key, locallyInserted: false, cancellationToken));
             }
 
             return codeActions;
@@ -143,10 +148,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
         private CodeAction CreateCodeAction(IDocumentAnalysis analysis,
                                             Node node,
-                                            string fullyQualifiedName,
+                                            string moduleFullName,
                                             bool locallyInserted,
                                             CancellationToken cancellationToken) {
-            var insertionPoint = GetInsertionInfo(analysis, node, fullyQualifiedName, locallyInserted, cancellationToken);
+            var insertionPoint = GetInsertionInfo(analysis, node, moduleFullName, locallyInserted, cancellationToken);
             if (insertionPoint == null) {
                 return null;
             }
@@ -299,19 +304,17 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             return parentChain;
         }
 
-        private void CollectCandidates(IPythonModule module,
+        private void CollectCandidates(ModuleInfo moduleInfo,
                                        string name,
-                                       HashSet<IPythonModule> visited,
-                                       List<string> nameParts,
-                                       HashSet<string> fullyQualifiedNames,
+                                       Dictionary<string, ImportInfo> moduleFullNameMap,
                                        CancellationToken cancellationToken) {
-            if (module == null || !visited.Add(module)) {
+            if (!moduleInfo.CheckCircularImports()) {
                 // bail out on circular imports
                 return;
             }
 
             // add non module (imported) member
-            AddNonImportedMemberWithName(module, name, nameParts, fullyQualifiedNames);
+            AddNonImportedMemberWithName(moduleInfo, name, moduleFullNameMap);
 
             // add module (imported) members if it shows up in __all__
             //
@@ -323,54 +326,63 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // we can miss "os.path" since it won't show in the module list.
             // for these modules that are supposed to be used with indirect path (imported name of the module),
             // we need to dig down to collect those with right path.
-            foreach (var memberName in GetAllVariables(module.Analysis)) {
+            foreach (var memberName in GetAllVariables(moduleInfo.Analysis)) {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var pythonModule = module.GetMember(memberName) as IPythonModule;
+                var pythonModule = moduleInfo.Module.GetMember(memberName) as IPythonModule;
                 if (pythonModule == null) {
                     continue;
                 }
 
-                nameParts.Add(memberName);
+                moduleInfo.AddName(memberName);
                 if (string.Equals(memberName, name)) {
-                    AddNameParts(nameParts, fullyQualifiedNames);
+                    // nested module are all imported
+                    AddNameParts(moduleInfo.FullName, moduleImported: true, memberImported: true, pythonModule, moduleFullNameMap);
                 }
 
-                CollectCandidates(pythonModule, name, visited, nameParts, fullyQualifiedNames, cancellationToken);
-                nameParts.RemoveAt(nameParts.Count - 1);
+                CollectCandidates(moduleInfo.With(pythonModule), name, moduleFullNameMap, cancellationToken);
+                moduleInfo.PopName();
             }
 
             // pop this module out so we can get to this module from
             // different path. 
             // ex) A -> B -> [C] and A -> D -> [C]
-            visited.Remove(module);
+            moduleInfo.ForgetModule();
         }
 
-        private void AddNonImportedMemberWithName(IPythonModule module, string name, List<string> nameParts, HashSet<string> fullyQualifiedNames) {
+        private void AddNonImportedMemberWithName(ModuleInfo moduleInfo, string name, Dictionary<string, ImportInfo> moduleFullNameMap) {
             // for now, skip any protected or private member
             if (name.StartsWith("_")) {
                 return;
             }
 
-            var pythonType = module.GetMember<IPythonType>(name);
+            var pythonType = moduleInfo.Module.GetMember<IPythonType>(name);
             if (pythonType == null || pythonType is IPythonModule || pythonType.IsUnknown()) {
                 return;
             }
 
             // skip any imported member (non module member) unless it is explicitly on __all__
-            if (module.Analysis.GlobalScope.Imported.TryGetVariable(name, out var imported) &&
-                object.Equals(pythonType, imported.Value) &&
-                GetAllVariables(module.Analysis).All(s => !string.Equals(s, name))) {
+            if (moduleInfo.Analysis.GlobalScope.Imported.TryGetVariable(name, out var importedVariable) &&
+                object.Equals(pythonType, importedVariable.Value) &&
+                GetAllVariables(moduleInfo.Analysis).All(s => !string.Equals(s, name))) {
                 return;
             }
 
-            nameParts.Add(name);
-            AddNameParts(nameParts, fullyQualifiedNames);
-            nameParts.RemoveAt(nameParts.Count - 1);
+            moduleInfo.AddName(name);
+            AddNameParts(moduleInfo.FullName, moduleInfo.ModuleImported, importedVariable != null, pythonType, moduleFullNameMap);
+            moduleInfo.PopName();
         }
 
-        private static bool AddNameParts(List<string> nameParts, HashSet<string> fullyQualifiedNames) {
-            return fullyQualifiedNames.Add(string.Join('.', nameParts));
+        private static void AddNameParts(
+            string fullName, bool moduleImported, bool memberImported, IPythonType symbol, Dictionary<string, ImportInfo> moduleFullNameMap) {
+            // one of case this can happen is if module's fullname is "a.b.c" and module "a.b" also import module "a.b.c" as "c" making
+            // fullname same "a.b.c". in this case, we mark it as "imported" since we refer one explicily shown in "__all__" to show
+            // higher rank than others
+            if (moduleFullNameMap.TryGetValue(fullName, out var info)) {
+                moduleImported |= info.ModuleImported;
+            }
+
+            moduleFullNameMap[fullName] = new ImportInfo(moduleImported, memberImported, symbol);
         }
 
         private IEnumerable<string> GetAllVariables(IDocumentAnalysis analysis) {
@@ -387,20 +399,26 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             return Array.Empty<string>();
         }
 
-        private class ModuleNameComparer : IComparer<string> {
+        private class ModuleNameComparer : IComparer<KeyValuePair<string, ImportInfo>> {
             public static readonly ModuleNameComparer Instance = new ModuleNameComparer();
 
             private ModuleNameComparer() { }
 
-            public int Compare(string x, string y) {
+            public int Compare(KeyValuePair<string, ImportInfo> x, KeyValuePair<string, ImportInfo> y) {
+                return CompareModuleFullName(x.Key, y.Key);
+            }
+
+            private int CompareModuleFullName(string x, string y) {
+                const string underscore = "_";
+
                 // move "_" to back of the list
-                if (x.StartsWith("_") && y.StartsWith("_")) {
+                if (x.StartsWith(underscore) && y.StartsWith(underscore)) {
                     return x.CompareTo(y);
                 }
-                if (x.StartsWith("_")) {
+                if (x.StartsWith(underscore)) {
                     return 1;
                 }
-                if (y.StartsWith("_")) {
+                if (y.StartsWith(underscore)) {
                     return -1;
                 }
 
@@ -419,6 +437,64 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 InsertionText = insertionText;
                 Range = range;
                 Indentation = indentation;
+            }
+        }
+
+        private struct ModuleInfo {
+            public readonly IPythonModule Module;
+            public readonly List<string> NameParts;
+            public readonly bool ModuleImported;
+
+            private readonly HashSet<IPythonModule> _visited;
+
+            public IDocumentAnalysis Analysis => Module.Analysis;
+            public string FullName => string.Join('.', NameParts);
+
+            public ModuleInfo(IPythonModule module) :
+                this(module, new List<string>(), moduleImported: false) {
+            }
+
+            private ModuleInfo(IPythonModule module, List<string> nameParts, bool moduleImported) :
+                this() {
+                Module = module;
+                NameParts = nameParts;
+                ModuleImported = moduleImported;
+
+                _visited = new HashSet<IPythonModule>();
+            }
+
+            public bool CheckCircularImports() => Module != null && _visited.Add(Module);
+            public void ForgetModule() => _visited.Remove(Module);
+
+            public void AddName(string memberName) => NameParts.Add(memberName);
+            public void PopName() => NameParts.RemoveAt(NameParts.Count - 1);
+
+            public ModuleInfo With(IPythonModule module) {
+                return new ModuleInfo(module, NameParts, moduleImported: true);
+            }
+
+            public ModuleInfo Reset(IPythonModule module) {
+                Debug.Assert(_visited.Count == 0);
+
+                NameParts.Clear();
+                NameParts.Add(module.Name);
+
+                return new ModuleInfo(module, NameParts, moduleImported: false);
+            }
+        }
+
+        [DebuggerDisplay("{Symbol.Name} {Symbol.MemberType} {ModuleImported} {MemberImported}")]
+        private struct ImportInfo {
+            // only one that shows up in "__all__" will be imported
+            public readonly bool ModuleImported;
+            public readonly bool MemberImported;
+
+            public readonly IPythonType Symbol;
+
+            public ImportInfo(bool moduleImported, bool memberImported, IPythonType symbol) {
+                ModuleImported = moduleImported;
+                MemberImported = memberImported;
+                Symbol = symbol;
             }
         }
     }
