@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -43,6 +44,14 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         private const int ModuleLoadTimeout = 10 * 1000; // 10 seconds
 
         public static readonly ICodeActionProvider Instance = new MissingImportCodeActionProvider();
+
+        // right now, it is a static. in future, we might consider giving an option to users to customize this list
+        // also, right now, it is text based. so if module has same name, they will get same suggestion even if
+        // the module is not something user expected
+        private static readonly Dictionary<string, string> WellKnownAbbreviationMap = new Dictionary<string, string>() {
+            { "numpy", "np" },
+            { "pandas", "pd" }
+        };
 
         private MissingImportCodeActionProvider() {
         }
@@ -223,21 +232,15 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             sb.Append(insertionPoint.Value.AddBlankLine ? insertionText + Environment.NewLine : insertionText);
             sb.AppendIf(insertionPoint.Value.Range.start == insertionPoint.Value.Range.end, Environment.NewLine);
 
-            var changes = new Dictionary<Uri, TextEdit[]> {{
-                        analysis.Document.Uri,
-                        new TextEdit[] {
-                            new TextEdit() {
-                                range = insertionPoint.Value.Range,
-                                newText = sb.ToString()
-                        }}
-                }};
+            var textEdits = new List<TextEdit>();
+            textEdits.Add(new TextEdit() { range = insertionPoint.Value.Range, newText = sb.ToString() });
 
-            return new CodeAction() {
-                title = titleText,
-                edit = new WorkspaceEdit() {
-                    changes = changes
-                }
-            };
+            if (insertionPoint.Value.AbbreviationOpt != null) {
+                textEdits.Add(new TextEdit() { range = node.GetSpan(analysis.Ast), newText = insertionPoint.Value.AbbreviationOpt });
+            }
+
+            var changes = new Dictionary<Uri, TextEdit[]> { { analysis.Document.Uri, textEdits.ToArray() } };
+            return new CodeAction() { title = titleText, edit = new WorkspaceEdit() { changes = changes } };
         }
 
         private InsertionInfo? GetInsertionInfo(IDocumentAnalysis analysis,
@@ -258,10 +261,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var dotIndex = fullyQualifiedName.LastIndexOf('.');
             if (dotIndex < 0) {
                 // there can't be existing import since we have the error
+                WellKnownAbbreviationMap.TryGetValue(fullyQualifiedName, out var abbreviation);
+
                 return new InsertionInfo(addBlankLine: lastImportNode == null,
-                                         $"import {fullyQualifiedName}",
+                                         GetInsertionText(fullyQualifiedName, abbreviation),
                                          GetRange(analysis.Ast, body, lastImportNode),
-                                         indentation);
+                                         indentation,
+                                         abbreviation);
             }
 
             // see whether there is existing from * import * statement.
@@ -281,6 +287,14 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                                      $"from {fromPart} import {nameToAdd}",
                                      GetRange(analysis.Ast, body, lastImportNode),
                                      indentation);
+        }
+
+        private static string GetInsertionText(string module, string abbreviation) {
+            if (abbreviation == null) {
+                return $"import {module}";
+            }
+
+            return $"import {module} as {abbreviation}";
         }
 
         private string GetInsertionText(FromImportStatement fromImportStatement, string rootModuleName, string moduleNameToAdd) {
@@ -486,12 +500,14 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             public readonly string InsertionText;
             public readonly Range Range;
             public readonly string Indentation;
+            public readonly string AbbreviationOpt;
 
-            public InsertionInfo(bool addBlankLine, string insertionText, Range range, string indentation) {
+            public InsertionInfo(bool addBlankLine, string insertionText, Range range, string indentation, string abbreviationOpt = null) {
                 AddBlankLine = addBlankLine;
                 InsertionText = insertionText;
                 Range = range;
                 Indentation = indentation;
+                AbbreviationOpt = abbreviationOpt;
             }
         }
 

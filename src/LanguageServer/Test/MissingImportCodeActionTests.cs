@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Services;
@@ -279,6 +280,34 @@ import socket
                 title: "from os import path",
                 newText: "from os import path" + Environment.NewLine + Environment.NewLine,
                 enableIndexManager: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SuggestAbbreviationForKnownModule() {
+            MarkupUtils.GetNamedSpans(@"{|insertionSpan:|}{|diagnostic:pandas|}", out var code, out var spans);
+
+            // get main analysis and add mock pandas module
+            var analysis = await GetAnalysisAsync(code);
+            await GetAnalysisAsync("", analysis.ExpressionEvaluator.Services, modulePath: TestData.GetTestSpecificPath("pandas.py"));
+
+            // calculate actions
+            var diagnostics = GetDiagnostics(analysis, spans["diagnostic"].First().ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+
+            var docTable = analysis.ExpressionEvaluator.Services.GetService<IRunningDocumentTable>();
+
+            // verify results
+            var codeAction = codeActions.Single(c => c.title == "import pandas as pd");
+            codeAction.edit.changes.Should().HaveCount(1);
+
+            var edits = codeAction.edit.changes[analysis.Document.Uri];
+            edits.Should().HaveCount(2);
+
+            var invocationEdit = edits.Single(e => e.newText == "pd");
+            invocationEdit.range.Should().Be(spans["diagnostic"].First().ToSourceSpan(analysis.Ast));
+
+            var insertEdit = edits.Single(e => e.newText == "import pandas as pd" + Environment.NewLine + Environment.NewLine);
+            insertEdit.range.Should().Be(spans["insertionSpan"].First().ToSourceSpan(analysis.Ast));
         }
 
         private async Task TestCodeActionAsync(string markup, string title, string newText, bool enableIndexManager = false) {
