@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Analyzer.Expressions;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Modules;
@@ -92,7 +93,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             // find members matching the given name from modules already loaded.
-            var moduleInfo = new ModuleInfo(module: null);
+            var moduleInfo = new ModuleInfo(analysis);
             foreach (var module in interpreter.ModuleResolution.GetImportedModules(cancellationToken)) {
                 if (module.ModuleType == ModuleType.Unresolved) {
                     continue;
@@ -440,6 +441,18 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                     continue;
                 }
 
+                // make sure we dig down modules only if we can use it from imports
+                var result = AstUtilities.FindImports(
+                    moduleInfo.CurrentFileAnalysis.Document.Interpreter.ModuleResolution.CurrentPathResolver,
+                    moduleInfo.CurrentFileAnalysis.Document.FilePath,
+                    GetRootNames($"{moduleInfo.FullName}.{memberName}"),
+                    dotCount: 0,
+                    forceAbsolute: true);
+
+                if (result is ImportNotFound) {
+                    continue;
+                }
+
                 moduleInfo.AddName(memberName);
                 if (string.Equals(memberName, name)) {
                     // nested module are all imported
@@ -454,6 +467,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // different path. 
             // ex) A -> B -> [C] and A -> D -> [C]
             moduleInfo.ForgetModule();
+        }
+
+        private IEnumerable<string> GetRootNames(string fullName) {
+            return fullName.Split('.');
         }
 
         private void AddNonImportedMemberWithName(ModuleInfo moduleInfo, string name, Dictionary<string, ImportInfo> importFullNameMap) {
@@ -545,6 +562,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private struct ModuleInfo {
+            public readonly IDocumentAnalysis CurrentFileAnalysis;
             public readonly IPythonModule Module;
             public readonly List<string> NameParts;
             public readonly bool ModuleImported;
@@ -554,12 +572,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             public IDocumentAnalysis Analysis => Module.Analysis;
             public string FullName => string.Join('.', NameParts);
 
-            public ModuleInfo(IPythonModule module) :
-                this(module, new List<string>(), moduleImported: false) {
+            public ModuleInfo(IDocumentAnalysis document) :
+                this(document, module: null, new List<string>(), moduleImported: false) {
             }
 
-            private ModuleInfo(IPythonModule module, List<string> nameParts, bool moduleImported) :
+            private ModuleInfo(IDocumentAnalysis document, IPythonModule module, List<string> nameParts, bool moduleImported) :
                 this() {
+                CurrentFileAnalysis = document;
                 Module = module;
                 NameParts = nameParts;
                 ModuleImported = moduleImported;
@@ -574,7 +593,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             public void PopName() => NameParts.RemoveAt(NameParts.Count - 1);
 
             public ModuleInfo With(IPythonModule module) {
-                return new ModuleInfo(module, NameParts, moduleImported: true);
+                return new ModuleInfo(CurrentFileAnalysis, module, NameParts, moduleImported: true);
             }
 
             public ModuleInfo Reset(IPythonModule module) {
@@ -583,7 +602,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 NameParts.Clear();
                 NameParts.Add(module.Name);
 
-                return new ModuleInfo(module, NameParts, moduleImported: false);
+                return new ModuleInfo(CurrentFileAnalysis, module, NameParts, moduleImported: false);
             }
         }
 
