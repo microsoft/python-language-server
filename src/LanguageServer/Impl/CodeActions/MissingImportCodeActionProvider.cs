@@ -103,8 +103,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 Debug.Assert(moduleInfo.NameParts.Count == 1 && moduleInfo.NameParts[0] == module.Name);
             }
 
-            // filter member found based on context
-            FilterOnConext(analysis, node, importFullNameMap, cancellationToken);
+            FilterCandidatesBasedOnContext(analysis, node, importFullNameMap, cancellationToken);
 
             // this will create actual code fix with certain orders
             var codeActions = new List<CodeAction>();
@@ -116,7 +115,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             return codeActions;
         }
 
-        private void FilterOnConext(IDocumentAnalysis analysis, Node node, Dictionary<string, ImportInfo> importFullNameMap, CancellationToken cancellationToken) {
+        private void FilterCandidatesBasedOnContext(IDocumentAnalysis analysis, Node node, Dictionary<string, ImportInfo> importFullNameMap, CancellationToken cancellationToken) {
             var ancestors = GetAncestorsOrThis(analysis.Ast.Body, node, cancellationToken);
             var index = ancestors.LastIndexOf(node);
             if (index <= 0) {
