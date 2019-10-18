@@ -74,7 +74,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(ClassDefinition cd) {
-            if (!IsDeprecated(cd) && !string.IsNullOrEmpty(cd.NameExpression?.Name)) {
+            if (!IsDeprecated(cd) &&
+                !string.IsNullOrEmpty(cd.NameExpression?.Name) &&
+                _typeMap.ContainsKey(cd)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(cd);
