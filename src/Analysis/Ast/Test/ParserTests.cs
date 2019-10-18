@@ -13,14 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
-using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Tests;
-using Microsoft.Python.Tests.Utilities.FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
 
@@ -47,6 +45,72 @@ def testGlobal(self):
             var analysis = await GetAnalysisAsync(code);
             var diag = analysis.Document.GetParseErrors().ToArray();
             diag.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportStarInNestedFunction() {
+            const string code = @"
+def test():
+    def test2():
+        from random import *
+        print(randint(1, 10))
+    test2()
+    print('hi')
+test()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var diag = analysis.Document.GetParseErrors().ToArray();
+            diag.Should().HaveCount(2);
+            diag[0].Message.Should().Be("import * only allowed at module level");
+            diag[0].Severity.Should().Be(Severity.Error);
+            diag[0].SourceSpan.Should().Be(4, 28, 4, 29);
+
+            diag[1].Message.Should().Be("import * is not allowed in function 'test2' because it is a nested function");
+            diag[1].Severity.Should().Be(Severity.Error);
+            diag[1].SourceSpan.Should().Be(3, 5, 5, 30);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportStarInNestedFunctionWithFreeVariables() {
+            const string code = @"
+def test():
+    from random import *
+    def test2(a, b):
+        print(randint(1, 10))
+    test2(1, 2)
+    print('hi')
+
+test()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var diag = analysis.Document.GetParseErrors().ToArray();
+            diag.Should().HaveCount(2);
+            diag[0].Message.Should().Be("import * only allowed at module level");
+            diag[0].Severity.Should().Be(Severity.Error);
+            diag[0].SourceSpan.Should().Be(3, 24, 3, 25);
+
+            diag[1].Message.Should().Be("import * is not allowed in function 'test' because it contains a nested function with free variables");
+            diag[1].Severity.Should().Be(Severity.Error);
+            diag[1].SourceSpan.Should().Be(2, 1, 7, 16);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task UnqualifiedExecContainsNestedFreeVariables() {
+            const string code = @"
+def func():
+    exec 'print ""hi from func""'
+    def subfunction():
+        return True
+
+func()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            var diag = analysis.Document.GetParseErrors().ToArray();
+            diag.Should().HaveCount(1);
+
+            diag[0].Message.Should().Be("unqualified exec is not allowed in function 'func' because it contains a nested function with free variables");
+            diag[0].Severity.Should().Be(Severity.Error);
+            diag[0].SourceSpan.Should().Be(2, 1, 5, 20);
         }
 
         [TestMethod, Priority(0)]
