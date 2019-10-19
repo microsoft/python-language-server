@@ -34,6 +34,7 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
@@ -107,10 +108,11 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             FilterCandidatesBasedOnContext(analysis, node, importFullNameMap, cancellationToken);
 
             // this will create actual code fix with certain orders
+            var diagnostics = new[] { diagnostic.ToDiagnostic() };
             var codeActions = new List<CodeAction>();
             foreach (var fullName in OrderFullNames(importFullNameMap)) {
                 cancellationToken.ThrowIfCancellationRequested();
-                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullName, locallyInserted: false, cancellationToken));
+                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullName, diagnostics, locallyInserted: false, cancellationToken));
             }
 
             return codeActions;
@@ -251,6 +253,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         private CodeAction CreateCodeAction(IDocumentAnalysis analysis,
                                             Node node,
                                             string moduleFullName,
+                                            Diagnostic[] diagnostics,
                                             bool locallyInserted,
                                             CancellationToken cancellationToken) {
             var insertionPoint = GetInsertionInfo(analysis, node, moduleFullName, locallyInserted, cancellationToken);
@@ -274,7 +277,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             var changes = new Dictionary<Uri, TextEdit[]> { { analysis.Document.Uri, textEdits.ToArray() } };
-            return new CodeAction() { title = titleText, edit = new WorkspaceEdit() { changes = changes } };
+            return new CodeAction() { title = titleText, kind = CodeActionKind.QuickFix, diagnostics = diagnostics, edit = new WorkspaceEdit() { changes = changes } };
         }
 
         private InsertionInfo? GetInsertionInfo(IDocumentAnalysis analysis,

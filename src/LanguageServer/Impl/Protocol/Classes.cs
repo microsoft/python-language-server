@@ -363,7 +363,32 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public DefinitionCapabilities definition;
 
         [Serializable]
-        public sealed class CodeActionCapabilities { public bool dynamicRegistration; }
+        public sealed class CodeActionCapabilities {
+            public bool dynamicRegistration;
+            //    
+            // The client support code action literals as a valid
+            // response of the `textDocument/codeAction` request.
+            // 
+            // Since 3.8.0
+            // 
+            public class CodeActionLiteralSupport {
+                // 
+                // The code action kind is support with the following value
+                // set.
+                // 
+                public class CodeActionKind {
+                    // 
+                    // The code action kind values the client supports. When this
+                    // property exists the client also guarantees that it will
+                    // handle values outside its set gracefully and falls back
+                    // to a default value when unknown.
+                    // 
+                    public string[] valueSet;
+                }
+                public CodeActionKind codeActionKind;
+            }
+            public CodeActionLiteralSupport codeActionLiteralSupport;
+        }
         public CodeActionCapabilities codeAction;
 
         [Serializable]
@@ -413,6 +438,17 @@ namespace Microsoft.Python.LanguageServer.Protocol {
     }
 
     [Serializable]
+    public sealed class CodeActionOptions {
+        // 
+        // CodeActionKinds that this server may return.
+        // 
+        // The list of kinds may be generic, such as `CodeActionKind.Refactor`, or the server
+        // may list out every specific kind they provide.
+        // 
+        public string[] codeActionKinds;
+    }
+
+    [Serializable]
     public sealed class DocumentOnTypeFormattingOptions {
         public string firstTriggerCharacter;
         public string[] moreTriggerCharacter;
@@ -456,7 +492,7 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         public bool documentHighlightProvider;
         public bool documentSymbolProvider;
         public bool workspaceSymbolProvider;
-        public bool codeActionProvider;
+        public CodeActionOptions codeActionProvider;
         public CodeLensOptions codeLensProvider;
         public bool documentFormattingProvider;
         public bool documentRangeFormattingProvider;
@@ -753,6 +789,16 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         // Summary:
         //     Gets or sets the human readable title for this code action.
         public string title;
+        // 
+        // The kind of the code action.
+        // 
+        // Used to filter code actions.
+        // 
+        public string kind;
+        // 
+        // The diagnostics that this code action resolves.
+        // 
+        public Diagnostic[] diagnostics;
         //
         // Summary:
         //     Gets or sets the workspace edit that this code action performs.

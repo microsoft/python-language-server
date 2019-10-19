@@ -189,7 +189,17 @@ namespace Microsoft.Python.LanguageServer.Protocol {
 
     [Serializable]
     public sealed class CodeActionContext {
+        // 
+	    // An array of diagnostics.
+	    // 
         public Diagnostic[] diagnostics;
+        // 
+	    // Requested kind of actions to return.
+	    // 
+	    // Actions not of this kind are filtered out by the client before being shown. So servers
+	    // can omit computing them.
+	    // 
+        public string[] only;
     }
 
     [Serializable]

@@ -98,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     firstTriggerCharacter = "\n",
                     moreTriggerCharacter = new[] { ";", ":" }
                 },
-                codeActionProvider = true,
+                codeActionProvider = new CodeActionOptions() { codeActionKinds = new string[] { CodeActionKind.QuickFix } },
             }
         };
 
