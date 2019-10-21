@@ -115,10 +115,8 @@ namespace Microsoft.Python.Analysis.Caching {
 
             for (var retries = 50; retries > 0; --retries) {
                 try {
-                    lock (_lock) {
-                        var dbPath = FindDatabaseFile(moduleName, filePath);
-                        return !string.IsNullOrEmpty(dbPath);
-                    }
+                    var dbPath = FindDatabaseFile(moduleName, filePath);
+                    return !string.IsNullOrEmpty(dbPath);
                 } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
                     Thread.Sleep(10);
                 }
