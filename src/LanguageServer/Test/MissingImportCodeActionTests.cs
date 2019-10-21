@@ -329,6 +329,16 @@ import socket
             TestCodeAction(analysis.Document.Uri, codeAction, title, insertionSpan, newText);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task ValidToBeUsedInImport() {
+            await TestCodeActionAsync(
+                @"from os import path
+{|insertionSpan:|}
+{|diagnostic:join|}",
+                title: "from os.path import join",
+                newText: "from os.path import join" + Environment.NewLine);
+        }
+
         private async Task TestCodeActionAsync(string markup, string title, string newText, bool enableIndexManager = false) {
             var (analysis, codeActions, insertionSpan) =
                 await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics, enableIndexManager);

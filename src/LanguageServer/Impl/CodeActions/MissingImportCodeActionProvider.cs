@@ -444,11 +444,21 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                     continue;
                 }
 
+                var fullName = $"{moduleInfo.FullName}.{memberName}";
+                if (string.Equals(memberName, name)) {
+                    // nested module are all imported
+                    AddNameParts(fullName, moduleImported: true, memberImported: true, pythonModule, importFullNameMap);
+                }
+
                 // make sure we dig down modules only if we can use it from imports
+                // for example, user can do "from numpy import char" to import char [defchararray] module
+                // but user can not do "from numpy.char import x" since it is not one of known modules to us.
+                // in contrast, users can do "from os import path" to import path [ntpath] module
+                // but also can do "from os.path import x" since "os.path" is one of known moudles to us.
                 var result = AstUtilities.FindImports(
                     moduleInfo.CurrentFileAnalysis.Document.Interpreter.ModuleResolution.CurrentPathResolver,
                     moduleInfo.CurrentFileAnalysis.Document.FilePath,
-                    GetRootNames($"{moduleInfo.FullName}.{memberName}"),
+                    GetRootNames(fullName),
                     dotCount: 0,
                     forceAbsolute: true);
 
@@ -457,11 +467,6 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 }
 
                 moduleInfo.AddName(memberName);
-                if (string.Equals(memberName, name)) {
-                    // nested module are all imported
-                    AddNameParts(moduleInfo.FullName, moduleImported: true, memberImported: true, pythonModule, importFullNameMap);
-                }
-
                 CollectCandidates(moduleInfo.With(pythonModule), name, importFullNameMap, cancellationToken);
                 moduleInfo.PopName();
             }
