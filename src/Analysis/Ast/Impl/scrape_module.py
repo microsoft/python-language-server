@@ -309,6 +309,9 @@ class Signature(object):
             # We have a property
             self.decorators = '@property',
             self.fullsig = self.name + "(" + ", ".join(self._defaults) + ")"
+
+        if scope_alias == "__Object__" and name == "__init__":
+            self.fullsig = "__init__(self)"
         
         self.fullsig = (
             self.fullsig or
