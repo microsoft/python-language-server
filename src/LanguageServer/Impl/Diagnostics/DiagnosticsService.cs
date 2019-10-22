@@ -63,7 +63,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private readonly DisposableBag _disposables = DisposableBag.Create<DiagnosticsService>();
         private readonly IServiceContainer _services;
         private readonly IClientApplication _clientApp;
-        private readonly ImmutableArray<DiagnosticTag> _supportedDiagnosticTags;
+        private readonly HashSet<DiagnosticTag> _supportedDiagnosticTags;
 
         private readonly object _lock = new object();
 
@@ -76,7 +76,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         public DiagnosticsService(IServiceContainer services, DiagnosticTag[] supportedDiagnosticTags = null) {
             _services = services;
             _clientApp = services.GetService<IClientApplication>();
-            _supportedDiagnosticTags = supportedDiagnosticTags?.ToImmutableArray() ?? ImmutableArray<DiagnosticTag>.Empty;
+            _supportedDiagnosticTags = new HashSet<DiagnosticTag>(supportedDiagnosticTags ?? Array.Empty<DiagnosticTag>());
 
             var idleTimeService = services.GetService<IIdleTimeService>();
             if (idleTimeService != null) {
@@ -175,7 +175,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             }
         }
 
-        private static Diagnostic ToDiagnostic(DiagnosticsEntry e) {
+        private Diagnostic ToDiagnostic(DiagnosticsEntry e) {
             DiagnosticSeverity s;
             switch (e.Severity) {
                 case Severity.Warning:
@@ -198,7 +198,16 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                 source = "Python",
                 code = e.ErrorCode,
                 message = e.Message,
+                tags = ToDiagnosticTag(e.Tags, _supportedDiagnosticTags)
             };
+        }
+
+        private DiagnosticTag[] ToDiagnosticTag(DiagnosticsEntry.DiagnosticTags[] tags, HashSet<DiagnosticTag> supportedDiagnosticTags) {
+            if (tags == null || tags.Length == 0) {
+                return Array.Empty<DiagnosticTag>();
+            }
+
+            return tags.Select(t => (DiagnosticTag)(int)t).Where(t => supportedDiagnosticTags.Contains(t)).ToArray();
         }
 
         private IEnumerable<DiagnosticsEntry> FilterBySeverityMap(DocumentDiagnostics d)
