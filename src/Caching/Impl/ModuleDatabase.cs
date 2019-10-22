@@ -33,7 +33,8 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
         private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
-        private readonly object _lock = new object();
+        private readonly object _depLock = new object();
+        private readonly object _writeLock = new object();
 
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
@@ -64,7 +65,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 return false;
             }
 
-            lock (_lock) {
+            lock (_depLock) {
                 if (_dependencies.TryGetValue(module.Name, out dp)) {
                     return true;
                 }
@@ -90,7 +91,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 return false;
             }
 
-            lock (_lock) {
+            lock (_depLock) {
                 if (FindModuleModel(module.Name, module.FilePath, out var model)) {
                     gs = new RestoredGlobalScope(model, module);
                 }
@@ -125,7 +126,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public void Clear() {
-            lock (_lock) {
+            lock (_depLock) {
                 _dependencies.Clear();
             }
         }
@@ -144,7 +145,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             Exception ex = null;
             for (var retries = 50; retries > 0; --retries) {
-                lock (_lock) {
+                lock (_writeLock) {
                     cancellationToken.ThrowIfCancellationRequested();
                     try {
                         if (!_fs.DirectoryExists(CacheFolder)) {
