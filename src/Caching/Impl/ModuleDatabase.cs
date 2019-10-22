@@ -124,12 +124,6 @@ namespace Microsoft.Python.Analysis.Caching {
             return false;
         }
 
-        public void Clear() {
-            lock (_lock) {
-                _dependencies.Clear();
-            }
-        }
-
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
             var cachingLevel = GetCachingLevel();
             if (cachingLevel == AnalysisCachingLevel.None) {
