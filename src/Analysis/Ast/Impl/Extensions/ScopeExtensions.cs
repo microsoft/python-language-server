@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
@@ -115,6 +116,24 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             return child;
+        }
+
+        /// <summary>
+        /// this returns __all__ contents we understood.
+        /// this is different than StartImportMemberNames since that only returns results when
+        /// all entries are known. this returns whatever we understood even if there are 
+        /// ones we couldn't understand in __all__
+        /// </summary>
+        public static IEnumerable<string> GetAllVariablesBestEffort(this IScope scope) {
+            if (scope.Variables.TryGetVariable("__all__", out var variable) &&
+                variable?.Value is IPythonCollection collection) {
+                return collection.Contents
+                    .OfType<IPythonConstant>()
+                    .Select(c => c.GetString())
+                    .Where(s => !string.IsNullOrEmpty(s));
+            }
+
+            return Enumerable.Empty<string>();
         }
 
         private static int GetLineIndent(IDocument document, int index, out bool lineIsEmpty) {

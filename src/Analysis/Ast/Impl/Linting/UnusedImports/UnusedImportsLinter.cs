@@ -15,6 +15,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -27,6 +28,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             var result = ImmutableArray<DiagnosticsEntry>.Empty;
 
             var imported = analysis.GlobalScope.Imported;
+            var allVariables = new HashSet<string>(analysis.GlobalScope.GetAllVariablesBestEffort());
 
             // * NOTE * variable declared in imported is different than same variable referenced in the code.
             //          that is because that variable is re-declared in another variable collection
@@ -35,6 +37,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             var variableDeclared = analysis.GlobalScope.Variables;
             foreach (var name in imported.Names) {
                 if (!imported.TryGetVariable(name, out var variableFromImportCollection)) {
+                    continue;
+                }
+
+                // name appeared in __all__ in considered used.
+                if (allVariables.Contains(name)) {
                     continue;
                 }
 
