@@ -191,12 +191,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
             _disposableBag.ThrowIfDisposed();
             switch (@params.settings) {
-                case ServerSettings settings: {
+                case ServerSettings settings:
                     Settings = settings;
                     _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
                     _completionSource.Options = Settings.completion;
                     break;
-                }
                 default:
                     _log?.Log(TraceEventType.Error, "change configuration notification sent unsupported settings");
                     break;

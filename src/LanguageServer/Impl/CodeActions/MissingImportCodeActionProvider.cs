@@ -63,14 +63,14 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         public async Task<IEnumerable<CodeAction>> GetCodeActionAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
             var finder = new ExpressionFinder(analysis.Ast, FindExpressionOptions.Complete);
             var node = finder.GetExpression(diagnostic.SourceSpan);
-            if (!(node is NameExpression)) {
+            if (!(node is NameExpression nex)) {
                 return Enumerable.Empty<CodeAction>();
             }
 
             var interpreter = analysis.Document.Interpreter;
             var pathResolver = interpreter.ModuleResolution.CurrentPathResolver;
 
-            var name = node.ToCodeString(analysis.Ast);
+            var name = nex.Name;
             if (string.IsNullOrEmpty(name)) {
                 return Enumerable.Empty<CodeAction>();
             }
