@@ -20,6 +20,12 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonSuperType : PythonType {
         private IReadOnlyList<IPythonType> _mro;
+
+        /// <summary>
+        /// more info at https://docs.python.org/3/library/functions.html#super
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="mro">Should be a list of IPythonType and first element is skiped</param>
         public PythonSuperType(Location location, IReadOnlyList<IPythonType> mro) 
             : base("super", location, string.Empty, BuiltinTypeId.Type) {
             _mro = mro;

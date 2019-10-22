@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
@@ -94,30 +95,32 @@ namespace Microsoft.Python.Analysis.Specializations {
 
         public static IMember Super(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
             if (argSet.Arguments.Any()) {
-                //multi argument form can have 1 or 2 arguments
+                // If multiple arguments first argument is required
                 var classType = argSet.Argument<IMember>(0).GetPythonType<IPythonClassType>();
-                var objOrType = argSet.Argument<IMember>(1).GetPythonType<IPythonClassType>();
-
-                bool isInstance = objOrType.Equals(classType);
-                bool isSubClass = objOrType.Bases.Any(b => classType.Equals(b));
-                if (!isInstance &&
-                    (!isSubClass ||
-                    classType?.Mro == null)) {
+                if (classType?.Mro == null) {
                     return null;
                 }
 
-                // Trim mro 
-                var mro = classType.Mro.ToList();
-                var start = mro.FindIndex(0, i => i.Name == objOrType.Name);
-                var remainingMro = mro.GetRange(start, mro.Count() - start);
+                // second argument optional
+                bool isUnbound = argSet.Argument<IMember>(1) == null;
+                if (isUnbound) {
+                    return CreateSuper(argSet, classType.Mro);
+                } else {
+                    // Second argument can be either an object instance or a class which are both IPythonType
+                    IPythonType objOrType = null;
+                    objOrType = argSet.Argument<IMember>(1).GetPythonType();
+                    bool isInstance = objOrType?.Equals(classType) ?? false;
 
-                var nextClassInLine = remainingMro.FirstOrDefault();
-                if (nextClassInLine != null) {
-                    var location = new Location(nextClassInLine.Location.Module, nextClassInLine.Location.IndexSpan);
-                    var proxySuper = new PythonSuperType(location, remainingMro);
-                    return proxySuper.CreateInstance(argSet);
+                    if (!isInstance) {
+                        var argAsType = argSet.Argument<IMember>(1).GetPythonType<IPythonClassType>();
+                        bool isSubClass = classType?.Bases.Any(b => argAsType.Equals(b)) ?? false;
+                        if (isSubClass) {
+                            objOrType = argAsType as IPythonType;
+                        }
+                    }
+                    
+                    return (objOrType != null) ? CreateSuper(argSet, classType.Mro, newStartType: objOrType) : null;
                 }
-                return null;
             } else {
                 //Zero argument form only works inside a class definition
                 foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
@@ -125,14 +128,41 @@ namespace Microsoft.Python.Analysis.Specializations {
                         var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
 
                         if (classType?.Mro != null) {
-                            var nextClassInLine = classType.Mro?.Skip(1).FirstOrDefault();
-                            var location = new Location(nextClassInLine.Location.Module, nextClassInLine.Location.IndexSpan);
-                            var proxySuper = new PythonSuperType(location, classType.Mro);
-                            return proxySuper.CreateInstance(argSet);
+                            return CreateSuper(argSet, classType.Mro);
                         }
                     }
                 }
             }
+            return null;
+        }
+
+        private static IMember CreateSuper(IArgumentSet argSet, IReadOnlyList<IPythonType> callerMro, IPythonType newStartType = null) {
+            if (!callerMro.Any()) {
+                return null;
+            }
+
+            // common case super with no params just reuse the caller's readonly mro
+            IReadOnlyList<IPythonType> mro = callerMro;
+            
+            // skip doing work if the newStartType is the first element in the callers mro
+            if (newStartType != null &&
+                !newStartType.Equals(callerMro.FirstOrDefault())) {
+                var mroList = callerMro.ToList();
+                var start = mroList.FindIndex(0, t =>  t.Equals(newStartType));
+                if (start >= 0) {
+                    mro = mroList.GetRange(start, mro.Count() - start).ToArray();
+                } else {
+                    return null;  // newStartType wasn't valid
+                }
+            }
+            
+            if (mro.Any()) {
+                var nextClassInLine = mro.FirstOrDefault();
+                var location = new Location(nextClassInLine.Location.Module, nextClassInLine.Location.IndexSpan);
+                var proxySuper = new PythonSuperType(location, mro);
+                return proxySuper.CreateInstance(argSet);
+            }
+
             return null;
         }
 
