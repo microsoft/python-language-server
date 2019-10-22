@@ -60,7 +60,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         }
                     }
 
-                    text = $"class {cls.Name}{sig}{clsDoc}";
+                    text = $"{cls.Name}{sig}{clsDoc}";
                     break;
 
                 case IPythonModule mod:
