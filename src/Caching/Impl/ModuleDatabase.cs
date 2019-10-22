@@ -144,24 +144,26 @@ namespace Microsoft.Python.Analysis.Caching {
 
             Exception ex = null;
             for (var retries = 50; retries > 0; --retries) {
-                cancellationToken.ThrowIfCancellationRequested();
-                try {
-                    if (!_fs.DirectoryExists(CacheFolder)) {
-                        _fs.CreateDirectory(CacheFolder);
-                    }
-
+                lock (_lock) {
                     cancellationToken.ThrowIfCancellationRequested();
-                    using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
-                        var modules = db.GetCollection<ModuleModel>("modules");
-                        modules.Upsert(model);
-                        return;
+                    try {
+                        if (!_fs.DirectoryExists(CacheFolder)) {
+                            _fs.CreateDirectory(CacheFolder);
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                        using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
+                            var modules = db.GetCollection<ModuleModel>("modules");
+                            modules.Upsert(model);
+                            return;
+                        }
+                    } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
+                        ex = ex1;
+                        Thread.Sleep(10);
+                    } catch (Exception ex2) {
+                        ex = ex2;
+                        break;
                     }
-                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
-                    ex = ex1;
-                    Thread.Sleep(10);
-                } catch (Exception ex2) {
-                    ex = ex2;
-                    break;
                 }
             }
 
