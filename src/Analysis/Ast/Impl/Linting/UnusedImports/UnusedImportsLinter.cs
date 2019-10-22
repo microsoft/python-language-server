@@ -20,14 +20,13 @@ using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.Collections;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UnusedImportsLinter : ILinter {
         private readonly static DiagnosticsEntry.DiagnosticTags[] tags = new[] { DiagnosticsEntry.DiagnosticTags.Unnecessary };
 
         public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services) {
-            var result = ImmutableArray<DiagnosticsEntry>.Empty;
+            var results = new List<DiagnosticsEntry>();
 
             var imported = analysis.GlobalScope.Imported;
             var allVariables = new HashSet<string>(analysis.GlobalScope.GetAllVariablesBestEffort());
@@ -50,7 +49,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 // we have variable from import statement, but we don't have any variable declared from actual
                 // usage. meaning the import is not used.
                 if (!variableDeclared.TryGetVariable(name, out var variableFromVariableCollection)) {
-                    ReportUnusedImports(variableFromImportCollection, ref result);
+                    ReportUnusedImports(variableFromImportCollection, results);
                     continue;
                 }
 
@@ -66,15 +65,15 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                     continue;
                 }
 
-                ReportUnusedImports(variableFromImportCollection, ref result);
+                ReportUnusedImports(variableFromImportCollection, results);
             }
 
-            return result;
+            return results;
         }
 
-        private static void ReportUnusedImports(IVariable variable, ref ImmutableArray<DiagnosticsEntry> result) {
+        private static void ReportUnusedImports(IVariable variable, List<DiagnosticsEntry> results) {
             var message = Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatUI(variable.Value.MemberType, variable.Name);
-            result = result.Add(new DiagnosticsEntry(
+            results.Add(new DiagnosticsEntry(
                 message,
                 variable.Definition.Span,
                 ErrorCodes.UnusedImport,
