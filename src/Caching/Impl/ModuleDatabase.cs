@@ -33,8 +33,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
         private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
-        private readonly object _depLock = new object();
-        private readonly object _writeLock = new object();
+        private readonly object _lock = new object();
 
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
@@ -65,7 +64,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 return false;
             }
 
-            lock (_depLock) {
+            lock (_lock) {
                 if (_dependencies.TryGetValue(module.Name, out dp)) {
                     return true;
                 }
@@ -91,7 +90,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 return false;
             }
 
-            lock (_depLock) {
+            lock (_lock) {
                 if (FindModuleModel(module.Name, module.FilePath, out var model)) {
                     gs = new RestoredGlobalScope(model, module);
                 }
@@ -126,7 +125,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public void Clear() {
-            lock (_depLock) {
+            lock (_lock) {
                 _dependencies.Clear();
             }
         }
@@ -145,26 +144,24 @@ namespace Microsoft.Python.Analysis.Caching {
 
             Exception ex = null;
             for (var retries = 50; retries > 0; --retries) {
-                lock (_writeLock) {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    try {
-                        if (!_fs.DirectoryExists(CacheFolder)) {
-                            _fs.CreateDirectory(CacheFolder);
-                        }
-
-                        cancellationToken.ThrowIfCancellationRequested();
-                        using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
-                            var modules = db.GetCollection<ModuleModel>("modules");
-                            modules.Upsert(model);
-                            return;
-                        }
-                    } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
-                        ex = ex1;
-                        Thread.Sleep(10);
-                    } catch (Exception ex2) {
-                        ex = ex2;
-                        break;
+                cancellationToken.ThrowIfCancellationRequested();
+                try {
+                    if (!_fs.DirectoryExists(CacheFolder)) {
+                        _fs.CreateDirectory(CacheFolder);
                     }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
+                        var modules = db.GetCollection<ModuleModel>("modules");
+                        modules.Upsert(model);
+                        return;
+                    }
+                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
+                    ex = ex1;
+                    Thread.Sleep(10);
+                } catch (Exception ex2) {
+                    ex = ex2;
+                    break;
                 }
             }
 
