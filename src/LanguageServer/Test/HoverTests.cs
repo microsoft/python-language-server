@@ -63,7 +63,7 @@ string = str
             hover.Should().BeNull();
 
             hover = hs.GetHover(analysis, new SourceLocation(4, 7));
-            hover.contents.value.Should().Be("C\n\nClass C is awesome");
+            hover.contents.value.Should().Be("class C\n\nClass C is awesome");
 
             hover = hs.GetHover(analysis, new SourceLocation(6, 9));
             hover.contents.value.Should().Be("C.method(a: int, b) -> float\n\nReturns a float!!!");
@@ -78,7 +78,7 @@ string = str
             hover.contents.value.Should().Be("y: int");
 
             hover = hs.GetHover(analysis, new SourceLocation(15, 2));
-            hover.contents.value.Should().StartWith("str\n\nstr(object='') -> str");
+            hover.contents.value.Should().StartWith("class str\n\nstr(object='') -> str");
         }
 
         [DataRow(false)]
@@ -93,7 +93,7 @@ datetime.datetime.now().day
             var hs = new HoverSource(new PlainTextDocumentationSource());
 
             AssertHover(hs, analysis, new SourceLocation(3, 2), "module datetime*", new SourceSpan(3, 1, 3, 9));
-            AssertHover(hs, analysis, new SourceLocation(3, 11), "datetime*", new SourceSpan(3, 9, 3, 18));
+            AssertHover(hs, analysis, new SourceLocation(3, 11), "class datetime*", new SourceSpan(3, 9, 3, 18));
             AssertHover(hs, analysis, new SourceLocation(3, 20), @"datetime.now(tz: tzinfo) -> datetime*", new SourceSpan(3, 18, 3, 22));
         }
 
@@ -136,8 +136,8 @@ class Derived(Base):
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var hs = new HoverSource(new PlainTextDocumentationSource());
-            AssertHover(hs, analysis, new SourceLocation(3, 19), "Base*", new SourceSpan(3, 18, 3, 22));
-            AssertHover(hs, analysis, new SourceLocation(8, 8), "Derived*", new SourceSpan(8, 8, 8, 12));
+            AssertHover(hs, analysis, new SourceLocation(3, 19), "class Base*", new SourceSpan(3, 18, 3, 22));
+            AssertHover(hs, analysis, new SourceLocation(8, 8), "class Derived*", new SourceSpan(8, 8, 8, 12));
         }
 
         [TestMethod, Priority(0)]
