@@ -166,6 +166,45 @@ class D(C):
         }
 
         [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromParentOtherModuleOnSuper() {
+            var otherModPath = TestData.GetTestSpecificUri("other.py");
+            var testModPath = TestData.GetTestSpecificUri("test.py");
+            const string otherModCode = @"
+class C:
+    v: int
+    def test(self):
+        pass
+";
+            const string testModCode = @"
+from other import C
+
+class D(C):
+    def hello(self):
+        super().test();
+        super().v
+";
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(otherModPath, otherModCode);
+            var testMod = rdt.OpenDocument(testModPath, testModCode);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await testMod.GetAnalysisAsync();
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(6, 17), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(3, 8, 3, 12);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(7, 18), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(2, 4, 2, 5);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task GotoModuleSource() {
             const string code = @"
 import sys

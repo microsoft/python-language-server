@@ -93,17 +93,44 @@ namespace Microsoft.Python.Analysis.Specializations {
         }
 
         public static IMember Super(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
-            foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
-                if (s.Node is ClassDefinition) {
-                    var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
+            if (argSet.Arguments.Any()) {
+                //multi argument form can have 1 or 2 arguments
+                var classType = argSet.Argument<IMember>(0).GetPythonType<IPythonClassType>();
+                var objOrType = argSet.Argument<IMember>(1).GetPythonType<IPythonClassType>();
 
-                    if (classType?.Mro != null) {
-                        var proxySuper = new PythonSuperType(new Location(declaringModule, indexSpan), classType.Mro);
-                        return proxySuper.CreateInstance(argSet);
+                bool isInstance = objOrType.Equals(classType);
+                bool isSubClass = objOrType.Bases.Any(b => classType.Equals(b));
+                if (!isInstance &&
+                    (!isSubClass ||
+                    classType?.Mro == null)) {
+                    return null;
+                }
+
+                // Trim mro 
+                var mro = classType.Mro.ToList();
+                var start = mro.FindIndex(0, i => i.Name == objOrType.Name);
+                var remainingMro = mro.GetRange(start, mro.Count() - start);
+
+                var nextClassInLine = remainingMro.FirstOrDefault();
+                if (nextClassInLine != null) {
+                    var location = new Location(nextClassInLine.Location.Module, nextClassInLine.Location.IndexSpan);
+                    var proxySuper = new PythonSuperType(location, remainingMro);
+                    return proxySuper.CreateInstance(argSet);
+                }
+                return null;
+            } else {
+                //Zero argument form only works inside a class definition
+                foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
+                    if (s.Node is ClassDefinition) {
+                        var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
+
+                        if (classType?.Mro != null) {
+                            var nextClassInLine = classType.Mro?.Skip(1).FirstOrDefault();
+                            var location = new Location(nextClassInLine.Location.Module, nextClassInLine.Location.IndexSpan);
+                            var proxySuper = new PythonSuperType(location, classType.Mro);
+                            return proxySuper.CreateInstance(argSet);
+                        }
                     }
-
-                    //var baseClassType = classType?.Mro?.Skip(1).FirstOrDefault();
-                    //return baseClassType;
                 }
             }
             return null;

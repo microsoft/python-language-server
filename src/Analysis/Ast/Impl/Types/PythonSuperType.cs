@@ -25,8 +25,6 @@ namespace Microsoft.Python.Analysis.Types {
             _mro = mro;
         }
 
-        public IPythonType Type => this;
-        
         public override IMember GetMember(string name) {
             foreach (var cls in _mro?.Skip(1).MaybeEnumerate()) {
                 var member = cls.GetMember(name);
@@ -37,13 +35,7 @@ namespace Microsoft.Python.Analysis.Types {
             return null;
         }
 
-        public override IEnumerable<string> GetMemberNames() {
-            foreach (var cls in _mro?.Skip(1).MaybeEnumerate()) {
-                foreach (var name in cls.GetMemberNames()) {
-                    yield return name;
-                }
-            }
-        }
+        public override IEnumerable<string> GetMemberNames() => (_mro?.Skip(1).MaybeEnumerate()).SelectMany(cls => cls.GetMemberNames().Select(name => name));
     }
 }
 
