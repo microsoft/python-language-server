@@ -683,7 +683,7 @@ with Test() as (test, test1):
     pass
 ";
             var ds = await LintAsync(code);
-            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
+            ds.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -701,8 +701,8 @@ class Test:
 with Test() as (test, test1):
     pass
 ";
-            var ds = await LintAsync(code);
-            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -741,8 +741,8 @@ class Test:
 with Test() as (a):
     pass
 ";
-            var ds = await LintAsync(code);
-            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -761,8 +761,8 @@ class Test:
 with Test() as [a]:
     pass
 ";
-            var ds = await LintAsync(code);
-            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -795,14 +795,14 @@ stuff = []
 from thismoduledoesnotexist import something
 something()
 ";
-            var ds = await LintAsync(code);
-            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
         }
 
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();
-            return a.LintModule(analysis.Document);
+            return a.LintModule(analysis.Document).Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).ToList();
         }
 
         private class AnalysisOptionsProvider : IAnalysisOptionsProvider {
