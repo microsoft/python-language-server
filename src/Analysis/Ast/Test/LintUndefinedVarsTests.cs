@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
@@ -28,6 +29,13 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 namespace Microsoft.Python.Analysis.Tests {
     [TestClass]
     public class LintUndefinedVarsTests : AnalysisTestBase {
+        private readonly static HashSet<string> UndefinedVarsErrorCodes =
+            new HashSet<string>() {
+                ErrorCodes.UndefinedVariable,
+                ErrorCodes.VariableNotDefinedGlobally,
+                ErrorCodes.VariableNotDefinedNonLocal,
+            };
+
         public TestContext TestContext { get; set; }
 
         [TestInitialize]
@@ -674,8 +682,8 @@ class Test:
 with Test() as (test, test1):
     pass
 ";
-            var d = await LintAsync(code);
-            d.Should().BeEmpty();
+            var ds = await LintAsync(code);
+            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -693,8 +701,8 @@ class Test:
 with Test() as (test, test1):
     pass
 ";
-            var d = await LintAsync(code);
-            d.Should().BeEmpty();
+            var ds = await LintAsync(code);
+            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -733,8 +741,8 @@ class Test:
 with Test() as (a):
     pass
 ";
-            var d = await LintAsync(code);
-            d.Should().BeEmpty();
+            var ds = await LintAsync(code);
+            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -753,8 +761,8 @@ class Test:
 with Test() as [a]:
     pass
 ";
-            var d = await LintAsync(code);
-            d.Should().BeEmpty();
+            var ds = await LintAsync(code);
+            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
         }
 
         [TestMethod, Priority(0)]
@@ -787,8 +795,8 @@ stuff = []
 from thismoduledoesnotexist import something
 something()
 ";
-            var d = await LintAsync(code);
-            d.Should().BeEmpty();
+            var ds = await LintAsync(code);
+            ds.Where(d => UndefinedVarsErrorCodes.Contains(d.ErrorCode)).Should().BeEmpty();
         }
 
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
