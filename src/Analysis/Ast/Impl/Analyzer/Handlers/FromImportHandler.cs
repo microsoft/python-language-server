@@ -40,21 +40,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             var imports = ModuleResolution.CurrentPathResolver.FindImports(Module.FilePath, node);
-            if (HandleImportSearchResult(imports, null, null, node.Root, out var variableModule)) {
-                AssignVariables(node, imports, variableModule);
-            }
+            HandleImportSearchResult(imports, null, null, node.Root, out var variableModule);
+            AssignVariables(node, imports, variableModule);
             return false;
         }
 
         private void AssignVariables(FromImportStatement node, IImportSearchResult imports, PythonVariableModule variableModule) {
-            if (variableModule == null) {
-                return;
-            }
-
             var names = node.Names;
             var asNames = node.AsNames;
 
-            if (names.Count == 1 && names[0].Name == "*") {
+            if (variableModule != null && names.Count == 1 && names[0].Name == "*") {
                 // TODO: warn this is not a good style per
                 // TODO: https://docs.python.org/3/faq/programming.html#what-are-the-best-practices-for-using-import-in-a-module
                 // TODO: warn this is invalid if not in the global scope.
@@ -94,26 +89,30 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         /// that is named the same as the variable and/or it has internal variables named same as the submodule.
         /// </summary>
         /// <example>'from a.b import c' when 'c' is both submodule of 'b' and a variable declared inside 'b'.</example>
-        /// <param name="variableModule">Source module of the variable such as 'a.b' in 'from a.b import c as d'.</param>
+        /// <param name="variableModule">Source module of the variable such as 'a.b' in 'from a.b import c as d'. May be null if the module was not found.</param>
         /// <param name="memberName">Module member name such as 'c' in 'from a.b import c as d'.</param>
         /// <param name="imports">Import search result.</param>
         /// <param name="variableName">Name of the variable to declare, such as 'd' in 'from a.b import c as d'.</param>
         /// <param name="importPosition">Position of the import statement.</param>
         /// <param name="nameLocation">Location of the variable name expression.</param>
         private void DeclareVariable(PythonVariableModule variableModule, string memberName, IImportSearchResult imports, string variableName, int importPosition, Node nameLocation) {
-            // First try imports since child modules should win, i.e. in 'from a.b import c'
-            // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
-            var value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
-            
-            // First try exported or child submodules.
-            value = value ?? variableModule.GetMember(memberName);
-            
-            // Value may be variable or submodule. If it is variable, we need it in order to add reference.
-            var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
-            value = variable?.Value?.Equals(value) == true ? variable : value;
-            
-            // If nothing is exported, variables are still accessible.
-            value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
+            IMember value = Eval.UnknownType;
+
+            if (variableModule != null) {
+                // First try imports since child modules should win, i.e. in 'from a.b import c'
+                // 'c' should be a submodule if 'b' has one, even if 'b' also declares 'c = 1'.
+                value = GetValueFromImports(variableModule, imports as IImportChildrenSource, memberName);
+
+                // First try exported or child submodules.
+                value = value ?? variableModule.GetMember(memberName);
+
+                // Value may be variable or submodule. If it is variable, we need it in order to add reference.
+                var variable = variableModule.Analysis?.GlobalScope?.Variables[memberName];
+                value = variable?.Value?.Equals(value) == true ? variable : value;
+
+                // If nothing is exported, variables are still accessible.
+                value = value ?? variableModule.Analysis?.GlobalScope?.Variables[memberName]?.Value ?? Eval.UnknownType;
+            }
             
             // Do not allow imported variables to override local declarations
             var canOverwrite = CanOverwriteVariable(variableName, importPosition, value);
