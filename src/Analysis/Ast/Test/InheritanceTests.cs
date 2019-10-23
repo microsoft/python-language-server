@@ -115,7 +115,7 @@ a = A()
         }
 
         [TestMethod, Priority(0)]
-        public async Task SingleInheritanceSuperShouldReturnBaseClassFunctions() {
+        public async Task SuperShouldReturnBaseClassFunctions() {
             const string code = @"
 class Baze:
     def base_func(self):
@@ -130,16 +130,13 @@ class Derived(Baze):
 
             // the class, for which we know parameter type initially
             analysis.Should().HaveClass("Derived").Which.Should().HaveMethod("foo")
-                .Which.Should().HaveVariable("x");
-
-            analysis.Should().HaveClass("Derived").Which.Should().HaveMethod("foo")
                 .Which.Should().HaveVariable("x")
                 .Which.Value.Should().HaveMemberName("base_func");
         }
 
 
         [TestMethod, Priority(0)]
-        public async Task SingleInheritanceSuperWithSecondParamDerivedShouldOnlyHaveBaseMembers() {
+        public async Task SuperWithSecondParamDerivedClassShouldOnlyHaveBaseMembers() {
             const string code = @"
 class Baze:
     def baze_foo(self):
@@ -155,8 +152,7 @@ x = super(Derived, d)
 ";
 
             var analysis = await GetAnalysisAsync(code);
-
-            // the class, for which we know parameter type initially
+            
             analysis.Should().HaveVariable("x")
                 .Which.Value.Should().HaveMemberName("baze_foo");
 
@@ -165,7 +161,7 @@ x = super(Derived, d)
         }
 
         [TestMethod, Priority(0)]
-        public async Task SingleInheritanceSuperWithSecondParamParentShouldOnlyRetunGrandparent() {
+        public async Task SuperWithSecondParamParentShouldOnlyReturnGrandparentMembers() {
             const string code = @"
 class A:
     def a_foo(self):
@@ -181,23 +177,75 @@ class C(B):
 
 b = B()
 
-x = super(C, b) # super starts its search after 'b'
+x = super(C, b) # super starts its search after 'b' in the mro
 ";
-
             var analysis = await GetAnalysisAsync(code);
 
-            analysis.Should().HaveVariable("x")
-                .Which.Value.Should().HaveMembers("a_foo");
+            analysis.Should().HaveVariable("x").Which.Value
+                .Should().HaveMembers("a_foo")
+                .And.NotHaveMembers("b_foo")
+                .And.NotHaveMembers("c_foo");
+        }
 
-            analysis.Should().HaveVariable("x")
-                .Which.Value.Should().NotHaveMembers("b_foo");
 
-            analysis.Should().HaveVariable("x")
-                .Which.Value.Should().NotHaveMembers("c_foo");
+        [TestMethod, Priority(0)]
+        public async Task SuperWithSecondParamInvalidShouldBeUnknown() {
+            const string code = @"
+class A:
+    def a_foo(self):
+        pass
+
+class B(A):
+    def b_foo(self):
+        pass
+
+x = super(B, DummyClass) # super starts its search after 'b'
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unknown);
         }
 
         [TestMethod, Priority(0)]
-        public async Task SingleInheritanceSuperWithNoBaseShouldReturnObject() {
+        public async Task SuperWithFirstParamInvalid() {
+            const string code = @"
+class A:
+    def a_foo(self):
+        pass
+
+class B(A):
+    def b_foo(self):
+        pass
+
+x = super(DummyClass, B) # super starts its search after 'b'
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Unknown);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SuperUnbounded() {
+            const string code = @"
+class A:
+    def a_foo(self):
+        pass
+
+class B(A):
+    def b_foo(self):
+        pass
+
+x = super(B) # super starts its search after 'b'
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            analysis.Should().HaveVariable("x").Which.Value
+                .Should().HaveMembers("a_foo")
+                .And.NotHaveMembers("b_foo");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SuperWithNoBaseShouldReturnObject() {
             const string code = @"
 class A():
     def foo(self):
@@ -207,10 +255,7 @@ class A():
 
             // the class, for which we know parameter type initially
             analysis.Should().HaveClass("A").Which.Should().HaveMethod("foo")
-                .Which.Should().HaveVariable("x");
-
-            analysis.Should().HaveClass("A").Which.Should().HaveMethod("foo")
-                .Which.Should().HaveVariable("x");
+                .Which.Should().HaveVariable("x").OfType(BuiltinTypeId.Type);
         }
 
         [TestMethod, Priority(0)]
@@ -242,7 +287,7 @@ def foo(self):
         }
 
         [TestMethod, Priority(0)]
-        public async Task SingleInheritanceSuperShouldReturnAllBaseClassMembers() {
+        public async Task SuperShouldReturnAllBaseClassMembers() {
             const string code = @"
 class GrandParent:
     def grand_func(self):
@@ -260,8 +305,7 @@ class Child(Parent):
             var analysis = await GetAnalysisAsync(code);
 
             var x = analysis.Should().HaveClass("Child").Which.Should().HaveMethod("child_func")
-                .Which.Should().HaveVariable("x")
-                .Which;
+                .Which.Should().HaveVariable("x").Which;
 
             x.Value.Should().HaveMemberName("grand_func");
             x.Value.Should().HaveMemberName("parent_func");

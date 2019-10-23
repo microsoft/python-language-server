@@ -94,28 +94,31 @@ namespace Microsoft.Python.Analysis.Specializations {
         }
 
         public static IMember Super(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
-            if (argSet.Arguments.Any()) {
+            var args = argSet.Values<IMember>();
+            if (args.Any()) {
                 // If multiple arguments first argument is required
-                var classType = argSet.Argument<IMember>(0).GetPythonType<IPythonClassType>();
+                var classType = args.First().GetPythonType<IPythonClassType>();
                 if (classType?.Mro == null) {
                     return null;
                 }
 
                 // second argument optional
-                bool isUnbound = argSet.Argument<IMember>(1) == null;
+                bool isUnbound = args.Count() == 1;
                 if (isUnbound) {
                     return CreateSuper(argSet, classType.Mro);
                 } else {
                     // Second argument can be either an object instance or a class which are both IPythonType
                     IPythonType objOrType = null;
-                    objOrType = argSet.Argument<IMember>(1).GetPythonType();
+                    objOrType = args[1].GetPythonType();
                     bool isInstance = objOrType?.Equals(classType) ?? false;
 
                     if (!isInstance) {
                         var argAsType = argSet.Argument<IMember>(1).GetPythonType<IPythonClassType>();
-                        bool isSubClass = classType?.Bases.Any(b => argAsType.Equals(b)) ?? false;
-                        if (isSubClass) {
-                            objOrType = argAsType as IPythonType;
+                        if (argAsType != null) {
+                            bool isSubClass = classType.Bases.Any(b => b.Equals(argAsType));
+                            if (isSubClass) {
+                                objOrType = argAsType as IPythonType;
+                            }
                         }
                     }
                     
