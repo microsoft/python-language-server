@@ -21,6 +21,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
+using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
@@ -106,24 +107,23 @@ namespace Microsoft.Python.Analysis.Specializations {
                 bool isUnbound = args.Count() == 1;
                 if (isUnbound) {
                     return CreateSuper(argSet, classType.Mro);
-                } else {
-                    // Second argument can be either an object instance or a class which are both IPythonType
-                    IPythonType objOrType = null;
-                    objOrType = args[1].GetPythonType();
-                    bool isInstance = objOrType?.Equals(classType) ?? false;
+                } 
 
-                    if (!isInstance) {
-                        var argAsType = argSet.Argument<IMember>(1).GetPythonType<IPythonClassType>();
-                        if (argAsType != null) {
-                            bool isSubClass = classType.Bases.Any(b => b.Equals(argAsType));
-                            if (isSubClass) {
-                                objOrType = argAsType as IPythonType;
-                            }
-                        }
+                // IsInstanceOf
+                IPythonType objOrType = null;
+                objOrType = args[1].GetPythonType();
+                bool isInstance = objOrType?.Equals(classType) ?? false;
+
+                // isSubClass
+                if (!isInstance) {
+                    var argAsType = args[1].GetPythonType<IPythonClassType>();
+                    if (argAsType != null) {
+                        objOrType = classType.Bases.MaybeEnumerate().FirstOrDefault(b => b.Equals(argAsType));
                     }
-                    
-                    return (objOrType != null) ? CreateSuper(argSet, classType.Mro, newStartType: objOrType) : null;
                 }
+
+                return (objOrType != null) ? CreateSuper(argSet, classType.Mro, typeToFind: objOrType) : null;
+                
             } else {
                 //Zero argument form only works inside a class definition
                 foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
@@ -139,30 +139,29 @@ namespace Microsoft.Python.Analysis.Specializations {
             return null;
         }
 
-        private static IMember CreateSuper(IArgumentSet argSet, IReadOnlyList<IPythonType> callerMro, IPythonType newStartType = null) {
-            if (!callerMro.Any()) {
+        private static IMember CreateSuper(IArgumentSet argSet, IReadOnlyList<IPythonType> callerMro, IPythonType typeToFind = null) {
+            if (callerMro.Count == 0) {
                 return null;
             }
-
-            // common case super with no params just reuse the caller's readonly mro
+            
             IReadOnlyList<IPythonType> mro = callerMro;
             
             // skip doing work if the newStartType is the first element in the callers mro
-            if (newStartType != null &&
-                !newStartType.Equals(callerMro.FirstOrDefault())) {
+            if (typeToFind != null &&
+                !typeToFind.Equals(callerMro.FirstOrDefault())) {
                 var mroList = callerMro.ToList();
-                var start = mroList.FindIndex(0, t =>  t.Equals(newStartType));
+                var start = mroList.FindIndex(0, t =>  t.Equals(typeToFind));
                 if (start >= 0) {
                     mro = mroList.GetRange(start, mro.Count() - start).ToArray();
                 } else {
                     return null;  // newStartType wasn't valid
                 }
             }
-            
-            if (mro.Any()) {
-                var nextClassInLine = mro.FirstOrDefault();
+            var nextClassInLine = mro?.FirstOrDefault();
+            if (nextClassInLine != null) {
                 var location = new Location(nextClassInLine.Location.Module, nextClassInLine.Location.IndexSpan);
-                var proxySuper = new PythonSuperType(location, mro);
+                // Skip the first element, super's search starts at the next elemement in the mro for both super() and super(cls, typeToFind)
+                var proxySuper = new PythonSuperType(location, mro.Skip(1).ToArray());
                 return proxySuper.CreateInstance(argSet);
             }
 

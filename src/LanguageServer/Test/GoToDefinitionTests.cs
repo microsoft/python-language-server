@@ -198,7 +198,7 @@ class D(C):
             reference.uri.AbsolutePath.Should().Contain("other.py");
             reference.range.Should().Be(3, 8, 3, 12);
 
-            reference = ds.FindDefinition(analysis, new SourceLocation(7, 18), out _);
+            reference = ds.FindDefinition(analysis, new SourceLocation(7, 17), out _);
             reference.Should().NotBeNull();
             reference.uri.AbsolutePath.Should().Contain("other.py");
             reference.range.Should().Be(2, 4, 2, 5);

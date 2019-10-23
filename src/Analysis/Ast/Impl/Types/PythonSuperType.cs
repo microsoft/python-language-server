@@ -18,21 +18,23 @@ using System.Linq;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types {
-    internal sealed class PythonSuperType : PythonType {
+    internal sealed class PythonSuperType : PythonType, IPythonSuperType {
         private IReadOnlyList<IPythonType> _mro;
 
         /// <summary>
         /// more info at https://docs.python.org/3/library/functions.html#super
         /// </summary>
         /// <param name="location"></param>
-        /// <param name="mro">Should be a list of IPythonType and first element is skiped</param>
+        /// <param name="mro">Should be a list of IPythonType</param>
         public PythonSuperType(Location location, IReadOnlyList<IPythonType> mro) 
             : base("super", location, string.Empty, BuiltinTypeId.Type) {
             _mro = mro;
         }
 
+        public IReadOnlyList<IPythonType> Mro => _mro;
+
         public override IMember GetMember(string name) {
-            foreach (var cls in _mro?.Skip(1).MaybeEnumerate()) {
+            foreach (var cls in _mro?.OfType<IPythonClassType>().MaybeEnumerate()) {
                 var member = cls.GetMember(name);
                 if (member != null) {
                     return member;
@@ -41,7 +43,7 @@ namespace Microsoft.Python.Analysis.Types {
             return null;
         }
 
-        public override IEnumerable<string> GetMemberNames() => (_mro?.Skip(1).MaybeEnumerate()).SelectMany(cls => cls.GetMemberNames().Select(name => name));
+        public override IEnumerable<string> GetMemberNames() => (_mro?.OfType<IPythonClassType>().MaybeEnumerate()).SelectMany(cls => cls.GetMemberNames().Select(name => name));
     }
 }
 
