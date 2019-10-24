@@ -96,33 +96,8 @@ namespace Microsoft.Python.Analysis.Specializations {
 
         public static IMember Super(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
             var args = argSet.Values<IMember>();
-            if (args.Any()) {
-                // If multiple arguments first argument is required
-                var firstCls = args.First().GetPythonType<IPythonClassType>();
-                if (firstCls == null) {
-                    return null;
-                }
 
-                // second argument optional
-                bool isUnbound = args.Count() == 1;
-                if (isUnbound) {
-                    return CreateSuper(argSet, firstCls.Mro, declaringModule, indexSpan);
-                }
-
-                IPythonClassType objOrType = null;
-                var argObj = args[1] as IPythonInstance;
-                if (argObj.IsInstanceOf(firstCls)) {
-                    objOrType = args[1].GetPythonType<IPythonClassType>();
-                } else {
-                    var type = args[1].GetPythonType<IPythonClassType>();
-                    if (type.IsSubClassOf(firstCls)) {
-                        objOrType = type;
-                    }
-                }
-                // We walk the mro of the second parameter looking for the first
-                return (objOrType != null) ? CreateSuper(argSet, objOrType.Mro, declaringModule, indexSpan, typeToFind: firstCls) : null;
-
-            } else {
+            if (args.Count() == 0) {
                 //Zero argument form only works inside a class definition
                 foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
                     if (s.Node is ClassDefinition) {
@@ -133,7 +108,28 @@ namespace Microsoft.Python.Analysis.Specializations {
                         }
                     }
                 }
+                return null;
             }
+
+            // If multiple arguments first argument is required
+            var firstCls = args.FirstOrDefault().GetPythonType<IPythonClassType>();
+            if (firstCls == null) {
+                return null;
+            }
+
+            // second argument optional
+            bool isUnbound = args.Count() == 1;
+            if (isUnbound) {
+                return CreateSuper(argSet, firstCls.Mro, declaringModule, indexSpan);
+            }
+
+            var secondCls = args[1].GetPythonType<IPythonClassType>();
+            if (secondCls != null &&
+                (secondCls.Equals(firstCls) || secondCls.IsSubClassOf(firstCls))) {
+                // We walk the mro of the second parameter looking for the first
+                return CreateSuper(argSet, secondCls.Mro, declaringModule, indexSpan, typeToFind: firstCls);
+            }
+
             return null;
         }
 
@@ -142,6 +138,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             IPythonModule declaringModule,
             IndexSpan indexSpan,
             IPythonType typeToFind = null) {
+
             if (callerMro.Count == 0) {
                 return null;
             }
@@ -156,7 +153,7 @@ namespace Microsoft.Python.Analysis.Specializations {
                 if (start >= 0) {
                     mro = mroList.GetRange(start, mro.Count() - start).ToArray();
                 } else {
-                    return null;  // newStartType wasn't valid
+                    return null;  // typeToFind wasn't in the mro
                 }
             }
             var nextClassInLine = mro?.FirstOrDefault();
