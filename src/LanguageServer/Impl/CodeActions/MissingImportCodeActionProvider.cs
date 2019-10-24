@@ -79,15 +79,15 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var codeActions = new List<CodeAction>();
             var diagnostics = new[] { diagnostic.ToDiagnostic() };
 
-            // add given name as it is
-            await GetCodeActionsAsync(analysis, diagnostics, new Input(node, identifier), codeActions, cancellationToken);
-
             // see whether it is one of abbreviation we specialize
             foreach (var moduleFullName in WellKnownAbbreviationMap.Where(kv => kv.Value == identifier).Select(kv => kv.Key)) {
                 var moduleName = GetModuleName(moduleFullName);
 
                 await GetCodeActionsAsync(analysis, diagnostics, new Input(node, moduleName, moduleFullName), codeActions, cancellationToken);
             }
+
+            // add then search given name as it is
+            await GetCodeActionsAsync(analysis, diagnostics, new Input(node, identifier), codeActions, cancellationToken);
 
             return codeActions;
 
