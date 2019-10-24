@@ -42,8 +42,6 @@ using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.CodeActions {
     internal sealed class MissingImportCodeActionProvider : ICodeActionProvider {
-        private const int ModuleLoadTimeout = 10 * 1000; // 10 seconds
-
         public static readonly ICodeActionProvider Instance = new MissingImportCodeActionProvider();
 
         // right now, it is a static. in future, we might consider giving an option to users to customize this list
