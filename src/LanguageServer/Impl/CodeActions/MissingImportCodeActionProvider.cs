@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -37,6 +36,7 @@ using Microsoft.Python.Core.Text;
 using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Indexing;
 using Microsoft.Python.LanguageServer.Protocol;
+using Microsoft.Python.LanguageServer.Utilities;
 using Microsoft.Python.Parsing.Ast;
 using Range = Microsoft.Python.Core.Text.Range;
 
@@ -65,7 +65,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             ErrorCodes.UndefinedVariable, ErrorCodes.VariableNotDefinedGlobally, ErrorCodes.VariableNotDefinedNonLocal);
 
         public async Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
-            var finder = new ExpressionFinder(analysis.Ast, FindExpressionOptions.Complete);
+            var finder = new ExpressionFinder(analysis.Ast, new FindExpressionOptions() { Names = true });
             var node = finder.GetExpression(diagnostic.SourceSpan);
             if (!(node is NameExpression nex)) {
                 return Enumerable.Empty<CodeAction>();
@@ -398,9 +398,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private static string GetAbbreviationForWellKnownModules(IDocumentAnalysis analysis, string fullyQualifiedName) {
-            // bind analysis to see whether abbreviation already exist
-            WellKnownAbbreviationMap.TryGetValue(fullyQualifiedName, out var abbreviation);
-            return abbreviation;
+            if (WellKnownAbbreviationMap.TryGetValue(fullyQualifiedName, out var abbreviation)) {
+                // for now, use module wide unique name for abbreviation. even though technically we could use
+                // context based unique name since variable declared in lower scope will hide it and there is no conflict
+                return UniqueNameGenerator.Generate(analysis, abbreviation);
+            }
+
+            return null;
         }
 
         private static string GetInsertionText(string insertionText, string abbreviation) =>

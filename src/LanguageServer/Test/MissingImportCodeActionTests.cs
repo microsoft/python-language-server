@@ -291,7 +291,7 @@ import socket
                 title: "import pandas as pd",
                 newText: "import pandas as pd" + Environment.NewLine + Environment.NewLine,
                 abbreviation: "pd",
-                relativePaths: "pandas");
+                relativePaths: "pandas.py");
         }
 
         [TestMethod, Priority(0)]
@@ -301,7 +301,7 @@ import socket
                 title: "from matplotlib import pyplot as plt",
                 newText: "from matplotlib import pyplot as plt" + Environment.NewLine + Environment.NewLine,
                 abbreviation: "plt",
-                relativePaths: @"matplotlib\pyplot");
+                relativePaths: @"matplotlib\pyplot.py");
         }
 
         [TestMethod, Priority(0)]
@@ -315,7 +315,7 @@ import socket
                 title: "from matplotlib import pyplot as plt, test",
                 newText: "from matplotlib import pyplot as plt, test",
                 abbreviation: "plt",
-                relativePaths: new string[] { @"matplotlib\pyplot", @"matplotlib\test" });
+                relativePaths: new string[] { @"matplotlib\pyplot.py", @"matplotlib\test.py" });
         }
 
         [TestMethod, Priority(0)]
@@ -325,7 +325,7 @@ import socket
                 title: "import pandas as pd",
                 newText: "import pandas as pd" + Environment.NewLine + Environment.NewLine,
                 abbreviation: "pd",
-                relativePaths: "pandas");
+                relativePaths: "pandas.py");
         }
 
         [TestMethod, Priority(0)]
@@ -335,7 +335,7 @@ import socket
                 title: "from matplotlib import pyplot as plt",
                 newText: "from matplotlib import pyplot as plt" + Environment.NewLine + Environment.NewLine,
                 abbreviation: "plt",
-                relativePaths: @"matplotlib\pyplot");
+                relativePaths: @"matplotlib\pyplot.py");
         }
 
         [TestMethod, Priority(0)]
@@ -349,7 +349,36 @@ import socket
                 title: "from matplotlib import pyplot as plt, test",
                 newText: "from matplotlib import pyplot as plt, test",
                 abbreviation: "plt",
-                relativePaths: new string[] { @"matplotlib\pyplot", @"matplotlib\test" });
+                relativePaths: new string[] { @"matplotlib\pyplot.py", @"matplotlib\test.py" });
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AbbreviationConflict() {
+            var markup = @"{|insertionSpan:|}pd = 1
+
+{|diagnostic:pandas|}";
+
+            await TestCodeActionAsync(
+                markup,
+                title: "import pandas as pd1",
+                newText: "import pandas as pd1" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "pd1",
+                relativePaths: "pandas.py");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AbbreviationConflict2() {
+            var markup = @"{|insertionSpan:|}{|diagnostic:pandas|}
+
+def Method():
+    pd = 1";
+
+            await TestCodeActionAsync(
+                markup,
+                title: "import pandas as pd1",
+                newText: "import pandas as pd1" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "pd1",
+                relativePaths: "pandas.py");
         }
 
         [TestMethod, Priority(0)]
@@ -442,7 +471,7 @@ import socket
             var analysis = await GetAnalysisAsync(code);
 
             foreach (var relativePath in relativePaths) {
-                await GetAnalysisAsync("", analysis.ExpressionEvaluator.Services, modulePath: TestData.GetTestSpecificPath($"{relativePath}.py"));
+                await GetAnalysisAsync("", analysis.ExpressionEvaluator.Services, modulePath: TestData.GetTestSpecificPath(relativePath));
             }
 
             // calculate actions
