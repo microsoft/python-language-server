@@ -136,6 +136,27 @@ class Derived(Baze):
 
 
         [TestMethod, Priority(0)]
+        public async Task SuperShouldReturnBaseClassFunctionsWhenCalledWithSelf() {
+            const string code = @"
+class Baze:
+    def base_func(self):
+        return 1234
+
+class Derived(Baze):
+    def foo(self):
+        x = super(Derived, self)
+";
+
+            var analysis = await GetAnalysisAsync(code);
+
+            // the class, for which we know parameter type initially
+            analysis.Should().HaveClass("Derived").Which.Should().HaveMethod("foo")
+                .Which.Should().HaveVariable("x")
+                .Which.Value.Should().HaveMemberName("base_func");
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task SuperWithSecondParamDerivedClassShouldOnlyHaveBaseMembers() {
             const string code = @"
 class Baze:
@@ -175,9 +196,9 @@ class C(B):
     def c_foo(self):
         pass
 
-b = B()
+c = C()
 
-x = super(C, b) # super starts its search after 'b' in the mro
+x = super(B, c) # super starts its search after 'B' in the mro
 ";
             var analysis = await GetAnalysisAsync(code);
 
@@ -312,33 +333,59 @@ class Child(Parent):
         }
 
 
-//        [TestMethod, Priority(0)]
-//        public async Task MultipleInheritanceSuperShould() {
-//            const string code = @"
-//class GrandParent:
-//    def dowork(self):
-//        return 1
+        [TestMethod, Priority(0)]
+        public async Task SuperShouldReturnAllBaseClassMembersGenerics() {
+            const string code = @"
+from typing import Generic, TypeVar
+T = TypeVar('T')
+class A(Generic[T]):
+    def af(self, x: T) -> T:
+        return x
+class B(A[int]):  # leave signature as is
+    def bf(self, x: T) -> T:
+        y = super()
+        return x
+";
 
-//class Dad(GrandParent):
-//    def dowork(self):
-//        return super().dowork()
+            var analysis = await GetAnalysisAsync(code);
 
-//class Mom():
-//    def dowork(self):
-//        return 2
+            var y = analysis.Should().HaveClass("B")
+                .Which.Should().HaveMethod("bf")
+                .Which.Should().HaveVariable("y").Which;
 
-//class Child(Dad, Mom):
-//    def child_func(self):
-//        x = super()
+            y.Value.Should().HaveMemberName("af");
+        }
 
-//";
-//            var analysis = await GetAnalysisAsync(code);
+    
 
-//            analysis.Should().HaveClass("Child")
-//                .Which.Should().HaveMethod("child_func")
-//                .Which.Should().HaveVariable("x")
-//                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
-//                .Which.Type.Name.Should().Be("Mom");
-//        }
+
+        //        [TestMethod, Priority(0)]
+        //        public async Task MultipleInheritanceSuperShould() {
+        //            const string code = @"
+        //class GrandParent:
+        //    def dowork(self):
+        //        return 1
+
+        //class Dad(GrandParent):
+        //    def dowork(self):
+        //        return super().dowork()
+
+        //class Mom():
+        //    def dowork(self):
+        //        return 2
+
+        //class Child(Dad, Mom):
+        //    def child_func(self):
+        //        x = super()
+
+        //";
+        //            var analysis = await GetAnalysisAsync(code);
+
+        //            analysis.Should().HaveClass("Child")
+        //                .Which.Should().HaveMethod("child_func")
+        //                .Which.Should().HaveVariable("x")
+        //                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
+        //                .Which.Type.Name.Should().Be("Mom");
+        //        }
     }
 }

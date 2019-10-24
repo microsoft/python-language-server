@@ -22,5 +22,9 @@ namespace Microsoft.Python.Analysis {
             value?.Type == null ||
             (value.Type.TypeId == BuiltinTypeId.Unknown &&
              value.Type.MemberType == PythonMemberType.Unknown && value.Type.Name.Equals("Unknown"));
+
+        public static bool IsInstanceOf(this IPythonInstance instance, IPythonClassType cls) {
+            return cls.GetPythonType() == instance.GetPythonType();
+        }
     }
 }
