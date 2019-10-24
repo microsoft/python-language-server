@@ -63,6 +63,10 @@ namespace Microsoft.Python.Analysis.Diagnostics {
 
         public DiagnosticTags[] Tags { get; }
 
+        public DiagnosticsEntry WithSeverity(Severity severity) {
+            return new DiagnosticsEntry(Message, SourceSpan, ErrorCode, severity, Source, Tags);
+        }
+
         public bool ShouldReport(IPythonModule module) {
             // Only report for user written modules
             if (module.ModuleType != ModuleType.User) {
@@ -81,7 +85,7 @@ namespace Microsoft.Python.Analysis.Diagnostics {
             if (!(obj is DiagnosticsEntry e)) {
                 return false;
             }
-            
+
             // for now, we ignore tags equality since we don't want to show duplicated errors
             // just because tags are different
             return ErrorCode == e.ErrorCode && SourceSpan == e.SourceSpan;

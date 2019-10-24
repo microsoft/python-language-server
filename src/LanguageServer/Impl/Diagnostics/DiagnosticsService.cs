@@ -214,12 +214,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             => d.Entries
                 .SelectMany(kvp => kvp.Value)
                 .Where(e => DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity) != Severity.Suppressed)
-                .Select(e => new DiagnosticsEntry(
-                    e.Message,
-                    e.SourceSpan,
-                    e.ErrorCode,
-                    DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity),
-                    e.Source)
+                .Select(e => e.WithSeverity(DiagnosticsSeverityMap.GetEffectiveSeverity(e.ErrorCode, e.Severity))
                 ).ToArray();
 
         private void ConnectToRdt() {
