@@ -187,7 +187,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             var reference = FindModuleNamePartReference(analysis, statement.Names, expr, out definingMember);
-            if(reference != null) {
+            if (reference != null) {
                 return reference;
             }
 

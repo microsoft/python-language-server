@@ -173,7 +173,7 @@ x = super(Derived, d)
 ";
 
             var analysis = await GetAnalysisAsync(code);
-            
+
             analysis.Should().HaveVariable("x")
                 .Which.Value.Should().HaveMemberName("baze_foo");
 
@@ -287,7 +287,7 @@ def foo(self):
 ";
 
             var analysis = await GetAnalysisAsync(code);
-          
+
             analysis.Should().HaveFunction("foo")
                 .Which.Should().HaveVariable("x")
                 .Which.Name.Should().Be("x");
@@ -356,7 +356,7 @@ class B(A[int]):  # leave signature as is
             y.Value.Should().HaveMemberName("af");
         }
 
-    
+
 
 
         //        [TestMethod, Priority(0)]

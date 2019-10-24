@@ -31,7 +31,6 @@ using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.Sources;
 using Microsoft.Python.LanguageServer.Tests.FluentAssertions;
 using Microsoft.Python.Parsing;
-using Microsoft.Python.Parsing.Ast;
 using Microsoft.Python.Parsing.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TestUtilities;
@@ -1104,7 +1103,7 @@ os.path.
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            
+
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 9));
             result.Should().HaveLabels("m1", "m2", "x");
         }

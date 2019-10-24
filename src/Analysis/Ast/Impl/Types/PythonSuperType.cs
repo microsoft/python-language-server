@@ -26,7 +26,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// </summary>
         /// <param name="location"></param>
         /// <param name="mro">Should be a list of IPythonType</param>
-        public PythonSuperType(Location location, IReadOnlyList<IPythonType> mro) 
+        public PythonSuperType(Location location, IReadOnlyList<IPythonType> mro)
             : base("super", location, string.Empty, BuiltinTypeId.Type) {
             _mro = mro;
         }
@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IReadOnlyList<IPythonType> Mro => _mro;
 
         public override IMember GetMember(string name) => _mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
-          
+
         public override IEnumerable<string> GetMemberNames() => _mro.MaybeEnumerate().SelectMany(cls => cls.GetMemberNames()).Distinct();
     }
 }
