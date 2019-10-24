@@ -75,22 +75,15 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return Enumerable.Empty<CodeAction>();
             }
 
-            await EnsureCandidateModulesLoadedAsync(analysis, name, cancellationToken);
-
             var importFullNameMap = new Dictionary<string, ImportInfo>();
+            await AddCandidatesFromIndexAsync(analysis, name, importFullNameMap, cancellationToken);
 
             // find installed modules matching the given name. this will include submodules
             var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
             var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
             foreach (var moduleFullName in pathResolver.GetAllImportableModulesByName(name, includeImplicit)) {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                var module = interpreter.ModuleResolution.GetOrLoadModule(moduleFullName);
-                if (module == null) {
-                    continue;
-                }
-
-                importFullNameMap[moduleFullName] = new ImportInfo(moduleImported: false, memberImported: false, module);
+                importFullNameMap[moduleFullName] = new ImportInfo(moduleImported: false, memberImported: false, isModule: true);
             }
 
             // find members matching the given name from modules already loaded.
@@ -135,7 +128,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // do simple filtering
             // remove all modules from candidates
             foreach (var kv in importFullNameMap.ToList()) {
-                if (kv.Value.Symbol.MemberType == PythonMemberType.Module) {
+                if (kv.Value.IsModule) {
                     importFullNameMap.Remove(kv.Key);
                 }
             }
@@ -143,6 +136,12 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
         private IEnumerable<string> OrderFullNames(Dictionary<string, ImportInfo> importFullNameMap) {
             // use some heuristic to improve code fix ordering
+
+            // put simple name module at the top
+            foreach (var fullName in OrderImportNames(importFullNameMap.Where(FilterSimpleName).Select(kv => kv.Key))) {
+                importFullNameMap.Remove(fullName);
+                yield return fullName;
+            }
 
             // heuristic is we put entries with decl without any exports at the top
             // such as array. another example will be chararray. 
@@ -152,7 +151,8 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // so we could leave only numpy.chararray and remove ones like numpy.core.chararray and etc. but for now,
             // we show all those but in certain order so that numpy.chararray shows up top
             // this heuristic still has issue with something like os.path.join since no one import macpath, macpath join shows up high
-            var sourceDeclarationFullNames = importFullNameMap.GroupBy(kv => kv.Value.Symbol.Definition, LocationInfo.FullComparer)
+            var sourceDeclarationFullNames = importFullNameMap.Where(kv => kv.Value.Symbol != null)
+                                                              .GroupBy(kv => kv.Value.Symbol.Definition, LocationInfo.FullComparer)
                                                               .Where(FilterSourceDeclarations)
                                                               .Select(g => g.First().Key);
 
@@ -188,9 +188,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return fullNames.OrderBy(n => n, ImportNameComparer.Instance).ToList();
             }
 
-            bool FilterImportedMembers(KeyValuePair<string, ImportInfo> kv) => kv.Value.Symbol.MemberType != PythonMemberType.Module && kv.Value.MemberImported;
-            bool FilterImportedModuleMembers(KeyValuePair<string, ImportInfo> kv) => kv.Value.Symbol.MemberType != PythonMemberType.Module && kv.Value.ModuleImported;
-            bool FilterImportedModules(KeyValuePair<string, ImportInfo> kv) => kv.Value.Symbol.MemberType == PythonMemberType.Module && kv.Value.MemberImported;
+            bool FilterSimpleName(KeyValuePair<string, ImportInfo> kv) => kv.Key.IndexOf(".") < 0;
+            bool FilterImportedMembers(KeyValuePair<string, ImportInfo> kv) => !kv.Value.IsModule && kv.Value.MemberImported;
+            bool FilterImportedModuleMembers(KeyValuePair<string, ImportInfo> kv) => !kv.Value.IsModule && kv.Value.ModuleImported;
+            bool FilterImportedModules(KeyValuePair<string, ImportInfo> kv) => kv.Value.IsModule && kv.Value.MemberImported;
 
             bool FilterSourceDeclarations(IGrouping<LocationInfo, KeyValuePair<string, ImportInfo>> group) {
                 var count = 0;
@@ -209,9 +210,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
         }
 
-        private static async Task EnsureCandidateModulesLoadedAsync(IDocumentAnalysis analysis,
-                                                                    string name,
-                                                                    CancellationToken cancellationToken) {
+        private static async Task AddCandidatesFromIndexAsync(IDocumentAnalysis analysis,
+                                                             string name,
+                                                             Dictionary<string, ImportInfo> importFullNameMap,
+                                                             CancellationToken cancellationToken) {
             var indexManager = analysis.ExpressionEvaluator.Services.GetService<IIndexManager>();
             if (indexManager == null) {
                 // indexing is not supported
@@ -221,32 +223,58 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var symbolsIncludingName = await indexManager.WorkspaceSymbolsAsync(name, maxLength: int.MaxValue, includeLibraries: true, cancellationToken);
 
             // we only consider exact matches rather than partial matches
-            var symbolsWithName = symbolsIncludingName.Where(s => s.Name == name && s.Kind != Indexing.SymbolKind.Variable);
+            var symbolsWithName = symbolsIncludingName.Where(Include);
 
             var analyzer = analysis.ExpressionEvaluator.Services.GetService<IPythonAnalyzer>();
             var pathResolver = analysis.Document.Interpreter.ModuleResolution.CurrentPathResolver;
 
             var modules = ImmutableArray<IPythonModule>.Empty;
-            foreach (var moduleName in symbolsWithName.Select(s => s.DocumentPath).Distinct().Select(p => pathResolver.GetModuleNameByPath(p))) {
+            foreach (var symbolAndModuleName in symbolsWithName.Select(s => (symbol: s, moduleName: pathResolver.GetModuleNameByPath(s.DocumentPath)))) {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var module = analysis.Document.Interpreter.ModuleResolution.GetOrLoadModule(moduleName);
-                if (module.Analysis is EmptyAnalysis) {
-                    // once module is analyzed, this analysis result will be kept in memory
-                    // even if graph for current document (modified) changed.
-                    // so this will let us to analyze these modules only once
-                    modules = modules.Add(module);
-                }
+                var key = $"{symbolAndModuleName.moduleName}.{symbolAndModuleName.symbol.Name}";
+                var symbol = symbolAndModuleName.symbol;
+
+                importFullNameMap.TryGetValue(key, out var existing);
+
+                // we don't actually know whether this is a module. all we know is it appeared at
+                // Import statement. but most likely module, so we mark it as module for now.
+                // later when we check loaded module, if this happen to be loaded, this will get
+                // updated with more accurate data.
+                // if there happen to be multiple symbols with same name, we refer to mark it as module
+                var isModule = symbol.Kind == Indexing.SymbolKind.Module || existing.IsModule;
+
+                // any symbol marked "Module" by indexer is imported.
+                importFullNameMap[key] = new ImportInfo(
+                    moduleImported: isModule,
+                    memberImported: isModule,
+                    isModule);
             }
 
-            if (modules.Count > 0) {
-                // declares given modules to be dependent to current document. otherwise, our optimization will drop
-                // analyzing these modules. this dependency will go away when user change the document
-                analyzer.EnqueueDocumentForAnalysis(analysis.Document, modules);
+            bool Include(FlatSymbol symbol) {
+                // we only suggest symbols that exist in __all__
+                // otherwise, we show gigantic list from index
+                return symbol._existInAllVariable &&
+                       symbol.ContainerName == null &&
+                       CheckKind(symbol.Kind) &&
+                       symbol.Name == name;
+            }
 
-                // this will make those modules to be loaded. we don't care about return analysis since we only
-                // care those modules being loaded and analyzed. but not new current document's analysis
-                await analysis.Document.GetAnalysisAsync(ModuleLoadTimeout, cancellationToken);
+            bool CheckKind(Indexing.SymbolKind kind) {
+                switch (kind) {
+                    case Indexing.SymbolKind.Module:
+                    case Indexing.SymbolKind.Namespace:
+                    case Indexing.SymbolKind.Package:
+                    case Indexing.SymbolKind.Class:
+                    case Indexing.SymbolKind.Enum:
+                    case Indexing.SymbolKind.Interface:
+                    case Indexing.SymbolKind.Function:
+                    case Indexing.SymbolKind.Constant:
+                    case Indexing.SymbolKind.Struct:
+                        return true;
+                    default:
+                        return false;
+                }
             }
         }
 
@@ -614,7 +642,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
         }
 
-        [DebuggerDisplay("{Symbol.Name} {Symbol.MemberType} {ModuleImported} {MemberImported}")]
+        [DebuggerDisplay("{Symbol?.Name} Module:{IsModule} ({ModuleImported} {MemberImported})")]
         private struct ImportInfo {
             // only one that shows up in "__all__" will be imported
             // containing module is imported
@@ -622,12 +650,19 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // containing symbol is imported
             public readonly bool MemberImported;
 
+            public readonly bool IsModule;
             public readonly IPythonType Symbol;
 
-            public ImportInfo(bool moduleImported, bool memberImported, IPythonType symbol) {
+            public ImportInfo(bool moduleImported, bool memberImported, IPythonType symbol) :
+                this(moduleImported, memberImported, symbol.MemberType == PythonMemberType.Module) {
+                Symbol = symbol;
+            }
+
+            public ImportInfo(bool moduleImported, bool memberImported, bool isModule) {
                 ModuleImported = moduleImported;
                 MemberImported = memberImported;
-                Symbol = symbol;
+                IsModule = isModule;
+                Symbol = null;
             }
         }
     }

@@ -258,14 +258,16 @@ import socket
 
         [TestMethod, Priority(0)]
         public async Task SymbolOrdering2() {
-            var markup = @"{|insertionSpan:|}{|diagnostic:join|}";
+            var markup = @"from os import path
+{|insertionSpan:|}
+{|diagnostic:join|}";
 
             var (analysis, codeActions, insertionSpan) = await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics, enableIndexManager: true);
 
             var list = codeActions.Select(c => c.title).ToList();
             var zipList = Enumerable.Range(0, list.Count).Zip(list);
 
-            var sourceDeclIndex = zipList.First(t => t.Second == "from macpath import join").First;
+            var sourceDeclIndex = zipList.First(t => t.Second == "from posixpath import join").First;
             var importedMemberIndex = zipList.First(t => t.Second == "from os.path import join").First;
             var restIndex = zipList.First(t => t.Second == "from ntpath import join").First;
 

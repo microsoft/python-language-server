@@ -99,7 +99,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 return DecorateWithParentsName((sym.Children ?? Enumerable.Empty<HierarchicalSymbol>()).ToList(), sym.Name);
             });
             return treeSymbols.Where(sym => sym.symbol.Name.ContainsOrdinal(query, ignoreCase: true))
-                              .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName));
+                              .Select(sym => new FlatSymbol(sym.symbol.Name, sym.symbol.Kind, path, sym.symbol.SelectionRange, sym.parentName, sym.symbol._existInAllVariable));
         }
 
         private static IEnumerable<(HierarchicalSymbol symbol, string parentName)> DecorateWithParentsName(

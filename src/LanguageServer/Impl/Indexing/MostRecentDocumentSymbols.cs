@@ -97,7 +97,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Dispose() {
             lock (_lock) {
                 _tcs.TrySetCanceled();
-                
+
                 try {
                     _workCts?.Dispose();
                 } catch (ObjectDisposedException) {
@@ -136,7 +136,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            var walker = new SymbolIndexWalker(ast, _library);
+            var walker = new SymbolIndexWalker(ast, _library, cancellationToken);
             ast.Walk(walker);
             return walker.Symbols;
         }
@@ -145,7 +145,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             try {
                 var ast = await _indexParser.ParseAsync(_path, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                var walker = new SymbolIndexWalker(ast);
+                var walker = new SymbolIndexWalker(ast, _library, cancellationToken);
                 ast.Walk(walker);
                 return walker.Symbols;
             } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {

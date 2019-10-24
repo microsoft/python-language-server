@@ -60,16 +60,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
     // Analagous to LSP's DocumentSymbol.
     [DebuggerDisplay("{Name}, {Kind}")]
-    internal class HierarchicalSymbol {
-        public string Name;
-        public string Detail;
-        public SymbolKind Kind;
-        public bool? Deprecated;
-        public SourceSpan Range;
-        public SourceSpan SelectionRange;
-        public IList<HierarchicalSymbol> Children;
+    internal sealed class HierarchicalSymbol {
+        public readonly string Name;
+        public readonly string Detail;
+        public readonly SymbolKind Kind;
+        public readonly bool? Deprecated;
+        public readonly SourceSpan Range;
+        public readonly SourceSpan SelectionRange;
+        public readonly IList<HierarchicalSymbol> Children;
 
-        public string _functionKind;
+        public readonly string _functionKind;
+        public readonly bool _existInAllVariable;
 
         public HierarchicalSymbol(
             string name,
@@ -77,7 +78,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             SourceSpan range,
             SourceSpan? selectionRange = null,
             IList<HierarchicalSymbol> children = null,
-            string functionKind = FunctionKind.None
+            string functionKind = FunctionKind.None,
+            bool existInAllVariable = false
         ) {
             Name = name;
             Kind = kind;
@@ -85,31 +87,36 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             SelectionRange = selectionRange ?? range;
             Children = children;
             _functionKind = functionKind;
+            _existInAllVariable = existInAllVariable;
         }
     }
 
     // Analagous to LSP's SymbolInformation.
     [DebuggerDisplay("{ContainerName}:{Name}, {Kind}")]
-    internal class FlatSymbol {
-        public string Name;
-        public SymbolKind Kind;
-        public bool? Deprecated;
-        public string DocumentPath;
-        public SourceSpan Range;
-        public string ContainerName;
+    internal sealed class FlatSymbol {
+        public readonly string Name;
+        public readonly SymbolKind Kind;
+        public readonly bool? Deprecated;
+        public readonly string DocumentPath;
+        public readonly SourceSpan Range;
+        public readonly string ContainerName;
+
+        public readonly bool _existInAllVariable;
 
         public FlatSymbol(
             string name,
             SymbolKind kind,
             string documentPath,
             SourceSpan range,
-            string containerName = null
+            string containerName = null,
+            bool existInAllVariable = false
         ) {
             Name = name;
             Kind = kind;
             DocumentPath = documentPath;
             Range = range;
             ContainerName = containerName;
+            _existInAllVariable = existInAllVariable;
         }
     }
 }
