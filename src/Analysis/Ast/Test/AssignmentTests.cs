@@ -114,6 +114,7 @@ y = u'u'
             var analysis = await GetAnalysisAsync(@"x = ...");
             analysis.Should().HaveVariable("x").WithNoTypes();
         }
+
         [TestMethod, Priority(0)]
         public async Task NegativeNumbersV2() {
             const string code = @"
@@ -234,8 +235,8 @@ class D(C):
             var d = analysis.Should().HaveClass("D").Which;
 
             d.Should().HaveMethod("__init__")
-            .Which.Should().HaveSingleOverload()
-            .Which.Should().HaveParameterAt(0).Which.Name.Should().Be("self");
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(0).Which.Name.Should().Be("self");
 
             d.Should().HaveMember<IPythonConstant>("fob")
                 .Which.Should().HaveType(BuiltinTypeId.Int);
@@ -485,7 +486,6 @@ g = bar()[1]
                 .And.HaveVariable("m").OfType(BuiltinTypeId.Str);
         }
 
-
         [TestMethod, Priority(0)]
         public async Task UnpackingTypingList() {
             const string code = @"
@@ -517,9 +517,9 @@ def foo() -> List[Tuple[str, int]]:
                 .And.HaveVariable("var2").OfType(BuiltinTypeId.Tuple);
 
             analysis.Should().HaveVariable("a").OfType(BuiltinTypeId.Str)
-                 .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
-                 .And.HaveVariable("c").OfType(BuiltinTypeId.Str)
-                 .And.HaveVariable("d").OfType(BuiltinTypeId.Int);
+                .And.HaveVariable("b").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("c").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("d").OfType(BuiltinTypeId.Int);
         }
 
         [TestMethod, Priority(0)]
@@ -628,7 +628,6 @@ d, e, f, g = [1, (1,2), 2, ['test', 'test']]
                 .And.HaveVariable("g").OfType(BuiltinTypeId.List);
         }
 
-
         [TestMethod, Priority(0)]
         public async Task UnpackingTypingNestedTuple() {
             const string code = @"
@@ -676,6 +675,50 @@ if (x := 1234) == 1234:
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             analysis.Should().HaveVariable("x").OfType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedExpressionInComprehensionBindOuterScope() {
+            const string code = @"
+def f(a):
+    return a
+
+h = [y := f(2), y**2, y**3]
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            analysis.Should().HaveVariable("y").OfType(BuiltinTypeId.Int).And.HaveVariable("h").OfType(BuiltinTypeId.List);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedExpressionInComprehensionBindFunctionScope() {
+            const string code = @"
+def f(a):
+    return a
+
+def test():
+    h = [y := f(2), y**2, y**3]
+
+test();
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            analysis.GlobalScope.Should().HaveChildScopeAt<IScope>(1).Which.Should()
+                .HaveVariable("y").OfType(BuiltinTypeId.Int).And.HaveVariable("h").OfType(BuiltinTypeId.List);
+        }
+        
+        [TestMethod, Priority(0)]
+        public async Task NamedExpressionInNestedComprehensionBindFunctionScope() {
+            const string code = @"
+from typing import List
+def foo(lst: List[List[List[int]]]):
+    l = [[[(a := y) for y in z] for z in x] for x in lst]
+    print(a)
+    # a here;
+# no a here
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
+            analysis.GlobalScope.Should().HaveChildScopeAt<IScope>(0).Which.Should()
+                .HaveVariable("a").OfType(BuiltinTypeId.Int);
+            analysis.Should().NotHaveVariable("a");
         }
 
         [TestMethod, Priority(0)]
