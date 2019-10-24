@@ -279,7 +279,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
                         try {
                             AnalyzeLoop(loop, stopWatch);
-                        } catch (OperationCanceledException oce) {
+                        } catch (OperationCanceledException) {
                             //loop.Value.TryCancel(oce, _walker.Version);
                             //LogCanceled(single.Value.Module);
                         } catch (Exception exception) {
