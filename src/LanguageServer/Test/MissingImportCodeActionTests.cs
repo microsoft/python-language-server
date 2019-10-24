@@ -286,30 +286,36 @@ import socket
 
         [TestMethod, Priority(0)]
         public async Task SuggestAbbreviationForKnownModule() {
-            MarkupUtils.GetNamedSpans(@"{|insertionSpan:|}{|diagnostic:pandas|}", out var code, out var spans);
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:pandas|}",
+                title: "import pandas as pd",
+                newText: "import pandas as pd" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "pd",
+                relativePaths: "pandas");
+        }
 
-            // get main analysis and add mock pandas module
-            var analysis = await GetAnalysisAsync(code);
-            await GetAnalysisAsync("", analysis.ExpressionEvaluator.Services, modulePath: TestData.GetTestSpecificPath("pandas.py"));
+        [TestMethod, Priority(0)]
+        public async Task SuggestAbbreviationForKnownModule2() {
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:pyplot|}",
+                title: "from matplotlib import pyplot as plt",
+                newText: "from matplotlib import pyplot as plt" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "plt",
+                relativePaths: @"matplotlib\pyplot");
+        }
 
-            // calculate actions
-            var diagnostics = GetDiagnostics(analysis, spans["diagnostic"].First().ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+        [TestMethod, Priority(0)]
+        public async Task SuggestAbbreviationForKnownModule3() {
+            var markup = @"
+{|insertionSpan:from matplotlib import test|}
+{|diagnostic:pyplot|}";
 
-            var docTable = analysis.ExpressionEvaluator.Services.GetService<IRunningDocumentTable>();
-
-            // verify results
-            var codeAction = codeActions.Single(c => c.title == "import pandas as pd");
-            codeAction.edit.changes.Should().HaveCount(1);
-
-            var edits = codeAction.edit.changes[analysis.Document.Uri];
-            edits.Should().HaveCount(2);
-
-            var invocationEdit = edits.Single(e => e.newText == "pd");
-            invocationEdit.range.Should().Be(spans["diagnostic"].First().ToSourceSpan(analysis.Ast));
-
-            var insertEdit = edits.Single(e => e.newText == "import pandas as pd" + Environment.NewLine + Environment.NewLine);
-            insertEdit.range.Should().Be(spans["insertionSpan"].First().ToSourceSpan(analysis.Ast));
+            await TestCodeActionAsync(
+                markup,
+                title: "from matplotlib import pyplot as plt, test",
+                newText: "from matplotlib import pyplot as plt, test",
+                abbreviation: "plt",
+                relativePaths: new string[] { @"matplotlib\pyplot", @"matplotlib\test" });
         }
 
         [TestMethod, Priority(0)]
@@ -393,6 +399,37 @@ import socket
                            .Where(d => d.SourceSpan == span && codes.Any(e => string.Equals(e, d.ErrorCode)))
                            .Select(d => d.ToDiagnostic())
                            .ToArray();
+        }
+
+        private async Task TestCodeActionAsync(string markup, string title, string newText, string abbreviation, params string[] relativePaths) {
+            MarkupUtils.GetNamedSpans(markup, out var code, out var spans);
+
+            // get main analysis and add mock pandas module
+            var analysis = await GetAnalysisAsync(code);
+
+            foreach (var relativePath in relativePaths) {
+                await GetAnalysisAsync("", analysis.ExpressionEvaluator.Services, modulePath: TestData.GetTestSpecificPath($"{relativePath}.py"));
+            }
+
+            // calculate actions
+            var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
+            var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+
+            var docTable = analysis.ExpressionEvaluator.Services.GetService<IRunningDocumentTable>();
+
+            // verify results
+            var codeAction = codeActions.Single(c => c.title == title);
+            codeAction.edit.changes.Should().HaveCount(1);
+
+            var edits = codeAction.edit.changes[analysis.Document.Uri];
+            edits.Should().HaveCount(2);
+
+            var invocationEdit = edits.Single(e => e.newText == abbreviation);
+            invocationEdit.range.Should().Be(diagnosticSpan);
+
+            var insertEdit = edits.Single(e => e.newText == newText);
+            insertEdit.range.Should().Be(spans["insertionSpan"].First().ToSourceSpan(analysis.Ast));
         }
     }
 }

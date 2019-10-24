@@ -51,7 +51,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         // the module is not something user expected
         private static readonly Dictionary<string, string> WellKnownAbbreviationMap = new Dictionary<string, string>() {
             { "numpy", "np" },
-            { "pandas", "pd" }
+            { "pandas", "pd" },
+            { "tensorflow", "tf" },
+            { "matplotlib.pyplot", "plt" },
+            { "matplotlib", "mpl" },
+            { "math", "m" },
+            { "scipy.io", "spio" },
+            { "scipy", "sp" },
         };
 
         private MissingImportCodeActionProvider() {
@@ -322,14 +328,14 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var importNodes = body.GetChildNodes().Where(c => c is ImportStatement || c is FromImportStatement).ToList();
             var lastImportNode = importNodes.LastOrDefault();
 
+            var abbreviation = GetAbbreviationForWellKnownModules(analysis, fullyQualifiedName);
+
             // first check whether module name is dotted or not
             var dotIndex = fullyQualifiedName.LastIndexOf('.');
             if (dotIndex < 0) {
                 // there can't be existing import since we have the error
-                WellKnownAbbreviationMap.TryGetValue(fullyQualifiedName, out var abbreviation);
-
                 return new InsertionInfo(addBlankLine: lastImportNode == null,
-                                         GetInsertionText(fullyQualifiedName, abbreviation),
+                                         GetInsertionText($"import {fullyQualifiedName}", abbreviation),
                                          GetRange(analysis.Ast, body, lastImportNode),
                                          indentation,
                                          abbreviation);
@@ -341,31 +347,35 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             foreach (var current in importNodes.Reverse<Node>().OfType<FromImportStatement>()) {
                 if (current.Root.MakeString() == fromPart) {
                     return new InsertionInfo(addBlankLine: false,
-                                             GetInsertionText(current, fromPart, nameToAdd),
+                                             GetInsertionText(current, fromPart, nameToAdd, abbreviation),
                                              current.GetSpan(analysis.Ast),
-                                             indentation);
+                                             indentation,
+                                             abbreviation);
                 }
             }
 
             // add new from * import * statement
             return new InsertionInfo(addBlankLine: lastImportNode == null,
-                                     $"from {fromPart} import {nameToAdd}",
+                                     GetInsertionText($"from {fromPart} import {nameToAdd}", abbreviation),
                                      GetRange(analysis.Ast, body, lastImportNode),
-                                     indentation);
+                                     indentation,
+                                     abbreviation);
         }
 
-        private static string GetInsertionText(string module, string abbreviation) {
-            if (abbreviation == null) {
-                return $"import {module}";
-            }
-
-            return $"import {module} as {abbreviation}";
+        private static string GetAbbreviationForWellKnownModules(IDocumentAnalysis analysis, string fullyQualifiedName) {
+            // bind analysis to see whether abbreviation already exist
+            WellKnownAbbreviationMap.TryGetValue(fullyQualifiedName, out var abbreviation);
+            return abbreviation;
         }
 
-        private string GetInsertionText(FromImportStatement fromImportStatement, string rootModuleName, string moduleNameToAdd) {
+        private static string GetInsertionText(string insertionText, string abbreviation) =>
+            abbreviation == null ? insertionText : $"{insertionText} as {abbreviation}";
+
+        private string GetInsertionText(FromImportStatement fromImportStatement, string rootModuleName, string moduleNameToAdd, string abbreviation) {
             var imports = fromImportStatement.Names.Select(n => n.Name)
-                .Concat(new string[] { moduleNameToAdd })
+                .Concat(new string[] { GetInsertionText(moduleNameToAdd, abbreviation) })
                 .OrderBy(n => n).ToList();
+
             return $"from {rootModuleName} import {string.Join(", ", imports)}";
         }
 
