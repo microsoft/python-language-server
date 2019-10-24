@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Specializations {
         public static IMember Super(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
             var args = argSet.Values<IMember>();
 
-            if (args.Count() == 0) {
+            if (args.Count == 0) {
                 //Zero argument form only works inside a class definition
                 foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
                     if (s.Node is ClassDefinition) {
@@ -118,7 +118,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             }
 
             // second argument optional
-            bool isUnbound = args.Count() == 1;
+            bool isUnbound = args.Count == 1;
             if (isUnbound) {
                 return CreateSuper(argSet, firstCls.Mro, declaringModule, indexSpan);
             }
