@@ -53,7 +53,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                     var mres = document.Interpreter.ModuleResolution;
                     var names = name.Names.TakeWhile(n => n.EndIndex < context.Position).Select(n => n.Name);
                     var importSearchResult = mres.CurrentPathResolver.GetImportsFromAbsoluteName(document.FilePath, names, import.ForceAbsolute);
-                    return GetResultFromImportSearch(importSearchResult, context, false);
+                    return GetResultFromImportSearch(importSearchResult, context, false, modulesOnly: true);
                 }
             }
             return null;
@@ -145,7 +145,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 .Select(n => CompletionItemSource.CreateCompletionItem(n, CompletionItemKind.Module));
         }
 
-        private static CompletionResult GetResultFromImportSearch(IImportSearchResult importSearchResult, CompletionContext context, bool prependStar, SourceSpan? applicableSpan = null) {
+        private static CompletionResult GetResultFromImportSearch(IImportSearchResult importSearchResult, CompletionContext context, bool prependStar, SourceSpan? applicableSpan = null, bool modulesOnly = false) {
             var document = context.Analysis.Document;
             var mres = document.Interpreter.ModuleResolution;
 
@@ -171,7 +171,11 @@ namespace Microsoft.Python.LanguageServer.Completion {
 
             var memberNames = (module?.GetMemberNames().Where(n => !string.IsNullOrEmpty(n)) ?? Enumerable.Empty<string>()).ToHashSet();
             if (module != null) {
-                completions.AddRange(memberNames.Select(n => context.ItemSource.CreateCompletionItem(n, module.GetMember(n))));
+                var moduleMembers = memberNames
+                    .Select(n => (n, m: module.GetMember(n)))
+                    .Where(pair => !modulesOnly || pair.m is IPythonModule)
+                    .Select(pair => context.ItemSource.CreateCompletionItem(pair.n, pair.m));
+                completions.AddRange(moduleMembers);
             }
 
             if (importSearchResult is IImportChildrenSource children) {

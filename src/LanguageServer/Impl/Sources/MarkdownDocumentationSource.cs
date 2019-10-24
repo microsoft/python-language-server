@@ -23,7 +23,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed class MarkdownDocumentationSource : DocumentationSource, IDocumentationSource {
         public InsertTextFormat DocumentationFormat => InsertTextFormat.PlainText;
 
-        public MarkupContent GetHover(string name, IMember member, IPythonType self) {
+        public MarkupContent GetHover(string name, IMember member, IPythonType self, bool includeClassInit = false) {
             // We need to tell between instance and type.
             var type = member.GetPythonType();
             if (type.IsUnknown()) {
@@ -41,16 +41,30 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var typeDoc = !string.IsNullOrEmpty(type.Documentation) ? $"\n---\n{type.MarkdownDoc()}" : string.Empty;
             switch (type) {
                 case IPythonPropertyType prop:
-                    text = GetPropertyHoverString(prop);
+                    text = GetPropertyString(prop);
                     break;
 
                 case IPythonFunctionType ft:
-                    text = GetFunctionHoverString(ft, self);
+                    text = GetFunctionString(ft, self);
                     break;
 
                 case IPythonClassType cls:
                     var clsDoc = !string.IsNullOrEmpty(cls.Documentation) ? $"\n---\n{cls.MarkdownDoc()}" : string.Empty;
-                    text = $"```\nclass {cls.Name}\n```{clsDoc}";
+
+                    string className;
+                    var sig = string.Empty;
+
+                    if (includeClassInit) {
+                        className = cls.Name;
+                        var init = cls.GetMember<IPythonFunctionType>("__init__");
+                        if (init != null) {
+                            sig = GetSignatureString(init, null, out var _, 0, "", true);
+                        }
+                    } else {
+                        className = "class " + cls.Name;
+                    }
+
+                    text = $"```\n{className}{sig}\n```{clsDoc}";
                     break;
 
                 case IPythonModule mod:
@@ -67,7 +81,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             };
         }
 
-        public MarkupContent FormatDocumentation(string documentation) 
+        public MarkupContent FormatDocumentation(string documentation)
             => new MarkupContent { kind = MarkupKind.Markdown, value = DocstringConverter.ToMarkdown(documentation) };
 
         public MarkupContent FormatParameterDocumentation(IParameterInfo parameter) {
@@ -79,13 +93,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return new MarkupContent { kind = MarkupKind.Markdown, value = text };
         }
 
-        private string GetPropertyHoverString(IPythonPropertyType prop, int overloadIndex = 0) {
+        private string GetPropertyString(IPythonPropertyType prop) {
             var decTypeString = prop.DeclaringType != null ? $"{prop.DeclaringType.Name}." : string.Empty;
             var propDoc = !string.IsNullOrEmpty(prop.Documentation) ? $"\n---\n{prop.MarkdownDoc()}" : string.Empty;
             return $"```\n{decTypeString}\n```{propDoc}";
         }
 
-        private string GetFunctionHoverString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0) {
+        private string GetFunctionString(IPythonFunctionType ft, IPythonType self, int overloadIndex = 0) {
             var sigString = GetSignatureString(ft, self, out _, overloadIndex);
             var decTypeString = ft.DeclaringType != null ? $"{ft.DeclaringType.Name}." : string.Empty;
             var funcDoc = !string.IsNullOrEmpty(ft.Documentation) ? $"\n---\n{ft.MarkdownDoc()}" : string.Empty;
