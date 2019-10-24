@@ -39,20 +39,12 @@ namespace Microsoft.Python.Parsing {
         PythonVariable DefineParameter(string name);
         #endregion
 
-        #region Contains
+        #region Booleans
         bool ContainsImportStar { get; set; }
         bool ContainsExceptionHandling { get; set; }
 
         bool ContainsUnqualifiedExec { get; set; }
-
-        /// <summary>
-        /// True if variables can be set in a late bound fashion that we don't
-        /// know about at code gen time - for example via from fob import *.
-        /// 
-        /// This is tracked independently of the ContainsUnqualifiedExec/NeedsLocalsDictionary
-        /// </summary>
-        bool HasLateBoundVariableSets { get; set; }
-
+        
         bool ExposesLocalVariable(PythonVariable name);
         # endregion
     }

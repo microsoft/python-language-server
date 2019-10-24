@@ -326,8 +326,8 @@ namespace Microsoft.Python.Parsing.Ast {
             if (node.NeedsLocalsDictionary()) {
                 _currentScope.NeedsLocalsDictionary = true;
             }
-            if (node.Locals == null && BoundScope != null) {
-                BoundScope.HasLateBoundVariableSets = true;
+            if (node.Locals == null) {
+                _currentScope.HasLateBoundVariableSets = true;
             }
         }
 
@@ -401,8 +401,8 @@ namespace Microsoft.Python.Parsing.Ast {
                 Debug.Assert(_currentScope != null);
                 if (BoundScope != null) {
                     BoundScope.ContainsImportStar = true;
-                    BoundScope.HasLateBoundVariableSets = true;
                 }
+                _currentScope.HasLateBoundVariableSets = true;
                 _currentScope.NeedsLocalsDictionary = true;
             }
             return true;

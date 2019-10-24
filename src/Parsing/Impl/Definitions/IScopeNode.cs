@@ -36,8 +36,16 @@ namespace Microsoft.Python.Parsing {
 
         bool IsClosure { get; }
 
-        bool TryGetVariable(string name, out PythonVariable variable);
+        /// <summary>
+        /// True if variables can be set in a late bound fashion that we don't
+        /// know about at code gen time - for example via from fob import *.
+        /// 
+        /// This is tracked independently of the ContainsUnqualifiedExec/NeedsLocalsDictionary
+        /// </summary>
+        bool HasLateBoundVariableSets { get; set; }
 
         bool IsGlobal { get; }
+        
+        bool TryGetVariable(string name, out PythonVariable variable);
     }
 }

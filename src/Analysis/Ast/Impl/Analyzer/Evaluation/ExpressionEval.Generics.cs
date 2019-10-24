@@ -81,7 +81,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             // All arguments to Generic must be distinct	
             if (genericTypeArgs.Distinct().Count() != genericTypeArgs.Count) {
-                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(Resources.GenericNotAllUnique, GetLocation(expr).Span,
+                ReportDiagnostics(Module.Uri, new DiagnosticsEntry(
+                    Resources.GenericNotAllUnique, 
+                    GetLocation(expr).Span,
                     ErrorCodes.TypingGenericArguments,
                     Severity.Warning,
                     DiagnosticSource.Analysis));

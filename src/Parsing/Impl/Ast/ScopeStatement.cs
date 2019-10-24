@@ -38,8 +38,6 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public bool NeedsLocalsDictionary { get; set; }
 
-        IReadOnlyList<PythonVariable> IScopeNode.ScopeVariables => ScopeInfo.ScopeVariables;
-
         public virtual string Name => "<unknown>";
 
         public bool IsGlobal => ScopeInfo.IsGlobal;
@@ -48,6 +46,8 @@ namespace Microsoft.Python.Parsing.Ast {
         public bool TryGetVariable(string name, out PythonVariable variable) => ScopeInfo.TryGetVariable(name, out variable);
 
         public IReadOnlyList<PythonVariable> FreeVariables => ScopeInfo.FreeVariables;
+        
+        public IReadOnlyList<PythonVariable> ScopeVariables => ScopeInfo.ScopeVariables;
         #endregion
 
         #region IBindableNode

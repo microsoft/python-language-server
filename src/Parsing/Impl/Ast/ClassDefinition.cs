@@ -46,11 +46,8 @@ namespace Microsoft.Python.Parsing.Ast {
 
         public ImmutableArray<Arg> Bases { get; }
 
-        #region IScopeStatement
-        public override Statement Body => _body;
-        #endregion
-
         #region ScopeStatement
+        public override Statement Body => _body;
         internal override ScopeInfo ScopeInfo { get; }
         #endregion
 
