@@ -1440,29 +1440,32 @@ class B(A):
 
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            var result = cs.GetCompletions(analysis, new SourceLocation(9, 9));
+            var result = cs.GetCompletions(analysis, new SourceLocation(9, 11));
 
-            Console.WriteLine(result.ToString());
+            result.Completions.Where(item => item.insertText == "base_func").Should().HaveCount(1);
         }
 
 
         [TestMethod]
-        public async Task SingleInheritanceSuperCheckCompletion2() {
+        public async Task SingleInheritanceSuperCheckCompletionNoDuplicates() {
             const string code = @"
 class A:
-    def base_func(self):
+    def foo(self):
         return 1234
 
 class B(A):
     def foo(self):
-        super()
-";
+        return 4321
 
+class C(B):
+    def foo(self):
+        super().
+";
             var analysis = await GetAnalysisAsync(code);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            var result = cs.GetCompletions(analysis, new SourceLocation(8, 6));
+            var result = cs.GetCompletions(analysis, new SourceLocation(12, 17));
 
-            Console.WriteLine(result.ToString());
+            result.Completions.GroupBy(item => item.insertText).Any(g => g.Count() > 1).Should().BeFalse();
         }
 
 

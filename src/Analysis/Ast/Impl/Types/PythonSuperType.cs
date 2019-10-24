@@ -33,17 +33,9 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IReadOnlyList<IPythonType> Mro => _mro;
 
-        public override IMember GetMember(string name) {
-            foreach (var cls in _mro?.OfType<IPythonClassType>().MaybeEnumerate()) {
-                var member = cls.GetMember(name);
-                if (member != null) {
-                    return member;
-                }
-            }
-            return null;
-        }
-
-        public override IEnumerable<string> GetMemberNames() => (_mro?.OfType<IPythonClassType>().MaybeEnumerate()).SelectMany(cls => cls.GetMemberNames().Select(name => name));
+        public override IMember GetMember(string name) => _mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
+          
+        public override IEnumerable<string> GetMemberNames() => _mro.MaybeEnumerate().SelectMany(cls => cls.GetMemberNames()).Distinct();
     }
 }
 
