@@ -362,7 +362,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var moduleKey = new AnalysisModuleKey(module);
                 entries[moduleKey] = (module, entry);
-                var analysis = TryRestoreCachedAnalysis(module);
+                var analysis = _analyzer.TryRestoreCachedAnalysis(module);
                 if (analysis != null) {
                     AddLoopImportsFromCachedAnalysis(importNames, variables, moduleKey, analysis);
                     cachedVariables.Add(new AnalysisModuleKey(module), analysis.GlobalScope.Variables);
@@ -547,7 +547,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis RestoreOrAnalyzeModule(IDependencyChainSingleNode<PythonAnalyzerEntry> node, IPythonModule module, PythonAst ast, int version) {
-            var analysis = TryRestoreCachedAnalysis(module);
+            var analysis = _analyzer.TryRestoreCachedAnalysis(module);
             if (analysis != null) {
                 MarkNodeWalked(node);
                 return analysis;
@@ -571,24 +571,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return isCanceled;
         }
 
-        private IDocumentAnalysis TryRestoreCachedAnalysis(IPythonModule module) {
-            var moduleType = module.ModuleType;
-            if (!moduleType.CanBeCached() || _moduleDatabaseService == null || !_moduleDatabaseService.ModuleExistsInStorage(module.Name, module.FilePath)) {
-                return null;
-            }
-
-            if (_moduleDatabaseService.TryRestoreGlobalScope(module, out var gs)) {
-                _log?.Log(TraceEventType.Verbose, "Restored from database: ", module.Name);
-                var analysis = new DocumentAnalysis((IDocument)module, 1, gs, new ExpressionEval(_services, module, module.GetAst()), Array.Empty<string>());
-                gs.ReconstructVariables();
-                return analysis;
-            }
-
-            _log?.Log(TraceEventType.Verbose, "Restore from database failed for module ", module.Name);
-
-            return null;
-        }
-
         private IDocumentAnalysis CreateAnalysis(IDependencyChainSingleNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker) {
             var canHaveLibraryAnalysis = false;
 
@@ -604,12 +586,14 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             var isCanceled = MarkNodeWalked(node);
             var createLibraryAnalysis = !isCanceled &&
-                                        node != null &&
-                                        !node.HasMissingDependencies &&
                                         canHaveLibraryAnalysis &&
-                                        !document.IsOpen &&
-                                        node.HasOnlyWalkedDependencies &&
-                                        node.IsValidVersion;
+                                        !document.IsOpen;
+
+            if (node != null) {
+                createLibraryAnalysis &= !node.HasMissingDependencies &&
+                                         node.HasOnlyWalkedDependencies &&
+                                         node.IsValidVersion;
+            }
 
             if (!createLibraryAnalysis) {
                 return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);

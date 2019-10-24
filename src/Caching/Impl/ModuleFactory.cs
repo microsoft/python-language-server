@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public IPythonType ConstructType(string qualifiedName)
-            => ConstructMember(qualifiedName)?.GetPythonType();
+            => ConstructMember(qualifiedName)?.GetPythonType() ?? Module.Interpreter.UnknownType;
 
         public IMember ConstructMember(string qualifiedName) {
             // Determine module name, member chain and if this is an instance.
@@ -113,11 +113,8 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 currentModel = nextModel;
-                declaringType = m as IPythonType;
+                declaringType = m.GetPythonType();
                 Debug.Assert(declaringType != null);
-                if (declaringType == null) {
-                    return null;
-                }
             }
 
             return m;
