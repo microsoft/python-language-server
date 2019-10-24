@@ -276,6 +276,32 @@ import socket
         }
 
         [TestMethod, Priority(0)]
+        public async Task SymbolOrdering3() {
+            var markup = @"{|insertionSpan:|}{|diagnostic:pd|}";
+
+            MarkupUtils.GetNamedSpans(markup, out var code, out var spans);
+
+            // get main analysis and add mock modules
+            var analysis = await GetAnalysisAsync(code);
+
+            await GetAnalysisAsync("", analysis.ExpressionEvaluator.Services, modulePath: TestData.GetTestSpecificPath("pandas.py"));
+            await GetAnalysisAsync("", analysis.ExpressionEvaluator.Services, modulePath: TestData.GetTestSpecificPath("pd.py"));
+
+            // calculate actions
+            var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
+            var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+
+            var list = codeActions.Select(c => c.title).ToList();
+            var zipList = Enumerable.Range(0, list.Count).Zip(list);
+
+            var pandasIndex = zipList.First(t => t.Second == "import pandas as pd").First;
+            var pdIndex = zipList.First(t => t.Second == "import pd").First;
+
+            pandasIndex.Should().BeLessThan(pdIndex);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ModuleNotReachableFromUserDocument() {
             await TestCodeActionAsync(
                 @"{|insertionSpan:|}{|diagnostic:path|}",
@@ -467,7 +493,7 @@ def Method():
         private async Task TestCodeActionAsync(string markup, string title, string newText, string abbreviation, params string[] relativePaths) {
             MarkupUtils.GetNamedSpans(markup, out var code, out var spans);
 
-            // get main analysis and add mock pandas module
+            // get main analysis and add mock modules
             var analysis = await GetAnalysisAsync(code);
 
             foreach (var relativePath in relativePaths) {
@@ -478,8 +504,6 @@ def Method():
             var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
             var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
             var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
-
-            var docTable = analysis.ExpressionEvaluator.Services.GetService<IRunningDocumentTable>();
 
             // verify results
             var codeAction = codeActions.Single(c => c.title == title);
