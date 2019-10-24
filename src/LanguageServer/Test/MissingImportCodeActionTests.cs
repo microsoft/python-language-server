@@ -319,6 +319,40 @@ import socket
         }
 
         [TestMethod, Priority(0)]
+        public async Task SuggestReverseAbbreviationForKnownModule() {
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:pd|}",
+                title: "import pandas as pd",
+                newText: "import pandas as pd" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "pd",
+                relativePaths: "pandas");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SuggestReverseAbbreviationForKnownModule2() {
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:plt|}",
+                title: "from matplotlib import pyplot as plt",
+                newText: "from matplotlib import pyplot as plt" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "plt",
+                relativePaths: @"matplotlib\pyplot");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task SuggestReverseAbbreviationForKnownModule3() {
+            var markup = @"
+{|insertionSpan:from matplotlib import test|}
+{|diagnostic:plt|}";
+
+            await TestCodeActionAsync(
+                markup,
+                title: "from matplotlib import pyplot as plt, test",
+                newText: "from matplotlib import pyplot as plt, test",
+                abbreviation: "plt",
+                relativePaths: new string[] { @"matplotlib\pyplot", @"matplotlib\test" });
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ContextBasedSuggestion() {
             var markup =
                 @"from os import path

@@ -64,28 +64,59 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         public ImmutableArray<string> FixableDiagnostics => ImmutableArray<string>.Create(
             ErrorCodes.UndefinedVariable, ErrorCodes.VariableNotDefinedGlobally, ErrorCodes.VariableNotDefinedNonLocal);
 
-        public async Task<IEnumerable<CodeAction>> GetCodeActionAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
+        public async Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
             var finder = new ExpressionFinder(analysis.Ast, FindExpressionOptions.Complete);
             var node = finder.GetExpression(diagnostic.SourceSpan);
             if (!(node is NameExpression nex)) {
                 return Enumerable.Empty<CodeAction>();
             }
 
-            var interpreter = analysis.Document.Interpreter;
-            var pathResolver = interpreter.ModuleResolution.CurrentPathResolver;
-
-            var name = nex.Name;
-            if (string.IsNullOrEmpty(name)) {
+            var identifier = nex.Name;
+            if (string.IsNullOrEmpty(identifier)) {
                 return Enumerable.Empty<CodeAction>();
             }
 
+            var codeActions = new List<CodeAction>();
+            var diagnostics = new[] { diagnostic.ToDiagnostic() };
+
+            // add given name as it is
+            await GetCodeActionsAsync(analysis, diagnostics, new Input(node, identifier), codeActions, cancellationToken);
+
+            // see whether it is one of abbreviation we specialize
+            foreach (var moduleFullName in WellKnownAbbreviationMap.Where(kv => kv.Value == identifier).Select(kv => kv.Key)) {
+                var moduleName = GetModuleName(moduleFullName);
+
+                await GetCodeActionsAsync(analysis, diagnostics, new Input(node, moduleName, moduleFullName), codeActions, cancellationToken);
+            }
+
+            return codeActions;
+
+            string GetModuleName(string moduleFullName) {
+                var index = moduleFullName.LastIndexOf(".");
+                if (index < 0) {
+                    return moduleFullName;
+                }
+
+                return moduleFullName.Substring(index + 1);
+            }
+        }
+
+        private async Task GetCodeActionsAsync(IDocumentAnalysis analysis,
+                                               Diagnostic[] diagnostics,
+                                               Input input,
+                                               List<CodeAction> codeActions,
+                                               CancellationToken cancellationToken) {
             var importFullNameMap = new Dictionary<string, ImportInfo>();
-            await AddCandidatesFromIndexAsync(analysis, name, importFullNameMap, cancellationToken);
+            await AddCandidatesFromIndexAsync(analysis, input.Identifier, importFullNameMap, cancellationToken);
+
+            var interpreter = analysis.Document.Interpreter;
+            var pathResolver = interpreter.ModuleResolution.CurrentPathResolver;
 
             // find installed modules matching the given name. this will include submodules
             var languageVersion = Parsing.PythonLanguageVersionExtensions.ToVersion(interpreter.LanguageVersion);
             var includeImplicit = !ModulePath.PythonVersionRequiresInitPyFiles(languageVersion);
-            foreach (var moduleFullName in pathResolver.GetAllImportableModulesByName(name, includeImplicit)) {
+
+            foreach (var moduleFullName in pathResolver.GetAllImportableModulesByName(input.Identifier, includeImplicit)) {
                 cancellationToken.ThrowIfCancellationRequested();
                 importFullNameMap[moduleFullName] = new ImportInfo(moduleImported: false, memberImported: false, isModule: true);
             }
@@ -98,21 +129,27 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 }
 
                 // module name is full module name that you can use in import xxxx directly
-                CollectCandidates(moduleInfo.Reset(module), name, importFullNameMap, cancellationToken);
+                CollectCandidates(moduleInfo.Reset(module), input.Identifier, importFullNameMap, cancellationToken);
                 Debug.Assert(moduleInfo.NameParts.Count == 1 && moduleInfo.NameParts[0] == module.Name);
             }
 
-            FilterCandidatesBasedOnContext(analysis, node, importFullNameMap, cancellationToken);
-
-            // this will create actual code fix with certain orders
-            var diagnostics = new[] { diagnostic.ToDiagnostic() };
-            var codeActions = new List<CodeAction>();
-            foreach (var fullName in OrderFullNames(importFullNameMap)) {
-                cancellationToken.ThrowIfCancellationRequested();
-                codeActions.AddIfNotNull(CreateCodeAction(analysis, node, fullName, diagnostics, locallyInserted: false, cancellationToken));
+            // check quick bail out case where we know what module we are looking for
+            if (input.ModuleFullNameOpt != null) {
+                if (importFullNameMap.ContainsKey(input.ModuleFullNameOpt)) {
+                    // add code action if the module exist, otherwise, bail out empty
+                    codeActions.AddIfNotNull(CreateCodeAction(analysis, input.Context, input.ModuleFullNameOpt, diagnostics, locallyInserted: false, cancellationToken));
+                }
+                return;
             }
 
-            return codeActions;
+            // regular case
+            FilterCandidatesBasedOnContext(analysis, input.Context, importFullNameMap, cancellationToken);
+
+            // this will create actual code fix with certain orders
+            foreach (var fullName in OrderFullNames(importFullNameMap)) {
+                cancellationToken.ThrowIfCancellationRequested();
+                codeActions.AddIfNotNull(CreateCodeAction(analysis, input.Context, fullName, diagnostics, locallyInserted: false, cancellationToken));
+            }
         }
 
         private void FilterCandidatesBasedOnContext(IDocumentAnalysis analysis, Node node, Dictionary<string, ImportInfo> importFullNameMap, CancellationToken cancellationToken) {
@@ -602,6 +639,18 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 Range = range;
                 Indentation = indentation;
                 AbbreviationOpt = abbreviationOpt;
+            }
+        }
+
+        private struct Input {
+            public readonly Node Context;
+            public readonly string Identifier;
+            public readonly string ModuleFullNameOpt;
+
+            public Input(Node context, string identifier, string moduleFullNameOpt = null) {
+                Context = context;
+                Identifier = identifier;
+                ModuleFullNameOpt = moduleFullNameOpt;
             }
         }
 

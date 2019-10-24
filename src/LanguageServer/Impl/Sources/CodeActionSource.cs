@@ -45,7 +45,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             foreach (var diagnostic in GetMatchingDiagnostics(analysis, diagnostics, cancellationToken)) {
                 foreach (var codeActionProvider in _codeActionProviders) {
                     if (codeActionProvider.FixableDiagnostics.Any(code => code == diagnostic.ErrorCode)) {
-                        results.AddRange(await codeActionProvider.GetCodeActionAsync(analysis, diagnostic, cancellationToken));
+                        results.AddRange(await codeActionProvider.GetCodeActionsAsync(analysis, diagnostic, cancellationToken));
                     }
                 }
             }
