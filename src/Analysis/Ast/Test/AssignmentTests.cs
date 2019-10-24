@@ -717,12 +717,11 @@ def foo(lst: List[List[List[int]]]):
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.Required_Python38X);
             analysis.GlobalScope.Should().HaveChildScopeAt<IScope>(0).Which.Should()
-                .HaveVariable("a").OfType(BuiltinTypeId.Int);
+                .HaveVariable("a");
             analysis.Should().NotHaveVariable("a");
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("Needs comprehension scoping")]
         public async Task NamedExpressionFromComprehension() {
             const string code = @"
 from typing import List
