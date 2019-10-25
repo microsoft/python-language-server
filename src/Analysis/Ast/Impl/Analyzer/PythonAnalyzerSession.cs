@@ -443,6 +443,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
                 CompleteAnalysis(entry, module, version, analysis);
+                
+                ActivityTracker.OnEnqueueModule(entry.Module.FilePath);
             }
 
             if (!MarkNodeWalked(loopNode)) {
@@ -599,7 +601,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
             }
 
-            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
+            ast.ReduceToImports();
             document.SetAst(ast);
 
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);

@@ -82,7 +82,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             walker = WalkModule(module, ast);
-            var gs = walker != null ? walker.Eval.GlobalScope : module.Analysis.GlobalScope;
+            var gs = walker != null ? walker.Eval.GlobalScope : module.GlobalScope;
             return gs?.Variables[name];
         }
 
