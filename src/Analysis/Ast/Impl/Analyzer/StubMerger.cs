@@ -177,7 +177,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue; // Stub already have the member, don't replace.
                 }
 
-                (stubType as PythonType)?.AddMember(name, stubMember, overwrite: true);
+                (stubType as PythonType)?.AddMember(name, sourceMember, overwrite: true);
             }
 
             // Second pass: go through stub class members and if they don't have documentation 
