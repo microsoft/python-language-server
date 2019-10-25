@@ -19,8 +19,6 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonSuperType : PythonType, IPythonSuperType {
-        private IReadOnlyList<IPythonType> _mro;
-
         /// <summary>
         /// more info at https://docs.python.org/3/library/functions.html#super
         /// </summary>
@@ -28,14 +26,14 @@ namespace Microsoft.Python.Analysis.Types {
         /// <param name="mro">Should be a list of IPythonType</param>
         public PythonSuperType(Location location, IReadOnlyList<IPythonType> mro)
             : base("super", location, string.Empty, BuiltinTypeId.Type) {
-            _mro = mro;
+            Mro = mro;
         }
 
-        public IReadOnlyList<IPythonType> Mro => _mro;
+        public IReadOnlyList<IPythonType> Mro { get; }
 
-        public override IMember GetMember(string name) => _mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
+        public override IMember GetMember(string name) => Mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
 
-        public override IEnumerable<string> GetMemberNames() => _mro.MaybeEnumerate().SelectMany(cls => cls.GetMemberNames()).Distinct();
+        public override IEnumerable<string> GetMemberNames() => Mro.MaybeEnumerate().SelectMany(cls => cls.GetMemberNames()).Distinct();
     }
 }
 

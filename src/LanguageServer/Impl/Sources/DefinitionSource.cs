@@ -286,7 +286,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         return FromMember(v1);
                     }
                     break;
-                case IPythonSuperType cls:
+                case IPythonSuperType cls: // TODO: move mro IPythontypes or  make IPythonClassType a child of IPythonSuperType
                     // Data members may be PythonInstances which do not track their declaration location.
                     // In this case we'll try looking up the respective variable instead according to Mro.
                     foreach (var b in cls.Mro.OfType<IPythonClassType>()) {

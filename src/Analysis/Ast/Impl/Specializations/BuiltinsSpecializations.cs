@@ -13,7 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
@@ -21,7 +21,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
@@ -99,14 +98,9 @@ namespace Microsoft.Python.Analysis.Specializations {
 
             if (args.Count == 0) {
                 //Zero argument form only works inside a class definition
-                foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal) {
-                    if (s.Node is ClassDefinition) {
-                        var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
-
-                        if (classType?.Mro != null) {
-                            return CreateSuper(argSet, classType.Mro, declaringModule, indexSpan);
-                        }
-                    }
+                foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal.Where(s => s.Node is ClassDefinition)) {
+                    var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
+                    return CreateSuper(argSet, classType, declaringModule, indexSpan);
                 }
                 return null;
             }
@@ -120,42 +114,41 @@ namespace Microsoft.Python.Analysis.Specializations {
             // second argument optional
             bool isUnbound = args.Count == 1;
             if (isUnbound) {
-                return CreateSuper(argSet, firstCls.Mro, declaringModule, indexSpan);
+                return CreateSuper(argSet, firstCls, declaringModule, indexSpan);
             }
 
             var secondCls = args[1].GetPythonType<IPythonClassType>();
-            if (secondCls != null &&
-                (secondCls.Equals(firstCls) || secondCls.IsSubClassOf(firstCls))) {
+            if (secondCls?.Equals(firstCls) == true || 
+                secondCls?.IsSubClassOf(firstCls) == true) {
                 // We walk the mro of the second parameter looking for the first
-                return CreateSuper(argSet, secondCls.Mro, declaringModule, indexSpan, typeToFind: firstCls);
+                return CreateSuper(argSet, secondCls, declaringModule, indexSpan, typeToFind: firstCls);
             }
 
             return null;
         }
 
         private static IMember CreateSuper(IArgumentSet argSet,
-            IReadOnlyList<IPythonType> callerMro,
+            IPythonClassType classType,
             IPythonModule declaringModule,
             IndexSpan indexSpan,
             IPythonType typeToFind = null) {
 
-            if (callerMro.Count == 0) {
+            var mro = classType?.Mro ?? Array.Empty<IPythonType>();
+            if (mro.Count == 0) {
                 return null;
             }
-
-            IReadOnlyList<IPythonType> mro = callerMro;
-
+            
             // skip doing work if the newStartType is the first element in the callers mro
-            if (typeToFind != null &&
-                !typeToFind.Equals(callerMro.FirstOrDefault())) {
-                var mroList = callerMro.ToList();
+            if (typeToFind?.Equals(classType.Mro.FirstOrDefault()) == false) {
+                var mroList = classType.Mro.ToList();
                 var start = mroList.FindIndex(0, t => t.Equals(typeToFind));
                 if (start >= 0) {
-                    mro = mroList.GetRange(start, mro.Count() - start).ToArray();
+                    mro = mroList.GetRange(start, mro.Count - start).ToArray();
                 } else {
                     return null;  // typeToFind wasn't in the mro
                 }
             }
+
             var nextClassInLine = mro?.FirstOrDefault();
             if (nextClassInLine != null) {
                 var location = new Location(declaringModule, indexSpan);
