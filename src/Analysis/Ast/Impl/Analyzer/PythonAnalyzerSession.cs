@@ -166,10 +166,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         totalMilliseconds = Math.Round(totalMilliseconds, 2);
                         (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
                         _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
-//#if DEBUG
-//                        var notReady = _analyzer.LoadedModules.Where(m => (m.ModuleType == ModuleType.Library || m.ModuleType == ModuleType.Stub) && m.Analysis is EmptyAnalysis).ToArray();
-//                        Debug.Assert(notReady.Length == 0);
-//#endif
+                        //#if DEBUG
+                        //                        var notReady = _analyzer.LoadedModules.Where(m => (m.ModuleType == ModuleType.Library || m.ModuleType == ModuleType.Stub) && m.Analysis is EmptyAnalysis).ToArray();
+                        //                        Debug.Assert(notReady.Length == 0);
+                        //#endif
                     }
                 }
             }
@@ -253,8 +253,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             return remaining;
         }
-        
-        private void RunAnalysis(IDependencyChainNode node, Stopwatch stopWatch) 
+
+        private void RunAnalysis(IDependencyChainNode node, Stopwatch stopWatch)
             => ExecutionContext.Run(ExecutionContext.Capture(), s => Analyze(node, null, stopWatch), null);
 
         private Task StartAnalysis(IDependencyChainNode node, AsyncCountdownEvent ace, Stopwatch stopWatch)
@@ -274,7 +274,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                             node.MarkWalked();
                             LogException(single.Value, exception);
                         }
-                        
+
                         break;
                     case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
                         try {
@@ -379,10 +379,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             if (asts.Count == 0) {
+                // Fully cached loop
+                foreach (var entry in loopNode.Values) {
+                    ActivityTracker.OnEnqueueModule(entry.Module.FilePath);
+                }
                 if (_log != null && _log.LogLevel == TraceEventType.Verbose) {
                     var names = string.Join(", ", cachedVariables.Select(v => v.Key.Name));
-                    _log?.Log(TraceEventType.Verbose, $"Attempt to reanalyze fully cached modules cycle: {names}");
+                    _log?.Log(TraceEventType.Verbose, $"Fully cached modules cycle: {names}");
                 }
+                return;
             }
 
             var imports = new List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, int ToPosition)>();
@@ -397,7 +402,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     imports.Add((fromModule, fromPosition, toModule, toPosition));
                 }
             }
-            
+
             var startingKeys = LocationLoopResolver<AnalysisModuleKey>.FindStartingItems(imports);
             lock (_syncObj) {
                 if (_isCanceled) {
@@ -425,7 +430,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             while (asts.Count > 0) {
                 var (moduleKey, ast) = asts.First();
                 variableHandler.WalkModule(entries[moduleKey].Module, ast);
-                
+
                 lock (_syncObj) {
                     if (_isCanceled) {
                         return;
@@ -443,7 +448,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
                 CompleteAnalysis(entry, module, version, analysis);
-                
+
                 ActivityTracker.OnEnqueueModule(entry.Module.FilePath);
             }
 
@@ -458,11 +463,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void AddLoopImportsFromCachedAnalysis(in List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)> unresolvedImports, 
-            in Dictionary<(AnalysisModuleKey Module, string Name), int> variables, 
-            in AnalysisModuleKey moduleKey, 
+        private void AddLoopImportsFromCachedAnalysis(in List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)> unresolvedImports,
+            in Dictionary<(AnalysisModuleKey Module, string Name), int> variables,
+            in AnalysisModuleKey moduleKey,
             in IDocumentAnalysis analysis) {
-            
+
             foreach (var variable in analysis.GlobalScope.Variables) {
                 var key = (moduleKey, variable.Name);
                 var location = variable.Location.IndexSpan.Start;
@@ -476,7 +481,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             in List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)> imports,
             in Dictionary<(AnalysisModuleKey Module, string Name), int> variables,
             in AnalysisModuleKey moduleKey,
-            in PythonAst ast, 
+            in PythonAst ast,
             in bool isCompiledModule) {
 
             var pathResolver = moduleKey.IsTypeshed ? _typeshedPathResolver : _modulesPathResolver;
@@ -543,7 +548,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             if (module.ModuleType != ModuleType.User) {
                 return;
             }
-            
+
             var linterDiagnostics = _analyzer.LintModule(module);
             _diagnosticsService?.Replace(entry.Module.Uri, linterDiagnostics, DiagnosticSource.Linter);
         }
