@@ -122,7 +122,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 import));
         }
 
-        private static IEnumerable<(IndexSpan?, IndexSpan?)> GetNames(Statement statement) {
+        private static IEnumerable<(IndexSpan? nameSpan, IndexSpan? asNameSpan)> GetNames(Statement statement) {
             switch (statement) {
                 case ImportStatement import:
                     return import.Names.Select(n => n?.IndexSpan).Zip(import.AsNames.Select(n => n?.IndexSpan), (i, i2) => (i, i2));
@@ -133,9 +133,9 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
         }
 
-        private static (SourceSpan, PythonAst, Statement) GetDiagnosticSpan(IVariable variable, CancellationToken cancellationToken) {
+        private static (IndexSpan, PythonAst, Statement) GetDiagnosticSpan(IVariable variable, CancellationToken cancellationToken) {
             // use some heuristic on where to show diagnostics
-            var definitionSpan = variable.Definition.Span;
+            var definitionSpan = variable.Location.IndexSpan;
             var ast = variable.Location.Module.Analysis.Ast ?? variable.Location.Module.GetAst();
             if (ast == null) {
                 return (definitionSpan, null, null);
@@ -143,7 +143,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
             // see whether import statement contains just 1 symbol or multiple one
             var finder = new ExpressionFinder(ast, new FindExpressionOptions() { ImportNames = true, ImportAsNames = true, Names = true });
-            var identifier = finder.GetExpression(definitionSpan);
+            var identifier = finder.GetExpression(definitionSpan.Start, definitionSpan.End);
             if (identifier == null) {
                 return (definitionSpan, ast, null);
             }
@@ -152,9 +152,23 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             switch (statement) {
                 case ImportStatement _:
                 case FromImportStatement _:
-                    return (definitionSpan, ast, statement);
+                    return (GetNameSpan(definitionSpan, statement), ast, statement);
                 default:
                     return (definitionSpan, ast, null);
+            }
+        }
+
+        private static IndexSpan GetNameSpan(IndexSpan definitionSpan, Statement statement) {
+            var names = GetNames(statement);
+            var match = names.FirstOrDefault(z => Contains(z.nameSpan, definitionSpan) || Contains(z.asNameSpan, definitionSpan));
+            if (match.nameSpan == null) {
+                return definitionSpan;
+            }
+
+            return IndexSpan.FromBounds(match.nameSpan.Value.Start, match.asNameSpan?.End ?? match.nameSpan.Value.End);
+
+            bool Contains(IndexSpan? span1, IndexSpan span2) {
+                return span1?.Contains(span2) ?? false;
             }
         }
 
@@ -189,11 +203,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
             public readonly PythonMemberType Type;
             public readonly string Name;
-            public readonly SourceSpan Span;
+            public readonly IndexSpan Span;
             public readonly PythonAst Ast;
             public readonly Statement ImportStatement;
 
-            public Info(PythonMemberType type, string name, SourceSpan span, PythonAst ast, Statement importStatement) {
+            public Info(PythonMemberType type, string name, IndexSpan span, PythonAst ast, Statement importStatement) {
                 Type = type;
                 Name = name;
                 Span = span;
@@ -202,25 +216,18 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
 
             public DiagnosticsEntry ToDiagnostic() {
-                return ToDiagnostic(Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatUI(Type, Name), Span);
+                return ToDiagnostic(Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatUI(Type, Name), Span.ToSourceSpan(Ast));
             }
 
             public static DiagnosticsEntry ToDiagnostic(IEnumerable<Info> info) {
                 var first = info.First();
+                var span = first.ImportStatement.GetSpan(first.Ast);
 
-                if (info.Count() == 1) {
-                    return ToDiagnostic(
-                        Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatUI(first.Type, first.Name),
-                        first.ImportStatement.GetSpan(first.Ast));
-                }
+                var message = info.Count() == 1 ?
+                    Resources._0_1_is_declared_but_it_is_never_used_within_the_current_file.FormatUI(first.Type, first.Name) :
+                    Resources._0_1_are_declared_but_they_are_never_used_within_the_current_file.FormatUI(first.Type, first.Name);
 
-                return new DiagnosticsEntry(
-                    Resources._0_1_are_declared_but_they_are_never_used_within_the_current_file.FormatUI(first.Type, first.Name),
-                    first.ImportStatement.GetSpan(first.Ast),
-                    ErrorCodes.UnusedImport,
-                    Parsing.Severity.Hint,
-                    DiagnosticSource.Linter,
-                    Tags);
+                return ToDiagnostic(message, span);
             }
 
             private static DiagnosticsEntry ToDiagnostic(string message, SourceSpan span) {

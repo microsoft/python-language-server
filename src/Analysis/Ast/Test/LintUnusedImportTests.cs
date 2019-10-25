@@ -67,9 +67,38 @@ e = math.e", PythonMemberType.Module, "os", multiple: false);
 
         [TestMethod, Priority(0)]
         public async Task MultipleModulesInImportWithAsName() {
-            await TestAsync(@"import os as {|diagnostic:o|}, math
+            await TestAsync(@"import {|diagnostic:os as o|}, math
 
 e = math.e", PythonMemberType.Module, "o", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleModulesInImportWithAsName2() {
+            await TestAsync(@"import os as o, {|diagnostic:math as m|}
+
+p = o.path", PythonMemberType.Module, "m", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BasicUnusedFromImport() {
+            await TestAsync(@"{|diagnostic:from os import path|}", PythonMemberType.Module, "path", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task BasicUnusedFromImportWithAsName() {
+            await TestAsync(@"{|diagnostic:from os import path as p|}", PythonMemberType.Module, "p", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleModulesInFromImport() {
+            await TestAsync(@"from os import {|diagnostic:path|}, pathconf
+p = pathconf('', '')", PythonMemberType.Module, "path", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleModulesInFromImportWithAsName() {
+            await TestAsync(@"from os import {|diagnostic:path as p1|}, pathconf
+p = pathconf('', '')", PythonMemberType.Module, "p1", multiple: false);
         }
 
         private async Task TestAsync(string markup, PythonMemberType type, string name, bool multiple) {
