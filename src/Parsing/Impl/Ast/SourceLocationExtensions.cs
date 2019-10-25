@@ -31,5 +31,8 @@ namespace Microsoft.Python.Parsing.Ast {
     public static class IndexSpanExtensions {
         public static SourceSpan ToSourceSpan(this IndexSpan span, ILocationConverter lc)
             => lc != null ? new SourceSpan(lc.IndexToLocation(span.Start), lc.IndexToLocation(span.End)) : default;
+        public static bool Contains(this IndexSpan span, IndexSpan other) {
+            return span.Start <= other.Start && other.End <= span.End;
+        }
     }
 }

@@ -61,7 +61,16 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &apos;{0} {1}&apos; is declared but it&apos;s never used within the current file..
+        ///   Looks up a localized string similar to &apos;{0} {1} and more&apos; are declared but they are never used within the current file..
+        /// </summary>
+        internal static string _0_1_are_declared_but_they_are_never_used_within_the_current_file {
+            get {
+                return ResourceManager.GetString("0_1_are_declared_but_they_are_never_used_within_the_current_file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0} {1}&apos; is declared but it is never used within the current file..
         /// </summary>
         internal static string _0_1_is_declared_but_it_is_never_used_within_the_current_file {
             get {
