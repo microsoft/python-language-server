@@ -222,8 +222,8 @@ p = path.join('', '')", PythonMemberType.Module, "os", multiple: false);
         [TestMethod, Priority(0)]
         public async Task MultipleImports2() {
             await TestAsync(@"{|diagnostic:import os|}
-{|diagnostic:import math|}", 
-                (PythonMemberType.Module, "os", multiple: false), 
+{|diagnostic:import math|}",
+                (PythonMemberType.Module, "os", multiple: false),
                 (PythonMemberType.Module, "math", multiple: false));
         }
 
@@ -233,6 +233,48 @@ p = path.join('', '')", PythonMemberType.Module, "os", multiple: false);
 {|diagnostic:import os.path|}",
                 (PythonMemberType.Module, "os", multiple: false),
                 (PythonMemberType.Module, "os", multiple: false));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports4() {
+            await TestAsync(@"{|diagnostic:import os as o|}
+import {|diagnostic:os.path as p|}, math
+e = math.e",
+                (PythonMemberType.Module, "o", multiple: false),
+                (PythonMemberType.Module, "p", multiple: false));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports5() {
+            await TestAsync(@"{|diagnostic:import os|}
+import {|diagnostic:os.path|}, math
+e = math.e",
+                (PythonMemberType.Module, "os", multiple: false),
+                (PythonMemberType.Module, "os", multiple: false));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports6() {
+            await TestAsync(@"{|diagnostic:import os, os.path|}",
+                PythonMemberType.Module, "os", multiple: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports7() {
+            await TestAsync(@"import {|diagnostic:os|}, {|diagnostic:os.path|}, math
+e = math.e",
+                (PythonMemberType.Module, "os", multiple: false),
+                (PythonMemberType.Module, "os", multiple: false));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports8() {
+            await TestAsync(@"{|diagnostic:import os|}
+
+def Method():
+    {|diagnostic:import math|}",
+                (PythonMemberType.Module, "os", multiple: false),
+                (PythonMemberType.Module, "math", multiple: false));
         }
 
         private Task TestNoUnusedAsync(string markup) {

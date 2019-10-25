@@ -26,18 +26,34 @@ using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
+using Microsoft.Python.Parsing.Extensions;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UnusedImportsLinter : ILinter {
         public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services) {
-            var results = new List<Info>();
-
-            var imported = analysis.GlobalScope.Imported;
             var allVariables = new HashSet<string>(analysis.GlobalScope.GetAllVariablesBestEffort());
 
+            var results = new List<Info>();
+            foreach (var scope in GetAllScopes(analysis, CancellationToken.None)) {
+                CollectUnusedImportForScope(analysis, scope, allVariables, results);
+            }
+
+            return CreateDiagnostics(results);
+        }
+
+        private IEnumerable<IScope> GetAllScopes(IDocumentAnalysis analysis, CancellationToken cancellationToken) {
+            foreach (var scope in analysis.Ast.ChildNodesDepthFirst().OfType<ScopeStatement>()) {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                yield return analysis.FindScope(scope.Body.GetStart(analysis.Ast));
+            }
+        }
+
+        private static void CollectUnusedImportForScope(IDocumentAnalysis analysis, IScope scope, HashSet<string> allVariables, List<Info> results) {
             // * NOTE * variable declared in imported is different than same variable referenced in the code.
             //          that is because that variable is re-declared in another variable collection
-            var variableDeclared = analysis.GlobalScope.Variables;
+            var imported = scope.Imported;
+            var variableDeclared = scope.Variables;
             foreach (var name in imported.Names) {
                 if (!imported.TryGetVariable(name, out var variableFromImported)) {
                     continue;
@@ -78,14 +94,13 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 // find any reference in current file which is not the import variable definition itself
                 // varaibleFromVariables reference contains references in the module and variableFromImported reference contains same imported member used in imports.
                 // make sure varaibleFromVariables reference contains any reference that are not part of imports
-                if (variableFromVariables.References.Any(l => !variableFromImported.References.Any(r => LocationInfo.FullComparer.Equals(l, r)))) {
+                var usageReferences = variableFromVariables.References.Where(l => !variableFromImported.References.Any(r => LocationInfo.FullComparer.Equals(l, r))).ToArray();
+                if (usageReferences.Length > 0) {
                     continue;
                 }
 
                 ReportUnusedImports(variableFromImported, results, CancellationToken.None);
             }
-
-            return CreateDiagnostics(results);
         }
 
         private IReadOnlyList<DiagnosticsEntry> CreateDiagnostics(List<Info> info) {
@@ -123,15 +138,18 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         private static void ReportUnusedImports(IVariable variable, List<Info> results, CancellationToken cancellationToken) {
             foreach (var reference in variable.References) {
-                var (span, ast, import) = GetDiagnosticSpan(variable, reference, cancellationToken);
-
-                results.Add(new Info(
-                    variable.Value.MemberType,
-                    variable.Name,
-                    span,
-                    ast,
-                    import));
+                ReportUnusedImports(variable, reference, results, cancellationToken);
             }
+        }
+
+        private static void ReportUnusedImports(IVariable variable, LocationInfo reference, List<Info> results, CancellationToken cancellationToken) {
+            var (span, ast, import) = GetDiagnosticSpan(variable, reference, cancellationToken);
+            results.Add(new Info(
+                variable.Value.MemberType,
+                variable.Name,
+                span,
+                ast,
+                import));
         }
 
         private static IEnumerable<(IndexSpan? nameSpan, IndexSpan? asNameSpan)> GetNames(Statement statement) {
