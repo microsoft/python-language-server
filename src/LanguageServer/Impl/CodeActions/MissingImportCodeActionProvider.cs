@@ -93,11 +93,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
             string GetModuleName(string moduleFullName) {
                 var index = moduleFullName.LastIndexOf(".");
-                if (index < 0) {
-                    return moduleFullName;
-                }
-
-                return moduleFullName.Substring(index + 1);
+                return index < 0 ? moduleFullName : moduleFullName.Substring(index + 1);
             }
         }
 
