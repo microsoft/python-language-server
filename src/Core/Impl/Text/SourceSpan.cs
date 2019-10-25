@@ -24,7 +24,7 @@ namespace Microsoft.Python.Core.Text {
     /// </summary>
     [Serializable]
     [DebuggerDisplay("({Start.Line}, {Start.Column})-({End.Line}, {End.Column})")]
-    public struct SourceSpan: IComparable<SourceSpan> {
+    public struct SourceSpan : IComparable<SourceSpan> {
         /// <summary>
         /// Constructs a new span with a specific start and end location.
         /// </summary>
@@ -95,7 +95,7 @@ namespace Microsoft.Python.Core.Text {
         /// <param name="left">One span to compare.</param>
         /// <param name="right">The other span to compare.</param>
         /// <returns>True if the spans are the same, False otherwise.</returns>
-        public static bool operator ==(SourceSpan left, SourceSpan right) 
+        public static bool operator ==(SourceSpan left, SourceSpan right)
             => left.Start == right.Start && left.End == right.End;
 
         /// <summary>
@@ -118,6 +118,10 @@ namespace Microsoft.Python.Core.Text {
                 return Start.Column == other.Start.Column ? 0 : 1;
             }
             return 1;
+        }
+
+        public bool Contains(SourceSpan other) {
+            return this.Start <= other.Start && this.End <= other.End;
         }
 
         public override bool Equals(object obj) {

@@ -19,7 +19,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
@@ -101,24 +100,170 @@ p = pathconf('', '')", PythonMemberType.Module, "path", multiple: false);
 p = pathconf('', '')", PythonMemberType.Module, "p1", multiple: false);
         }
 
-        private async Task TestAsync(string markup, PythonMemberType type, string name, bool multiple) {
+        [TestMethod, Priority(0)]
+        public async Task DottedNameImport() {
+            await TestAsync(@"{|diagnostic:import os.path|}", PythonMemberType.Module, "os", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DottedNameImport2() {
+            await TestAsync(@"import {|diagnostic:os.path|}, math
+e = math.e", PythonMemberType.Module, "os", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DottedNameImport3() {
+            await TestAsync(@"import {|diagnostic:os.path as p|}, math
+e = math.e", PythonMemberType.Module, "p", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task DottedNameImport4() {
+            await TestAsync(@"import os.path as p, {|diagnostic:xml.dom as d|}
+a = p.join('', '')", PythonMemberType.Module, "d", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleNames() {
+            await TestAsync(@"{|diagnostic:import os.path, math|}", PythonMemberType.Module, "os", multiple: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleNames2() {
+            await TestAsync(@"{|diagnostic:import math, os.path|}", PythonMemberType.Module, "math", multiple: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleNames3() {
+            await TestAsync(@"{|diagnostic:import os.path as p, xml.dom as d|}", PythonMemberType.Module, "p", multiple: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleNamesFromImport() {
+            await TestAsync(@"{|diagnostic:from os import path, pathconf|}", PythonMemberType.Module, "path", multiple: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleNamesFromImport2() {
+            await TestAsync(@"{|diagnostic:from os import pathconf, path|}", PythonMemberType.Function, "pathconf", multiple: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleNamesFromImport3() {
+            await TestAsync(@"{|diagnostic:from os import path as p, pathconf as c|}", PythonMemberType.Module, "p", multiple: true);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ReferenceInAllVariable() {
+            await TestAsync(@"from os import path as p, {|diagnostic:pathconf as c|}
+__all__ = [ 'p' ]
+", PythonMemberType.Function, "c", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused() {
+            await TestNoUnusedAsync(@"import os
+path = os.path");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused2() {
+            await TestNoUnusedAsync(@"import os as o, math as m
+p = o.path
+c = m.acos(10)");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused3() {
+            await TestNoUnusedAsync(@"import os.path
+s = os.sys");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused4() {
+            await TestNoUnusedAsync(@"import os.path as s
+p = s.join('', '')");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused5() {
+            await TestNoUnusedAsync(@"import os.path
+o = os");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused6() {
+            await TestNoUnusedAsync(@"from os import path as p, pathconf as c
+s = p.join('', '')
+v = c('')");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused7() {
+            await TestNoUnusedAsync(@"import os.path
+__all__ = [ 'os' ]
+");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoUnused8() {
+            await TestNoUnusedAsync(@"import os.path as p
+__all__ = [ 'p' ]
+");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports() {
+            await TestAsync(@"{|diagnostic:import os|}
+from os import path
+p = path.join('', '')", PythonMemberType.Module, "os", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports2() {
+            await TestAsync(@"{|diagnostic:import os|}
+{|diagnostic:import math|}", 
+                (PythonMemberType.Module, "os", multiple: false), 
+                (PythonMemberType.Module, "math", multiple: false));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports3() {
+            await TestAsync(@"{|diagnostic:import os|}
+{|diagnostic:import os.path|}",
+                (PythonMemberType.Module, "os", multiple: false),
+                (PythonMemberType.Module, "os", multiple: false));
+        }
+
+        private Task TestNoUnusedAsync(string markup) {
+            return TestAsync(markup);
+        }
+
+        private Task TestAsync(string markup, PythonMemberType type, string name, bool multiple) {
+            // another way of doing this is putting (type, name, multiple) as a annotation in markup itself.
+            return TestAsync(markup, (type, name, multiple));
+        }
+
+        private async Task TestAsync(string markup, params (PythonMemberType type, string name, bool multiple)[] expected) {
             MarkupUtils.GetNamedSpans(markup, out var code, out var spans);
 
             var analysis = await GetAnalysisAsync(code);
-            var actual = Lint(analysis, code);
+            var actual = Lint(analysis);
 
-            var expected = spans["diagnostic"];
-            actual.Should().HaveCount(expected.Count);
+            spans.TryGetValue("diagnostic", out var expectedDiagnostics);
 
-            var message = GetMessage(type, name, multiple);
-            var set = new HashSet<SourceSpan>(expected.Select(i => i.ToSourceSpan(analysis.Ast)));
-            foreach (var diagnostic in actual) {
-                diagnostic.ErrorCode.Should().Be(ErrorCodes.UnusedImport);
-                diagnostic.Message.Should().Be(message);
-                diagnostic.Tags.Should().HaveCount(1);
-                diagnostic.Tags[0].Should().Be(DiagnosticsEntry.DiagnosticTags.Unnecessary);
+            expectedDiagnostics = expectedDiagnostics ?? new List<IndexSpan>();
+            actual.Should().HaveCount(expectedDiagnostics.Count);
+            actual.Should().HaveCount(expected.Length);
 
-                set.Remove(diagnostic.SourceSpan).Should().BeTrue();
+            var set = new HashSet<SourceSpan>(expectedDiagnostics.Select(i => i.ToSourceSpan(analysis.Ast)));
+            foreach (var item in actual.Zip(expected, (d, e) => (d: d, e: e))) {
+                item.d.ErrorCode.Should().Be(ErrorCodes.UnusedImport);
+                item.d.Message.Should().Be(GetMessage(item.e.type, item.e.name, item.e.multiple));
+                item.d.Tags.Should().HaveCount(1);
+                item.d.Tags[0].Should().Be(DiagnosticsEntry.DiagnosticTags.Unnecessary);
+
+                set.Remove(item.d.SourceSpan).Should().BeTrue();
             }
 
             set.Should().BeEmpty();
@@ -132,7 +277,7 @@ p = pathconf('', '')", PythonMemberType.Module, "p1", multiple: false);
             return string.Format(CultureInfo.CurrentCulture, Resources._0_1_are_declared_but_they_are_never_used_within_the_current_file, type, name);
         }
 
-        private IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, string code) {
+        private IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis) {
             var a = Services.GetService<IPythonAnalyzer>();
             return a.LintModule(analysis.Document).Where(d => UnusedImportErrorCodes.Contains(d.ErrorCode)).ToList();
         }

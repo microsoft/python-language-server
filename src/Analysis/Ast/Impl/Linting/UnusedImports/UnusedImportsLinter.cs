@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Python.Analysis.Analyzer;
@@ -36,39 +37,52 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
             // * NOTE * variable declared in imported is different than same variable referenced in the code.
             //          that is because that variable is re-declared in another variable collection
-            //          not sure whether it is a bug or intentional behavior. might be intentional to distinguish
-            //          same name used for 2 different varialbes. need to check
             var variableDeclared = analysis.GlobalScope.Variables;
             foreach (var name in imported.Names) {
-                if (!imported.TryGetVariable(name, out var variableFromImportCollection)) {
+                if (!imported.TryGetVariable(name, out var variableFromImported)) {
                     continue;
                 }
 
-                // name appeared in __all__ in considered used.
+                // all imported variable must be declared in this file
+                Debug.Assert(variableFromImported.Definition.DocumentUri == analysis.Document.Uri);
+
+                // all references of the imported variable must exist in this module
+                Debug.Assert(variableFromImported.References.All(r => r.DocumentUri == analysis.Document.Uri));
+
+                // skip any name that is dotted name
+                // we only care about imported variable that are added to current module, not
+                // one that added to other module
+                // ex) import os.path
+                // we care about "os", but not "os.path"
+                if (name.IndexOf(".") >= 0) {
+                    continue;
+                }
+
+                // name appeared in "__all__" is considered used.
                 if (allVariables.Contains(name)) {
                     continue;
                 }
 
                 // we have variable from import statement, but we don't have any variable declared from actual
                 // usage. meaning the import is not used.
-                if (!variableDeclared.TryGetVariable(name, out var variableFromVariableCollection)) {
-                    ReportUnusedImports(variableFromImportCollection, results, CancellationToken.None);
+                if (!variableDeclared.TryGetVariable(name, out var variableFromVariables)) {
+                    ReportUnusedImports(variableFromImported, results, CancellationToken.None);
                     continue;
                 }
 
                 // * NOTE * this seems won't work if variable with same name declared multiple times?
-                if (!LocationInfo.FullComparer.Equals(variableFromVariableCollection.Definition, variableFromImportCollection.Definition)) {
+                if (!LocationInfo.FullComparer.Equals(variableFromVariables.Definition, variableFromImported.Definition)) {
                     continue;
                 }
 
                 // find any reference in current file which is not the import variable definition itself
-                // we need to use one from variable declared collection since FAR info is only there
-                if (variableFromVariableCollection.References.Any(r => r.DocumentUri == variableFromImportCollection.Definition.DocumentUri &&
-                                                                       r.Span != variableFromImportCollection.Definition.Span)) {
+                // varaibleFromVariables reference contains references in the module and variableFromImported reference contains same imported member used in imports.
+                // make sure varaibleFromVariables reference contains any reference that are not part of imports
+                if (variableFromVariables.References.Any(l => !variableFromImported.References.Any(r => LocationInfo.FullComparer.Equals(l, r)))) {
                     continue;
                 }
 
-                ReportUnusedImports(variableFromImportCollection, results, CancellationToken.None);
+                ReportUnusedImports(variableFromImported, results, CancellationToken.None);
             }
 
             return CreateDiagnostics(results);
@@ -96,30 +110,28 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
         }
 
         private bool ShouldMerge(IGrouping<Statement, Info> imports) {
-            var first = imports.First();
-
-            if (imports.Count() == 1) {
-                if (first.ImportStatement == null) {
-                    // can't determine whether we need to merge or not
-                    return false;
-                }
-
-                var names = GetNames(first.ImportStatement);
-                return names.Count() == 1;
+            var statement = imports.Key;
+            if (statement == null) {
+                // can't determine whether we need to merge or not
+                return false;
             }
 
-            return false;
+            // if every names in import statement has a diagnostic, then we can remove whole statement
+            var names = GetNames(statement);
+            return names.Count() == imports.Count();
         }
 
         private static void ReportUnusedImports(IVariable variable, List<Info> results, CancellationToken cancellationToken) {
-            var (span, ast, import) = GetDiagnosticSpan(variable, cancellationToken);
+            foreach (var reference in variable.References) {
+                var (span, ast, import) = GetDiagnosticSpan(variable, reference, cancellationToken);
 
-            results.Add(new Info(
-                variable.Value.MemberType,
-                variable.Name,
-                span,
-                ast,
-                import));
+                results.Add(new Info(
+                    variable.Value.MemberType,
+                    variable.Name,
+                    span,
+                    ast,
+                    import));
+            }
         }
 
         private static IEnumerable<(IndexSpan? nameSpan, IndexSpan? asNameSpan)> GetNames(Statement statement) {
@@ -133,28 +145,28 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
         }
 
-        private static (IndexSpan, PythonAst, Statement) GetDiagnosticSpan(IVariable variable, CancellationToken cancellationToken) {
+        private static (IndexSpan, PythonAst, Statement) GetDiagnosticSpan(IVariable variable, LocationInfo reference, CancellationToken cancellationToken) {
+            // this module is this file. Ast must exist
+            var ast = variable.Location.Module.Analysis.Ast;
+            Debug.Assert(ast != null);
+
             // use some heuristic on where to show diagnostics
-            var definitionSpan = variable.Location.IndexSpan;
-            var ast = variable.Location.Module.Analysis.Ast ?? variable.Location.Module.GetAst();
-            if (ast == null) {
-                return (definitionSpan, null, null);
-            }
+            var span = reference.Span.ToIndexSpan(ast);
 
             // see whether import statement contains just 1 symbol or multiple one
             var finder = new ExpressionFinder(ast, new FindExpressionOptions() { ImportNames = true, ImportAsNames = true, Names = true });
-            var identifier = finder.GetExpression(definitionSpan.Start, definitionSpan.End);
+            var identifier = finder.GetExpression(span.Start, span.End);
             if (identifier == null) {
-                return (definitionSpan, ast, null);
+                return (span, ast, null);
             }
 
             var statement = GetAncestorsOrThis(ast.Body, identifier, cancellationToken).FirstOrDefault(c => c is ImportStatement || c is FromImportStatement) as Statement;
             switch (statement) {
                 case ImportStatement _:
                 case FromImportStatement _:
-                    return (GetNameSpan(definitionSpan, statement), ast, statement);
+                    return (GetNameSpan(span, statement), ast, statement);
                 default:
-                    return (definitionSpan, ast, null);
+                    return (span, ast, null);
             }
         }
 
