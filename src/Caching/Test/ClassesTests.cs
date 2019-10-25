@@ -66,6 +66,24 @@ c = B().methodB1()
         }
 
         [TestMethod, Priority(0)]
+        public async Task PrivateMembers() {
+            const string code = @"
+class A:
+    _x = 1
+
+    def _methodA(self):
+        return True
+
+    @classmethod
+    def _methodB(self):
+        return True
+";
+            var analysis = await GetAnalysisAsync(code);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            await CompareBaselineAndRestoreAsync(model, analysis.Document);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ForwardDeclarations() {
             const string code = @"
 x = 'str'

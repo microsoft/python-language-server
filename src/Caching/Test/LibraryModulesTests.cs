@@ -100,6 +100,9 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
         public Task Distutils() => TestModule("distutils");
 
         [TestMethod, Priority(0)]
+        public Task EmailGenerator() => TestModule("email.generator");
+
+        [TestMethod, Priority(0)]
         public Task Email() => TestModule("email");
 
         [TestMethod, Priority(0)]
