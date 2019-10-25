@@ -20,8 +20,8 @@ using Microsoft.Python.LanguageServer.Protocol;
 namespace Microsoft.Python.LanguageServer {
     public interface IDocumentationSource {
         InsertTextFormat DocumentationFormat { get; }
-        MarkupContent GetHover(string name, IMember member, IPythonType self = null);
-        string GetSignatureString(IPythonFunctionType ft, IPythonType self, out (IndexSpan, IParameterInfo)[] parameterSpans, int overloadIndex = 0, string name = null);
+        MarkupContent GetHover(string name, IMember member, IPythonType self = null, bool includeClassInit = false);
+        string GetSignatureString(IPythonFunctionType ft, IPythonType self, out (IndexSpan, IParameterInfo)[] parameterSpans, int overloadIndex = 0, string name = null, bool noReturn = false);
         MarkupContent FormatParameterDocumentation(IParameterInfo parameter);
         MarkupContent FormatDocumentation(string documentation);
     }

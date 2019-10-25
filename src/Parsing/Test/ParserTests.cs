@@ -57,6 +57,7 @@ namespace Microsoft.Python.Parsing.Tests {
         internal static readonly PythonLanguageVersion[] V33AndV34 = AllVersions.Where(v => v >= PythonLanguageVersion.V33 && v <= PythonLanguageVersion.V34).ToArray();
         internal static readonly PythonLanguageVersion[] V33AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V33).ToArray();
         internal static readonly PythonLanguageVersion[] V35AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V35).ToArray();
+        internal static readonly PythonLanguageVersion[] V35_V37Versions = AllVersions.Where(v => v >= PythonLanguageVersion.V35 && v <= PythonLanguageVersion.V37).ToArray();
         internal static readonly PythonLanguageVersion[] V36AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V36).ToArray();
         internal static readonly PythonLanguageVersion[] V37AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V37).ToArray();
         internal static readonly PythonLanguageVersion[] V38AndUp = AllVersions.Where(v => v >= PythonLanguageVersion.V38).ToArray();
@@ -955,7 +956,7 @@ namespace Microsoft.Python.Parsing.Tests {
                 );
             }
 
-            foreach (var version in V35AndUp) {
+            foreach (var version in V35_V37Versions) {
                 ParseErrorsWithOffset("AllErrors.py",
                     version,
                     initLoc,
@@ -971,6 +972,66 @@ namespace Microsoft.Python.Parsing.Tests {
                     new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
                     new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
                     new ErrorResult("'continue' not supported inside 'finally' clause", new SourceSpan(34, 9, 34, 17)),
+                    new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
+                    new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
+                    new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
+                    new ErrorResult("can't delete or expression", new SourceSpan(39, 5, 39, 13)),
+                    new ErrorResult("can't delete and expression", new SourceSpan(40, 5, 40, 14)),
+                    new ErrorResult("can't delete dictionary display", new SourceSpan(41, 5, 41, 7)),
+                    new ErrorResult("can't delete literal", new SourceSpan(42, 5, 42, 9)),
+                    new ErrorResult("can't delete literal", new SourceSpan(43, 5, 43, 9)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(45, 1, 45, 5)),
+                    new ErrorResult("can't assign to literal", new SourceSpan(46, 1, 46, 5)),
+                    new ErrorResult("'return' outside function", new SourceSpan(48, 1, 48, 7)),
+                    new ErrorResult("misplaced yield", new SourceSpan(55, 1, 55, 6)),
+                    new ErrorResult("two starred expressions in assignment", new SourceSpan(68, 8, 68, 10)),
+                    new ErrorResult("illegal expression for augmented assignment", new SourceSpan(70, 1, 70, 3)),
+                    new ErrorResult("missing module name", new SourceSpan(72, 6, 72, 12)),
+                    new ErrorResult("import * only allowed at module level", new SourceSpan(75, 19, 75, 20)),
+                    new ErrorResult("from __future__ imports must occur at the beginning of the file", new SourceSpan(78, 1, 78, 32)),
+                    new ErrorResult("nonlocal declaration not allowed at module level", new SourceSpan(82, 1, 82, 9)),
+                    new ErrorResult("invalid syntax, only exception value is allowed in 3.x.", new SourceSpan(83, 10, 83, 15)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(99, 15, 99, 16)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(105, 13, 105, 15)),
+                    new ErrorResult("duplicate * args arguments", new SourceSpan(108, 13, 108, 15)),
+                    new ErrorResult("named arguments must follow bare *", new SourceSpan(111, 10, 111, 11)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(114, 10, 114, 16)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(117, 10, 117, 17)),
+                    new ErrorResult("duplicate argument 'abc' in function definition", new SourceSpan(120, 12, 120, 15)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(123, 10, 123, 20)),
+                    new ErrorResult("invalid parameter", new SourceSpan(127, 7, 127, 9)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(134, 17, 134, 20)),
+                    new ErrorResult("default 'except' must be last", new SourceSpan(132, 1, 132, 8)),
+                    new ErrorResult("\", variable\" not allowed in 3.x - use \"as variable\" instead.", new SourceSpan(144, 17, 144, 20)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(147, 8, 147, 13)),
+                    new ErrorResult("cannot mix bytes and nonbytes literals", new SourceSpan(148, 7, 148, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(149, 7, 149, 9)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(150, 8, 150, 10)),
+                    new ErrorResult("invalid syntax", new SourceSpan(152, 4, 152, 6)),
+                    new ErrorResult("expected name", new SourceSpan(154, 3, 154, 5)),
+                    new ErrorResult("invalid parameter", new SourceSpan(156, 7, 156, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(160, 12, 160, 13)),
+                    new ErrorResult("invalid syntax", new SourceSpan(161, 10, 161, 13))
+                );
+            }
+
+            foreach (var version in V38AndUp) {
+                ParseErrorsWithOffset("AllErrors.py",
+                    version,
+                    initLoc,
+                    new ErrorResult("future statement does not support import *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("future feature is not defined: *", new SourceSpan(1, 1, 1, 25)),
+                    new ErrorResult("not a chance", new SourceSpan(2, 1, 2, 30)),
+                    new ErrorResult("future feature is not defined: unknown", new SourceSpan(3, 1, 3, 31)),
+                    new ErrorResult("default value must be specified here", new SourceSpan(5, 16, 5, 17)),
+                    new ErrorResult("positional argument follows keyword argument", new SourceSpan(8, 12, 8, 13)),
+                    new ErrorResult("unexpected token 'pass'", new SourceSpan(14, 1, 14, 5)),
+                    new ErrorResult("sublist parameters are not supported in 3.x", new SourceSpan(17, 10, 17, 17)),
+                    new ErrorResult("invalid parameter", new SourceSpan(20, 10, 20, 12)),
+                    new ErrorResult("'break' outside loop", new SourceSpan(25, 1, 25, 6)),
+                    new ErrorResult("'continue' not properly in loop", new SourceSpan(26, 1, 26, 9)),
                     new ErrorResult("expected expression after del", new SourceSpan(36, 1, 36, 4)),
                     new ErrorResult("can't delete binary operator", new SourceSpan(37, 5, 37, 8)),
                     new ErrorResult("can't delete unary operator", new SourceSpan(38, 5, 38, 7)),
@@ -2801,6 +2862,30 @@ namespace Microsoft.Python.Parsing.Tests {
         }
 
         [TestMethod, Priority(0)]
+        public void ForFinallyContinue() {
+            foreach (var version in V38AndUp) {
+                var errors = new CollectingErrorSink();
+                CheckAst(
+                    ParseFile("ForFinallyContinue.py", errors, version),
+                    CheckSuite(
+                        CheckForStmt(
+                            CheckNameExpr("x"),
+                            CheckNameExpr("l"),
+                            CheckSuite(
+                                CheckTryStmt(
+                                    CheckSuite(Pass),
+                                    Array.Empty< Action<TryStatementHandler>>(),
+                                    _finally: CheckSuite(Continue)
+                                )
+                            )
+                        )
+                    )
+                );
+                errors.Errors.Should().BeEmpty();
+            }
+        }
+
+        [TestMethod, Priority(0)]
         public void CoroutineDef() {
             foreach (var version in V35AndUp) {
                 CheckAst(
@@ -4022,9 +4107,13 @@ pass
 
                 body(tryStmt.Body);
 
-                Assert.AreEqual(handlers.Length, tryStmt.Handlers.Count);
-                for (var i = 0; i < handlers.Length; i++) {
-                    handlers[i](tryStmt.Handlers[i]);
+                if (tryStmt.Handlers != null) {
+                    Assert.AreEqual(handlers.Length, tryStmt.Handlers.Count);
+                    for (var i = 0; i < handlers.Length; i++) {
+                        handlers[i](tryStmt.Handlers[i]);
+                    }
+                } else {
+                    Assert.AreEqual(handlers.Length, 0);
                 }
 
                 if (_else != null) {

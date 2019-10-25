@@ -781,6 +781,16 @@ stuff = []
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task UnresolvedFromImport() {
+            const string code = @"
+from thismoduledoesnotexist import something
+something()
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();

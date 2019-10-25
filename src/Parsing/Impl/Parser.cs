@@ -595,7 +595,7 @@ namespace Microsoft.Python.Parsing {
                 case TokenKind.KeywordContinue:
                     if (!_inLoop) {
                         ReportSyntaxError(Resources.ContinueNotInLoopErrorMsg);//'continue' not properly in loop
-                    } else if (_inFinally) {
+                    } else if (_inFinally && _langVersion < PythonLanguageVersion.V38) {
                         ReportSyntaxError(Resources.ContinueNotSupportedInsideFinallyErrorMsg);//'continue' not supported inside 'finally' clause
                     }
                     return FinishSmallStmt(new ContinueStatement());

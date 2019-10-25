@@ -100,7 +100,9 @@ namespace Microsoft.Python.Analysis.Modules {
 
                     output = process.StandardOutput.ReadToEnd();
                 }
-            } catch (Exception ex) when (!ex.IsCriticalException()) { }
+            } catch (Exception ex) when (!ex.IsCriticalException()) {
+                Log?.Log(TraceEventType.Verbose, "Exception scraping module", Name, ex.Message);
+            }
 
             return output;
         }

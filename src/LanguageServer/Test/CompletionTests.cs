@@ -127,12 +127,16 @@ class oar(list):
         [TestMethod]
         public async Task OverrideInit3X() {
             const string code = @"
-class Test():
+class A:
+    def __init__(self, *args, **kwargs):
+        pass
+
+class Test(A):
     def __
 ";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            var result = cs.GetCompletions(analysis, new SourceLocation(3, 10));
+            var result = cs.GetCompletions(analysis, new SourceLocation(7, 10));
 
             result.Should().HaveItem("__init__")
                 .Which.Should().HaveInsertText($"__init__(self, *args, **kwargs):{Environment.NewLine}    super().__init__(*args, **kwargs)")
@@ -1416,6 +1420,25 @@ class B(A):
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 1));
 
             result.Completions.Where(item => item.insertText == "None").Should().HaveCount(1);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task ImportDotMembers() {
+            var appUri = TestData.GetTestSpecificUri("app.py");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "__init__.py"), "badvar1 = 3.141");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "m1", "__init__.py"), "badvar2 = 123");
+            await TestData.CreateTestSpecificFileAsync(Path.Combine("package", "m2", "__init__.py"), "badvar3 = 'str'");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            var doc = rdt.OpenDocument(appUri, "import package.");
+
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(1, 16));
+            result.Should().OnlyHaveLabels("m1", "m2");
         }
     }
 }
