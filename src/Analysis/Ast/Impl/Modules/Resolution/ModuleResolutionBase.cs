@@ -26,7 +26,6 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal abstract class ModuleResolutionBase {

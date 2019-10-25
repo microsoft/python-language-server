@@ -416,7 +416,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
             }
 
-            ast.Reduce(x => x is ImportStatement || x is FromImportStatement);
+            ast.ReduceToImports();
             document.SetAst(ast);
 
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);
