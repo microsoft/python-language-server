@@ -184,7 +184,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 yield return fullName;
             }
 
-            // heuristic is we put entries with decl without any exports at the top
+            // heuristic is we put entries with decl without any exports (imported member with __all__) at the top
             // such as array. another example will be chararray. 
             // this will make numpy chararray at the top and numpy defchararray at the bottom.
             // if we want, we can add more info to hide intermediate ones. 

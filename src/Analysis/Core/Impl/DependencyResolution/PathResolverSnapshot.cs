@@ -119,11 +119,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         public string GetModuleNameByPath(string modulePath) {
-            if (TryFindModule(modulePath, out var edge, out _)) {
-                return edge.End.FullModuleName;
-            }
-
-            return null;
+            return TryFindModule(modulePath, out var edge, out _) ? edge.End.FullModuleName : null;
         }
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {

@@ -56,16 +56,16 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public IBuiltinsPythonModule BuiltinsModule { get; private set; }
 
         public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken) {
+            foreach (var module in _specialized.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return module;
+            }
+
             foreach (var moduleRef in Modules.Values) {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (moduleRef.Value != null) {
                     yield return moduleRef.Value;
                 }
-            }
-
-            foreach (var module in _specialized.Values) {
-                cancellationToken.ThrowIfCancellationRequested();
-                yield return module;
             }
         }
 

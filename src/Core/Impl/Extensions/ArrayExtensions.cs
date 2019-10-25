@@ -38,7 +38,9 @@ namespace Microsoft.Python.Core {
             return -1;
         }
 
-        public static List<T> AddIfNotNull<T>(this List<T> list, T item) where T : class {
+        public static TCollection AddIfNotNull<TCollection, TItem>(this TCollection list, TItem item)
+            where TCollection : ICollection<TItem>
+            where TItem : class {
             if (item == null) {
                 return list;
             }
@@ -46,7 +48,10 @@ namespace Microsoft.Python.Core {
             list.Add(item);
             return list;
         }
-        public static List<T> AddIfNotNull<T>(this List<T> list, params T[] items) where T : class {
+
+        public static TCollection AddIfNotNull<TCollection, TItem>(this TCollection list, params TItem[] items)
+            where TCollection : ICollection<TItem>
+            where TItem : class {
             foreach (var item in items) {
                 list.AddIfNotNull(item);
             }
