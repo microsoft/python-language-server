@@ -13,10 +13,13 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
+
 namespace Microsoft.Python.Analysis.Caching.Models {
     /// <summary>
     /// Represents from import statement for dependency resolution.
     /// </summary>
+    [Serializable]
     internal sealed class FromImportModel {
         public string[] RootNames { get; set; }
         public string[] MemberNames { get; set; }

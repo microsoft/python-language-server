@@ -14,9 +14,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
+    [Serializable]
     internal sealed class NewLineModel {
         public int EndIndex { get; set; }
         public NewLineKind Kind { get; set; }
