@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
@@ -27,12 +28,12 @@ namespace Microsoft.Python.Analysis.Caching {
         private ModuleModel _model; // Non-readonly b/c of DEBUG conditional.
         private ModuleFactory _factory; // Non-readonly b/c of DEBUG conditional.
 
-        public RestoredGlobalScope(ModuleModel model, IPythonModule module) {
+        public RestoredGlobalScope(ModuleModel model, IPythonModule module, ModuleDatabase db, IServiceContainer services) {
             _model = model ?? throw new ArgumentNullException(nameof(model));
             Module = module ?? throw new ArgumentNullException(nameof(module));
             Name = model.Name;
-            _factory = new ModuleFactory(_model, Module, this);
-            DeclareVariables();
+            _factory = new ModuleFactory(_model, Module, this, db, services);
+            DeclareVariables(db, services);
         }
 
         public void ReconstructVariables() {
@@ -47,11 +48,11 @@ namespace Microsoft.Python.Analysis.Caching {
 #endif
         }
 
-        private void DeclareVariables() {
+        private void DeclareVariables(ModuleDatabase db, IServiceContainer services) {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
-            var mf = new ModuleFactory(_model, Module, this);
+            var mf = new ModuleFactory(_model, Module, this, db, services);
 
             // Generics first
             var typeVars = _model.TypeVars.Concat<MemberModel>(_model.NamedTuples).Concat(_model.Classes).Concat(_model.Functions);

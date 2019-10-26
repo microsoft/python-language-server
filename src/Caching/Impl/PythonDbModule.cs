@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public void Construct(ModuleModel model) {
-            var gs = new RestoredGlobalScope(model, this);
+            var gs = new RestoredGlobalScope(model, this, Services.GetService<ModuleDatabase>(), Services);
             GlobalScope = gs;
             gs.ReconstructVariables();
         }

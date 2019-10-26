@@ -53,7 +53,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public ClassModel() { } // For de-serializer from JSON
 
-        public ClassModel(IPythonClassType cls) {
+        public ClassModel(IPythonClassType cls, IServiceContainer services) {
             var methods = new List<FunctionModel>();
             var properties = new List<PropertyModel>();
             var fields = new List<VariableModel>();
@@ -78,21 +78,21 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             if (!ct.DeclaringModule.Equals(cls.DeclaringModule)) {
                                 continue;
                             }
-                            innerClasses.Add(new ClassModel(ct));
+                            innerClasses.Add(new ClassModel(ct, services));
                             break;
                         case IPythonFunctionType ft when ft.IsLambda():
                             break;
                         case IPythonFunctionType ft when ft.Name == name:
-                            methods.Add(new FunctionModel(ft));
+                            methods.Add(new FunctionModel(ft, services));
                             break;
                         case IPythonPropertyType prop when prop.Name == name:
-                            properties.Add(new PropertyModel(prop));
+                            properties.Add(new PropertyModel(prop, services));
                             break;
                         case IPythonInstance inst:
-                            fields.Add(VariableModel.FromInstance(name, inst));
+                            fields.Add(VariableModel.FromInstance(name, inst, services));
                             break;
                         case IPythonType t:
-                            fields.Add(VariableModel.FromType(name, t));
+                            fields.Add(VariableModel.FromType(name, t, services));
                             break;
                     }
                 }
@@ -100,6 +100,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             Name = cls.TypeId == BuiltinTypeId.Ellipsis ? "ellipsis" : cls.Name;
             Id = Name.GetStableHash();
+            DeclaringModuleId = cls.DeclaringModule.GetUniqueId(services);
             QualifiedName = cls.QualifiedName;
             IndexSpan = cls.Location.IndexSpan.ToModel();
 
@@ -107,9 +108,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Documentation = (cls as PythonClassType)?.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ? cls.Documentation : null;
 
             var ntBases = cls.Bases.OfType<ITypingNamedTupleType>().ToArray();
-            NamedTupleBases = ntBases.Select(b => new NamedTupleModel(b)).ToArray();
+            NamedTupleBases = ntBases.Select(b => new NamedTupleModel(b, services)).ToArray();
 
-            Bases = cls.Bases.Except(ntBases).Select(t => t.GetPersistentQualifiedName()).ToArray();
+            Bases = cls.Bases.Except(ntBases).Select(t => t.GetPersistentQualifiedName(services)).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();
@@ -125,7 +126,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             GenericBaseParameters = GenericBaseParameters ?? Array.Empty<string>();
 
             GenericParameterValues = cls.GenericParameters
-                .Select(p => new GenericParameterValueModel { Name = p.Key, Type = p.Value.GetPersistentQualifiedName() })
+                .Select(p => new GenericParameterValueModel { Name = p.Key, Type = p.Value.GetPersistentQualifiedName(services) })
                 .ToArray();
         }
 

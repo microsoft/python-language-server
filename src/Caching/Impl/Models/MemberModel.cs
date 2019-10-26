@@ -35,6 +35,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string Name { get; set; }
 
         /// <summary>
+        /// Unique id of declaring module.
+        /// </summary>
+        public string DeclaringModuleId { get; set; }
+
+        /// <summary>
         /// Member qualified name within the module, such as A.B.C.
         /// </summary>
         public string QualifiedName { get; set; }

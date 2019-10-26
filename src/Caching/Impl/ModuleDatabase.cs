@@ -14,25 +14,21 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
-using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
-using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
         private readonly object _lock = new object();
 
         private readonly IServiceContainer _services;
@@ -53,31 +49,6 @@ namespace Microsoft.Python.Analysis.Caching {
         public string CacheFolder { get; }
 
         /// <summary>
-        /// Retrieves dependencies from the module persistent state.
-        /// </summary>
-        /// <param name="module">Python module to restore analysis for.</param>
-        /// <param name="dp">Python module dependency provider.</param>
-        public bool TryRestoreDependencies(IPythonModule module, out IDependencyProvider dp) {
-            dp = null;
-
-            if (GetCachingLevel() == AnalysisCachingLevel.None || !module.ModuleType.CanBeCached()) {
-                return false;
-            }
-
-            lock (_lock) {
-                if (_dependencies.TryGetValue(module.Name, out dp)) {
-                    return true;
-                }
-                if (FindModuleModel(module.Name, module.FilePath, out var model)) {
-                    dp = new DependencyProvider(module, model);
-                    _dependencies[module.Name] = dp;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /// <summary>
         /// Creates global scope from module persistent state.
         /// Global scope is then can be used to construct module analysis.
         /// </summary>
@@ -91,8 +62,8 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             lock (_lock) {
-                if (FindModuleModel(module.Name, module.FilePath, out var model)) {
-                    gs = new RestoredGlobalScope(model, module);
+                if (FindModuleModelByPath(module.Name, module.FilePath, out var model)) {
+                    gs = new RestoredGlobalScope(model, module, this, _services);
                 }
             }
 
@@ -173,12 +144,11 @@ namespace Microsoft.Python.Analysis.Caching {
         /// module content (typically file sizes).
         /// </summary>
         private string FindDatabaseFile(string moduleName, string filePath) {
-            var interpreter = _services.GetService<IPythonInterpreter>();
             var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, ModuleType.Specialized, _services, GetCachingLevel());
-            if (string.IsNullOrEmpty(uniqueId)) {
-                return null;
-            }
+            return string.IsNullOrEmpty(uniqueId) ? null : FindDatabaseFile(uniqueId);
+        }
 
+        private string FindDatabaseFile(string uniqueId) {
             // Try module name as is.
             var dbPath = Path.Combine(CacheFolder, $"{uniqueId}.db");
             if (_fs.FileExists(dbPath)) {
@@ -187,6 +157,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             // TODO: resolving to a different version can be an option
             // Try with the major.minor Python version.
+            var interpreter = _services.GetService<IPythonInterpreter>();
             var pythonVersion = interpreter.Configuration.Version;
 
             dbPath = Path.Combine(CacheFolder, $"{uniqueId}({pythonVersion.Major}.{pythonVersion.Minor}).db");
@@ -199,15 +170,19 @@ namespace Microsoft.Python.Analysis.Caching {
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
 
-        private bool FindModuleModel(string moduleName, string filePath, out ModuleModel model) {
-            model = null;
+        public bool FindModuleModelByPath(string moduleName, string filePath, out ModuleModel model) 
+            => TryGetModuleModel(moduleName, FindDatabaseFile(moduleName, filePath), out model);
 
+        public bool FindModuleModelById(string moduleName, string uniqueId, out ModuleModel model)
+            => TryGetModuleModel(moduleName, FindDatabaseFile(moduleName, uniqueId), out model);
+
+        private bool TryGetModuleModel(string moduleName, string dbPath, out ModuleModel model) {
+            model = null;
             // We don't cache results here. Module resolution service decides when to call in here
             // and it is responsible of overall management of the loaded Python modules.
             for (var retries = 50; retries > 0; --retries) {
                 try {
                     // TODO: make combined db rather than per module?
-                    var dbPath = FindDatabaseFile(moduleName, filePath);
                     if (string.IsNullOrEmpty(dbPath)) {
                         return false;
                     }
@@ -229,18 +204,5 @@ namespace Microsoft.Python.Analysis.Caching {
         }
         private AnalysisCachingLevel GetCachingLevel()
             => _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel ?? AnalysisCachingLevel.None;
-
-        private sealed class DependencyProvider : IDependencyProvider {
-            private readonly ISet<AnalysisModuleKey> _dependencies;
-
-            public DependencyProvider(IPythonModule module, ModuleModel model) {
-                var dc = new DependencyCollector(module);
-                dc.AddImports(model.Imports);
-                dc.AddFromImports(model.FromImports);
-                _dependencies = dc.Dependencies;
-            }
-
-            public ISet<AnalysisModuleKey> GetDependencies(PythonAst ast) => _dependencies;
-        }
     }
 }

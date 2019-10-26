@@ -26,10 +26,12 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class ModuleUniqueId {
-        public static string GetUniqueId(this IPythonModule module, IServiceContainer services, AnalysisCachingLevel cachingLevel)
+        public static string GetUniqueId(this IPythonModule module, 
+            IServiceContainer services, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library)
             => GetUniqueId(module.Name, module.FilePath, module.ModuleType, services, cachingLevel);
 
-        public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, IServiceContainer services, AnalysisCachingLevel cachingLevel) {
+        public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, 
+            IServiceContainer services, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library) {
             if(cachingLevel == AnalysisCachingLevel.None) {
                 return null;
             }

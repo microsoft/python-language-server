@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -34,17 +35,24 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>For use in tests so missing members will assert.</summary>
         internal static bool EnableMissingMemberAssertions { get; set; }
 
+        private static readonly ConcurrentDictionary<string, PythonDbModule> _modulesCache
+            = new ConcurrentDictionary<string, PythonDbModule>();
+
         // TODO: better resolve circular references.
         private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
         private readonly ModuleModel _model;
         private readonly IGlobalScope _gs;
+        private readonly ModuleDatabase _db;
+        private readonly IServiceContainer _services;
 
         public IPythonModule Module { get; }
         public Location DefaultLocation { get; }
 
-        public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs) {
+        public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs, ModuleDatabase db, IServiceContainer services) {
             _model = model;
             _gs = gs;
+            _db = db;
+            _services = services;
             Module = module;
             DefaultLocation = new Location(Module);
         }
@@ -100,7 +108,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 var nextModel = currentModel.GetModel(memberName);
-                Debug.Assert(nextModel != null, 
+                Debug.Assert(nextModel != null,
                     $"Unable to find {string.Join(".", memberNames)} in module {Module.Name}");
                 if (nextModel == null) {
                     return null;
@@ -132,22 +140,31 @@ namespace Microsoft.Python.Analysis.Caching {
             if (parts.ModuleName == Module.Name) {
                 return Module;
             }
+
             using (_moduleReentrancy.Push(parts.ModuleName, out var reentered)) {
                 if (reentered) {
                     return null;
                 }
+
+                var module = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
+                if (module == null && parts.ModuleId != null) {
+                    if (!_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
+                        if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, out var model)) {
+                            _modulesCache[parts.ModuleId] = m = new PythonDbModule(model, model.FilePath, _services);
+                            m.Construct(model);
+                            module = m;
+                        }
+                    }
+                }
+
                 // Here we do not call GetOrLoad since modules references here must
                 // either be loaded already since they were required to create
                 // persistent state from analysis. Also, occasionally types come
                 // from the stub and the main module was never loaded. This, for example,
                 // happens with io which has member with mmap type coming from mmap
                 // stub rather than the primary mmap module.
-                var m = parts.IsStub
-                    ? Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName)
-                    : Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
-
-                if (m != null) {
-                    return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(m) : m;
+                if (module != null) {
+                    return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(module) : module;
                 }
                 return null;
             }

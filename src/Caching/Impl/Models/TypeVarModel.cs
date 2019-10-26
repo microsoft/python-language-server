@@ -32,13 +32,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public object Covariant { get; set; }
         public object Contravariant { get; set; }
 
-        public static TypeVarModel FromGeneric(IVariable v) {
+        public static TypeVarModel FromGeneric(IVariable v, IServiceContainer services) {
             var g = (IGenericTypeParameter)v.Value;
             return new TypeVarModel {
                 Id = g.Name.GetStableHash(),
                 Name = g.Name,
                 QualifiedName = g.QualifiedName,
-                Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName()).ToArray(),
+                Constraints = g.Constraints.Select(c => c.GetPersistentQualifiedName(services)).ToArray(),
                 Bound = g.Bound?.QualifiedName,
                 Covariant = g.Covariant,
                 Contravariant = g.Contravariant

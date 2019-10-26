@@ -32,9 +32,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         [NonSerialized]
         private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
+
         protected CallableModel() { } // For de-serializer from JSON
 
-        protected CallableModel(IPythonType callable) {
+        protected CallableModel(IPythonType callable, IServiceContainer services) {
             var functions = new List<FunctionModel>();
             var classes = new List<ClassModel>();
 
@@ -50,10 +51,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                         case IPythonFunctionType ft1 when ft1.IsLambda():
                             break;
                         case IPythonFunctionType ft2:
-                            functions.Add(new FunctionModel(ft2));
+                            functions.Add(new FunctionModel(ft2, services));
                             break;
                         case IPythonClassType cls:
-                            classes.Add(new ClassModel(cls));
+                            classes.Add(new ClassModel(cls, services));
                             break;
                     }
                 }
@@ -61,6 +62,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             Id = callable.Name.GetStableHash();
             Name = callable.Name;
+            DeclaringModuleId = callable.DeclaringModule.GetUniqueId(services, AnalysisCachingLevel.Library);
             QualifiedName = callable.QualifiedName;
             Documentation = callable.Documentation;
             Classes = classes.ToArray();

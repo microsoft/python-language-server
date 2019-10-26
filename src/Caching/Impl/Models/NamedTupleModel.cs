@@ -33,9 +33,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public NamedTupleModel() { } // For de-serializer from JSON
 
-        public NamedTupleModel(ITypingNamedTupleType nt) {
+        public NamedTupleModel(ITypingNamedTupleType nt, IServiceContainer services) {
             Id = nt.Name.GetStableHash();
             Name = nt.Name;
+            DeclaringModuleId = nt.DeclaringModule.GetUniqueId(services, AnalysisCachingLevel.Library);
             QualifiedName = nt.QualifiedName;
             IndexSpan = nt.Location.IndexSpan.ToModel();
             ItemNames = nt.ItemNames.ToArray();

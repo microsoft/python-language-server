@@ -29,13 +29,6 @@ namespace Microsoft.Python.Analysis.Caching {
         bool TryRestoreGlobalScope(IPythonModule module, out IRestoredGlobalScope gs);
 
         /// <summary>
-        /// Retrieves dependencies from the module persistent state.
-        /// </summary>
-        /// <param name="module">Python module to restore analysis for.</param>
-        /// <param name="dp">Python module dependency provider.</param>
-        bool TryRestoreDependencies(IPythonModule module, out IDependencyProvider dp);
-
-        /// <summary>
         /// Writes module data to the database.
         /// </summary>
         Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default);

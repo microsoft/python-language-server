@@ -35,10 +35,6 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IDependencyProvider
         public ISet<AnalysisModuleKey> GetDependencies(PythonAst ast) {
-            if (_dbService != null && _dbService.TryRestoreDependencies(_module, out var dp)) {
-                return dp.GetDependencies(ast);
-            }
-
             // TODO: try and handle LoadFunctionDependencyModules functionality here.
             var dw = new DependencyWalker(_module, ast);
             return dw.Dependencies;

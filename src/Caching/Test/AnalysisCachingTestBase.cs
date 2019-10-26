@@ -66,23 +66,6 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             //var json = ToJson(model);
             //Baseline.CompareToFile(BaselineFileName, json);
 
-            // In real case dependency analysis will restore model dependencies.
-            // Here we don't go through the dependency analysis so we have to
-            // manually restore dependent modules.
-            var dc = new DependencyCollector(m);
-            dc.AddImports(model.Imports);
-            dc.AddFromImports(model.FromImports);
-            foreach(var dep in dc.Dependencies) {
-                m.Interpreter.ModuleResolution.GetOrLoadModule(dep.Name);
-            }
-
-            var dcs = new DependencyCollector(m, true);
-            dcs.AddImports(model.StubImports);
-            dcs.AddFromImports(model.StubFromImports);
-            foreach (var dep in dcs.Dependencies) {
-                m.Interpreter.TypeshedResolution.GetOrLoadModule(dep.Name);
-            }
-
             var analyzer = Services.GetService<IPythonAnalyzer>();
             await analyzer.WaitForCompleteAnalysisAsync();
 

@@ -16,6 +16,7 @@
 using System;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -28,8 +29,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         [NonSerialized] private PythonPropertyType _property;
 
-        public PropertyModel(IPythonPropertyType prop) : base(prop) {
-            ReturnType = prop.ReturnType.GetPersistentQualifiedName();
+        public PropertyModel(IPythonPropertyType prop, IServiceContainer services) : base(prop, services) {
+            ReturnType = prop.ReturnType.GetPersistentQualifiedName(services);
         }
 
         public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 

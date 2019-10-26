@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -31,8 +32,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         [NonSerialized] private PythonFunctionType _function;
 
-        public FunctionModel(IPythonFunctionType func) : base(func) {
-            Overloads = func.Overloads.Select(FromOverload).ToArray();
+        public FunctionModel(IPythonFunctionType func, IServiceContainer services) : base(func, services) {
+            Overloads = func.Overloads.Select(s => FromOverload(s, services)).ToArray();
         }
 
         public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
@@ -61,15 +62,15 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         private IParameterInfo ConstructParameter(ModuleFactory mf, ParameterModel pm)
             => new ParameterInfo(pm.Name, mf.ConstructType(pm.Type), pm.Kind, mf.ConstructMember(pm.DefaultValue));
 
-        private static OverloadModel FromOverload(IPythonFunctionOverload o)
+        private static OverloadModel FromOverload(IPythonFunctionOverload o, IServiceContainer services)
             => new OverloadModel {
                 Parameters = o.Parameters.Select(p => new ParameterModel {
                     Name = p.Name,
-                    Type = p.Type.GetPersistentQualifiedName(),
+                    Type = p.Type.GetPersistentQualifiedName(services),
                     Kind = p.Kind,
-                    DefaultValue = p.DefaultValue.GetPersistentQualifiedName(),
+                    DefaultValue = p.DefaultValue.GetPersistentQualifiedName(services),
                 }).ToArray(),
-                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName()
+                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName(services)
             };
     }
 }

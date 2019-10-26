@@ -22,7 +22,7 @@ using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     [DebuggerDisplay("{Name} : {FilePath}")]
-    internal readonly struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
+    public readonly struct AnalysisModuleKey : IEquatable<AnalysisModuleKey> {
         public string Name { get; }
         public string FilePath { get; }
         public bool IsTypeshed { get; }
