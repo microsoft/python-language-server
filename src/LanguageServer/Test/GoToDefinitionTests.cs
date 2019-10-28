@@ -205,6 +205,7 @@ class D(C):
         }
 
         [TestMethod, Priority(0)]
+        [Ignore("Todo: super() multiple Inheritance support")]
         public async Task MultipleInheritanceSuperShouldWalkDecendants() {
             var testModPath = TestData.GetTestSpecificUri("test.py");
             const string code = @"
@@ -225,9 +226,6 @@ class D(C):
                 pass
 
         ";
-
-            Assert.Inconclusive("Todo: super() multiple Inheritance support");
-
             await CreateServicesAsync(PythonVersions.LatestAvailable3X);
             var rdt = Services.GetService<IRunningDocumentTable>();
             

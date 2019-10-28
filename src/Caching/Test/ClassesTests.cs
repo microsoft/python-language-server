@@ -151,7 +151,8 @@ class B(A):
             Baseline.CompareToFile(BaselineFileName, json);
         }
 
-         [TestMethod, Priority(0)]
+        [TestMethod, Priority(0)]
+        [Ignore("Todo: super() persistence support, Asserts in debug due to no model found for super")]
         public async Task ClassesWithSuper() {
             const string code = @"
 class A:
@@ -164,8 +165,6 @@ class B(A):
 
 b = B().methodB()
 ";
-            Assert.Inconclusive("Todo: super() persistence support");
-
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("b").Which.Should().HaveType("super");
 
