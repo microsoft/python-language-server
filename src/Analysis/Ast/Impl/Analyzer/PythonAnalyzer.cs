@@ -163,18 +163,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        public IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module) {
+        public IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module, CancellationToken cancellationToken = default) {
             if (module.ModuleType != ModuleType.User) {
                 return Array.Empty<DiagnosticsEntry>();
             }
 
-            // Linter always runs no matter of the option since it looks up variables
-            // which also enumerates and updates variable references for find all
-            // references and rename operations.
-            var result = new LinterAggregator().Lint(module, _services);
-
-            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            return optionsProvider?.Options?.LintingEnabled == false ? Array.Empty<DiagnosticsEntry>() : result;
+            return new LinterAggregator().Lint(module, _services, cancellationToken);
         }
 
         public async Task ResetAnalyzer() {

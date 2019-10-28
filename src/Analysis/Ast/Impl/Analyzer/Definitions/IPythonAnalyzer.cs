@@ -54,7 +54,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// <summary>
         /// Runs linters on the modules
         /// </summary>
-        IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module);
+        IReadOnlyList<DiagnosticsEntry> LintModule(IPythonModule module, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Removes all the modules from the analysis and restarts it, including stubs.

@@ -13,8 +13,10 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Linting.UndefinedVariables;
 using Microsoft.Python.Analysis.Types;
@@ -26,12 +28,27 @@ namespace Microsoft.Python.Analysis.Linting {
 
         public LinterAggregator() {
             // TODO: develop mechanism for dynamic and external linter discovery.
+            // make sure UndefinedVariablesLinter is always the first that runs since it sets references info
+            // to module.
             _linters.Add(new UndefinedVariablesLinter());
             _linters.Add(new UnusedImportsLinter());
         }
 
-        // * NOTE * linter is not cancellable? is this by design?
-        public IReadOnlyList<DiagnosticsEntry> Lint(IPythonModule module, IServiceContainer services)
-            => _linters.SelectMany(l => l.Lint(module.Analysis, services)).Where(d => d.ShouldReport(module)).ToArray();
+        public IReadOnlyList<DiagnosticsEntry> Lint(IPythonModule module, IServiceContainer services, CancellationToken cancellationToken) {
+            var optionsProvider = services.GetService<IAnalysisOptionsProvider>();
+            if (optionsProvider != null &&
+                optionsProvider.Options != null &&
+                optionsProvider.Options.LintingEnabled == false) {
+                // the first linter (UndefinedVariablesLinter) always runs no matter of the option since it looks up variables
+                // which also enumerates and updates variable references for find all
+                // references and rename operations.
+                _linters[0].Lint(module.Analysis, services, cancellationToken);
+
+                // linter is off, so caller gets nothing
+                return Array.Empty<DiagnosticsEntry>();
+            }
+
+            return _linters.SelectMany(l => l.Lint(module.Analysis, services, cancellationToken)).Where(d => d.ShouldReport(module)).ToArray();
+        }
     }
 }

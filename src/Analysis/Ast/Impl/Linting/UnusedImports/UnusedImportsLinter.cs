@@ -30,12 +30,12 @@ using Microsoft.Python.Parsing.Extensions;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UnusedImportsLinter : ILinter {
-        public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services) {
+        public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services, CancellationToken cancellationToken) {
             var allVariables = new HashSet<string>(analysis.GlobalScope.GetAllVariablesBestEffort());
 
             var results = new List<Info>();
-            foreach (var scope in GetAllScopes(analysis, CancellationToken.None)) {
-                CollectUnusedImportForScope(analysis, scope, allVariables, results, CancellationToken.None);
+            foreach (var scope in GetAllScopes(analysis, cancellationToken)) {
+                CollectUnusedImportForScope(analysis, scope, allVariables, results, cancellationToken);
             }
 
             return CreateDiagnostics(results);
@@ -59,6 +59,8 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             var imported = scope.Imported;
             var variableDeclared = scope.Variables;
             foreach (var name in imported.Names) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (!imported.TryGetVariable(name, out var variableFromImported)) {
                     continue;
                 }
@@ -86,7 +88,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 // we have variable from import statement, but we don't have any variable declared from actual
                 // usage. meaning the import is not used.
                 if (!variableDeclared.TryGetVariable(name, out var variableFromVariables)) {
-                    ReportUnusedImports(variableFromImported, results, CancellationToken.None);
+                    ReportUnusedImports(variableFromImported, results, cancellationToken);
                     continue;
                 }
 
@@ -114,7 +116,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                 // make sure varaibleFromVariables reference contains any reference that are not part of imports
                 var usageReferences = variableFromVariables.References.Where(l => !variableFromImported.References.Any(r => LocationInfo.FullComparer.Equals(l, r))).ToArray();
                 if (usageReferences.Length > 0) {
-                    ReportUnnecessaryImports(analysis, variableFromImported, usageReferences, results, cancellationToken);
+                    ReportUnnecessaryImports(variableFromImported, usageReferences, results, cancellationToken);
                     continue;
                 }
 
@@ -122,8 +124,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
         }
 
-        private static void ReportUnnecessaryImports(IDocumentAnalysis analysis,
-                                                     IVariable variable,
+        private static void ReportUnnecessaryImports(IVariable variable,
                                                      LocationInfo[] usages,
                                                      List<Info> results,
                                                      CancellationToken cancellationToken) {

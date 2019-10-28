@@ -14,12 +14,15 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
     internal sealed class UndefinedVariablesLinter : ILinter {
-        public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services) {
+        public IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services, CancellationToken cancellationToken) {
+            // this linter is special and we never cancel this linter. this will always run as the first linter in the aggregator and this will
+            // set references in the analyzed module as it runs
             var w = new UndefinedVariablesWalker(analysis, services);
             analysis.Ast.Walk(w);
             return w.Diagnostics;

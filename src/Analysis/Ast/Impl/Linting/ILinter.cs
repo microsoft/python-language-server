@@ -14,11 +14,12 @@
 // permissions and limitations under the License.
 
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Linting {
     public interface ILinter {
-        IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services);
+        IReadOnlyList<DiagnosticsEntry> Lint(IDocumentAnalysis analysis, IServiceContainer services, CancellationToken cancellationToken);
     }
 }
