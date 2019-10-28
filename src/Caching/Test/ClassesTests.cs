@@ -152,17 +152,28 @@ class B(A):
         }
 
          [TestMethod, Priority(0)]
-        public void ClassesWithSuper() {
-//            const string code = @"
-//class A:
-//    def methodA(self):
-//        return True
+        public async Task ClassesWithSuper() {
+            const string code = @"
+class A:
+    def methodA(self):
+        return True
 
-//class B(A):
-//    def methodB(self):
-//        return super()
-//";
+class B(A):
+    def methodB(self):
+        return super()
+
+b = B().methodB()
+";
             Assert.Inconclusive("Todo: super() persistence support");
+
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("b").Which.Should().HaveType("super");
+
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+          
+            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
+                dbModule.Should().HaveSameMembersAs(analysis.Document);
+            }
         }
 
     }
