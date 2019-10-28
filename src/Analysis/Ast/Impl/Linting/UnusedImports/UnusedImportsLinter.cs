@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
             var results = new List<Info>();
             foreach (var scope in GetAllScopes(analysis, CancellationToken.None)) {
-                CollectUnusedImportForScope(analysis, scope, allVariables, results);
+                CollectUnusedImportForScope(analysis, scope, allVariables, results, CancellationToken.None);
             }
 
             return CreateDiagnostics(results);
@@ -49,7 +49,11 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
         }
 
-        private static void CollectUnusedImportForScope(IDocumentAnalysis analysis, IScope scope, HashSet<string> allVariables, List<Info> results) {
+        private static void CollectUnusedImportForScope(IDocumentAnalysis analysis,
+                                                        IScope scope,
+                                                        HashSet<string> allVariables,
+                                                        List<Info> results,
+                                                        CancellationToken cancellationToken) {
             // * NOTE * variable declared in imported is different than same variable referenced in the code.
             //          that is because that variable is re-declared in another variable collection
             var imported = scope.Imported;
@@ -86,20 +90,62 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
                     continue;
                 }
 
-                // * NOTE * this seems won't work if variable with same name declared multiple times?
-                if (!LocationInfo.FullComparer.Equals(variableFromVariables.Definition, variableFromImported.Definition)) {
-                    continue;
-                }
+                // our engine has issue with same name variable being assigned multiple times. 
+                // we just look up variable name under a scope without considering position where lookup
+                // is asked. so we can't distinguish cases such as
+                // import os
+                // os = 1
+                // p = os <= type of os 
+                // 
+                // or
+                // os = 1
+                // import os
+                // p = os <= type of os
+                //
+                // we consider all these "os" as same variable defined by the very first usage of "os" as lvalue.
+                // we can improve this once we support data flow analysis to figure out proper "os" type at the given
+                // position. until then, we will treat it as corner case and leave it as it is.
+                //
+                // when we implement extract method where we probably need some kind of data flow analysis, 
+                // we might be able to use same analysis to improve this as well.
 
                 // find any reference in current file which is not the import variable definition itself
                 // varaibleFromVariables reference contains references in the module and variableFromImported reference contains same imported member used in imports.
                 // make sure varaibleFromVariables reference contains any reference that are not part of imports
                 var usageReferences = variableFromVariables.References.Where(l => !variableFromImported.References.Any(r => LocationInfo.FullComparer.Equals(l, r))).ToArray();
                 if (usageReferences.Length > 0) {
+                    ReportUnnecessaryImports(analysis, variableFromImported, usageReferences, results, cancellationToken);
                     continue;
                 }
 
-                ReportUnusedImports(variableFromImported, results, CancellationToken.None);
+                ReportUnusedImports(variableFromImported, results, cancellationToken);
+            }
+        }
+
+        private static void ReportUnnecessaryImports(IDocumentAnalysis analysis,
+                                                     IVariable variable,
+                                                     LocationInfo[] usages,
+                                                     List<Info> results,
+                                                     CancellationToken cancellationToken) {
+            // this report imports that could be deleted because there is another imports that basically import same module to the scope
+            // such as 
+            // import os <- this is unnecessary
+            // import os.path
+            // p = os.path
+            var locations = variable.References.Select(r => (r.Span, Variable: variable)).Concat(usages.Select(r => (r.Span, Variable: (IVariable)null))).OrderBy(kv => kv.Span).ToArray();
+
+            for (var i = 0; i < locations.Length - 1; i++) {
+                if (locations[i].Variable != null &&
+                    locations[i + 1].Variable != null) {
+                    // 2 imports next to each other. we only need 1
+                    ReportUnusedImports(locations[i].Variable, locations[i].Span, results, cancellationToken);
+                }
+            }
+
+            // if last statement is import statement without anyone referencing it, report it as well
+            var last = locations.Length - 1;
+            if (locations[last].Variable != null) {
+                ReportUnusedImports(locations[last].Variable, locations[last].Span, results, cancellationToken);
             }
         }
 
@@ -138,12 +184,12 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
 
         private static void ReportUnusedImports(IVariable variable, List<Info> results, CancellationToken cancellationToken) {
             foreach (var reference in variable.References) {
-                ReportUnusedImports(variable, reference, results, cancellationToken);
+                ReportUnusedImports(variable, reference.Span, results, cancellationToken);
             }
         }
 
-        private static void ReportUnusedImports(IVariable variable, LocationInfo reference, List<Info> results, CancellationToken cancellationToken) {
-            var (span, ast, import) = GetDiagnosticSpan(variable, reference, cancellationToken);
+        private static void ReportUnusedImports(IVariable variable, SourceSpan defintionSpan, List<Info> results, CancellationToken cancellationToken) {
+            var (span, ast, import) = GetDiagnosticSpan(variable, defintionSpan, cancellationToken);
             results.Add(new Info(
                 variable.Value.MemberType,
                 variable.Name,
@@ -163,13 +209,13 @@ namespace Microsoft.Python.Analysis.Linting.UndefinedVariables {
             }
         }
 
-        private static (IndexSpan, PythonAst, Statement) GetDiagnosticSpan(IVariable variable, LocationInfo reference, CancellationToken cancellationToken) {
+        private static (IndexSpan, PythonAst, Statement) GetDiagnosticSpan(IVariable variable, SourceSpan varialbeDefinitionSpan, CancellationToken cancellationToken) {
             // this module is this file. Ast must exist
             var ast = variable.Location.Module.Analysis.Ast;
             Debug.Assert(ast != null);
 
             // use some heuristic on where to show diagnostics
-            var span = reference.Span.ToIndexSpan(ast);
+            var span = varialbeDefinitionSpan.ToIndexSpan(ast);
 
             // see whether import statement contains just 1 symbol or multiple one
             var finder = new ExpressionFinder(ast, new FindExpressionOptions() { ImportNames = true, ImportAsNames = true, Names = true });

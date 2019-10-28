@@ -277,6 +277,99 @@ def Method():
                 (PythonMemberType.Module, "math", multiple: false));
         }
 
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports9() {
+            await TestAsync(@"{|diagnostic:import os|}
+
+def Method():
+    {|diagnostic:import os.path|}",
+                (PythonMemberType.Module, "os", multiple: false),
+                (PythonMemberType.Module, "os", multiple: false));
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports10() {
+            await TestAsync(@"{|diagnostic:import os|}
+
+def Method():
+    import os.path
+    p = os.path",
+                PythonMemberType.Module, "os", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports11() {
+            await TestNoUnusedAsync(@"import os
+o = os.path
+
+def Method():
+    import os.path
+    p = os.path");
+        }
+
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports12() {
+            await TestNoUnusedAsync(@"import os
+o = os.path
+
+import os.path
+p = os.path");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports13() {
+            await TestAsync(@"{|diagnostic:import os|}
+import os.path
+
+p = os.path",
+            PythonMemberType.Module, "os", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports14() {
+            await TestAsync(@"import os
+p = os.path
+
+{|diagnostic:import os.path|}",
+            PythonMemberType.Module, "os", multiple: false);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports15() {
+            await TestNoUnusedAsync(@"import os
+o = os.path
+
+os = 1
+
+import os
+p = os.path");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports16() {
+            // currently, our engine doesn't handle
+            // varaible being reassigned to different type
+            // in same scope. so it can't handle this case
+            await TestNoUnusedAsync(@"import os
+
+os = 1
+p2 = os
+
+import os
+p = os.path");
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task MultipleImports17() {
+            await TestAsync(@"os = 1
+{|diagnostic:import os.path|}
+
+import os
+p = os.path",
+            PythonMemberType.Module, "os", multiple: false);
+        }
+
         private Task TestNoUnusedAsync(string markup) {
             return TestAsync(markup);
         }
