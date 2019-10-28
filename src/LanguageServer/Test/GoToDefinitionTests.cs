@@ -222,7 +222,7 @@ class D(C):
 
         class Child(Dad, Mom):
             def child_func(self):
-                x = super()
+                pass
 
         ";
 
