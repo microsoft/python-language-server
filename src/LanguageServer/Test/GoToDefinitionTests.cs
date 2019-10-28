@@ -205,6 +205,46 @@ class D(C):
         }
 
         [TestMethod, Priority(0)]
+        public async Task MultipleInheritanceSuperShouldWalkDecendants() {
+            var testModPath = TestData.GetTestSpecificUri("test.py");
+            const string code = @"
+        class GrandParent:
+            def dowork(self):
+                return 1
+
+        class Dad(GrandParent):
+            def dowork(self):
+                return super().dowork()
+
+        class Mom():
+            def dowork(self):
+                return 2
+
+        class Child(Dad, Mom):
+            def child_func(self):
+                x = super()
+
+        ";
+
+            Assert.Inconclusive("Todo: super() multiple Inheritance support");
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            
+            var testMod = rdt.OpenDocument(testModPath, code);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await testMod.GetAnalysisAsync();
+            var ds = new DefinitionSource(Services);
+
+            // Goto on Dad's super().dowork() should jump to Mom's
+            var reference = ds.FindDefinition(analysis, new SourceLocation(9, 33), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("test.py");
+            reference.range.Should().Be(11, 16, 11, 23);
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task GotoModuleSource() {
             const string code = @"
 import sys

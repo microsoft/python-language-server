@@ -355,37 +355,5 @@ class B(A[int]):  # leave signature as is
 
             y.Value.Should().HaveMemberName("af");
         }
-
-
-
-
-        //        [TestMethod, Priority(0)]
-        //        public async Task MultipleInheritanceSuperShould() {
-        //            const string code = @"
-        //class GrandParent:
-        //    def dowork(self):
-        //        return 1
-
-        //class Dad(GrandParent):
-        //    def dowork(self):
-        //        return super().dowork()
-
-        //class Mom():
-        //    def dowork(self):
-        //        return 2
-
-        //class Child(Dad, Mom):
-        //    def child_func(self):
-        //        x = super()
-
-        //";
-        //            var analysis = await GetAnalysisAsync(code);
-
-        //            analysis.Should().HaveClass("Child")
-        //                .Which.Should().HaveMethod("child_func")
-        //                .Which.Should().HaveVariable("x")
-        //                .Which.Value.Should().BeAssignableTo<IPythonInstance>()
-        //                .Which.Type.Name.Should().Be("Mom");
-        //        }
     }
 }

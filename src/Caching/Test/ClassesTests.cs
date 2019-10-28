@@ -150,5 +150,21 @@ class B(A):
             // In JSON, class A should have 'class A doc' documentation while B should have none.
             Baseline.CompareToFile(BaselineFileName, json);
         }
+
+         [TestMethod, Priority(0)]
+        public void ClassesWithSuper() {
+//            const string code = @"
+//class A:
+//    def methodA(self):
+//        return True
+
+//class B(A):
+//    def methodB(self);
+//        x = super()
+//        return True
+//";
+            Assert.Inconclusive("Todo: super() persistence support");
+        }
+
     }
 }
