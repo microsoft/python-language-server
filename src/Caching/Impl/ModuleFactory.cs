@@ -96,7 +96,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (memberName == "<lambda>") {
-                    return null;
+                    return new PythonFunctionType("<lambda>", default, default, string.Empty);
                 }
 
                 var nextModel = currentModel.GetModel(memberName);
