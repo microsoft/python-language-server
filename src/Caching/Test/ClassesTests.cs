@@ -160,7 +160,7 @@ class B(A):
 
 //class B(A):
 //    def methodB(self):
-//        return super().methodA
+//        return super()
 //";
             Assert.Inconclusive("Todo: super() persistence support");
         }
