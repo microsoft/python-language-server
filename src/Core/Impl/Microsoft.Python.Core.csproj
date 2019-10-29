@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>Microsoft.Python.Core</RootNamespace>
     <AssemblyName>Microsoft.Python.Core</AssemblyName>
   </PropertyGroup>
@@ -9,7 +9,7 @@
       1701, 1702 - "You may need to supply assembly policy"
     -->
     <NoWarn>1701;1702;$(NoWarn)</NoWarn>
-    <LangVersion>7.3</LangVersion>
+    <TieredCompilation>true</TieredCompilation>
   </PropertyGroup>
   <Import Project="..\..\..\build\NetStandard.settings" />
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
