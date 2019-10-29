@@ -20,7 +20,6 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -36,7 +35,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
-        private readonly IServiceManager _services;
+        private readonly IServiceContainer _services;
         private readonly IDependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry> _dependencyResolver;
         private readonly Dictionary<AnalysisModuleKey, PythonAnalyzerEntry> _analysisEntries = new Dictionary<AnalysisModuleKey, PythonAnalyzerEntry>();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonAnalyzer>();
@@ -51,7 +50,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private PythonAnalyzerSession _nextSession;
         private bool _forceGCOnNextSession;
 
-        public PythonAnalyzer(IServiceManager services) {
+        public PythonAnalyzer(IServiceContainer services) {
             _services = services;
             _log = services.GetService<ILogger>();
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
