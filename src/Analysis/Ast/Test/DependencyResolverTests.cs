@@ -368,9 +368,10 @@ namespace Microsoft.Python.Analysis.Tests {
             var newWalker = resolver.CreateWalker();
 
             // Mark vertex walked as it would've been in parallel
+            // Loops are always walked fully.
             node = await walker.GetNextAsync(default);
             node.Should().HaveSingleValue("A:B")
-                .And.HaveNonWalkedDependencies()
+                .And.HaveOnlyWalkedDependencies()
                 .And.NotBeWalkedWithDependencies();
             node.MarkWalked();
             node.MoveNext();

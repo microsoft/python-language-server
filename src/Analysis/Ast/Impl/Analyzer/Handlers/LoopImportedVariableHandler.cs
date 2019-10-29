@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Modules;
@@ -74,6 +73,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var key = new AnalysisModuleKey(module);
             if (_walkers.TryGetValue(key, out var walker)) {
+                var v = walker.Eval.GlobalScope?.Variables[name];
+                if (v.IsUnknown()) {
+                    var dm = v?.Value.GetPythonType().DeclaringModule;
+                    if (dm?.Analysis is EmptyAnalysis) {
+                        EnsureModule(module);
+                    }
+                }
                 return walker.Eval.GlobalScope?.Variables[name];
             }
 
@@ -91,7 +97,13 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (module == null || _isCanceled()) {
                 return;
             }
+            EnsureModule(module);
+        }
 
+        public void EnsureModule(in IPythonModule module) {
+            if (module == null || _isCanceled()) {
+                return;
+            }
             var key = new AnalysisModuleKey(module);
             if (!_walkers.ContainsKey(key) && _asts.TryGetValue(key, out var ast)) {
                 WalkModule(module, ast);

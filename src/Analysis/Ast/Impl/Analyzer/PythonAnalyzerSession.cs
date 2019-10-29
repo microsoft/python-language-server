@@ -208,8 +208,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var remaining = 0;
             var ace = new AsyncCountdownEvent(0);
 
-            bool isCanceled;
             while ((node = await _walker.GetNextAsync(_analyzerCancellationToken)) != null) {
+                bool isCanceled;
                 lock (_syncObj) {
                     isCanceled = _isCanceled;
                 }
@@ -217,9 +217,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (isCanceled) {
                     switch (node) {
                         case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
-                            remaining += loop.Values.Count(e => !e.NotAnalyzed);
-                            node.MoveNext();
-                            continue;
+                            // Loop analysis is not cancellable or else small
+                            // inner loops of a larger loop will not be analyzed
+                            // correctly as large loop may cancel inner loop pass.
+                            break;
                         case IDependencyChainSingleNode<PythonAnalyzerEntry> single when !single.Value.NotAnalyzed:
                             remaining++;
                             node.MoveNext();
@@ -261,6 +262,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             => Task.Run(() => Analyze(node, ace, stopWatch));
 
         private void Analyze(IDependencyChainNode node, AsyncCountdownEvent ace, Stopwatch stopWatch) {
+            var loopAnalysis = false;
             try {
                 switch (node) {
                     case IDependencyChainSingleNode<PythonAnalyzerEntry> single:
@@ -278,6 +280,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         break;
                     case IDependencyChainLoopNode<PythonAnalyzerEntry> loop:
                         try {
+                            loopAnalysis = true;
                             AnalyzeLoop(loop, stopWatch);
                         } catch (OperationCanceledException) {
                             //loop.Value.TryCancel(oce, _walker.Version);
@@ -298,7 +301,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     isCanceled = _isCanceled;
                 }
 
-                if (!isCanceled) {
+                if (!isCanceled || loopAnalysis) {
                     _progress.ReportRemaining(_walker.Remaining);
                 }
 
@@ -354,6 +357,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var asts = new Dictionary<AnalysisModuleKey, PythonAst>();
             var startTime = stopWatch.Elapsed;
 
+            // Note: loop analysis is not cancellable. The reason
             foreach (var entry in loopNode.Values) {
                 if (!CanUpdateAnalysis(entry, Version, out var module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of loop canceled.");
@@ -367,22 +371,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     AddLoopImportsFromCachedAnalysis(importNames, variables, moduleKey, analysis);
                     cachedVariables.Add(new AnalysisModuleKey(module), analysis.GlobalScope.Variables);
                 } else {
-                    AddLoopImportsFromAst(importNames, variables, moduleKey, ast, module.ModuleType == ModuleType.Compiled || module.ModuleType == ModuleType.CompiledBuiltin);
+                    AddLoopImportsFromAst(importNames, variables, moduleKey, ast);
                     asts.Add(new AnalysisModuleKey(module), ast);
-                }
-            }
-
-            lock (_syncObj) {
-                if (_isCanceled) {
-                    return;
                 }
             }
 
             if (asts.Count == 0) {
                 // Fully cached loop
-                foreach (var entry in loopNode.Values) {
-                    ActivityTracker.OnEnqueueModule(entry.Module.FilePath);
-                }
                 if (_log != null && _log.LogLevel == TraceEventType.Verbose) {
                     var names = string.Join(", ", cachedVariables.Select(v => v.Key.Name));
                     _log?.Log(TraceEventType.Verbose, $"Fully cached modules cycle: {names}");
@@ -404,22 +399,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var startingKeys = LocationLoopResolver<AnalysisModuleKey>.FindStartingItems(imports);
-            lock (_syncObj) {
-                if (_isCanceled) {
-                    return;
-                }
-            }
-
-            var variableHandler = new LoopImportedVariableHandler(_services, asts, cachedVariables, IsCanceled);
+            var variableHandler = new LoopImportedVariableHandler(_services, asts, cachedVariables, () => false);
             foreach (var key in startingKeys) {
                 if (asts.TryGetValue(key, out var startingAst) && entries.TryGetValue(key, out var me)) {
                     variableHandler.WalkModule(me.Module, startingAst);
-                }
-
-                lock (_syncObj) {
-                    if (_isCanceled) {
-                        return;
-                    }
                 }
             }
 
@@ -430,12 +413,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             while (asts.Count > 0) {
                 var (moduleKey, ast) = asts.First();
                 variableHandler.WalkModule(entries[moduleKey].Module, ast);
-
-                lock (_syncObj) {
-                    if (_isCanceled) {
-                        return;
-                    }
-                }
 
                 foreach (var walker in variableHandler.Walkers) {
                     asts.Remove(new AnalysisModuleKey(walker.Module));
@@ -448,19 +425,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
                 CompleteAnalysis(entry, module, version, analysis);
-
-                ActivityTracker.OnEnqueueModule(entry.Module.FilePath);
             }
 
-            if (!MarkNodeWalked(loopNode)) {
-                LogCompleted(loopNode, entries.Values.Select(v => v.Module), stopWatch, startTime);
-            }
-
-            bool IsCanceled() {
-                lock (_syncObj) {
-                    return _isCanceled;
-                }
-            }
+            loopNode.MarkWalked();
+            LogCompleted(loopNode, entries.Values.Select(v => v.Module), stopWatch, startTime);
         }
 
         private void AddLoopImportsFromCachedAnalysis(in List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)> unresolvedImports,
@@ -481,8 +449,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             in List<(AnalysisModuleKey From, int FromPosition, AnalysisModuleKey To, string ToName)> imports,
             in Dictionary<(AnalysisModuleKey Module, string Name), int> variables,
             in AnalysisModuleKey moduleKey,
-            in PythonAst ast,
-            in bool isCompiledModule) {
+            in PythonAst ast) {
 
             var pathResolver = moduleKey.IsTypeshed ? _typeshedPathResolver : _modulesPathResolver;
             var walker = new ImportExportWalker(ast, _platformService, pathResolver, moduleKey.FilePath, moduleKey.IsTypeshed);
@@ -494,11 +461,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (!variables.TryGetValue(key, out var currentLocation) || currentLocation > location) {
                     variables[key] = location;
                 }
-            }
-
-            // Don't add imports from compiled modules
-            if (isCompiledModule) {
-                return;
             }
 
             foreach (var (toModule, name, location) in walker.Imports) {

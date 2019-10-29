@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -642,6 +643,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
+        [DebuggerDisplay("{" + nameof(Value) + "}")]
         private sealed class SingleNode : IDependencyChainSingleNode<TValue> {
             private readonly WalkingVertex<TKey, TValue> _vertex;
             private DependencyChainWalker _walker;
@@ -659,6 +661,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             public void MoveNext() => Interlocked.Exchange(ref _walker, null)?.MoveNext(_vertex, loopAnalysis: false);
         }
 
+        [DebuggerDisplay("Loop: {_vertices.Count} nodes")]
         private sealed class LoopNode : IDependencyChainLoopNode<TValue> {
             private readonly IReadOnlyList<WalkingVertex<TKey, TValue>> _vertices;
             private DependencyChainWalker _walker;
