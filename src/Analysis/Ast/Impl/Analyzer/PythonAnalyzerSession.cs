@@ -357,7 +357,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var asts = new Dictionary<AnalysisModuleKey, PythonAst>();
             var startTime = stopWatch.Elapsed;
 
-            // Note: loop analysis is not cancellable. The reason
+            // Note: loop analysis is not cancellable. The reason is that when smaller loop
+            // appears inside a larger loop gets canceled, it will not be re-walked during
+            // the outer loop analysis. For example, functools <=> _functools loop and
+            // the related CircularDependencyFunctools test.
             foreach (var entry in loopNode.Values) {
                 if (!CanUpdateAnalysis(entry, Version, out var module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of loop canceled.");
@@ -369,10 +372,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var analysis = _analyzer.TryRestoreCachedAnalysis(module);
                 if (analysis != null) {
                     AddLoopImportsFromCachedAnalysis(importNames, variables, moduleKey, analysis);
-                    cachedVariables.Add(new AnalysisModuleKey(module), analysis.GlobalScope.Variables);
+                    cachedVariables.Add(moduleKey, analysis.GlobalScope.Variables);
                 } else {
                     AddLoopImportsFromAst(importNames, variables, moduleKey, ast);
-                    asts.Add(new AnalysisModuleKey(module), ast);
+                    asts.Add(moduleKey, ast);
                 }
             }
 
@@ -421,10 +424,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             foreach (var walker in variableHandler.Walkers) {
                 var module = (IDocument)walker.Module;
-                var entry = entries[new AnalysisModuleKey(module)].Entry;
-
-                var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
-                CompleteAnalysis(entry, module, version, analysis);
+                var moduleKey = new AnalysisModuleKey(module);
+                if (entries.TryGetValue(moduleKey, out var e)) {
+                    var analysis = CreateAnalysis(null, module, walker.Ast, version, walker);
+                    CompleteAnalysis(e.Entry, module, version, analysis);
+                }
             }
 
             loopNode.MarkWalked();
