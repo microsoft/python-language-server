@@ -15,8 +15,11 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Core;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
@@ -48,6 +51,26 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 await _server.InitializedAsync(ToObject<InitializedParams>(token), cancellationToken, userConfiguredPaths);
                 await _rpc.NotifyAsync("python/languageServerStarted");
+
+                EnableProfileOptimization();
+            }
+        }
+
+        private void EnableProfileOptimization() {
+            var cachService = _services.GetService<ICacheFolderService>();
+            if (cachService == null) {
+                return;
+            }
+
+            try {
+                // create directory for profile optimization
+                var path = Path.Combine(cachService.CacheFolder, "Profiles");
+                Directory.CreateDirectory(path);
+
+                ProfileOptimization.SetProfileRoot(path);
+                ProfileOptimization.StartProfile("profile");
+            } catch {
+                // ignore any issue with profiling
             }
         }
 

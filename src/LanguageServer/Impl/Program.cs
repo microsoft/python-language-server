@@ -18,8 +18,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime;
-using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
 using Microsoft.Python.Core.Services;
@@ -33,8 +31,6 @@ namespace Microsoft.Python.LanguageServer.Server {
     internal static class Program {
         public static void Main(string[] args) {
             CheckDebugMode();
-
-            EnableProfileOptimization();
 
             using (CoreShell.Create()) {
                 var services = CoreShell.Current.ServiceManager;
@@ -74,24 +70,6 @@ namespace Microsoft.Python.LanguageServer.Server {
                     token.WaitHandle.WaitOne();
                 }
             }
-        }
-
-        private static void EnableProfileOptimization() {
-            try {
-                // create directory for profile optimization
-                var path = Path.Combine(Path.GetTempPath(), "PythonLanguageServer", GetUserName(), "Profiles");
-                Directory.CreateDirectory(path);
-
-                ProfileOptimization.SetProfileRoot(path);
-                ProfileOptimization.StartProfile("profile");
-            } catch {
-                // ignore any issue with profiling
-            }
-        }
-
-        private static string GetUserName() {
-            var userName = Environment.UserName ?? "NoName";
-            return userName.GetHashString();
         }
 
         private static void CheckDebugMode() {
