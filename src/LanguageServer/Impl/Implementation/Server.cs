@@ -107,7 +107,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _initParams = @params;
             _log = _services.GetService<ILogger>();
 
-            var root = _initParams?.initializationOptions?.rootPathOverride ?? _initParams?.rootUri?.ToAbsolutePath() ?? _initParams?.rootPath;
+            var initializationOptions = _initParams?.initializationOptions;
+            CacheService.Register(_services, initializationOptions?.cacheFolderPath);
+
+            var root = initializationOptions?.rootPathOverride ?? _initParams?.rootUri?.ToAbsolutePath() ?? _initParams?.rootPath;
             if (!string.IsNullOrEmpty(root)) {
                 Root = PathUtils.NormalizePathAndTrim(root);
             }
@@ -123,14 +126,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var cacheFolderPath = initializationOptions?.cacheFolderPath;
-            var fs = _services.GetService<IFileSystem>();
-            if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
-                _log?.Log(TraceEventType.Warning, Resources.Error_InvalidCachePath);
-                cacheFolderPath = null;
-            }
-
-            var analyzer = new PythonAnalyzer(_services, cacheFolderPath);
+            var analyzer = new PythonAnalyzer(_services);
             _services.AddService(analyzer);
 
             analyzer.AnalysisComplete += OnAnalysisComplete;

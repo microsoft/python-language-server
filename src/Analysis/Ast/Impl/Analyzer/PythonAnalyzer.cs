@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private PythonAnalyzerSession _nextSession;
         private bool _forceGCOnNextSession;
 
-        public PythonAnalyzer(IServiceManager services, string cacheFolderPath = null) {
+        public PythonAnalyzer(IServiceManager services) {
             _services = services;
             _log = services.GetService<ILogger>();
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
@@ -59,9 +59,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _startNextSession = StartNextSession;
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
-
-            _services.AddService(new CacheFolderService(_services, cacheFolderPath));
-            _services.AddService(new StubCache(_services));
         }
 
         public void Dispose() {

@@ -39,7 +39,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             using (await _prioritizer.InitializePriorityAsync(cancellationToken)) {
                 // Force the next handled request to be "initialized", where the work actually happens.
                 _initializedPriorityTask = _prioritizer.InitializePriorityAsync(default);
-                return await _server.InitializeAsync(_initParams, cancellationToken);
+                var result = await _server.InitializeAsync(_initParams, cancellationToken);
+
+                EnableProfileOptimization();
+                return result;
             }
         }
 
@@ -51,8 +54,6 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 await _server.InitializedAsync(ToObject<InitializedParams>(token), cancellationToken, userConfiguredPaths);
                 await _rpc.NotifyAsync("python/languageServerStarted");
-
-                EnableProfileOptimization();
             }
         }
 
