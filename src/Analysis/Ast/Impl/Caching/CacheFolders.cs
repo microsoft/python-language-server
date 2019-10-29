@@ -16,8 +16,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.OS;
@@ -31,12 +29,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public string CacheFolder { get; }
 
         public string GetFileNameFromContent(string content) {
-            // File name depends on the content so we can distinguish between different versions.
-            using (var hash = SHA256.Create()) {
-                return Convert
-                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(content)))
-                    .Replace('/', '_').Replace('+', '-');
-            }
+            return content.GetHashString();
         }
 
         private static string GetCacheFolder(IServiceContainer services) {
