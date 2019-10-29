@@ -28,9 +28,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
         public string CacheFolder { get; }
 
-        public string GetFileNameFromContent(string content) {
-            return content.GetHashString();
-        }
+        public string GetFileNameFromContent(string content) => content.GetHashString();
 
         private static string GetCacheFolder(IServiceContainer services) {
             var platform = services.GetService<IOSPlatform>();

@@ -58,14 +58,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void EnableProfileOptimization() {
-            var cachService = _services.GetService<ICacheFolderService>();
-            if (cachService == null) {
+            var cacheService = _services.GetService<ICacheFolderService>();
+            if (cacheService == null) {
                 return;
             }
 
             try {
                 // create directory for profile optimization
-                var path = Path.Combine(cachService.CacheFolder, "Profiles");
+                var path = Path.Combine(cacheService.CacheFolder, "Profiles");
                 Directory.CreateDirectory(path);
 
                 ProfileOptimization.SetProfileRoot(path);

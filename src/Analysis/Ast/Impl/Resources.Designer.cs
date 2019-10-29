@@ -268,6 +268,15 @@ namespace Microsoft.Python.Analysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Specified cache folder (&apos;{0}&apos;) does not exist. Switching to default..
+        /// </summary>
+        internal static string Invalid_0_CacheFolder {
+            get {
+                return ResourceManager.GetString("Invalid_0_CacheFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The first argument to NewType must be a string..
         /// </summary>
         internal static string NewTypeFirstArgument {
@@ -327,15 +336,6 @@ namespace Microsoft.Python.Analysis {
         internal static string ReturnInInit {
             get {
                 return ResourceManager.GetString("ReturnInInit", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Specified cache folder (&apos;{0}&apos;) does not exist. Switching to default..
-        /// </summary>
-        internal static string Specified_cache_folder_0_does_not_exist_Switching_to_default {
-            get {
-                return ResourceManager.GetString("Specified_cache_folder_0_does_not_exist_Switching_to_default", resourceCulture);
             }
         }
         

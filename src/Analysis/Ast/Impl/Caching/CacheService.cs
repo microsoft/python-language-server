@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
-                log?.Log(TraceEventType.Warning, Resources.Specified_cache_folder_0_does_not_exist_Switching_to_default.FormatUI(cacheFolderPath));
+                log?.Log(TraceEventType.Warning, Resources.Invalid_0_CacheFolder.FormatUI(cacheFolderPath));
                 cacheFolderPath = null;
             }
 
