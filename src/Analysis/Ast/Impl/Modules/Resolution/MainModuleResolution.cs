@@ -178,11 +178,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public bool IsSpecializedModule(string fullName, string modulePath = null)
             => _specialized.ContainsKey(fullName);
 
-        internal async Task AddBuiltinTypesToPathResolverAsync(CancellationToken cancellationToken = default) {
+        private async Task AddBuiltinTypesToPathResolverAsync(CancellationToken cancellationToken = default) {
             var analyzer = Services.GetService<IPythonAnalyzer>();
-            await analyzer.GetAnalysisAsync(BuiltinsModule, -1, cancellationToken);
+            await analyzer.GetAnalysisAsync(BuiltinsModule, Timeout.Infinite, cancellationToken);
 
-            Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "After await");
+            Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "Builtins analysis did not complete correctly.");
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");

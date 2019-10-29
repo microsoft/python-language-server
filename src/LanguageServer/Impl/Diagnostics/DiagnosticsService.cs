@@ -145,18 +145,16 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private void PublishDiagnostics() {
             var diagnostics = new Dictionary<Uri, DocumentDiagnostics>();
             lock (_lock) {
-                foreach (var d in _diagnostics) {
-                    if (d.Value.Changed) {
-                        diagnostics[d.Key] = d.Value;
-                        d.Value.Changed = false;
-                    }
+                foreach (var (uri, documentDiagnostics) in _diagnostics.Where(d => d.Value.Changed)) {
+                    diagnostics[uri] = documentDiagnostics;
+                    documentDiagnostics.Changed = false;
                 }
 
-                foreach (var kvp in diagnostics) {
+                foreach (var (uri, documentDiagnostics) in diagnostics) {
                     var parameters = new PublishDiagnosticsParams {
-                        uri = kvp.Key,
-                        diagnostics = Rdt.GetDocument(kvp.Key)?.IsOpen == true
-                                ? FilterBySeverityMap(kvp.Value).Select(d => d.ToDiagnostic()).ToArray()
+                        uri = uri,
+                        diagnostics = Rdt.GetDocument(uri)?.IsOpen == true
+                                ? FilterBySeverityMap(documentDiagnostics).Select(d => d.ToDiagnostic()).ToArray()
                                 : Array.Empty<Diagnostic>()
                     };
                     _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
@@ -221,7 +219,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
         private void ClearDiagnostics(Uri uri, bool remove) {
             lock (_lock) {
                 if (_diagnostics.TryGetValue(uri, out var d)) {
-                    d.ClearAll();
+                    d.Changed = true;
                     PublishDiagnostics();
                     if (remove) {
                         _diagnostics.Remove(uri);
