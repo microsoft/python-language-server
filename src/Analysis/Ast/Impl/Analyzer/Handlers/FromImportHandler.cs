@@ -69,8 +69,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     DeclareVariable(variableModule, memberName, imports, variableName, node.StartIndex, nameExpression);
                 }
 
-                if (imports is IImportChildrenSource cs 
-                    && cs.TryGetChildImport(memberName, out var csr) 
+                if (imports is IImportChildrenSource cs
+                    && cs.TryGetChildImport(memberName, out var csr)
                     && HandleImportSearchResult(csr, variableModule, null, names[i], out var childModule)) {
 
                     _importedVariableHandler.EnsureModule(childModule);
@@ -119,17 +119,31 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 // Value may be variable or submodule. If it is variable, we need it in order to add reference.
                 var variable = _importedVariableHandler.GetVariable(variableModule, memberName);
 
-                // If nothing is exported, variables are still accessible.
-                value = value ?? member as PythonVariableModule ?? (variable?.Value != null ? variable : member) ?? Eval.UnknownType;
+                if (member is PythonVariableModule vm && vm.Equals(variable?.Value)) {
+                    // If member is submodule, use actual variable so it can be linked through for goto definition.
+                    value = variable;
+                } else if (value == null) {
+                    if (member is PythonVariableModule) {
+                        // If member is submodule, use it.
+                        value = member;
+                    } else if (variable?.Value != null) {
+                        // Otherwise use variable, if available so references can be linked.
+                        value = variable;
+                    } else if (member != null) {
+                        value = member;
+                    } else {
+                        value = Eval.UnknownType;
+                    }
+                }
             }
 
             // Do not allow imported variables to override local declarations
             var canOverwrite = CanOverwriteVariable(variableName, importPosition, value);
-            
+
             // Do not declare references to '*'
             var locationExpression = nameLocation is NameExpression nex && nex.Name == "*" ? null : nameLocation;
             Eval.DeclareVariable(variableName, value, VariableSource.Import, locationExpression, canOverwrite);
-            
+
             // Make sure module is loaded and analyzed.
             if (value is IPythonModule m) {
                 ModuleResolution.GetOrLoadModule(m.Name);
@@ -141,8 +155,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             if (v == null) {
                 return true; // Variable does not exist
             }
-            
-            if(newValue.IsUnknown()) {
+
+            if (newValue.IsUnknown()) {
                 return false; // Do not overwrite potentially good value with unknowns.
             }
 
