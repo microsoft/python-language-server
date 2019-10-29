@@ -98,13 +98,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                 IVariable variable = null;
                 if (expr is NameExpression nex) {
-                    analysis.ExpressionEvaluator.LookupNameInScopes(nex.Name, out _, out variable, LookupOptions.All);
+                    eval.LookupNameInScopes(nex.Name, out _, out variable, LookupOptions.All);
                     if (IsInvalidClassMember(variable, hoverScopeStatement, location.ToIndex(analysis.Ast))) {
                         return null;
                     }
                 }
 
-                value = variable?.Value ?? analysis.ExpressionEvaluator.GetValueFromExpression(expr, LookupOptions.All);
+                value = variable?.Value ?? eval.GetValueFromExpression(expr, LookupOptions.All);
                 type = value?.GetPythonType();
                 if (type == null) {
                     return null;
@@ -124,7 +124,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 // In case of a member expression get the target since if we end up with method
                 // of a generic class, the function will need specific type to determine its return
                 // value correctly. I.e. in x.func() we need to determine type of x (self for func).
-                var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
+                var v = eval.GetValueFromExpression(mex.Target);
                 self = v?.GetPythonType();
             }
 

@@ -19,13 +19,27 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Parsing.Ast {
     public static class SourceLocationExtensions {
         public static int ToIndex(this SourceLocation location, ILocationConverter lc) => lc.LocationToIndex(location);
+
+        public static SourceLocation ToSourceLocation(this Position position, ILocationConverter lc = null) {
+            var location = new SourceLocation(position.line + 1, position.character + 1);
+            if (lc == null) {
+                return location;
+            }
+
+            return new SourceLocation(lc.LocationToIndex(location), location.Line, location.Column);
+        }
+    }
+
+    public static class RangeExtensions {
+        public static IndexSpan ToIndexSpan(this Range range, ILocationConverter lc)
+            => IndexSpan.FromBounds(lc.LocationToIndex(range.start), lc.LocationToIndex(range.end));
+        public static SourceSpan ToSourceSpan(this Range range, ILocationConverter lc = null)
+            => new SourceSpan(range.start.ToSourceLocation(lc), range.end.ToSourceLocation(lc));
     }
 
     public static class SourceSpanExtensions {
         public static IndexSpan ToIndexSpan(this SourceSpan span, ILocationConverter lc)
             => IndexSpan.FromBounds(lc.LocationToIndex(span.Start), lc.LocationToIndex(span.End));
-        public static IndexSpan ToIndexSpan(this Range range, ILocationConverter lc)
-            => IndexSpan.FromBounds(lc.LocationToIndex(range.start), lc.LocationToIndex(range.end));
     }
 
     public static class IndexSpanExtensions {

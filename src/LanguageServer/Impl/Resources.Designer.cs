@@ -106,6 +106,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to import locally &apos;{0}&apos;.
+        /// </summary>
+        internal static string ImportLocally {
+            get {
+                return ResourceManager.GetString("ImportLocally", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Initializing for generic interpreter.
         /// </summary>
         internal static string InitializingForGenericInterpreter {

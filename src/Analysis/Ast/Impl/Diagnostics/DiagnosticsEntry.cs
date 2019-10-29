@@ -92,6 +92,9 @@ namespace Microsoft.Python.Analysis.Diagnostics {
         }
         public override int GetHashCode() => 0;
 
+        /// <summary>
+        /// Value of each enum member must match the one in <see cref="DiagnosticTags" />
+        /// </summary>
         public enum DiagnosticTags {
             /// <summary>
             /// Unused or unnecessary code.

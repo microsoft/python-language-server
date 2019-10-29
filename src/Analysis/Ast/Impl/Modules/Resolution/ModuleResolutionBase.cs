@@ -81,11 +81,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return module;
             }
 
-            module = Interpreter.ModuleResolution.GetSpecializedModule(name);
-            if (module != null) {
-                return module;
-            }
-
             // Now try regular case.
             if (Modules.TryGetValue(name, out var moduleRef)) {
                 return moduleRef.GetOrCreate(name, this);

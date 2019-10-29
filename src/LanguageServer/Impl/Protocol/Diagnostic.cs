@@ -57,6 +57,78 @@ namespace Microsoft.Python.LanguageServer.Protocol {
         Hint = 4
     }
 
+    //
+    // The kind of a code action.
+    //
+    // Kinds are a hierarchical list of identifiers separated by `.`, e.g. `"refactor.extract.function"`.
+    //
+    // The set of kinds is open and client needs to announce the kinds it supports to the server during
+    // initialization.
+    //
+    // 
+    // A set of predefined code action kinds
+    // 
+    public static class CodeActionKind {
+        // 
+        // Empty kind.
+        // 
+        public const string Empty = "";
+        // 
+        // Base kind for quickfix actions: 'quickfix'
+        // 
+        public const string QuickFix = "quickfix";
+        // 
+        // Base kind for refactoring actions: 'refactor'
+        // 
+        public const string Refactor = "refactor";
+        // 
+        // Base kind for refactoring extraction actions: 'refactor.extract'
+        // 
+        // Example extract actions:
+        // 
+        // - Extract method
+        // - Extract function
+        // - Extract variable
+        // - Extract interface from class
+        // - ...
+        // 
+        public const string RefactorExtract = "refactor.extract";
+        // 
+        // Base kind for refactoring inline actions: 'refactor.inline'
+        // 
+        // Example inline actions:
+        // 
+        // - Inline function
+        // - Inline variable
+        // - Inline constant
+        // - ...
+        // 
+        public const string RefactorInline = "refactor.inline";
+        // 
+        // Base kind for refactoring rewrite actions: 'refactor.rewrite'
+        // 
+        // Example rewrite actions:
+        // 
+        // - Convert JavaScript function to class
+        // - Add or remove parameter
+        // - Encapsulate field
+        // - Make method static
+        // - Move method to base class
+        // - ...
+        // 
+        public const string RefactorRewrite = "refactor.rewrite";
+        // 
+        // Base kind for source actions: `source`
+        // 
+        // Source code actions apply to the entire file.
+        // 
+        public const string Source = "source";
+        // 
+        // Base kind for an organize imports source action: `source.organizeImports`
+        // 
+        public const string SourceOrganizeImports = "source.organizeImports";
+    }
+
     public enum DiagnosticTag : int {
         /// <summary>
         /// Unused or unnecessary code.

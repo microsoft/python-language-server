@@ -55,6 +55,20 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IBuiltinsPythonModule BuiltinsModule { get; private set; }
 
+        public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken) {
+            foreach (var module in _specialized.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return module;
+            }
+
+            foreach (var moduleRef in Modules.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (moduleRef.Value != null) {
+                    yield return moduleRef.Value;
+                }
+            }
+        }
+
         protected override IPythonModule CreateModule(string name) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport == null) {
@@ -164,11 +178,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         public bool IsSpecializedModule(string fullName, string modulePath = null)
             => _specialized.ContainsKey(fullName);
 
-        internal async Task AddBuiltinTypesToPathResolverAsync(CancellationToken cancellationToken = default) {
+        private async Task AddBuiltinTypesToPathResolverAsync(CancellationToken cancellationToken = default) {
             var analyzer = Services.GetService<IPythonAnalyzer>();
-            await analyzer.GetAnalysisAsync(BuiltinsModule, -1, cancellationToken);
+            await analyzer.GetAnalysisAsync(BuiltinsModule, Timeout.Infinite, cancellationToken);
 
-            Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "After await");
+            Check.InvalidOperation(!(BuiltinsModule.Analysis is EmptyAnalysis), "Builtins analysis did not complete correctly.");
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
