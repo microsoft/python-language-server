@@ -129,7 +129,7 @@ namespace Microsoft.Python.Analysis.Types {
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
-                if (StaticReturnValue == null && !string.IsNullOrEmpty(_returnDocumentation)) {
+                if (StaticReturnValue == null && !string.IsNullOrEmpty(_returnDocumentation) && FunctionDefinition?.ReturnAnnotation != null) {
                     // There is return documentation but no static return value.
                     // This may happen if function is inside module circular
                     // dependency loop. Try and re-evaluate now.
