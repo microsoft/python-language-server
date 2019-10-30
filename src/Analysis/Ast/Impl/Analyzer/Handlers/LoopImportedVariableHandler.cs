@@ -73,13 +73,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
             var key = new AnalysisModuleKey(module);
             if (_walkers.TryGetValue(key, out var walker)) {
-                var v = walker.Eval.GlobalScope?.Variables[name];
-                if (v.IsUnknown()) {
-                    var dm = v?.Value.GetPythonType().DeclaringModule;
-                    if (dm?.Analysis is EmptyAnalysis) {
-                        EnsureModule(module);
-                    }
-                }
                 return walker.Eval.GlobalScope?.Variables[name];
             }
 
@@ -87,7 +80,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 return _cachedVariables.TryGetValue(key, out var variables) ? variables[name] : default;
             }
 
-            walker = WalkModule(module, ast);
+            _walkers[key] = walker = WalkModule(module, ast);
             var gs = walker != null ? walker.Eval.GlobalScope : module.GlobalScope;
             return gs?.Variables[name];
         }

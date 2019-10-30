@@ -556,8 +556,7 @@ class A3:
 from module2 import y1
 z = y1.M1()
 ";
-
-            var appCode = @"
+            const string appCode = @"
 from module1 import x
 from module3 import z
 
