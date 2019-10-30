@@ -107,10 +107,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _initParams = @params;
             _log = _services.GetService<ILogger>();
 
-            var initializationOptions = _initParams?.initializationOptions;
-            CacheService.Register(_services, initializationOptions?.cacheFolderPath);
-
-            var root = initializationOptions?.rootPathOverride ?? _initParams?.rootUri?.ToAbsolutePath() ?? _initParams?.rootPath;
+            var root = _initParams?.initializationOptions?.rootPathOverride ?? _initParams?.rootUri?.ToAbsolutePath() ?? _initParams?.rootPath;
             if (!string.IsNullOrEmpty(root)) {
                 Root = PathUtils.NormalizePathAndTrim(root);
             }

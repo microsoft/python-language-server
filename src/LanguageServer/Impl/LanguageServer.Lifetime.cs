@@ -15,12 +15,11 @@
 
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Core;
+using Microsoft.Python.LanguageServer.Optimization;
 using Microsoft.Python.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
@@ -36,42 +35,26 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<InitializeResult> Initialize(JToken token, CancellationToken cancellationToken) {
             _initParams = token.ToObject<InitializeParams>();
             MonitorParentProcess(_initParams);
+            RegisterServices(_initParams);
+
             using (await _prioritizer.InitializePriorityAsync(cancellationToken)) {
                 // Force the next handled request to be "initialized", where the work actually happens.
                 _initializedPriorityTask = _prioritizer.InitializePriorityAsync(default);
                 var result = await _server.InitializeAsync(_initParams, cancellationToken);
-
-                EnableProfileOptimization();
                 return result;
             }
         }
 
         [JsonRpcMethod("initialized")]
         public async Task Initialized(JToken token, CancellationToken cancellationToken) {
+            _services.GetService<IProfileOptimizationService>()?.Profile("Initialized");
+
             using (await _initializedPriorityTask) {
                 var pythonSection = await GetPythonConfigurationAsync(cancellationToken, 200);
                 var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 await _server.InitializedAsync(ToObject<InitializedParams>(token), cancellationToken, userConfiguredPaths);
                 await _rpc.NotifyAsync("python/languageServerStarted");
-            }
-        }
-
-        private void EnableProfileOptimization() {
-            var cacheService = _services.GetService<ICacheFolderService>();
-            if (cacheService == null) {
-                return;
-            }
-
-            try {
-                // create directory for profile optimization
-                var path = Path.Combine(cacheService.CacheFolder, "Profiles");
-                Directory.CreateDirectory(path);
-
-                ProfileOptimization.SetProfileRoot(path);
-                ProfileOptimization.StartProfile("profile");
-            } catch {
-                // ignore any issue with profiling
             }
         }
 
@@ -140,6 +123,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     }
                 }).DoNotWait();
             }
+        }
+
+        private void RegisterServices(InitializeParams initParams) {
+            // we need to register cache service first.
+            // optimization service consumes the cache info.
+            CacheService.Register(_services, initParams?.initializationOptions?.cacheFolderPath);
+            _services.AddService(new ProfileOptimizationService(_services));
         }
     }
 }
