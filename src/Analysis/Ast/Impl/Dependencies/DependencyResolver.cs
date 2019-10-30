@@ -25,6 +25,9 @@ using Microsoft.Python.Core.Threading;
 
 namespace Microsoft.Python.Analysis.Dependencies {
     internal sealed class DependencyResolver<TKey, TValue> : IDependencyResolver<TKey, TValue> {
+        // optimization to only analyze one that is reachable from root
+        private readonly bool _checkVertexReachability = true;
+
         private readonly Dictionary<TKey, int> _keys = new Dictionary<TKey, int>();
         private readonly List<DependencyVertex<TKey, TValue>> _vertices = new List<DependencyVertex<TKey, TValue>>();
         private readonly object _syncObj = new object();
@@ -284,7 +287,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             for (var index = 0; index < vertices.Count; index++) {
                 var vertex = vertices[index];
-                if (vertex == null || vertex.IsWalked || depths[index] == -1) {
+                if (vertex == null || vertex.IsWalked || !ReachableFromRoot(depths, index)) {
                     continue;
                 }
 
@@ -308,7 +311,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                 foreach (var outgoingIndex in node.DependencyVertex.Outgoing) {
                     if (!nodesByVertexIndex.TryGetValue(outgoingIndex, out var outgoingNode)) {
                         var vertex = vertices[outgoingIndex];
-                        if (vertex == null || depths[vertex.Index] == -1) {
+                        if (vertex == null || !ReachableFromRoot(depths, vertex.Index)) {
                             continue;
                         }
 
@@ -323,6 +326,14 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
             analysisGraph = ImmutableArray<WalkingVertex<TKey, TValue>>.Create(nodesByVertexIndex.Values);
             return true;
+
+            bool ReachableFromRoot(ImmutableArray<int> reachable, int index) {
+                const int inaccessibleFromRoot = -1;
+
+                // one of usage case for this optimization is not analyzing module that is not reachable
+                // from user code
+                return _checkVertexReachability && reachable[index] != inaccessibleFromRoot;
+            }
         }
 
         private static ImmutableArray<int> CalculateDepths(in ImmutableArray<DependencyVertex<TKey, TValue>> vertices) {

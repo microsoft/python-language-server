@@ -57,6 +57,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var classInfo = CreateClass(cd);
+                if (classInfo == null) {
+                    // we can't create class info for this node.
+                    // don't walk down
+                    return false;
+                }
+
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
@@ -68,7 +74,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(ClassDefinition cd) {
-            if (!IsDeprecated(cd) && !string.IsNullOrEmpty(cd.NameExpression?.Name)) {
+            if (!IsDeprecated(cd) &&
+                !string.IsNullOrEmpty(cd.NameExpression?.Name) &&
+                _typeMap.ContainsKey(cd)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(cd);
@@ -95,9 +103,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private PythonClassType CreateClass(ClassDefinition cd) {
             PythonType declaringType = null;
-            if(!(cd.Parent is PythonAst)) {
-                Debug.Assert(_typeMap.ContainsKey(cd.Parent));
-                _typeMap.TryGetValue(cd.Parent, out declaringType);
+            if (!(cd.Parent is PythonAst)) {
+                if (!_typeMap.TryGetValue(cd.Parent, out declaringType)) {
+                    // we can get into this situation if parent is defined twice and we preserve
+                    // only one of them.
+                    // for example, code has function definition with exact same signature
+                    // and class is defined under one of that function
+                    return null;
+                }
             }
             var cls = new PythonClassType(cd, declaringType, _eval.GetLocationOfName(cd),
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
@@ -119,6 +132,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 f = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
+
+                // if there are multiple functions with same name exist, only the very first one will be
+                // maintained in the scope. we should improve this if possible.
+                // https://github.com/microsoft/python-language-server/issues/1693
                 _eval.DeclareVariable(fd.Name, f, VariableSource.Declaration);
                 _typeMap[fd] = f;
                 declaringType?.AddMember(f.Name, f, overwrite: true);

@@ -154,7 +154,7 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
                     var parameters = new PublishDiagnosticsParams {
                         uri = uri,
                         diagnostics = Rdt.GetDocument(uri)?.IsOpen == true
-                                ? FilterBySeverityMap(documentDiagnostics).Select(ToDiagnostic).ToArray()
+                                ? FilterBySeverityMap(documentDiagnostics).Select(d => d.ToDiagnostic()).ToArray()
                                 : Array.Empty<Diagnostic>()
                     };
                     _clientApp.NotifyWithParameterObjectAsync("textDocument/publishDiagnostics", parameters).DoNotWait();
@@ -166,32 +166,6 @@ namespace Microsoft.Python.LanguageServer.Diagnostics {
             lock (_lock) {
                 _diagnostics.Clear();
             }
-        }
-
-        private static Diagnostic ToDiagnostic(DiagnosticsEntry e) {
-            DiagnosticSeverity s;
-            switch (e.Severity) {
-                case Severity.Warning:
-                    s = DiagnosticSeverity.Warning;
-                    break;
-                case Severity.Information:
-                    s = DiagnosticSeverity.Information;
-                    break;
-                case Severity.Hint:
-                    s = DiagnosticSeverity.Hint;
-                    break;
-                default:
-                    s = DiagnosticSeverity.Error;
-                    break;
-            }
-
-            return new Diagnostic {
-                range = e.SourceSpan,
-                severity = s,
-                source = "Python",
-                code = e.ErrorCode,
-                message = e.Message,
-            };
         }
 
         private IEnumerable<DiagnosticsEntry> FilterBySeverityMap(DocumentDiagnostics d)
