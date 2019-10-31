@@ -597,27 +597,6 @@ def outer():
         }
 
         [TestMethod, Priority(0)]
-        public async Task Deprecated() {
-            const string code = @"
-@deprecation.deprecated('')
-class A:
-    def a(self): pass
-
-@deprecation.deprecated('')
-def func(): ...
-
-class B:
-    @deprecation.deprecated('')
-    def b(self): pass
-
-";
-            var analysis = await GetAnalysisAsync(code);
-            analysis.Should().NotHaveVariable("A");
-            analysis.Should().NotHaveVariable("func");
-            analysis.Should().HaveVariable("B").Which.Should().NotHaveMember("b");
-        }
-
-        [TestMethod, Priority(0)]
         public async Task AnnotatedParameterPriority() {
             const string code = @"
 class Foo:
