@@ -21,7 +21,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Services;
@@ -58,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Tests {
             var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
             diagnostics.Should().NotBeEmpty();
 
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken.None);
             codeActions.Should().BeEmpty();
         }
 
@@ -193,7 +192,7 @@ import socket
             var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
             diagnostics.Should().NotBeEmpty();
 
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken.None);
 
             var list = codeActions.Select(c => c.title).ToList();
             var zipList = Enumerable.Range(0, list.Count).Zip(list);
@@ -290,7 +289,7 @@ import socket
             // calculate actions
             var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
             var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken.None);
 
             var list = codeActions.Select(c => c.title).ToList();
             var zipList = Enumerable.Range(0, list.Count).Zip(list);
@@ -469,7 +468,7 @@ def Method():
             var insertionSpan = spans["insertionSpan"].First().ToSourceSpan(analysis.Ast);
 
             var diagnostics = GetDiagnostics(analysis, spans["diagnostic"].First().ToSourceSpan(analysis.Ast), codes);
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken.None);
             return (analysis, codeActions.ToArray(), insertionSpan);
         }
 
@@ -503,7 +502,7 @@ def Method():
             // calculate actions
             var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
             var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-            var codeActions = await new CodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, diagnostics, CancellationToken.None);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken.None);
 
             // verify results
             var codeAction = codeActions.Single(c => c.title == title);
