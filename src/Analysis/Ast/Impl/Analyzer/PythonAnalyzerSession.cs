@@ -29,7 +29,6 @@ using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Services;
 using Microsoft.Python.Core.Testing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -42,7 +41,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly PythonAnalyzerEntry _entry;
         private readonly Action<Task> _startNextSession;
         private readonly CancellationToken _analyzerCancellationToken;
-        private readonly IServiceManager _services;
+        private readonly IServiceContainer _services;
         private readonly IDiagnosticsService _diagnosticsService;
         private readonly IProgressReporter _progress;
         private readonly IPythonAnalyzer _analyzer;
@@ -65,7 +64,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public int Version { get; }
         public int AffectedEntriesCount { get; }
 
-        public PythonAnalyzerSession(IServiceManager services,
+        public PythonAnalyzerSession(IServiceContainer services,
             IProgressReporter progress,
             Action<Task> startNextSession,
             CancellationToken analyzerCancellationToken,

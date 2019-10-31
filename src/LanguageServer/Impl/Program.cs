@@ -31,6 +31,7 @@ namespace Microsoft.Python.LanguageServer.Server {
     internal static class Program {
         public static void Main(string[] args) {
             CheckDebugMode();
+
             using (CoreShell.Create()) {
                 var services = CoreShell.Current.ServiceManager;
 

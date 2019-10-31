@@ -123,14 +123,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var cacheFolderPath = initializationOptions?.cacheFolderPath;
-            var fs = _services.GetService<IFileSystem>();
-            if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
-                _log?.Log(TraceEventType.Warning, Resources.Error_InvalidCachePath);
-                cacheFolderPath = null;
-            }
-
-            var analyzer = new PythonAnalyzer(_services, cacheFolderPath);
+            var analyzer = new PythonAnalyzer(_services);
             _services.AddService(analyzer);
 
             analyzer.AnalysisComplete += OnAnalysisComplete;

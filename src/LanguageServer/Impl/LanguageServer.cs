@@ -45,7 +45,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
         private readonly AnalysisOptionsProvider _optionsProvider = new AnalysisOptionsProvider();
 
-        private IServiceContainer _services;
+        private IServiceManager _services;
         private Server _server;
         private ILogger _logger;
         private ITelemetryService _telemetry;
