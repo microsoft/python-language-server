@@ -204,9 +204,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 case "Unknown":
                     return builtins.Interpreter.UnknownType;
                 case "SuperType":
-                    var location = new Location(Module, default);
-                    return new PythonSuperType(location, typeArgs);
-                    
+                    return new PythonSuperType(typeArgs);
             }
             return builtins.GetMember(memberName);
         }

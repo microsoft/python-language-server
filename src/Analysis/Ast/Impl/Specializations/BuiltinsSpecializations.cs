@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Specializations {
                 //Zero argument form only works inside a class definition
                 foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal.Where(s => s.Node is ClassDefinition)) {
                     var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
-                    return CreateSuper(argSet, classType, declaringModule, indexSpan);
+                    return PythonSuperType.CreateSuper(classType)?.CreateInstance(argSet); 
                 }
                 return null;
             }
@@ -114,47 +114,14 @@ namespace Microsoft.Python.Analysis.Specializations {
             // second argument optional
             bool isUnbound = args.Count == 1;
             if (isUnbound) {
-                return CreateSuper(argSet, firstCls, declaringModule, indexSpan);
+                return PythonSuperType.CreateSuper(firstCls)?.CreateInstance(argSet);
             }
 
             var secondCls = args[1].GetPythonType<IPythonClassType>();
             if (secondCls?.Equals(firstCls) == true || 
                 secondCls?.IsSubClassOf(firstCls) == true) {
                 // We walk the mro of the second parameter looking for the first
-                return CreateSuper(argSet, secondCls, declaringModule, indexSpan, typeToFind: firstCls);
-            }
-
-            return null;
-        }
-
-        private static IMember CreateSuper(IArgumentSet argSet,
-            IPythonClassType classType,
-            IPythonModule declaringModule,
-            IndexSpan indexSpan,
-            IPythonType typeToFind = null) {
-
-            var mro = classType?.Mro ?? Array.Empty<IPythonType>();
-            if (mro.Count == 0) {
-                return null;
-            }
-            
-            // skip doing work if the newStartType is the first element in the callers mro
-            if (typeToFind?.Equals(classType.Mro.FirstOrDefault()) == false) {
-                var mroList = classType.Mro.ToList();
-                var start = mroList.FindIndex(0, t => t.Equals(typeToFind));
-                if (start >= 0) {
-                    mro = mroList.GetRange(start, mro.Count - start).ToArray();
-                } else {
-                    return null;  // typeToFind wasn't in the mro
-                }
-            }
-
-            var nextClassInLine = mro?.FirstOrDefault();
-            if (nextClassInLine != null) {
-                var location = new Location(declaringModule, indexSpan);
-                // Skip the first element, super's search starts at the next elemement in the mro for both super() and super(cls, typeToFind)
-                var proxySuper = new PythonSuperType(location, mro.Skip(1).ToArray());
-                return proxySuper.CreateInstance(argSet);
+                return PythonSuperType.CreateSuper(secondCls, typeToFind: firstCls)?.CreateInstance(argSet);
             }
 
             return null;
