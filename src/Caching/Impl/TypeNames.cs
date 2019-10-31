@@ -89,9 +89,10 @@ namespace Microsoft.Python.Analysis.Caching {
         private static void GetModuleNameAndMembers(string qualifiedName, ref QualifiedNameParts parts, int prefixOffset) {
             // Strip the prefix, turning i:module:A.B.C into module:A.B.C
             var typeName = qualifiedName.Substring(prefixOffset);
-
+            
             var moduleSeparatorIndex = typeName.IndexOf(':');
-            if (moduleSeparatorIndex < 0) {
+            if (moduleSeparatorIndex <= 0) {
+                typeName = typeName.TrimStart(':');
                 switch (parts.ObjectType) {
                     case ObjectType.Type:
                     case ObjectType.Instance:

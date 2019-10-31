@@ -152,7 +152,6 @@ class B(A):
         }
 
         [TestMethod, Priority(0)]
-        [Ignore("Todo: super() persistence support, Asserts in debug due to no model found for super")]
         public async Task ClassesWithSuper() {
             const string code = @"
 class A:
@@ -162,18 +161,38 @@ class A:
 class B(A):
     def methodB(self):
         return super()
-
-b = B().methodB()
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().HaveVariable("b").Which.Should().HaveType("super");
-
+           
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
-          
+
             using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(analysis.Document);
             }
         }
 
+        [TestMethod, Priority(0)]
+        public async Task GlobalSuper() {
+            const string code = @"
+class Baze:
+    def baze_foo(self):
+        pass
+
+class Derived(Baze):
+    def foo(self):
+        pass
+
+d = Derived()
+
+x = super(Derived, d)
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+
+            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
+                dbModule.Should().HaveSameMembersAs(analysis.Document);
+            }
+        }
     }
 }

@@ -29,6 +29,12 @@ namespace Microsoft.Python.Analysis.Types {
             Mro = mro;
         }
 
+        public override string QualifiedName {
+            get {
+                return $":SuperType[{string.Join(",", Mro.Select(t => t.QualifiedName))}]";
+            }
+        }
+
         public IReadOnlyList<IPythonType> Mro { get; }
 
         public override IMember GetMember(string name) => Mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
