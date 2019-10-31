@@ -150,47 +150,5 @@ class B(A):
             // In JSON, class A should have 'class A doc' documentation while B should have none.
             Baseline.CompareToFile(BaselineFileName, json);
         }
-
-        [TestMethod, Priority(0)]
-        public async Task ClassesWithSuper() {
-            const string code = @"
-class A:
-    def methodA(self):
-        return True
-
-class B(A):
-    def methodB(self):
-        return super()
-";
-            var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
-
-            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
-                dbModule.Should().HaveSameMembersAs(analysis.Document);
-            }
-        }
-
-        [TestMethod, Priority(0)]
-        public async Task GlobalSuper() {
-            const string code = @"
-class Baze:
-    def baze_foo(self):
-        pass
-
-class Derived(Baze):
-    def foo(self):
-        pass
-
-d = Derived()
-
-x = super(Derived, d)
-";
-            var analysis = await GetAnalysisAsync(code);
-            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
-
-            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
-                dbModule.Should().HaveSameMembersAs(analysis.Document);
-            }
-        }
     }
 }
