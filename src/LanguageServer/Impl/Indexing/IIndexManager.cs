@@ -17,16 +17,18 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Documents;
 
 namespace Microsoft.Python.LanguageServer.Indexing {
     internal interface IIndexManager : IDisposable {
-        Task IndexWorkspace(CancellationToken ct = default);
+        Task IndexWorkspace(PathResolverSnapshot snapshot = null, CancellationToken ct = default);
         void ProcessNewFile(string path, IDocument doc);
         void ProcessClosedFile(string path);
         void ReIndexFile(string path, IDocument doc);
         void AddPendingDoc(IDocument doc);
         Task<IReadOnlyList<HierarchicalSymbol>> HierarchicalDocumentSymbolsAsync(string path, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<FlatSymbol>> WorkspaceSymbolsAsync(string query, int maxLength, bool includeLibraries, CancellationToken cancellationToken = default);
     }
 }
