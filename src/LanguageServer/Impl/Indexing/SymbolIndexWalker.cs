@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing.Ast;
 
@@ -25,17 +26,27 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private static readonly Regex ConstantLike = new Regex(@"^[\p{Lu}\p{N}_]+$", RegexOptions.Compiled);
 
         private readonly PythonAst _ast;
+        private readonly bool _libraryMode;
         private readonly SymbolStack _stack = new SymbolStack();
+        private readonly HashSet<string> _namesInAllVariable;
 
-        public SymbolIndexWalker(PythonAst ast) {
+        public SymbolIndexWalker(PythonAst ast, bool libraryMode = false, CancellationToken cancellationToken = default) {
             _ast = ast;
+            _libraryMode = libraryMode;
+
+            var collector = new AllVariableCollector(cancellationToken);
+            _ast.Walk(collector);
+
+            _namesInAllVariable = collector.Names;
         }
 
         public IReadOnlyList<HierarchicalSymbol> Symbols => _stack.Root;
 
         public override bool Walk(ClassDefinition node) {
             _stack.Enter(SymbolKind.Class);
-            node.Body?.Walk(this);
+
+            WalkIfNotLibraryMode(node.Body);
+
             var children = _stack.Exit();
 
             _stack.AddSymbol(new HierarchicalSymbol(
@@ -44,7 +55,8 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 node.GetSpan(_ast),
                 node.NameExpression.GetSpan(_ast),
                 children,
-                FunctionKind.Class
+                FunctionKind.Class,
+                ExistInAllVariable(node.Name)
             ));
 
             return false;
@@ -55,55 +67,67 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             foreach (var p in node.Parameters) {
                 AddVarSymbol(p.NameExpression);
             }
-            node.Body?.Walk(this);
+
+            // don't bother to walk down locals for libraries
+            // we don't care those for libraries
+            WalkIfNotLibraryMode(node.Body);
+
             var children = _stack.Exit();
+
+            SymbolKind symbolKind;
+            string functionKind;
+            GetKinds(node, out symbolKind, out functionKind);
 
             var span = node.GetSpan(_ast);
 
             var ds = new HierarchicalSymbol(
                 node.Name,
-                SymbolKind.Function,
+                symbolKind,
                 span,
                 node.IsLambda ? span : node.NameExpression.GetSpan(_ast),
                 children,
-                FunctionKind.Function
+                functionKind,
+                ExistInAllVariable(node.Name)
             );
 
+            _stack.AddSymbol(ds);
+            return false;
+        }
+
+        private void GetKinds(FunctionDefinition node, out SymbolKind symbolKind, out string functionKind) {
+            symbolKind = SymbolKind.Function;
+            functionKind = FunctionKind.Function;
+
             if (_stack.Parent == SymbolKind.Class) {
-                switch (ds.Name) {
+                switch (node.Name) {
                     case "__init__":
-                        ds.Kind = SymbolKind.Constructor;
+                        symbolKind = SymbolKind.Constructor;
                         break;
                     case var name when DoubleUnderscore.IsMatch(name):
-                        ds.Kind = SymbolKind.Operator;
+                        symbolKind = SymbolKind.Operator;
                         break;
                     default:
-                        ds.Kind = SymbolKind.Method;
+                        symbolKind = SymbolKind.Method;
 
                         if (node.Decorators != null) {
                             foreach (var dec in node.Decorators.Decorators) {
                                 var maybeKind = DecoratorExpressionToKind(dec);
                                 if (maybeKind.HasValue) {
-                                    ds.Kind = maybeKind.Value.kind;
-                                    ds._functionKind = maybeKind.Value.functionKind;
+                                    symbolKind = maybeKind.Value.kind;
+                                    functionKind = maybeKind.Value.functionKind;
                                     break;
                                 }
                             }
                         }
-
                         break;
                 }
             }
-
-            _stack.AddSymbol(ds);
-
-            return false;
         }
 
         public override bool Walk(ImportStatement node) {
             foreach (var (nameNode, nameString) in node.Names.Zip(node.AsNames, (name, asName) => asName != null ? (asName, asName.Name) : ((Node)name, name.MakeString()))) {
                 var span = nameNode.GetSpan(_ast);
-                _stack.AddSymbol(new HierarchicalSymbol(nameString, SymbolKind.Module, span));
+                _stack.AddSymbol(new HierarchicalSymbol(nameString, SymbolKind.Module, span, existInAllVariable: ExistInAllVariable(nameString)));
             }
 
             return false;
@@ -116,14 +140,15 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
             foreach (var name in node.Names.Zip(node.AsNames, (name, asName) => asName ?? name)) {
                 var span = name.GetSpan(_ast);
-                _stack.AddSymbol(new HierarchicalSymbol(name.Name, SymbolKind.Module, span));
+                _stack.AddSymbol(new HierarchicalSymbol(name.Name, SymbolKind.Module, span, existInAllVariable: ExistInAllVariable(name.Name)));
             }
 
             return false;
         }
 
         public override bool Walk(AssignmentStatement node) {
-            node.Right?.Walk(this);
+            WalkIfNotLibraryMode(node.Right);
+
             foreach (var exp in node.Left) {
                 AddVarSymbolRecursive(exp);
             }
@@ -132,13 +157,15 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public override bool Walk(NamedExpression node) {
-            node.Value?.Walk(this);
+            WalkIfNotLibraryMode(node.Value);
+
             AddVarSymbolRecursive(node.Target);
             return false;
         }
 
         public override bool Walk(AugmentedAssignStatement node) {
-            node.Right?.Walk(this);
+            WalkIfNotLibraryMode(node.Right);
+
             AddVarSymbol(node.Left as NameExpression);
             return false;
         }
@@ -174,11 +201,19 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         }
 
         public override bool Walk(ComprehensionFor node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             AddVarSymbolRecursive(node.Left);
             return base.Walk(node);
         }
 
         public override bool Walk(ListComprehension node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             _stack.Enter(SymbolKind.None);
             return base.Walk(node);
         }
@@ -186,6 +221,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public override void PostWalk(ListComprehension node) => ExitComprehension(node);
 
         public override bool Walk(DictionaryComprehension node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             _stack.Enter(SymbolKind.None);
             return base.Walk(node);
         }
@@ -193,6 +232,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public override void PostWalk(DictionaryComprehension node) => ExitComprehension(node);
 
         public override bool Walk(SetComprehension node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             _stack.Enter(SymbolKind.None);
             return base.Walk(node);
         }
@@ -200,6 +243,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public override void PostWalk(SetComprehension node) => ExitComprehension(node);
 
         public override bool Walk(GeneratorExpression node) {
+            if (_libraryMode) {
+                return false;
+            }
+
             _stack.Enter(SymbolKind.None);
             return base.Walk(node);
         }
@@ -207,6 +254,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public override void PostWalk(GeneratorExpression node) => ExitComprehension(node);
 
         private void ExitComprehension(Comprehension node) {
+            if (_libraryMode) {
+                return;
+            }
+
             var children = _stack.Exit();
             var span = node.GetSpan(_ast);
 
@@ -237,7 +288,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
 
             var span = node.GetSpan(_ast);
 
-            _stack.AddSymbol(new HierarchicalSymbol(node.Name, kind, span));
+            _stack.AddSymbol(new HierarchicalSymbol(node.Name, kind, span, existInAllVariable: ExistInAllVariable(node.Name)));
         }
 
         private void AddVarSymbolRecursive(Expression node) {
@@ -281,6 +332,14 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             return null;
         }
 
+        private void WalkIfNotLibraryMode(Node node) {
+            if (_libraryMode) {
+                return;
+            }
+
+            node?.Walk(this);
+        }
+
         private bool NameIsProperty(string name) =>
             name == "property"
             || name == "abstractproperty"
@@ -309,6 +368,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             foreach (var node in nodes.MaybeEnumerate()) {
                 WalkAndDeclare(node);
             }
+        }
+
+        private bool ExistInAllVariable(string name) {
+            return _namesInAllVariable.Contains(name);
         }
 
         private class SymbolStack {
