@@ -121,15 +121,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var codeActions = new List<CodeAction>();
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
 
-            if (@params.context.only == null || @params.context.only.Any(s => s.StartsWith(CodeActionKind.Refactor))) {
+            if (AskedFor(@params, CodeActionKind.Refactor)) {
                 codeActions.AddRange(await new RefactoringCodeActionSource(Services).GetCodeActionsAsync(analysis, _codeActionSettings, @params.range, cancellationToken));
             }
 
-            if (@params.context.diagnostics?.Length > 0) {
+            if (@params.context.diagnostics?.Length > 0 && AskedFor(@params, CodeActionKind.QuickFix)) {
                 codeActions.AddRange(await new QuickFixCodeActionSource(Services).GetCodeActionsAsync(analysis, _codeActionSettings, @params.context.diagnostics, cancellationToken));
             }
 
             return codeActions.ToArray();
+
+            static bool AskedFor(CodeActionParams @params, string codeActionKind) {
+                return @params.context.only == null || @params.context.only.Any(s => s.StartsWith(codeActionKind));
+            }
         }
     }
 }
