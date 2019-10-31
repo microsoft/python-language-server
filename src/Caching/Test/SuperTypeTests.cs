@@ -74,5 +74,28 @@ x = super(Derived, d)
                 dbModule.Should().HaveSameMembersAs(analysis.Document);
             }
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NamedTupleWithSuper() {
+            const string code = @"
+from typing import NamedTuple
+
+Point = NamedTuple('Point', ['x', 'y'])
+
+class ChildPoint(Point):
+    def foo(self):
+        pass
+
+p = ChildPoint()
+
+x = super(ChildPoint, p)
+";
+            var analysis = await GetAnalysisAsync(code);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+
+            using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
+                dbModule.Should().HaveSameMembersAs(analysis.Document);
+            }
+        }
     }
 }
