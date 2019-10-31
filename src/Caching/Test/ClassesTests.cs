@@ -163,7 +163,6 @@ class B(A):
         return super()
 ";
             var analysis = await GetAnalysisAsync(code);
-           
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
 
             using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {
@@ -187,7 +186,6 @@ d = Derived()
 x = super(Derived, d)
 ";
             var analysis = await GetAnalysisAsync(code);
-
             var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
 
             using (var dbModule = CreateDbModule(model, analysis.Document.FilePath)) {

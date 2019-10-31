@@ -38,7 +38,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public ClassModel[] Classes { get; set; }
         public TypeVarModel[] TypeVars { get; set; }
         public NamedTupleModel[] NamedTuples { get; set; }
-        
         /// <summary>
         /// Collection of new line information for conversion of linear spans
         /// to line/columns in navigation to member definitions and references.
@@ -69,7 +68,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var classes = new Dictionary<string, ClassModel>();
             var typeVars = new Dictionary<string, TypeVarModel>();
             var namedTuples = new Dictionary<string, NamedTupleModel>();
-        
             // Go directly through variables which names are listed in GetMemberNames
             // as well as variables that are declarations.
             var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
