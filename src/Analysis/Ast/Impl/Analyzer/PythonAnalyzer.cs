@@ -316,19 +316,33 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var foundKeys = ImmutableArray<AnalysisModuleKey>.Empty;
-            foreach (var key in missingKeys) {
+            foreach (var missingKey in missingKeys) {
                 lock (_syncObj) {
-                    if (_analysisEntries.TryGetValue(key, out _)) {
+                    if (_analysisEntries.TryGetValue(missingKey, out _)) {
                         continue;
                     }
                 }
 
-                var (moduleName, _, isTypeshed) = key;
+                var (moduleName, _, isTypeshed) = missingKey;
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
+
                 var module = moduleResolution.GetOrLoadModule(moduleName);
                 if (module != null && module.ModuleType != ModuleType.Unresolved) {
+                    foundKeys = foundKeys.Add(missingKey);
                     var entry = GetOrCreateAnalysisEntry(module, out _);
-                    _dependencyResolver.TryAddValue(key, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
+                    _dependencyResolver.TryAddValue(missingKey, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
+                }
+
+                if (foundKeys.Count > 0) {
+                    foreach (var foundKey in foundKeys) {
+                        PythonAnalyzerEntry entry;
+                        lock (_syncObj) {
+                            if (!_analysisEntries.TryGetValue(foundKey, out entry)) {
+                                continue;
+                            }
+                        }
+                        _dependencyResolver.TryAddValue(foundKey, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
+                    }
                 }
             }
         }

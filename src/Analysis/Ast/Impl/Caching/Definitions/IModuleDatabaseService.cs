@@ -15,18 +15,15 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Dependencies;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal interface IModuleDatabaseService: IModuleDatabaseCache {
         /// <summary>
-        /// Creates global scope from module persistent state.
-        /// Global scope is then can be used to construct module analysis.
+        /// Restores module from database.
         /// </summary>
-        /// <param name="module">Python module to restore analysis for.</param>
-        /// <param name="gs">Python module global scope.</param>
-        bool TryRestoreGlobalScope(IPythonModule module, out IRestoredGlobalScope gs);
+        IPythonModule RestoreModule(string moduleName, string modulePath, ModuleType moduleType);
 
         /// <summary>
         /// Writes module data to the database.
@@ -36,6 +33,11 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>
         /// Determines if module analysis exists in the storage.
         /// </summary>
-        bool ModuleExistsInStorage(string moduleName, string filePath);
+        bool ModuleExistsInStorage(string name, string filePath, ModuleType moduleType);
+    }
+
+    internal static class ModuleDatabaseExtensions {
+        public static bool ModuleExistsInStorage(this IModuleDatabaseService dbs, IPythonModule module)
+            => dbs.ModuleExistsInStorage(module.Name, module.FilePath, module.ModuleType);
     }
 }

@@ -27,7 +27,7 @@ using Newtonsoft.Json;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
-    public abstract class AnalysisCachingTestBase: AnalysisTestBase {
+    public abstract class AnalysisCachingTestBase : AnalysisTestBase {
         protected AnalysisCachingTestBase() {
             ModuleFactory.EnableMissingMemberAssertions = true;
         }
@@ -51,16 +51,13 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             }
         }
 
-        protected string GetBaselineFileName(string testName, string suffix = null) 
-            => Path.ChangeExtension(suffix == null 
+        protected string GetBaselineFileName(string testName, string suffix = null)
+            => Path.ChangeExtension(suffix == null
                 ? Path.Combine(BaselineFilesFolder, testName)
                 : Path.Combine(BaselineFilesFolder, testName + suffix), "json");
 
-        internal PythonDbModule CreateDbModule(ModuleModel model, string modulePath) {
-            var dbModule = new PythonDbModule(model, modulePath, Services);
-            dbModule.Construct(model);
-            return dbModule;
-        }
+        internal PythonDbModule CreateDbModule(ModuleModel model, string modulePath)
+            => new PythonDbModule(model, modulePath, Services);
 
         internal async Task CompareBaselineAndRestoreAsync(ModuleModel model, IPythonModule m) {
             //var json = ToJson(model);

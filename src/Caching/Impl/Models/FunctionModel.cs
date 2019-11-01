@@ -41,12 +41,12 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
             // Create inner functions and classes first since function may be returning one of them.
-            var all = Classes.Concat<MemberModel>(Functions).ToArray();
+            var innerTypes = Classes.Concat<MemberModel>(Functions).ToArray();
 
-            foreach (var model in all) {
+            foreach (var model in innerTypes) {
                 _function.AddMember(Name, model.Create(mf, _function, gs), overwrite: true);
             }
-            foreach (var model in all) {
+            foreach (var model in innerTypes) {
                 model.Populate(mf, _function, gs);
             }
 

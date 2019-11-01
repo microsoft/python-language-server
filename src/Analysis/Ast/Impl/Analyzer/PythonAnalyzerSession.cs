@@ -348,11 +348,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         private IDocumentAnalysis DoAnalyzeEntry(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module, PythonAst ast, int version) {
-            var analysis = TryRestoreCachedAnalysis(node, module);
-            if (analysis != null) {
-                return analysis;
-            }
-
             var walker = new ModuleWalker(_services, module, ast, _analyzerCancellationToken);
             ast.Walk(walker);
             walker.Complete();
@@ -368,26 +363,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 node?.MarkWalked();
             }
             return isCanceled;
-        }
-
-        private IDocumentAnalysis TryRestoreCachedAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module) {
-            var moduleType = module.ModuleType;
-            if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(module.Name, module.FilePath) == true) {
-                if (_moduleDatabaseService.TryRestoreGlobalScope(module, out var gs)) {
-                    if (_log != null) {
-                        _log.Log(TraceEventType.Verbose, "Restored from database: ", module.Name);
-                    }
-                    var analysis = new DocumentAnalysis((IDocument)module, 1, gs, new ExpressionEval(_services, module, module.GetAst()), Array.Empty<string>());
-                    gs.ReconstructVariables();
-                    MarkNodeWalked(node);
-                    return analysis;
-                } else {
-                    if (_log != null) {
-                        _log.Log(TraceEventType.Verbose, "Restore from database failed for module ", module.Name);
-                    }
-                }
-            }
-            return null;
         }
 
         private IDocumentAnalysis CreateAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IDocument document, PythonAst ast, int version, ModuleWalker walker) {

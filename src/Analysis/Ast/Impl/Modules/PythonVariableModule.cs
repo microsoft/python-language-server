@@ -51,7 +51,6 @@ namespace Microsoft.Python.Analysis.Modules {
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
-        public bool IsPersistent => Module?.IsPersistent == true;
         public bool IsTypeshed => Module?.IsTypeshed == true;
 
         public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 
@@ -83,10 +82,6 @@ namespace Microsoft.Python.Analysis.Modules {
         #region ILocationConverter
         public SourceLocation IndexToLocation(int index) => (Module as ILocationConverter)?.IndexToLocation(index) ?? default;
         public int LocationToIndex(SourceLocation location) => (Module as ILocationConverter)?.LocationToIndex(location) ?? default;
-        #endregion
-
-        #region IDependencyProvider
-        public IDependencyProvider DependencyProvider => (Module as IAnalyzable)?.DependencyProvider;
         #endregion
     }
 }

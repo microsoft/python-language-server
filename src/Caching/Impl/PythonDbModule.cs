@@ -15,8 +15,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing;
@@ -31,18 +33,17 @@ namespace Microsoft.Python.Analysis.Caching {
             Documentation = model.Documentation;
             _newLines = model.NewLines.Select(nl => new NewLineLocation(nl.EndIndex, nl.Kind)).ToArray();
             _fileSize = model.FileSize;
-        }
-
-        public void Construct(ModuleModel model) {
-            var gs = new RestoredGlobalScope(model, this, Services.GetService<ModuleDatabase>(), Services);
-            GlobalScope = gs;
-            gs.ReconstructVariables();
+            GlobalScope = new RestoredGlobalScope(model, this, Services);
         }
 
         protected override string LoadContent() => string.Empty;
 
         public override string Documentation { get; }
         public override IEnumerable<string> GetMemberNames() => GlobalScope.Variables.Names;
+        public override IMember GetMember(string name) {
+            ((RestoredGlobalScope)GlobalScope).ReconstructVariable(name);
+            return base.GetMember(name);
+        }
 
         #region ILocationConverter
         public override SourceLocation IndexToLocation(int index) => NewLineLocation.IndexToLocation(_newLines, index);

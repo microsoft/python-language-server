@@ -37,6 +37,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public ClassModel[] Classes { get; set; }
         public TypeVarModel[] TypeVars { get; set; }
         public NamedTupleModel[] NamedTuples { get; set; }
+        //public SubmoduleModel[] SubModules { get; set; }
 
         /// <summary>
         /// Collection of new line information for conversion of linear spans
@@ -51,6 +52,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         [NonSerialized] private Dictionary<string, MemberModel> _modelCache;
 
+        /// <summary>
+        /// Constructs module persistent model from analysis.
+        /// </summary>
         public static ModuleModel FromAnalysis(IDocumentAnalysis analysis, IServiceContainer services, AnalysisCachingLevel options) {
             var uniqueId = analysis.Document.GetUniqueId(services, options);
             if (uniqueId == null) {
@@ -63,15 +67,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             var classes = new Dictionary<string, ClassModel>();
             var typeVars = new Dictionary<string, TypeVarModel>();
             var namedTuples = new Dictionary<string, NamedTupleModel>();
+            //var subModules = new Dictionary<string, SubmoduleModel>();
 
-            // Go directly through variables which names are listed in GetMemberNames
-            // as well as variables that are declarations.
-            var exportedNames = new HashSet<string>(analysis.Document.GetMemberNames());
-            foreach (var v in analysis.GlobalScope.Variables
-                .Where(v => exportedNames.Contains(v.Name) ||
-                            v.Source == VariableSource.Declaration ||
-                            v.Source == VariableSource.Builtin ||
-                            v.Source == VariableSource.Generic)) {
+            foreach (var v in analysis.Document.GetMemberNames()
+                .Select(x => analysis.GlobalScope.Variables[x]).ExcludeDefault()) {
 
                 if (v.Value is IGenericTypeParameter && !typeVars.ContainsKey(v.Name)) {
                     typeVars[v.Name] = TypeVarModel.FromGeneric(v, services);
@@ -107,6 +106,12 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             continue;
                         }
                         break;
+                    //case IPythonModule m:
+                    //    if (!subModules.ContainsKey(m.Name)) {
+                    //        subModules[m.Name] = new SubmoduleModel(m, services);
+                    //        continue;
+                    //    }
+                    //    break;
                 }
 
                 // Do not re-declare classes and functions as variables in the model.
@@ -127,6 +132,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Classes = classes.Values.ToArray(),
                 TypeVars = typeVars.Values.ToArray(),
                 NamedTuples = namedTuples.Values.ToArray(),
+                //SubModules = subModules.Values.ToArray(),
                 NewLines = analysis.Ast.NewLineLocations.Select(l => new NewLineModel {
                     EndIndex = l.EndIndex,
                     Kind = l.Kind
@@ -162,6 +168,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
             return _modelCache.TryGetValue(name, out var model) ? model : null;
         }
+
+        public IEnumerable<string> GetMemberNames() 
+            => TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions)
+                .Concat(Variables)/*.Concat(SubModules)*/.Select(m => m.Name);
 
         public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
         public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();

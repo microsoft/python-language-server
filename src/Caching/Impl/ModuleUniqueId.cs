@@ -35,10 +35,6 @@ namespace Microsoft.Python.Analysis.Caching {
             if(cachingLevel == AnalysisCachingLevel.None) {
                 return null;
             }
-            if (moduleType == ModuleType.User) {
-                // Only for tests.
-                return $"{moduleName}";
-            }
 
             var interpreter = services.GetService<IPythonInterpreter>();
             var fs = services.GetService<IFileSystem>();
@@ -86,6 +82,10 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             var parent = moduleResolution.CurrentPathResolver.GetModuleParentFromModuleName(moduleName);
+            if (parent == null) {
+                return moduleName;
+            }
+
             var hash = HashModuleFileSizes(parent);
             // If all else fails, hash modules file sizes.
             return $"{moduleName}.{(ulong)hash}";
@@ -97,6 +97,9 @@ namespace Microsoft.Python.Analysis.Caching {
             foreach (var name in names) {
                 if (source.TryGetChildImport(name, out var child)) {
                     if (child is ModuleImport moduleImport) {
+                        if (moduleImport.ModuleFileSize == 0) {
+                            continue; // Typically test case, memory-only module.
+                        }
                         hash = unchecked(hash * 31 ^ moduleImport.ModuleFileSize);
                     }
 

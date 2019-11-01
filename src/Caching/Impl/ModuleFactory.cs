@@ -48,11 +48,11 @@ namespace Microsoft.Python.Analysis.Caching {
         public IPythonModule Module { get; }
         public Location DefaultLocation { get; }
 
-        public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs, ModuleDatabase db, IServiceContainer services) {
+        public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs, IServiceContainer services) {
             _model = model;
             _gs = gs;
-            _db = db;
             _services = services;
+            _db = services.GetService<ModuleDatabase>();
             Module = module;
             DefaultLocation = new Location(Module);
         }
@@ -146,12 +146,13 @@ namespace Microsoft.Python.Analysis.Caching {
                     return null;
                 }
 
+                // If module is loaded, then use it. Otherwise, create DB module but don't restore it just yet.
                 var module = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
                 if (module == null && parts.ModuleId != null) {
                     if (!_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
-                        if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, out var model)) {
+                        if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, ModuleType.Specialized, out var model)) {
+                            // Create db module, but do not reconstruct the analysis just yet.
                             _modulesCache[parts.ModuleId] = m = new PythonDbModule(model, model.FilePath, _services);
-                            m.Construct(model);
                             module = m;
                         }
                     }

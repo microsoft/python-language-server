@@ -86,14 +86,13 @@ namespace Microsoft.Python.Analysis.Modules {
             SetDeclaringModule(this);
         }
 
-        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isPersistent, bool isTypeshed, IServiceContainer services) :
+        protected PythonModule(string moduleName, string filePath, ModuleType moduleType, IPythonModule stub, bool isTypeshed, IServiceContainer services) :
             this(new ModuleCreationOptions {
                 ModuleName = moduleName,
                 FilePath = filePath,
                 ModuleType = moduleType,
                 Stub = stub,
-                IsTypeshed = isTypeshed,
-                IsPersistent = isPersistent
+                IsTypeshed = isTypeshed
             }, services) { }
 
         internal PythonModule(ModuleCreationOptions creationOptions, IServiceContainer services)
@@ -119,7 +118,6 @@ namespace Microsoft.Python.Analysis.Modules {
                 ContentState = State.Analyzed;
             }
 
-            IsPersistent = creationOptions.IsPersistent;
             IsTypeshed = creationOptions.IsTypeshed;
 
             InitializeContent(creationOptions.Content, 0);
@@ -220,11 +218,6 @@ namespace Microsoft.Python.Analysis.Modules {
         /// wants to see library code and not a stub.
         /// </summary>
         public IPythonModule PrimaryModule { get; private set; }
-
-        /// <summary>
-        /// Indicates if module is restored from database.
-        /// </summary>
-        public bool IsPersistent { get; }
 
         /// <summary>
         /// Defines if module belongs to Typeshed and hence resolved
@@ -411,8 +404,6 @@ namespace Microsoft.Python.Analysis.Modules {
         #endregion
 
         #region IAnalyzable
-        public virtual IDependencyProvider DependencyProvider => new DependencyProvider(this, Services);
-
         public void NotifyAnalysisBegins() {
             lock (_syncObj) {
                 if (_updated) {
@@ -534,11 +525,7 @@ namespace Microsoft.Python.Analysis.Modules {
         private void SetOrLoadContent(string content) {
             if (ContentState < State.Loading) {
                 try {
-                    if (IsPersistent) {
-                        content = string.Empty;
-                    } else {
-                        content = content ?? LoadContent();
-                    }
+                    content = content ?? LoadContent();
                     _buffer.SetContent(content);
                     ContentState = State.Loaded;
                 } catch (IOException) { } catch (UnauthorizedAccessException) { }

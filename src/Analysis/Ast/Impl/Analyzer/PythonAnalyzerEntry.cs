@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
@@ -252,11 +253,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return dependencies;
             }
 
-            var dependencyProvider = (module as IAnalyzable)?.DependencyProvider;
-            var moduleDeps = dependencyProvider?.GetDependencies(ast);
-            if (moduleDeps != null) {
-                dependencies.UnionWith(moduleDeps);
-            }
+            var dw = new DependencyWalker(_module, ast);
+            dependencies.UnionWith(dw.Dependencies);
 
             dependencies.Remove(new AnalysisModuleKey(module));
             return dependencies;

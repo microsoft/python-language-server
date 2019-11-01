@@ -62,8 +62,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 return null;
             }
 
+            IPythonModule module;
             if (moduleImport.ModulePath != null) {
-                var module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
+                module = GetRdt().GetDocument(new Uri(moduleImport.ModulePath));
                 if (module != null) {
                     GetRdt().LockDocument(module.Uri);
                     return module;
@@ -71,31 +72,32 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             var dbs = GetDbService();
-            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath);
+            module = dbs?.RestoreModule(name, moduleImport.ModulePath, ModuleType.Specialized);
+            if (module != null) {
+                Log?.Log(TraceEventType.Verbose, "Restored from database: ", name);
+                return module;
+            }
 
-            IPythonModule stub = null;
-            if (!moduleImport.IsPersistent) {
-                // If there is a stub, make sure it is loaded and attached
-                // First check stub next to the module.
-                if (!TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
-                    // If nothing found, try Typeshed.
-                    stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
-                }
+            // If there is a stub, make sure it is loaded and attached
+            // First check stub next to the module.
+            if (!TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
+                // If nothing found, try Typeshed.
+                stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
+            }
 
-                // If stub is created and its path equals to module, return that stub as module
-                if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
-                    return stub;
-                }
+            // If stub is created and its path equals to module, return that stub as module
+            if (stub != null && stub.FilePath.PathEquals(moduleImport.ModulePath)) {
+                return stub;
             }
 
             if (moduleImport.IsBuiltin) {
                 Log?.Log(TraceEventType.Verbose, "Create built-in compiled (scraped) module: ", name, Configuration.InterpreterPath);
-                return new CompiledBuiltinPythonModule(name, stub, moduleImport.IsPersistent, Services);
+                return new CompiledBuiltinPythonModule(name, stub, Services);
             }
 
             if (moduleImport.IsCompiled) {
                 Log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, moduleImport.IsPersistent, false, Services);
+                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, false, Services);
             }
 
             Log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
@@ -105,8 +107,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 ModuleName = moduleImport.FullName,
                 ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
                 FilePath = moduleImport.ModulePath,
-                Stub = stub,
-                IsPersistent = moduleImport.IsPersistent
+                Stub = stub
             };
 
             return GetRdt().AddModule(mco);
