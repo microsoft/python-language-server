@@ -435,6 +435,25 @@ def Method():
                 newText: "from os.path import join" + Environment.NewLine);
         }
 
+        [TestMethod, Priority(0)]
+        public async Task Disabled() {
+            var markup = @"from os import path
+[|socket|]()";
+
+            MarkupUtils.GetSpan(markup, out var code, out var span);
+
+            var analysis = await GetAnalysisAsync(code);
+            var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            diagnostics.Should().NotBeEmpty();
+
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken.None);
+            codeActions.Should().NotBeEmpty();
+
+            var emptyActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(
+                analysis, new CodeActionSettings(null, new Dictionary<string, object>() { { "addimports", false } }), diagnostics, CancellationToken.None);
+            emptyActions.Should().BeEmpty();
+        }
+
         private async Task TestCodeActionAsync(string markup, string title, string newText, bool enableIndexManager = false) {
             var (analysis, codeActions, insertionSpan) =
                 await GetAnalysisAndCodeActionsAndSpanAsync(markup, MissingImportCodeActionProvider.Instance.FixableDiagnostics, enableIndexManager);
