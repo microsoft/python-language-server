@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             }
 
             var moduleType = moduleImport.IsBuiltin ? ModuleType.CompiledBuiltin
-                : moduleImport.IsCompiled ? ModuleType.CompiledBuiltin
+                : moduleImport.IsCompiled ? ModuleType.Compiled
                 : moduleImport.IsLibrary ? ModuleType.Library
                 : ModuleType.User;
 
