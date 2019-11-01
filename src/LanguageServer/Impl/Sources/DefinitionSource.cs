@@ -187,7 +187,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
 
             var reference = FindModuleNamePartReference(analysis, statement.Names, expr, out definingMember);
-            if(reference != null) {
+            if (reference != null) {
                 return reference;
             }
 
@@ -286,7 +286,19 @@ namespace Microsoft.Python.LanguageServer.Sources {
                         return FromMember(v1);
                     }
                     break;
-
+                case IPythonSuperType cls: // TODO: move mro IPythontypes or  make IPythonClassType a child of IPythonSuperType
+                    // Data members may be PythonInstances which do not track their declaration location.
+                    // In this case we'll try looking up the respective variable instead according to Mro.
+                    foreach (var b in cls.Mro.OfType<IPythonClassType>()) {
+                        using (eval.OpenScope(b)) {
+                            eval.LookupNameInScopes(mex.Name, out _, out var v2, LookupOptions.Local);
+                            if (v2 != null) {
+                                definingMember = v2;
+                                return FromMember(v2);
+                            }
+                        }
+                    }
+                    break;
                 case IPythonClassType cls:
                     // Data members may be PythonInstances which do not track their declaration location.
                     // In this case we'll try looking up the respective variable instead according to Mro.
