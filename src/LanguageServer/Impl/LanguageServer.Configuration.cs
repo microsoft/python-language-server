@@ -93,7 +93,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
                 foreach (var child in setting) {
                     if (child is JValue value) {
-                        // there shouldn't be duplicates and prefix must exist. 
+                        // there shouldn't be duplicates and prefix must exist.
                         var path = child.Path;
                         if (path.Length <= prefixLength) {
                             // nothing to add
