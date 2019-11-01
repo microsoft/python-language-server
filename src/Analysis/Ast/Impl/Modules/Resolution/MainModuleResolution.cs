@@ -84,8 +84,13 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 }
             }
 
+            var moduleType = moduleImport.IsBuiltin ? ModuleType.CompiledBuiltin
+                : moduleImport.IsCompiled ? ModuleType.CompiledBuiltin
+                : moduleImport.IsLibrary ? ModuleType.Library
+                : ModuleType.User;
+
             var dbs = GetDbService();
-            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath);
+            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath, moduleType);
 
             IPythonModule stub = null;
             if (!moduleImport.IsPersistent) {
@@ -109,7 +114,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             if (moduleImport.IsCompiled) {
                 Log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, moduleImport.IsPersistent, false, Services);
+                return new CompiledPythonModule(moduleImport.FullName, moduleType, moduleImport.ModulePath, stub, moduleImport.IsPersistent, false, Services);
             }
 
             Log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
@@ -117,7 +122,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             var mco = new ModuleCreationOptions {
                 ModuleName = moduleImport.FullName,
-                ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
+                ModuleType = moduleType,
                 FilePath = moduleImport.ModulePath,
                 Stub = stub,
                 IsPersistent = moduleImport.IsPersistent

@@ -371,7 +371,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private IDocumentAnalysis TryRestoreCachedAnalysis(IDependencyChainNode<PythonAnalyzerEntry> node, IPythonModule module) {
             var moduleType = module.ModuleType;
-            if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(module.Name, module.FilePath) == true) {
+            if (moduleType.CanBeCached() && _moduleDatabaseService?.ModuleExistsInStorage(module.Name, module.FilePath, module.ModuleType) == true) {
                 if (_moduleDatabaseService.TryRestoreGlobalScope(module, out var gs)) {
                     if (_log != null) {
                         _log.Log(TraceEventType.Verbose, "Restored from database: ", module.Name);
