@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Caching {
     /// Register caching services for the given cache folder path 
     /// </summary>
     public static class CacheService {
-        public static void Register(IServiceManager services, string cacheFolderPath) {
+        public static void Register(IServiceManager services, string cacheFolderPath, bool pathCheck = true) {
             var log = services.GetService<ILogger>();
             var fs = services.GetService<IFileSystem>();
 
@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 return;
             }
 
-            if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
+            if (pathCheck && cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
                 log?.Log(TraceEventType.Warning, Resources.Invalid_0_CacheFolder.FormatUI(cacheFolderPath));
                 cacheFolderPath = null;
             }

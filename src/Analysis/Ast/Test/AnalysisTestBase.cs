@@ -85,7 +85,7 @@ namespace Microsoft.Python.Analysis.Tests {
 
             TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
 
-            CacheService.Register(sm, stubCacheFolderPath);
+            CacheService.Register(sm, stubCacheFolderPath, pathCheck: false);
             var analyzer = new PythonAnalyzer(sm);
             sm.AddService(analyzer);
 
