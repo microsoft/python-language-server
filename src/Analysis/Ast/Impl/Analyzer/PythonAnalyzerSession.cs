@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private readonly PythonAnalyzerEntry _entry;
         private readonly Action<Task> _startNextSession;
         private readonly CancellationToken _analyzerCancellationToken;
-        private readonly IServiceManager _services;
+        private readonly IServiceContainer _services;
         private readonly IDiagnosticsService _diagnosticsService;
         private readonly IOSPlatform _platformService;
         private readonly IProgressReporter _progress;
@@ -73,7 +73,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public int Version { get; }
         public int AffectedEntriesCount { get; }
 
-        public PythonAnalyzerSession(IServiceManager services,
+        public PythonAnalyzerSession(IServiceContainer services,
             IProgressReporter progress,
             Action<Task> startNextSession,
             CancellationToken analyzerCancellationToken,

@@ -54,15 +54,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             return _result;
         }
 
-        public override bool Walk(AssignmentStatement node) {
-            foreach (var lhs in node.Left) {
-                if (lhs is NameExpression nameExp && (nameExp.Name == "self" || nameExp.Name == "cls")) {
-                    return true; // Don't assign to 'self' or 'cls'.
-                }
-            }
-            return base.Walk(node);
-        }
-
         public override bool Walk(ReturnStatement node) {
             var value = Eval.GetValueFromExpression(node.Expression, LookupOptions.Normal);
             if (!value.IsUnknown()) {

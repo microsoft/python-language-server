@@ -19,6 +19,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Python.Core.Text;
 
@@ -311,6 +313,20 @@ namespace Microsoft.Python.Core {
                     hash = hash * 31 + c;
                 }
                 return hash;
+            }
+        }
+
+        /// <summary>
+        /// return string representation of hash of the input string.
+        /// 
+        /// the string representation of the hash is in the form where it can be used in a file system.
+        /// </summary>
+        public static string GetHashString(this string input) {
+            // File name depends on the content so we can distinguish between different versions.
+            using (var hash = SHA256.Create()) {
+                return Convert
+                    .ToBase64String(hash.ComputeHash(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(input)))
+                    .Replace('/', '_').Replace('+', '-');
             }
         }
     }

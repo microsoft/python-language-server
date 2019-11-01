@@ -167,7 +167,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 if (mc is IBuiltinsPythonModule builtins) {
                     // Builtins require special handling since there may be 'hidden' names
                     // which need to be mapped to visible types.
-                    member = GetBuiltinMember(builtins, memberName) ?? builtins.Interpreter.UnknownType;
+                    member = GetBuiltinMember(builtins, memberName, typeArgs) ?? builtins.Interpreter.UnknownType;
                 } else {
                     member = mc?.GetMember(memberName);
                     // Work around problem that some stubs have incorrectly named tuples.
@@ -191,7 +191,7 @@ namespace Microsoft.Python.Analysis.Caching {
             return member;
         }
 
-        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName) {
+        private IMember GetBuiltinMember(IBuiltinsPythonModule builtins, string memberName, IReadOnlyList<IPythonType> typeArgs) {
             if (memberName.StartsWithOrdinal("__")) {
                 memberName = memberName.Substring(2, memberName.Length - 4);
             }
@@ -201,6 +201,8 @@ namespace Microsoft.Python.Analysis.Caching {
                     return builtins.Interpreter.GetBuiltinType(BuiltinTypeId.None);
                 case "Unknown":
                     return builtins.Interpreter.UnknownType;
+                case "SuperType":
+                    return new PythonSuperType(typeArgs);
             }
             return builtins.GetMember(memberName);
         }

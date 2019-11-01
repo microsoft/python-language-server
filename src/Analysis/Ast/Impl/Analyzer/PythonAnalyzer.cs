@@ -37,7 +37,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
-        private readonly IServiceManager _services;
+        private readonly IServiceContainer _services;
         private readonly IDependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry> _dependencyResolver;
         private readonly Dictionary<AnalysisModuleKey, PythonAnalyzerEntry> _analysisEntries = new Dictionary<AnalysisModuleKey, PythonAnalyzerEntry>();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonAnalyzer>();
@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private PythonAnalyzerSession _nextSession;
         private bool _forceGCOnNextSession;
 
-        public PythonAnalyzer(IServiceManager services, string cacheFolderPath = null) {
+        public PythonAnalyzer(IServiceContainer services) {
             _services = services;
             _log = services.GetService<ILogger>();
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
@@ -60,9 +60,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _startNextSession = StartNextSession;
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
-
-            _services.AddService(new CacheFolderService(_services, cacheFolderPath));
-            _services.AddService(new StubCache(_services));
         }
 
         public void Dispose() {

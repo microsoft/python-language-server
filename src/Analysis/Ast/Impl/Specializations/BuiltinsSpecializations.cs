@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
@@ -21,6 +22,7 @@ using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core.Text;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Specializations {
     public static class BuiltinsSpecializations {
@@ -91,6 +93,40 @@ namespace Microsoft.Python.Analysis.Specializations {
             return args.Count > 0 && args[0] is PythonCollection c ? c.Contents.FirstOrDefault() : null;
         }
 
+        public static IMember Super(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
+            var args = argSet.Values<IMember>();
+
+            if (args.Count == 0) {
+                //Zero argument form only works inside a class definition
+                foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal.Where(s => s.Node is ClassDefinition)) {
+                    var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
+                    return PythonSuperType.CreateSuper(classType)?.CreateInstance(argSet); 
+                }
+                return null;
+            }
+
+            // If multiple arguments first argument is required
+            var firstCls = args.FirstOrDefault().GetPythonType<IPythonClassType>();
+            if (firstCls == null) {
+                return null;
+            }
+
+            // second argument optional
+            bool isUnbound = args.Count == 1;
+            if (isUnbound) {
+                return PythonSuperType.CreateSuper(firstCls)?.CreateInstance(argSet);
+            }
+
+            var secondCls = args[1].GetPythonType<IPythonClassType>();
+            if (secondCls?.Equals(firstCls) == true || 
+                secondCls?.IsSubClassOf(firstCls) == true) {
+                // We walk the mro of the second parameter looking for the first
+                return PythonSuperType.CreateSuper(secondCls, typeToFind: firstCls)?.CreateInstance(argSet);
+            }
+
+            return null;
+        }
+
         public static IMember Open(IPythonModule declaringModule, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
             var mode = argSet.GetArgumentValue<IPythonConstant>("mode");
 
@@ -141,7 +177,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             // getattr(a, 3.14)
             if (name == null) {
                 // TODO diagnostic error when second arg of getattr is not a string
-                return  module.Interpreter.UnknownType;
+                return module.Interpreter.UnknownType;
             }
 
             return o?.GetPythonType().GetMember(name) ?? def;

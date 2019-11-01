@@ -38,7 +38,9 @@ namespace Microsoft.Python.Parsing.Ast {
             foreach (var expression in _left) {
                 yield return expression;
             }
-            if (Right != null) yield return Right;
+            if (Right != null) {
+                yield return Right;
+            }
         }
 
         public override void Walk(PythonWalker walker) {

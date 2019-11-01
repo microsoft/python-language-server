@@ -184,14 +184,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             foreach (var lhs in node.Left) {
                 switch (lhs) {
-                    case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
-                            if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
-                                t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
-                            }
-                            continue;
+                    case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1:
+                        if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
+                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
                         }
+                        continue;
                     case NameExpression nameExp2 when nameExp2.Name == "self":
-                        return true; // Don't assign to 'self'
+                        // Only assign to 'self' if it is not declared yet.
+                        if (Eval.LookupNameInScopes(nameExp2.Name, out _) == null) {
+                            Eval.DeclareVariable(nameExp2.Name, value, VariableSource.Declaration);
+                        }
+                        return true;
                 }
             }
             return base.Walk(node);
