@@ -107,7 +107,6 @@ namespace Microsoft.Python.Parsing.Ast {
             lock (_lock) {
                 (Body as SuiteStatement)?.FilterStatements(filter);
                 _attributes?.Clear();
-                ScopeInfo.Variables?.Clear();
                 CommentLocations = Array.Empty<SourceLocation>();
                 // DO keep NewLineLocations as they are required
                 // to calculate node positions for navigation;

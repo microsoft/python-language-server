@@ -10,6 +10,8 @@ namespace Microsoft.Python.Parsing.Ast {
     internal abstract class ScopeInfo {
         // Storing variables due to "exec" or call to dir, locals, eval, vars...
 
+        private Dictionary<string, PythonVariable> _variables;
+        
         // list of variables accessed from outer scopes
         private List<PythonVariable> _freeVars;
 
@@ -37,7 +39,7 @@ namespace Microsoft.Python.Parsing.Ast {
         /// </summary>
         public bool IsClosure => FreeVariables != null && FreeVariables.Count > 0;
 
-        internal Dictionary<string, PythonVariable> Variables { get; private set; }
+        internal IReadOnlyDictionary<string, PythonVariable> Variables => _variables;
 
         /// <summary>
         /// Gets the variables for this scope.
@@ -49,6 +51,7 @@ namespace Microsoft.Python.Parsing.Ast {
         public PythonAst GlobalParent => (PythonAst) Node.EnumerateTowardsGlobal().Last();
 
         internal void Clear() {
+            _variables?.Clear();
             _references?.Clear();
             _cellVars?.Clear();
             _freeVars?.Clear();
@@ -118,7 +121,7 @@ namespace Microsoft.Python.Parsing.Ast {
                     if (variable.Deleted && variable.ScopeNode != Node && !variable.IsGlobal && binder.LanguageVersion < PythonLanguageVersion.V32) {
                         // report syntax error
                         binder.ReportSyntaxError(
-                            "can not delete variable '{0}' referenced in nested scope"
+                            "cannot delete variable '{0}' referenced in nested scope"
                                 .FormatUI(reference.Name),
                             Node);
                     }
@@ -147,7 +150,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
 
-            if (FreeVariables != null && FreeVariables.Count > 0) {
+            if (FreeVariables?.Any() ?? false) {
                 closureVariables = new List<ClosureInfo>();
 
                 foreach (var variable in FreeVariables) {
@@ -155,7 +158,7 @@ namespace Microsoft.Python.Parsing.Ast {
                 }
             }
 
-            if (Variables != null && Variables.Count > 0) {
+            if (Variables?.Any() ?? false) {
                 if (closureVariables == null) {
                     closureVariables = new List<ClosureInfo>();
                 }
@@ -191,8 +194,8 @@ namespace Microsoft.Python.Parsing.Ast {
         }
 
         private void EnsureVariables() {
-            if (Variables == null) {
-                Variables = new Dictionary<string, PythonVariable>(StringComparer.Ordinal);
+            if (_variables == null) {
+                _variables = new Dictionary<string, PythonVariable>(StringComparer.Ordinal);
             }
         }
 
@@ -214,13 +217,13 @@ namespace Microsoft.Python.Parsing.Ast {
         internal PythonVariable CreateVariable(string name, VariableKind kind) {
             EnsureVariables();
             PythonVariable variable;
-            Variables[name] = variable = new PythonVariable(name, kind, Node);
+            _variables[name] = variable = new PythonVariable(name, kind, Node);
             return variable;
         }
 
         internal void AddVariable(PythonVariable variable) {
             EnsureVariables();
-            Variables[variable.Name] = variable;
+            _variables[variable.Name] = variable;
         }
 
         internal PythonVariable EnsureVariable(string name) {

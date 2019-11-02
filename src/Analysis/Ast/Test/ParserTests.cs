@@ -114,6 +114,39 @@ func()
         }
 
         [TestMethod, Priority(0)]
+        public async Task DeleteVariableInNestedScope() {
+            const string code = @"
+def foo():
+    x=5
+    add=lambda a:x+a
+    del x
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable2X);
+            var diag = analysis.Document.GetParseErrors().ToArray();
+            diag.Should().HaveCount(1);
+
+            diag[0].Message.Should().Be("cannot delete variable 'x' referenced in nested scope");
+            diag[0].Severity.Should().Be(Severity.Error);
+            diag[0].SourceSpan.Should().Be(4, 9, 4, 21);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoBindingForNonlocal() {
+            const string code = @"
+def f():
+    nonlocal x
+    return 42
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var diag = analysis.Document.GetParseErrors().ToArray();
+            diag.Should().HaveCount(1);
+
+            diag[0].Message.Should().Be("no binding for nonlocal 'x' found");
+            diag[0].Severity.Should().Be(Severity.Error);
+            diag[0].SourceSpan.Should().Be(3, 14, 3, 15);
+        }
+
+        [TestMethod, Priority(0)]
         public async Task RedeclareNonlocal() {
             const string code = @"
 def test_nonlocal(self):
