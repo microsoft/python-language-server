@@ -36,23 +36,21 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public NamedTupleModel(ITypingNamedTupleType nt, IServiceContainer services) {
             Id = nt.Name.GetStableHash();
             Name = nt.Name;
-            DeclaringModuleId = nt.DeclaringModule.GetUniqueId(services, AnalysisCachingLevel.Library);
+            DeclaringModuleId = nt.DeclaringModule.GetUniqueId(services);
             QualifiedName = nt.QualifiedName;
             IndexSpan = nt.Location.IndexSpan.ToModel();
             ItemNames = nt.ItemNames.ToArray();
             ItemTypes = nt.ItemTypes.Select(t => t.QualifiedName).ToArray();
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            if (_namedTuple != null) {
-                return _namedTuple;
+        protected override IMember DeclareMember(IPythonType declaringType) {
+            if (_namedTuple == null) {
+                var itemTypes = ItemTypes.Select(_mf.ConstructType).ToArray();
+                _namedTuple = new NamedTupleType(Name, ItemNames, itemTypes, _mf.Module, IndexSpan.ToSpan());
             }
-
-            var itemTypes = ItemTypes.Select(mf.ConstructType).ToArray();
-            _namedTuple = new NamedTupleType(Name, ItemNames, itemTypes, mf.Module, IndexSpan.ToSpan());
             return _namedTuple;
         }
 
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) { }
+        protected override void FinalizeMember() { }
     }
 }

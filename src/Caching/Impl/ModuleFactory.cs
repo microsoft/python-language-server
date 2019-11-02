@@ -114,8 +114,11 @@ namespace Microsoft.Python.Analysis.Caching {
                     return null;
                 }
 
-                m = nextModel.Create(this, declaringType, _gs);
+                m = nextModel.Declare(this, declaringType, _gs);
                 Debug.Assert(m != null);
+                if (m != null) {
+                    nextModel.Finalize();
+                }
 
                 if (m is IGenericType gt && typeArgs.Count > 0) {
                     m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));
@@ -151,7 +154,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 if (module == null && parts.ModuleId != null) {
                     if (!_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
                         if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, ModuleType.Specialized, out var model)) {
-                            // Create db module, but do not reconstruct the analysis just yet.
+                            // DeclareMember db module, but do not reconstruct the analysis just yet.
                             _modulesCache[parts.ModuleId] = m = new PythonDbModule(model, model.FilePath, _services);
                             module = m;
                         }

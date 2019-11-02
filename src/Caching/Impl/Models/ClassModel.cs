@@ -53,6 +53,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public ClassModel() { } // For de-serializer from JSON
 
+        /// <summary>
+        /// Constructs class model for persistence off the class in-memory type.
+        /// </summary>
         public ClassModel(IPythonClassType cls, IServiceContainer services) {
             var methods = new List<FunctionModel>();
             var properties = new List<PropertyModel>();
@@ -130,15 +133,24 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .ToArray();
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            if(_cls != null) {
-                return _cls;
+        /// <summary>
+        /// Restores class from its model for declarations. The class may not be fully constructed
+        /// yet: method overloads and return types of methods may be missing.<see cref="FinalizeMember"/>
+        /// </summary>
+        protected override IMember DeclareMember(IPythonType declaringType) {
+            if (_cls == null) {
+                _cls = new PythonClassType(Name, new Location(_mf.Module, IndexSpan.ToSpan()));
+                _cls.SetDocumentation(Documentation);
             }
-            _cls = new PythonClassType(Name, new Location(mf.Module, IndexSpan.ToSpan()));
-            var bases = CreateBases(mf, gs);
+            return _cls;
+        }
 
+        /// <summary>
+        /// Populates class with members.
+        /// </summary>
+        protected override void FinalizeMember() {
+            var bases = CreateBases(_mf, _gs);
             _cls.SetBases(bases);
-            _cls.SetDocumentation(Documentation);
 
             if (GenericParameterValues.Length > 0) {
                 _cls.StoreGenericParameters(
@@ -146,29 +158,24 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     _cls.GenericParameters.Keys.ToArray(),
                     GenericParameterValues.ToDictionary(
                         k => _cls.GenericParameters.Keys.First(x => x == k.Name),
-                        v => mf.ConstructType(v.Type)
+                        v => _mf.ConstructType(v.Type)
                     )
                 );
             }
 
-            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields);
+            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields).ToArray();
             foreach (var m in all) {
-                _cls.AddMember(m.Name, m.Create(mf, _cls, gs), false);
+                _cls.AddMember(m.Name, m.Declare(_mf, _cls, _gs), false);
             }
-            return _cls;
-        }
-
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields);
             foreach (var m in all) {
-                m.Populate(mf, _cls, gs);
+                m.Finalize();
             }
         }
 
         private IEnumerable<IPythonType> CreateBases(ModuleFactory mf, IGlobalScope gs) {
             var ntBases = NamedTupleBases.Select(ntb => {
-                var n = ntb.Create(mf, _cls, gs);
-                ntb.Populate(mf, _cls, gs);
+                var n = ntb.Declare(mf, _cls, gs);
+                ntb.Finalize();
                 return n;
             }).OfType<IPythonType>().ToArray();
 

@@ -173,7 +173,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             => TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions)
                 .Concat(Variables)/*.Concat(SubModules)*/.Select(m => m.Name);
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) => throw new NotImplementedException();
+        protected override IMember DeclareMember(IPythonType declaringType) => throw new NotImplementedException();
+        protected override void FinalizeMember() => throw new NotImplementedException();
     }
 }

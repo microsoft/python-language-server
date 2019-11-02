@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -33,15 +34,17 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             ReturnType = prop.ReturnType.GetPersistentQualifiedName(services);
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
-            => _property ?? (_property = new PythonPropertyType(Name, new Location(mf.Module, IndexSpan.ToSpan()), Documentation, declaringType, (Attributes & FunctionAttributes.Abstract) != 0));
-
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
+        protected override IMember DeclareMember(IPythonType declaringType) {
+            Debug.Assert(_property == null);
+            _property = new PythonPropertyType(Name, new Location(_mf.Module, IndexSpan.ToSpan()), Documentation, declaringType, (Attributes & FunctionAttributes.Abstract) != 0);
             _property.SetDocumentation(Documentation);
+            return _property;
+        }
 
-            var o = new PythonFunctionOverload(_property, mf.DefaultLocation);
+        protected override void FinalizeMember() {
+            var o = new PythonFunctionOverload(_property, _mf.DefaultLocation);
             o.SetDocumentation(Documentation);
-            o.SetReturnValue(mf.ConstructMember(ReturnType), true);
+            o.SetReturnValue(_mf.ConstructMember(ReturnType), true);
             _property.AddOverload(o);
         }
     }

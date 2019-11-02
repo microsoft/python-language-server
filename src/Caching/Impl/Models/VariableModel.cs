@@ -49,11 +49,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             Value = t.GetPersistentQualifiedName(services)
         };
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
-            var m = mf.ConstructMember(Value) ?? mf.Module.Interpreter.UnknownType;
-            return new Variable(Name, m, VariableSource.Declaration, new Location(mf.Module, IndexSpan?.ToSpan() ?? default));
+        protected override IMember DeclareMember(IPythonType declaringType) {
+            var m = _mf.ConstructMember(Value) ?? _mf.Module.Interpreter.UnknownType;
+            return new Variable(Name, m, VariableSource.Declaration, new Location(_mf.Module, IndexSpan?.ToSpan() ?? default));
         }
 
-        public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) { }
+        protected override void FinalizeMember() { }
     }
 }

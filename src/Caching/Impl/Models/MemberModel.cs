@@ -24,6 +24,10 @@ using Microsoft.Python.Analysis.Values;
 namespace Microsoft.Python.Analysis.Caching.Models {
     [Serializable]
     internal abstract class MemberModel {
+        [NonSerialized] protected ModuleFactory _mf;
+        [NonSerialized] protected IGlobalScope _gs;
+        [NonSerialized] private bool _finalizing;
+
         /// <summary>
         /// Member unique id in the database.
         /// </summary>
@@ -50,16 +54,29 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public IndexSpanModel IndexSpan { get; set; }
 
         /// <summary>
-        /// Create member for declaration but does not construct its parts just yet.
+        /// Creates member for declaration but does not construct its parts just yet.
         /// Used as a first pass in two-pass handling of forward declarations.
         /// </summary>
-        public abstract IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs);
+        public IMember Declare(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
+            _mf = mf;
+            _gs = gs;
+            return DeclareMember(declaringType);
+        }
 
         /// <summary>
-        /// Populate member with content, such as create class methods, etc.
+        /// Populates member with content, such as create class methods, etc.
         /// </summary>
-        public abstract void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs);
-            
+        public void Finalize() {
+            if (!_finalizing) {
+                _finalizing = true;
+                FinalizeMember();
+                _finalizing = false;
+            }
+        }
+
+        protected abstract IMember DeclareMember(IPythonType declaringType);
+        protected abstract void FinalizeMember();
+
         public virtual MemberModel GetModel(string name) => GetMemberModels().FirstOrDefault(m => m.Name == name);
         protected virtual IEnumerable<MemberModel> GetMemberModels() => Enumerable.Empty<MemberModel>();
     }

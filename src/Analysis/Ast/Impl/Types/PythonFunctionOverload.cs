@@ -124,7 +124,7 @@ namespace Microsoft.Python.Analysis.Types {
         public IMember Call(IArgumentSet args, IPythonType self) {
             if (!_fromAnnotation) {
                 // First try supplied specialization callback.
-                var rt = _returnValueProvider?.Invoke(args.Eval.Module, this, args, default);
+                var rt = _returnValueProvider?.Invoke(args.Eval?.Module, this, args, default);
                 if (!rt.IsUnknown()) {
                     return rt;
                 }
