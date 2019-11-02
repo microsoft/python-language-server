@@ -4,7 +4,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Parsing {
     public static class ScopeExtensions {
         public static ScopeStatement FindClosestScopeStatement(this IScopeNode node) {
-            var scope = node;
+            var scope = node?.ParentScopeNode;
             while (scope != null && !(scope is ScopeStatement)) {
                 scope = scope.ParentScopeNode;
             }

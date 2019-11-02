@@ -55,27 +55,27 @@ namespace Microsoft.Python.LanguageServer.Sources {
             var eval = analysis.ExpressionEvaluator;
             switch (statement) {
                 case FromImportStatement fi when node is NameExpression nex: {
-                        var contents = HandleFromImport(fi, location, hoverScopeStatement, analysis);
-                        if (contents != null) {
-                            return new Hover {
-                                contents = contents,
-                                range = range
-                            };
-                        }
-
-                        break;
+                    var contents = HandleFromImport(fi, location, hoverScopeStatement, analysis);
+                    if (contents != null) {
+                        return new Hover {
+                            contents = contents,
+                            range = range
+                        };
                     }
+
+                    break;
+                }
                 case ImportStatement imp: {
-                        var contents = HandleImport(imp, location, hoverScopeStatement, analysis);
-                        if (contents != null) {
-                            return new Hover {
-                                contents = contents,
-                                range = range
-                            };
-                        }
-
-                        break;
+                    var contents = HandleImport(imp, location, hoverScopeStatement, analysis);
+                    if (contents != null) {
+                        return new Hover {
+                            contents = contents,
+                            range = range
+                        };
                     }
+
+                    break;
+                }
             }
 
             IMember value;
@@ -97,13 +97,13 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                 IVariable variable = null;
                 if (expr is NameExpression nex) {
-                    analysis.ExpressionEvaluator.LookupNameInScopes(nex.Name, out _, out variable, LookupOptions.All);
+                    eval.LookupNameInScopes(nex.Name, out _, out variable, LookupOptions.All);
                     if (IsInvalidClassMember(variable, hoverScopeStatement, location.ToIndex(analysis.Ast))) {
                         return null;
                     }
                 }
 
-                value = variable?.Value ?? analysis.ExpressionEvaluator.GetValueFromExpression(expr, LookupOptions.All);
+                value = variable?.Value ?? eval.GetValueFromExpression(expr, LookupOptions.All);
                 type = value?.GetPythonType();
                 if (type == null) {
                     return null;
@@ -123,7 +123,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 // In case of a member expression get the target since if we end up with method
                 // of a generic class, the function will need specific type to determine its return
                 // value correctly. I.e. in x.func() we need to determine type of x (self for func).
-                var v = analysis.ExpressionEvaluator.GetValueFromExpression(mex.Target);
+                var v = eval.GetValueFromExpression(mex.Target);
                 self = v?.GetPythonType();
             }
 
@@ -166,7 +166,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
             }
             switch (v.Value) {
                 case IPythonClassType cls when cls.ClassDefinition == scope:
-                    return hoverPosition  > cls.ClassDefinition.HeaderIndex;
+                    return hoverPosition > cls.ClassDefinition.HeaderIndex;
                 case IPythonFunctionType ft when ft.FunctionDefinition == scope:
                     return hoverPosition > ft.FunctionDefinition.HeaderIndex;
                 case IPythonPropertyType prop when prop.FunctionDefinition == scope:

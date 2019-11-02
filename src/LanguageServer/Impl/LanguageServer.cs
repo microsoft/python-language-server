@@ -45,7 +45,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private readonly CancellationTokenSource _shutdownCts = new CancellationTokenSource();
         private readonly AnalysisOptionsProvider _optionsProvider = new AnalysisOptionsProvider();
 
-        private IServiceContainer _services;
+        private IServiceManager _services;
         private Server _server;
         private ILogger _logger;
         private ITelemetryService _telemetry;
@@ -215,11 +215,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        //[JsonRpcMethod("textDocument/codeAction")]
-        //public async Task<Command[]> CodeAction(JToken token, CancellationToken cancellationToken) {
-        //    await _prioritizer.DefaultPriorityAsync(cancellationToken);
-        //    return await _server.CodeAction(ToObject<CodeActionParams>(token), cancellationToken);
-        //}
+        [JsonRpcMethod("textDocument/codeAction")]
+        public async Task<CodeAction[]> CodeAction(JToken token, CancellationToken cancellationToken) {
+            await _prioritizer.DefaultPriorityAsync(cancellationToken);
+            return await _server.CodeAction(ToObject<CodeActionParams>(token), cancellationToken);
+        }
 
         //[JsonRpcMethod("textDocument/codeLens")]
         //public async Task<CodeLens[]> CodeLens(JToken token, CancellationToken cancellationToken) {

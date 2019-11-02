@@ -17,6 +17,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis {
@@ -76,6 +77,13 @@ namespace Microsoft.Python.Analysis {
                 specificType = gtp.Bound;
             }
             return specificType != null;
+        }
+
+        public static bool IsSubClassOf(this IPythonClassType cls, IPythonClassType classToCheck) {
+            if (classToCheck == null) {
+                return false;
+            }
+            return cls?.Bases.MaybeEnumerate().Any(b => b.Equals(classToCheck)) ?? false;
         }
     }
 }

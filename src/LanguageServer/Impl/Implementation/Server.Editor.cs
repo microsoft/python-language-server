@@ -98,7 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
             var reference = new DeclarationSource(Services).FindDefinition(analysis, @params.position, out _);
-            return reference != null ? new Location { uri = reference.uri, range = reference.range} : null;
+            return reference != null ? new Location { uri = reference.uri, range = reference.range } : null;
         }
 
         public Task<Reference[]> FindReferences(ReferencesParams @params, CancellationToken cancellationToken) {
@@ -111,6 +111,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Rename in {uri} at {@params.position}");
             return new RenameSource(Services).RenameAsync(uri, @params.position, @params.newName, cancellationToken);
+        }
+
+        public async Task<CodeAction[]> CodeAction(CodeActionParams @params, CancellationToken cancellationToken) {
+            var uri = @params.textDocument.uri;
+            _log?.Log(TraceEventType.Verbose, $"Code Action in {uri} at {@params.range}");
+
+            if (@params.context.diagnostics?.Length == 0) {
+                return Array.Empty<CodeAction>();
+            }
+
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
+            var codeActions = await new CodeActionSource(Services).GetCodeActionsAsync(analysis, @params.context.diagnostics, cancellationToken);
+            return codeActions ?? Array.Empty<CodeAction>();
         }
     }
 }

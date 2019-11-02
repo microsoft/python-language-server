@@ -23,7 +23,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
     internal abstract class DocumentationSource {
-        public string GetSignatureString(IPythonFunctionType ft, IPythonType self, out (IndexSpan, IParameterInfo)[] parameterSpans, int overloadIndex = 0, string funcName = null) {
+        public string GetSignatureString(IPythonFunctionType ft, IPythonType self, out (IndexSpan, IParameterInfo)[] parameterSpans, int overloadIndex = 0, string funcName = null, bool noReturn = false) {
             funcName = funcName ?? ft.Name;
             var o = ft.Overloads[overloadIndex];
 
@@ -82,10 +82,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             builder.Append(')');
 
-            var returnDoc = o.GetReturnDocumentation(self);
-            if (!string.IsNullOrWhiteSpace(returnDoc)) {
-                builder.Append(" -> ");
-                builder.Append(returnDoc);
+            if (!noReturn) {
+                var returnDoc = o.GetReturnDocumentation(self);
+                if (!string.IsNullOrWhiteSpace(returnDoc)) {
+                    builder.Append(" -> ");
+                    builder.Append(returnDoc);
+                }
             }
 
             parameterSpans = spans.ToArray();

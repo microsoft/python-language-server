@@ -14,10 +14,12 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Microsoft.Python.Core.Logging;
 
 namespace Microsoft.Python.Core.IO {
     public static class IOExtensions {
@@ -79,7 +81,7 @@ namespace Microsoft.Python.Core.IO {
             return !fs.DirectoryExists(path);
         }
 
-        public static FileStream OpenWithRetry(this IFileSystem fs, string file, FileMode mode, FileAccess access, FileShare share) {
+        public static FileStream OpenWithRetry(this IFileSystem fs, string file, FileMode mode, FileAccess access, FileShare share, ILogger log = null) {
             // Retry for up to one second
             var create = mode != FileMode.Open;
             for (var retries = 100; retries > 0; --retries) {
@@ -89,20 +91,23 @@ namespace Microsoft.Python.Core.IO {
                     return null;
                 } catch (DirectoryNotFoundException) when (!create) {
                     return null;
-                } catch (UnauthorizedAccessException) {
+                } catch (UnauthorizedAccessException uaex) {
+                    log?.Log(TraceEventType.Verbose, "Unable to open file ", file, uaex.Message);
                     Thread.Sleep(10);
                 } catch (IOException) {
                     if (create) {
                         var dir = Path.GetDirectoryName(file);
                         try {
                             fs.CreateDirectory(dir);
-                        } catch (IOException) {
-                            // Cannot create directory for DB, so just bail out
-                            return null;
+                        } catch (IOException ioex) {
+                            log?.Log(TraceEventType.Verbose, "Unable to create directory ", dir, ioex.Message);
+                            Thread.Sleep(10);
                         }
+                    } else {
+                        Thread.Sleep(10);
                     }
-                    Thread.Sleep(10);
-                } catch (NotSupportedException) {
+                } catch (NotSupportedException nsx) {
+                    log?.Log(TraceEventType.Verbose, "Unable to open file ", file, nsx.Message);
                     return null;
                 }
             }
@@ -121,20 +126,26 @@ namespace Microsoft.Python.Core.IO {
             return null;
         }
 
-        public static void WriteTextWithRetry(this IFileSystem fs, string filePath, string text) {
+        public static void WriteTextWithRetry(this IFileSystem fs, string filePath, string text, ILogger log = null) {
+            Exception ex = null;
             for (var retries = 100; retries > 0; --retries) {
                 try {
-                    using (var stream = fs.OpenWithRetry(filePath, FileMode.Create, FileAccess.Write, FileShare.Read)) {
+                    using (var stream = fs.OpenWithRetry(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, log)) {
                         if (stream != null) {
                             var bytes = Encoding.UTF8.GetBytes(text);
                             stream.Write(bytes, 0, bytes.Length);
                             return;
                         }
                     }
-                } catch (IOException) { } catch (UnauthorizedAccessException) {
-                    Thread.Sleep(10);
+                } catch (IOException ioex) {
+                    ex = ioex;
+                } catch (UnauthorizedAccessException uaex) {
+                    ex = uaex;
                 }
+                Thread.Sleep(10);
             }
+
+            log?.Log(TraceEventType.Verbose, "Unable to write to ", filePath, ex?.Message ?? "Unknown exception");
 
             try {
                 fs.DeleteFile(filePath);

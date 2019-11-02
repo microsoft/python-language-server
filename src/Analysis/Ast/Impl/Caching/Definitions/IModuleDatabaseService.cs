@@ -44,10 +44,5 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Determines if module analysis exists in the storage.
         /// </summary>
         bool ModuleExistsInStorage(string moduleName, string filePath);
-
-        /// <summary>
-        /// Clear cached data.
-        /// </summary>
-        void Clear();
     }
 }

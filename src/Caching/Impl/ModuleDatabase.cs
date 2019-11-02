@@ -115,21 +115,13 @@ namespace Microsoft.Python.Analysis.Caching {
 
             for (var retries = 50; retries > 0; --retries) {
                 try {
-                    lock (_lock) {
-                        var dbPath = FindDatabaseFile(moduleName, filePath);
-                        return !string.IsNullOrEmpty(dbPath);
-                    }
+                    var dbPath = FindDatabaseFile(moduleName, filePath);
+                    return !string.IsNullOrEmpty(dbPath);
                 } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
                     Thread.Sleep(10);
                 }
             }
             return false;
-        }
-
-        public void Clear() {
-            lock (_lock) {
-                _dependencies.Clear();
-            }
         }
 
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
@@ -146,26 +138,24 @@ namespace Microsoft.Python.Analysis.Caching {
 
             Exception ex = null;
             for (var retries = 50; retries > 0; --retries) {
-                lock (_lock) {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    try {
-                        if (!_fs.DirectoryExists(CacheFolder)) {
-                            _fs.CreateDirectory(CacheFolder);
-                        }
-
-                        cancellationToken.ThrowIfCancellationRequested();
-                        using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
-                            var modules = db.GetCollection<ModuleModel>("modules");
-                            modules.Upsert(model);
-                            return;
-                        }
-                    } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
-                        ex = ex1;
-                        Thread.Sleep(10);
-                    } catch (Exception ex2) {
-                        ex = ex2;
-                        break;
+                cancellationToken.ThrowIfCancellationRequested();
+                try {
+                    if (!_fs.DirectoryExists(CacheFolder)) {
+                        _fs.CreateDirectory(CacheFolder);
                     }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
+                        var modules = db.GetCollection<ModuleModel>("modules");
+                        modules.Upsert(model);
+                        return;
+                    }
+                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
+                    ex = ex1;
+                    Thread.Sleep(10);
+                } catch (Exception ex2) {
+                    ex = ex2;
+                    break;
                 }
             }
 

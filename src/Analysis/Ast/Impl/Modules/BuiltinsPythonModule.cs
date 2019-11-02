@@ -15,12 +15,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
+using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
 
@@ -52,8 +54,17 @@ namespace Microsoft.Python.Analysis.Modules {
             foreach (var n in GetMemberNames()) {
                 GetMember(n).GetPythonType<PythonType>()?.MakeReadOnly();
             }
-
             base.OnAnalysisComplete();
+        }
+
+        protected override string LoadContent() {
+            var content = base.LoadContent();
+            if (string.IsNullOrEmpty(content)) {
+                const string message = "Unable continue, no builtins module content.";
+                Services.GetService<ILogger>()?.Log(TraceEventType.Error, message);
+                throw new InvalidOperationException(message);
+            }
+            return content;
         }
 
         private void SpecializeTypes() {
@@ -163,9 +174,9 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis.SpecializeFunction("type", BuiltinsSpecializations.TypeInfo);
             Analysis.SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
 
+            Analysis.SpecializeFunction("super", BuiltinsSpecializations.Super);
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
-            //SpecializeFunction(_builtinName, "super", SpecialSuper);
         }
 
         private IReadOnlyList<ParameterInfo> OpenConstructor() {

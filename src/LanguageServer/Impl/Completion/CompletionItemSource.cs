@@ -56,7 +56,7 @@ namespace Microsoft.Python.LanguageServer.Completion {
                 // Place regular items first, advanced entries last
                 sortText = char.IsLetter(text, 0) ? "1" : "2",
                 kind = kind,
-                documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member, self) : null,
+                documentation = !t.IsUnknown() ? _docSource.GetHover(label ?? text, member, self, true) : null,
                 // Custom fields used by the LS extensions that may modify
                 // the completion list. Not passed to the client.
                 Member = member,

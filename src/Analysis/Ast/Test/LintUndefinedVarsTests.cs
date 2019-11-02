@@ -789,6 +789,31 @@ stuff = []
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task UnresolvedFromImport() {
+            const string code = @"
+from thismoduledoesnotexist import something
+something()
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task AssignedSelf() {
+            const string code = @"
+class DocEnum(Enum):
+    def __new__(cls, value, doc=None):
+        self = object.__new__(cls)
+        self._value_ = value
+        if doc is not None:
+            self.__doc__ = doc
+        return self
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();
