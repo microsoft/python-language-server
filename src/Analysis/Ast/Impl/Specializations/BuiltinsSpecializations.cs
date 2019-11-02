@@ -100,7 +100,7 @@ namespace Microsoft.Python.Analysis.Specializations {
                 //Zero argument form only works inside a class definition
                 foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal.Where(s => s.Node is ClassDefinition)) {
                     var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
-                    return PythonSuperType.CreateSuper(classType)?.CreateInstance(argSet); 
+                    return PythonSuperType.Create(classType)?.CreateInstance(argSet); 
                 }
                 return null;
             }
@@ -114,14 +114,14 @@ namespace Microsoft.Python.Analysis.Specializations {
             // second argument optional
             bool isUnbound = args.Count == 1;
             if (isUnbound) {
-                return PythonSuperType.CreateSuper(firstCls)?.CreateInstance(argSet);
+                return PythonSuperType.Create(firstCls)?.CreateInstance(argSet);
             }
 
             var secondCls = args[1].GetPythonType<IPythonClassType>();
             if (secondCls?.Equals(firstCls) == true || 
                 secondCls?.IsSubClassOf(firstCls) == true) {
                 // We walk the mro of the second parameter looking for the first
-                return PythonSuperType.CreateSuper(secondCls, typeToFind: firstCls)?.CreateInstance(argSet);
+                return PythonSuperType.Create(secondCls, typeToFind: firstCls)?.CreateInstance(argSet);
             }
 
             return null;
