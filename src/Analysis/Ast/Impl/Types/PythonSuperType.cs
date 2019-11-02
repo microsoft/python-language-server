@@ -21,12 +21,13 @@ using Microsoft.Python.Core;
 namespace Microsoft.Python.Analysis.Types {
     internal sealed class PythonSuperType : PythonType, IPythonSuperType {
         /// <summary>
-        /// more info at https://docs.python.org/3/library/functions.html#super
+        /// Implements 'super' specialization type.
+        /// See also https://docs.python.org/3/library/functions.html#super
         /// </summary>
-        /// <param name="location"></param>
-        /// <param name="mro">Should be a list of IPythonType</param>
-        public PythonSuperType(IReadOnlyList<IPythonType> mro)
-            : base("super", new Location(), string.Empty, BuiltinTypeId.Type) {
+        /// <param name="mro">The derived class MRO.</param>
+        /// <param name="declaringModule">Declaring module.</param>
+        public PythonSuperType(IReadOnlyList<IPythonType> mro, IPythonModule declaringModule)
+            : base("super", new Location(declaringModule), string.Empty, BuiltinTypeId.Type) {
             Mro = mro;
         }
 
@@ -34,21 +35,23 @@ namespace Microsoft.Python.Analysis.Types {
 
         public IReadOnlyList<IPythonType> Mro { get; }
 
-        public override IMember GetMember(string name) => Mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
+        public override IMember GetMember(string name)
+            => Mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
 
-        public override IEnumerable<string> GetMemberNames() => Mro.MaybeEnumerate().SelectMany(cls => cls.GetMemberNames()).Distinct();
-
+        public override IEnumerable<string> GetMemberNames() 
+            => Mro.MaybeEnumerate().SelectMany(cls => cls.GetMemberNames()).Distinct();
 
         /// <summary>
-        ///  This will return PythonSuperType with a mro list that starts with the next class in line in classType's mro, 
-        ///  or it will search classType's mro for typeToFild then build an mro list for the remaining classses after typeToFind.
+        /// Creates PythonSuperType with a MRO list that starts with the next class in line in classType's MRO, 
+        /// or searches classType's MRO for <see cref="typeToFind"/>, then builds an MRO list for
+        /// the remaining classes after <see cref="typeToFind"/>.
         /// </summary>
         /// <param name="classType"></param>
         /// <param name="typeToFind"></param>
         /// <returns></returns>
-        internal static PythonSuperType CreateSuper(IPythonClassType classType, IPythonType typeToFind = null) {
+        internal static PythonSuperType Create(IPythonClassType classType, IPythonType typeToFind = null) {
             var mro = classType?.Mro ?? Array.Empty<IPythonType>();
-            if (mro.Count == 0) {
+            if (classType == null || mro.Count == 0) {
                 return null;
             }
 
@@ -64,12 +67,8 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             var nextClassInLine = mro?.FirstOrDefault();
-            if (nextClassInLine != null) {
-                // Skip the first element, super's search starts at the next elemement in the mro for both super() and super(cls, typeToFind)
-                return new PythonSuperType(mro.Skip(1).ToArray());
-            }
-
-            return null;
+            // Skip the first element, super's search starts at the next element in the mro for both super() and super(cls, typeToFind)
+            return nextClassInLine != null ? new PythonSuperType(mro.Skip(1).ToArray(), classType.DeclaringModule) : null;
         }
     }
 }
