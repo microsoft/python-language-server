@@ -11,7 +11,7 @@ namespace Microsoft.Python.Parsing.Ast {
         // Storing variables due to "exec" or call to dir, locals, eval, vars...
 
         private Dictionary<string, PythonVariable> _variables;
-        
+
         // list of variables accessed from outer scopes
         private List<PythonVariable> _freeVars;
 
@@ -97,10 +97,9 @@ namespace Microsoft.Python.Parsing.Ast {
         internal bool TryGetVariable(string name, out PythonVariable variable) {
             if (Variables != null && name != null) {
                 return Variables.TryGetValue(name, out variable);
-            } else {
-                variable = null;
-                return false;
             }
+            variable = null;
+            return false;
         }
 
         internal virtual bool TryBindOuter(IBindableNode from, string name, bool allowGlobals, out PythonVariable variable) {
