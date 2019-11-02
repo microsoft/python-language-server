@@ -20,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -83,7 +84,9 @@ namespace Microsoft.Python.Analysis.Tests {
             }
 
             TestLogger.Log(TraceEventType.Information, "Create PythonAnalyzer");
-            var analyzer = new PythonAnalyzer(sm, stubCacheFolderPath);
+
+            CacheService.Register(sm, stubCacheFolderPath, pathCheck: false);
+            var analyzer = new PythonAnalyzer(sm);
             sm.AddService(analyzer);
 
             TestLogger.Log(TraceEventType.Information, "Create PythonInterpreter");

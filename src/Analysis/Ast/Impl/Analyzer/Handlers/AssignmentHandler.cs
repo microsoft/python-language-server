@@ -13,12 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
-using Microsoft.Python.Core;
-using Microsoft.Python.Parsing.Ast;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class AssignmentHandler : StatementHandler {
@@ -134,7 +133,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         private void TryHandleClassVariable(MemberExpression mex, IMember value) {
-            if (!string.IsNullOrEmpty(mex?.Name) && mex.Target is NameExpression nex && nex.Name.EqualsOrdinal("self")) {
+            if (mex.Target is NameExpression nex && nex.Name == "self") {
                 var m = Eval.LookupNameInScopes(nex.Name, out _, LookupOptions.Local);
                 var cls = m.GetPythonType<IPythonClassType>();
                 if (cls != null) {

@@ -74,7 +74,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                             v => v.GetPythonType<IPythonClassType>() == null &&
                                  v.GetPythonType<IPythonFunctionType>() == null)
                         ) {
-                            ((VariableCollection)Eval.CurrentScope.Variables).Clear();
+                        ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
                 }
             }
@@ -90,7 +90,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 var t = annotationType.CreateInstance(ArgumentSet.Empty(FunctionDefinition.ReturnAnnotation, Eval));
                 // If instance could not be created, such as when return type is List[T] and
                 // type of T is not yet known, just use the type.
-                var instance = t.IsUnknown() ? (IMember) annotationType : t;
+                var instance = t.IsUnknown() ? (IMember)annotationType : t;
                 _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
             } else {
                 // Check if function is a generator
@@ -112,7 +112,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     case IPythonFunctionType function:
                         CheckValidFunction(function, parameters);
                         break;
-                    //TODO check properties
+                        //TODO check properties
                 }
             }
         }
@@ -168,14 +168,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             foreach (var lhs in node.Left) {
                 switch (lhs) {
-                    case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
-                            if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
-                                t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
-                            }
-                            continue;
+                    case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1:
+                        if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
+                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
                         }
+                        continue;
                     case NameExpression nameExp2 when nameExp2.Name == "self":
-                        return true; // Don't assign to 'self'
+                        // Only assign to 'self' if it is not declared yet.
+                        if (Eval.LookupNameInScopes(nameExp2.Name, out _) == null) {
+                            Eval.DeclareVariable(nameExp2.Name, value, VariableSource.Declaration);
+                        }
+                        return true;
                 }
             }
             return base.Walk(node);
