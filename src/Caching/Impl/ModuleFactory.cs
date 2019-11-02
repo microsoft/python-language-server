@@ -202,7 +202,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 case "Unknown":
                     return builtins.Interpreter.UnknownType;
                 case "SuperType":
-                    return new PythonSuperType(typeArgs);
+                    return new PythonSuperType(typeArgs, builtins);
             }
             return builtins.GetMember(memberName);
         }
