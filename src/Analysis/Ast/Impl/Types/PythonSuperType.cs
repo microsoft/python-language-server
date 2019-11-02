@@ -25,9 +25,9 @@ namespace Microsoft.Python.Analysis.Types {
         /// See also https://docs.python.org/3/library/functions.html#super
         /// </summary>
         /// <param name="mro">The derived class MRO.</param>
-        /// <param name="declaringModule">Declaring module.</param>
-        public PythonSuperType(IReadOnlyList<IPythonType> mro, IPythonModule declaringModule)
-            : base("super", new Location(declaringModule), string.Empty, BuiltinTypeId.Type) {
+        /// <param name="builtins">Builtins module.</param>
+        public PythonSuperType(IReadOnlyList<IPythonType> mro, IBuiltinsPythonModule builtins)
+            : base("super", new Location(builtins), string.Empty, BuiltinTypeId.Type) {
             Mro = mro;
         }
 
@@ -38,7 +38,7 @@ namespace Microsoft.Python.Analysis.Types {
         public override IMember GetMember(string name)
             => Mro.MaybeEnumerate().Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
 
-        public override IEnumerable<string> GetMemberNames() 
+        public override IEnumerable<string> GetMemberNames()
             => Mro.MaybeEnumerate().SelectMany(cls => cls.GetMemberNames()).Distinct();
 
         /// <summary>
@@ -67,9 +67,9 @@ namespace Microsoft.Python.Analysis.Types {
             }
 
             var nextClassInLine = mro?.FirstOrDefault();
+            var builtins = classType.DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule;
             // Skip the first element, super's search starts at the next element in the mro for both super() and super(cls, typeToFind)
-            return nextClassInLine != null ? new PythonSuperType(mro.Skip(1).ToArray(), classType.DeclaringModule) : null;
+            return nextClassInLine != null ? new PythonSuperType(mro.Skip(1).ToArray(), builtins) : null;
         }
     }
 }
-
