@@ -362,6 +362,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             // the outer loop analysis. For example, functools <=> _functools loop and
             // the related CircularDependencyFunctools test.
             foreach (var entry in loopNode.Values) {
+                ActivityTracker.OnEnqueueModule(entry.Module.FilePath);
                 if (!CanUpdateAnalysis(entry, Version, out var module, out var ast)) {
                     _log?.Log(TraceEventType.Verbose, $"Analysis of loop canceled.");
                     return;
