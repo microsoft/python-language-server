@@ -212,7 +212,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public IDocumentAnalysis TryRestoreCachedAnalysis(IPythonModule module) {
             var moduleType = module.ModuleType;
             var moduleDatabaseService = _services.GetService<IModuleDatabaseService>();
-            if (!moduleType.CanBeCached() || moduleDatabaseService == null || !moduleDatabaseService.ModuleExistsInStorage(module.Name, module.FilePath)) {
+            if (!moduleType.CanBeCached() || moduleDatabaseService == null || !moduleDatabaseService.ModuleExistsInStorage(module.Name, module.FilePath, moduleType)) {
                 return null;
             }
 

@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -32,8 +33,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private readonly Dictionary<string, IDependencyProvider> _dependencies = new Dictionary<string, IDependencyProvider>();
-        private readonly object _lock = new object();
+        private readonly ConcurrentDictionary<string, IDependencyProvider> _dependencies = new ConcurrentDictionary<string, IDependencyProvider>();
 
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public string CacheFolderBaseName => "analysis.v";
-        public int DatabaseFormatVersion => 3;
+        public int DatabaseFormatVersion => 4;
         public string CacheFolder { get; }
 
         /// <summary>
@@ -64,15 +64,14 @@ namespace Microsoft.Python.Analysis.Caching {
                 return false;
             }
 
-            lock (_lock) {
-                if (_dependencies.TryGetValue(module.Name, out dp)) {
-                    return true;
-                }
-                if (FindModuleModel(module.Name, module.FilePath, out var model)) {
-                    dp = new DependencyProvider(module, model);
-                    _dependencies[module.Name] = dp;
-                    return true;
-                }
+            if (_dependencies.TryGetValue(module.Name, out dp)) {
+                return true;
+            }
+
+            if (FindModuleModel(module.Name, module.FilePath, module.ModuleType, out var model)) {
+                dp = new DependencyProvider(module, model);
+                _dependencies[module.Name] = dp;
+                return true;
             }
             return false;
         }
@@ -90,10 +89,8 @@ namespace Microsoft.Python.Analysis.Caching {
                 return false;
             }
 
-            lock (_lock) {
-                if (FindModuleModel(module.Name, module.FilePath, out var model)) {
-                    gs = new RestoredGlobalScope(model, module);
-                }
+            if (FindModuleModel(module.Name, module.FilePath, module.ModuleType, out var model)) {
+                gs = new RestoredGlobalScope(model, module);
             }
 
             return gs != null;
@@ -108,14 +105,14 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>
         /// Determines if module analysis exists in the storage.
         /// </summary>
-        public bool ModuleExistsInStorage(string moduleName, string filePath) {
+        public bool ModuleExistsInStorage(string moduleName, string filePath, ModuleType moduleType) {
             if (GetCachingLevel() == AnalysisCachingLevel.None) {
                 return false;
             }
 
             for (var retries = 50; retries > 0; --retries) {
                 try {
-                    var dbPath = FindDatabaseFile(moduleName, filePath);
+                    var dbPath = FindDatabaseFile(moduleName, filePath, moduleType);
                     return !string.IsNullOrEmpty(dbPath);
                 } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
                     Thread.Sleep(10);
@@ -172,9 +169,9 @@ namespace Microsoft.Python.Analysis.Caching {
         /// by name, version, current Python interpreter version and/or hash of the
         /// module content (typically file sizes).
         /// </summary>
-        private string FindDatabaseFile(string moduleName, string filePath) {
+        private string FindDatabaseFile(string moduleName, string filePath, ModuleType moduleType) {
             var interpreter = _services.GetService<IPythonInterpreter>();
-            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, ModuleType.Specialized, _services, GetCachingLevel());
+            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, moduleType, _services, GetCachingLevel());
             if (string.IsNullOrEmpty(uniqueId)) {
                 return null;
             }
@@ -199,7 +196,7 @@ namespace Microsoft.Python.Analysis.Caching {
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
 
-        private bool FindModuleModel(string moduleName, string filePath, out ModuleModel model) {
+        private bool FindModuleModel(string moduleName, string filePath, ModuleType moduleType, out ModuleModel model) {
             model = null;
 
             // We don't cache results here. Module resolution service decides when to call in here
@@ -207,7 +204,7 @@ namespace Microsoft.Python.Analysis.Caching {
             for (var retries = 50; retries > 0; --retries) {
                 try {
                     // TODO: make combined db rather than per module?
-                    var dbPath = FindDatabaseFile(moduleName, filePath);
+                    var dbPath = FindDatabaseFile(moduleName, filePath, moduleType);
                     if (string.IsNullOrEmpty(dbPath)) {
                         return false;
                     }
