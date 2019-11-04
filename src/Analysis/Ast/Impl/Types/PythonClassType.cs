@@ -79,10 +79,8 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         public override IMember GetMember(string name) {
-            IMember member;
-
             lock (_membersLock) {
-                if (Members.TryGetValue(name, out member)) {
+                if (Members.TryGetValue(name, out var member)) {
                     return member;
                 }
             }
@@ -101,12 +99,7 @@ namespace Microsoft.Python.Analysis.Types {
 
             using (_memberGuard.Push(this, out var reentered)) {
                 if (!reentered) {
-                    foreach (var m in Mro.Reverse()) {
-                        if (m == this) {
-                            return member;
-                        }
-                        member = member ?? m.GetMember(name);
-                    }
+                    return Mro.Skip(1).Select(c => c.GetMember(name)).ExcludeDefault().FirstOrDefault();
                 }
                 return null;
             }

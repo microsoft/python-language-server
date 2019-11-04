@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.Python.Analysis;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -56,7 +57,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
                     if (includeClassInit) {
                         className = cls.Name;
-                        var init = cls.GetMember<IPythonFunctionType>("__init__");
+                        var init = cls.TryGetFunctionType();
                         if (init != null) {
                             sig = GetSignatureString(init, null, out var _, 0, "", true);
                         }
