@@ -14,9 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
-using System.Diagnostics;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -26,26 +24,15 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     [Serializable]
     internal sealed class PropertyModel : CallableModel {
         public string ReturnType { get; set; }
+        public bool IsReadOnly { get; set; }
+
         public PropertyModel() { } // For de-serializer from JSON
 
         [NonSerialized] private PythonPropertyType _property;
 
         public PropertyModel(IPythonPropertyType prop, IServiceContainer services) : base(prop, services) {
             ReturnType = prop.ReturnType.GetPersistentQualifiedName(services);
-        }
-
-        protected override IMember DeclareMember(IPythonType declaringType) {
-            Debug.Assert(_property == null);
-            _property = new PythonPropertyType(Name, new Location(_mf.Module, IndexSpan.ToSpan()), Documentation, declaringType, (Attributes & FunctionAttributes.Abstract) != 0);
-            _property.SetDocumentation(Documentation);
-            return _property;
-        }
-
-        protected override void PopulateMember() {
-            var o = new PythonFunctionOverload(_property, _mf.DefaultLocation);
-            o.SetDocumentation(Documentation);
-            o.SetReturnValue(_mf.ConstructMember(ReturnType), true);
-            _property.AddOverload(o);
+            IsReadOnly = prop.IsReadOnly;
         }
     }
 }

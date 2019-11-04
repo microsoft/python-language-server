@@ -82,7 +82,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 }
             }
         }
-
         protected override IEnumerable<MemberModel> GetMemberModels() => Classes.Concat<MemberModel>(Functions);
     }
 }

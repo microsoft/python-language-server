@@ -15,30 +15,42 @@
 
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching.Lazy {
-    internal sealed class PythonLazyPropertyType: PythonTypeWrapper, IPythonPropertyType {
-        private readonly PythonPropertyType _innerProperty;
-        private FunctionModel _model;
+    internal sealed class PythonLazyPropertyType : PythonLazyType<PropertyModel>, IPythonPropertyType {
+        private readonly PythonPropertyType _property;
 
-        public PythonLazyPropertyType(PythonPropertyType innerProperty) {
-            _innerProperty = innerProperty;
+        public PythonLazyPropertyType(PropertyModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType)
+            : base(model, mf, gs, declaringType) {
+
+            var location = new Location(mf.Module, model.IndexSpan.ToSpan());
+            _property = new PythonPropertyType(Model.Name, location, Model.Documentation, declaringType,
+                Model.Attributes.HasFlag(FunctionAttributes.Abstract));
+
+            // parameters and return type just to look at them.
+            var o = new PythonFunctionOverload(_property, location);
+            o.SetDocumentation(Documentation);
+            _property.AddOverload(o);
+
+            IsReadOnly = model.IsReadOnly;
+            SetInnerType(_property);
         }
 
-        public IPythonType DeclaringType => _innerProperty.DeclaringType;
         public FunctionDefinition FunctionDefinition => null;
-        public string Description => _innerProperty.Description;
-        public bool IsReadOnly => _innerProperty.IsReadOnly;
+        public bool IsReadOnly { get; }
+
         public IMember ReturnType {
             get {
                 EnsureContent();
-                return _innerProperty.ReturnType;
+                return _property.ReturnType;
             }
         }
-        private void EnsureContent() {
-            _model?.CreateContent();
-            _model = null;
+
+        protected override void EnsureContent() {
+            _property.Getter.SetReturnValue(ModuleFactory.ConstructMember(Model.ReturnType), true);
+            ReleaseModel();
         }
     }
 }

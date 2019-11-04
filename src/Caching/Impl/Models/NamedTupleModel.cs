@@ -18,8 +18,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
-using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Models {
@@ -42,15 +40,5 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             ItemNames = nt.ItemNames.ToArray();
             ItemTypes = nt.ItemTypes.Select(t => t.QualifiedName).ToArray();
         }
-
-        protected override IMember DeclareMember(IPythonType declaringType) {
-            if (_namedTuple == null) {
-                var itemTypes = ItemTypes.Select(_mf.ConstructType).ToArray();
-                _namedTuple = new NamedTupleType(Name, ItemNames, itemTypes, _mf.Module, IndexSpan.ToSpan());
-            }
-            return _namedTuple;
-        }
-
-        protected override void PopulateMember() { }
     }
 }

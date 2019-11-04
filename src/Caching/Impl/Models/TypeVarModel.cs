@@ -17,8 +17,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing;
-using Microsoft.Python.Analysis.Specializations.Typing.Types;
-using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 // ReSharper disable MemberCanBePrivate.Global
@@ -44,12 +42,5 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Contravariant = g.Contravariant
             };
         }
-
-        protected override IMember DeclareMember(IPythonType declaringType) 
-            => new GenericTypeParameter(Name, _mf.Module,
-                Constraints.Select(_mf.ConstructType).ToArray(), 
-                _mf.ConstructType(Bound), Covariant, Contravariant, default);
-
-        protected override void PopulateMember() { }
     }
 }

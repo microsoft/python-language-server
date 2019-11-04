@@ -27,9 +27,9 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         public PythonLazyFunctionType(FunctionModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType)
         : base(model, mf, gs, declaringType) {
             var location = new Location(mf.Module, model.IndexSpan.ToSpan());
-            _function = new PythonFunctionType(_model.Name, location, declaringType, Documentation);
+            _function = new PythonFunctionType(Model.Name, location, declaringType, Documentation);
 
-            // TODO: restore signature string so hover does not need to restore function
+            // TODO: restore signature string so hover (tooltip) documentation won't have to restore the function.
             // parameters and return type just to look at them.
             for (var i = 0; i < model.Overloads.Length; i++) {
                 var o = new PythonFunctionOverload(_function, location);
@@ -51,28 +51,26 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         #endregion
 
         protected override void EnsureContent() {
-            if (_model == null) {
+            if (Model == null) {
                 return;
             }
 
             // DeclareMember inner functions and classes first since function may be returning one of them.
-            var innerTypes = _model.Classes.Concat<MemberModel>(_model.Functions).ToArray();
+            var innerTypes = Model.Classes.Concat<MemberModel>(Model.Functions).ToArray();
             foreach (var model in innerTypes) {
-                _function.AddMember(Name, model.CreateDeclaration(_mf, _function, _gs), overwrite: true);
-            }
-            foreach (var model in innerTypes) {
-                model.CreateContent();
+                _function.AddMember(Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _function), overwrite: true);
             }
 
-            for (var i = 0; i < _model.Overloads.Length; i++) {
-                var om = _model.Overloads[i];
+            for (var i = 0; i < Model.Overloads.Length; i++) {
+                var om = Model.Overloads[i];
                 var o = (PythonFunctionOverload)_function.Overloads[i];
-                o.SetReturnValue(_mf.ConstructMember(om.ReturnType), true);
-                o.SetParameters(om.Parameters.Select(p => ConstructParameter(_mf, p)).ToArray());
+                o.SetReturnValue(ModuleFactory.ConstructMember(om.ReturnType), true);
+                o.SetParameters(om.Parameters.Select(p => ConstructParameter(ModuleFactory, p)).ToArray());
             }
 
             ReleaseModel();
         }
+
         private IParameterInfo ConstructParameter(ModuleFactory mf, ParameterModel pm)
             => new ParameterInfo(pm.Name, mf.ConstructType(pm.Type), pm.Kind, mf.ConstructMember(pm.DefaultValue));
     }

@@ -156,12 +156,11 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             }
             return null;
         }
-
+        
         public override MemberModel GetModel(string name) {
             if (_modelCache == null) {
-                var models = TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions).Concat(Variables);
                 _modelCache = new Dictionary<string, MemberModel>();
-                foreach (var m in models) {
+                foreach (var m in GetMemberModels()) {
                     Debug.Assert(!_modelCache.ContainsKey(m.Name));
                     _modelCache[m.Name] = m;
                 }
@@ -169,11 +168,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return _modelCache.TryGetValue(name, out var model) ? model : null;
         }
 
-        public IEnumerable<string> GetMemberNames() 
-            => TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions)
-                .Concat(Variables)/*.Concat(SubModules)*/.Select(m => m.Name);
-
-        protected override IMember DeclareMember(IPythonType declaringType) => throw new NotImplementedException();
-        protected override void PopulateMember() => throw new NotImplementedException();
+        protected override IEnumerable<MemberModel> GetMemberModels() 
+            => TypeVars.Concat<MemberModel>(NamedTuples).Concat(Classes).Concat(Functions).Concat(Variables);
     }
 }

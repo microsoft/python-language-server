@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Python.Analysis.Caching.Lazy;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -25,66 +26,37 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class RestoredGlobalScope : IGlobalScope {
         private readonly VariableCollection _scopeVariables = new VariableCollection();
-        private ModuleModel _model; // Non-readonly b/c of DEBUG conditional.
-        private ModuleFactory _factory; // Non-readonly b/c of DEBUG conditional.
-        private bool _typeVarsCreated;
 
         public RestoredGlobalScope(ModuleModel model, IPythonModule module, IServiceContainer services) {
-            _model = model ?? throw new ArgumentNullException(nameof(model));
             Module = module ?? throw new ArgumentNullException(nameof(module));
             Name = model.Name;
-            _factory = new ModuleFactory(_model, Module, this, services);
-            DeclareVariables(services);
+            DeclareVariables(model, services);
         }
 
-        public void ReconstructVariable(string name) {
-            EnsureTypeVars();
-            var model = _model.NamedTuples.FirstOrDefault(x => x.Name == name)
-                ?? _model.Classes.Cast<MemberModel>().FirstOrDefault(x => x.Name == name)
-                ?? _model.Functions.Cast<MemberModel>().FirstOrDefault(x => x.Name == name)
-                //?? _model.SubModules<MemberModel>.FirstOrDefault(x => x.Name == name)
-                ?? _model.Variables.FirstOrDefault(x => x.Name == name);
-
-            model?.CreateContent();
-
-            // TODO: re-declare __doc__, __name__, etc.
-#if !DEBUG
-            _model = null;
-            _factory = null;
-#endif
-        }
-
-        private void EnsureTypeVars() {
-            if (!_typeVarsCreated) {
-                foreach (var m in _model.TypeVars) {
-                    m.CreateContent();
-                }
-                _typeVarsCreated = true;
-            }
-        }
-
-        private void DeclareVariables(IServiceContainer services) {
+        private void DeclareVariables(ModuleModel model, IServiceContainer services) {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.
-            var mf = new ModuleFactory(_model, Module, this, services);
+            var mf = new ModuleFactory(model, Module, this, services);
 
             // Generics first
-            foreach (var m in _model.TypeVars) {
-                _scopeVariables.DeclareVariable(m.Name, m.CreateDeclaration(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
+            foreach (var m in model.TypeVars) {
+                var member = MemberFactory.CreateMember(m, mf, this, null);
+                _scopeVariables.DeclareVariable(m.Name, member, VariableSource.Generic, mf.DefaultLocation);
             }
 
-            var members = _model.NamedTuples
-                .Concat<MemberModel>(_model.Classes).Concat(_model.Functions); //.Concat(_model.SubModules);
-            foreach (var m in members) {
-                _scopeVariables.DeclareVariable(m.Name, m.CreateDeclaration(mf, null, this), VariableSource.Declaration, mf.DefaultLocation);
+            var models = model.NamedTuples
+                .Concat<MemberModel>(model.Classes).Concat(model.Functions); //.Concat(_model.SubModules);
+            foreach (var m in models) {
+                var member = MemberFactory.CreateMember(m, mf, this, null);
+                _scopeVariables.DeclareVariable(m.Name, member, VariableSource.Declaration, mf.DefaultLocation);
             }
 
-            // CreateDeclaration variables in the order of appearance since later variables
+            // Now variables in the order of appearance since later variables
             // may use types declared in the preceding ones.
-            foreach (var vm in _model.Variables.OrderBy(m => m.IndexSpan.Start)) {
-                var v = (IVariable)vm.CreateDeclaration(mf, null, this);
-                _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
+            foreach (var vm in model.Variables.OrderBy(m => m.IndexSpan.Start)) {
+                var member = MemberFactory.CreateMember(vm, mf, this, null);
+                _scopeVariables.DeclareVariable(vm.Name, member, VariableSource.Declaration, mf.DefaultLocation);
             }
         }
 

@@ -18,22 +18,30 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
 namespace Microsoft.Python.Analysis.Caching.Lazy {
+    /// <summary>
+    /// Represents 'lazy' type that delays creation of its content such as members,
+    /// function parameters and return types until they are requested. This allows
+    /// deferred fetching of data from the database, avoiding wholesale restore.
+    /// </summary>
     internal abstract class PythonLazyType<TModel> : PythonTypeWrapper where TModel : class {
-        protected IGlobalScope _gs;
-        protected ModuleFactory _mf;
-        protected TModel _model;
+        protected IGlobalScope GlobalScope { get; private set; }
+        protected ModuleFactory ModuleFactory { get; private set; }
+        protected TModel Model { get; private set; }
 
         protected PythonLazyType(TModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType) {
-            _model = model ?? throw new ArgumentNullException(nameof(model));
-            _mf = mf ?? throw new ArgumentNullException(nameof(mf));
-            _gs = gs ?? throw new ArgumentNullException(nameof(gs));
+            Model = model ?? throw new ArgumentNullException(nameof(model));
+            ModuleFactory = mf ?? throw new ArgumentNullException(nameof(mf));
+            GlobalScope = gs ?? throw new ArgumentNullException(nameof(gs));
+            DeclaringType = declaringType;
         }
+
+        public IPythonType DeclaringType { get; }
 
         protected abstract void EnsureContent();
         protected void ReleaseModel() {
-            _mf = null;
-            _gs = null;
-            _model = null;
+            ModuleFactory = null;
+            GlobalScope = null;
+            Model = null;
         }
     }
 }

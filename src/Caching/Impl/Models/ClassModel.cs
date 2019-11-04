@@ -22,7 +22,6 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Parsing;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable MemberCanBePrivate.Global
@@ -49,7 +48,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public GenericParameterValueModel[] GenericParameterValues { get; set; }
 
         [NonSerialized] private readonly ReentrancyGuard<IMember> _processing = new ReentrancyGuard<IMember>();
-        [NonSerialized] private PythonClassType _cls;
 
         public ClassModel() { } // For de-serializer from JSON
 
@@ -132,47 +130,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .Select(p => new GenericParameterValueModel { Name = p.Key, Type = p.Value.GetPersistentQualifiedName(services) })
                 .ToArray();
         }
-
-        /// <summary>
-        /// Restores class from its model for declarations. The class may not be fully constructed
-        /// yet: method overloads and return types of methods may be missing.<see cref="PopulateMember"/>
-        /// </summary>
-        protected override IMember DeclareMember(IPythonType declaringType) {
-            if (_cls == null) {
-                _cls = new PythonClassType(Name, new Location(_mf.Module, IndexSpan.ToSpan()));
-                _cls.SetDocumentation(Documentation);
-            }
-            return _cls;
-        }
-
-        /// <summary>
-        /// Populates class with members.
-        /// </summary>
-        protected override void PopulateMember() {
-            var bases = CreateBases(_mf, _gs);
-            _cls.SetBases(bases);
-
-            if (GenericParameterValues.Length > 0) {
-                _cls.StoreGenericParameters(
-                    _cls,
-                    _cls.GenericParameters.Keys.ToArray(),
-                    GenericParameterValues.ToDictionary(
-                        k => _cls.GenericParameters.Keys.First(x => x == k.Name),
-                        v => _mf.ConstructType(v.Type)
-                    )
-                );
-            }
-
-            var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields).ToArray();
-            foreach (var m in all) {
-                _cls.AddMember(m.Name, m.CreateDeclaration(_mf, _cls, _gs), false);
-            }
-            foreach (var m in all) {
-                m.CreateContent();
-            }
-        }
-
-
         protected override IEnumerable<MemberModel> GetMemberModels()
             => Classes.Concat<MemberModel>(Methods).Concat(Properties).Concat(Fields);
     }

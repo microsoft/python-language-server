@@ -18,6 +18,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Caching.Lazy;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
@@ -114,11 +115,8 @@ namespace Microsoft.Python.Analysis.Caching {
                     return null;
                 }
 
-                m = nextModel.CreateDeclaration(this, declaringType, _gs);
+                m = MemberFactory.CreateMember(nextModel, this, _gs, declaringType);
                 Debug.Assert(m != null);
-                if (m != null) {
-                    nextModel.CreateContent();
-                }
 
                 if (m is IGenericType gt && typeArgs.Count > 0) {
                     m = gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null));

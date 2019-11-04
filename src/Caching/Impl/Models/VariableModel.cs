@@ -48,12 +48,5 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             IndexSpan = t.Location.IndexSpan.ToModel(),
             Value = t.GetPersistentQualifiedName(services)
         };
-
-        protected override IMember DeclareMember(IPythonType declaringType) {
-            var m = _mf.ConstructMember(Value) ?? _mf.Module.Interpreter.UnknownType;
-            return new Variable(Name, m, VariableSource.Declaration, new Location(_mf.Module, IndexSpan?.ToSpan() ?? default));
-        }
-
-        protected override void PopulateMember() { }
     }
 }
