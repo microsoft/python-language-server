@@ -30,9 +30,9 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         private readonly PythonClassType _cls;
 
         public PythonLazyClassType(ClassModel model, ModuleFactory mf, IPythonType declaringType)
-            : base(model, mf, null, declaringType) {
-            _cls = new PythonClassType(Name, new Location(mf.Module, model.IndexSpan.ToSpan()));
-            _cls.SetDocumentation(Documentation);
+            : base(model, mf, new EmptyGlobalScope(mf.Module), declaringType) {
+            _cls = new PythonClassType(model.Name, new Location(mf.Module, model.IndexSpan.ToSpan()));
+            _cls.SetDocumentation(model.Documentation);
             SetInnerType(_cls);
         }
 

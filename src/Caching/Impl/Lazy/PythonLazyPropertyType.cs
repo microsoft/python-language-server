@@ -31,7 +31,7 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
 
             // parameters and return type just to look at them.
             var o = new PythonFunctionOverload(_property, location);
-            o.SetDocumentation(Documentation);
+            o.SetDocumentation(model.Documentation);
             _property.AddOverload(o);
 
             IsReadOnly = model.IsReadOnly;

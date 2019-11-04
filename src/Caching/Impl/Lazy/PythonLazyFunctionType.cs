@@ -27,13 +27,15 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         public PythonLazyFunctionType(FunctionModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType)
         : base(model, mf, gs, declaringType) {
             var location = new Location(mf.Module, model.IndexSpan.ToSpan());
-            _function = new PythonFunctionType(Model.Name, location, declaringType, Documentation);
+            _function = new PythonFunctionType(Model.Name, location, declaringType, model.Documentation);
 
             // TODO: restore signature string so hover (tooltip) documentation won't have to restore the function.
             // parameters and return type just to look at them.
             for (var i = 0; i < model.Overloads.Length; i++) {
+                var om = Model.Overloads[i];
                 var o = new PythonFunctionOverload(_function, location);
-                o.SetDocumentation(Documentation);
+                o.SetDocumentation(model.Documentation);
+                o.SetReturnValueProvider((a, b, c, d) => ModuleFactory.ConstructMember(om.ReturnType));
                 _function.AddOverload(o);
             }
             SetInnerType(_function);
@@ -64,7 +66,6 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
             for (var i = 0; i < Model.Overloads.Length; i++) {
                 var om = Model.Overloads[i];
                 var o = (PythonFunctionOverload)_function.Overloads[i];
-                o.SetReturnValue(ModuleFactory.ConstructMember(om.ReturnType), true);
                 o.SetParameters(om.Parameters.Select(p => ConstructParameter(ModuleFactory, p)).ToArray());
             }
 
