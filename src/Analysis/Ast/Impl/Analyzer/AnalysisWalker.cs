@@ -39,9 +39,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
         public PythonAst Ast => Eval.Ast;
         protected ModuleSymbolTable SymbolTable => Eval.SymbolTable;
 
-        protected AnalysisWalker(ExpressionEval eval) {
+        protected AnalysisWalker(ExpressionEval eval, IImportedVariableHandler importedVariableHandler) {
             Eval = eval;
-            ImportHandler = new ImportHandler(this);
+            ImportHandler = new ImportHandler(this, importedVariableHandler);
             AssignmentHandler = new AssignmentHandler(this);
             LoopHandler = new LoopHandler(this);
             ConditionalHandler = new ConditionalHandler(this);

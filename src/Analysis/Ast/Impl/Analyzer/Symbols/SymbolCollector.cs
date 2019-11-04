@@ -112,7 +112,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             return cls;
         }
 
-
         private void AddFunctionOrProperty(FunctionDefinition fd) {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
             if (!TryAddProperty(fd, declaringType)) {
@@ -166,7 +165,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (t is IPythonFunctionType f) {
                 return f.Overloads
                     .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Where(p => !p.IsPositionalOnlyMarker).Count());
+                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Count(p => !p.IsPositionalOnlyMarker));
             }
             return null;
         }

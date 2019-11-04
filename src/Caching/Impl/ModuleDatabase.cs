@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public string CacheFolderBaseName => "analysis.v";
-        public int DatabaseFormatVersion => 2;
+        public int DatabaseFormatVersion => 3;
         public string CacheFolder { get; }
 
         /// <summary>
