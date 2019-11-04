@@ -31,18 +31,14 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
 
             // TODO: restore signature string so hover (tooltip) documentation won't have to restore the function.
             // parameters and return type just to look at them.
-            for (var i = 0; i < model.Overloads.Length; i++) {
-                var om = Model.Overloads[i];
-                var o = new PythonFunctionOverload(_function, location);
-                o.SetDocumentation(model.Documentation);
-                o.SetReturnValueProvider((a, b, c, d) => ModuleFactory.ConstructMember(om.ReturnType));
+            foreach (var om in Model.Overloads) {
+                var o = new PythonLazyOverload(om, mf, _function);
                 _function.AddOverload(o);
             }
             SetInnerType(_function);
         }
 
         #region IPythonFunctionType
-        public IPythonType DeclaringType => _function.DeclaringType;
         public FunctionDefinition FunctionDefinition => null;
         public bool IsClassMethod => _function.IsClassMethod;
         public bool IsStatic => _function.IsStatic;
@@ -56,23 +52,11 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
             if (Model == null) {
                 return;
             }
-
-            // DeclareMember inner functions and classes first since function may be returning one of them.
             var innerTypes = Model.Classes.Concat<MemberModel>(Model.Functions).ToArray();
             foreach (var model in innerTypes) {
                 _function.AddMember(Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _function), overwrite: true);
             }
-
-            for (var i = 0; i < Model.Overloads.Length; i++) {
-                var om = Model.Overloads[i];
-                var o = (PythonFunctionOverload)_function.Overloads[i];
-                o.SetParameters(om.Parameters.Select(p => ConstructParameter(ModuleFactory, p)).ToArray());
-            }
-
             ReleaseModel();
         }
-
-        private IParameterInfo ConstructParameter(ModuleFactory mf, ParameterModel pm)
-            => new ParameterInfo(pm.Name, mf.ConstructType(pm.Type), pm.Kind, mf.ConstructMember(pm.DefaultValue));
     }
 }

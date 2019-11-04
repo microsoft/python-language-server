@@ -28,8 +28,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         public PropertyModel() { } // For de-serializer from JSON
 
-        [NonSerialized] private PythonPropertyType _property;
-
         public PropertyModel(IPythonPropertyType prop, IServiceContainer services) : base(prop, services) {
             ReturnType = prop.ReturnType.GetPersistentQualifiedName(services);
             IsReadOnly = prop.IsReadOnly;

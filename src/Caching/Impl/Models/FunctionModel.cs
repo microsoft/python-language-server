@@ -41,7 +41,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                     Kind = p.Kind,
                     DefaultValue = p.DefaultValue.GetPersistentQualifiedName(services),
                 }).ToArray(),
-                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName(services)
+                ReturnType = o.StaticReturnValue.GetPersistentQualifiedName(services),
+                Documentation = o.Documentation
             };
     }
 }

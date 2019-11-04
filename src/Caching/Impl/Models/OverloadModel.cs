@@ -20,5 +20,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
     internal sealed class OverloadModel {
         public ParameterModel[] Parameters { get; set; }
         public string ReturnType { get; set; }
+        public string Documentation { get; set; }
     }
 }

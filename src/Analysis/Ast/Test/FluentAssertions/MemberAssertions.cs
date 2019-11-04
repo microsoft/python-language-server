@@ -154,8 +154,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     otherMember.Should().BeAssignableTo<IPythonInstance>();
                 }
 
-                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType, $"Type name: {subjectMemberType.Name}");
-                //Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
+                Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
+                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
 
                 if (subjectMemberType is IPythonClassType subjectClass) {
                     var otherClass = otherMemberType as IPythonClassType;
