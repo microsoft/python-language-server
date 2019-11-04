@@ -45,10 +45,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             };
         }
 
-        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) 
-            => new GenericTypeParameter(Name, mf.Module,
-                Constraints.Select(mf.ConstructType).ToArray(), 
-                mf.ConstructType(Bound), Covariant, Contravariant, default);
+        public override IMember Create(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) {
+            var bound = mf.ConstructType(Bound);
+            bound = bound.IsUnknown() ? null : bound;
+            return new GenericTypeParameter(Name, mf.Module,
+                Constraints.Select(mf.ConstructType).ToArray(),
+                bound, Covariant, Contravariant, default);
+        }
 
         public override void Populate(ModuleFactory mf, IPythonType declaringType, IGlobalScope gs) { }
     }

@@ -96,7 +96,9 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             if (!moduleImport.IsPersistent) {
                 // If there is a stub, make sure it is loaded and attached
                 // First check stub next to the module.
-                if (!TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
+                if (TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
+                    Analyzer.InvalidateAnalysis(stub);
+                } else {
                     // If nothing found, try Typeshed.
                     stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
                 }
@@ -191,7 +193,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
-            var value = (builtinModuleNamesMember as IVariable)?.Value ?? builtinModuleNamesMember;
+            var value = builtinModuleNamesMember is IVariable variable ? variable.Value : builtinModuleNamesMember;
             if (value.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
                 PathResolver.SetBuiltins(builtinModuleNames);

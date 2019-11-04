@@ -18,12 +18,12 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Types {
     public readonly struct Location {
-        public Location(IPythonModule module) : this(module, default) { }
-
-        public Location(IPythonModule module, IndexSpan indexSpan) {
+        public Location(IPythonModule module, IndexSpan indexSpan = default) {
             Module = module;
             IndexSpan = indexSpan;
         }
+
+        public void Deconstruct(out IPythonModule module, out IndexSpan indexSpan) => (module, indexSpan) = (Module, IndexSpan);
 
         public IPythonModule Module { get; }
         public IndexSpan IndexSpan { get; }

@@ -20,6 +20,8 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
+using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -65,6 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _disposeToken.TryMarkDisposed();
         }
 
+        #region IPythonAnalyzer
         public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
             => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
@@ -205,6 +208,26 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
+
+        public IDocumentAnalysis TryRestoreCachedAnalysis(IPythonModule module) {
+            var moduleType = module.ModuleType;
+            var moduleDatabaseService = _services.GetService<IModuleDatabaseService>();
+            if (!moduleType.CanBeCached() || moduleDatabaseService == null || !moduleDatabaseService.ModuleExistsInStorage(module.Name, module.FilePath, moduleType)) {
+                return null;
+            }
+
+            if (moduleDatabaseService.TryRestoreGlobalScope(module, out var gs)) {
+                _log?.Log(TraceEventType.Verbose, "Restored from database: ", module.Name);
+                var analysis = new DocumentAnalysis((IDocument)module, 1, gs, new ExpressionEval(_services, module, module.GetAst()), Array.Empty<string>());
+                gs.ReconstructVariables();
+                return analysis;
+            }
+
+            _log?.Log(TraceEventType.Verbose, "Restore from database failed for module ", module.Name);
+
+            return null;
+        }
+        #endregion
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
             _analysisCompleteEvent.Set();
