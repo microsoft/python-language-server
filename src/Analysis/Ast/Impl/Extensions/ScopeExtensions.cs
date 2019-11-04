@@ -13,8 +13,11 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Documents;
+using Microsoft.Python.Analysis.Modules;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
@@ -22,6 +25,35 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class ScopeExtensions {
+        public static IEnumerable<string> GetExportableVariableNames(this IGlobalScope scope)
+             // drop imported modules and typing
+            => scope.Variables
+                .Where(v => {
+                    // Instances are always fine.
+                    if (v.Value is IPythonInstance) {
+                        return true;
+                    }
+
+                    var valueType = v.Value?.GetPythonType();
+                    switch (valueType) {
+                        case PythonModule _:
+                        case IPythonFunctionType f when f.IsLambda():
+                            return false; // Do not re-export modules.
+                    }
+
+                    if (scope.Module is TypingModule) {
+                        return true; // Let typing module behave normally.
+                    }
+
+                    // Do not re-export types from typing. However, do export variables
+                    // assigned with types from typing. Example:
+                    //    from typing import Any # do NOT export Any
+                    //    x = Union[int, str] # DO export x
+                    return !(valueType?.DeclaringModule is TypingModule) || v.Name != valueType.Name;
+                })
+                .Select(v => v.Name)
+                .ToArray();
+
         public static IMember LookupNameInScopes(this IScope currentScope, string name, out IScope scope) {
             scope = null;
             foreach (var s in currentScope.EnumerateTowardsGlobal) {

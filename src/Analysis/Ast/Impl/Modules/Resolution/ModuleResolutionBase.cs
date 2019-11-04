@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -26,13 +27,13 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
-using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Modules.Resolution {
     internal abstract class ModuleResolutionBase {
         protected IServiceContainer Services { get; }
         protected IFileSystem FileSystem { get; }
         protected IPythonInterpreter Interpreter { get; }
+        protected IPythonAnalyzer Analyzer { get; }
         protected ILogger Log { get; }
 
         protected ConcurrentDictionary<string, ModuleRef> Modules { get; } = new ConcurrentDictionary<string, ModuleRef>();
@@ -49,6 +50,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             FileSystem = services.GetService<IFileSystem>();
 
             Interpreter = services.GetService<IPythonInterpreter>();
+            Analyzer = services.GetService<IPythonAnalyzer>();
             StubCache = services.GetService<IStubCache>();
             Log = services.GetService<ILogger>();
         }
