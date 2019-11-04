@@ -180,7 +180,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return ImmutableArray<string>.Empty;
         }
 
-        private const string DefaultCachingLevel = "System";
+        private const string DefaultCachingLevel = "None";
 
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
             var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
