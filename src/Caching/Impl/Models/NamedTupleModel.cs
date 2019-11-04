@@ -51,6 +51,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return _namedTuple;
         }
 
-        protected override void FinalizeMember() { }
+        protected override void PopulateMember() { }
     }
 }

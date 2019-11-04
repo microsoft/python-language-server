@@ -17,7 +17,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
@@ -30,45 +29,9 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public OverloadModel[] Overloads { get; set; }
         public FunctionModel() { } // For de-serializer from JSON
 
-        [NonSerialized] private PythonFunctionType _function;
-
         public FunctionModel(IPythonFunctionType func, IServiceContainer services) : base(func, services) {
             Overloads = func.Overloads.Select(s => FromOverload(s, services)).ToArray();
         }
-
-        protected override IMember DeclareMember(IPythonType declaringType) {
-            Debug.Assert(_function == null);
-            _function = new PythonFunctionType(Name, new Location(_mf.Module, IndexSpan.ToSpan()), declaringType, Documentation);
-            // TODO: restore signature string so hover does not need to restore function
-            // parameters and return type just to look at them.
-            for (var i = 0; i < Overloads.Length; i++) {
-                var o = new PythonFunctionOverload(_function, new Location(_mf.Module, IndexSpan.ToSpan()));
-                o.SetDocumentation(Documentation);
-                _function.AddOverload(o);
-            }
-            return _function;
-        }
-
-        protected override void FinalizeMember() {
-            // DeclareMember inner functions and classes first since function may be returning one of them.
-            var innerTypes = Classes.Concat<MemberModel>(Functions).ToArray();
-            foreach (var model in innerTypes) {
-                _function.AddMember(Name, model.Declare(_mf, _function, _gs), overwrite: true);
-            }
-            foreach (var model in innerTypes) {
-                model.Finalize();
-            }
-
-            for (var i = 0; i < Overloads.Length; i++) {
-                var om = Overloads[i];
-                var o = (PythonFunctionOverload)_function.Overloads[i];
-                o.SetReturnValue(_mf.ConstructMember(om.ReturnType), true);
-                o.SetParameters(om.Parameters.Select(p => ConstructParameter(_mf, p)).ToArray());
-            }
-        }
-
-        private IParameterInfo ConstructParameter(ModuleFactory mf, ParameterModel pm)
-            => new ParameterInfo(pm.Name, mf.ConstructType(pm.Type), pm.Kind, mf.ConstructMember(pm.DefaultValue));
 
         private static OverloadModel FromOverload(IPythonFunctionOverload o, IServiceContainer services)
             => new OverloadModel {

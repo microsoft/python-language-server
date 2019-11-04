@@ -174,6 +174,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 .Concat(Variables)/*.Concat(SubModules)*/.Select(m => m.Name);
 
         protected override IMember DeclareMember(IPythonType declaringType) => throw new NotImplementedException();
-        protected override void FinalizeMember() => throw new NotImplementedException();
+        protected override void PopulateMember() => throw new NotImplementedException();
     }
 }

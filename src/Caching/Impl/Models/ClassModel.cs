@@ -135,7 +135,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
         /// <summary>
         /// Restores class from its model for declarations. The class may not be fully constructed
-        /// yet: method overloads and return types of methods may be missing.<see cref="FinalizeMember"/>
+        /// yet: method overloads and return types of methods may be missing.<see cref="PopulateMember"/>
         /// </summary>
         protected override IMember DeclareMember(IPythonType declaringType) {
             if (_cls == null) {
@@ -148,7 +148,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         /// <summary>
         /// Populates class with members.
         /// </summary>
-        protected override void FinalizeMember() {
+        protected override void PopulateMember() {
             var bases = CreateBases(_mf, _gs);
             _cls.SetBases(bases);
 
@@ -165,43 +165,13 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             var all = Classes.Concat<MemberModel>(Properties).Concat(Methods).Concat(Fields).ToArray();
             foreach (var m in all) {
-                _cls.AddMember(m.Name, m.Declare(_mf, _cls, _gs), false);
+                _cls.AddMember(m.Name, m.CreateDeclaration(_mf, _cls, _gs), false);
             }
             foreach (var m in all) {
-                m.Finalize();
+                m.CreateContent();
             }
         }
 
-        private IEnumerable<IPythonType> CreateBases(ModuleFactory mf, IGlobalScope gs) {
-            var ntBases = NamedTupleBases.Select(ntb => {
-                var n = ntb.Declare(mf, _cls, gs);
-                ntb.Finalize();
-                return n;
-            }).OfType<IPythonType>().ToArray();
-
-            var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
-            var basesNames = Bases.Select(b => is3x && b == "object" ? null : b).ExcludeDefault().ToArray();
-            var bases = basesNames.Select(mf.ConstructType).ExcludeDefault().Concat(ntBases).ToArray();
-
-            if (GenericBaseParameters.Length > 0) {
-                // Generic class. Need to reconstruct generic base so code can then
-                // create specific types off the generic class.
-                var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
-                if (genericBase != null) {
-                    var typeVars = GenericBaseParameters.Select(n => gs.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
-                    //Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
-                    if (typeVars.Length > 0) {
-                        var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));
-                        if (genericWithParameters != null) {
-                            bases = bases.Except(Enumerable.Repeat(genericBase, 1)).Concat(Enumerable.Repeat(genericWithParameters, 1)).ToArray();
-                        }
-                    }
-                } else {
-                    Debug.Fail("Generic class does not have generic base.");
-                }
-            }
-            return bases;
-        }
 
         protected override IEnumerable<MemberModel> GetMemberModels()
             => Classes.Concat<MemberModel>(Methods).Concat(Properties).Concat(Fields);

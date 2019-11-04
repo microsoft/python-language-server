@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return _property;
         }
 
-        protected override void FinalizeMember() {
+        protected override void PopulateMember() {
             var o = new PythonFunctionOverload(_property, _mf.DefaultLocation);
             o.SetDocumentation(Documentation);
             o.SetReturnValue(_mf.ConstructMember(ReturnType), true);

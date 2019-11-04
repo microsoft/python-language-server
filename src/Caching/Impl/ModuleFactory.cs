@@ -49,11 +49,11 @@ namespace Microsoft.Python.Analysis.Caching {
         public Location DefaultLocation { get; }
 
         public ModuleFactory(ModuleModel model, IPythonModule module, IGlobalScope gs, IServiceContainer services) {
-            _model = model;
-            _gs = gs;
-            _services = services;
+            _model = model ?? throw new ArgumentNullException(nameof(model));
+            _gs = gs ?? throw new ArgumentNullException(nameof(gs));
+            _services = services ?? throw new ArgumentNullException(nameof(services));
             _db = services.GetService<ModuleDatabase>();
-            Module = module;
+            Module = module ?? throw new ArgumentNullException(nameof(module));
             DefaultLocation = new Location(Module);
         }
 
@@ -114,10 +114,10 @@ namespace Microsoft.Python.Analysis.Caching {
                     return null;
                 }
 
-                m = nextModel.Declare(this, declaringType, _gs);
+                m = nextModel.CreateDeclaration(this, declaringType, _gs);
                 Debug.Assert(m != null);
                 if (m != null) {
-                    nextModel.Finalize();
+                    nextModel.CreateContent();
                 }
 
                 if (m is IGenericType gt && typeArgs.Count > 0) {
@@ -151,7 +151,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
                 // If module is loaded, then use it. Otherwise, create DB module but don't restore it just yet.
                 var module = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
-                if (module == null && parts.ModuleId != null) {
+                if (module == null && parts.ModuleId != null && _db != null) {
                     if (!_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
                         if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, ModuleType.Specialized, out var model)) {
                             // DeclareMember db module, but do not reconstruct the analysis just yet.

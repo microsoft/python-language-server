@@ -54,6 +54,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             return new Variable(Name, m, VariableSource.Declaration, new Location(_mf.Module, IndexSpan?.ToSpan() ?? default));
         }
 
-        protected override void FinalizeMember() { }
+        protected override void PopulateMember() { }
     }
 }

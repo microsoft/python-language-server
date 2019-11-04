@@ -25,6 +25,7 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
@@ -35,14 +36,15 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly IFileSystem _fs;
         private readonly AnalysisCachingLevel? _cachingLevel;
 
-        public ModuleDatabase(IServiceContainer services, string cacheFolder = null, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library) {
-            _services = services;
-            _log = services.GetService<ILogger>();
-            _fs = services.GetService<IFileSystem>();
+        public ModuleDatabase(IServiceManager sm, string cacheFolder = null, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library) {
+            _services = sm;
+            _log = _services.GetService<ILogger>();
+            _fs = _services.GetService<IFileSystem>();
             _cachingLevel = cachingLevel;
 
-            var cfs = services.GetService<ICacheFolderService>();
+            var cfs = _services.GetService<ICacheFolderService>();
             CacheFolder = cacheFolder ?? Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
+            sm.AddService(this);
         }
 
         public string CacheFolderBaseName => "analysis.v";

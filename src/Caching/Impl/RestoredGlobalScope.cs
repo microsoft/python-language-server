@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 //?? _model.SubModules<MemberModel>.FirstOrDefault(x => x.Name == name)
                 ?? _model.Variables.FirstOrDefault(x => x.Name == name);
 
-            model?.Finalize();
+            model?.CreateContent();
 
             // TODO: re-declare __doc__, __name__, etc.
 #if !DEBUG
@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Caching {
         private void EnsureTypeVars() {
             if (!_typeVarsCreated) {
                 foreach (var m in _model.TypeVars) {
-                    m.Finalize();
+                    m.CreateContent();
                 }
                 _typeVarsCreated = true;
             }
@@ -71,19 +71,19 @@ namespace Microsoft.Python.Analysis.Caching {
 
             // Generics first
             foreach (var m in _model.TypeVars) {
-                _scopeVariables.DeclareVariable(m.Name, m.Declare(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
+                _scopeVariables.DeclareVariable(m.Name, m.CreateDeclaration(mf, null, this), VariableSource.Generic, mf.DefaultLocation);
             }
 
             var members = _model.NamedTuples
                 .Concat<MemberModel>(_model.Classes).Concat(_model.Functions); //.Concat(_model.SubModules);
             foreach (var m in members) {
-                _scopeVariables.DeclareVariable(m.Name, m.Declare(mf, null, this), VariableSource.Declaration, mf.DefaultLocation);
+                _scopeVariables.DeclareVariable(m.Name, m.CreateDeclaration(mf, null, this), VariableSource.Declaration, mf.DefaultLocation);
             }
 
-            // Declare variables in the order of appearance since later variables
+            // CreateDeclaration variables in the order of appearance since later variables
             // may use types declared in the preceding ones.
             foreach (var vm in _model.Variables.OrderBy(m => m.IndexSpan.Start)) {
-                var v = (IVariable)vm.Declare(mf, null, this);
+                var v = (IVariable)vm.CreateDeclaration(mf, null, this);
                 _scopeVariables.DeclareVariable(vm.Name, v.Value, VariableSource.Declaration, mf.DefaultLocation);
             }
         }

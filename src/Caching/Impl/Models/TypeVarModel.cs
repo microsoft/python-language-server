@@ -50,6 +50,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 Constraints.Select(_mf.ConstructType).ToArray(), 
                 _mf.ConstructType(Bound), Covariant, Contravariant, default);
 
-        protected override void FinalizeMember() { }
+        protected override void PopulateMember() { }
     }
 }
