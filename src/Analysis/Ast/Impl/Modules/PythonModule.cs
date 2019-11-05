@@ -125,7 +125,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         #region IPythonType
         public string Name { get; }
-        public string QualifiedName => Name;
+        public string QualifiedName => ModuleType == ModuleType.Stub ? $"{Name}(stub)" : Name;
         public BuiltinTypeId TypeId => BuiltinTypeId.Module;
         public bool IsBuiltin => true;
         public bool IsAbstract => false;

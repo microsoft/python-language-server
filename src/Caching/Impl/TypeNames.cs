@@ -127,6 +127,15 @@ namespace Microsoft.Python.Analysis.Caching {
             parts.ModuleName = typeName.Substring(0, moduleSeparatorIndex);
             var memberNamesOffset = parts.ModuleName.Length + 1;
             parts.MemberNames = GetTypeNames(typeName.Substring(memberNamesOffset), '.');
+
+            DetermineModuleType(ref parts);
+        }
+
+        private static void DetermineModuleType(ref QualifiedNameParts parts) {
+            if (parts.ModuleName.EndsWith("(stub)")) {
+                parts.ModuleName = parts.ModuleName.Substring(0, parts.ModuleName.Length - 6);
+                parts.IsStub = true;
+            }
         }
 
         public static IReadOnlyList<string> GetTypeNames(string qualifiedTypeName, char separator) {

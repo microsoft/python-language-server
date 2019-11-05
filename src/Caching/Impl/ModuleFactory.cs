@@ -145,7 +145,13 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 // If module is loaded, then use it. Otherwise, create DB module but don't restore it just yet.
+                // If module is a stub, first try regular module, then the stub since with regular modules
+                // stub data is merged into the module data but there are also standalone stubs like posix.
                 var module = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
+                if (module == null && parts.IsStub) {
+                    module = Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
+                }
+                // If module is not loaded, try database.
                 if (module == null && parts.ModuleId != null && _db != null) {
                     if (!_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
                         if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, ModuleType.Specialized, out var model)) {
