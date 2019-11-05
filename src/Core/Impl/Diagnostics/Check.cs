@@ -93,5 +93,12 @@ namespace Microsoft.Python.Core.Diagnostics {
                 throw new ArgumentException(Invariant($"{argumentName} is not valid"));
             }
         }
+
+        [DebuggerStepThrough]
+        public static void Argument(string argumentName, bool condition) {
+            if (!condition) {
+                throw new ArgumentException(Invariant($"{argumentName} is not valid"));
+            }
+        }
     }
 }

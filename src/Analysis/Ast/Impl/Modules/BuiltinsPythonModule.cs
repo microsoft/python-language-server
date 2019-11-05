@@ -21,7 +21,6 @@ using Microsoft.Python.Analysis.Specializations;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
@@ -45,8 +44,7 @@ namespace Microsoft.Python.Analysis.Modules {
 
         public override IEnumerable<string> GetMemberNames() => base.GetMemberNames().Except(_hiddenNames).ToArray();
 
-        protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
-            => !InstallPath.TryGetFile("scrape_module.py", out var sb) ? null : new[] { "-W", "ignore", "-B", "-E", sb };
+        protected override string[] GetScrapeArguments(IPythonInterpreter interpreter) => Array.Empty<string>();
 
         protected override void OnAnalysisComplete() {
             SpecializeTypes();
@@ -91,29 +89,29 @@ namespace Microsoft.Python.Analysis.Modules {
                 // In V3 Unicode and regular strings are 'Str' and ASCII/byte string is 'Bytes'.
                 switch (typeId) {
                     case BuiltinTypeId.Bytes: {
-                            var id = !isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Bytes;
-                            biType.TrySetTypeId(id);
-                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, id), true);
-                            break;
-                        }
-                    case BuiltinTypeId.BytesIterator: {
-                            biType.TrySetTypeId(!isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.BytesIterator);
-                            break;
-                        }
-                    case BuiltinTypeId.Unicode: {
-                            var id = isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Unicode;
-                            biType.TrySetTypeId(id);
-                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, id), true);
-                            break;
-                        }
-                    case BuiltinTypeId.UnicodeIterator: {
-                            biType.TrySetTypeId(isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.UnicodeIterator);
-                            break;
-                        }
-                    case BuiltinTypeId.Str: {
-                            biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, typeId), true);
-                        }
+                        var id = !isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Bytes;
+                        biType.TrySetTypeId(id);
+                        biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, id), true);
                         break;
+                    }
+                    case BuiltinTypeId.BytesIterator: {
+                        biType.TrySetTypeId(!isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.BytesIterator);
+                        break;
+                    }
+                    case BuiltinTypeId.Unicode: {
+                        var id = isV3 ? BuiltinTypeId.Str : BuiltinTypeId.Unicode;
+                        biType.TrySetTypeId(id);
+                        biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, id), true);
+                        break;
+                    }
+                    case BuiltinTypeId.UnicodeIterator: {
+                        biType.TrySetTypeId(isV3 ? BuiltinTypeId.StrIterator : BuiltinTypeId.UnicodeIterator);
+                        break;
+                    }
+                    case BuiltinTypeId.Str: {
+                        biType.AddMember(@"__iter__", BuiltinsSpecializations.__iter__(Interpreter, typeId), true);
+                    }
+                    break;
                     case BuiltinTypeId.Unknown:
                         break;
                     default:

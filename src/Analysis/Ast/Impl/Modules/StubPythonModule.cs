@@ -15,6 +15,7 @@
 
 using System;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
@@ -31,7 +32,7 @@ namespace Microsoft.Python.Analysis.Modules {
             return FileSystem.FileExists(FilePath) ? FileSystem.ReadTextWithRetry(FilePath) : string.Empty;
         }
 
-        protected override string[] GetScrapeArguments(IPythonInterpreter factory) => Array.Empty<string>();
+        protected override string[] GetScrapeArguments(IPythonInterpreter factory) => throw new InvalidOperationException("Shoult not reachable");
         protected override void SaveCachedCode(string code) { }
     }
 }

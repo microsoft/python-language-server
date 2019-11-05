@@ -13,14 +13,12 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
+using System.Threading;
 using Microsoft.Python.Analysis.Caching;
+using Microsoft.Python.Analysis.Generators;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
-using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Modules {
     internal class CompiledPythonModule : PythonModule {
@@ -33,18 +31,12 @@ namespace Microsoft.Python.Analysis.Modules {
             => GetMember("__doc__").TryGetConstant<string>(out var s) ? s : string.Empty;
 
         protected virtual string[] GetScrapeArguments(IPythonInterpreter interpreter) {
-            var args = new List<string> { "-W", "ignore", "-B", "-E" };
-
             var mp = Interpreter.ModuleResolution.FindModule(FilePath);
             if (string.IsNullOrEmpty(mp.FullName)) {
                 return null;
             }
 
-            if (!InstallPath.TryGetFile("scrape_module.py", out var sm)) {
-                return null;
-            }
-
-            args.Add(sm);
+            var args = new List<string>();
             args.Add("-u8");
             args.Add(mp.ModuleName);
             args.Add(mp.LibraryPath);
@@ -60,51 +52,18 @@ namespace Microsoft.Python.Analysis.Modules {
                     return string.Empty;
                 }
 
-                code = ScrapeModule();
+                var args = GetScrapeArguments(Interpreter);
+                if (args == null) {
+                    return string.Empty;
+                }
+
+                code = StubGenerator.Scrape(Interpreter, Log, this, args, CancellationToken.None);
                 SaveCachedCode(code);
             }
+
             return code;
         }
 
         protected virtual void SaveCachedCode(string code) => StubCache.WriteCachedModule(FilePath, code);
-
-        private string ScrapeModule() {
-            var args = GetScrapeArguments(Interpreter);
-            if (args == null) {
-                return string.Empty;
-            }
-
-            var startInfo = new ProcessStartInfo {
-                FileName = Interpreter.Configuration.InterpreterPath,
-                Arguments = args.AsQuotedArguments(),
-                WorkingDirectory = Interpreter.Configuration.LibraryPath,
-                UseShellExecute = false,
-                ErrorDialog = false,
-                CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-
-            Log?.Log(TraceEventType.Verbose, "Scrape", startInfo.FileName, startInfo.Arguments);
-            var output = string.Empty;
-
-            try {
-                using (var process = new Process()) {
-                    process.StartInfo = startInfo;
-                    process.ErrorDataReceived += (s, e) => { };
-
-                    process.Start();
-                    process.BeginErrorReadLine();
-
-                    output = process.StandardOutput.ReadToEnd();
-                }
-            } catch (Exception ex) when (!ex.IsCriticalException()) {
-                Log?.Log(TraceEventType.Verbose, "Exception scraping module", Name, ex.Message);
-            }
-
-            return output;
-        }
     }
 }

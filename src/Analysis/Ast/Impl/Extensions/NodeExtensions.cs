@@ -13,6 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
@@ -45,6 +48,73 @@ namespace Microsoft.Python.Analysis {
                 e = parExpr.Expression;
             }
             return e;
+        }
+
+        public static List<Node> GetAncestorsOrThis(this Node root, Node node, CancellationToken cancellationToken) {
+            var parentChain = new List<Node>();
+
+            // there seems no way to go up the parent chain. always has to go down from the top
+            while (root != null) {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var temp = root;
+                root = null;
+
+                // this assumes node is not overlapped and children are ordered from left to right
+                // in textual position
+                foreach (var current in GetChildNodes(temp)) {
+                    if (!current.IndexSpan.Contains(node.IndexSpan)) {
+                        continue;
+                    }
+
+                    parentChain.Add(current);
+                    root = current;
+                    break;
+                }
+            }
+
+            return parentChain;
+
+            IEnumerable<Node> GetChildNodes(Node current) {
+                // workaround import statement issue
+                switch (current) {
+                    case ImportStatement import: {
+                        foreach (var name in WhereNotNull(import.Names)) {
+                            yield return name;
+                        }
+
+                        foreach (var name in WhereNotNull(import.AsNames)) {
+                            yield return name;
+                        }
+
+                        yield break;
+                    }
+
+                    case FromImportStatement fromImport: {
+                        yield return fromImport.Root;
+
+                        foreach (var name in WhereNotNull(fromImport.Names)) {
+                            yield return name;
+                        }
+
+                        foreach (var name in WhereNotNull(fromImport.AsNames)) {
+                            yield return name;
+                        }
+
+                        yield break;
+                    }
+
+                    default:
+                        foreach (var child in current.GetChildNodes()) {
+                            yield return child;
+                        }
+                        yield break;
+                }
+            }
+
+            IEnumerable<T> WhereNotNull<T>(IEnumerable<T> items) where T : class {
+                return items.Where(n => n != null);
+            }
         }
     }
 }

@@ -26,8 +26,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public CompiledBuiltinPythonModule(string moduleName, IPythonModule stub, bool isPersistent, IServiceContainer services)
             : base(moduleName, ModuleType.CompiledBuiltin, MakeFakeFilePath(moduleName, services), stub, isPersistent, false, services) { }
 
-        protected override string[] GetScrapeArguments(IPythonInterpreter interpreter)
-            => !InstallPath.TryGetFile("scrape_module.py", out var sm) ? null : new [] { "-W", "ignore", "-B", "-E", sm, "-u8", Name };
+        protected override string[] GetScrapeArguments(IPythonInterpreter interpreter) => new[] { "-u8", Name };
 
         private static string MakeFakeFilePath(string name, IServiceContainer services) {
             var interpreterPath = services.GetService<IPythonInterpreter>().Configuration.InterpreterPath;
