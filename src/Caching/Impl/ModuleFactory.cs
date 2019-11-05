@@ -153,11 +153,12 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
                 // If module is not loaded, try database.
                 if (module == null && parts.ModuleId != null && _db != null) {
-                    if (!_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
+                    if (_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
+                        module = m;
+                    } else {
                         if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, ModuleType.Specialized, out var model)) {
                             // DeclareMember db module, but do not reconstruct the analysis just yet.
-                            _modulesCache[parts.ModuleId] = m = new PythonDbModule(model, model.FilePath, _services);
-                            module = m;
+                            module = _modulesCache[parts.ModuleId] = new PythonDbModule(model, model.FilePath, _services);
                         }
                     }
                 }
@@ -169,9 +170,9 @@ namespace Microsoft.Python.Analysis.Caching {
                 // happens with io which has member with mmap type coming from mmap
                 // stub rather than the primary mmap module.
                 if (module != null) {
-                    return parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(module) : module;
+                    module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(module) : module;
                 }
-                return null;
+                return module;
             }
         }
 
