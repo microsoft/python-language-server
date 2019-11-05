@@ -26,7 +26,7 @@ using Microsoft.Python.LanguageServer.Protocol;
 namespace Microsoft.Python.LanguageServer.Sources {
     internal sealed partial class RefactoringCodeActionSource {
         private static readonly ImmutableArray<IRefactoringCodeActionProvider> _codeActionProviders =
-            ImmutableArray<IRefactoringCodeActionProvider>.Empty;
+            ImmutableArray<IRefactoringCodeActionProvider>.Create(StubGenerationRefactoringCodeActionProvider.Instance);
 
         private readonly IServiceContainer _services;
 

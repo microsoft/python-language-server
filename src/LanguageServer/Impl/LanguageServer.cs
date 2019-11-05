@@ -108,9 +108,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         #endregion
 
         #region Commands
-        //[JsonRpcMethod("workspace/executeCommand")]
-        //public Task<object> ExecuteCommand(JToken token, CancellationToken cancellationToken)
-        //   => _server.ExecuteCommandAsync(ToObject<ExecuteCommandParams>(token), cancellationToken);
+        [JsonRpcMethod("workspace/executeCommand")]
+        public Task<object> ExecuteCommand(JToken token, CancellationToken cancellationToken)
+           => _server.ExecuteCommandAsync(ToObject<ExecuteCommandParams>(token), cancellationToken);
         #endregion
 
         #region TextDocument

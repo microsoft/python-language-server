@@ -36,8 +36,8 @@ namespace Microsoft.Python.LanguageServer {
         /// <param name="analysis"><see cref="IDocumentAnalysis" /> of the file where <paramref name="diagnostic"/> reported</param>
         /// <param name="settings">settings related to code actions one can query to get user preferences</param>
         /// <param name="diagnostic"><see cref="DiagnosticsEntry" /> that code action is supposed to fix</param>
-        /// <param name="cancellation"><see cref="CancellationToken" /></param>
+        /// <param name="cancellationToken"><see cref="CancellationToken" /></param>
         /// <returns><see cref="CodeAction" /> that can fix the given <paramref name="diagnostic"/></returns>
-        Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, DiagnosticsEntry diagnostic, CancellationToken cancellation);
+        Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, DiagnosticsEntry diagnostic, CancellationToken cancellationToken);
     }
 }

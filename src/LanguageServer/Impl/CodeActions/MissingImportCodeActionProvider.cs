@@ -153,7 +153,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private void FilterCandidatesBasedOnContext(IDocumentAnalysis analysis, Node node, Dictionary<string, ImportInfo> importFullNameMap, CancellationToken cancellationToken) {
-            var ancestors = GetAncestorsOrThis(analysis.Ast.Body, node, cancellationToken);
+            var ancestors = analysis.Ast.Body.GetAncestorsOrThis(node, cancellationToken);
             var index = ancestors.LastIndexOf(node);
             if (index <= 0) {
                 // nothing to filter on
@@ -442,7 +442,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return (analysis.Ast.Body, string.Empty);
             }
 
-            var candidate = GetAncestorsOrThis(analysis.Ast.Body, node, cancellationToken).Where(p => p is FunctionDefinition).LastOrDefault();
+            var candidate = analysis.Ast.Body.GetAncestorsOrThis(node, cancellationToken).Where(p => p is FunctionDefinition).LastOrDefault();
 
             // for now, only stop at FunctionDefinition. 
             // we can expand it to more scope if we want but this seems what other tool also provide as well.
@@ -463,32 +463,6 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // not sure how to handle a case where user is using "tab" instead of "space"
             // for indentation. where can one get tab over indentation option?
             return new string(' ', firstToken.GetStart(ast).Column - 1);
-        }
-
-        private List<Node> GetAncestorsOrThis(Node root, Node node, CancellationToken cancellationToken) {
-            var parentChain = new List<Node>();
-
-            // there seems no way to go up the parent chain. always has to go down from the top
-            while (root != null) {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var temp = root;
-                root = null;
-
-                // this assumes node is not overlapped and children are ordered from left to right
-                // in textual position
-                foreach (var current in temp.GetChildNodes()) {
-                    if (!current.IndexSpan.Contains(node.IndexSpan)) {
-                        continue;
-                    }
-
-                    parentChain.Add(current);
-                    root = current;
-                    break;
-                }
-            }
-
-            return parentChain;
         }
 
         private void CollectCandidates(ModuleInfo moduleInfo,

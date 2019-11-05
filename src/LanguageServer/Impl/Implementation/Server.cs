@@ -102,6 +102,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                         moreTriggerCharacter = new[] { ";", ":" }
                     },
                     codeActionProvider = new CodeActionOptions() { codeActionKinds = new string[] { CodeActionKind.QuickFix, CodeActionKind.Refactor } },
+                    executeCommandProvider = new ExecuteCommandOptions() { commands = WellKnownCommands.Commands },
                 }
             };
         }

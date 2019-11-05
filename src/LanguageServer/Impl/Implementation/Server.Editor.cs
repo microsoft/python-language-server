@@ -135,5 +135,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 return @params.context.only == null || @params.context.only.Any(s => s.StartsWith(codeActionKind));
             }
         }
+
+        public async Task<object> ExecuteCommandAsync(ExecuteCommandParams @params, CancellationToken cancellationToken) {
+            _log?.Log(TraceEventType.Verbose, $"Execute Command with {@params.command}");
+
+            return await new CommandHandlerSource(Services).HandleAsync(@params.command, @params.arguments, cancellationToken);
+        }
     }
 }
