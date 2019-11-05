@@ -139,8 +139,18 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             return SpecializedTasks.True;
         }
 
-        private string GetStubPath(string stubBasePath, ModulePath modulePath) =>
-            Path.Combine(stubBasePath, modulePath.ModuleName.Replace('.', Path.DirectorySeparatorChar), $"{modulePath.Name}.pyi");
+        private string GetStubPath(string stubBasePath, ModulePath modulePath) {
+            if (modulePath.Name == "__init__") {
+                return Path.Combine(stubBasePath, modulePath.ModuleName.Replace('.', Path.DirectorySeparatorChar), $"{modulePath.Name}.pyi");
+            }
+
+            var endIndex = modulePath.ModuleName.LastIndexOf($".{modulePath.Name}");
+            if (endIndex >= 0) {
+                return Path.Combine(stubBasePath, modulePath.ModuleName.Substring(0, endIndex).Replace('.', Path.DirectorySeparatorChar), $"{modulePath.Name}.pyi");
+            }
+
+            return Path.Combine(stubBasePath, modulePath.ModuleName.Replace('.', Path.DirectorySeparatorChar), $"{modulePath.Name}.pyi");
+        }
 
         private static string GetStubBasePath(IServiceContainer service, CodeActionSettings settings) {
             var baseStubPath = settings.GetRefactoringOption<string>("generation.stub.path", null);
