@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public IPythonType ConstructType(string qualifiedName)
-            => ConstructMember(qualifiedName)?.GetPythonType() ?? Module.Interpreter.UnknownType;
+            => ConstructMember(qualifiedName)?.GetPythonType();
 
         public IMember ConstructMember(string qualifiedName) {
             // Determine module name, member chain and if this is an instance.
