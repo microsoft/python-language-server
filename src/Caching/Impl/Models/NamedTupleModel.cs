@@ -27,8 +27,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public string[] ItemNames { get; set; }
         public string[] ItemTypes { get; set; }
 
-        [NonSerialized] private NamedTupleType _namedTuple;
-
         public NamedTupleModel() { } // For de-serializer from JSON
 
         public NamedTupleModel(ITypingNamedTupleType nt, IServiceContainer services) {

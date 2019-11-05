@@ -609,9 +609,7 @@ namespace Microsoft.Python.Analysis.Tests {
             node.MarkWalked();
             node.MoveNext();
 
-            resolver.RemoveKeys("B", "D");
             walker = resolver.CreateWalker();
-            walker.MissingKeys.Should().Equal("B", "D");
 
             node = await walker.GetNextAsync(default);
             node.Value.Should().Be("C:D");

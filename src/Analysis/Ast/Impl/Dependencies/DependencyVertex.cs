@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             _state = !isNew && oldVertex.IsWalked ? (int)State.ChangedOutgoing : (int)State.New;
         }
 
-        public DependencyVertex(TKey key, TValue value, bool isRoot, ImmutableArray<int> incoming, int version, int index) {
+        public DependencyVertex(TKey key, TValue value, bool isRoot, bool isWalked, ImmutableArray<int> incoming, int version, int index) {
             Key = key;
             Value = value;
             IsRoot = isRoot;
@@ -59,7 +59,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             Index = index;
             Incoming = incoming;
 
-            _state = (int)State.New;
+            _state = isWalked ? (int)State.Walked : (int)State.New;
         }
 
         public bool ContainsOutgoing(int index) => _outgoing != null && _outgoing.Contains(index);

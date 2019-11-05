@@ -117,7 +117,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 key = new AnalysisModuleKey(module);
                 _analysisEntries.Remove(key);
             }
-
             _dependencyResolver.Remove(key);
         }
 
@@ -188,13 +187,13 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_syncObj) {
                 _forceGCOnNextSession = true;
 
-                _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out var entriesToRemove);
+                _analysisEntries.Split(kvp => kvp.Value.Module is IBuiltinsPythonModule, out var entriesToPreserve, out _);
                 _analysisEntries.Clear();
                 foreach (var (key, entry) in entriesToPreserve) {
                     _analysisEntries.Add(key, entry);
                 }
 
-                _dependencyResolver.RemoveKeys(entriesToRemove.Select(e => e.Key));
+                _dependencyResolver.Reset();
             }
 
             _services.GetService<IRunningDocumentTable>().ReloadAll();
@@ -315,7 +314,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            var foundKeys = ImmutableArray<AnalysisModuleKey>.Empty;
             foreach (var missingKey in missingKeys) {
                 lock (_syncObj) {
                     if (_analysisEntries.TryGetValue(missingKey, out _)) {
@@ -328,21 +326,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
                 var module = moduleResolution.GetOrLoadModule(moduleName);
                 if (module != null && module.ModuleType != ModuleType.Unresolved) {
-                    foundKeys = foundKeys.Add(missingKey);
                     var entry = GetOrCreateAnalysisEntry(module, out _);
-                    _dependencyResolver.TryAddValue(missingKey, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
-                }
-
-                if (foundKeys.Count > 0) {
-                    foreach (var foundKey in foundKeys) {
-                        PythonAnalyzerEntry entry;
-                        lock (_syncObj) {
-                            if (!_analysisEntries.TryGetValue(foundKey, out entry)) {
-                                continue;
-                            }
-                        }
-                        _dependencyResolver.TryAddValue(foundKey, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
-                    }
+                    _dependencyResolver.TryAddValue(missingKey,
+                        entry,
+                        entry.IsUserModule,
+                        module.ModuleType == ModuleType.Specialized,
+                        ImmutableArray<AnalysisModuleKey>.Empty);
                 }
             }
         }

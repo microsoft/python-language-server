@@ -23,10 +23,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// concurrently.
     /// </summary>
     internal interface IDependencyResolver<TKey, TValue> {
-        int TryAddValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys);
+        int TryAddValue(in TKey key, in TValue value, in bool isRoot, in bool isWalked, in ImmutableArray<TKey> incomingKeys);
         int ChangeValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys);
         int Remove(in TKey key);
-        int RemoveKeys(in ImmutableArray<TKey> keys);
+        void Reset();
 
         IDependencyChainWalker<TKey, TValue> CreateWalker();
         bool TryCreateWalker(in int version, in int walkerDepthLimit, out IDependencyChainWalker<TKey, TValue> walker);

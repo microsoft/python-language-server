@@ -17,12 +17,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
-using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Caching.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Documents;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NSubstitute;
 using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Caching.Tests {
@@ -71,6 +69,29 @@ def func2() -> C2: ...
             c2.Should().HaveMember<IPythonFunctionType>("M1C2")
                 .Which.Should().HaveSingleOverload()
                 .Which.Should().HaveReturnType(BuiltinTypeId.Int);
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task Sys() {
+            const string code = @"
+import sys
+x = sys.api_version
+";
+            var analysis = await GetAnalysisAsync(code);
+
+            var sys = analysis.Should().HaveVariable("sys").Which;
+            var sysAnalysis = ((IPythonModule)sys.Value).Analysis;
+
+            var dbs = new ModuleDatabase(Services, Path.GetDirectoryName(TestData.GetDefaultModulePath()));
+            Services.AddService(dbs);
+            await dbs.StoreModuleAnalysisAsync(sysAnalysis, CancellationToken.None);
+
+            await Services.GetService<IPythonAnalyzer>().ResetAnalyzer();
+            var doc = Services.GetService<IRunningDocumentTable>().GetDocument(analysis.Document.Uri);
+            analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
+
+            analysis.Should().HaveVariable("x")
+                .Which.Should().HaveType(BuiltinTypeId.Int);
         }
     }
 }
