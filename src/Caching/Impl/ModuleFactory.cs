@@ -20,11 +20,11 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Caching.Lazy;
 using Microsoft.Python.Analysis.Caching.Models;
+using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Utilities;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 
@@ -36,11 +36,6 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>For use in tests so missing members will assert.</summary>
         internal static bool EnableMissingMemberAssertions { get; set; }
 
-        private static readonly ConcurrentDictionary<string, PythonDbModule> _modulesCache
-            = new ConcurrentDictionary<string, PythonDbModule>();
-
-        // TODO: better resolve circular references.
-        private readonly ReentrancyGuard<string> _moduleReentrancy = new ReentrancyGuard<string>();
         private readonly ModuleModel _model;
         private readonly IGlobalScope _gs;
         private readonly ModuleDatabase _db;
@@ -139,41 +134,45 @@ namespace Microsoft.Python.Analysis.Caching {
                 return Module;
             }
 
-            using (_moduleReentrancy.Push(parts.ModuleName, out var reentered)) {
-                if (reentered) {
-                    return null;
-                }
+            // If module is loaded, then use it. Otherwise, create DB module but don't restore it just yet.
+            // If module is a stub, first try regular module, then the stub since with regular modules
+            // stub data is merged into the module data but there are also standalone stubs like posix.
+            var mres = Module.Interpreter.ModuleResolution;
+            var tres = Module.Interpreter.TypeshedResolution;
 
-                // If module is loaded, then use it. Otherwise, create DB module but don't restore it just yet.
-                // If module is a stub, first try regular module, then the stub since with regular modules
-                // stub data is merged into the module data but there are also standalone stubs like posix.
-                var module = Module.Interpreter.ModuleResolution.GetImportedModule(parts.ModuleName);
-                if (module == null && parts.IsStub) {
-                    module = Module.Interpreter.TypeshedResolution.GetImportedModule(parts.ModuleName);
-                }
-                // If module is not loaded, try database.
-                if (module == null && parts.ModuleId != null && _db != null) {
-                    if (_modulesCache.TryGetValue(parts.ModuleId, out var m)) {
-                        module = m;
-                    } else {
-                        if (_db.FindModuleModelById(parts.ModuleName, parts.ModuleId, ModuleType.Specialized, out var model)) {
-                            // DeclareMember db module, but do not reconstruct the analysis just yet.
-                            module = _modulesCache[parts.ModuleId] = new PythonDbModule(model, model.FilePath, _services);
-                        }
-                    }
-                }
-
-                // Here we do not call GetOrLoad since modules references here must
-                // either be loaded already since they were required to create
-                // persistent state from analysis. Also, occasionally types come
-                // from the stub and the main module was never loaded. This, for example,
-                // happens with io which has member with mmap type coming from mmap
-                // stub rather than the primary mmap module.
-                if (module != null) {
-                    module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(module) : module;
-                }
-                return module;
+            var module = mres.GetImportedModule(parts.ModuleName);
+            if (module == null && parts.IsStub) {
+                module = tres.GetImportedModule(parts.ModuleName);
             }
+
+            // If module is not loaded, try database.
+            if (module == null) {
+                var moduleId = parts.ModuleId ?? parts.ModuleName;
+                module = _db.RestoreModule(parts.ModuleName, moduleId);
+            }
+
+            if (module == null) {
+                // Fallback if somehow module is not loaded or missing from the database.
+                // Try to load it directly and wait a bit hoping for the analysis to complete.
+                // Example: posix is a stub-only and is not loaded with the database.
+                // TODO: consider writing stub-only modules to the database as well.
+                var resolution = parts.IsStub ? tres : mres;
+                var imports = resolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, Enumerable.Repeat(parts.ModuleName, 1), true);
+                if (imports is ModuleImport moduleImport) {
+                    module = resolution.GetOrLoadModule(moduleImport.FullName);
+                }
+            }
+
+            // Here we do not call GetOrLoad since modules references here must
+            // either be loaded already since they were required to create
+            // persistent state from analysis. Also, occasionally types come
+            // from the stub and the main module was never loaded. This, for example,
+            // happens with io which has member with mmap type coming from mmap
+            // stub rather than the primary mmap module.
+            if (module != null) {
+                module = parts.ObjectType == ObjectType.VariableModule ? new PythonVariableModule(module) : module;
+            }
+            return module;
         }
 
         private IMember GetMember(IMember root, IEnumerable<string> memberNames) {

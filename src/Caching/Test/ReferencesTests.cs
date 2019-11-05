@@ -66,6 +66,7 @@ class B:
             Baseline.CompareToFile(BaselineFileName, json);
 
             using (var dbModule = new PythonDbModule(model, analysis.Document.FilePath, Services)) {
+                dbModule.Construct(model);
 
                 var sum = dbModule.GetMember("sum") as IPythonFunctionType;
                 sum.Should().NotBeNull();

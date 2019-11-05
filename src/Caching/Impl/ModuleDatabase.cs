@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -30,6 +31,7 @@ using Microsoft.Python.Core.Services;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
         private readonly object _lock = new object();
+        private static readonly Dictionary<string, PythonDbModule> _modulesCache = new Dictionary<string, PythonDbModule>();
 
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
@@ -61,12 +63,9 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             lock (_lock) {
-                if (FindModuleModelByPath(moduleName, modulePath, moduleType, out var model)) {
-                    return new PythonDbModule(model, modulePath, _services);
-                }
+                return FindModuleModelByPath(moduleName, modulePath, moduleType, out var model) 
+                    ? RestoreModule(model) : null;
             }
-
-            return null;
         }
 
         /// <summary>
@@ -92,6 +91,25 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
             }
             return false;
+        }
+
+        internal IPythonModule RestoreModule(string moduleName, string uniqueId) {
+            lock (_lock) {
+                return FindModuleModelById(moduleName, uniqueId, out var model) 
+                    ? RestoreModule(model) : null;
+            }
+        }
+
+        private IPythonModule RestoreModule(ModuleModel model) {
+            lock (_lock) {
+                if (_modulesCache.TryGetValue(model.UniqueId, out var m)) {
+                    return m;
+                }
+
+                var dbModule = _modulesCache[model.UniqueId] = new PythonDbModule(model, model.FilePath, _services);
+                dbModule.Construct(model);
+                return dbModule;
+            }
         }
 
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
@@ -172,8 +190,8 @@ namespace Microsoft.Python.Analysis.Caching {
         public bool FindModuleModelByPath(string moduleName, string modulePath, ModuleType moduleType, out ModuleModel model) 
             => TryGetModuleModel(moduleName, FindDatabaseFile(moduleName, modulePath, moduleType), out model);
 
-        public bool FindModuleModelById(string moduleName, string uniqueId, ModuleType moduleType, out ModuleModel model)
-            => TryGetModuleModel(moduleName, FindDatabaseFile(moduleName, uniqueId, moduleType), out model);
+        public bool FindModuleModelById(string moduleName, string uniqueId, out ModuleModel model)
+            => TryGetModuleModel(moduleName, FindDatabaseFile(uniqueId), out model);
 
         private bool TryGetModuleModel(string moduleName, string dbPath, out ModuleModel model) {
             model = null;

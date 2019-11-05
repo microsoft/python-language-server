@@ -30,6 +30,14 @@ namespace Microsoft.Python.Analysis.Caching {
             Documentation = model.Documentation;
             _newLines = model.NewLines.Select(nl => new NewLineLocation(nl.EndIndex, nl.Kind)).ToArray();
             _fileSize = model.FileSize;
+        }
+
+        /// <summary>
+        /// Constructs module global scope. This is separate from regular constructor
+        /// in order to better handle reentrancy due to circular references
+        /// in the module factory.
+        /// </summary>
+        public void Construct(ModuleModel model) {
             GlobalScope = new RestoredGlobalScope(model, this, Services);
         }
 

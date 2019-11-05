@@ -526,6 +526,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 case ModuleType.Library:
                 case ModuleType.Compiled:
                 case ModuleType.CompiledBuiltin:
+                case ModuleType.Stub when document.PrimaryModule == null:
                     canHaveLibraryAnalysis = true;
                     break;
             }

@@ -56,8 +56,11 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
                 ? Path.Combine(BaselineFilesFolder, testName)
                 : Path.Combine(BaselineFilesFolder, testName + suffix), "json");
 
-        internal PythonDbModule CreateDbModule(ModuleModel model, string modulePath)
-            => new PythonDbModule(model, modulePath, Services);
+        internal PythonDbModule CreateDbModule(ModuleModel model, string modulePath) {
+            var dbModule = new PythonDbModule(model, modulePath, Services);
+            dbModule.Construct(model);
+            return dbModule;
+        }
 
         internal async Task CompareBaselineAndRestoreAsync(ModuleModel model, IPythonModule m) {
             //var json = ToJson(model);
