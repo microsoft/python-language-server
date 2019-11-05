@@ -148,7 +148,7 @@ namespace Microsoft.Python.Analysis.Caching {
             // If module is not loaded, try database.
             if (module == null) {
                 var moduleId = parts.ModuleId ?? parts.ModuleName;
-                module = _db.RestoreModule(parts.ModuleName, moduleId);
+                module = _db?.RestoreModule(parts.ModuleName, moduleId);
             }
 
             if (module == null) {

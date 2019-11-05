@@ -26,9 +26,14 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class ModuleUniqueId {
-        public static string GetUniqueId(this IPythonModule module, 
-            IServiceContainer services, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library)
-            => GetUniqueId(module.Name, module.FilePath, module.ModuleType, services, cachingLevel);
+        public static string GetUniqueId(this IPythonModule module, IServiceContainer services, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library) {
+            // If module is a standalone stub, permit it. Otherwise redirect to the main module
+            // since during stub merge types from stub normally become part of the primary module.
+            if (module.ModuleType == ModuleType.Stub && module.PrimaryModule != null) {
+                module = module.PrimaryModule;
+            }
+            return GetUniqueId(module.Name, module.FilePath, module.ModuleType, services, cachingLevel);
+        }
 
         public static string GetUniqueId(string moduleName, string filePath, ModuleType moduleType, 
             IServiceContainer services, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library) {

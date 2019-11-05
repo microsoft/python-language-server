@@ -94,6 +94,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue;
                 }
 
+                // If type comes from another module and stub type comes from that module stub, skip it.
+                // For example, 'sqlite3.dbapi2' has Date variable with value from 'datetime' module.
+                // Stub of 'sqlite3.dbapi2' also has Date from 'datetime (stub)'. We want to use
+                // type from the primary 'datetime' since it already merged its stub and updated
+                // type location and documentation while 'datetime' stub does not have documentation
+                // and its location is irrelevant since we don't navigate to stub source.
+                if (!_eval.Module.Equals(sourceType?.DeclaringModule) &&
+                    sourceType?.DeclaringModule.Stub != null && 
+                    sourceType.DeclaringModule.Equals(stubType.DeclaringModule.PrimaryModule)) {
+                    continue;
+                }
+
                 TryReplaceMember(v, sourceType, stubType, cancellationToken);
             }
         }
