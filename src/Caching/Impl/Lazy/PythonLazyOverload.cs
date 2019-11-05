@@ -21,6 +21,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Caching.Lazy {
     internal sealed class PythonLazyOverload: IPythonFunctionOverload {
+        private readonly object _contentLock = new object();
         private readonly PythonFunctionOverload _overload;
         private ModuleFactory _mf;
         private OverloadModel _model;
@@ -66,15 +67,16 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         }
 
         private void EnsureContent() {
-            if (_model == null) {
-                return;
+            lock (_contentLock) {
+                if (_model != null) {
+                    _overload.SetParameters(_model.Parameters.Select(p => ConstructParameter(_mf, p)).ToArray());
+                    _overload.SetReturnValue(_mf.ConstructMember(_model.ReturnType), true);
+                    _model = null;
+                    _mf = null;
+                }
             }
-            _overload.SetParameters(_model.Parameters.Select(p => ConstructParameter(_mf, p)).ToArray());
-            _overload.SetReturnValue(_mf.ConstructMember(_model.ReturnType), true);
-
-            _model = null;
-            _mf = null;
         }
+
         private IParameterInfo ConstructParameter(ModuleFactory mf, ParameterModel pm)
             => new ParameterInfo(pm.Name, mf.ConstructType(pm.Type), pm.Kind, mf.ConstructMember(pm.DefaultValue));
     }

@@ -25,7 +25,7 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         public static IMember CreateMember(MemberModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType) {
             switch (model) {
                 case ClassModel cm:
-                    return new PythonLazyClassType(cm, mf, declaringType);
+                    return new PythonLazyClassType(cm, mf, gs, declaringType);
                 case FunctionModel fm:
                     return new PythonLazyFunctionType(fm, mf, gs, declaringType);
                 case PropertyModel pm:

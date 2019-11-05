@@ -29,8 +29,8 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
     internal sealed class PythonLazyClassType : PythonLazyType<ClassModel>, IPythonClassType {
         private readonly PythonClassType _cls;
 
-        public PythonLazyClassType(ClassModel model, ModuleFactory mf, IPythonType declaringType)
-            : base(model, mf, new EmptyGlobalScope(mf.Module), declaringType) {
+        public PythonLazyClassType(ClassModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType)
+            : base(model, mf, gs, declaringType) {
             _cls = new PythonClassType(model.Name, new Location(mf.Module, model.IndexSpan.ToSpan()));
             _cls.SetDocumentation(model.Documentation);
             SetInnerType(_cls);
@@ -92,54 +92,53 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         }
         #endregion
 
-        protected override void EnsureContent() {
-            if (Model == null) {
-                return;
-            }
-
-            var bases = CreateBases(ModuleFactory, GlobalScope);
+        protected override void EnsureContent(ClassModel cm) {
+            var bases = CreateBases(cm, ModuleFactory, GlobalScope);
             _cls.SetBases(bases);
 
-            if (Model.GenericParameterValues.Length > 0) {
+            if (cm.GenericParameterValues.Length > 0) {
                 _cls.StoreGenericParameters(
                     _cls,
                     _cls.GenericParameters.Keys.ToArray(),
-                    Model.GenericParameterValues.ToDictionary(
+                    cm.GenericParameterValues.ToDictionary(
                         k => _cls.GenericParameters.Keys.First(x => x == k.Name),
                         v => ModuleFactory.ConstructType(v.Type)
                     )
                 );
             }
 
-            var allMemberModels = Model.Classes
-                .Concat<MemberModel>(Model.Properties)
-                .Concat(Model.Methods)
-                .Concat(Model.Fields)
+            var allMemberModels = cm.Classes
+                .Concat<MemberModel>(cm.Properties)
+                .Concat(cm.Methods)
+                .Concat(cm.Fields)
                 .ToArray();
 
             foreach (var model in allMemberModels) {
                 _cls.AddMember(model.Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _cls), false);
             }
-
-            ReleaseModel();
         }
 
-        private IEnumerable<IPythonType> CreateBases(ModuleFactory mf, IGlobalScope gs) {
-            var ntBases = Model.NamedTupleBases
+        private IEnumerable<IPythonType> CreateBases(ClassModel cm, ModuleFactory mf, IGlobalScope gs) {
+            var ntBases = cm.NamedTupleBases
                 .Select(ntb => MemberFactory.CreateMember(ntb, ModuleFactory, GlobalScope, _cls))
                 .OfType<IPythonType>()
                 .ToArray();
 
             var is3x = mf.Module.Interpreter.LanguageVersion.Is3x();
-            var basesNames = Model.Bases.Select(b => is3x && b == "object" ? null : b).ExcludeDefault().ToArray();
+            var basesNames = cm.Bases.Select(b => is3x && b == "object" ? null : b).ExcludeDefault().ToArray();
             var bases = basesNames.Select(mf.ConstructType).ExcludeDefault().Concat(ntBases).ToArray();
 
-            if (Model.GenericBaseParameters.Length > 0) {
+            // Make sure base types are realized
+            foreach (var b in bases.OfType<PythonLazyClassType>()) {
+                b.EnsureContent();
+            }
+
+            if (cm.GenericBaseParameters.Length > 0) {
                 // Generic class. Need to reconstruct generic base so code can then
                 // create specific types off the generic class.
                 var genericBase = bases.OfType<IGenericType>().FirstOrDefault(b => b.Name == "Generic");
                 if (genericBase != null) {
-                    var typeVars = Model.GenericBaseParameters.Select(n => gs.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
+                    var typeVars = cm.GenericBaseParameters.Select(n => gs.Variables[n]?.Value).OfType<IGenericTypeParameter>().ToArray();
                     //Debug.Assert(typeVars.Length > 0, "Class generic type parameters were not defined in the module during restore");
                     if (typeVars.Length > 0) {
                         var genericWithParameters = genericBase.CreateSpecificType(new ArgumentSet(typeVars, null, null));

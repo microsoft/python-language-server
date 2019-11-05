@@ -27,11 +27,11 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         public PythonLazyFunctionType(FunctionModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType)
         : base(model, mf, gs, declaringType) {
             var location = new Location(mf.Module, model.IndexSpan.ToSpan());
-            _function = new PythonFunctionType(Model.Name, location, declaringType, model.Documentation);
+            _function = new PythonFunctionType(model.Name, location, declaringType, model.Documentation);
 
             // TODO: restore signature string so hover (tooltip) documentation won't have to restore the function.
             // parameters and return type just to look at them.
-            foreach (var om in Model.Overloads) {
+            foreach (var om in model.Overloads) {
                 var o = new PythonLazyOverload(om, mf, _function);
                 _function.AddOverload(o);
             }
@@ -48,15 +48,11 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         public IReadOnlyList<IPythonFunctionOverload> Overloads => _function.Overloads;
         #endregion
 
-        protected override void EnsureContent() {
-            if (Model == null) {
-                return;
-            }
-            var innerTypes = Model.Classes.Concat<MemberModel>(Model.Functions).ToArray();
+        protected override void EnsureContent(FunctionModel fm) {
+            var innerTypes = fm.Classes.Concat<MemberModel>(fm.Functions).ToArray();
             foreach (var model in innerTypes) {
                 _function.AddMember(Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _function), overwrite: true);
             }
-            ReleaseModel();
         }
     }
 }

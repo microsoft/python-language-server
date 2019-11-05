@@ -62,7 +62,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
             Id = callable.Name.GetStableHash();
             Name = callable.Name;
-            DeclaringModuleId = callable.DeclaringModule.GetUniqueId(services, AnalysisCachingLevel.Library);
+            DeclaringModuleId = callable.DeclaringModule.GetUniqueId(services);
             QualifiedName = callable.QualifiedName;
             Documentation = callable.Documentation;
             Classes = classes.ToArray();

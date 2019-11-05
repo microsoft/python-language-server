@@ -24,12 +24,14 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
     /// deferred fetching of data from the database, avoiding wholesale restore.
     /// </summary>
     internal abstract class PythonLazyType<TModel> : PythonTypeWrapper where TModel : class {
+        private readonly object _contentLock = new object();
+        private TModel _model;
+
         protected IGlobalScope GlobalScope { get; private set; }
         protected ModuleFactory ModuleFactory { get; private set; }
-        protected TModel Model { get; private set; }
 
         protected PythonLazyType(TModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType) {
-            Model = model ?? throw new ArgumentNullException(nameof(model));
+            _model = model ?? throw new ArgumentNullException(nameof(model));
             ModuleFactory = mf ?? throw new ArgumentNullException(nameof(mf));
             GlobalScope = gs ?? throw new ArgumentNullException(nameof(gs));
             DeclaringType = declaringType;
@@ -37,11 +39,18 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
 
         public IPythonType DeclaringType { get; }
 
-        protected abstract void EnsureContent();
-        protected void ReleaseModel() {
-            ModuleFactory = null;
-            GlobalScope = null;
-            Model = null;
+        internal void EnsureContent() {
+            lock (_contentLock) {
+                if (_model != null) {
+                    EnsureContent(_model);
+
+                    ModuleFactory = null;
+                    GlobalScope = null;
+                    _model = null;
+                }
+            }
         }
+
+        protected abstract void EnsureContent(TModel model);
     }
 }

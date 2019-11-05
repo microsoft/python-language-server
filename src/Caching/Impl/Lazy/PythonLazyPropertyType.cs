@@ -26,8 +26,8 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
             : base(model, mf, gs, declaringType) {
 
             var location = new Location(mf.Module, model.IndexSpan.ToSpan());
-            _property = new PythonPropertyType(Model.Name, location, Model.Documentation, declaringType,
-                Model.Attributes.HasFlag(FunctionAttributes.Abstract));
+            _property = new PythonPropertyType(model.Name, location, model.Documentation, declaringType,
+                model.Attributes.HasFlag(FunctionAttributes.Abstract));
 
             // parameters and return type just to look at them.
             var o = new PythonFunctionOverload(_property, location);
@@ -48,9 +48,8 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
             }
         }
 
-        protected override void EnsureContent() {
-            _property.Getter.SetReturnValue(ModuleFactory.ConstructMember(Model.ReturnType), true);
-            ReleaseModel();
+        protected override void EnsureContent(PropertyModel pm) {
+            _property.Getter.SetReturnValue(ModuleFactory.ConstructMember(pm.ReturnType), true);
         }
     }
 }

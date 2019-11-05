@@ -154,7 +154,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     otherMember.Should().BeAssignableTo<IPythonInstance>();
                 }
 
-                Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
+                // Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
                 subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType);
 
                 if (subjectMemberType is IPythonClassType subjectClass) {
@@ -163,7 +163,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
                     if (subjectClass is IGenericType gt) {
                         otherClass.Should().BeAssignableTo<IGenericType>();
-                        otherClass.IsGeneric.Should().Be(gt.IsGeneric, $"Class name: {subjectClass.Name}");
+                        Debug.Assert(otherClass.IsGeneric == gt.IsGeneric);
+                        otherClass.IsGeneric.Should().Be(gt.IsGeneric);
                     }
 
                     // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
