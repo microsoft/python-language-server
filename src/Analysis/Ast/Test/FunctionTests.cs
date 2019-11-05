@@ -609,12 +609,11 @@ def func(): ...
 class B:
     @deprecation.deprecated('')
     def b(self): pass
-
 ";
             var analysis = await GetAnalysisAsync(code);
-            analysis.Should().NotHaveVariable("A");
-            analysis.Should().NotHaveVariable("func");
-            analysis.Should().HaveVariable("B").Which.Should().NotHaveMember("b");
+            analysis.Should().HaveVariable("A");
+            analysis.Should().HaveVariable("func");
+            analysis.Should().HaveVariable("B").Which.Should().HaveMember("b");
         }
 
         [TestMethod, Priority(0)]

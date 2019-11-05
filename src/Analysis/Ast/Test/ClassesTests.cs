@@ -271,6 +271,23 @@ a = X(2)
         }
 
         [TestMethod, Priority(0)]
+        public async Task ClassBaseInit() {
+            const string code = @"
+class A:
+    def __init__(self, value):
+        self.value = value
+
+class B(A): ...
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveClass("B")
+                .Which.Should().HaveMethod("__init__")
+                .Which.Should().HaveSingleOverload()
+                .Which.Should().HaveParameterAt(1)
+                .Which.Name.Should().Be("value");
+        }
+
+        [TestMethod, Priority(0)]
         public async Task ClassBase2X() {
             const string code = @"
 class X: ...

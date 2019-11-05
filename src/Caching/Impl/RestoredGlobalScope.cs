@@ -62,6 +62,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
         #region IScope
         public string Name { get; }
+        public PythonAst Ast => null;
         public ScopeStatement Node => null;
         public IScope OuterScope => null;
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();

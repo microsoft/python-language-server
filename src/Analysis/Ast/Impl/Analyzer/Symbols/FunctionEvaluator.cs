@@ -74,36 +74,52 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                             v => v.GetPythonType<IPythonClassType>() == null &&
                                  v.GetPythonType<IPythonFunctionType>() == null)
                         ) {
-                            ((VariableCollection)Eval.CurrentScope.Variables).Clear();
+                        ((VariableCollection)Eval.CurrentScope.Variables).Clear();
                     }
                 }
             }
             Result = _function;
         }
 
-        private IPythonType TryDetermineReturnValue() {
-            var annotationType = Eval.GetTypeFromAnnotation(FunctionDefinition.ReturnAnnotation, LookupOptions.All);
-            if (!annotationType.IsUnknown()) {
-                // Annotations are typically types while actually functions return
-                // instances unless specifically annotated to a type such as Type[T].
-                // TODO: try constructing argument set from types. Consider Tuple[_T1, _T2] where _T1 = TypeVar('_T1', str, bytes)
-                var t = annotationType.CreateInstance(ArgumentSet.Empty(FunctionDefinition.ReturnAnnotation, Eval));
-                // If instance could not be created, such as when return type is List[T] and
-                // type of T is not yet known, just use the type.
-                var instance = t.IsUnknown() ? (IMember) annotationType : t;
-                _overload.SetReturnValue(instance, true); _overload.SetReturnValue(instance, true);
-            } else {
-                // Check if function is a generator
-                var suite = FunctionDefinition.Body as SuiteStatement;
-                var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
-                if (yieldExpr != null) {
-                    // Function return is an iterator
-                    var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
-                    var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
-                    _overload.SetReturnValue(returnValue, true);
-                }
+        public static IMember GetReturnValueFromAnnotation(ExpressionEval eval, Expression annotation) {
+            if (eval == null || annotation == null) {
+                return null;
             }
-            return annotationType;
+
+            var annotationType = eval.GetTypeFromAnnotation(annotation, LookupOptions.All);
+            if (annotationType.IsUnknown()) {
+                return null;
+            }
+
+            // Annotations are typically types while actually functions return
+            // instances unless specifically annotated to a type such as Type[T].
+            // TODO: try constructing argument set from types. Consider Tuple[_T1, _T2] where _T1 = TypeVar('_T1', str, bytes)
+            var t = annotationType.CreateInstance(ArgumentSet.Empty(annotation, eval));
+            // If instance could not be created, such as when return type is List[T] and
+            // type of T is not yet known, just use the type.
+            var instance = t.IsUnknown() ? (IMember)annotationType : t;
+            return instance;
+        }
+
+        private IMember TryDetermineReturnValue() {
+            var returnType = GetReturnValueFromAnnotation(Eval, FunctionDefinition.ReturnAnnotation);
+            if (returnType != null) {
+                _overload.SetReturnValue(returnType, true);
+                return returnType;
+            }
+
+            // Check if function is a generator
+            var suite = FunctionDefinition.Body as SuiteStatement;
+            var yieldExpr = suite?.Statements.OfType<ExpressionStatement>().Select(s => s.Expression as YieldExpression).ExcludeDefault().FirstOrDefault();
+            if (yieldExpr != null) {
+                // Function return is an iterator
+                var yieldValue = Eval.GetValueFromExpression(yieldExpr.Expression) ?? Eval.UnknownType;
+                var returnValue = new PythonGenerator(Eval.Interpreter, yieldValue);
+                _overload.SetReturnValue(returnValue, true);
+                return returnValue;
+            }
+
+            return null;
         }
 
         private void CheckValidOverload(IReadOnlyList<IParameterInfo> parameters) {
@@ -112,7 +128,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                     case IPythonFunctionType function:
                         CheckValidFunction(function, parameters);
                         break;
-                    //TODO check properties
+                        //TODO check properties
                 }
             }
         }
@@ -130,6 +146,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             // Lambdas never get a self/cls argument.
             if (function.IsLambda()) {
+                return;
+            }
+
+            // Error in parameters, don't lint
+            if (FunctionDefinition.Body == null) {
                 return;
             }
 
@@ -168,14 +189,17 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             var value = Eval.GetValueFromExpression(node.Right) ?? Eval.UnknownType;
             foreach (var lhs in node.Left) {
                 switch (lhs) {
-                    case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1: {
-                            if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
-                                t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
-                            }
-                            continue;
+                    case MemberExpression memberExp when memberExp.Target is NameExpression nameExp1:
+                        if (_function.DeclaringType.GetPythonType() is PythonClassType t && nameExp1.Name == "self") {
+                            t.AddMembers(new[] { new KeyValuePair<string, IMember>(memberExp.Name, value) }, false);
                         }
+                        continue;
                     case NameExpression nameExp2 when nameExp2.Name == "self":
-                        return true; // Don't assign to 'self'
+                        // Only assign to 'self' if it is not declared yet.
+                        if (Eval.LookupNameInScopes(nameExp2.Name, out _) == null) {
+                            Eval.DeclareVariable(nameExp2.Name, value, VariableSource.Declaration);
+                        }
+                        return true;
                 }
             }
             return base.Walk(node);

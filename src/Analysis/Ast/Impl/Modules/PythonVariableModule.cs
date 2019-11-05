@@ -52,6 +52,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public Uri Uri => Module?.Uri;
         public override PythonMemberType MemberType => PythonMemberType.Module;
         public bool IsTypeshed => Module?.IsTypeshed == true;
+        public IEnumerable<string> ChildrenNames => _children.Keys;
 
         public PythonVariableModule(string name, IPythonInterpreter interpreter) : base(null) { 
             Name = name;
@@ -68,7 +69,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public void AddChildModule(string memberName, PythonVariableModule module) => _children[memberName] = module;
 
         public IMember GetMember(string name) => _children.TryGetValue(name, out var module) ? module : Module?.GetMember(name);
-        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(_children.Keys).Distinct() : _children.Keys;
+        public IEnumerable<string> GetMemberNames() => Module != null ? Module.GetMemberNames().Concat(ChildrenNames).Distinct() : ChildrenNames;
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => GetMember(memberName);
         public IMember Index(IPythonInstance instance, IArgumentSet args) => Interpreter.UnknownType;
@@ -77,7 +78,7 @@ namespace Microsoft.Python.Analysis.Modules {
         public bool Equals(IPythonModule other) => other is PythonVariableModule module && Name.EqualsOrdinal(module.Name);
 
         public override bool Equals(object obj) => Equals(obj as IPythonModule);
-        public override int GetHashCode() => 0;
+        public override int GetHashCode() => Name.GetHashCode();
 
         #region ILocationConverter
         public SourceLocation IndexToLocation(int index) => (Module as ILocationConverter)?.IndexToLocation(index) ?? default;

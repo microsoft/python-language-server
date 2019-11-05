@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core.Text;
@@ -21,7 +22,7 @@ using Microsoft.Python.Core.Text;
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
     [ExcludeFromCodeCoverage]
     internal static class AssertionsFactory {
-        public static ScopeAssertions Should(this IScope scope) => new ScopeAssertions(scope);
+        public static DependencyChainNodeAssertions Should(this IDependencyChainNode node) => new DependencyChainNodeAssertions(node);
 
         public static MemberAssertions Should(this IMember member) => new MemberAssertions(member);
         public static PythonFunctionAssertions Should(this IPythonFunctionType f) => new PythonFunctionAssertions(f);
@@ -33,6 +34,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
 
         public static RangeAssertions Should(this Range? range) => new RangeAssertions(range);
 
+        public static ScopeAssertions Should(this IScope scope) => new ScopeAssertions(scope);
         public static SourceSpanAssertions Should(this SourceSpan span) => new SourceSpanAssertions(span);
         public static SourceSpanAssertions Should(this SourceSpan? span) => new SourceSpanAssertions(span.Value);
     }

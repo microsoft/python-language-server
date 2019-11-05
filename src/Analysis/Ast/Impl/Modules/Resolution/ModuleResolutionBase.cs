@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
@@ -32,6 +33,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
         protected IServiceContainer Services { get; }
         protected IFileSystem FileSystem { get; }
         protected IPythonInterpreter Interpreter { get; }
+        protected IPythonAnalyzer Analyzer { get; }
         protected ILogger Log { get; }
 
         protected ConcurrentDictionary<string, ModuleRef> Modules { get; } = new ConcurrentDictionary<string, ModuleRef>();
@@ -48,6 +50,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             FileSystem = services.GetService<IFileSystem>();
 
             Interpreter = services.GetService<IPythonInterpreter>();
+            Analyzer = services.GetService<IPythonAnalyzer>();
             StubCache = services.GetService<IStubCache>();
             Log = services.GetService<ILogger>();
         }
@@ -76,11 +79,6 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             // to allow loading from the database just yet since module
             // may already exist in the analyzed state.
             var module = GetImportedModule(name);
-            if (module != null) {
-                return module;
-            }
-
-            module = Interpreter.ModuleResolution.GetSpecializedModule(name);
             if (module != null) {
                 return module;
             }

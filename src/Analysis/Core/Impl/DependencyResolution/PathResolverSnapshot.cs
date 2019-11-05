@@ -82,15 +82,27 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         }
 
         public ImmutableArray<string> GetAllImportableModuleNames(bool includeImplicitPackages = true) {
+            return GetAllImportableModuleInfo(n => !string.IsNullOrEmpty(n.FullModuleName), n => n.FullModuleName, includeImplicitPackages);
+        }
+
+        public ImmutableArray<string> GetAllImportableModulesByName(string name, bool includeImplicitPackages = true) {
+            return GetAllImportableModuleInfo(n => string.Equals(n.Name, name), n => n.FullModuleName, includeImplicitPackages);
+        }
+
+        public ImmutableArray<string> GetAllImportableModuleFilePaths(bool includeImplicitPackages = true) {
+            return GetAllImportableModuleInfo(n => !string.IsNullOrEmpty(n.ModulePath), n => n.ModulePath, includeImplicitPackages);
+        }
+
+        private ImmutableArray<T> GetAllImportableModuleInfo<T>(Func<Node, bool> predicate, Func<Node, T> valueGetter, bool includeImplicitPackages = true) {
             var roots = _roots.Prepend(_nonRooted);
             var items = new Queue<Node>(roots);
-            var names = ImmutableArray<string>.Empty;
+            var stringValues = ImmutableArray<T>.Empty;
 
             while (items.Count > 0) {
                 var item = items.Dequeue();
                 if (item != null) {
-                    if (!string.IsNullOrEmpty(item.FullModuleName) && (item.IsModule || includeImplicitPackages)) {
-                        names = names.Add(item.FullModuleName);
+                    if (predicate(item) && (item.IsModule || includeImplicitPackages)) {
+                        stringValues = stringValues.Add(valueGetter(item));
                     }
 
                     foreach (var child in item.Children.ExcludeDefault()) {
@@ -99,11 +111,15 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 }
             }
 
-            return names.AddRange(
+            return stringValues.AddRange(
                 _builtins.Children
-                    .Where(b => !string.IsNullOrEmpty(b.FullModuleName))
-                    .Select(b => b.FullModuleName)
+                    .Where(b => predicate(b))
+                    .Select(b => valueGetter(b))
             );
+        }
+
+        public string GetModuleNameByPath(string modulePath) {
+            return TryFindModule(modulePath, out var edge, out _) ? edge.End.FullModuleName : null;
         }
 
         public ModuleImport GetModuleImportFromModuleName(in string fullModuleName) {

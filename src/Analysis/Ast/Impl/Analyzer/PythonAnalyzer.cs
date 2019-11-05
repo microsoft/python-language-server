@@ -20,6 +20,7 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
@@ -36,7 +37,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     public sealed class PythonAnalyzer : IPythonAnalyzer, IDisposable {
-        private readonly IServiceManager _services;
+        private readonly IServiceContainer _services;
         private readonly IDependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry> _dependencyResolver;
         private readonly Dictionary<AnalysisModuleKey, PythonAnalyzerEntry> _analysisEntries = new Dictionary<AnalysisModuleKey, PythonAnalyzerEntry>();
         private readonly DisposeToken _disposeToken = DisposeToken.Create<PythonAnalyzer>();
@@ -51,7 +52,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         private PythonAnalyzerSession _nextSession;
         private bool _forceGCOnNextSession;
 
-        public PythonAnalyzer(IServiceManager services, string cacheFolderPath = null) {
+        public PythonAnalyzer(IServiceContainer services) {
             _services = services;
             _log = services.GetService<ILogger>();
             _dependencyResolver = new DependencyResolver<AnalysisModuleKey, PythonAnalyzerEntry>();
@@ -59,9 +60,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _startNextSession = StartNextSession;
 
             _progress = new ProgressReporter(services.GetService<IProgressService>());
-
-            _services.AddService(new CacheFolderService(_services, cacheFolderPath));
-            _services.AddService(new StubCache(_services));
         }
 
         public void Dispose() {
@@ -69,6 +67,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             _disposeToken.TryMarkDisposed();
         }
 
+        #region IPythonAnalyzer
         public Task WaitForCompleteAnalysisAsync(CancellationToken cancellationToken = default)
             => _analysisCompleteEvent.WaitAsync(cancellationToken);
 
@@ -208,6 +207,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
         }
 
         public event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
+        #endregion
 
         internal void RaiseAnalysisComplete(int moduleCount, double msElapsed) {
             _analysisCompleteEvent.Set();

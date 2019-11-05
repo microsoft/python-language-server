@@ -98,6 +98,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     firstTriggerCharacter = "\n",
                     moreTriggerCharacter = new[] { ";", ":" }
                 },
+                codeActionProvider = new CodeActionOptions() { codeActionKinds = new string[] { CodeActionKind.QuickFix } },
             }
         };
 
@@ -122,14 +123,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var cacheFolderPath = initializationOptions?.cacheFolderPath;
-            var fs = _services.GetService<IFileSystem>();
-            if (cacheFolderPath != null && !fs.DirectoryExists(cacheFolderPath)) {
-                _log?.Log(TraceEventType.Warning, Resources.Error_InvalidCachePath);
-                cacheFolderPath = null;
-            }
-
-            var analyzer = new PythonAnalyzer(_services, cacheFolderPath);
+            var analyzer = new PythonAnalyzer(_services);
             _services.AddService(analyzer);
 
             analyzer.AnalysisComplete += OnAnalysisComplete;
@@ -160,7 +154,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                                             initializationOptions?.includeFiles,
                                             initializationOptions?.excludeFiles,
                                             _services.GetService<IIdleTimeService>());
-            _indexManager.IndexWorkspace().DoNotWait();
+            _indexManager.IndexWorkspace(_interpreter.ModuleResolution.CurrentPathResolver).DoNotWait();
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
 
@@ -190,12 +184,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void DidChangeConfiguration(DidChangeConfigurationParams @params, CancellationToken cancellationToken) {
             _disposableBag.ThrowIfDisposed();
             switch (@params.settings) {
-                case ServerSettings settings: {
-                        Settings = settings;
-                        _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
-                        _completionSource.Options = Settings.completion;
-                        break;
-                    }
+                case ServerSettings settings:
+                    Settings = settings;
+                    _symbolHierarchyMaxSymbols = Settings.analysis.symbolsHierarchyMaxSymbols;
+                    _completionSource.Options = Settings.completion;
+                    break;
                 default:
                     _log?.Log(TraceEventType.Error, "change configuration notification sent unsupported settings");
                     break;

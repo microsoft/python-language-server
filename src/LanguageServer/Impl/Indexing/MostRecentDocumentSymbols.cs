@@ -28,6 +28,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
     internal sealed class MostRecentDocumentSymbols : IMostRecentDocumentSymbols {
         private readonly IIndexParser _indexParser;
         private readonly string _path;
+        private readonly bool _library;
 
         // Only used to cancel all work when this object gets disposed.
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
@@ -37,9 +38,10 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         private TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>> _tcs = new TaskCompletionSource<IReadOnlyList<HierarchicalSymbol>>();
         private CancellationTokenSource _workCts;
 
-        public MostRecentDocumentSymbols(string path, IIndexParser indexParser) {
+        public MostRecentDocumentSymbols(string path, IIndexParser indexParser, bool library) {
             _path = path;
             _indexParser = indexParser;
+            _library = library;
         }
 
         public Task<IReadOnlyList<HierarchicalSymbol>> GetSymbolsAsync(CancellationToken ct = default) {
@@ -70,7 +72,17 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CancellationTokenSource cts,
                 Func<CancellationToken, Task<IReadOnlyList<HierarchicalSymbol>>> fn) {
                 using (cts) {
-                    return await fn(cts.Token);
+                    var result = await fn(cts.Token);
+
+                    lock (_lock) {
+                        // Attempt to set _workCts to null if that's the current _workCts
+                        // to avoid catching ObjectDisposedException all the time.
+                        if (_workCts == cts) {
+                            _workCts = null;
+                        }
+                    }
+
+                    return result;
                 }
             }
         }
@@ -95,7 +107,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
         public void Dispose() {
             lock (_lock) {
                 _tcs.TrySetCanceled();
-                
+
                 try {
                     _workCts?.Dispose();
                 } catch (ObjectDisposedException) {
@@ -134,7 +146,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            var walker = new SymbolIndexWalker(ast);
+            var walker = new SymbolIndexWalker(ast, _library, cancellationToken);
             ast.Walk(walker);
             return walker.Symbols;
         }
@@ -143,7 +155,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
             try {
                 var ast = await _indexParser.ParseAsync(_path, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                var walker = new SymbolIndexWalker(ast);
+                var walker = new SymbolIndexWalker(ast, _library, cancellationToken);
                 ast.Walk(walker);
                 return walker.Symbols;
             } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) {

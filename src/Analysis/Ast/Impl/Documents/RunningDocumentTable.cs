@@ -85,6 +85,7 @@ namespace Microsoft.Python.Analysis.Documents {
         /// <param name="filePath">Optional file path, if different from the URI.</param>
         public IDocument OpenDocument(Uri uri, string content, string filePath = null) {
             bool justOpened;
+            var created = false;
             IDocument document;
             lock (_lock) {
                 var entry = FindDocument(uri);
@@ -105,9 +106,14 @@ namespace Microsoft.Python.Analysis.Documents {
                         ModuleType = moduleType
                     };
                     entry = CreateDocument(mco);
+                    created = true;
                 }
                 justOpened = TryOpenDocument(entry, content);
                 document = entry.Document;
+            }
+
+            if (created) {
+                _services.GetService<IPythonAnalyzer>().InvalidateAnalysis(document);
             }
 
             if (justOpened) {

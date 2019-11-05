@@ -222,4 +222,7 @@
   <data name="Analysis_PositionalOnlyArgumentNamed" xml:space="preserve">
     <value>Positional only argument '{0}' may not be named.</value>
   </data>
+  <data name="Invalid_0_CacheFolder" xml:space="preserve">
+    <value>Specified cache folder ('{0}') does not exist. Switching to default.</value>
+  </data>
 </root>

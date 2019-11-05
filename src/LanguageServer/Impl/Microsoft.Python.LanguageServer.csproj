@@ -11,7 +11,7 @@
         <DebugType>portable</DebugType>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <NoWarn>1701;1702;$(NoWarn)</NoWarn>
-        <LangVersion>7.2</LangVersion>
+      <TieredCompilation>true</TieredCompilation>
       </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
       <CodeAnalysisRuleSet>..\..\PLS.ruleset</CodeAnalysisRuleSet>

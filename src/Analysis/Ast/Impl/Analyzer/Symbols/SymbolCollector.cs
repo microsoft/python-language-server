@@ -51,12 +51,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             => node.WalkIfWithSystemConditions(this, _eval.Ast.LanguageVersion, _eval.Services.GetService<IOSPlatform>());
 
         public override bool Walk(ClassDefinition cd) {
-            if (IsDeprecated(cd)) {
-                return false;
-            }
-
             if (!string.IsNullOrEmpty(cd.NameExpression?.Name)) {
                 var classInfo = CreateClass(cd);
+                if (classInfo == null) {
+                    // we can't create class info for this node.
+                    // don't walk down
+                    return false;
+                }
+
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Class type is tracking locations for references and renaming.
                 _eval.DeclareVariable(cd.Name, classInfo, VariableSource.Declaration);
@@ -68,16 +70,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(ClassDefinition cd) {
-            if (!IsDeprecated(cd) && !string.IsNullOrEmpty(cd.NameExpression?.Name)) {
+            if (!string.IsNullOrEmpty(cd.NameExpression?.Name) &&
+                _typeMap.ContainsKey(cd)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(cd);
         }
 
         public override bool Walk(FunctionDefinition fd) {
-            if (IsDeprecated(fd)) {
-                return false;
-            }
             if (!string.IsNullOrEmpty(fd.Name)) {
                 AddFunctionOrProperty(fd);
                 // Open function scope
@@ -87,7 +87,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
         }
 
         public override void PostWalk(FunctionDefinition fd) {
-            if (!IsDeprecated(fd) && !string.IsNullOrEmpty(fd.Name)) {
+            if (!string.IsNullOrEmpty(fd.Name)) {
                 _scopes.Pop().Dispose();
             }
             base.PostWalk(fd);
@@ -95,9 +95,14 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
         private PythonClassType CreateClass(ClassDefinition cd) {
             PythonType declaringType = null;
-            if(!(cd.Parent is PythonAst)) {
-                Debug.Assert(_typeMap.ContainsKey(cd.Parent));
-                _typeMap.TryGetValue(cd.Parent, out declaringType);
+            if (!(cd.Parent is PythonAst)) {
+                if (!_typeMap.TryGetValue(cd.Parent, out declaringType)) {
+                    // we can get into this situation if parent is defined twice and we preserve
+                    // only one of them.
+                    // for example, code has function definition with exact same signature
+                    // and class is defined under one of that function
+                    return null;
+                }
             }
             var cls = new PythonClassType(cd, declaringType, _eval.GetLocationOfName(cd),
                 _eval.SuppressBuiltinLookup ? BuiltinTypeId.Unknown : BuiltinTypeId.Type);
@@ -106,7 +111,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             declaringType?.AddMember(cls.Name, cls, overwrite: true);
             return cls;
         }
-
 
         private void AddFunctionOrProperty(FunctionDefinition fd) {
             var declaringType = fd.Parent != null && _typeMap.TryGetValue(fd.Parent, out var t) ? t : null;
@@ -120,6 +124,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 f = new PythonFunctionType(fd, declaringType, _eval.GetLocationOfName(fd));
                 // The variable is transient (non-user declared) hence it does not have location.
                 // Function type is tracking locations for references and renaming.
+
+                // if there are multiple functions with same name exist, only the very first one will be
+                // maintained in the scope. we should improve this if possible.
+                // https://github.com/microsoft/python-language-server/issues/1693
                 _eval.DeclareVariable(fd.Name, f, VariableSource.Declaration);
                 _typeMap[fd] = f;
                 declaringType?.AddMember(f.Name, f, overwrite: true);
@@ -157,7 +165,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
             if (t is IPythonFunctionType f) {
                 return f.Overloads
                     .OfType<PythonFunctionOverload>()
-                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Where(p => !p.IsPositionalOnlyMarker).Count());
+                    .FirstOrDefault(o => o.Parameters.Count == node.Parameters.Count(p => !p.IsPositionalOnlyMarker));
             }
             return null;
         }
@@ -223,18 +231,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
 
             return member;
         }
-
-        private static bool IsDeprecated(ClassDefinition cd)
-            => cd.Decorators?.Decorators != null && IsDeprecated(cd.Decorators.Decorators);
-
-        private static bool IsDeprecated(FunctionDefinition fd)
-            => fd.Decorators?.Decorators != null && IsDeprecated(fd.Decorators.Decorators);
-
-        private static bool IsDeprecated(IEnumerable<Expression> decorators)
-            => decorators.OfType<CallExpression>().Any(IsDeprecationDecorator);
-
-        private static bool IsDeprecationDecorator(CallExpression c)
-            => (c.Target is MemberExpression n1 && n1.Name == "deprecated") ||
-               (c.Target is NameExpression n2 && n2.Name == "deprecated");
     }
 }

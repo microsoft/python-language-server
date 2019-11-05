@@ -55,6 +55,20 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
         public IBuiltinsPythonModule BuiltinsModule { get; private set; }
 
+        public IEnumerable<IPythonModule> GetImportedModules(CancellationToken cancellationToken) {
+            foreach (var module in _specialized.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return module;
+            }
+
+            foreach (var moduleRef in Modules.Values) {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (moduleRef.Value != null) {
+                    yield return moduleRef.Value;
+                }
+            }
+        }
+
         protected override IPythonModule CreateModule(string name) {
             var moduleImport = CurrentPathResolver.GetModuleImportFromModuleName(name);
             if (moduleImport == null) {
@@ -70,6 +84,11 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                     return module;
                 }
             }
+
+            var moduleType = moduleImport.IsBuiltin ? ModuleType.CompiledBuiltin
+                : moduleImport.IsCompiled ? ModuleType.Compiled
+                : moduleImport.IsLibrary ? ModuleType.Library
+                : ModuleType.User;
 
             var dbs = GetDbService();
             module = dbs?.RestoreModule(name, moduleImport.ModulePath, ModuleType.Specialized);
@@ -105,7 +124,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             var mco = new ModuleCreationOptions {
                 ModuleName = moduleImport.FullName,
-                ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
+                ModuleType = moduleType,
                 FilePath = moduleImport.ModulePath,
                 Stub = stub
             };
@@ -173,7 +192,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
-            var value = (builtinModuleNamesMember as IVariable)?.Value ?? builtinModuleNamesMember;
+            var value = builtinModuleNamesMember is IVariable variable ? variable.Value : builtinModuleNamesMember;
             if (value.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
                 PathResolver.SetBuiltins(builtinModuleNames);

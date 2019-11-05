@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using Microsoft.Python.Analysis.Analyzer.Handlers;
 using Microsoft.Python.Analysis.Analyzer.Symbols;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Parsing.Ast;
@@ -28,7 +29,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
         private readonly FunctionDefinition _function;
         private IMember _result;
 
-        public FunctionCallEvaluator(IPythonModule declaringModule, FunctionDefinition fd, ExpressionEval eval): base(eval) {
+        public FunctionCallEvaluator(IPythonModule declaringModule, FunctionDefinition fd, ExpressionEval eval): base(eval, SimpleImportedVariableHandler.Instance) {
             _declaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             _eval = eval ?? throw new ArgumentNullException(nameof(eval));
             _function = fd ?? throw new ArgumentNullException(nameof(fd));
@@ -51,15 +52,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 _function.Body.Walk(this);
             }
             return _result;
-        }
-
-        public override bool Walk(AssignmentStatement node) {
-            foreach (var lhs in node.Left) {
-                if (lhs is NameExpression nameExp && (nameExp.Name == "self" || nameExp.Name == "cls")) {
-                    return true; // Don't assign to 'self' or 'cls'.
-                }
-            }
-            return base.Walk(node);
         }
 
         public override bool Walk(ReturnStatement node) {
