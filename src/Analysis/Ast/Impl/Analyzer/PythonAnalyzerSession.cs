@@ -166,10 +166,6 @@ namespace Microsoft.Python.Analysis.Analyzer {
                         totalMilliseconds = Math.Round(totalMilliseconds, 2);
                         (_analyzer as PythonAnalyzer)?.RaiseAnalysisComplete(modulesCount, totalMilliseconds);
                         _log?.Log(TraceEventType.Verbose, $"Analysis complete: {modulesCount} modules in {totalMilliseconds} ms.");
-                        //#if DEBUG
-                        //                        var notReady = _analyzer.LoadedModules.Where(m => (m.ModuleType == ModuleType.Library || m.ModuleType == ModuleType.Stub) && m.Analysis is EmptyAnalysis).ToArray();
-                        //                        Debug.Assert(notReady.Length == 0);
-                        //#endif
                     }
                 }
             }
@@ -248,7 +244,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 if (_walker.MissingKeys.Count == 0 || _walker.MissingKeys.All(k => k.IsTypeshed)) {
                     Debug.Assert(_runningTasks == 0);
                 } else if (!_isCanceled && _log != null && _log.LogLevel >= TraceEventType.Verbose) {
-                    //_log?.Log(TraceEventType.Verbose, $"Missing keys: {string.Join(", ", _walker.MissingKeys)}");
+                    _log?.Log(TraceEventType.Verbose, $"Missing keys: {string.Join(", ", _walker.MissingKeys)}");
                 }
             }
 

@@ -46,12 +46,12 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     _vertices.Add(default);
                 }
 
-                Update(key, value, isRoot, false, incomingKeys, index);
+                Update(key, value, isRoot, incomingKeys, index);
                 return _version;
             }
         }
 
-        public int TryAddValue(in TKey key, in TValue value, in bool isRoot, in bool isWalked, in ImmutableArray<TKey> incomingKeys) {
+        public int TryAddValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys) {
             lock (_syncObj) {
                 if (!_keys.TryGetValue(key, out var index)) {
                     index = _keys.Count;
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
                     return _version;
                 }
 
-                Update(key, value, isRoot, isWalked, incomingKeys, index);
+                Update(key, value, isRoot, incomingKeys, index);
                 return _version;
             }
         }
@@ -121,10 +121,10 @@ namespace Microsoft.Python.Analysis.Dependencies {
             }
         }
 
-        private void Update(in TKey key, in TValue value, in bool isRoot, in bool isWalked, in ImmutableArray<TKey> incomingKeys, in int index) {
+        private void Update(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys, in int index) {
             var version = Interlocked.Increment(ref _version);
             var incoming = EnsureKeys(index, incomingKeys, version);
-            _vertices[index] = new DependencyVertex<TKey, TValue>(key, value, isRoot, isWalked, incoming, version, index);
+            _vertices[index] = new DependencyVertex<TKey, TValue>(key, value, isRoot, incoming, version, index);
             _keys[key] = index;
         }
 
@@ -531,7 +531,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
             private int _remaining;
             private PriorityProducerConsumer<IDependencyChainNode> _ppc;
 
-            public ImmutableArray<TKey> MissingKeys { get; }
+            public ImmutableArray<TKey> MissingKeys { get; set; }
             public ImmutableArray<TValue> AffectedValues { get; }
             public int Version { get; }
 

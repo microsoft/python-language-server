@@ -91,10 +91,15 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 : ModuleType.User;
 
             var dbs = GetDbService();
-            module = dbs?.RestoreModule(name, moduleImport.ModulePath, moduleType);
-            if (module != null) {
-                Log?.Log(TraceEventType.Verbose, "Restored from database: ", name);
-                return module;
+            if (dbs != null) {
+                var sw = new Stopwatch();
+                sw.Start();
+                module = dbs.RestoreModule(name, moduleImport.ModulePath, moduleType);
+                sw.Stop();
+                if (module != null) {
+                    Log?.Log(TraceEventType.Verbose, $"Restored from database: {name} in {sw.ElapsedMilliseconds} ms.");
+                    return module;
+                }
             }
 
             // If there is a stub, make sure it is loaded and attached

@@ -20,6 +20,7 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -255,7 +256,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return false;
             }
 
-            LoadMissingDocuments(entry.Module.Interpreter, walker.MissingKeys);
+            LoadMissingDocuments(entry.Module.Interpreter, walker);
 
             lock (_syncObj) {
                 if (_currentSession == null) {
@@ -307,12 +308,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             return new PythonAnalyzerSession(_services, _progress, _startNextSession, _disposeToken.CancellationToken, walker, _version, entry, forceGC: forceGC);
         }
 
-        private void LoadMissingDocuments(IPythonInterpreter interpreter, ImmutableArray<AnalysisModuleKey> missingKeys) {
-            if (missingKeys.Count == 0) {
-                return;
-            }
-
-            foreach (var key in missingKeys) {
+        private void LoadMissingDocuments(IPythonInterpreter interpreter, IDependencyChainWalker<AnalysisModuleKey, PythonAnalyzerEntry> walker) {
+            foreach (var key in walker.MissingKeys.ToArray()) {
                 lock (_syncObj) {
                     if (_analysisEntries.TryGetValue(key, out _)) {
                         continue;
@@ -325,11 +322,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 var module = moduleResolution.GetOrLoadModule(moduleName);
                 if (module != null && module.ModuleType != ModuleType.Unresolved) {
                     var entry = GetOrCreateAnalysisEntry(module, out _);
-                    _dependencyResolver.TryAddValue(key,
-                        entry,
-                        entry.IsUserModule,
-                        module.ModuleType == ModuleType.Specialized,
-                        ImmutableArray<AnalysisModuleKey>.Empty);
+                    if (module.ModuleType == ModuleType.Specialized) {
+                        walker.MissingKeys = walker.MissingKeys.Remove(key);
+                    } else {
+                        _dependencyResolver.TryAddValue(key, entry, entry.IsUserModule, ImmutableArray<AnalysisModuleKey>.Empty);
+                    }
                 }
             }
         }
@@ -341,12 +338,18 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private PythonAnalyzerEntry GetOrCreateAnalysisEntry(IPythonModule module, AnalysisModuleKey key) {
             lock (_syncObj) {
-                if (!_analysisEntries.TryGetValue(key, out var entry)) {
-                    var emptyAnalysis = new EmptyAnalysis(_services, (IDocument)module);
-                    entry = new PythonAnalyzerEntry(emptyAnalysis);
-                    _analysisEntries[key] = entry;
+                if (_analysisEntries.TryGetValue(key, out var entry)) {
+                    return entry;
+                }
+
+                if (module.ModuleType == ModuleType.Specialized) {
+                    entry = new PythonAnalyzerEntry(new CachedAnalysis((IDocument)module, _services));
+                } else {
+                    entry = new PythonAnalyzerEntry(new EmptyAnalysis(_services, (IDocument)module));
                     _analysisCompleteEvent.Reset();
                 }
+
+                _analysisEntries[key] = entry;
                 return entry;
             }
         }

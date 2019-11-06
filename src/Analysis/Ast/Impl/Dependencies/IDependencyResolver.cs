@@ -23,7 +23,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
     /// concurrently.
     /// </summary>
     internal interface IDependencyResolver<TKey, TValue> {
-        int TryAddValue(in TKey key, in TValue value, in bool isRoot, in bool isWalked, in ImmutableArray<TKey> incomingKeys);
+        int TryAddValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys);
         int ChangeValue(in TKey key, in TValue value, in bool isRoot, in ImmutableArray<TKey> incomingKeys);
         int Remove(in TKey key);
         void Reset();
