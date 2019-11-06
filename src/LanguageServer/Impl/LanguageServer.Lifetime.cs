@@ -28,6 +28,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
     public partial class LanguageServer {
         private InitializeParams _initParams;
         private bool _shutdown;
+        private bool _initialized;
 
         private Task<IDisposable> _initializedPriorityTask;
 
@@ -38,8 +39,9 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             RegisterServices(_initParams);
 
             using (await _prioritizer.InitializePriorityAsync(cancellationToken)) {
+                Debug.Assert(!_initialized);
                 // Force the next handled request to be "initialized", where the work actually happens.
-                _initializedPriorityTask = _prioritizer.InitializePriorityAsync(default);
+                _initializedPriorityTask = _prioritizer.InitializedPriorityAsync();
                 var result = await _server.InitializeAsync(_initParams, cancellationToken);
                 return result;
             }
@@ -50,11 +52,13 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             _services.GetService<IProfileOptimizationService>()?.Profile("Initialized");
 
             using (await _initializedPriorityTask) {
+                Debug.Assert(!_initialized);
                 var pythonSection = await GetPythonConfigurationAsync(cancellationToken, 200);
                 var userConfiguredPaths = GetUserConfiguredPaths(pythonSection);
 
                 await _server.InitializedAsync(ToObject<InitializedParams>(token), cancellationToken, userConfiguredPaths);
                 await _rpc.NotifyAsync("python/languageServerStarted");
+                _initialized = true;
             }
         }
 

@@ -91,6 +91,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/didChangeWatchedFiles")]
         public async Task DidChangeWatchedFiles(JToken token, CancellationToken cancellationToken) {
             using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
                 _server.DidChangeWatchedFiles(ToObject<DidChangeWatchedFilesParams>(token));
             }
         }
@@ -99,6 +100,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<SymbolInformation[]> WorkspaceSymbols(JToken token, CancellationToken cancellationToken) {
             using (var timer = _requestTimer.Time("workspace/symbol")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 var result = await _server.WorkspaceSymbols(ToObject<WorkspaceSymbolParams>(token), cancellationToken);
                 timer.AddMeasure("count", result?.Length ?? 0);
                 return result;
@@ -118,6 +120,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task DidOpenTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
                 _server.DidOpenTextDocument(ToObject<DidOpenTextDocumentParams>(token));
             }
         }
@@ -126,6 +129,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task DidChangeTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
                 var @params = ToObject<DidChangeTextDocumentParams>(token);
                 _server.DidChangeTextDocument(@params);
             }
@@ -144,6 +148,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task DidCloseTextDocument(JToken token, CancellationToken cancellationToken) {
             _idleTimeTracker?.NotifyUserActivity();
             using (await _prioritizer.DocumentChangePriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
                 _server.DidCloseTextDocument(ToObject<DidCloseTextDocumentParams>(token));
             }
         }
@@ -154,6 +159,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<CompletionList> Completion(JToken token, CancellationToken cancellationToken) {
             using (var timer = _requestTimer.Time("textDocument/completion")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 var result = await _server.Completion(ToObject<CompletionParams>(token), GetToken(cancellationToken));
                 timer.AddMeasure("count", result?.items?.Length ?? 0);
                 return result;
@@ -164,6 +170,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<Hover> Hover(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/hover")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 return await _server.Hover(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
             }
         }
@@ -172,6 +179,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<SignatureHelp> SignatureHelp(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/signatureHelp")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 return await _server.SignatureHelp(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
             }
         }
@@ -180,6 +188,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<Reference[]> GotoDefinition(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/definition")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 return await _server.GotoDefinition(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
             }
         }
@@ -188,6 +197,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<Location> GotoDeclaration(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/declaration")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 return await _server.GotoDeclaration(ToObject<TextDocumentPositionParams>(token), GetToken(cancellationToken));
             }
         }
@@ -196,6 +206,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<Reference[]> FindReferences(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/references")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 return await _server.FindReferences(ToObject<ReferencesParams>(token), GetToken(cancellationToken));
             }
         }
@@ -210,6 +221,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<DocumentSymbol[]> DocumentSymbol(JToken token, CancellationToken cancellationToken) {
             using (_requestTimer.Time("textDocument/documentSymbol")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 // This call is also used by VSC document outline and it needs correct information
                 return await _server.HierarchicalDocumentSymbol(ToObject<DocumentSymbolParams>(token), GetToken(cancellationToken));
             }
@@ -219,6 +231,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<CodeAction[]> CodeAction(JToken token, CancellationToken cancellationToken) {
             using var timer = _requestTimer.Time("textDocument/codeAction");
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
+            Debug.Assert(_initialized);
             var actions = await _server.CodeAction(ToObject<CodeActionParams>(token), cancellationToken);
             timer.AddMeasure("count", actions?.Length ?? 0);
             return actions;
@@ -259,6 +272,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("textDocument/onTypeFormatting")]
         public async Task<TextEdit[]> DocumentOnTypeFormatting(JToken token, CancellationToken cancellationToken) {
             await _prioritizer.DefaultPriorityAsync(cancellationToken);
+            Debug.Assert(_initialized);
             return await _server.DocumentOnTypeFormatting(ToObject<DocumentOnTypeFormattingParams>(token), GetToken(cancellationToken));
         }
 
@@ -266,6 +280,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task<WorkspaceEdit> Rename(JToken token, CancellationToken cancellationToken) {
             using (var timer = _requestTimer.Time("textDocument/rename")) {
                 await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
                 return await _server.Rename(ToObject<RenameParams>(token), GetToken(cancellationToken));
             }
         }
@@ -293,6 +308,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public async Task ClearAnalysisCache(CancellationToken cancellationToken) {
             using (_requestTimer.Time("python/clearAnalysisCache"))
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
                 _server.ClearAnalysisCache();
             }
         }
@@ -328,14 +344,19 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 => Debugger.IsAttached ? CancellationToken.None : original;
 
         private class Prioritizer : IDisposable {
-            private const int InitializePriority = 0;
-            private const int ConfigurationPriority = 1;
-            private const int DocumentChangePriority = 2;
-            private const int DefaultPriority = 3;
+            private enum Priority {
+                Initialize,
+                Initialized,
+                Configuration,
+                DocumentChange,
+                Default,
+                Length, // Length of the enum, not a real priority.
+            }
+
             private readonly PriorityProducerConsumer<QueueItem> _ppc;
 
             public Prioritizer() {
-                _ppc = new PriorityProducerConsumer<QueueItem>(maxPriority: 4);
+                _ppc = new PriorityProducerConsumer<QueueItem>(maxPriority: (int)Priority.Length);
                 Task.Run(ConsumerLoop).DoNotWait();
             }
 
@@ -356,21 +377,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 }
             }
 
-            public Task<IDisposable> InitializePriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(InitializePriority, isAwaitable: true, cancellationToken);
+            public Task<IDisposable> InitializePriorityAsync(CancellationToken cancellationToken = default)
+                => Enqueue(Priority.Initialize, isAwaitable: true, cancellationToken);
 
-            public Task<IDisposable> ConfigurationPriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(ConfigurationPriority, isAwaitable: true, cancellationToken);
+            public Task<IDisposable> InitializedPriorityAsync(CancellationToken cancellationToken = default)
+                => Enqueue(Priority.Initialized, isAwaitable: true, cancellationToken);
 
-            public Task<IDisposable> DocumentChangePriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(DocumentChangePriority, isAwaitable: true, cancellationToken);
+            public Task<IDisposable> ConfigurationPriorityAsync(CancellationToken cancellationToken = default)
+                => Enqueue(Priority.Configuration, isAwaitable: true, cancellationToken);
 
-            public Task DefaultPriorityAsync(CancellationToken cancellationToken = default(CancellationToken))
-                => Enqueue(DefaultPriority, isAwaitable: false, cancellationToken);
+            public Task<IDisposable> DocumentChangePriorityAsync(CancellationToken cancellationToken = default)
+                => Enqueue(Priority.DocumentChange, isAwaitable: true, cancellationToken);
 
-            private Task<IDisposable> Enqueue(int priority, bool isAwaitable, CancellationToken cancellationToken = default(CancellationToken)) {
+            public Task DefaultPriorityAsync(CancellationToken cancellationToken = default)
+                => Enqueue(Priority.Default, isAwaitable: false, cancellationToken);
+
+            private Task<IDisposable> Enqueue(Priority priority, bool isAwaitable, CancellationToken cancellationToken) {
                 var item = new QueueItem(isAwaitable, cancellationToken);
-                _ppc.Produce(item, priority);
+                _ppc.Produce(item, (int)priority);
                 return item.Task;
             }
 
