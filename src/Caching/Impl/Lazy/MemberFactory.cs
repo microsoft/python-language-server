@@ -23,6 +23,7 @@ using Microsoft.Python.Analysis.Values;
 namespace Microsoft.Python.Analysis.Caching.Lazy {
     internal static class MemberFactory {
         public static IMember CreateMember(MemberModel model, ModuleFactory mf, IGlobalScope gs, IPythonType declaringType) {
+            var unkType =  mf.Module.Interpreter.UnknownType;
             switch (model) {
                 case ClassModel cm:
                     return new PythonLazyClassType(cm, mf, gs, declaringType);
@@ -32,16 +33,16 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
                     return new PythonLazyPropertyType(pm, mf, gs, declaringType);
 
                 case NamedTupleModel ntm:
-                    var itemTypes = ntm.ItemTypes.Select(mf.ConstructType).ToArray();
+                    var itemTypes = ntm.ItemTypes.Select(n => mf.ConstructType(n) ?? unkType).ToArray();
                     return new NamedTupleType(ntm.Name, ntm.ItemNames, itemTypes, mf.Module, ntm.IndexSpan.ToSpan());
 
                 case TypeVarModel tvm:
                     return new GenericTypeParameter(tvm.Name, mf.Module,
-                        tvm.Constraints.Select(mf.ConstructType).ToArray(),
+                        tvm.Constraints.Select(n => mf.ConstructType(n) ?? unkType).ToArray(),
                     mf.ConstructType(tvm.Bound), tvm.Covariant, tvm.Contravariant, default);
 
                 case VariableModel vm:
-                    var m = mf.ConstructMember(vm.Value) ?? mf.Module.Interpreter.UnknownType;
+                    var m = mf.ConstructMember(vm.Value) ?? unkType;
                     return new Variable(vm.Name, m, VariableSource.Declaration, new Location(mf.Module, vm.IndexSpan?.ToSpan() ?? default));
 
             }
