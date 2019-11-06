@@ -92,8 +92,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             var dbs = GetDbService();
             if (dbs != null) {
-                var sw = new Stopwatch();
-                sw.Start();
+                var sw = Stopwatch.StartNew();
                 module = dbs.RestoreModule(name, moduleImport.ModulePath, moduleType);
                 sw.Stop();
                 if (module != null) {
@@ -107,7 +106,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
             if (TryCreateModuleStub(name, moduleImport.ModulePath, out var stub)) {
                 Analyzer.InvalidateAnalysis(stub);
             } else {
-                // If nothing found, try Typeshed.	
+                // If nothing found, try Typeshed.
                 stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
             }
 

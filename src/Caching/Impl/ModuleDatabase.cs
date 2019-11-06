@@ -92,8 +92,12 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         internal IPythonModule RestoreModule(string moduleName, string uniqueId) {
-            return FindModuleModelById(moduleName, uniqueId, out var model)
-                ? RestoreModule(model) : null;
+            lock (_lock) {
+                if (_modulesCache.TryGetValue(uniqueId, out var m)) {
+                    return m;
+                }
+            }
+            return FindModuleModelById(moduleName, uniqueId, out var model) ? RestoreModule(model) : null;
         }
 
         private IPythonModule RestoreModule(ModuleModel model) {
