@@ -186,6 +186,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
             // TODO: Remove this one caching is working at any level again.
+            // https://github.com/microsoft/python-language-server/issues/1758
             return AnalysisCachingLevel.None;
 
             // var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
