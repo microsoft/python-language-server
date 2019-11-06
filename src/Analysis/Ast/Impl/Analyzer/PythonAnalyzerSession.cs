@@ -247,6 +247,8 @@ namespace Microsoft.Python.Analysis.Analyzer {
             lock (_syncObj) {
                 if (_walker.MissingKeys.Count == 0 || _walker.MissingKeys.All(k => k.IsTypeshed)) {
                     Debug.Assert(_runningTasks == 0);
+                } else if (!_isCanceled && _log != null && _log.LogLevel >= TraceEventType.Verbose) {
+                    //_log?.Log(TraceEventType.Verbose, $"Missing keys: {string.Join(", ", _walker.MissingKeys)}");
                 }
             }
 

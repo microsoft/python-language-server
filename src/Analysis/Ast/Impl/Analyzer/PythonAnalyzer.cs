@@ -20,8 +20,6 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Python.Analysis.Analyzer.Evaluation;
-using Microsoft.Python.Analysis.Caching;
 using Microsoft.Python.Analysis.Dependencies;
 using Microsoft.Python.Analysis.Diagnostics;
 using Microsoft.Python.Analysis.Documents;
@@ -314,20 +312,20 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return;
             }
 
-            foreach (var missingKey in missingKeys) {
+            foreach (var key in missingKeys) {
                 lock (_syncObj) {
-                    if (_analysisEntries.TryGetValue(missingKey, out _)) {
+                    if (_analysisEntries.TryGetValue(key, out _)) {
                         continue;
                     }
                 }
 
-                var (moduleName, _, isTypeshed) = missingKey;
+                var (moduleName, _, isTypeshed) = key;
                 var moduleResolution = isTypeshed ? interpreter.TypeshedResolution : interpreter.ModuleResolution;
 
                 var module = moduleResolution.GetOrLoadModule(moduleName);
                 if (module != null && module.ModuleType != ModuleType.Unresolved) {
                     var entry = GetOrCreateAnalysisEntry(module, out _);
-                    _dependencyResolver.TryAddValue(missingKey,
+                    _dependencyResolver.TryAddValue(key,
                         entry,
                         entry.IsUserModule,
                         module.ModuleType == ModuleType.Specialized,

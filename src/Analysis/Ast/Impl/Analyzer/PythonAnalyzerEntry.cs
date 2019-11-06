@@ -249,7 +249,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
         private HashSet<AnalysisModuleKey> FindDependencies(IPythonModule module, PythonAst ast, int bufferVersion) {
             var dependencies = new HashSet<AnalysisModuleKey>();
-            if (_bufferVersion > bufferVersion) {
+            if (_bufferVersion > bufferVersion || module.ModuleType == ModuleType.Specialized) {
                 return dependencies;
             }
 
