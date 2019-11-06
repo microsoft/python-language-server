@@ -104,9 +104,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             DeclaringModuleId = cls.DeclaringModule.GetUniqueId(services);
             QualifiedName = cls.QualifiedName;
             IndexSpan = cls.Location.IndexSpan.ToModel();
-
-            // Only persist documentation from this class, leave bases or __init__ alone.
-            Documentation = (cls as PythonClassType)?.DocumentationSource == PythonClassType.ClassDocumentationSource.Class ? cls.Documentation : null;
+            Documentation = cls.Documentation;
 
             var ntBases = cls.Bases.OfType<ITypingNamedTupleType>().ToArray();
             NamedTupleBases = ntBases.Select(b => new NamedTupleModel(b, services)).ToArray();

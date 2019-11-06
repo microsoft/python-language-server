@@ -62,16 +62,20 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             return dbModule;
         }
 
-        internal async Task CompareBaselineAndRestoreAsync(ModuleModel model, IPythonModule m) {
-            //var json = ToJson(model);
-            //Baseline.CompareToFile(BaselineFileName, json);
-
+        internal async Task CompareRestoreAsync(ModuleModel model, IPythonModule m) {
             var analyzer = Services.GetService<IPythonAnalyzer>();
             await analyzer.WaitForCompleteAnalysisAsync();
 
             using (var dbModule = CreateDbModule(model, m.FilePath)) {
                 dbModule.Should().HaveSameMembersAs(m);
             }
+        }
+
+        internal async Task<ModuleModel> GetModelAsync(string code) {
+            var analysis = await GetAnalysisAsync(code);
+            var model = ModuleModel.FromAnalysis(analysis, Services, AnalysisCachingLevel.Library);
+            model.FilePath = null;
+            return model;
         }
     }
 }

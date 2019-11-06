@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Analyzer;
@@ -78,13 +79,7 @@ import sys
 x = sys.api_version
 ";
             var analysis = await GetAnalysisAsync(code);
-
-            var sys = analysis.Should().HaveVariable("sys").Which;
-            var sysAnalysis = ((IPythonModule)sys.Value).Analysis;
-
-            var dbs = new ModuleDatabase(Services, Path.GetDirectoryName(TestData.GetDefaultModulePath()));
-            Services.AddService(dbs);
-            await dbs.StoreModuleAnalysisAsync(sysAnalysis, CancellationToken.None);
+            await CreateDatabaseAsync(analysis.Document.Interpreter);
 
             await Services.GetService<IPythonAnalyzer>().ResetAnalyzer();
             var doc = Services.GetService<IRunningDocumentTable>().GetDocument(analysis.Document.Uri);
@@ -92,6 +87,21 @@ x = sys.api_version
 
             analysis.Should().HaveVariable("x")
                 .Which.Should().HaveType(BuiltinTypeId.Int);
+        }
+
+        private async Task CreateDatabaseAsync(IPythonInterpreter interpreter) {
+            var dbs = new ModuleDatabase(Services, Path.GetDirectoryName(TestData.GetDefaultModulePath()));
+            Services.AddService(dbs);
+
+            var importedModules = interpreter.ModuleResolution.GetImportedModules();
+            foreach (var m in importedModules.Where(m => m.Analysis is LibraryAnalysis)) {
+                await dbs.StoreModuleAnalysisAsync(m.Analysis, CancellationToken.None);
+            }
+            
+            importedModules = interpreter.TypeshedResolution.GetImportedModules();
+            foreach (var m in importedModules.Where(m => m.Analysis is LibraryAnalysis)) {
+                await dbs.StoreModuleAnalysisAsync(m.Analysis, CancellationToken.None);
+            }
         }
     }
 }

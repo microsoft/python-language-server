@@ -175,7 +175,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 // Allow documentation replacement from primary
                 // https://github.com/microsoft/python-language-server/issues/1753
                 if (expectedMemberType.DeclaringModule.ModuleType != ModuleType.Stub) {
-                    // Debug.Assert(expectedMemberType.Documentation == actualMemberType.Documentation);
+                    Debug.Assert(expectedMemberType.Documentation == actualMemberType.Documentation);
                     if (string.IsNullOrEmpty(expectedMemberType.Documentation)) {
                         assertion.ForCondition(string.IsNullOrEmpty(actualMemberType.Documentation))
                             .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have no documentation{{reason}}, but it has '{actualMemberType.Documentation}'");

@@ -546,8 +546,10 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 return new DocumentAnalysis(document, version, walker.GlobalScope, walker.Eval, walker.StarImportMemberNames);
             }
 
-            ast.ReduceToImports();
-            document.SetAst(ast);
+            if (document.ModuleType != ModuleType.Stub) {
+                ast.ReduceToImports();
+                document.SetAst(ast);
+            }
 
             var eval = new ExpressionEval(walker.Eval.Services, document, ast);
             var analysis = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);

@@ -30,10 +30,9 @@ namespace Microsoft.Python.Analysis.Caching {
         public RestoredGlobalScope(ModuleModel model, IPythonModule module, IServiceContainer services) {
             Module = module ?? throw new ArgumentNullException(nameof(module));
             Name = model.Name;
-            DeclareVariables(model, services);
         }
 
-        private void DeclareVariables(ModuleModel model, IServiceContainer services) {
+        public void Construct(ModuleModel model, IServiceContainer services) {
             // Member creation may be non-linear. Consider function A returning instance
             // of a class or type info of a function which hasn't been created yet.
             // Thus first create members so we can find then, then populate them with content.

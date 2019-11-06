@@ -38,7 +38,9 @@ namespace Microsoft.Python.Analysis.Caching {
         /// in the module factory.
         /// </summary>
         public void Construct(ModuleModel model) {
-            GlobalScope = new RestoredGlobalScope(model, this, Services);
+            var rs = new RestoredGlobalScope(model, this, Services);
+            GlobalScope = rs;
+            rs.Construct(model, Services);
         }
 
         protected override string LoadContent() => string.Empty;
