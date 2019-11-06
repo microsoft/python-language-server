@@ -21,6 +21,7 @@ using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -152,8 +153,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                         .FailWith($"Expected '{GetName(subjectType)}.{n}' to implement IPythonInstance{{reason}}, but its type is {actualMember.GetType().FullName}");
                 }
 
-                actualMemberType.MemberType.Should().Be(expectedMemberType.MemberType, $"{expectedMemberType.Name} is {expectedMemberType.MemberType}");
                 // Debug.Assert(actualMemberType.MemberType == expectedMemberType.MemberType);
+                actualMemberType.MemberType.Should().Be(expectedMemberType.MemberType, $"{expectedMemberType.Name} is {expectedMemberType.MemberType}");
 
                 if (actualMemberType is IPythonClassType actualClass) {
                     var expectedClass = expectedMemberType as IPythonClassType;
@@ -162,7 +163,8 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     if (actualClass is IGenericType gt) {
                         expectedClass.Should().BeAssignableTo<IGenericType>();
                         // Debug.Assert(expectedClass.IsGeneric == gt.IsGeneric);
-                        expectedClass.IsGeneric.Should().Be(gt.IsGeneric, $"{expectedClass.Name} is generic.");
+                        // https://github.com/microsoft/python-language-server/issues/1753
+                        // expectedClass.IsGeneric.Should().Be(gt.IsGeneric, $"{expectedClass.Name} is generic");
                     }
 
                     // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
@@ -170,13 +172,17 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                     //subjectClass.Bases.Count.Should().BeGreaterOrEqualTo(otherClass.Bases.Count);
                 }
 
-                Debug.Assert(expectedMemberType.Documentation == actualMemberType.Documentation);
-                if (string.IsNullOrEmpty(expectedMemberType.Documentation)) {
-                    assertion.ForCondition(string.IsNullOrEmpty(actualMemberType.Documentation))
-                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have no documentation{{reason}}, but it has '{actualMemberType.Documentation}'");
-                } else {
-                    assertion.ForCondition(actualMemberType.Documentation.EqualsOrdinal(expectedMemberType.Documentation))
-                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualMemberType.Documentation}'");
+                // Allow documentation replacement from primary
+                // https://github.com/microsoft/python-language-server/issues/1753
+                if (expectedMemberType.DeclaringModule.ModuleType != ModuleType.Stub) {
+                    // Debug.Assert(expectedMemberType.Documentation == actualMemberType.Documentation);
+                    if (string.IsNullOrEmpty(expectedMemberType.Documentation)) {
+                        assertion.ForCondition(string.IsNullOrEmpty(actualMemberType.Documentation))
+                            .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have no documentation{{reason}}, but it has '{actualMemberType.Documentation}'");
+                    } else {
+                        assertion.ForCondition(actualMemberType.Documentation.EqualsOrdinal(expectedMemberType.Documentation))
+                            .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualMemberType.Documentation}'");
+                    }
                 }
 
                 switch (actualMemberType.MemberType) {
