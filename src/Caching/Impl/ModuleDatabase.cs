@@ -62,10 +62,8 @@ namespace Microsoft.Python.Analysis.Caching {
                 return null;
             }
 
-            lock (_lock) {
-                return FindModuleModelByPath(moduleName, modulePath, moduleType, out var model) 
-                    ? RestoreModule(model) : null;
-            }
+            return FindModuleModelByPath(moduleName, modulePath, moduleType, out var model)
+                ? RestoreModule(model) : null;
         }
 
         /// <summary>
@@ -94,22 +92,20 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         internal IPythonModule RestoreModule(string moduleName, string uniqueId) {
-            lock (_lock) {
-                return FindModuleModelById(moduleName, uniqueId, out var model) 
-                    ? RestoreModule(model) : null;
-            }
+            return FindModuleModelById(moduleName, uniqueId, out var model)
+                ? RestoreModule(model) : null;
         }
 
         private IPythonModule RestoreModule(ModuleModel model) {
+            PythonDbModule dbModule;
             lock (_lock) {
                 if (_modulesCache.TryGetValue(model.UniqueId, out var m)) {
                     return m;
                 }
-
-                var dbModule = _modulesCache[model.UniqueId] = new PythonDbModule(model, model.FilePath, _services);
-                dbModule.Construct(model);
-                return dbModule;
+                dbModule = _modulesCache[model.UniqueId] = new PythonDbModule(model, model.FilePath, _services);
             }
+            dbModule.Construct(model);
+            return dbModule;
         }
 
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
@@ -187,7 +183,7 @@ namespace Microsoft.Python.Analysis.Caching {
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
 
-        public bool FindModuleModelByPath(string moduleName, string modulePath, ModuleType moduleType, out ModuleModel model) 
+        public bool FindModuleModelByPath(string moduleName, string modulePath, ModuleType moduleType, out ModuleModel model)
             => TryGetModuleModel(moduleName, FindDatabaseFile(moduleName, modulePath, moduleType), out model);
 
         public bool FindModuleModelById(string moduleName, string uniqueId, out ModuleModel model)
