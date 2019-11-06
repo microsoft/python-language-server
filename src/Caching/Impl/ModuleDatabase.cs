@@ -36,16 +36,14 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
-        private readonly AnalysisCachingLevel _cachingLevel;
+        private readonly AnalysisCachingLevel _defaultCachingLevel;
+        private AnalysisCachingLevel? _cachingLevel;
 
-        public ModuleDatabase(IServiceManager sm, string cacheFolder = null, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library) {
+        public ModuleDatabase(IServiceManager sm, string cacheFolder = null) {
             _services = sm;
             _log = _services.GetService<ILogger>();
             _fs = _services.GetService<IFileSystem>();
-            
-            var optionsProvider = _services.GetService<IAnalysisOptionsProvider>();
-            _cachingLevel = optionsProvider?.Options.AnalysisCachingLevel ?? cachingLevel;
-
+            _defaultCachingLevel = AnalysisCachingLevel.Library;
             var cfs = _services.GetService<ICacheFolderService>();
             CacheFolder = cacheFolder ?? Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
             sm.AddService(this);
@@ -60,7 +58,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Global scope is then can be used to construct module analysis.
         /// </summary>
         public IPythonModule RestoreModule(string moduleName, string modulePath, ModuleType moduleType) {
-            if (_cachingLevel == AnalysisCachingLevel.None) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None) {
                 return null;
             }
 
@@ -78,7 +76,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// Determines if module analysis exists in the storage.
         /// </summary>
         public bool ModuleExistsInStorage(string name, string filePath, ModuleType moduleType) {
-            if (_cachingLevel == AnalysisCachingLevel.None) {
+            if (GetCachingLevel() == AnalysisCachingLevel.None) {
                 return false;
             }
 
@@ -111,11 +109,12 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
-            if (_cachingLevel == AnalysisCachingLevel.None) {
+            var cachingLevel = GetCachingLevel();
+            if (cachingLevel == AnalysisCachingLevel.None) {
                 return;
             }
 
-            var model = ModuleModel.FromAnalysis(analysis, _services, _cachingLevel);
+            var model = ModuleModel.FromAnalysis(analysis, _services, cachingLevel);
             if (model == null) {
                 // Caching level setting does not permit this module to be persisted.
                 return;
@@ -158,7 +157,7 @@ namespace Microsoft.Python.Analysis.Caching {
         /// module content (typically file sizes).
         /// </summary>
         private string FindDatabaseFile(string moduleName, string filePath, ModuleType moduleType) {
-            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, moduleType, _services, _cachingLevel);
+            var uniqueId = ModuleUniqueId.GetUniqueId(moduleName, filePath, moduleType, _services, GetCachingLevel());
             return string.IsNullOrEmpty(uniqueId) ? null : FindDatabaseFile(uniqueId);
         }
 
@@ -216,5 +215,9 @@ namespace Microsoft.Python.Analysis.Caching {
             }
             return false;
         }
+        private AnalysisCachingLevel GetCachingLevel()
+            => _cachingLevel
+               ?? (_cachingLevel = _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel)
+               ?? _defaultCachingLevel;
     }
 }
