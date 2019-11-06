@@ -217,12 +217,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         [JsonRpcMethod("textDocument/codeAction")]
         public async Task<CodeAction[]> CodeAction(JToken token, CancellationToken cancellationToken) {
-            using (var timer = _requestTimer.Time("textDocument/codeAction")) {
-                await _prioritizer.DefaultPriorityAsync(cancellationToken);
-                var actions = await _server.CodeAction(ToObject<CodeActionParams>(token), cancellationToken);
-                timer.AddMeasure("count", actions?.Length ?? 0);
-                return actions;
-            }
+            using var timer = _requestTimer.Time("textDocument/codeAction");
+            await _prioritizer.DefaultPriorityAsync(cancellationToken);
+            var actions = await _server.CodeAction(ToObject<CodeActionParams>(token), cancellationToken);
+            timer.AddMeasure("count", actions?.Length ?? 0);
+            return actions;
         }
 
         //[JsonRpcMethod("textDocument/codeLens")]
