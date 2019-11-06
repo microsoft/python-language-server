@@ -40,6 +40,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/didChangeConfiguration")]
         public async Task DidChangeConfiguration(JToken token, CancellationToken cancellationToken) {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
+
                 var settings = new LanguageServerSettings();
 
                 // https://github.com/microsoft/python-language-server/issues/915
