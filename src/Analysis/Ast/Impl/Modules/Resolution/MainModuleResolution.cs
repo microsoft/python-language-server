@@ -91,7 +91,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 : ModuleType.User;
 
             var dbs = GetDbService();
-            module = dbs?.RestoreModule(name, moduleImport.ModulePath, ModuleType.Specialized);
+            module = dbs?.RestoreModule(name, moduleImport.ModulePath, moduleType);
             if (module != null) {
                 Log?.Log(TraceEventType.Verbose, "Restored from database: ", name);
                 return module;

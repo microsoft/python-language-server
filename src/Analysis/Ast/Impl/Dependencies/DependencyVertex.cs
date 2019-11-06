@@ -36,7 +36,7 @@ namespace Microsoft.Python.Analysis.Dependencies {
 
         private int _state;
         private HashSet<int> _outgoing;
-        private static HashSet<int> _empty = new HashSet<int>();
+        private static readonly HashSet<int> _empty = new HashSet<int>();
 
         public DependencyVertex(DependencyVertex<TKey, TValue> oldVertex, int version, bool isNew) {
             Key = oldVertex.Key;

@@ -188,8 +188,9 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
 
             var dependenciesHashSet = new HashSet<AnalysisModuleKey>();
-            foreach (var dependency in analysisDependencies) {
-                if (dependency != module && (dependency.ModuleType == ModuleType.User && dependency.Analysis.Version < version || dependency.Analysis is EmptyAnalysis)) {
+            foreach (var dependency in analysisDependencies.ExcludeDefault().Where(d => d.ModuleType != ModuleType.Specialized)) {
+                if (!dependency.Equals(module) && 
+                    (dependency.ModuleType == ModuleType.User && dependency.Analysis.Version < version || dependency.Analysis is EmptyAnalysis)) {
                     dependenciesHashSet.Add(new AnalysisModuleKey(dependency));
                 }
             }
