@@ -97,6 +97,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 sw.Stop();
                 if (module != null) {
                     Log?.Log(TraceEventType.Verbose, $"Restored from database: {name} in {sw.ElapsedMilliseconds} ms.");
+                    Interpreter.ModuleResolution.SpecializeModule(name, x => module, true);
                     return module;
                 }
             }

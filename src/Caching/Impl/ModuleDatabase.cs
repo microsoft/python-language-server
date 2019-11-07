@@ -14,12 +14,15 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -31,7 +34,10 @@ using Microsoft.Python.Core.Services;
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
         private readonly object _lock = new object();
-        private static readonly Dictionary<string, PythonDbModule> _modulesCache = new Dictionary<string, PythonDbModule>();
+        private static readonly Dictionary<string, PythonDbModule> _modulesCache
+            = new Dictionary<string, PythonDbModule>();
+        private static readonly ConcurrentDictionary<AnalysisModuleKey, bool> _searchResults
+            = new ConcurrentDictionary<AnalysisModuleKey, bool>();
 
         private readonly IServiceContainer _services;
         private readonly ILogger _log;
@@ -61,7 +67,6 @@ namespace Microsoft.Python.Analysis.Caching {
             if (GetCachingLevel() == AnalysisCachingLevel.None) {
                 return null;
             }
-
             return FindModuleModelByPath(moduleName, modulePath, moduleType, out var model)
                 ? RestoreModule(model) : null;
         }
@@ -80,10 +85,16 @@ namespace Microsoft.Python.Analysis.Caching {
                 return false;
             }
 
+            var key = new AnalysisModuleKey(name, filePath);
+            if (_searchResults.TryGetValue(key, out var result)) {
+                return result;
+            }
+
             for (var retries = 50; retries > 0; --retries) {
                 try {
                     var dbPath = FindDatabaseFile(name, filePath, moduleType);
-                    return !string.IsNullOrEmpty(dbPath);
+                    _searchResults[key] = result = !string.IsNullOrEmpty(dbPath);
+                    return result;
                 } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
                     Thread.Sleep(10);
                 }
@@ -124,35 +135,21 @@ namespace Microsoft.Python.Analysis.Caching {
                 return;
             }
 
-            Exception ex = null;
-            for (var retries = 50; retries > 0; --retries) {
+            WithRetries(() => {
+                if (!_fs.DirectoryExists(CacheFolder)) {
+                    _fs.CreateDirectory(CacheFolder);
+                }
+                return true;
+            }, $"Unable to create directory {CacheFolder} for modules cache.");
+
+            WithRetries(() => {
                 cancellationToken.ThrowIfCancellationRequested();
-                try {
-                    if (!_fs.DirectoryExists(CacheFolder)) {
-                        _fs.CreateDirectory(CacheFolder);
-                    }
-
-                    cancellationToken.ThrowIfCancellationRequested();
-                    using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
-                        var modules = db.GetCollection<ModuleModel>("modules");
-                        modules.Upsert(model);
-                        return;
-                    }
-                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
-                    ex = ex1;
-                    Thread.Sleep(10);
-                } catch (Exception ex2) {
-                    ex = ex2;
-                    break;
+                using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
+                    var modules = db.GetCollection<ModuleModel>("modules");
+                    modules.Upsert(model);
                 }
-            }
-
-            if (ex != null) {
-                _log?.Log(System.Diagnostics.TraceEventType.Warning, $"Unable to write analysis of {model.Name} to database. Exception {ex.Message}");
-                if (ex.IsCriticalException()) {
-                    throw ex;
-                }
-            }
+                return true;
+            }, $"Unable to write analysis of {model.Name} to database.");
         }
 
         /// <summary>
@@ -187,41 +184,54 @@ namespace Microsoft.Python.Analysis.Caching {
             return _fs.FileExists(dbPath) ? dbPath : null;
         }
 
-        public bool FindModuleModelByPath(string moduleName, string modulePath, ModuleType moduleType, out ModuleModel model)
+        private bool FindModuleModelByPath(string moduleName, string modulePath, ModuleType moduleType, out ModuleModel model)
             => TryGetModuleModel(moduleName, FindDatabaseFile(moduleName, modulePath, moduleType), out model);
 
-        public bool FindModuleModelById(string moduleName, string uniqueId, out ModuleModel model)
+        private bool FindModuleModelById(string moduleName, string uniqueId, out ModuleModel model)
             => TryGetModuleModel(moduleName, FindDatabaseFile(uniqueId), out model);
 
         private bool TryGetModuleModel(string moduleName, string dbPath, out ModuleModel model) {
             model = null;
-            // We don't cache results here. Module resolution service decides when to call in here
-            // and it is responsible of overall management of the loaded Python modules.
-            for (var retries = 50; retries > 0; --retries) {
-                try {
-                    // TODO: make combined db rather than per module?
-                    if (string.IsNullOrEmpty(dbPath)) {
-                        return false;
-                    }
-
-                    using (var db = new LiteDatabase(dbPath)) {
-                        if (!db.CollectionExists("modules")) {
-                            return false;
-                        }
-
-                        var modules = db.GetCollection<ModuleModel>("modules");
-                        model = modules.Find(m => m.Name == moduleName).FirstOrDefault();
-                        return model != null;
-                    }
-                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
-                    Thread.Sleep(10);
-                }
+            
+            if (string.IsNullOrEmpty(dbPath)) {
+                return false;
             }
-            return false;
+            
+            model = WithRetries<ModuleModel>(() => {
+                using (var db = new LiteDatabase(dbPath)) {
+                    var modules = db.GetCollection<ModuleModel>("modules");
+                    return modules.Find(m => m.Name == moduleName).FirstOrDefault();
+                }
+            }, $"Unable to locate database for module {moduleName}.");
+            
+            return model != null;
         }
+
         private AnalysisCachingLevel GetCachingLevel()
             => _cachingLevel
                ?? (_cachingLevel = _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel)
                ?? _defaultCachingLevel;
+
+        private T WithRetries<T>(Func<T> a, string errorMessage) {
+            Exception ex = null;
+            for (var retries = 50; retries > 0; --retries) {
+                try {
+                    return a();
+                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
+                    ex = ex1;
+                    Thread.Sleep(10);
+                } catch (Exception ex2) {
+                    ex = ex2;
+                    break;
+                }
+            }
+            if (ex != null) {
+                _log?.Log(TraceEventType.Warning, $"{errorMessage} Exception: {ex.Message}");
+                if (ex.IsCriticalException()) {
+                    throw ex;
+                }
+            }
+            return default;
+        }
     }
 }
