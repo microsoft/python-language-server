@@ -211,11 +211,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
-        //[JsonRpcMethod("textDocument/documentHighlight")]
-        //public async Task<DocumentHighlight[]> DocumentHighlight(JToken token, CancellationToken cancellationToken) {
-        //    await _prioritizer.DefaultPriorityAsync(cancellationToken);
-        //    return await _server.DocumentHighlight(ToObject<TextDocumentPositionParams>(token), cancellationToken);
-        //}
+        [JsonRpcMethod("textDocument/documentHighlight")]
+        public async Task<DocumentHighlight[]> DocumentHighlight(JToken token, CancellationToken cancellationToken) {
+            using (_requestTimer.Time("textDocument/documentHighlight")) {
+                await _prioritizer.DefaultPriorityAsync(cancellationToken);
+                Debug.Assert(_initialized);
+                return await _server.DocumentHighlight(ToObject<ReferencesParams>(token), cancellationToken);
+            }
+        }
 
         [JsonRpcMethod("textDocument/documentSymbol")]
         public async Task<DocumentSymbol[]> DocumentSymbol(JToken token, CancellationToken cancellationToken) {
