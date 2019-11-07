@@ -43,19 +43,21 @@ namespace Microsoft.Python.Analysis.Tests {
         private TimeSpan GetAnalysisTimeout() => Debugger.IsAttached ? Timeout.InfiniteTimeSpan : AnalysisTimeout;
 
         protected TestLogger TestLogger { get; } = new TestLogger();
-        protected ServiceManager Services { get; private set; }
+        protected IServiceManager Services { get; private set; }
 
         protected virtual IDiagnosticsService GetDiagnosticsService(IServiceContainer s) => null;
 
-        protected ServiceManager CreateServiceManager() {
-            Services = new ServiceManager();
+        protected IServiceManager CreateServiceManager(IServiceManager sm = null) {
+            Services = sm ?? new ServiceManager();
 
-            var platform = new OSPlatform();
-            Services
-                .AddService(TestLogger)
-                .AddService(platform)
-                .AddService(new ProcessServices())
-                .AddService(new FileSystem(platform));
+            if (sm == null) {
+                var platform = new OSPlatform();
+                Services
+                    .AddService(TestLogger)
+                    .AddService(platform)
+                    .AddService(new ProcessServices())
+                    .AddService(new FileSystem(platform));
+            }
 
             return Services;
         }
@@ -73,12 +75,12 @@ namespace Microsoft.Python.Analysis.Tests {
             searchPaths = searchPaths ?? new[] { GetAnalysisTestDataFilesPath() };
             var typeshedPath = TestData.GetDefaultTypeshedPath();
 
-            sm = sm ?? CreateServiceManager();
+            CreateServiceManager(sm);
 
             sm.AddService(Substitute.For<IClientApplication>())
               .AddService(Substitute.For<IIdleTimeService>());
 
-            var ds = GetDiagnosticsService(Services);
+            var ds = GetDiagnosticsService(sm);
             if (ds != null) {
                 sm.AddService(ds);
             }
