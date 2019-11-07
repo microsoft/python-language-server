@@ -175,13 +175,16 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                 // Allow documentation replacement from primary
                 // https://github.com/microsoft/python-language-server/issues/1753
                 if (expectedMemberType.DeclaringModule.ModuleType != ModuleType.Stub) {
-                    Debug.Assert(expectedMemberType.Documentation == actualMemberType.Documentation);
-                    if (string.IsNullOrEmpty(expectedMemberType.Documentation)) {
-                        assertion.ForCondition(string.IsNullOrEmpty(actualMemberType.Documentation))
-                            .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have no documentation{{reason}}, but it has '{actualMemberType.Documentation}'");
+                    var expectedDoc = expectedMemberType.Documentation?.Trim();
+                    var actualDoc = actualMemberType.Documentation?.Trim();
+
+                    Debug.Assert(expectedDoc == actualDoc);
+                    if (string.IsNullOrEmpty(expectedDoc)) {
+                        assertion.ForCondition(string.IsNullOrEmpty(actualDoc))
+                            .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have no documentation{{reason}}, but it has '{actualDoc}'");
                     } else {
-                        assertion.ForCondition(actualMemberType.Documentation.EqualsOrdinal(expectedMemberType.Documentation))
-                            .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualMemberType.Documentation}'");
+                        assertion.ForCondition(actualDoc.EqualsOrdinal(expectedDoc))
+                            .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualDoc}'");
                     }
                 }
 

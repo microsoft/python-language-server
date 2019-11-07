@@ -73,20 +73,22 @@ def func2() -> C2: ...
         }
 
         [TestMethod, Priority(0)]
-        public async Task Sys() {
-            const string code = @"
-import sys
-x = sys.api_version
-";
-            var analysis = await GetAnalysisAsync(code);
-            await CreateDatabaseAsync(analysis.Document.Interpreter);
+        public Task Sys() => TestModule("sys");
 
+        [TestMethod, Priority(0)]
+        public Task Numpy() => TestModule("numpy");
+
+        private async Task TestModule(string name) {
+            var analysis = await GetAnalysisAsync($"import {name}");
+            var sys = analysis.Should().HaveVariable(name).Which;
+
+            await CreateDatabaseAsync(analysis.Document.Interpreter);
             await Services.GetService<IPythonAnalyzer>().ResetAnalyzer();
             var doc = Services.GetService<IRunningDocumentTable>().GetDocument(analysis.Document.Uri);
-            analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
 
-            analysis.Should().HaveVariable("x")
-                .Which.Should().HaveType(BuiltinTypeId.Int);
+            var restored = await doc.GetAnalysisAsync(Timeout.Infinite);
+            var restoredSys = restored.Should().HaveVariable(name).Which;
+            restoredSys.Value.Should().HaveSameMembersAs(sys.Value);
         }
 
         private async Task CreateDatabaseAsync(IPythonInterpreter interpreter) {
