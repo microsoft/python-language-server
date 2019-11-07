@@ -13,21 +13,19 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Specializations.Typing.Values;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values.Collections;
 
-namespace Microsoft.Python.Analysis.Values {
-    internal sealed class PythonNone : PythonType, IPythonInstance {
-        public PythonNone(IBuiltinsPythonModule builtins) : base("None", new Location(builtins), string.Empty, BuiltinTypeId.None) { }
+namespace Microsoft.Python.Analysis.Specializations {
+    internal sealed class Type : SpecializedClass {
+        public Type(IPythonModule declaringModule) : base(BuiltinTypeId.Type, declaringModule) { }
 
-        public override IMember CreateInstance(IArgumentSet args) => this;
+        public override PythonMemberType MemberType => PythonMemberType.Class;
 
-        public IPythonType Type => this;
-
-        public IMember Call(string memberName, IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
-
-        public IPythonIterator GetIterator() => new EmptyIterator(DeclaringModule.Interpreter.UnknownType);
-
-        public IMember Index(IArgumentSet args) => DeclaringModule.Interpreter.UnknownType;
+        public override IMember CreateInstance(IArgumentSet args) {
+            var argMembers = args.Values<IMember>();
+            // type(self, ...)
+            return argMembers.Count > 1 ? argMembers[1].GetPythonType().ToBound() : this;
+        }
     }
 }

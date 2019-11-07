@@ -806,6 +806,21 @@ class DocEnum(Enum):
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task Metaclass() {
+            const string code = @"
+class MyMetaclass(type):
+    pass
+
+MyClass = MyMetaclass('MyClass', (), {})
+
+class Subclass(MyClass):
+    pass
+";
+            var d = await LintAsync(code);
+            d.Should().BeEmpty();
+        }
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();

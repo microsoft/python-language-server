@@ -66,7 +66,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override void RemoveReferences(IPythonModule module) => _locatedMember.RemoveReferences(module);
         #endregion
 
-        public override IPythonInstance CreateInstance(IArgumentSet args) => new TypingTuple(this);
+        public override IMember CreateInstance(IArgumentSet args) => new TypingTuple(this);
 
         // NamedTuple does not create instances, it defines a type.
         public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => this;

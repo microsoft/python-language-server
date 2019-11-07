@@ -52,7 +52,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override bool IsAbstract => false;
         public override bool IsSpecialized => true;
 
-        public override IPythonInstance CreateInstance(IArgumentSet args) => new TypingList(this);
+        public override IMember CreateInstance(IArgumentSet args) => new TypingList(this);
         public IPythonType ItemType { get; }
 
         public override IMember Index(IPythonInstance instance, IArgumentSet args) => ItemType.CreateInstance(args);
