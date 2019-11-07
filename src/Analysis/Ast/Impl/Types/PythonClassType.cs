@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Types {
         }
 
         // Constructor call
-        public override IPythonInstance CreateInstance(IArgumentSet args) {
+        public override IMember CreateInstance(IArgumentSet args) {
             var builtins = DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule;
             // Specializations
             switch (Name) {
@@ -157,6 +157,10 @@ namespace Microsoft.Python.Analysis.Types {
                         var contents = args.Values<IMember>();
                         return PythonCollectionType.CreateTuple(builtins, contents);
                     }
+            }
+            // Metaclasses return type, not instance.
+            if (Bases.MaybeEnumerate().Any(b => b.Name == "type" && b.DeclaringModule.ModuleType == ModuleType.Builtins)) {
+                return this;
             }
             return new PythonInstance(this);
         }

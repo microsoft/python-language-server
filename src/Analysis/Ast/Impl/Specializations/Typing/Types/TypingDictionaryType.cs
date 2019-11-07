@@ -48,7 +48,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override string Name { get; }
         public override string QualifiedName { get; }
 
-        public override IPythonInstance CreateInstance(IArgumentSet args) => new TypingDictionary(this);
+        public override IMember CreateInstance(IArgumentSet args) => new TypingDictionary(this);
         public override IMember Index(IPythonInstance instance, IArgumentSet args) => ValueType.CreateInstance(args);
         public override bool IsSpecialized => true;
 

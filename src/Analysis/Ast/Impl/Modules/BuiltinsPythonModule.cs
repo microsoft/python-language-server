@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -171,12 +172,13 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis.SpecializeFunction("pow", BuiltinsSpecializations.Identity);
             Analysis.SpecializeFunction("range", BuiltinsSpecializations.Range);
             Analysis.SpecializeFunction("sum", BuiltinsSpecializations.CollectionItem);
-            Analysis.SpecializeFunction("type", BuiltinsSpecializations.TypeInfo);
             Analysis.SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
 
             Analysis.SpecializeFunction("super", BuiltinsSpecializations.Super);
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
+
+            Analysis.GlobalScope.DeclareVariable("type", new TypeClass(Analysis), VariableSource.Builtin);
         }
 
         private IReadOnlyList<ParameterInfo> OpenConstructor() {
@@ -198,6 +200,26 @@ namespace Microsoft.Python.Analysis.Modules {
                     new ParameterInfo("opener", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.Str)))
                 };
             }
+        }
+
+        private class TypeClass: PythonTypeWrapper, IPythonClassType {
+            public TypeClass(IDocumentAnalysis analysis): 
+                base(analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Type), 
+                     analysis.Document.Interpreter.ModuleResolution.BuiltinsModule) {
+            }
+
+            public override PythonMemberType MemberType => PythonMemberType.Class;
+            public override IMember CreateInstance(IArgumentSet args) => this;
+            public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet) => this;
+            public override IMember Index(IPythonInstance instance, IArgumentSet args) => null;
+            public IPythonType CreateSpecificType(IArgumentSet typeArguments) => this;
+            public IPythonType DeclaringType => null;
+            public IReadOnlyList<IGenericTypeParameter> Parameters => Array.Empty<IGenericTypeParameter>();
+            public bool IsGeneric => false;
+            public ClassDefinition ClassDefinition => null;
+            public IReadOnlyList<IPythonType> Mro => Array.Empty<IPythonType>();
+            public IReadOnlyList<IPythonType> Bases => new[] {DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object)};
+            public IReadOnlyDictionary<string, IPythonType> GenericParameters => EmptyDictionary<string, IPythonType>.Instance;
         }
     }
 }

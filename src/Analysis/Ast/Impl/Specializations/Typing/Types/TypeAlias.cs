@@ -25,6 +25,6 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public override string QualifiedName => $"typing:{Name}";
         public override bool IsSpecialized => true;
 
-        public override IPythonInstance CreateInstance(IArgumentSet args) => new PythonInstance(this);
+        public override IMember CreateInstance(IArgumentSet args) => new PythonInstance(this);
     }
 }
