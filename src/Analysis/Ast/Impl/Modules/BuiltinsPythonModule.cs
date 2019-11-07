@@ -26,6 +26,7 @@ using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Parsing;
 using Microsoft.Python.Parsing.Ast;
+using Type = Microsoft.Python.Analysis.Specializations.Type;
 
 namespace Microsoft.Python.Analysis.Modules {
     /// <summary>
@@ -178,7 +179,7 @@ namespace Microsoft.Python.Analysis.Modules {
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
 
-            Analysis.GlobalScope.DeclareVariable("type", new TypeClass(Analysis), VariableSource.Builtin);
+            Analysis.GlobalScope.DeclareVariable("type", new Type(Analysis.Document), VariableSource.Builtin);
         }
 
         private IReadOnlyList<ParameterInfo> OpenConstructor() {
@@ -188,38 +189,18 @@ namespace Microsoft.Python.Analysis.Modules {
                     new ParameterInfo("mode", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant("r", Interpreter.GetBuiltinType(BuiltinTypeId.Str))),
                     new ParameterInfo("buffering", Interpreter.GetBuiltinType(BuiltinTypeId.Int), ParameterKind.Normal, new PythonConstant(-1, Interpreter.GetBuiltinType(BuiltinTypeId.Int))),
                 };
-            } else {
-                return new[] {
-                    new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
-                    new ParameterInfo("mode", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant("r", Interpreter.GetBuiltinType(BuiltinTypeId.Str))),
-                    new ParameterInfo("buffering", Interpreter.GetBuiltinType(BuiltinTypeId.Int), ParameterKind.Normal, new PythonConstant(-1, Interpreter.GetBuiltinType(BuiltinTypeId.Int))),
-                    new ParameterInfo("encoding", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
-                    new ParameterInfo("errors", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
-                    new ParameterInfo("newline", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
-                    new ParameterInfo("closefd", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.Normal, new PythonConstant(true, Interpreter.GetBuiltinType(BuiltinTypeId.Bool))),
-                    new ParameterInfo("opener", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.Str)))
-                };
-            }
-        }
-
-        private class TypeClass: PythonTypeWrapper, IPythonClassType {
-            public TypeClass(IDocumentAnalysis analysis): 
-                base(analysis.Document.Interpreter.GetBuiltinType(BuiltinTypeId.Type), 
-                     analysis.Document.Interpreter.ModuleResolution.BuiltinsModule) {
             }
 
-            public override PythonMemberType MemberType => PythonMemberType.Class;
-            public override IMember CreateInstance(IArgumentSet args) => this;
-            public override IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet) => this;
-            public override IMember Index(IPythonInstance instance, IArgumentSet args) => null;
-            public IPythonType CreateSpecificType(IArgumentSet typeArguments) => this;
-            public IPythonType DeclaringType => null;
-            public IReadOnlyList<IGenericTypeParameter> Parameters => Array.Empty<IGenericTypeParameter>();
-            public bool IsGeneric => false;
-            public ClassDefinition ClassDefinition => null;
-            public IReadOnlyList<IPythonType> Mro => Array.Empty<IPythonType>();
-            public IReadOnlyList<IPythonType> Bases => new[] {DeclaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Object)};
-            public IReadOnlyDictionary<string, IPythonType> GenericParameters => EmptyDictionary<string, IPythonType>.Instance;
+            return new[] {
+                new ParameterInfo("file", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, null),
+                new ParameterInfo("mode", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant("r", Interpreter.GetBuiltinType(BuiltinTypeId.Str))),
+                new ParameterInfo("buffering", Interpreter.GetBuiltinType(BuiltinTypeId.Int), ParameterKind.Normal, new PythonConstant(-1, Interpreter.GetBuiltinType(BuiltinTypeId.Int))),
+                new ParameterInfo("encoding", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
+                new ParameterInfo("errors", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
+                new ParameterInfo("newline", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.None))),
+                new ParameterInfo("closefd", Interpreter.GetBuiltinType(BuiltinTypeId.Bool), ParameterKind.Normal, new PythonConstant(true, Interpreter.GetBuiltinType(BuiltinTypeId.Bool))),
+                new ParameterInfo("opener", Interpreter.GetBuiltinType(BuiltinTypeId.Str), ParameterKind.Normal, new PythonConstant(null, Interpreter.GetBuiltinType(BuiltinTypeId.Str)))
+            };
         }
     }
 }
