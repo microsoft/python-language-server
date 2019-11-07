@@ -58,6 +58,7 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
 
         internal PythonDbModule CreateDbModule(ModuleModel model, string modulePath) {
             var dbModule = new PythonDbModule(model, modulePath, Services);
+            Services.GetService<IPythonAnalyzer>().InvalidateAnalysis(dbModule);
             dbModule.Construct(model);
             return dbModule;
         }

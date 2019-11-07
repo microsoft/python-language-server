@@ -24,6 +24,7 @@ using FluentAssertions.Primitives;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 using static Microsoft.Python.Analysis.Tests.FluentAssertions.AssertionsUtilities;
 
 namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
@@ -126,59 +127,62 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
             return HaveMembers(((IMemberContainer)member).GetMemberNames(), string.Empty);
         }
 
-        public void HaveSameMembersAs(IMember other) {
-            other.Should().BeAssignableTo<IMemberContainer>();
-            var otherContainer = (IMemberContainer)other;
+        public void HaveSameMembersAs(IMember expected, string because = "", params object[] becauseArgs) {
+            var expectedContainer = expected.Should().BeAssignableTo<IMemberContainer>().Which;
 
             var subjectType = Subject.GetPythonType();
-            var subjectMemberNames = subjectType.GetMemberNames().ToArray();
-            var otherMemberNames = otherContainer.GetMemberNames().ToArray();
+            var actualNames = subjectType.GetMemberNames().ToArray();
+            var expectedNames = expectedContainer.GetMemberNames().ToArray();
 
-            var missingNames = otherMemberNames.Except(subjectMemberNames).ToArray();
-            var extraNames = subjectMemberNames.Except(otherMemberNames).ToArray();
+            var errorMessage = GetAssertCollectionOnlyContainsMessage(actualNames, expectedNames, GetQuotedName(Subject), "member", "members");
 
-            Debug.Assert(missingNames.Length == 0);
-            missingNames.Should().BeEmpty("Subject has missing names: ", missingNames);
+            var assertion = Execute.Assertion.BecauseOf(because, becauseArgs);
 
-            Debug.Assert(extraNames.Length == 0);
-            extraNames.Should().BeEmpty("Subject has extra names: ", extraNames);
+            assertion.ForCondition(errorMessage == null).FailWith(errorMessage);
 
-            foreach (var n in subjectMemberNames.Except(Enumerable.Repeat("__base__", 1))) {
-                var subjectMember = subjectType.GetMember(n);
-                var otherMember = otherContainer.GetMember(n);
-                var subjectMemberType = subjectMember.GetPythonType();
-                var otherMemberType = otherMember.GetPythonType();
+            foreach (var n in actualNames.Except(Enumerable.Repeat("__base__", 1))) {
+                var actualMember = subjectType.GetMember(n);
+                var expectedMember = expectedContainer.GetMember(n);
+                var actualMemberType = actualMember.GetPythonType();
+                var expectedMemberType = expectedMember.GetPythonType();
 
                 // PythonConstant, PythonUnicodeStrings... etc are mapped to instances.
-                if (subjectMember is IPythonInstance) {
-                    otherMember.Should().BeAssignableTo<IPythonInstance>();
+                if (expectedMember is IPythonInstance && !expectedMember.IsUnknown()) {
+                    assertion.ForCondition(actualMember is IPythonInstance)
+                        .FailWith($"Expected '{GetName(subjectType)}.{n}' to implement IPythonInstance{{reason}}, but its type is {actualMember.GetType().FullName}");
                 }
 
-                subjectMemberType.MemberType.Should().Be(otherMemberType.MemberType, $"Type name: {subjectMemberType.Name}");
-                //Debug.Assert(subjectMemberType.MemberType == otherMemberType.MemberType);
+                assertion.ForCondition(actualMemberType.MemberType == expectedMemberType.MemberType)
+                    .FailWith($"Expected '{GetName(subjectType)}.{n}' to have MemberType {expectedMemberType.MemberType}{{reason}}, but it has MemberType {actualMemberType.MemberType}");
 
-                if (subjectMemberType is IPythonClassType subjectClass) {
-                    var otherClass = otherMemberType as IPythonClassType;
-                    otherClass.Should().NotBeNull();
+                if (expectedMemberType is IPythonClassType) {
+                    assertion.ForCondition(actualMemberType is IPythonClassType)
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to implement IPythonClassType{{reason}}, but python type is {actualMemberType.GetType().FullName}");
+                }
 
-                    if (subjectClass is IGenericType gt) {
-                        otherClass.Should().BeAssignableTo<IGenericType>();
-                        otherClass.IsGeneric.Should().Be(gt.IsGeneric, $"Class name: {subjectClass.Name}");
-                    }
+                if (expectedMemberType is IGenericType expectedGenericType) {
+                    assertion.ForCondition(actualMemberType is IGenericType)
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to implement IGenericType{{reason}}, but python type is {actualMemberType.GetType().FullName}");
+
+                    //var expectedIsGeneric = expectedGenericType.IsGeneric ? "be generic" : "not be generic";
+                    //var actualIsNotGeneric = expectedGenericType.IsGeneric ? "is not" : "is generic";
+                    //assertion.ForCondition(expectedGenericType.IsGeneric == ((IGenericType)actualMemberType).IsGeneric)
+                    //    .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to {expectedIsGeneric}{{reason}}, but it {actualIsNotGeneric}.");
 
                     // See https://github.com/microsoft/python-language-server/issues/1533 on unittest.
                     //Debug.Assert(subjectClass.Bases.Count == otherClass.Bases.Count);
                     //subjectClass.Bases.Count.Should().BeGreaterOrEqualTo(otherClass.Bases.Count);
                 }
 
-                if (string.IsNullOrEmpty(subjectMemberType.Documentation)) {
-                    otherMemberType.Documentation.Should().BeNullOrEmpty($"Type name: {subjectMemberType.Name}.");
+                if (string.IsNullOrEmpty(expectedMemberType.Documentation)) {
+                    assertion.ForCondition(string.IsNullOrEmpty(actualMemberType.Documentation))
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have no documentation{{reason}}, but it has '{actualMemberType.Documentation}'");
                 } else {
-                    Debug.Assert(subjectMemberType.Documentation == otherMemberType.Documentation);
-                    subjectMemberType.Documentation.Should().Be(otherMemberType.Documentation, $"Type name: {subjectMemberType.Name}.");
+                    assertion.ForCondition(actualMemberType.Documentation.EqualsOrdinal(expectedMemberType.Documentation))
+                        .FailWith($"Expected python type of '{GetName(subjectType)}.{n}' to have documentation '{expectedMemberType.Documentation}'{{reason}}, but it has '{actualMemberType.Documentation}'");
                 }
 
-                switch (subjectMemberType.MemberType) {
+                switch (actualMemberType.MemberType) {
                     case PythonMemberType.Class:
                         // Restored collections (like instance of tuple) turn into classes
                         // rather than into collections with content since we don't track
@@ -189,20 +193,20 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                         break;
                     case PythonMemberType.Function:
                     case PythonMemberType.Method:
-                        subjectMemberType.Should().BeAssignableTo<IPythonFunctionType>();
-                        otherMemberType.Should().BeAssignableTo<IPythonFunctionType>();
-                        if (subjectMemberType is IPythonFunctionType subjectFunction) {
-                            var otherFunction = (IPythonFunctionType)otherMemberType;
+                        actualMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        expectedMemberType.Should().BeAssignableTo<IPythonFunctionType>();
+                        if (actualMemberType is IPythonFunctionType subjectFunction) {
+                            var otherFunction = (IPythonFunctionType)expectedMemberType;
                             subjectFunction.Should().HaveSameOverloadsAs(otherFunction);
                         }
 
                         break;
                     case PythonMemberType.Property:
-                        subjectMemberType.Should().BeAssignableTo<IPythonPropertyType>();
-                        otherMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        actualMemberType.Should().BeAssignableTo<IPythonPropertyType>();
+                        expectedMemberType.Should().BeAssignableTo<IPythonPropertyType>();
                         break;
                     case PythonMemberType.Unknown:
-                        subjectMemberType.IsUnknown().Should().BeTrue();
+                        actualMemberType.IsUnknown().Should().BeTrue();
                         break;
                 }
             }

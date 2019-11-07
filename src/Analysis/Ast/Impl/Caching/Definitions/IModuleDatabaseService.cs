@@ -16,6 +16,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Python.Analysis.Dependencies;
+using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 
 namespace Microsoft.Python.Analysis.Caching {
@@ -43,6 +44,6 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>
         /// Determines if module analysis exists in the storage.
         /// </summary>
-        bool ModuleExistsInStorage(string moduleName, string filePath);
+        bool ModuleExistsInStorage(string moduleName, string filePath, ModuleType moduleType);
     }
 }
