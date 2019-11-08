@@ -89,9 +89,12 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                 if (op.IsComparison()) {
                     return Interpreter.GetBuiltinType(BuiltinTypeId.Bool);
                 }
-
                 return UnknownType;
             }
+
+            var leftValue = left is IVariable v1 ? v1.Value : left;
+            var rightValue = right is IVariable v2 ? v2.Value : right;
+            var isInstance = leftValue is IPythonInstance || rightValue is IPythonInstance;
 
             var leftType = left.GetPythonType();
             var rightType = right.GetPythonType();
@@ -121,7 +124,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
 
             if (leftIsSupported && rightIsSupported) {
                 if (TryGetValueFromBuiltinBinaryOp(op, leftTypeId, rightTypeId, Interpreter.LanguageVersion.Is3x(), out var member)) {
-                    return member;
+                    return isInstance ? new PythonInstance(member.GetPythonType()) : member;
                 }
             }
 
@@ -136,11 +139,10 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
                     ret = CallOperator(op, left, leftType, right, rightType, expr, tryLeft: false);
                 }
 
-                if (!ret.IsUnknown()) {
-                    return ret;
+                if (ret.IsUnknown()) {
+                    ret = op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : left;
                 }
-
-                return op.IsComparison() ? Interpreter.GetBuiltinType(BuiltinTypeId.Bool) : left;
+                return isInstance ? new PythonInstance(ret.GetPythonType()) : ret;
             }
 
             if (rightIsSupported) {
