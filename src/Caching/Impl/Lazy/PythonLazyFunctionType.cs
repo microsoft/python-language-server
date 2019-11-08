@@ -51,7 +51,7 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         protected override void EnsureContent(FunctionModel fm) {
             var innerTypes = fm.Classes.Concat<MemberModel>(fm.Functions).ToArray();
             foreach (var model in innerTypes) {
-                _function.AddMember(Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _function), overwrite: true);
+                _function.AddMember(model.Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _function), overwrite: true);
             }
         }
     }

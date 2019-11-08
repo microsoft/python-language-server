@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Parsing;
@@ -34,18 +35,6 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
             _cls.SetDocumentation(model.Documentation);
             SetInnerType(_cls);
         }
-
-        #region IPythonType
-        public override IMember GetMember(string name) {
-            EnsureContent();
-            return base.GetMember(name);
-        }
-
-        public override IEnumerable<string> GetMemberNames() {
-            EnsureContent();
-            return base.GetMemberNames();
-        }
-        #endregion
 
         #region IPythonClassType
         public IPythonType CreateSpecificType(IArgumentSet typeArguments) {
@@ -115,6 +104,7 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
             foreach (var model in allMemberModels) {
                 _cls.AddMember(model.Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _cls), false);
             }
+            _cls.AddMember("__class__", _cls, true);
         }
 
         private IEnumerable<IPythonType> CreateBases(ClassModel cm, ModuleFactory mf, IGlobalScope gs) {
@@ -149,6 +139,11 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
                     Debug.Fail("Generic class does not have generic base.");
                 }
             }
+
+            if (bases.Length > 0) {
+                _cls.AddMember("__base__", bases[0], true);
+            }
+            _cls.AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, bases), true);
             return bases;
         }
     }

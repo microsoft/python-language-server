@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 
@@ -38,6 +39,18 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         }
 
         public IPythonType DeclaringType { get; }
+
+        #region IPythonType
+        public override IMember GetMember(string name) {
+            EnsureContent();
+            return base.GetMember(name);
+        }
+
+        public override IEnumerable<string> GetMemberNames() {
+            EnsureContent();
+            return base.GetMemberNames();
+        }
+        #endregion
 
         internal void EnsureContent() {
             lock (_contentLock) {
