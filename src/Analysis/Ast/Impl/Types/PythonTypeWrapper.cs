@@ -77,7 +77,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual bool IsAbstract => InnerType.IsAbstract;
         public virtual bool IsSpecialized => InnerType.IsSpecialized;
 
-        public virtual IPythonInstance CreateInstance(IArgumentSet args)
+        public virtual IMember CreateInstance(IArgumentSet args)
             => IsAbstract ? null : InnerType.CreateInstance(args);
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => InnerType.Call(instance, memberName, args);

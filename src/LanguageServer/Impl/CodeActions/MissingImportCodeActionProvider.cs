@@ -590,6 +590,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private IEnumerable<string> GetAllVariables(IDocumentAnalysis analysis) {
+            if (analysis?.GlobalScope == null) {
+                return Array.Empty<string>();
+            }
+
             // this is different than StartImportMemberNames since that only returns something when
             // all entries are known. for import, we are fine doing best effort
             if (analysis.GlobalScope.Variables.TryGetVariable("__all__", out var variable) &&
