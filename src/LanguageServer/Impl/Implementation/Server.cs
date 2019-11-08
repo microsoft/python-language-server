@@ -32,6 +32,7 @@ using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
+using Microsoft.Python.LanguageServer.CodeActions;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Indexing;
@@ -54,6 +55,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private bool _watchSearchPaths;
         private PathsWatcher _pathsWatcher;
         private string[] _searchPaths;
+        private CodeActionSettings _codeActionSettings;
 
         public string Root { get; private set; }
 
@@ -77,30 +79,32 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void Dispose() => _disposableBag.TryDispose();
 
         #region Client message handling
-        private InitializeResult GetInitializeResult() => new InitializeResult {
-            capabilities = new ServerCapabilities {
-                textDocumentSync = new TextDocumentSyncOptions {
-                    openClose = true,
-                    change = TextDocumentSyncKind.Incremental
-                },
-                completionProvider = new CompletionOptions {
-                    triggerCharacters = new[] { "." }
-                },
-                hoverProvider = true,
-                signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
-                definitionProvider = true,
-                referencesProvider = true,
-                workspaceSymbolProvider = true,
-                documentSymbolProvider = true,
-                renameProvider = true,
-                declarationProvider = true,
-                documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
-                    firstTriggerCharacter = "\n",
-                    moreTriggerCharacter = new[] { ";", ":" }
-                },
-                codeActionProvider = new CodeActionOptions() { codeActionKinds = new string[] { CodeActionKind.QuickFix } },
-            }
-        };
+        private InitializeResult GetInitializeResult() {
+            return new InitializeResult {
+                capabilities = new ServerCapabilities {
+                    textDocumentSync = new TextDocumentSyncOptions {
+                        openClose = true,
+                        change = TextDocumentSyncKind.Incremental
+                    },
+                    completionProvider = new CompletionOptions {
+                        triggerCharacters = new[] { "." }
+                    },
+                    hoverProvider = true,
+                    signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
+                    definitionProvider = true,
+                    referencesProvider = true,
+                    workspaceSymbolProvider = true,
+                    documentSymbolProvider = true,
+                    renameProvider = true,
+                    declarationProvider = true,
+                    documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
+                        firstTriggerCharacter = "\n",
+                        moreTriggerCharacter = new[] { ";", ":" }
+                    },
+                    codeActionProvider = new CodeActionOptions() { codeActionKinds = new string[] { CodeActionKind.QuickFix, CodeActionKind.Refactor } },
+                }
+            };
+        }
 
         public Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken = default) {
             _disposableBag.ThrowIfDisposed();
@@ -218,6 +222,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             if (changed) {
                 ResetAnalyzer();
             }
+        }
+
+        public void HandleCodeActionsChange(CodeActionSettings settings) {
+            _codeActionSettings = settings;
         }
 
         #region Private Helpers
