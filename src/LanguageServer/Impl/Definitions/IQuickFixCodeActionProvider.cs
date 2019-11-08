@@ -25,7 +25,7 @@ using Microsoft.Python.LanguageServer.Protocol;
 namespace Microsoft.Python.LanguageServer {
     public interface IQuickFixCodeActionProvider {
         /// <summary>
-        /// Returns error code this code action can provide fix for. this error code must be same as ones that are reported to host as diagnostics
+        /// Returns error code this code action can provide fix for. This error code must be same as ones that are reported to host as diagnostics
         /// for example, error code from linter
         /// </summary>
         ImmutableArray<string> FixableDiagnostics { get; }
