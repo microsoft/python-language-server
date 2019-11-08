@@ -313,7 +313,16 @@ namespace Microsoft.Python.Analysis.Modules {
             _linkedParseCts = CancellationTokenSource.CreateLinkedTokenSource(_disposeToken.CancellationToken, _parseCts.Token);
 
             ContentState = State.Parsing;
-            _parsingTask = Task.Run(() => Parse(_linkedParseCts.Token), _linkedParseCts.Token);
+            _parsingTask = Task.Run(() => ParseAndLogExceptions(_linkedParseCts.Token), _linkedParseCts.Token);
+        }
+
+        private void ParseAndLogExceptions(CancellationToken cancellationToken) {
+            try {
+                Parse(cancellationToken);
+            } catch (Exception ex) when (!(ex is OperationCanceledException)) {
+                Log?.Log(TraceEventType.Warning, $"Exception while parsing {FilePath}: {ex}");
+                throw;
+            }
         }
 
         private void Parse(CancellationToken cancellationToken) {
