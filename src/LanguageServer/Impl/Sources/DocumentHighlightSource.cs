@@ -30,11 +30,6 @@ using Microsoft.Python.LanguageServer.Documents;
 using Microsoft.Python.LanguageServer.Protocol;
 
 namespace Microsoft.Python.LanguageServer.Sources {
-    internal enum DocumentHighlightSearchOptions {
-        All,
-        ExcludeLibraries
-    }
-
     internal sealed class DocumentHighlightSource {
         private const int DocumentHighlightAnalysisTimeout = 10000;
         private readonly IServiceContainer _services;
@@ -55,7 +50,6 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
 
                 var rootDefinition = definingMember.GetRootDefinition();
-                var name = definingMember.GetName();
 
                 var result = rootDefinition.References
                     .Where(r => r.DocumentUri.Equals(uri))
