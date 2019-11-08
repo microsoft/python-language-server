@@ -141,8 +141,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     }
                     break;
 
-                case PythonClassType sourceClass:
-                    MergeClass(v, sourceClass, stubType, cancellationToken);
+                case IPythonClassType sourceClass:
+                    MergeMembers(v, sourceClass, stubType, cancellationToken);
+                    break;
+
+                case PythonFunctionType sourceFunction:
+                    MergeMembers(v, sourceFunction, stubType, cancellationToken);
                     break;
 
                 case IPythonModule _:
@@ -168,11 +172,11 @@ namespace Microsoft.Python.Analysis.Analyzer {
             }
         }
 
-        private void MergeClass(IVariable v, IPythonClassType sourceClass, IPythonType stubType, CancellationToken cancellationToken) {
+        private void MergeMembers(IVariable v, IPythonType sourceType, IPythonType stubType, CancellationToken cancellationToken) {
             // Transfer documentation first so we get class documentation
             // that comes from the class definition win over one that may
             // come from __init__ during the member merge below.
-            TransferDocumentationAndLocation(sourceClass, stubType);
+            TransferDocumentationAndLocation(sourceType.GetPythonType(), stubType);
 
             // Replace the class entirely since stub members may use generic types
             // and the class definition is important. We transfer missing members
@@ -181,15 +185,15 @@ namespace Microsoft.Python.Analysis.Analyzer {
 
             // First pass: go through source class members and pick those 
             // that are not present in the stub class.
-            foreach (var name in sourceClass.GetMemberNames().ToArray()) {
+            foreach (var name in sourceType.GetMemberNames().ToArray()) {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var sourceMember = sourceClass.GetMember(name);
+                var sourceMember = sourceType.GetMember(name);
                 if (sourceMember.IsUnknown()) {
                     continue; // Do not add unknowns to the stub.
                 }
                 var sourceMemberType = sourceMember?.GetPythonType();
-                if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceClass) {
+                if (sourceMemberType is IPythonClassMember cm && cm.DeclaringType != sourceType) {
                     continue; // Only take members from this class and not from bases.
                 }
                 if (!IsFromThisModuleOrSubmodules(sourceMemberType)) {
@@ -227,7 +231,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
                     continue; // Only take members from this class and not from bases.
                 }
 
-                var sourceMember = sourceClass.GetMember(name);
+                var sourceMember = sourceType.GetMember(name);
                 if (sourceMember.IsUnknown()) {
                     continue;
                 }

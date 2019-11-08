@@ -76,6 +76,9 @@ def func2() -> C2: ...
         public Task Sys() => TestModule("sys");
 
         [TestMethod, Priority(0)]
+        public Task Os() => TestModule("os");
+
+        [TestMethod, Priority(0)]
         public Task Numpy() => TestModule("numpy");
 
         private async Task TestModule(string name) {
