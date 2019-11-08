@@ -142,7 +142,7 @@ namespace Microsoft.Python.Analysis.Types {
             lock (_lock) {
                 if (!_readonly) {
                     if (overwrite || !Members.ContainsKey(name)) {
-                        WritableMembers[name] = member;
+                        WritableMembers[name] = member is IVariable v ? v.Value : member;
                     }
                 }
                 return member;
