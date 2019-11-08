@@ -51,6 +51,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IIndexManager _indexManager;
 
         private InitializeParams _initParams;
+        private bool _initialized;
 
         private bool _watchSearchPaths;
         private PathsWatcher _pathsWatcher;
@@ -178,6 +179,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 ChooseDocumentationSource(sigInfo?.documentationFormat),
                 sigInfo?.parameterInformation?.labelOffsetSupport == true
             );
+
+            _initialized = true;
         }
 
         public Task Shutdown() {
@@ -257,6 +260,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void ResetAnalyzer() {
+            if (!_initialized) {
+                // We haven't yet initialized everything, not even the builtins.
+                // Resetting here would break things.
+                return;
+            }
+
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
             _services.GetService<PythonAnalyzer>().ResetAnalyzer().ContinueWith(t => {
                 if (_watchSearchPaths) {
