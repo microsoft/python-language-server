@@ -34,7 +34,7 @@ namespace Microsoft.Python.LanguageServer {
         /// Returns <see cref="CodeAction" /> that can potentially fix given diagnostic
         /// </summary>
         /// <param name="analysis"><see cref="IDocumentAnalysis" /> of the file where <paramref name="diagnostic"/> reported</param>
-        /// <param name="settings">settings related to code actions one can query to get user preferences</param>
+        /// <param name="settings">Settings related to code actions one can query to get user preferences</param>
         /// <param name="diagnostic"><see cref="DiagnosticsEntry" /> that code action is supposed to fix</param>
         /// <param name="cancellation"><see cref="CancellationToken" /></param>
         /// <returns><see cref="CodeAction" /> that can fix the given <paramref name="diagnostic"/></returns>

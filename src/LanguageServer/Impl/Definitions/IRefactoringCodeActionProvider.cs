@@ -27,8 +27,8 @@ namespace Microsoft.Python.LanguageServer {
         /// Returns <see cref="CodeAction" /> for the given <paramref name="range"/>. What it would do is up to the refactoring
         /// </summary>
         /// <param name="analysis"><see cref="IDocumentAnalysis" /> of the file where <paramref name="range"/> exists</param>
-        /// <param name="settings">settings related to code actions one can query to get user preferences</param>
-        /// <param name="range">range where refactoring is called upon</param>
+        /// <param name="settings">Settings related to code actions one can query to get user preferences</param>
+        /// <param name="range">Range where refactoring is called upon</param>
         /// <param name="cancellation"><see cref="CancellationToken" /></param>
         /// <returns><see cref="CodeAction" /> that will update user code or context</returns>
         Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, Range range, CancellationToken cancellation);
