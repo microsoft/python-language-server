@@ -76,16 +76,16 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
         private void HandleCodeActionsChanges(JToken pythonSection) {
             var refactoring = new Dictionary<string, object>();
-            var quickfix = new Dictionary<string, object>();
+            var quickFix = new Dictionary<string, object>();
 
             var refactoringToken = pythonSection["refactoring"];
-            var quickfixToken = pythonSection["quickfix"];
+            var quickFixToken = pythonSection["quickfix"];
 
             // +1 is for last "." after prefix
             AppendToMap(refactoringToken, refactoringToken?.Path.Length + 1 ?? 0, refactoring);
-            AppendToMap(quickfixToken, quickfixToken?.Path.Length + 1 ?? 0, quickfix);
+            AppendToMap(quickFixToken, quickFixToken?.Path.Length + 1 ?? 0, quickFix);
 
-            var codeActionSettings = new CodeActionSettings(refactoring, quickfix);
+            var codeActionSettings = new CodeActionSettings(refactoring, quickFix);
             _server.HandleCodeActionsChange(codeActionSettings);
 
             void AppendToMap(JToken setting, int prefixLength, Dictionary<string, object> map) {
