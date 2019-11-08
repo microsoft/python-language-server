@@ -1103,7 +1103,7 @@ os.path.
             await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
             var analysis = await doc.GetAnalysisAsync(Timeout.Infinite);
             var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
-            
+
             var result = cs.GetCompletions(analysis, new SourceLocation(2, 9));
             result.Should().HaveLabels("m1", "m2", "x");
         }
@@ -1421,6 +1421,52 @@ class B(A):
 
             result.Completions.Where(item => item.insertText == "None").Should().HaveCount(1);
         }
+
+
+
+        [TestMethod]
+        public async Task SingleInheritanceSuperCheckCompletion() {
+            const string code = @"
+class A:
+    def base_func(self):
+        return 1234
+
+class B(A):
+    def foo(self):
+        x = super()
+        x.
+";
+
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var result = cs.GetCompletions(analysis, new SourceLocation(9, 11));
+
+            result.Completions.Where(item => item.insertText == "base_func").Should().HaveCount(1);
+        }
+
+
+        [TestMethod]
+        public async Task SingleInheritanceSuperCheckCompletionNoDuplicates() {
+            const string code = @"
+class A:
+    def foo(self):
+        return 1234
+
+class B(A):
+    def foo(self):
+        return 4321
+
+class C(B):
+    def foo(self):
+        super().
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+            var result = cs.GetCompletions(analysis, new SourceLocation(12, 17));
+
+            result.Completions.GroupBy(item => item.insertText).Any(g => g.Count() > 1).Should().BeFalse();
+        }
+
 
         [TestMethod, Priority(0)]
         public async Task ImportDotMembers() {

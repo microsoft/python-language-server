@@ -166,6 +166,83 @@ class D(C):
         }
 
         [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromParentOtherModuleOnSuper() {
+            var otherModPath = TestData.GetTestSpecificUri("other.py");
+            var testModPath = TestData.GetTestSpecificUri("test.py");
+            const string otherModCode = @"
+class C:
+    v: int
+    def test(self):
+        pass
+";
+            const string testModCode = @"
+from other import C
+
+class D(C):
+    def hello(self):
+        super().test();
+        super().v
+";
+
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(otherModPath, otherModCode);
+            var testMod = rdt.OpenDocument(testModPath, testModCode);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await testMod.GetAnalysisAsync();
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(6, 17), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(3, 8, 3, 12);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(7, 17), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(2, 4, 2, 5);
+        }
+
+        [TestMethod, Priority(0)]
+        [Ignore("Todo: super() multiple Inheritance support")]
+        public async Task MultipleInheritanceSuperShouldWalkDecendants() {
+            var testModPath = TestData.GetTestSpecificUri("test.py");
+            const string code = @"
+        class GrandParent:
+            def dowork(self):
+                return 1
+
+        class Dad(GrandParent):
+            def dowork(self):
+                return super().dowork()
+
+        class Mom():
+            def dowork(self):
+                return 2
+
+        class Child(Dad, Mom):
+            def child_func(self):
+                pass
+
+        ";
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+            
+            var testMod = rdt.OpenDocument(testModPath, code);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await testMod.GetAnalysisAsync();
+            var ds = new DefinitionSource(Services);
+
+            // Goto on Dad's super().dowork() should jump to Mom's
+            var reference = ds.FindDefinition(analysis, new SourceLocation(9, 33), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("test.py");
+            reference.range.Should().Be(11, 16, 11, 23);
+        }
+
+
+        [TestMethod, Priority(0)]
         public async Task GotoModuleSource() {
             const string code = @"
 import sys
@@ -525,13 +602,15 @@ print(os_path.basename('a/b/c'))
 
             reference = ds.FindDefinition(analysis, new SourceLocation(4, 12), out _);
             reference.Should().NotBeNull();
-            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            var osPyPath = reference.uri.AbsolutePath;
+            line = File.ReadAllLines(osPyPath)[reference.range.start.line];
             line.Should().EndWith("as path");
             line.Substring(reference.range.start.character).Should().Be("path");
 
             reference = ds.FindDefinition(analysis, new SourceLocation(5, 12), out _);
             reference.Should().NotBeNull();
-            line = File.ReadAllLines(reference.uri.AbsolutePath)[reference.range.start.line];
+            reference.uri.AbsolutePath.Should().Be(osPyPath);
+            line = File.ReadAllLines(osPyPath)[reference.range.start.line];
             line.Should().EndWith("as path");
             line.Substring(reference.range.start.character).Should().Be("path");
         }

@@ -71,5 +71,12 @@ namespace Microsoft.Python.Analysis.Analyzer {
         /// Fires when analysis is complete.
         /// </summary>
         event EventHandler<AnalysisCompleteEventArgs> AnalysisComplete;
+
+        /// <summary>
+        /// Attempts to restore modules analysis from database.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <returns></returns>
+        IDocumentAnalysis TryRestoreCachedAnalysis(IPythonModule module);
     }
 }

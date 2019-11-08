@@ -15,7 +15,6 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Microsoft.Python.Analysis.Analyzer {
     internal static class ActivityTracker {

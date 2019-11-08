@@ -28,16 +28,22 @@ namespace TestUtilities {
     public class TestEnvironmentImpl {
         private static readonly FieldInfo _stackTraceStringField = typeof(Exception).GetField("_stackTraceString", BindingFlags.Instance | BindingFlags.NonPublic);
         private static readonly FieldInfo _showDialogField = typeof(Debug).GetField("s_ShowDialog", BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly FieldInfo _debugProviderField = typeof(Debug).GetField("s_provider", BindingFlags.Static | BindingFlags.NonPublic);
 
         protected internal static TestEnvironmentImpl Instance { get; protected set; }
 
         protected TestEnvironmentImpl() {
-            TryOverrideShowDialog();
+            TryOverrideDebugFail();
         }
 
-        private static void TryOverrideShowDialog() {
+        private static void TryOverrideDebugFail() {
             if (_showDialogField != null) {
                 _showDialogField.SetValue(null, new Action<string, string, string, string>(ThrowAssertException));
+            } else if (_debugProviderField != null) {
+                var failCoreField = _debugProviderField.FieldType.GetField("s_FailCore", BindingFlags.Static | BindingFlags.NonPublic);
+                if (failCoreField != null) {
+                    failCoreField.SetValue(null, new Action<string, string, string, string>(ThrowAssertException));
+                }
             }
         }
 

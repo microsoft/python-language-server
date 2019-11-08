@@ -18,12 +18,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Core;
+using Microsoft.Python.Core.Diagnostics;
 
 namespace Microsoft.Python.Analysis.Types {
     internal abstract class LocatedMember : ILocatedMember {
         private HashSet<Location> _references;
 
-        protected LocatedMember(IPythonModule module) : this(new Location(module)) { }
+        protected LocatedMember(IPythonModule module) : this(new Location(module)) {
+            Check.InvalidOperation(module != null || this is IPythonModule, 
+                "Located member can only have null declaring module if it is the module.");
+        }
 
         protected LocatedMember(Location location) {
             Location = location;

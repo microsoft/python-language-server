@@ -122,5 +122,15 @@ class Test(type):
             var analysis = await GetAnalysisAsync(code);
             analysis.Diagnostics.Should().BeEmpty();
         }
+
+        [TestMethod, Priority(0)]
+        public async Task NoDiagnosticNoParameters() {
+            const string code = @"
+class test:
+    def walk
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Diagnostics.Should().BeEmpty();
+        }
     }
 }

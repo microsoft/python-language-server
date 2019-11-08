@@ -84,14 +84,21 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
                 }
             }
 
+            var moduleType = moduleImport.IsBuiltin ? ModuleType.CompiledBuiltin
+                : moduleImport.IsCompiled ? ModuleType.Compiled
+                : moduleImport.IsLibrary ? ModuleType.Library
+                : ModuleType.User;
+
             var dbs = GetDbService();
-            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath);
+            moduleImport.IsPersistent = dbs != null && dbs.ModuleExistsInStorage(name, moduleImport.ModulePath, moduleType);
 
             IPythonModule stub = null;
             if (!moduleImport.IsPersistent) {
                 // If there is a stub, make sure it is loaded and attached
                 // First check stub next to the module.
-                if (!TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
+                if (TryCreateModuleStub(name, moduleImport.ModulePath, out stub)) {
+                    Analyzer.InvalidateAnalysis(stub);
+                } else {
                     // If nothing found, try Typeshed.
                     stub = Interpreter.TypeshedResolution.GetOrLoadModule(moduleImport.IsBuiltin ? name : moduleImport.FullName);
                 }
@@ -109,7 +116,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             if (moduleImport.IsCompiled) {
                 Log?.Log(TraceEventType.Verbose, "Create compiled (scraped): ", moduleImport.FullName, moduleImport.ModulePath, moduleImport.RootPath);
-                return new CompiledPythonModule(moduleImport.FullName, ModuleType.Compiled, moduleImport.ModulePath, stub, moduleImport.IsPersistent, false, Services);
+                return new CompiledPythonModule(moduleImport.FullName, moduleType, moduleImport.ModulePath, stub, moduleImport.IsPersistent, false, Services);
             }
 
             Log?.Log(TraceEventType.Verbose, "Import: ", moduleImport.FullName, moduleImport.ModulePath);
@@ -117,7 +124,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             var mco = new ModuleCreationOptions {
                 ModuleName = moduleImport.FullName,
-                ModuleType = moduleImport.IsLibrary ? ModuleType.Library : ModuleType.User,
+                ModuleType = moduleType,
                 FilePath = moduleImport.ModulePath,
                 Stub = stub,
                 IsPersistent = moduleImport.IsPersistent
@@ -186,7 +193,7 @@ namespace Microsoft.Python.Analysis.Modules.Resolution {
 
             // Add built-in module names
             var builtinModuleNamesMember = BuiltinsModule.GetAnyMember("__builtin_module_names__");
-            var value = (builtinModuleNamesMember as IVariable)?.Value ?? builtinModuleNamesMember;
+            var value = builtinModuleNamesMember is IVariable variable ? variable.Value : builtinModuleNamesMember;
             if (value.TryGetConstant<string>(out var s)) {
                 var builtinModuleNames = s.Split(',').Select(n => n.Trim());
                 PathResolver.SetBuiltins(builtinModuleNames);

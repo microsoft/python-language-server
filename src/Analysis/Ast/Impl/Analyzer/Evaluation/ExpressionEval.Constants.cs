@@ -23,7 +23,7 @@ using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
     internal sealed partial class ExpressionEval {
-        public IPythonInstance GetConstantFromLiteral(Expression expr) {
+        public IMember GetConstantFromLiteral(Expression expr) {
             if (expr is ConstantExpression ce) {
                 switch (ce.Value) {
                     case string s:

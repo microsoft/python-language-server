@@ -29,9 +29,12 @@ using ErrorCodes = Microsoft.Python.Analysis.Diagnostics.ErrorCodes;
 
 namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed partial class ImportHandler : StatementHandler {
+        private readonly IImportedVariableHandler _importedVariableHandler;
         private readonly Dictionary<string, PythonVariableModule> _variableModules = new Dictionary<string, PythonVariableModule>();
 
-        public ImportHandler(AnalysisWalker walker) : base(walker) { }
+        public ImportHandler(AnalysisWalker walker, in IImportedVariableHandler importedVariableHandler) : base(walker) {
+            _importedVariableHandler = importedVariableHandler;
+        }
 
         public bool HandleImport(ImportStatement node) {
             if (Module.ModuleType == ModuleType.Specialized) {
@@ -65,7 +68,9 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     lastModule = default;
                     break;
                 }
+
                 resolvedModules[i] = (nameExpression.Name, lastModule);
+                _importedVariableHandler.EnsureModule(lastModule);
             }
 
             // "import fob.oar.baz as baz" is handled as baz = import_module('fob.oar.baz')
@@ -89,15 +94,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     Eval.DeclareVariable(importNames[0], firstModule, VariableSource.Import, moduleImportExpression.Names[0]);
                 }
             }
-
-            // import a.b.c.d => declares a, b in the current module, c in b, d in c.
-            for (var i = 1; i < resolvedModules.Length - 1; i++) {
-                var (childName, childModule) = resolvedModules[i + 1];
-                if (!string.IsNullOrEmpty(childName) && childModule != null) {
-                    var parent = resolvedModules[i].module;
-                    parent?.AddChildModule(childName, childModule);
-                }
-            }
         }
 
         private bool HandleImportSearchResult(in IImportSearchResult imports, in PythonVariableModule parent, in NameExpression asNameExpression, in Node location, out PythonVariableModule variableModule) {
@@ -112,8 +108,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     return TryGetPackageFromImport(packageImport, parent, out variableModule);
                 case RelativeImportBeyondTopLevel importBeyondTopLevel:
                     var message = Resources.ErrorRelativeImportBeyondTopLevel.FormatInvariant(importBeyondTopLevel.RelativeImportName);
-                    Eval.ReportDiagnostics(Eval.Module.Uri,
-                        new DiagnosticsEntry(message, location.GetLocation(Eval).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
+                    Eval.ReportDiagnostics(Eval.Module.Uri, new DiagnosticsEntry(message, location.GetLocation(Eval).Span, ErrorCodes.UnresolvedImport, Severity.Warning, DiagnosticSource.Analysis));
                     variableModule = default;
                     return false;
                 case ImportNotFound importNotFound:
@@ -177,7 +172,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                         return false;
                 }
             }
-
+            
             return true;
         }
 
@@ -196,24 +191,22 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in string fullName, in PythonVariableModule parentModule, in string memberName) {
-            if (_variableModules.TryGetValue(fullName, out var variableModule)) {
-                return variableModule;
+            if (!_variableModules.TryGetValue(fullName, out var variableModule)) {
+                variableModule = new PythonVariableModule(fullName, Eval.Interpreter);
+                _variableModules[fullName] = variableModule;
             }
-
-            variableModule = new PythonVariableModule(fullName, Eval.Interpreter);
-            _variableModules[fullName] = variableModule;
+            
             parentModule?.AddChildModule(memberName, variableModule);
             return variableModule;
         }
 
         private PythonVariableModule GetOrCreateVariableModule(in IPythonModule module, in PythonVariableModule parentModule, in string memberName) {
             var moduleFullName = module.Name;
-            if (_variableModules.TryGetValue(moduleFullName, out var variableModule)) {
-                return variableModule;
+            if (!_variableModules.TryGetValue(moduleFullName, out var variableModule)) {
+                variableModule = new PythonVariableModule(module);
+                _variableModules[moduleFullName] = variableModule;
             }
 
-            variableModule = new PythonVariableModule(module);
-            _variableModules[moduleFullName] = variableModule;
             parentModule?.AddChildModule(memberName, variableModule);
             return variableModule;
         }
