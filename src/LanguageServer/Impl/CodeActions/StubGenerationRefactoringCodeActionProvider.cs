@@ -121,22 +121,64 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                 return SpecializedTasks.False;
             }
 
-            var logger = services.GetService<ILogger>();
-            var code = StubGenerator.Scrape(interpreter, logger, module, GetScrapeArguments(interpreter, module.FilePath), cancellationToken);
+            var code = GenerateStub(services, stubPath, module, cancellationToken);
 
             try {
                 // ensure directory exist
                 var path = Path.GetDirectoryName(stubPath);
                 fileSystem.CreateDirectory(path);
 
-                using (var writer = new StreamWriter(fileSystem.CreateFile(stubPath))) {
-                    writer.Write(code);
-                }
+                fileSystem.WriteAllText(stubPath, code);
             } catch (Exception ex) {
+                var logger = services.GetService<ILogger>();
                 logger?.Log(TraceEventType.Error, $"writing stub file failed: {ex.ToString()}");
             }
 
             return SpecializedTasks.True;
+        }
+
+        private string GenerateStub(IServiceContainer services, string stubPath, IPythonModule module, CancellationToken cancellationToken) {
+            if (HasTypeAnnotation(module)) {
+                return GenerateFromModule(services, module, cancellationToken);
+            } else {
+                // we need to create stub from scratch
+                return GenerateFromScrape(services, module, cancellationToken);
+            }
+
+            static bool HasTypeAnnotation(IPythonModule module) {
+                // if module already has type annotation, then create stub from the module itself
+                return false;
+            }
+        }
+
+        private string GenerateFromModule(IServiceContainer services, IPythonModule module, CancellationToken cancellationToken) {
+            // it looks like module already has type annotation. create stub from it
+            var ast = module.Analysis.Ast;
+
+            return string.Empty;
+        }
+
+        private static string GenerateFromScrape(IServiceContainer services,
+            IPythonModule module,
+            CancellationToken cancellationToken) {
+
+            var interpreter = services.GetService<IPythonInterpreter>();
+            var logger = services.GetService<ILogger>();
+            return StubGenerator.Generate(interpreter, logger, module, GetScrapeArguments(interpreter, module.FilePath), cancellationToken);
+
+            static string[] GetScrapeArguments(IPythonInterpreter interpreter, string filePath) {
+                var mp = interpreter.ModuleResolution.FindModule(filePath);
+                if (string.IsNullOrEmpty(mp.FullName)) {
+                    return null;
+                }
+
+                var args = new List<string>();
+                args.Add("-u8");
+                args.Add(mp.ModuleName);
+                args.Add(mp.LibraryPath);
+
+                return args.ToArray();
+            }
         }
 
         private string GetStubPath(string stubBasePath, ModulePath modulePath) {
@@ -164,19 +206,6 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             return null;
-        }
-
-        private static string[] GetScrapeArguments(IPythonInterpreter interpreter, string filePath) {
-            var args = new List<string>();
-            var mp = interpreter.ModuleResolution.FindModule(filePath);
-            if (string.IsNullOrEmpty(mp.FullName)) {
-                return null;
-            }
-
-            args.Add(mp.ModuleName);
-            args.Add(mp.LibraryPath);
-
-            return args.ToArray();
         }
 
         private static IPythonModule GetModule(IDocumentAnalysis analysis, ScopeStatement scope, Node node, CancellationToken cancellationToken) {

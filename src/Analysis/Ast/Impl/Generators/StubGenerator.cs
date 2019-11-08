@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -23,23 +24,24 @@ using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
+using Microsoft.Python.Parsing;
 
 namespace Microsoft.Python.Analysis.Generators {
     /// <summary>
     /// Generate stub (pyi) content from analyzed module using our analysis engine or
     /// Scrape stub content from scrape_module.py
     /// </summary>
-    public sealed class StubGenerator {
+    public sealed partial class StubGenerator {
 
         private readonly IPythonInterpreter _interpreter;
         private readonly IPythonModule _module;
         private readonly ILogger _logger;
 
         public static string Scrape(IPythonInterpreter interpreter,
-                                      ILogger logger,
-                                      IPythonModule module,
-                                      string[] extraScrapeArguments,
-                                      CancellationToken cancellationToken) {
+                                    ILogger logger,
+                                    IPythonModule module,
+                                    string[] extraScrapeArguments,
+                                    CancellationToken cancellationToken) {
             var defaultArgs = GetDefaultScrapeArguments();
             if (defaultArgs == null) {
                 return string.Empty;
@@ -47,6 +49,24 @@ namespace Microsoft.Python.Analysis.Generators {
 
             var args = defaultArgs.Concat(extraScrapeArguments ?? Enumerable.Empty<string>()).ToArray();
             return new StubGenerator(interpreter, logger, module).Generate(args, cancellationToken);
+        }
+
+        public static string Generate(IPythonInterpreter interpreter,
+                                      ILogger logger,
+                                      IPythonModule module,
+                                      string[] extraScrapeArguments,
+                                      CancellationToken cancellationToken) {
+            var scrappedCode = Scrape(interpreter, logger, module, extraScrapeArguments, cancellationToken);
+
+            using (var reader = new StringReader(scrappedCode)) {
+                var parser = Parser.CreateParser(reader, interpreter.LanguageVersion);
+                var ast = parser.ParseFile(module.Uri);
+
+                var walker = new ScrapeWalker(logger, module, ast, scrappedCode);
+                ast.Walk(walker);
+
+                return walker.GetCode(cancellationToken);
+            }
         }
 
         private StubGenerator(IPythonInterpreter interpreter, ILogger logger, IPythonModule module) {

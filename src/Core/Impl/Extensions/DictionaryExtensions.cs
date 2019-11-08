@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Microsoft.Python.Core {
-    public class EmptyDictionary<TKey, TValue>: IReadOnlyDictionary<TKey, TValue> {
+    public class EmptyDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue> {
         public static readonly IReadOnlyDictionary<TKey, TValue> Instance = new EmptyDictionary<TKey, TValue>();
 
         public TValue this[TKey key] => throw new KeyNotFoundException();
@@ -33,5 +33,16 @@ namespace Microsoft.Python.Core {
             return false;
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    public static class DictionaryExtensions {
+        public static TValue GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> map, TKey key) where TValue : new() {
+            if (!map.TryGetValue(key, out var value)) {
+                value = new TValue();
+                map.Add(key, value);
+            }
+
+            return value;
+        }
     }
 }
