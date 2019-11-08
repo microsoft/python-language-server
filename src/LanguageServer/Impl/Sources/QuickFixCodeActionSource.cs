@@ -37,12 +37,12 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
-            cancellationToken.ThrowIfCancellationRequested();
-
             var results = new List<CodeAction>();
 
             foreach (var diagnostic in GetMatchingDiagnostics(analysis, diagnostics, cancellationToken)) {
                 foreach (var codeActionProvider in _codeActionProviders) {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     if (codeActionProvider.FixableDiagnostics.Any(code => code == diagnostic.ErrorCode)) {
                         results.AddRange(await codeActionProvider.GetCodeActionsAsync(analysis, settings, diagnostic, cancellationToken));
                     }

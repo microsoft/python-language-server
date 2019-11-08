@@ -35,10 +35,10 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, Range range, CancellationToken cancellationToken) {
-            cancellationToken.ThrowIfCancellationRequested();
-
             var results = new List<CodeAction>();
             foreach (var codeActionProvider in _codeActionProviders) {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 results.AddRange(await codeActionProvider.GetCodeActionsAsync(analysis, settings, range, cancellationToken));
             }
 
