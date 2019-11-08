@@ -26,7 +26,7 @@ namespace Microsoft.Python.LanguageServer {
     public interface IQuickFixCodeActionProvider {
         /// <summary>
         /// Returns error code this code action can provide fix for. this error code must be same as ones that are reported to host as diagnostics
-        /// ex) error code from linter
+        /// for example, error code from linter
         /// </summary>
         ImmutableArray<string> FixableDiagnostics { get; }
 
