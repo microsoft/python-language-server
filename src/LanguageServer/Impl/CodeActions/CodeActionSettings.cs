@@ -31,14 +31,18 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         public T GetQuickFixOption<T>(string key, T defaultValue) => GetOption(_quickFix, key, defaultValue);
 
         private T GetOption<T>(IReadOnlyDictionary<string, object> map, string key, T defaultValue) {
-            try {
-                if (map.TryGetValue(key, out var value)) {
+            if (key == null) {
+                // invalid key
+                return defaultValue;
+            }
+
+            if (map.TryGetValue(key, out var value)) {
+                if (value == null) {
+                    // if value is explicitly set to null, then return null
                     return (T)value;
                 }
 
-                return defaultValue;
-            } catch {
-                // ignore any option failure
+                return (value is T typedValue) ? typedValue : defaultValue;
             }
 
             return defaultValue;
