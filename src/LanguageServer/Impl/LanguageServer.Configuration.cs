@@ -41,6 +41,8 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         [JsonRpcMethod("workspace/didChangeConfiguration")]
         public async Task DidChangeConfiguration(JToken token, CancellationToken cancellationToken) {
             using (await _prioritizer.ConfigurationPriorityAsync(cancellationToken)) {
+                Debug.Assert(_initialized);
+
                 var settings = new LanguageServerSettings();
 
                 // https://github.com/microsoft/python-language-server/issues/915
@@ -220,20 +222,24 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             return ImmutableArray<string>.Empty;
         }
 
-        private const string DefaultCachingLevel = "System";
+        private const string DefaultCachingLevel = "None";
 
         private AnalysisCachingLevel GetAnalysisCachingLevel(JToken analysisKey) {
-            var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
+            // TODO: Remove this one caching is working at any level again.
+            // https://github.com/microsoft/python-language-server/issues/1758
+            return AnalysisCachingLevel.None;
 
-            if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
-                s = DefaultCachingLevel;
-            }
-
-            if (s.EqualsIgnoreCase("System")) {
-                return AnalysisCachingLevel.System;
-            }
-
-            return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
+            // var s = GetSetting(analysisKey, "cachingLevel", DefaultCachingLevel);
+            // 
+            // if (string.IsNullOrWhiteSpace(s) || s.EqualsIgnoreCase("Default")) {
+            //     s = DefaultCachingLevel;
+            // }
+            // 
+            // if (s.EqualsIgnoreCase("System")) {
+            //     return AnalysisCachingLevel.System;
+            // }
+            // 
+            // return s.EqualsIgnoreCase("Library") ? AnalysisCachingLevel.Library : AnalysisCachingLevel.None;
         }
     }
 }

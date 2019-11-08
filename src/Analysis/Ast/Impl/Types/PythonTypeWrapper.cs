@@ -34,7 +34,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates delegate type wrapper over an existing type.
         /// Use dedicated constructor for wrapping builtin types.
         /// </summary>
-        public PythonTypeWrapper(IPythonType type) : this(type, type.DeclaringModule) { }
+        protected PythonTypeWrapper(IPythonType type) : this(type, type.DeclaringModule) { }
 
         public PythonTypeWrapper(string typeName, string documentation, IPythonModule declaringModule, IPythonType baseType) : this(baseType, declaringModule) {
             _typeName = typeName;
@@ -45,7 +45,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// Creates delegate type wrapper over an existing type.
         /// Use dedicated constructor for wrapping builtin types.
         /// </summary>
-        public PythonTypeWrapper(IPythonType type, IPythonModule declaringModule) {
+        protected PythonTypeWrapper(IPythonType type, IPythonModule declaringModule) {
             _innerType = type ?? throw new ArgumentNullException(nameof(type));
             DeclaringModule = declaringModule;
         }
@@ -55,7 +55,7 @@ namespace Microsoft.Python.Analysis.Types {
         /// wrap builtins since it can be done when builtins module is not loaded
         /// yet - such as when builtins module itself is being imported or specialized.
         /// </summary>
-        public PythonTypeWrapper(BuiltinTypeId builtinTypeId, IPythonModule declaringModule) {
+        protected PythonTypeWrapper(BuiltinTypeId builtinTypeId, IPythonModule declaringModule) {
             DeclaringModule = declaringModule ?? throw new ArgumentNullException(nameof(declaringModule));
             _builtinTypeId = builtinTypeId;
         }
@@ -71,7 +71,7 @@ namespace Microsoft.Python.Analysis.Types {
         public virtual bool IsAbstract => InnerType.IsAbstract;
         public virtual bool IsSpecialized => InnerType.IsSpecialized;
 
-        public virtual IPythonInstance CreateInstance(IArgumentSet args)
+        public virtual IMember CreateInstance(IArgumentSet args)
             => IsAbstract ? null : InnerType.CreateInstance(args);
         public virtual IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) 
             => InnerType.Call(instance, memberName, args);

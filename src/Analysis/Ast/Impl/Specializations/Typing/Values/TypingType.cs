@@ -41,7 +41,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
         public bool IsSpecialized => true;
 
         public IMember Call(IPythonInstance instance, string memberName, IArgumentSet args) => _type.Call(instance, memberName, args);
-        public IPythonInstance CreateInstance(IArgumentSet args) => _type.CreateInstance(args);
+        public IMember CreateInstance(IArgumentSet args) => _type.CreateInstance(args);
         public IMember GetMember(string name) => _type.GetMember(name);
         public IEnumerable<string> GetMemberNames() => _type.GetMemberNames();
         public IMember Index(IPythonInstance instance, IArgumentSet args) => _type.Index(instance, args);

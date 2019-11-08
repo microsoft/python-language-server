@@ -24,7 +24,7 @@ namespace Microsoft.Python.Analysis.Types.Collections {
             : base(BuiltinTypeId.Dict, declaringModule, isMutable) {
         }
 
-        public override IPythonInstance CreateInstance(IArgumentSet args) {
+        public override IMember CreateInstance(IArgumentSet args) {
             var contents = args.Arguments.Count == 1
                 ? args.Arguments[0].Value as IReadOnlyDictionary<IMember, IMember>
                 : EmptyDictionary<IMember, IMember>.Instance;

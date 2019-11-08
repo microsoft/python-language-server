@@ -149,6 +149,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Symbols {
                 return;
             }
 
+            // Error in parameters, don't lint
+            if (FunctionDefinition.Body == null) {
+                return;
+            }
+
             // Otherwise, functions defined in classes must have at least one argument
             if (parameters.IsNullOrEmpty()) {
                 var funcLoc = Eval.GetLocation(FunctionDefinition.NameExpression);
