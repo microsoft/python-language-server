@@ -451,8 +451,44 @@ def Method():
             codeActions.Should().NotBeEmpty();
 
             var emptyActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(
-                analysis, new CodeActionSettings(null, new Dictionary<string, object>() { { "addimports", false } }), diagnostics, CancellationToken);
+                analysis, new CodeActionSettings(null, new Dictionary<string, object>() { { "addImports", false } }), diagnostics, CancellationToken);
             emptyActions.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
+        public async Task CustomAbbreviation() {
+            var settings = new CodeActionSettings(null, new Dictionary<string, object>() {
+                { "addImports.abbreviation", new Dictionary<string, object>() {
+                        { "myOwnModule", "mm" }
+                    }
+                }
+            });
+
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:mm|}",
+                title: "import myOwnModule as mm",
+                newText: "import myOwnModule as mm" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "mm",
+                settings,
+                relativePaths: "myOwnModule.py");
+        }
+
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
+        public async Task RedefineDefaultAbbreviation() {
+            var settings = new CodeActionSettings(null, new Dictionary<string, object>() {
+                { "addImports.abbreviation", new Dictionary<string, object>() {
+                        { "pandas", "mm" }
+                    }
+                }
+            });
+
+            await TestCodeActionAsync(
+                @"{|insertionSpan:|}{|diagnostic:mm|}",
+                title: "import pandas as mm",
+                newText: "import pandas as mm" + Environment.NewLine + Environment.NewLine,
+                abbreviation: "mm",
+                settings,
+                relativePaths: "pandas.py");
         }
 
         private async Task TestCodeActionAsync(string markup, string title, string newText, bool enableIndexManager = false) {
@@ -509,7 +545,11 @@ def Method():
                            .ToArray();
         }
 
-        private async Task TestCodeActionAsync(string markup, string title, string newText, string abbreviation, params string[] relativePaths) {
+        private Task TestCodeActionAsync(string markup, string title, string newText, string abbreviation, params string[] relativePaths) {
+            return TestCodeActionAsync(markup, title, newText, abbreviation, CodeActionSettings.Default, relativePaths);
+        }
+
+        private async Task TestCodeActionAsync(string markup, string title, string newText, string abbreviation, CodeActionSettings settings, params string[] relativePaths) {
             MarkupUtils.GetNamedSpans(markup, out var code, out var spans);
 
             // get main analysis and add mock modules
@@ -522,7 +562,7 @@ def Method():
             // calculate actions
             var diagnosticSpan = spans["diagnostic"].First().ToSourceSpan(analysis.Ast);
             var diagnostics = GetDiagnostics(analysis, diagnosticSpan, MissingImportCodeActionProvider.Instance.FixableDiagnostics);
-            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, CodeActionSettings.Default, diagnostics, CancellationToken);
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, settings, diagnostics, CancellationToken);
 
             // verify results
             var codeAction = codeActions.Single(c => c.title == title);

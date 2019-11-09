@@ -47,7 +47,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         // right now, it is a static. in future, we might consider giving an option to users to customize this list
         // also, right now, it is text based. so if module has same name, they will get same suggestion even if
         // the module is not something user expected
-        private static readonly Dictionary<string, string> WellKnownAbbreviationMap = new Dictionary<string, string>() {
+        private static readonly Dictionary<string, string> DefaultAbbreviationMap = new Dictionary<string, string>() {
             { "numpy", "np" },
             { "pandas", "pd" },
             { "tensorflow", "tf" },
@@ -58,6 +58,9 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             { "scipy", "sp" },
         };
 
+        // hold onto last merged cache of well known abbreviation map
+        private (Dictionary<string, object>, Dictionary<string, string>)? _lastAbbreviationMapCache = null;
+
         private MissingImportCodeActionProvider() {
         }
 
@@ -65,7 +68,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             ErrorCodes.UndefinedVariable, ErrorCodes.VariableNotDefinedGlobally, ErrorCodes.VariableNotDefinedNonLocal);
 
         public async Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
-            if (!settings.GetQuickFixOption("addimports", true)) {
+            if (!settings.GetQuickFixOption("addImports", true)) {
                 return Enumerable.Empty<CodeAction>();
             }
 
@@ -83,15 +86,17 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var codeActions = new List<CodeAction>();
             var diagnostics = new[] { diagnostic.ToDiagnostic() };
 
+            var abbreviationMap = GetAbbreviationMap(settings);
+
             // see whether it is one of abbreviation we specialize
-            foreach (var moduleFullName in WellKnownAbbreviationMap.Where(kv => kv.Value == identifier).Select(kv => kv.Key)) {
+            foreach (var moduleFullName in abbreviationMap.Where(kv => kv.Value == identifier).Select(kv => kv.Key)) {
                 var moduleName = GetModuleName(moduleFullName);
 
-                await GetCodeActionsAsync(analysis, diagnostics, new Input(node, moduleName, moduleFullName), codeActions, cancellationToken);
+                await CollectCodeActions(analysis, abbreviationMap, new Input(diagnostics, node, moduleName, moduleFullName), codeActions, cancellationToken);
             }
 
             // add then search given name as it is
-            await GetCodeActionsAsync(analysis, diagnostics, new Input(node, identifier), codeActions, cancellationToken);
+            await CollectCodeActions(analysis, abbreviationMap, new Input(diagnostics, node, identifier), codeActions, cancellationToken);
 
             return codeActions;
 
@@ -101,11 +106,53 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
         }
 
-        private async Task GetCodeActionsAsync(IDocumentAnalysis analysis,
-                                               Diagnostic[] diagnostics,
-                                               Input input,
-                                               List<CodeAction> codeActions,
-                                               CancellationToken cancellationToken) {
+        private Dictionary<string, string> GetAbbreviationMap(CodeActionSettings settings) {
+            var map = settings.GetQuickFixOption("addImports.abbreviation", default(Dictionary<string, object>));
+            if (map == null) {
+                // remove cache
+                _lastAbbreviationMapCache = null;
+                return DefaultAbbreviationMap;
+            }
+
+            // this relies on the fact that setting is cached by language server
+            if (map == _lastAbbreviationMapCache?.Item1) {
+                return _lastAbbreviationMapCache?.Item2 ?? DefaultAbbreviationMap;
+            }
+
+            // clone existing default
+            var newMap = DefaultAbbreviationMap.ToDictionary(kv => kv.Key, kv => kv.Value);
+
+            // add only value one to list
+            foreach (var kv in map) {
+                if (string.IsNullOrWhiteSpace(kv.Key)) {
+                    // invalid module name
+                    continue;
+                }
+
+                if (!(kv.Value is string abbr) ||
+                    string.IsNullOrWhiteSpace(abbr)) {
+                    continue;
+                }
+
+                // abbreviation can't have "." in it
+                if (abbr.IndexOf(".") >= 0) {
+                    continue;
+                }
+
+                // last one override existing one
+                newMap[kv.Key.Trim()] = abbr.Trim();
+            }
+
+            _lastAbbreviationMapCache = (map, newMap);
+
+            return newMap;
+        }
+
+        private async Task CollectCodeActions(IDocumentAnalysis analysis,
+                                              Dictionary<string, string> abbreviationMap,
+                                              Input input,
+                                              List<CodeAction> codeActions,
+                                              CancellationToken cancellationToken) {
             var importFullNameMap = new Dictionary<string, ImportInfo>();
             await AddCandidatesFromIndexAsync(analysis, input.Identifier, importFullNameMap, cancellationToken);
 
@@ -137,7 +184,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             if (input.ModuleFullNameOpt != null) {
                 if (importFullNameMap.ContainsKey(input.ModuleFullNameOpt)) {
                     // add code action if the module exist, otherwise, bail out empty
-                    codeActions.AddIfNotNull(CreateCodeAction(analysis, input.Context, input.ModuleFullNameOpt, diagnostics, locallyInserted: false, cancellationToken));
+                    codeActions.AddIfNotNull(CreateCodeAction(analysis, abbreviationMap, input.Context, input.ModuleFullNameOpt, input.Diagnostics, locallyInserted: false, cancellationToken));
                 }
                 return;
             }
@@ -148,7 +195,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             // this will create actual code fix with certain orders
             foreach (var fullName in OrderFullNames(importFullNameMap)) {
                 cancellationToken.ThrowIfCancellationRequested();
-                codeActions.AddIfNotNull(CreateCodeAction(analysis, input.Context, fullName, diagnostics, locallyInserted: false, cancellationToken));
+                codeActions.AddIfNotNull(CreateCodeAction(analysis, abbreviationMap, input.Context, fullName, input.Diagnostics, locallyInserted: false, cancellationToken));
             }
         }
 
@@ -320,12 +367,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private CodeAction CreateCodeAction(IDocumentAnalysis analysis,
+                                            Dictionary<string, string> abbreviationMap,
                                             Node node,
                                             string moduleFullName,
                                             Diagnostic[] diagnostics,
                                             bool locallyInserted,
                                             CancellationToken cancellationToken) {
-            var insertionPoint = GetInsertionInfo(analysis, node, moduleFullName, locallyInserted, cancellationToken);
+            var insertionPoint = GetInsertionInfo(analysis, abbreviationMap, node, moduleFullName, locallyInserted, cancellationToken);
             if (insertionPoint == null) {
                 return null;
             }
@@ -350,6 +398,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private InsertionInfo? GetInsertionInfo(IDocumentAnalysis analysis,
+                                                Dictionary<string, string> abbreviationMap,
                                                 Node node,
                                                 string fullyQualifiedName,
                                                 bool locallyInserted,
@@ -363,7 +412,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             var importNodes = body.GetChildNodes().Where(c => c is ImportStatement || c is FromImportStatement).ToList();
             var lastImportNode = importNodes.LastOrDefault();
 
-            var abbreviation = GetAbbreviationForWellKnownModules(analysis, fullyQualifiedName);
+            var abbreviation = GetAbbreviationForWellKnownModules(analysis, abbreviationMap, fullyQualifiedName);
 
             // first check whether module name is dotted or not
             var dotIndex = fullyQualifiedName.LastIndexOf('.');
@@ -397,8 +446,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                                      abbreviation);
         }
 
-        private static string GetAbbreviationForWellKnownModules(IDocumentAnalysis analysis, string fullyQualifiedName) {
-            if (WellKnownAbbreviationMap.TryGetValue(fullyQualifiedName, out var abbreviation)) {
+        private static string GetAbbreviationForWellKnownModules(IDocumentAnalysis analysis,
+                                                                 Dictionary<string, string> abbreviationMap,
+                                                                 string fullyQualifiedName) {
+            if (abbreviationMap.TryGetValue(fullyQualifiedName, out var abbreviation)) {
                 // for now, use module wide unique name for abbreviation. even though technically we could use
                 // context based unique name since variable declared in lower scope will hide it and there is no conflict
                 return UniqueNameGenerator.Generate(analysis, abbreviation);
@@ -595,7 +646,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
 
         private IEnumerable<string> GetAllVariables(IDocumentAnalysis analysis) {
             if (analysis?.GlobalScope == null) {
-                return Array.Empty<string>();
+                return Enumerable.Empty<string>();
             }
 
             // this is different than StartImportMemberNames since that only returns something when
@@ -608,7 +659,7 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
                     .Where(s => !string.IsNullOrEmpty(s));
             }
 
-            return Array.Empty<string>();
+            return Enumerable.Empty<string>();
         }
 
         private class ImportNameComparer : IComparer<string> {
@@ -651,11 +702,13 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private struct Input {
+            public readonly Diagnostic[] Diagnostics;
             public readonly Node Context;
             public readonly string Identifier;
             public readonly string ModuleFullNameOpt;
 
-            public Input(Node context, string identifier, string moduleFullNameOpt = null) {
+            public Input(Diagnostic[] diagnostics, Node context, string identifier, string moduleFullNameOpt = null) {
+                Diagnostics = diagnostics;
                 Context = context;
                 Identifier = identifier;
                 ModuleFullNameOpt = moduleFullNameOpt;
