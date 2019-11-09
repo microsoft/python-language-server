@@ -26,7 +26,7 @@ using Microsoft.Python.Parsing.Ast;
 namespace Microsoft.Python.Analysis.Analyzer {
     public static class ScopeExtensions {
         public static IEnumerable<string> GetExportableVariableNames(this IGlobalScope scope)
-             // drop imported modules and typing
+            // drop imported modules and typing
             => scope.Variables
                 .Where(v => {
                     // Instances are always fine.
@@ -178,6 +178,30 @@ namespace Microsoft.Python.Analysis.Analyzer {
                 default:
                     return -1;
             }
+        }
+
+        /// <summary>
+        /// This returns __all__ contents we understood.
+        /// This is different than StartImportMemberNames since that only returns results when
+        /// all entries are known. This returns whatever we understood even if there are 
+        /// ones we couldn't understand in __all__
+        /// </summary>
+        public static IEnumerable<string> GetBestEffortsAllVariables(this IScope scope) {
+            if (scope == null) {
+                return Enumerable.Empty<string>();
+            }
+
+            // this is different than StartImportMemberNames since that only returns something when
+            // all entries are known. for import, we are fine doing best effort
+            if (scope.Variables.TryGetVariable("__all__", out var variable) &&
+                variable?.Value is IPythonCollection collection) {
+                return collection.Contents
+                    .OfType<IPythonConstant>()
+                    .Select(c => c.GetString())
+                    .Where(s => !string.IsNullOrEmpty(s));
+            }
+
+            return Enumerable.Empty<string>();
         }
     }
 }
