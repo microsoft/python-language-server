@@ -63,6 +63,26 @@ namespace Microsoft.Python.LanguageServer.Tests {
         }
 
         [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
+        public async Task Missing2() {
+            var settings = new CodeActionSettings(null, new Dictionary<string, object>() {
+                { "addImports.abbreviation", new Dictionary<string, object>() {
+                        { "myOwnModule", "mm" }
+                    }
+                }
+            });
+
+            MarkupUtils.GetSpan(@"[|mm|]", out var code, out var span);
+
+            var analysis = await GetAnalysisAsync(code);
+            var diagnostics = GetDiagnostics(analysis, span.ToSourceSpan(analysis.Ast), MissingImportCodeActionProvider.Instance.FixableDiagnostics);
+            diagnostics.Should().NotBeEmpty();
+
+            // no code action since myOwnModule doesn't exist
+            var codeActions = await new QuickFixCodeActionSource(analysis.ExpressionEvaluator.Services).GetCodeActionsAsync(analysis, settings, diagnostics, CancellationToken);
+            codeActions.Should().BeEmpty();
+        }
+
+        [TestMethod, Priority(0), Timeout(AnalysisTimeoutInMS)]
         public async Task TopModule() {
             const string markup = @"{|insertionSpan:|}{|diagnostic:ntpath|}";
 
