@@ -621,7 +621,8 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
             }
 
             // skip any imported member (non module member) unless it is explicitly on __all__
-            if (moduleInfo.Analysis.GlobalScope.Imported.TryGetVariable(name, out var importedVariable) &&
+            IVariable importedVariable = null;
+            if (moduleInfo.Analysis?.GlobalScope?.Imported.TryGetVariable(name, out importedVariable) == true &&
                 object.Equals(pythonType, importedVariable.Value) &&
                 GetAllVariables(moduleInfo.Analysis).All(s => !string.Equals(s, name))) {
                 return;
