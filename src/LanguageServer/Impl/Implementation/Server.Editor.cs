@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -123,13 +124,22 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             var uri = @params.textDocument.uri;
             _log?.Log(TraceEventType.Verbose, $"Code Action in {uri} at {@params.range}");
 
-            if (@params.context.diagnostics?.Length == 0) {
-                return Array.Empty<CodeAction>();
+            var codeActions = new List<CodeAction>();
+            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
+
+            if (AskedFor(@params, CodeActionKind.Refactor)) {
+                codeActions.AddRange(await new RefactoringCodeActionSource(Services).GetCodeActionsAsync(analysis, _codeActionSettings, @params.range, cancellationToken));
             }
 
-            var analysis = await Document.GetAnalysisAsync(uri, Services, CompletionAnalysisTimeout, cancellationToken);
-            var codeActions = await new CodeActionSource(Services).GetCodeActionsAsync(analysis, @params.context.diagnostics, cancellationToken);
-            return codeActions ?? Array.Empty<CodeAction>();
+            if (@params.context.diagnostics?.Length > 0 && AskedFor(@params, CodeActionKind.QuickFix)) {
+                codeActions.AddRange(await new QuickFixCodeActionSource(Services).GetCodeActionsAsync(analysis, _codeActionSettings, @params.context.diagnostics, cancellationToken));
+            }
+
+            return codeActions.ToArray();
+
+            static bool AskedFor(CodeActionParams @params, string codeActionKind) {
+                return @params.context.only == null || @params.context.only.Any(s => s.StartsWith(codeActionKind));
+            }
         }
     }
 }

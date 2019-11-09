@@ -49,7 +49,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Evaluation {
             // Open scope and declare parameters
             using (_eval.OpenScope(_declaringModule, _function, out _)) {
                 args.DeclareParametersInScope(_eval);
-                _function.Body.Walk(this);
+                _function.Body?.Walk(this);
             }
             return _result;
         }
