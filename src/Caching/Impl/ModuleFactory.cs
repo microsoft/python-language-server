@@ -103,8 +103,8 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 var nextModel = currentModel.GetModel(memberName);
-                Debug.Assert(nextModel != null,
-                    $"Unable to find {string.Join(".", memberNames)} in module {Module.Name}");
+                //Debug.Assert(nextModel != null,
+                //    $"Unable to find {string.Join(".", memberNames)} in module {Module.Name}");
                 if (nextModel == null) {
                     return null;
                 }

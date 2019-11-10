@@ -62,12 +62,12 @@ namespace Microsoft.Python.Analysis.Caching.Tests {
             return dbModule;
         }
 
-        internal async Task CompareRestoreAsync(ModuleModel model, IPythonModule m) {
+        internal async Task CompareRestoreAsync(ModuleModel model, IPythonModule m, bool recursive = false) {
             var analyzer = Services.GetService<IPythonAnalyzer>();
             await analyzer.WaitForCompleteAnalysisAsync();
 
             using (var dbModule = CreateDbModule(model, m.FilePath)) {
-                dbModule.Should().HaveSameMembersAs(m);
+                dbModule.Should().HaveSameMembersAs(m, recursive);
             }
         }
 

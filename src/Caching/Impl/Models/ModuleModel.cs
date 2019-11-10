@@ -51,6 +51,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         public int FileSize { get; set; }
 
         [NonSerialized] private Dictionary<string, MemberModel> _modelCache;
+        [NonSerialized] private object _modelCacheLock = new object();
 
         /// <summary>
         /// Constructs module persistent model from analysis.
@@ -158,14 +159,17 @@ namespace Microsoft.Python.Analysis.Caching.Models {
         }
         
         public override MemberModel GetModel(string name) {
-            if (_modelCache == null) {
-                _modelCache = new Dictionary<string, MemberModel>();
-                foreach (var m in GetMemberModels()) {
-                    Debug.Assert(!_modelCache.ContainsKey(m.Name));
-                    _modelCache[m.Name] = m;
+            lock (_modelCacheLock) {
+                if (_modelCache == null) {
+                    _modelCache = new Dictionary<string, MemberModel>();
+                    foreach (var m in GetMemberModels()) {
+                        Debug.Assert(!_modelCache.ContainsKey(m.QualifiedName));
+                        _modelCache[m.QualifiedName] = m;
+                    }
                 }
+
+                return _modelCache.TryGetValue(name, out var model) ? model : null;
             }
-            return _modelCache.TryGetValue(name, out var model) ? model : null;
         }
 
         protected override IEnumerable<MemberModel> GetMemberModels() 
