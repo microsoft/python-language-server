@@ -15,8 +15,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
+using Microsoft.Python.Core;
 
 namespace Microsoft.Python.Analysis.Caching.Lazy {
     /// <summary>
@@ -41,15 +44,17 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         public IPythonType DeclaringType { get; }
 
         #region IPythonType
+
         public override IMember GetMember(string name) {
-            EnsureContent();
+            if (_model != null) {
+                var memberModel = GetMemberModels(_model).FirstOrDefault(m => m.Name == name);
+                return memberModel != null ? MemberFactory.CreateMember(memberModel, ModuleFactory, GlobalScope, this) : null;
+            }
             return base.GetMember(name);
         }
 
-        public override IEnumerable<string> GetMemberNames() {
-            EnsureContent();
-            return base.GetMemberNames();
-        }
+        public override IEnumerable<string> GetMemberNames()
+            => _model != null ? GetMemberModels(_model).Select(m => m.Name) : base.GetMemberNames();
         #endregion
 
         internal void EnsureContent() {
@@ -65,5 +70,6 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         }
 
         protected abstract void EnsureContent(TModel model);
+        protected abstract IEnumerable<MemberModel> GetMemberModels(TModel m);
     }
 }

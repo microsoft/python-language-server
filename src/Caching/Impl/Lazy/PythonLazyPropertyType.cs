@@ -13,6 +13,8 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -51,5 +53,7 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         protected override void EnsureContent(PropertyModel pm) {
             _property.Getter.SetReturnValue(ModuleFactory.ConstructMember(pm.ReturnType), true);
         }
+        protected override IEnumerable<MemberModel> GetMemberModels(PropertyModel pm)
+            => pm.Classes.Concat<MemberModel>(pm.Functions);
     }
 }

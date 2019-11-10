@@ -202,12 +202,12 @@ namespace Microsoft.Python.Analysis.Caching {
                 }
 
                 if (member == null) {
-                    var containerName = mc is IPythonType t ? t.Name : "<mc>";
+                    //var containerName = mc is IPythonType t ? t.Name : "<mc>";
                     //Debug.Assert(member != null || EnableMissingMemberAssertions == false, $"Unable to find member {memberName} in {containerName}.");
                     break;
                 }
 
-                member = typeArgs.Count > 0 && member is IGenericType gt
+                member = typeArgs.Count > 0 && member is IGenericType gt && typeArgs.Any(a => !(a is IGenericTypeParameter))
                     ? gt.CreateSpecificType(new ArgumentSet(typeArgs, null, null))
                     : member;
             }

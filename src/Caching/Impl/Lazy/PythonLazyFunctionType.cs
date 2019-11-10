@@ -49,10 +49,12 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
         #endregion
 
         protected override void EnsureContent(FunctionModel fm) {
-            var innerTypes = fm.Classes.Concat<MemberModel>(fm.Functions).ToArray();
-            foreach (var model in innerTypes) {
+            foreach (var model in GetMemberModels(fm)) {
                 _function.AddMember(model.Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _function), overwrite: true);
             }
         }
+
+        protected override IEnumerable<MemberModel> GetMemberModels(FunctionModel fm)
+            => fm.Classes.Concat<MemberModel>(fm.Functions);
     }
 }

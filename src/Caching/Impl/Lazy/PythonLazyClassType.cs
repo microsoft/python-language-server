@@ -95,13 +95,7 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
                 );
             }
 
-            var allMemberModels = cm.Classes
-                .Concat<MemberModel>(cm.Properties)
-                .Concat(cm.Methods)
-                .Concat(cm.Fields)
-                .ToArray();
-
-            foreach (var model in allMemberModels) {
+            foreach (var model in GetMemberModels(cm)) {
                 _cls.AddMember(model.Name, MemberFactory.CreateMember(model, ModuleFactory, GlobalScope, _cls), false);
             }
             _cls.AddMember("__class__", _cls, true);
@@ -146,5 +140,8 @@ namespace Microsoft.Python.Analysis.Caching.Lazy {
             _cls.AddMember("__bases__", PythonCollectionType.CreateList(DeclaringModule.Interpreter.ModuleResolution.BuiltinsModule, bases), true);
             return bases;
         }
+
+        protected override IEnumerable<MemberModel> GetMemberModels(ClassModel cm)
+            => cm.Classes.Concat<MemberModel>(cm.Properties).Concat(cm.Methods).Concat(cm.Fields);
     }
 }
