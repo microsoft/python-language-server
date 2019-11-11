@@ -286,6 +286,9 @@ namespace Microsoft.Python.Core.IO {
 
             foreach (var dir in dirs) {
                 var fullDir = Path.IsPathRooted(dir) ? dir : root + dir;
+                if (string.IsNullOrEmpty(fullDir)) {
+                    continue;
+                }
                 IFileInfo[] files = null;
                 try {
                     files = fileSystem.GetDirectoryInfo(fullDir)
