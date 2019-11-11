@@ -152,9 +152,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             if (module == null) {
                 // Fallback if somehow module is not loaded or missing from the database.
-                // Try to load it directly and wait a bit hoping for the analysis to complete.
-                // Example: posix is a stub-only and is not loaded with the database.
-                // TODO: consider writing stub-only modules to the database as well.
+                // Try loading it directly and wait a bit hoping for the analysis to complete.
                 var resolution = parts.IsStub ? tres : mres;
                 var imports = resolution.CurrentPathResolver.GetImportsFromAbsoluteName(Module.FilePath, Enumerable.Repeat(parts.ModuleName, 1), true);
                 if (imports is ModuleImport moduleImport) {
