@@ -33,10 +33,14 @@ using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal sealed class ModuleDatabase : IModuleDatabaseService {
-        private readonly object _lock = new object();
-        private static readonly Dictionary<string, PythonDbModule> _modulesCache
+        private readonly object _modulesLock = new object();
+        private readonly Dictionary<string, PythonDbModule> _modulesCache
             = new Dictionary<string, PythonDbModule>();
-        private static readonly ConcurrentDictionary<AnalysisModuleKey, bool> _searchResults
+
+        private readonly ConcurrentDictionary<string, ModuleModel> _modelsCache
+            = new ConcurrentDictionary<string, ModuleModel>();
+
+        private readonly ConcurrentDictionary<AnalysisModuleKey, bool> _searchResults
             = new ConcurrentDictionary<AnalysisModuleKey, bool>();
 
         private readonly IServiceContainer _services;
@@ -103,7 +107,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         internal IPythonModule RestoreModule(string moduleName, string uniqueId) {
-            lock (_lock) {
+            lock (_modulesLock) {
                 if (_modulesCache.TryGetValue(uniqueId, out var m)) {
                     return m;
                 }
@@ -113,7 +117,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
         private IPythonModule RestoreModule(ModuleModel model) {
             PythonDbModule dbModule;
-            lock (_lock) {
+            lock (_modulesLock) {
                 if (_modulesCache.TryGetValue(model.UniqueId, out var m)) {
                     return m;
                 }
@@ -147,6 +151,7 @@ namespace Microsoft.Python.Analysis.Caching {
                 using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
                     var modules = db.GetCollection<ModuleModel>("modules");
                     modules.Upsert(model);
+                    modules.EnsureIndex(x => x.Name);
                 }
                 return true;
             }, $"Unable to write analysis of {model.Name} to database.");
@@ -192,18 +197,24 @@ namespace Microsoft.Python.Analysis.Caching {
 
         private bool TryGetModuleModel(string moduleName, string dbPath, out ModuleModel model) {
             model = null;
-            
+
             if (string.IsNullOrEmpty(dbPath)) {
                 return false;
             }
-            
-            model = WithRetries<ModuleModel>(() => {
+
+            if (_modelsCache.TryGetValue(moduleName, out model)) {
+                return true;
+            }
+
+            model = WithRetries(() => {
                 using (var db = new LiteDatabase(dbPath)) {
                     var modules = db.GetCollection<ModuleModel>("modules");
-                    return modules.Find(m => m.Name == moduleName).FirstOrDefault();
+                    var storedModel = modules.FindOne(m => m.Name == moduleName);
+                    _modelsCache[moduleName] = storedModel;
+                    return storedModel;
                 }
             }, $"Unable to locate database for module {moduleName}.");
-            
+
             return model != null;
         }
 
