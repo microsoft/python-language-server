@@ -106,10 +106,10 @@ namespace Microsoft.Python.Analysis.Caching.Models {
             IndexSpan = cls.Location.IndexSpan.ToModel();
             Documentation = cls.Documentation;
 
-            var ntBases = cls.Bases.OfType<ITypingNamedTupleType>().ToArray();
+            var ntBases = cls.Bases.MaybeEnumerate().OfType<ITypingNamedTupleType>().ToArray();
             NamedTupleBases = ntBases.Select(b => new NamedTupleModel(b, services)).ToArray();
 
-            Bases = cls.Bases.Except(ntBases).Select(t => t.GetPersistentQualifiedName(services)).ToArray();
+            Bases = cls.Bases.MaybeEnumerate().Except(ntBases).Select(t => t.GetPersistentQualifiedName(services)).ToArray();
             Methods = methods.ToArray();
             Properties = properties.ToArray();
             Fields = fields.ToArray();
