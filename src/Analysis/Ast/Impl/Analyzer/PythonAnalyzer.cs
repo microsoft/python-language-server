@@ -312,6 +312,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             foreach (var key in walker.MissingKeys.ToArray()) {
                 lock (_syncObj) {
                     if (_analysisEntries.TryGetValue(key, out _)) {
+                        walker.MissingKeys = walker.MissingKeys.Remove(key);
                         continue;
                     }
                 }
