@@ -78,7 +78,7 @@ namespace Microsoft.Python.LanguageServer.Indexing {
                 CreateIndices(userFiles, _userCodeSymbolIndex, linkedCt);
 
                 // index library files if asked
-                CreateIndices(LibraryFiles(snapshot).Except(userFiles, FileSystemInfoComparer.Instance), _libraryCodeSymbolIndex, linkedCt);
+                // CreateIndices(LibraryFiles(snapshot).Except(userFiles, FileSystemInfoComparer.Instance), _libraryCodeSymbolIndex, linkedCt);
             }, linkedCt).ContinueWith(_ => linkedCts.Dispose());
         }
 
