@@ -29,6 +29,7 @@ using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.OS;
+using Microsoft.Python.LanguageServer.CodeActions;
 using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.LanguageServer.SearchPaths;
 using Newtonsoft.Json.Linq;
@@ -67,8 +68,47 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 HandleUserConfiguredPathsChanges(userConfiguredPaths);
                 HandlePathWatchChanges(GetSetting(analysis, "watchSearchPaths", true));
                 HandleDiagnosticsChanges(pythonSection, settings);
+                HandleCodeActionsChanges(pythonSection);
 
                 _server.DidChangeConfiguration(new DidChangeConfigurationParams { settings = settings }, cancellationToken);
+            }
+        }
+
+        private void HandleCodeActionsChanges(JToken pythonSection) {
+            var refactoring = new Dictionary<string, object>();
+            var quickFix = new Dictionary<string, object>();
+
+            var refactoringToken = pythonSection["refactoring"];
+            var quickFixToken = pythonSection["quickfix"];
+
+            // +1 is for last "." after prefix
+            AppendToMap(refactoringToken, refactoringToken?.Path.Length + 1 ?? 0, refactoring);
+            AppendToMap(quickFixToken, quickFixToken?.Path.Length + 1 ?? 0, quickFix);
+
+            var codeActionSettings = new CodeActionSettings(refactoring, quickFix);
+            _server.HandleCodeActionsChange(codeActionSettings);
+
+            void AppendToMap(JToken setting, int prefixLength, Dictionary<string, object> map) {
+                if (setting == null || !setting.HasValues) {
+                    return;
+                }
+
+                foreach (var child in setting) {
+                    if (child is JValue value) {
+                        // there shouldn't be duplicates and prefix must exist.
+                        var path = child.Path;
+                        if (path.Length <= prefixLength) {
+                            // nothing to add
+                            continue;
+                        }
+
+                        // get rid of common "settings.python..." prefix
+                        map[path.Substring(prefixLength)] = value.Value;
+                        continue;
+                    }
+
+                    AppendToMap(child, prefixLength, map);
+                }
             }
         }
 
