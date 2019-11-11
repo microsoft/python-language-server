@@ -14,9 +14,11 @@
 // permissions and limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Core.DependencyResolution;
 using Microsoft.Python.Analysis.Core.Interpreter;
 using Microsoft.Python.Analysis.Modules;
@@ -26,6 +28,8 @@ using Microsoft.Python.Core.IO;
 
 namespace Microsoft.Python.Analysis.Caching {
     internal static class ModuleUniqueId {
+        private static ConcurrentDictionary<AnalysisModuleKey, string> _idCache = new ConcurrentDictionary<AnalysisModuleKey, string>();
+
         public static string GetUniqueId(this IPythonModule module, IServiceContainer services, AnalysisCachingLevel cachingLevel = AnalysisCachingLevel.Library) {
             // If module is a standalone stub, permit it. Otherwise redirect to the main module
             // since during stub merge types from stub normally become part of the primary module.
@@ -54,6 +58,11 @@ namespace Microsoft.Python.Analysis.Caching {
             }
 
             if (!string.IsNullOrEmpty(filePath) && modulePathType == PythonLibraryPathType.Site) {
+                var key = new AnalysisModuleKey(moduleName, filePath);
+                if (_idCache.TryGetValue(key, out var id)) {
+                    return id;
+                }
+
                 // Module can be a submodule of a versioned package. In this case we want to use
                 // version of the enclosing package so we have to look up the chain of folders.
                 var moduleRootName = moduleName.Split('.')[0];
@@ -73,7 +82,9 @@ namespace Microsoft.Python.Analysis.Caching {
                     if (folders.Length == 1) {
                         var fileName = Path.GetFileNameWithoutExtension(folders[0]);
                         var dash = fileName.IndexOf('-');
-                        return $"{moduleName}({fileName.Substring(dash + 1)})";
+                        var uniqueId = $"{moduleName}({fileName.Substring(dash + 1)})";
+                        _idCache[key] = uniqueId;
+                        return uniqueId;
                     }
                     // Move up if nothing is found.
                     versionFolder = Path.GetDirectoryName(versionFolder);

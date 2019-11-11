@@ -22,6 +22,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Python.Analysis.Analyzer;
+using Microsoft.Python.Analysis.Caching.IO;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
@@ -46,6 +47,7 @@ namespace Microsoft.Python.Analysis.Caching {
         private readonly ILogger _log;
         private readonly IFileSystem _fs;
         private readonly AnalysisCachingLevel _defaultCachingLevel;
+        private readonly CacheWriter _cacheWriter;
         private AnalysisCachingLevel? _cachingLevel;
 
         public ModuleDatabase(IServiceManager sm, string cacheFolder = null) {
@@ -55,6 +57,7 @@ namespace Microsoft.Python.Analysis.Caching {
             _defaultCachingLevel = AnalysisCachingLevel.Library;
             var cfs = _services.GetService<ICacheFolderService>();
             CacheFolder = cacheFolder ?? Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
+            _cacheWriter = new CacheWriter(_fs, _log, CacheFolder);
             sm.AddService(this);
         }
 
@@ -73,12 +76,6 @@ namespace Microsoft.Python.Analysis.Caching {
             return FindModuleModelByPath(moduleName, modulePath, moduleType, out var model)
                 ? RestoreModule(model) : null;
         }
-
-        /// <summary>
-        /// Writes module data to the database.
-        /// </summary>
-        public Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default)
-            => Task.Run(() => StoreModuleAnalysis(analysis, cancellationToken), cancellationToken);
 
         /// <summary>
         /// Determines if module analysis exists in the storage.
@@ -105,6 +102,18 @@ namespace Microsoft.Python.Analysis.Caching {
             return false;
         }
 
+        public async Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
+            var cachingLevel = GetCachingLevel();
+            if (cachingLevel == AnalysisCachingLevel.None) {
+                return;
+            }
+
+            var model = await Task.Run(() => ModuleModel.FromAnalysis(analysis, _services, cachingLevel), cancellationToken);
+            if (model != null && !cancellationToken.IsCancellationRequested) {
+                await _cacheWriter.EnqueueModel(model, cancellationToken);
+            }
+        }
+
         internal IPythonModule RestoreModule(string moduleName, string uniqueId) {
             lock (_modulesLock) {
                 if (_modulesCache.TryGetValue(uniqueId, out var m)) {
@@ -124,36 +133,6 @@ namespace Microsoft.Python.Analysis.Caching {
             }
             dbModule.Construct(model);
             return dbModule;
-        }
-
-        private void StoreModuleAnalysis(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
-            var cachingLevel = GetCachingLevel();
-            if (cachingLevel == AnalysisCachingLevel.None) {
-                return;
-            }
-
-            var model = ModuleModel.FromAnalysis(analysis, _services, cachingLevel);
-            if (model == null) {
-                // Caching level setting does not permit this module to be persisted.
-                return;
-            }
-
-            WithRetries(() => {
-                if (!_fs.DirectoryExists(CacheFolder)) {
-                    _fs.CreateDirectory(CacheFolder);
-                }
-                return true;
-            }, $"Unable to create directory {CacheFolder} for modules cache.");
-
-            WithRetries(() => {
-                cancellationToken.ThrowIfCancellationRequested();
-                using (var db = new LiteDatabase(Path.Combine(CacheFolder, $"{model.UniqueId}.db"))) {
-                    var modules = db.GetCollection<ModuleModel>("modules");
-                    modules.Upsert(model);
-                    modules.EnsureIndex(x => x.Name);
-                }
-                return true;
-            }, $"Unable to write analysis of {model.Name} to database.");
         }
 
         /// <summary>
@@ -205,14 +184,14 @@ namespace Microsoft.Python.Analysis.Caching {
                 return true;
             }
 
-            model = WithRetries(() => {
+            model = WithRetries.Execute(() => {
                 using (var db = new LiteDatabase(dbPath)) {
                     var modules = db.GetCollection<ModuleModel>("modules");
                     var storedModel = modules.FindOne(m => m.Name == moduleName);
                     _modelsCache[moduleName] = storedModel;
                     return storedModel;
                 }
-            }, $"Unable to locate database for module {moduleName}.");
+            }, $"Unable to locate database for module {moduleName}.", _log);
 
             return model != null;
         }
@@ -221,27 +200,5 @@ namespace Microsoft.Python.Analysis.Caching {
             => _cachingLevel
                ?? (_cachingLevel = _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel)
                ?? _defaultCachingLevel;
-
-        private T WithRetries<T>(Func<T> a, string errorMessage) {
-            Exception ex = null;
-            for (var retries = 50; retries > 0; --retries) {
-                try {
-                    return a();
-                } catch (Exception ex1) when (ex1 is IOException || ex1 is UnauthorizedAccessException) {
-                    ex = ex1;
-                    Thread.Sleep(10);
-                } catch (Exception ex2) {
-                    ex = ex2;
-                    break;
-                }
-            }
-            if (ex != null) {
-                _log?.Log(TraceEventType.Warning, $"{errorMessage} Exception: {ex.Message}");
-                if (ex.IsCriticalException()) {
-                    throw ex;
-                }
-            }
-            return default;
-        }
     }
 }
