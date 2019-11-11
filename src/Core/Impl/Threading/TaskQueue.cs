@@ -28,8 +28,9 @@ namespace Microsoft.Python.Core.Threading {
         public TaskQueue(int maxWorkers) {
             _workers = new Thread[maxWorkers];
             // Create and start a separate thread for each worker
-            for (var i = 0; i < _workers.Length; i++)
+            for (var i = 0; i < _workers.Length; i++) {
                 (_workers[i] = new Thread(Consume)).Start();
+            }
         }
 
         public void Dispose() {
