@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +31,7 @@ using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
 
 namespace Microsoft.Python.Analysis.Caching {
-    internal sealed class ModuleDatabase : IModuleDatabaseService {
+    internal sealed class ModuleDatabase : IModuleDatabaseService, IDisposable {
         private readonly object _modulesLock = new object();
         private readonly Dictionary<string, PythonDbModule> _modulesCache
             = new Dictionary<string, PythonDbModule>();
@@ -200,5 +199,7 @@ namespace Microsoft.Python.Analysis.Caching {
             => _cachingLevel
                ?? (_cachingLevel = _services.GetService<IAnalysisOptionsProvider>()?.Options.AnalysisCachingLevel)
                ?? _defaultCachingLevel;
+
+        public void Dispose() => _cacheWriter.Dispose();
     }
 }
