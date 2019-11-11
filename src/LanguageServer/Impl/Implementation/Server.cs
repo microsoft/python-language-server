@@ -188,7 +188,7 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void IndexLibraries(object o, AnalysisCompleteEventArgs e) {
-            _log?.Log(TraceEventType.Verbose, "Indexing libraries");
+            _log?.Log(TraceEventType.Verbose, Resources.IndexingLibraries);
             _indexManager.IndexSnapshot(_interpreter.ModuleResolution.CurrentPathResolver).DoNotWait();
             _analyzer.AnalysisComplete -= IndexLibraries;
         }
