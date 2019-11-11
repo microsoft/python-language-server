@@ -18,7 +18,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
@@ -60,7 +59,7 @@ namespace Microsoft.Python.Analysis.Caching {
         }
 
         public string CacheFolderBaseName => "analysis.v";
-        public int DatabaseFormatVersion => 2;
+        public int DatabaseFormatVersion => 3;
         public string CacheFolder { get; }
 
         /// <summary>
