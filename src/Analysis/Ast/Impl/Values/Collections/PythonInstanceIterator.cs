@@ -46,8 +46,8 @@ namespace Microsoft.Python.Analysis.Values.Collections {
     /// Empty iterator
     /// </summary>
     internal sealed class EmptyIterator : EmptyLocatedMember, IPythonIterator {
-        public EmptyIterator(IPythonType unknownType): base(PythonMemberType.Class) {
-            Type = unknownType;
+        public EmptyIterator(IPythonModule declaringModule): base(declaringModule, PythonMemberType.Class) {
+            Type = declaringModule.Interpreter.UnknownType;
         }
         
         public IPythonIterator GetIterator() => this;
