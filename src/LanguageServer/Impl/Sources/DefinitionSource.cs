@@ -165,7 +165,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
         private static Reference FindModulePartReference(ImmutableArray<NameExpression> names, Node expr, IPythonModule module, out ILocatedMember definingMember) {
             definingMember = null;
-            var part = names.FirstOrDefault(x => x.IndexSpan.Start <= expr.StartIndex && x.IndexSpan.Start <= expr.EndIndex);
+            var part = names.FirstOrDefault(n => expr.StartIndex <= n.IndexSpan.Start && expr.EndIndex >= n.IndexSpan.End);
             if (part != null) {
                 var definition = module.Analysis.GlobalScope.Variables[part.Name]?.Definition;
                 if (definition != null) {
