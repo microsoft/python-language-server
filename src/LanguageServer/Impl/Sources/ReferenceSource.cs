@@ -54,13 +54,19 @@ namespace Microsoft.Python.LanguageServer.Sources {
                 }
 
                 var rootDefinition = definingMember.GetRootDefinition();
-                var name = definingMember.GetName();
+                if (rootDefinition != null) {
+                    var name = definingMember.GetName();
+                    var moduleUri = rootDefinition.Definition?.DocumentUri;
+                    if (moduleUri != null) {
+                        var rdt = _services.GetService<IRunningDocumentTable>();
+                        var declaringModule = rdt.GetDocument(moduleUri);
 
-                // If it is an implicitly declared variable, such as function or a class
-                // then the location is invalid and the module is null. Use current module.
-                var declaringModule = rootDefinition?.DeclaringModule ?? analysis.Document;
-                if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
-                    return await FindAllReferencesAsync(name, declaringModule, rootDefinition, location, definitionSource, cancellationToken);
+                        // If it is an implicitly declared variable, such as function or a class
+                        // then the location is invalid and the module is null. Use current module.
+                        if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
+                            return await FindAllReferencesAsync(name, declaringModule, rootDefinition, location, definitionSource, cancellationToken);
+                        }
+                    }
                 }
             }
             return Array.Empty<Reference>();
