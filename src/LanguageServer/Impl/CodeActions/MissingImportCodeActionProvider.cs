@@ -41,8 +41,8 @@ using Microsoft.Python.Parsing.Ast;
 using Range = Microsoft.Python.Core.Text.Range;
 
 namespace Microsoft.Python.LanguageServer.CodeActions {
-    internal sealed class MissingImportCodeActionProvider : ICodeActionProvider {
-        public static readonly ICodeActionProvider Instance = new MissingImportCodeActionProvider();
+    internal sealed class MissingImportCodeActionProvider : IQuickFixCodeActionProvider {
+        public static readonly IQuickFixCodeActionProvider Instance = new MissingImportCodeActionProvider();
 
         // right now, it is a static. in future, we might consider giving an option to users to customize this list
         // also, right now, it is text based. so if module has same name, they will get same suggestion even if
@@ -64,7 +64,11 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         public ImmutableArray<string> FixableDiagnostics => ImmutableArray<string>.Create(
             ErrorCodes.UndefinedVariable, ErrorCodes.VariableNotDefinedGlobally, ErrorCodes.VariableNotDefinedNonLocal);
 
-        public async Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
+        public async Task<IEnumerable<CodeAction>> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, DiagnosticsEntry diagnostic, CancellationToken cancellationToken) {
+            if (!settings.GetQuickFixOption("addimports", true)) {
+                return Enumerable.Empty<CodeAction>();
+            }
+
             var finder = new ExpressionFinder(analysis.Ast, new FindExpressionOptions() { Names = true });
             var node = finder.GetExpression(diagnostic.SourceSpan);
             if (!(node is NameExpression nex)) {
@@ -590,6 +594,10 @@ namespace Microsoft.Python.LanguageServer.CodeActions {
         }
 
         private IEnumerable<string> GetAllVariables(IDocumentAnalysis analysis) {
+            if (analysis?.GlobalScope == null) {
+                return Array.Empty<string>();
+            }
+
             // this is different than StartImportMemberNames since that only returns something when
             // all entries are known. for import, we are fine doing best effort
             if (analysis.GlobalScope.Variables.TryGetVariable("__all__", out var variable) &&

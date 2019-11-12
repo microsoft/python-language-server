@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -27,25 +26,25 @@ using Microsoft.Python.LanguageServer.Protocol;
 using Microsoft.Python.Parsing.Ast;
 
 namespace Microsoft.Python.LanguageServer.Sources {
-    internal sealed partial class CodeActionSource {
-        private static readonly ImmutableArray<ICodeActionProvider> _codeActionProviders =
-            ImmutableArray<ICodeActionProvider>.Create(MissingImportCodeActionProvider.Instance);
+    internal sealed partial class QuickFixCodeActionSource {
+        private static readonly ImmutableArray<IQuickFixCodeActionProvider> _codeActionProviders =
+            ImmutableArray<IQuickFixCodeActionProvider>.Create(MissingImportCodeActionProvider.Instance);
 
         private readonly IServiceContainer _services;
 
-        public CodeActionSource(IServiceContainer services) {
+        public QuickFixCodeActionSource(IServiceContainer services) {
             _services = services;
         }
 
-        public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
-            cancellationToken.ThrowIfCancellationRequested();
-
+        public async Task<CodeAction[]> GetCodeActionsAsync(IDocumentAnalysis analysis, CodeActionSettings settings, Diagnostic[] diagnostics, CancellationToken cancellationToken) {
             var results = new List<CodeAction>();
 
             foreach (var diagnostic in GetMatchingDiagnostics(analysis, diagnostics, cancellationToken)) {
                 foreach (var codeActionProvider in _codeActionProviders) {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     if (codeActionProvider.FixableDiagnostics.Any(code => code == diagnostic.ErrorCode)) {
-                        results.AddRange(await codeActionProvider.GetCodeActionsAsync(analysis, diagnostic, cancellationToken));
+                        results.AddRange(await codeActionProvider.GetCodeActionsAsync(analysis, settings, diagnostic, cancellationToken));
                     }
                 }
             }

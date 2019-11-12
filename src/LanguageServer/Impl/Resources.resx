@@ -135,6 +135,9 @@
   <data name="ImportLocally" xml:space="preserve">
     <value>import locally '{0}'</value>
   </data>
+  <data name="IndexingLibraries" xml:space="preserve">
+    <value>Indexing libraries.</value>
+  </data>
   <data name="InitializingForGenericInterpreter" xml:space="preserve">
     <value>Initializing for generic interpreter</value>
   </data>

@@ -32,6 +32,7 @@ using Microsoft.Python.Core.Idle;
 using Microsoft.Python.Core.IO;
 using Microsoft.Python.Core.Logging;
 using Microsoft.Python.Core.Services;
+using Microsoft.Python.LanguageServer.CodeActions;
 using Microsoft.Python.LanguageServer.Completion;
 using Microsoft.Python.LanguageServer.Diagnostics;
 using Microsoft.Python.LanguageServer.Indexing;
@@ -48,12 +49,15 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IRunningDocumentTable _rdt;
         private ILogger _log;
         private IIndexManager _indexManager;
+        private PythonAnalyzer _analyzer;
 
         private InitializeParams _initParams;
+        private bool _initialized;
 
         private bool _watchSearchPaths;
         private PathsWatcher _pathsWatcher;
         private string[] _searchPaths;
+        private CodeActionSettings _codeActionSettings;
 
         public string Root { get; private set; }
 
@@ -77,30 +81,32 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         public void Dispose() => _disposableBag.TryDispose();
 
         #region Client message handling
-        private InitializeResult GetInitializeResult() => new InitializeResult {
-            capabilities = new ServerCapabilities {
-                textDocumentSync = new TextDocumentSyncOptions {
-                    openClose = true,
-                    change = TextDocumentSyncKind.Incremental
-                },
-                completionProvider = new CompletionOptions {
-                    triggerCharacters = new[] { "." }
-                },
-                hoverProvider = true,
-                signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
-                definitionProvider = true,
-                referencesProvider = true,
-                workspaceSymbolProvider = true,
-                documentSymbolProvider = true,
-                renameProvider = true,
-                declarationProvider = true,
-                documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
-                    firstTriggerCharacter = "\n",
-                    moreTriggerCharacter = new[] { ";", ":" }
-                },
-                codeActionProvider = new CodeActionOptions() { codeActionKinds = new string[] { CodeActionKind.QuickFix } },
-            }
-        };
+        private InitializeResult GetInitializeResult() {
+            return new InitializeResult {
+                capabilities = new ServerCapabilities {
+                    textDocumentSync = new TextDocumentSyncOptions {
+                        openClose = true,
+                        change = TextDocumentSyncKind.Incremental
+                    },
+                    completionProvider = new CompletionOptions {
+                        triggerCharacters = new[] { "." }
+                    },
+                    hoverProvider = true,
+                    signatureHelpProvider = new SignatureHelpOptions { triggerCharacters = new[] { "(", ",", ")" } },
+                    definitionProvider = true,
+                    referencesProvider = true,
+                    workspaceSymbolProvider = true,
+                    documentSymbolProvider = true,
+                    renameProvider = true,
+                    declarationProvider = true,
+                    documentOnTypeFormattingProvider = new DocumentOnTypeFormattingOptions {
+                        firstTriggerCharacter = "\n",
+                        moreTriggerCharacter = new[] { ";", ":" }
+                    },
+                    codeActionProvider = new CodeActionOptions() { codeActionKinds = new string[] { CodeActionKind.QuickFix, CodeActionKind.Refactor } },
+                }
+            };
+        }
 
         public Task<InitializeResult> InitializeAsync(InitializeParams @params, CancellationToken cancellationToken = default) {
             _disposableBag.ThrowIfDisposed();
@@ -123,11 +129,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var analyzer = new PythonAnalyzer(_services);
-            _services.AddService(analyzer);
+            _analyzer = new PythonAnalyzer(_services);
+            _services.AddService(_analyzer);
 
-            analyzer.AnalysisComplete += OnAnalysisComplete;
-            _disposableBag.Add(() => analyzer.AnalysisComplete -= OnAnalysisComplete);
+            _analyzer.AnalysisComplete += OnAnalysisComplete;
+            _disposableBag.Add(() => _analyzer.AnalysisComplete -= OnAnalysisComplete);
 
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
@@ -154,7 +160,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                                             initializationOptions?.includeFiles,
                                             initializationOptions?.excludeFiles,
                                             _services.GetService<IIdleTimeService>());
-            _indexManager.IndexWorkspace(_interpreter.ModuleResolution.CurrentPathResolver).DoNotWait();
+
+            _indexManager.IndexWorkspace().DoNotWait();
+            _analyzer.AnalysisComplete += IndexLibraries;
+            _disposableBag.Add(() => _analyzer.AnalysisComplete -= IndexLibraries);
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
 
@@ -174,6 +183,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 ChooseDocumentationSource(sigInfo?.documentationFormat),
                 sigInfo?.parameterInformation?.labelOffsetSupport == true
             );
+
+            _initialized = true;
+        }
+
+        private void IndexLibraries(object o, AnalysisCompleteEventArgs e) {
+            _log?.Log(TraceEventType.Verbose, Resources.IndexingLibraries);
+            _indexManager.IndexSnapshot(_interpreter.ModuleResolution.CurrentPathResolver).DoNotWait();
+            _analyzer.AnalysisComplete -= IndexLibraries;
         }
 
         public Task Shutdown() {
@@ -220,6 +237,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
             }
         }
 
+        public void HandleCodeActionsChange(CodeActionSettings settings) {
+            _codeActionSettings = settings;
+        }
+
         #region Private Helpers
         private IDocumentationSource ChooseDocumentationSource(string[] kinds) {
             if (kinds == null) {
@@ -249,6 +270,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void ResetAnalyzer() {
+            if (!_initialized) {
+                // We haven't yet initialized everything, not even the builtins.
+                // Resetting here would break things.
+                return;
+            }
+
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
             _services.GetService<PythonAnalyzer>().ResetAnalyzer().ContinueWith(t => {
                 if (_watchSearchPaths) {

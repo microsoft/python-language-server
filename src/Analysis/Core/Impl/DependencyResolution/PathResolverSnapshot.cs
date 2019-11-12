@@ -46,19 +46,20 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private readonly string _workDirectory;
         private readonly ImmutableArray<string> _interpreterSearchPaths;
         private readonly ImmutableArray<string> _userSearchPaths;
+        private readonly HashSet<string> _isLibraryPath;
         private readonly ImmutableArray<Node> _roots;
         private readonly int _userRootsCount;
         public int Version { get; }
 
         public PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, string workDirectory, ImmutableArray<string> interpreterSearchPaths, ImmutableArray<string> userSearchPaths)
-            : this(pythonLanguageVersion, workDirectory, userSearchPaths, interpreterSearchPaths, ImmutableArray<Node>.Empty, 0, Node.CreateDefaultRoot(), Node.CreateBuiltinRoot(), default) {
+            : this(pythonLanguageVersion, workDirectory, userSearchPaths, interpreterSearchPaths, CreateIsLibrarySet(userSearchPaths, interpreterSearchPaths), ImmutableArray<Node>.Empty, 0, Node.CreateDefaultRoot(), Node.CreateBuiltinRoot(), default) {
 
             _pythonLanguageVersion = pythonLanguageVersion;
             _workDirectory = workDirectory;
             _userSearchPaths = userSearchPaths;
             _interpreterSearchPaths = interpreterSearchPaths;
 
-            if (workDirectory != string.Empty) {
+            if (!string.IsNullOrEmpty(workDirectory)) {
                 CreateRootsWithDefault(workDirectory, userSearchPaths, interpreterSearchPaths, out _roots, out _userRootsCount);
             } else {
                 CreateRootsWithoutDefault(userSearchPaths, interpreterSearchPaths, out _roots, out _userRootsCount);
@@ -69,11 +70,12 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
             Version = default;
         }
 
-        private PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, string workDirectory, ImmutableArray<string> userSearchPaths, ImmutableArray<string> interpreterSearchPaths, ImmutableArray<Node> roots, int userRootsCount, Node nonRooted, Node builtins, int version) {
+        private PathResolverSnapshot(PythonLanguageVersion pythonLanguageVersion, string workDirectory, ImmutableArray<string> userSearchPaths, ImmutableArray<string> interpreterSearchPaths, HashSet<string> isLibraryPath, ImmutableArray<Node> roots, int userRootsCount, Node nonRooted, Node builtins, int version) {
             _pythonLanguageVersion = pythonLanguageVersion;
             _workDirectory = workDirectory;
             _userSearchPaths = userSearchPaths;
             _interpreterSearchPaths = interpreterSearchPaths;
+            _isLibraryPath = isLibraryPath;
             _roots = roots;
             _userRootsCount = userRootsCount;
             _nonRooted = nonRooted;
@@ -411,6 +413,7 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
                 _workDirectory,
                 _userSearchPaths,
                 _interpreterSearchPaths,
+                _isLibraryPath,
                 _roots,
                 _userRootsCount,
                 _nonRooted,
@@ -815,14 +818,17 @@ namespace Microsoft.Python.Analysis.Core.DependencyResolution {
         private static bool IsInitPyModule(in Node node, out Node initPyNode)
             => node.TryGetChild("__init__", out initPyNode) && initPyNode.IsModule;
 
-        private bool IsLibraryPath(string rootPath)
-            => !_userSearchPaths.Contains(rootPath, StringExtensions.PathsStringComparer)
-               && _interpreterSearchPaths.Except(_userSearchPaths).Contains(rootPath, StringExtensions.PathsStringComparer);
+        private bool IsLibraryPath(string rootPath) => _isLibraryPath.Contains(rootPath);
 
         private PathResolverSnapshot ReplaceNonRooted(Node nonRooted)
-            => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _roots, _userRootsCount, nonRooted, _builtins, Version + 1);
+            => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _isLibraryPath, _roots, _userRootsCount, nonRooted, _builtins, Version + 1);
 
         private PathResolverSnapshot ImmutableReplaceRoot(Node root, int index)
-            => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _roots.ReplaceAt(index, root), _userRootsCount, _nonRooted, _builtins, Version + 1);
+            => new PathResolverSnapshot(_pythonLanguageVersion, _workDirectory, _userSearchPaths, _interpreterSearchPaths, _isLibraryPath, _roots.ReplaceAt(index, root), _userRootsCount, _nonRooted, _builtins, Version + 1);
+
+        private static HashSet<string> CreateIsLibrarySet(ImmutableArray<string> userSearchPaths, ImmutableArray<string> interpreterSearchPaths) {
+            var interpreterMinusUser = interpreterSearchPaths.Except(userSearchPaths, StringExtensions.PathsStringComparer);
+            return new HashSet<string>(interpreterMinusUser, StringExtensions.PathsStringComparer);
+        }
     }
 }

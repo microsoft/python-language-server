@@ -59,24 +59,22 @@ namespace Microsoft.Python.Analysis.Types {
         /// <summary>
         /// Create instance of the type, if any.
         /// </summary>
-        /// <param name="typeName">Name of the type. Used in specialization scenarios
-        /// where constructor may want to create specialized type.</param>
-        /// <param name="args">Any custom arguments required to create the instance.</param>
-        IPythonInstance CreateInstance(IArgumentSet args);
+        /// <param name="args">Call arguments.</param>
+        IMember CreateInstance(IArgumentSet args);
 
         /// <summary>
         /// Invokes method or property on the specified instance.
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
         /// <param name="memberName">Member name to call, if applicable.</param>
-        /// <param name="argSet">Call arguments.</param>
-        IMember Call(IPythonInstance instance, string memberName, IArgumentSet argSet);
+        /// <param name="args">Call arguments.</param>
+        IMember Call(IPythonInstance instance, string memberName, IArgumentSet args);
 
         /// <summary>
         /// Invokes indexer on the specified instance.
         /// </summary>
         /// <param name="instance">Instance of the type.</param>
-        /// <param name="index">Index arguments.</param>
+        /// <param name="args">Call arguments.</param>
         IMember Index(IPythonInstance instance, IArgumentSet args);
     }
 }

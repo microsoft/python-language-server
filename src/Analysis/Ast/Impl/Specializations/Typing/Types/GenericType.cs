@@ -122,7 +122,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Types {
         public bool IsAbstract => true;
         public bool IsSpecialized => true;
 
-        public IPythonInstance CreateInstance(IArgumentSet args) {
+        public IMember CreateInstance(IArgumentSet args) {
             var types = GetTypesFromValues(args.Arguments);
             if (types.Count != args.Arguments.Count) {
                 throw new ArgumentException(@"Generic type instance construction arguments must be all of IPythonType", nameof(args));

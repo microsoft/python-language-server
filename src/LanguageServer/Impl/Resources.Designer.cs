@@ -115,6 +115,15 @@ namespace Microsoft.Python.LanguageServer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Indexing libraries..
+        /// </summary>
+        internal static string IndexingLibraries {
+            get {
+                return ResourceManager.GetString("IndexingLibraries", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Initializing for generic interpreter.
         /// </summary>
         internal static string InitializingForGenericInterpreter {
