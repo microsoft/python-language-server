@@ -37,6 +37,7 @@ namespace Microsoft.Python.Analysis.Generators {
 
             private readonly Dictionary<string, string> _fromMap;
             private readonly Dictionary<string, List<string>> _importMap;
+            private readonly HashSet<string> importToKeepInOriginalForm;
             private readonly StringBuilder _sb;
 
             // index in _original that points to the part that are processed
@@ -55,6 +56,7 @@ namespace Microsoft.Python.Analysis.Generators {
                 _sb = new StringBuilder();
                 _fromMap = new Dictionary<string, string>();
                 _importMap = new Dictionary<string, List<string>>();
+                importToKeepInOriginalForm = new HashSet<string>();
             }
 
             public override bool Walk(ImportStatement node, Node parent) {
@@ -70,9 +72,16 @@ namespace Microsoft.Python.Analysis.Generators {
             }
 
             public override bool Walk(FunctionDefinition node, Node parent) {
-                if (node.Name.StartsWith("__") && !_allVariablesMap.Contains(node.Name)) {
+                if (IsPrivate(node.Name)) {
                     // remove private member not in __all__
                     return RemoveNode(node.IndexSpan);
+                }
+
+                // require proper scope. but for now, just always global
+
+                var eval = _module.Analysis.ExpressionEvaluator;
+                using (eval.OpenScope(_module.Analysis.Document, null)) {
+                    var member = eval.LookupNameInScopes(node.Name, Analysis.Analyzer.LookupOptions.All);
                 }
 
                 return base.Walk(node, parent);
@@ -106,16 +115,22 @@ namespace Microsoft.Python.Analysis.Generators {
                         }
                     }
 
-                    if (nex.Name.StartsWith("__")) {
+                    if (IsPrivate(nex.Name)) {
                         // remove any private variables
                         return RemoveNode(node.IndexSpan);
                     }
 
-                    // handle call
                     if (node.Right is CallExpression call &&
                         MatchMemberName(call.Target as MemberExpression, out var targetName)) {
-                        _importMap.GetOrAdd(targetName).Add(nex.Name);
-                        return RemoveNode(node.IndexSpan);
+
+                        // handle call only for __future__
+                        if (targetName == "_mod___future__") {
+                            _importMap.GetOrAdd(targetName).Add(nex.Name);
+                            return RemoveNode(node.IndexSpan);
+                        } else {
+                            // keep import as it is for other call
+                            importToKeepInOriginalForm.Add(targetName);
+                        }
                     }
 
                     // handle member access
@@ -130,7 +145,7 @@ namespace Microsoft.Python.Analysis.Generators {
                 bool MatchMemberName(MemberExpression member, out string name) {
                     name = null;
 
-                    if (node == null) {
+                    if (member == null) {
                         return false;
                     }
 
@@ -158,6 +173,12 @@ namespace Microsoft.Python.Analysis.Generators {
                     var future = _fromMap.FirstOrDefault(kv => kv.Value == "__future__");
                     AppendImports(sb, future, useAs: false);
 
+                    foreach (var asName in importToKeepInOriginalForm) {
+                        if (_fromMap.TryGetValue(asName, out var import)) {
+                            sb.AppendLine($"import {import} as {asName}");
+                        }
+                    }
+
                     foreach (var kv in _fromMap.OrderBy(kv => kv.Value).ToList()) {
                         // in stub, only xxx as yyy is considered "exported"
                         AppendImports(sb, kv, useAs: true);
@@ -168,11 +189,12 @@ namespace Microsoft.Python.Analysis.Generators {
 
                 void AppendImports(StringBuilder sb, KeyValuePair<string, string> entry, bool useAs) {
                     if (entry.Key != null) {
-                        _fromMap.Remove(entry.Key);
                         if (_importMap.TryGetValue(entry.Key, out var imports) && imports.Count > 0) {
                             sb.AppendLine($"from {entry.Value} import {GetImports(imports, useAs)}");
+
+                            _fromMap.Remove(entry.Key);
+                            _importMap.Remove(entry.Key);
                         }
-                        _importMap.Remove(entry.Key);
                     }
                 }
 
@@ -235,6 +257,10 @@ namespace Microsoft.Python.Analysis.Generators {
                 }
 
                 return Array.Empty<string>();
+            }
+
+            private bool IsPrivate(string identifier) {
+                return identifier.StartsWith("__") && !_allVariablesMap.Contains(identifier);
             }
         }
     }
