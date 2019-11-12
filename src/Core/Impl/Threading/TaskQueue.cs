@@ -43,9 +43,17 @@ namespace Microsoft.Python.Core.Threading {
             }
         }
 
-        public void Enqueue(Action action) {
+        public void Enqueue(Action action, bool immediate = true) {
             lock (_lock) {
                 _queue.Enqueue(action);
+                if (immediate) {
+                    Monitor.PulseAll(_lock);
+                }
+            }
+        }
+
+        public void ProcessQueue() {
+            lock (_lock) {
                 Monitor.PulseAll(_lock);
             }
         }

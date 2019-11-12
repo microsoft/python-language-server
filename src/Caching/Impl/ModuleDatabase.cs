@@ -56,7 +56,7 @@ namespace Microsoft.Python.Analysis.Caching {
             _defaultCachingLevel = AnalysisCachingLevel.Library;
             var cfs = _services.GetService<ICacheFolderService>();
             CacheFolder = cacheFolder ?? Path.Combine(cfs.CacheFolder, $"{CacheFolderBaseName}{DatabaseFormatVersion}");
-            _cacheWriter = new CacheWriter(_fs, _log, CacheFolder);
+            _cacheWriter = new CacheWriter(_services.GetService<IPythonAnalyzer>(), _fs, _log, CacheFolder);
             sm.AddService(this);
         }
 

@@ -65,6 +65,7 @@ namespace Microsoft.Python.Analysis.Caching {
         public ScopeStatement Node => null;
         public IScope OuterScope => null;
         public IReadOnlyList<IScope> Children => Array.Empty<IScope>();
+        public IScope GetChildScope(ScopeStatement node) => null;
         public IEnumerable<IScope> EnumerateTowardsGlobal => Enumerable.Empty<IScope>();
         public IEnumerable<IScope> EnumerateFromGlobal => Enumerable.Empty<IScope>();
         public IVariableCollection Variables => _scopeVariables;

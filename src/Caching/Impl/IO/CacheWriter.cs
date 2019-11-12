@@ -18,6 +18,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Caching.Models;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.IO;
@@ -30,15 +31,22 @@ namespace Microsoft.Python.Analysis.Caching.IO {
         private readonly ILogger _log;
         private readonly string _cacheFolder;
         private readonly TaskQueue _taskQueue;
+        private readonly IPythonAnalyzer _analyzer;
 
-        public CacheWriter(IFileSystem fs, ILogger log, string cacheFolder) {
+        public CacheWriter(IPythonAnalyzer analyzer, IFileSystem fs, ILogger log, string cacheFolder) {
             _fs = fs;
             _log = log;
             _cacheFolder = cacheFolder;
-            _taskQueue = new TaskQueue(Math.Max(1, Environment.ProcessorCount / 8));
+            _taskQueue = new TaskQueue(Math.Max(1, Environment.ProcessorCount / 4));
+
+            _analyzer = analyzer;
+            _analyzer.AnalysisComplete += OnAnalysisComplete;
         }
 
+        private void OnAnalysisComplete(object sender, AnalysisCompleteEventArgs e) => _taskQueue.ProcessQueue();
+
         public void Dispose() {
+            _analyzer.AnalysisComplete -= OnAnalysisComplete;
             _taskQueue.Dispose();
         }
 
@@ -53,7 +61,7 @@ namespace Microsoft.Python.Analysis.Caching.IO {
                 } catch (Exception ex) when (!ex.IsCriticalException()) {
                     tcs.TrySetException(ex);
                 }
-            });
+            }, immediate: false);
             return tcs.Task;
         }
 
