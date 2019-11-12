@@ -89,15 +89,11 @@ namespace Microsoft.Python.Analysis.Caching {
                 return result;
             }
 
-            for (var retries = 50; retries > 0; --retries) {
-                try {
-                    var dbPath = FindDatabaseFile(name, filePath, moduleType);
-                    _searchResults[key] = result = !string.IsNullOrEmpty(dbPath);
-                    return result;
-                } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
-                    Thread.Sleep(10);
-                }
-            }
+            WithRetries.Execute(() => {
+                var dbPath = FindDatabaseFile(name, filePath, moduleType);
+                _searchResults[key] = result = !string.IsNullOrEmpty(dbPath);
+                return result;
+            }, "Unable to find database file for {name}.", _log);
             return false;
         }
 
