@@ -27,13 +27,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         internal static void Assign(SequenceExpression seq, IMember value, ExpressionEval eval) {
             var typeEnum = new ValueEnumerator(value, eval.UnknownType, eval.Module);
-            // Fetch actual tuple from the list for assignment item by item
-            // rather than assigning tuples from the list to each item.
-            // x, y, z = [('abc', 42, True), ('abc', 23, False)]
-            // yields x = 'abc', y = 42 rather than x = ('abc', 42, True), ...
-            if (seq is TupleExpression && typeEnum.Peek is IPythonCollection coll) {
-                typeEnum = new ValueEnumerator(coll, eval.UnknownType, eval.Module);
-            }
             Assign(seq, typeEnum, eval);
         }
 

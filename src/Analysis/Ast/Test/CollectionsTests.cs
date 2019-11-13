@@ -583,10 +583,13 @@ a2 = False
 for i, x in enumerate(a):
     a1 = i
     a2 = x
+
+a3 = enumerate(a)
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a1").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("a2").OfType(BuiltinTypeId.Str);
+                .And.HaveVariable("a2").OfType(BuiltinTypeId.Str)
+                .And.HaveVariable("a3").OfType(BuiltinTypeId.Str);
         }
     }
 }

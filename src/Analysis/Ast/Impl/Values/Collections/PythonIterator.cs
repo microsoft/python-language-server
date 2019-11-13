@@ -30,9 +30,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
             Collection = collection;
         }
 
-        public PythonIterator(IPythonType iteratorType, IPythonCollection collection) : base(iteratorType) {
-            Collection = collection;
-        }
+        protected PythonIterator(IPythonType iteratorTypeId) : base(iteratorTypeId) { }
 
         public virtual IMember Next => Collection.Index(GetArgSet(_index++)) ?? UnknownType;
 

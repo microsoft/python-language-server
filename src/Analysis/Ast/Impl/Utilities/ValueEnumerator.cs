@@ -14,6 +14,7 @@
 // permissions and limitations under the License.
 
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Builtins;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -46,6 +47,9 @@ namespace Microsoft.Python.Analysis.Utilities {
             }
 
             switch (value) {
+                case IPythonEnumerator e:
+                    _values = ImmutableArray<IMember>.Create(e.IndexValue, e.Next);
+                    break;
                 // Tuple = 'tuple value' (such as from callable). Transfer values.
                 case IPythonCollection seq:
                     _values = seq.Contents.ToImmutableArray();

@@ -23,7 +23,7 @@ using Microsoft.Python.Analysis.Values.Collections;
 using Microsoft.Python.Core.Text;
 using Microsoft.Python.Parsing.Ast;
 
-namespace Microsoft.Python.Analysis.Specializations {
+namespace Microsoft.Python.Analysis.Specializations.Builtins {
     public static class BuiltinsSpecializations {
         public static IMember Identity(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
             var args = argSet.Values<IMember>();
@@ -176,16 +176,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             return o?.GetPythonType().GetMember(name) ?? def;
         }
 
-        public static IMember Enumerate(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
-            var args = argSet.Values<IMember>();
-            if (args.Count > 0) {
-                var iterator = (args[0] as IPythonIterable)?.GetIterator();
-                var itemType = (iterator?.Next ?? module.Interpreter.UnknownType).GetPythonType();
-                var intType = module.Interpreter.GetBuiltinType(BuiltinTypeId.Int);
-                var content = new[] { intType.CreateInstance(ArgumentSet.WithoutContext), itemType.CreateInstance(ArgumentSet.WithoutContext) };
-                return PythonCollectionType.CreateTuple(module, content);
-            }
-            return null;
-        }
+        public static IMember Enumerate(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan)
+            => new PythonEnumerator(argSet, module);
     }
 }
