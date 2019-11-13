@@ -32,8 +32,8 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             var typeEnum = new ValueEnumerator(value, eval.UnknownType, eval.Module);
             // Fetch actual tuple from the list for assignment item by item
             // rather than assigning tuples from the list to each item.
-            // x = [('abc', 42, True), ('abc', 23, False)]
-            // for some_str, some_int, some_bool in x:
+            // x, y, z = [('abc', 42, True), ('abc', 23, False)]
+            // yields x = 'abc', y = 42 rather than x = ('abc', 42, True), ...
             if (seq is TupleExpression && typeEnum.Peek is IPythonCollection coll) {
                 typeEnum = new ValueEnumerator(coll, eval.UnknownType, eval.Module);
             }
