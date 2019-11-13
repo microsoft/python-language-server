@@ -42,15 +42,21 @@ namespace Microsoft.Python.Parsing.Extensions {
         /// </summary>
         protected Node GetParent(Node node) => _parentMap[node];
 
+        protected virtual void PushSpine(Node node, Node parent) { }
+        protected virtual void PopSpine(Node node, Node parent) { }
+
         private Node PushSpine(Node node) {
             var parent = PeekSpine();
             _parentMap.Add(node, parent);
             _spineStack.Push(node);
+
+            PushSpine(node, parent);
             return parent;
         }
 
         private Node PopSpine(Node node) {
             var parent = GetParent(node);
+            PopSpine(node, parent);
 
             var removed = _spineStack.Pop();
             var peeked = PeekSpine();
