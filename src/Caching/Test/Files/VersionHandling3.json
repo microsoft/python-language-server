@@ -1,5 +1,5 @@
 {
-  "UniqueId": "module.0",
+  "UniqueId": "module",
   "FilePath": null,
   "Documentation": "",
   "Functions": [
@@ -36,7 +36,7 @@
       "Functions": [],
       "Id": 24395611,
       "Name": "func",
-      "DeclaringModuleId": "module.0",
+      "DeclaringModuleId": "module",
       "QualifiedName": "module:func",
       "IndexSpan": {
         "Start": 42,
@@ -160,7 +160,7 @@
     }
   ],
   "FileSize": 91,
-  "Id": 773962309,
+  "Id": -2131035837,
   "Name": "module",
   "DeclaringModuleId": null,
   "QualifiedName": "module",

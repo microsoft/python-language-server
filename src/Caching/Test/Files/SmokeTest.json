@@ -1,5 +1,5 @@
 {
-  "UniqueId": "module.0",
+  "UniqueId": "module",
   "FilePath": null,
   "Documentation": "",
   "Functions": [
@@ -17,7 +17,7 @@
       "Functions": [],
       "Id": 24395611,
       "Name": "func",
-      "DeclaringModuleId": "module.0",
+      "DeclaringModuleId": "module",
       "QualifiedName": "module:func",
       "IndexSpan": {
         "Start": 207,
@@ -126,7 +126,7 @@
       }
     },
     {
-      "Value": "i:module:C$module.0",
+      "Value": "i:module:C$module",
       "Id": 812,
       "Name": "c",
       "DeclaringModuleId": null,
@@ -151,7 +151,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "t:module:C$module.0",
+                  "Type": "t:module:C$module",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -166,7 +166,7 @@
           "Functions": [],
           "Id": 965872103,
           "Name": "__init__",
-          "DeclaringModuleId": "module.0",
+          "DeclaringModuleId": "module",
           "QualifiedName": "module:C.__init__",
           "IndexSpan": {
             "Start": 45,
@@ -179,7 +179,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "t:module:C$module.0",
+                  "Type": "t:module:C$module",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -194,7 +194,7 @@
           "Functions": [],
           "Id": -2139806792,
           "Name": "method",
-          "DeclaringModuleId": "module.0",
+          "DeclaringModuleId": "module",
           "QualifiedName": "module:C.method",
           "IndexSpan": {
             "Start": 100,
@@ -212,7 +212,7 @@
           "Functions": [],
           "Id": 24690682,
           "Name": "prop",
-          "DeclaringModuleId": "module.0",
+          "DeclaringModuleId": "module",
           "QualifiedName": "module:C.prop",
           "IndexSpan": {
             "Start": 163,
@@ -243,7 +243,7 @@
       "GenericParameterValues": [],
       "Id": 780,
       "Name": "C",
-      "DeclaringModuleId": "module.0",
+      "DeclaringModuleId": "module",
       "QualifiedName": "module:C",
       "IndexSpan": {
         "Start": 21,
@@ -332,7 +332,7 @@
     }
   ],
   "FileSize": 243,
-  "Id": 773962309,
+  "Id": -2131035837,
   "Name": "module",
   "DeclaringModuleId": null,
   "QualifiedName": "module",
