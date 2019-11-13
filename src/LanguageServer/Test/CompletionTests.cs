@@ -1486,5 +1486,30 @@ class C(B):
             var result = cs.GetCompletions(analysis, new SourceLocation(1, 16));
             result.Should().OnlyHaveLabels("m1", "m2");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task ClassPrivateMembers() {
+            const string code = @"
+class Op:
+    __EQ = '0'
+    __NOT_EQ = '1'
+    __OP_LIST = [__EQ]
+
+    def print_EQ1(self):
+        self.
+
+    @classmethod
+    def print_EQ2(cls):
+        cls.
+";
+            var analysis = await GetAnalysisAsync(code);
+            var cs = new CompletionSource(new PlainTextDocumentationSource(), ServerSettings.completion, Services);
+
+            var result = cs.GetCompletions(analysis, new SourceLocation(8, 14));
+            result.Should().HaveLabels("__EQ", "__NOT_EQ", "__OP_LIST");
+
+            result = cs.GetCompletions(analysis, new SourceLocation(12, 13));
+            result.Should().HaveLabels("__EQ", "__NOT_EQ", "__OP_LIST");
+        }
     }
 }
