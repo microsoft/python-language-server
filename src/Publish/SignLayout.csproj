@@ -8,7 +8,7 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
   <PropertyGroup>
-    <SignEngine Condition="$(SignEngine) == ''">false</SignEngine>
+    <SignParse Condition="$(SignParse) == ''">false</SignParse>
     <SignServer Condition="$(SignServer) == ''">false</SignServer>
     <SignPackage Condition="$(SignPackage) == ''">false</SignPackage>
   </PropertyGroup>
@@ -26,11 +26,9 @@
   <Target Name="CoreCompile" />
   <Target Name="CopyFilesToOutputDirectory" />
 
-  <ItemGroup Condition="$(SignEngine)">
+  <ItemGroup Condition="$(SignParse)">
     <SignFiles Include="$(OutputPath)\Microsoft.Python.Core.dll" />
     <SignFiles Include="$(OutputPath)\Microsoft.Python.Parsing.dll" />
-    <SignFiles Include="$(OutputPath)\Microsoft.Python.Analysis.Core.dll" />
-    <SignFiles Include="$(OutputPath)\Microsoft.Python.Analysis.dll" />
   </ItemGroup>
 
   <ItemGroup Condition="$(SignServer)">
