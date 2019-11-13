@@ -38,16 +38,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // will be handled by AssignToExpr.
             var value = ExtractRhs(node.Right, lhs.FirstOrDefault(), lookupOptions);
             if (value != null) {
-                // Named tuple may get assigned to variables that have name different from the tuple itself.
-                // Then the name may conflict with other types in module or its persistent model. For example,
-                // 'tokenize' stub declares _TokenInfo = NamedTuple('TokenInfo', ...) but there is also
-                // 'class TokenInfo(_TokenInfo)'' so we have to use the variable name in order to avoid type conflicts.
+                // Named tuple may get assigned to variable that has name different from the tuple itself.
+                // Then the name may end up conflicting with other types in module when stub merges with
+                // module types. For example, 'tokenize' stub declares _TokenInfo = NamedTuple('TokenInfo', ...)
+                // but there is also 'class TokenInfo(_TokenInfo)' so we have to use the variable name
+                // in order to avoid type naming conflicts.
                 if (value is ITypingNamedTupleType nt && lhs.Length == 1 && lhs[0] is NameExpression nex) {
                     nt.SetName(nex.Name);
-                } else {
-                    foreach (var expr in lhs) {
-                        AssignToExpr(expr, value);
-                    }
+                }
+                foreach (var expr in lhs) {
+                    AssignToExpr(expr, value);
                 }
             }
         }
