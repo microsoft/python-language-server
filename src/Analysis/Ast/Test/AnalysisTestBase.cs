@@ -38,7 +38,9 @@ using TestUtilities;
 
 namespace Microsoft.Python.Analysis.Tests {
     public abstract class AnalysisTestBase {
-        protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMinutes(1);
+        protected const int AnalysisTimeoutInMS = 1000 * 60;
+
+        protected TimeSpan AnalysisTimeout { get; set; } = TimeSpan.FromMilliseconds(AnalysisTimeoutInMS);
 
         private TimeSpan GetAnalysisTimeout() => Debugger.IsAttached ? Timeout.InfiniteTimeSpan : AnalysisTimeout;
 

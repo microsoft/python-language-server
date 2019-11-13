@@ -18,7 +18,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="get_search_paths.py">

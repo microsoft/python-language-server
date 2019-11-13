@@ -821,6 +821,18 @@ class Subclass(MyClass):
             d.Should().BeEmpty();
         }
 
+        [TestMethod, Priority(0)]
+        public async Task AugmentedAssignToUndefined() {
+            const string code = @"
+x += 1
+";
+            var d = await LintAsync(code);
+            d.Should().HaveCount(1);
+            d[0].ErrorCode.Should().Be(ErrorCodes.UndefinedVariable);
+            d[0].SourceSpan.Should().Be(2, 1, 2, 2);
+        }
+
+
         private async Task<IReadOnlyList<DiagnosticsEntry>> LintAsync(string code, InterpreterConfiguration configuration = null) {
             var analysis = await GetAnalysisAsync(code, configuration ?? PythonVersions.LatestAvailable3X);
             var a = Services.GetService<IPythonAnalyzer>();

@@ -74,7 +74,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                     }
                     var args = new ConfigurationParams {
                         items = new[] {
-                            new ConfigurationItem { section = "python" }
+                            new ConfigurationItem {
+                                scopeUri = _initParams.rootUri,
+                                section = "python"
+                            }
                         }
                     };
                     var configs = await _rpc.InvokeWithParameterObjectAsync<JToken>("workspace/configuration", args, cancellationToken);

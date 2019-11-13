@@ -49,8 +49,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         private IRunningDocumentTable _rdt;
         private ILogger _log;
         private IIndexManager _indexManager;
+        private PythonAnalyzer _analyzer;
 
         private InitializeParams _initParams;
+        private bool _initialized;
 
         private bool _watchSearchPaths;
         private PathsWatcher _pathsWatcher;
@@ -128,11 +130,11 @@ namespace Microsoft.Python.LanguageServer.Implementation {
 
             _services.AddService(new DiagnosticsService(_services));
 
-            var analyzer = new PythonAnalyzer(_services);
-            _services.AddService(analyzer);
+            _analyzer = new PythonAnalyzer(_services);
+            _services.AddService(_analyzer);
 
-            analyzer.AnalysisComplete += OnAnalysisComplete;
-            _disposableBag.Add(() => analyzer.AnalysisComplete -= OnAnalysisComplete);
+            _analyzer.AnalysisComplete += OnAnalysisComplete;
+            _disposableBag.Add(() => _analyzer.AnalysisComplete -= OnAnalysisComplete);
 
             _services.AddService(new RunningDocumentTable(_services));
             _rdt = _services.GetService<IRunningDocumentTable>();
@@ -159,7 +161,10 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                                             initializationOptions?.includeFiles,
                                             initializationOptions?.excludeFiles,
                                             _services.GetService<IIdleTimeService>());
-            _indexManager.IndexWorkspace(_interpreter.ModuleResolution.CurrentPathResolver).DoNotWait();
+
+            _indexManager.IndexWorkspace().DoNotWait();
+            _analyzer.AnalysisComplete += IndexLibraries;
+            _disposableBag.Add(() => _analyzer.AnalysisComplete -= IndexLibraries);
             _services.AddService(_indexManager);
             _disposableBag.Add(_indexManager);
 
@@ -179,6 +184,14 @@ namespace Microsoft.Python.LanguageServer.Implementation {
                 ChooseDocumentationSource(sigInfo?.documentationFormat),
                 sigInfo?.parameterInformation?.labelOffsetSupport == true
             );
+
+            _initialized = true;
+        }
+
+        private void IndexLibraries(object o, AnalysisCompleteEventArgs e) {
+            _log?.Log(TraceEventType.Verbose, Resources.IndexingLibraries);
+            _indexManager.IndexSnapshot(_interpreter.ModuleResolution.CurrentPathResolver).DoNotWait();
+            _analyzer.AnalysisComplete -= IndexLibraries;
         }
 
         public Task Shutdown() {
@@ -258,6 +271,12 @@ namespace Microsoft.Python.LanguageServer.Implementation {
         }
 
         private void ResetAnalyzer() {
+            if (!_initialized) {
+                // We haven't yet initialized everything, not even the builtins.
+                // Resetting here would break things.
+                return;
+            }
+
             _log?.Log(TraceEventType.Information, Resources.ReloadingModules);
             _services.GetService<PythonAnalyzer>().ResetAnalyzer().ContinueWith(t => {
                 if (_watchSearchPaths) {
