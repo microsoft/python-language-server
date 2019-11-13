@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
@@ -23,7 +24,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingTuple : PythonCollection {
         private readonly ITypingTupleType _collectionType;
         public TypingTuple(ITypingTupleType collectionType)
-            : base(collectionType, collectionType.ItemTypes.Select(t => t.CreateInstance(ArgumentSet.WithoutContext)).ToArray()) {
+            : base(collectionType, collectionType.ItemTypes) {
             _collectionType = collectionType;
         }
 
@@ -35,5 +36,8 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
 
         public override IMember Index(IArgumentSet args) 
             => _collectionType.Index(this, args).GetPythonType().CreateInstance(ArgumentSet.Empty(args.Expression, args.Eval));
+
+        public override IReadOnlyList<IMember> Contents
+            => _collectionType.ItemTypes.Select(t => t.CreateInstance(ArgumentSet.WithoutContext)).ToArray();
     }
 }

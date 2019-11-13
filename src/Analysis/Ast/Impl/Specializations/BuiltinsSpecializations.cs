@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Data;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Specializations.Typing.Values;
@@ -182,8 +183,8 @@ namespace Microsoft.Python.Analysis.Specializations {
                 var iterator = (args[0] as IPythonIterable)?.GetIterator();
                 var itemType = (iterator?.Next ?? module.Interpreter.UnknownType).GetPythonType();
                 var intType = module.Interpreter.GetBuiltinType(BuiltinTypeId.Int);
-                var tupleType = new TypingTupleType(new[] { intType, itemType }, module, module.Interpreter);
-                return new TypingTuple(tupleType);
+                var content = new[] {new PythonInstance(intType), itemType.CreateInstance(ArgumentSet.WithoutContext)};
+                return PythonCollectionType.CreateTuple(module, content);
             }
             return null;
         }

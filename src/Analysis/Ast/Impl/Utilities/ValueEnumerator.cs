@@ -34,6 +34,7 @@ namespace Microsoft.Python.Analysis.Utilities {
         /// </summary>
         /// <param name="value">Collection to iterate over</param>
         /// <param name="unknown">Default type when we cannot find type from collection</param>
+        /// <param name="declaringModule">Declaring module</param>
         public ValueEnumerator(IMember value, IPythonType unknown, IPythonModule declaringModule) {
             _value = value;
             _unknown = unknown;

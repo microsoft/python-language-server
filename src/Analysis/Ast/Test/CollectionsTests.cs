@@ -571,5 +571,22 @@ pt = nt(1, 2)
             nt.Should().HaveType(BuiltinTypeId.Tuple);
             nt.Should().HaveMembers("x", "y");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task Enumerate() {
+            const string code = @"
+a = ['a', 'b', 'c']
+
+a1 = True
+a2 = False
+
+for i, x in enumerate(a):
+    a1 = i
+    a2 = x
+";
+            var analysis = await GetAnalysisAsync(code);
+            analysis.Should().HaveVariable("a1").OfType(BuiltinTypeId.Int)
+                .And.HaveVariable("a2").OfType(BuiltinTypeId.Str);
+        }
     }
 }
