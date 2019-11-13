@@ -39,27 +39,26 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         public async Task<DocumentHighlight[]> DocumentHighlightAsync(Uri uri, SourceLocation location, CancellationToken cancellationToken = default) {
-            if (uri != null) {
-                var analysis = await Document.GetAnalysisAsync(uri, _services, DocumentHighlightAnalysisTimeout, cancellationToken);
-
-                var definitionSource = new DefinitionSource(_services);
-
-                var definition = definitionSource.FindDefinition(analysis, location, out var definingMember);
-                if ((definition == null) || (definingMember == null)) {
-                    return Array.Empty<DocumentHighlight>();
-                }
-
-                var rootDefinition = definingMember.GetRootDefinition();
-
-                var result = rootDefinition.References
-                    .Where(r => r.DocumentUri.Equals(uri))
-                    .Select((r , i) => new DocumentHighlight { kind = (i == 0) ? DocumentHighlightKind.Write : DocumentHighlightKind.Read, range = r.Span })
-                    .ToArray();
-
-                return result;
+            if (uri == null) {
+                return Array.Empty<DocumentHighlight>();
             }
 
-            return Array.Empty<DocumentHighlight>();
+            var analysis = await Document.GetAnalysisAsync(uri, _services, DocumentHighlightAnalysisTimeout, cancellationToken);
+            var definitionSource = new DefinitionSource(_services);
+
+            var definition = definitionSource.FindDefinition(analysis, location, out var definingMember);
+            if (definition == null || definingMember == null) {
+                return Array.Empty<DocumentHighlight>();
+            }
+
+            var rootDefinition = definingMember.GetRootDefinition();
+
+            var result = rootDefinition.References
+                .Where(r => r.DocumentUri.Equals(uri))
+                .Select((r, i) => new DocumentHighlight { kind = (i == 0) ? DocumentHighlightKind.Write : DocumentHighlightKind.Read, range = r.Span })
+                .ToArray();
+
+            return result;
         }
     }
 }
