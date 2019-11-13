@@ -60,21 +60,5 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                 }
             }
         }
-
-        private static IEnumerable<NameExpression> NamesFromSequenceExpression(SequenceExpression rootSeq) {
-            var names = new List<NameExpression>();
-            foreach (var item in rootSeq.Items) {
-                var expr = item.RemoveParenthesis();
-                switch (expr) {
-                    case SequenceExpression seq:
-                        names.AddRange(NamesFromSequenceExpression(seq));
-                        break;
-                    case NameExpression nex:
-                        names.Add(nex);
-                        break;
-                }
-            }
-            return names;
-        }
     }
 }

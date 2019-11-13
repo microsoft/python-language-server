@@ -93,7 +93,7 @@ namespace Microsoft.Python.Analysis.Specializations {
                 //Zero argument form only works inside a class definition
                 foreach (var s in argSet.Eval.CurrentScope.EnumerateTowardsGlobal.Where(s => s.Node is ClassDefinition)) {
                     var classType = s.Variables["__class__"].GetPythonType<IPythonClassType>();
-                    return PythonSuperType.Create(classType)?.CreateInstance(argSet); 
+                    return PythonSuperType.Create(classType)?.CreateInstance(argSet);
                 }
                 return null;
             }
@@ -111,7 +111,7 @@ namespace Microsoft.Python.Analysis.Specializations {
             }
 
             var secondCls = args[1].GetPythonType<IPythonClassType>();
-            if (secondCls?.Equals(firstCls) == true || 
+            if (secondCls?.Equals(firstCls) == true ||
                 secondCls?.IsSubClassOf(firstCls) == true) {
                 // We walk the mro of the second parameter looking for the first
                 return PythonSuperType.Create(secondCls, typeToFind: firstCls)?.CreateInstance(argSet);
@@ -174,6 +174,18 @@ namespace Microsoft.Python.Analysis.Specializations {
             }
 
             return o?.GetPythonType().GetMember(name) ?? def;
+        }
+
+        public static IMember Enumerate(IPythonModule module, IPythonFunctionOverload overload, IArgumentSet argSet, IndexSpan indexSpan) {
+            var args = argSet.Values<IMember>();
+            if (args.Count > 0) {
+                var iterator = (args[0] as IPythonIterable)?.GetIterator();
+                var itemType = (iterator?.Next ?? module.Interpreter.UnknownType).GetPythonType();
+                var intType = module.Interpreter.GetBuiltinType(BuiltinTypeId.Int);
+                var tupleType = new TypingTupleType(new[] { intType, itemType }, module, module.Interpreter);
+                return new TypingTuple(tupleType);
+            }
+            return null;
         }
     }
 }

@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Python.Analysis.Specializations;
-using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
@@ -176,6 +175,8 @@ namespace Microsoft.Python.Analysis.Modules {
             Analysis.SpecializeFunction("vars", BuiltinsSpecializations.DictStringToObject);
 
             Analysis.SpecializeFunction("super", BuiltinsSpecializations.Super);
+            Analysis.SpecializeFunction("enumerate", BuiltinsSpecializations.Enumerate);
+
             //SpecializeFunction(_builtinName, "range", RangeConstructor);
             //SpecializeFunction(_builtinName, "sorted", ReturnsListOfInputIterable);
 

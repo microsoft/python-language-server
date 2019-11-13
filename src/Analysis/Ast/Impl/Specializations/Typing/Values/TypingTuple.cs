@@ -13,6 +13,7 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -22,7 +23,7 @@ namespace Microsoft.Python.Analysis.Specializations.Typing.Values {
     internal class TypingTuple : PythonCollection {
         private readonly ITypingTupleType _collectionType;
         public TypingTuple(ITypingTupleType collectionType)
-            : base(collectionType, collectionType.ItemTypes) {
+            : base(collectionType, collectionType.ItemTypes.Select(t => t.CreateInstance(ArgumentSet.WithoutContext)).ToArray()) {
             _collectionType = collectionType;
         }
 

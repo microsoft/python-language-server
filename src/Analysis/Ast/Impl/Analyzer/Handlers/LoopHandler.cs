@@ -22,11 +22,11 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
 
         public bool HandleFor(ForStatement node) {
             var iterable = Eval.GetValueFromExpression(node.List);
-            var iterator = (iterable as IPythonIterable)?.GetIterator();
-            var value = iterator?.Next ?? Eval.UnknownType;
             switch (node.Left) {
                 case NameExpression nex:
                     // for x in y:
+                    var iterator = (iterable as IPythonIterable)?.GetIterator();
+                    var value = iterator?.Next ?? Eval.UnknownType;
                     if (!string.IsNullOrEmpty(nex.Name)) {
                         Eval.DeclareVariable(nex.Name, value, VariableSource.Declaration, nex);
                     }
@@ -35,7 +35,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
                     // x = [('abc', 42, True), ('abc', 23, False)]
                     // for some_str, (some_int, some_bool) in x:
                     var h = new SequenceExpressionHandler(Walker);
-                    h.HandleAssignment(seq, value);
+                    h.HandleAssignment(seq, iterable);
                     break;
             }
 

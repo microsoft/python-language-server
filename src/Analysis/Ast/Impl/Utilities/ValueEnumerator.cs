@@ -57,7 +57,7 @@ namespace Microsoft.Python.Analysis.Utilities {
         }
 
         public IMember Next() {
-            IMember t = Peek;
+            var t = Peek;
             _index++;
 
             foreach (var ve in _nested) {
