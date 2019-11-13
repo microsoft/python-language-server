@@ -553,7 +553,7 @@ namespace Microsoft.Python.Analysis.Analyzer {
             var analysis = new LibraryAnalysis(document, version, walker.GlobalScope, eval, walker.StarImportMemberNames);
 
             var dbs = _services.GetService<IModuleDatabaseService>();
-            dbs?.StoreModuleAnalysisAsync(analysis, CancellationToken.None).DoNotWait();
+            dbs?.StoreModuleAnalysisAsync(analysis, immediate:false, _analyzerCancellationToken).DoNotWait();
 
             return analysis;
         }

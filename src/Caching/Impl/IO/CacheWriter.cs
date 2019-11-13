@@ -50,7 +50,7 @@ namespace Microsoft.Python.Analysis.Caching.IO {
             _taskQueue.Dispose();
         }
 
-        public Task EnqueueModel(ModuleModel model, CancellationToken cancellationToken) {
+        public Task EnqueueModel(ModuleModel model, bool immediate = false, CancellationToken cancellationToken = default) {
             var tcs = new TaskCompletionSource<bool>();
             _taskQueue.Enqueue(() => {
                 try {
@@ -61,7 +61,7 @@ namespace Microsoft.Python.Analysis.Caching.IO {
                 } catch (Exception ex) when (!ex.IsCriticalException()) {
                     tcs.TrySetException(ex);
                 }
-            }, immediate: false);
+            }, immediate: immediate);
             return tcs.Task;
         }
 

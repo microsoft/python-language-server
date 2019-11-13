@@ -15,6 +15,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Python.Analysis.Analyzer;
 using Microsoft.Python.Analysis.Modules;
 using Microsoft.Python.Analysis.Types;
 
@@ -28,7 +29,13 @@ namespace Microsoft.Python.Analysis.Caching {
         /// <summary>
         /// Writes module data to the database.
         /// </summary>
-        Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default);
+        /// <param name="analysis">Document analysis</param>
+        /// <param name="immediate">
+        /// True if database should be written to disk immediately
+        /// as opposed to delaying writing until complete analysis event from the <see cref="IPythonAnalyzer"/>
+        /// </param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, bool immediate = false, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Determines if module analysis exists in the storage.

@@ -57,7 +57,7 @@ def func2() -> C2: ...
 
             var dbs = new ModuleDatabase(Services, Path.GetDirectoryName(TestData.GetDefaultModulePath()));
             Services.AddService(dbs);
-            await dbs.StoreModuleAnalysisAsync(analysis2, CancellationToken.None);
+            await dbs.StoreModuleAnalysisAsync(analysis2, immediate: true, CancellationToken.None);
 
             await Services.GetService<IPythonAnalyzer>().ResetAnalyzer();
             var doc = Services.GetService<IRunningDocumentTable>().GetDocument(analysis.Document.Uri);
@@ -100,12 +100,12 @@ def func2() -> C2: ...
 
             var importedModules = interpreter.ModuleResolution.GetImportedModules();
             foreach (var m in importedModules.Where(m => m.Analysis is LibraryAnalysis)) {
-                await dbs.StoreModuleAnalysisAsync(m.Analysis, CancellationToken.None);
+                await dbs.StoreModuleAnalysisAsync(m.Analysis, immediate: true);
             }
             
             importedModules = interpreter.TypeshedResolution.GetImportedModules();
             foreach (var m in importedModules.Where(m => m.Analysis is LibraryAnalysis)) {
-                await dbs.StoreModuleAnalysisAsync(m.Analysis, CancellationToken.None);
+                await dbs.StoreModuleAnalysisAsync(m.Analysis, immediate: true);
             }
         }
     }

@@ -97,7 +97,7 @@ namespace Microsoft.Python.Analysis.Caching {
             return false;
         }
 
-        public async Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, CancellationToken cancellationToken = default) {
+        public async Task StoreModuleAnalysisAsync(IDocumentAnalysis analysis, bool immediate = false, CancellationToken cancellationToken = default) {
             var cachingLevel = GetCachingLevel();
             if (cachingLevel == AnalysisCachingLevel.None) {
                 return;
@@ -105,7 +105,7 @@ namespace Microsoft.Python.Analysis.Caching {
 
             var model = await Task.Run(() => ModuleModel.FromAnalysis(analysis, _services, cachingLevel), cancellationToken);
             if (model != null && !cancellationToken.IsCancellationRequested) {
-                await _cacheWriter.EnqueueModel(model, cancellationToken);
+                await _cacheWriter.EnqueueModel(model, immediate, cancellationToken);
             }
         }
 
