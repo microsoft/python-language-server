@@ -587,6 +587,7 @@ for i, x in enumerate(a):
     a2 = x
 
 a3 = enumerate(a)
+a4 = a3.__next__()
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a1").OfType(BuiltinTypeId.Int)
@@ -594,7 +595,8 @@ a3 = enumerate(a)
 
             var a3 = analysis.Should().HaveVariable("a3").Which.Value;
             a3.Should().BeAssignableTo<IPythonEnumerator>();
-            a3.GetPythonType().Name.Should().Be("enumerate");
+
+            analysis.Should().HaveVariable("a4").Which.Should().HaveType(BuiltinTypeId.Tuple);
         }
     }
 }

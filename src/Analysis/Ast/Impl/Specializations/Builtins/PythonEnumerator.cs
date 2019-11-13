@@ -13,7 +13,9 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
+using Microsoft.Python.Analysis.Specializations.Typing.Types;
 using Microsoft.Python.Analysis.Types;
+using Microsoft.Python.Analysis.Types.Collections;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Analysis.Values.Collections;
 
@@ -22,24 +24,27 @@ namespace Microsoft.Python.Analysis.Specializations.Builtins {
     /// Represents object returned from enumerate().
     /// </summary>
     internal sealed class PythonEnumerator : PythonIterator, IPythonEnumerator {
-        private readonly IPythonInterpreter _interpreter;
+        private readonly IPythonModule _declaringModule;
         private readonly IPythonIterator _iterator;
+
+        private IPythonInterpreter Interpreter => _declaringModule.Interpreter;
 
         public PythonEnumerator(IArgumentSet argSet, IPythonModule declaringModule)
             : base(declaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.TupleIterator)) {
-            _interpreter = declaringModule.Interpreter;
+            _declaringModule = declaringModule;
             var args = argSet.Values<IMember>();
             if (args.Count > 0) {
                 _iterator = (args[0] as IPythonIterable)?.GetIterator();
             }
         }
 
-        public override IPythonType Type
-            => _interpreter.ModuleResolution.BuiltinsModule.GetMember("enumerate")?.GetPythonType() ?? _interpreter.UnknownType;
-
         public IMember IndexValue
-            => _interpreter.GetBuiltinType(BuiltinTypeId.Int).CreateInstance(ArgumentSet.WithoutContext);
+            => Interpreter.GetBuiltinType(BuiltinTypeId.Int).CreateInstance(ArgumentSet.WithoutContext);
+
+        public IMember ItemValue
+            => (_iterator?.Next ?? Interpreter.UnknownType).GetPythonType().CreateInstance(ArgumentSet.WithoutContext);
+
         public override IMember Next
-            => _iterator?.Next ?? _interpreter.UnknownType.CreateInstance(ArgumentSet.WithoutContext);
+            => PythonCollectionType.CreateTuple(_declaringModule, new[] { IndexValue, ItemValue });
     }
 }

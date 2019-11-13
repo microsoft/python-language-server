@@ -22,5 +22,6 @@ namespace Microsoft.Python.Analysis.Specializations.Builtins {
     /// </summary>
     public interface IPythonEnumerator: IPythonIterator {
         IMember IndexValue { get; }
+        IMember ItemValue { get; }
     }
 }

@@ -47,7 +47,7 @@ namespace Microsoft.Python.Analysis.Values.Collections {
 
             switch (value) {
                 case IPythonEnumerator e:
-                    _values = ImmutableArray<IMember>.Create(e.IndexValue, e.Next);
+                    _values = ImmutableArray<IMember>.Create(e.IndexValue, e.ItemValue);
                     break;
                 // Tuple = 'tuple value' (such as from callable). Transfer values.
                 case IPythonCollection seq:
