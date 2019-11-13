@@ -1,5 +1,5 @@
 {
-  "UniqueId": "module.0",
+  "UniqueId": "module",
   "FilePath": null,
   "Documentation": "",
   "Functions": [],
@@ -104,7 +104,7 @@
       }
     },
     {
-      "Value": "i:module:B.C$module.0",
+      "Value": "i:module:B.C$module",
       "Id": 812,
       "Name": "c",
       "DeclaringModuleId": null,
@@ -129,7 +129,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "t:module:A$module.0",
+                  "Type": "t:module:A$module",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -144,7 +144,7 @@
           "Functions": [],
           "Id": -1909501047,
           "Name": "methodA",
-          "DeclaringModuleId": "module.0",
+          "DeclaringModuleId": "module",
           "QualifiedName": "module:A.methodA",
           "IndexSpan": {
             "Start": 33,
@@ -159,7 +159,7 @@
       "GenericParameterValues": [],
       "Id": 778,
       "Name": "A",
-      "DeclaringModuleId": "module.0",
+      "DeclaringModuleId": "module",
       "QualifiedName": "module:A",
       "IndexSpan": {
         "Start": 21,
@@ -179,12 +179,12 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "t:module:B$module.0",
+                  "Type": "t:module:B$module",
                   "DefaultValue": null,
                   "Kind": 0
                 }
               ],
-              "ReturnType": "i:module:B.C$module.0",
+              "ReturnType": "i:module:B.C$module",
               "Documentation": null
             }
           ],
@@ -194,7 +194,7 @@
           "Functions": [],
           "Id": 935009767,
           "Name": "methodB1",
-          "DeclaringModuleId": "module.0",
+          "DeclaringModuleId": "module",
           "QualifiedName": "module:B.methodB1",
           "IndexSpan": {
             "Start": 235,
@@ -207,7 +207,7 @@
               "Parameters": [
                 {
                   "Name": "self",
-                  "Type": "t:module:B$module.0",
+                  "Type": "t:module:B$module",
                   "DefaultValue": null,
                   "Kind": 0
                 }
@@ -222,7 +222,7 @@
           "Functions": [],
           "Id": 935009768,
           "Name": "methodB2",
-          "DeclaringModuleId": "module.0",
+          "DeclaringModuleId": "module",
           "QualifiedName": "module:B.methodB2",
           "IndexSpan": {
             "Start": 287,
@@ -255,7 +255,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "t:module:B.C$module.0",
+                      "Type": "t:module:B.C$module",
                       "DefaultValue": null,
                       "Kind": 0
                     }
@@ -270,7 +270,7 @@
               "Functions": [],
               "Id": 965872103,
               "Name": "__init__",
-              "DeclaringModuleId": "module.0",
+              "DeclaringModuleId": "module",
               "QualifiedName": "module:B.C.__init__",
               "IndexSpan": {
                 "Start": 122,
@@ -283,7 +283,7 @@
                   "Parameters": [
                     {
                       "Name": "self",
-                      "Type": "t:module:B.C$module.0",
+                      "Type": "t:module:B.C$module",
                       "DefaultValue": null,
                       "Kind": 0
                     }
@@ -298,7 +298,7 @@
               "Functions": [],
               "Id": -1909501045,
               "Name": "methodC",
-              "DeclaringModuleId": "module.0",
+              "DeclaringModuleId": "module",
               "QualifiedName": "module:B.C.methodC",
               "IndexSpan": {
                 "Start": 175,
@@ -322,7 +322,7 @@
           "GenericParameterValues": [],
           "Id": 780,
           "Name": "C",
-          "DeclaringModuleId": "module.0",
+          "DeclaringModuleId": "module",
           "QualifiedName": "module:B.C",
           "IndexSpan": {
             "Start": 106,
@@ -334,7 +334,7 @@
       "GenericParameterValues": [],
       "Id": 779,
       "Name": "B",
-      "DeclaringModuleId": "module.0",
+      "DeclaringModuleId": "module",
       "QualifiedName": "module:B",
       "IndexSpan": {
         "Start": 78,
@@ -439,7 +439,7 @@
     }
   ],
   "FileSize": 353,
-  "Id": 773962309,
+  "Id": -2131035837,
   "Name": "module",
   "DeclaringModuleId": null,
   "QualifiedName": "module",

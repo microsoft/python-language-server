@@ -163,7 +163,7 @@ namespace Microsoft.Python.Analysis.Tests.FluentAssertions {
                             .FailWith($"Expected '{GetName(actualContainer)}.{n}' to implement IPythonInstance{{reason}}, but its type is {actualMember.GetType().FullName}");
                     }
 
-                    // Debug.Assert(actualMemberType.MemberType == expectedMemberType.MemberType);
+                    Debug.Assert(actualMemberType.MemberType == expectedMemberType.MemberType);
                     actualMemberType.MemberType.Should().Be(expectedMemberType.MemberType, $"{expectedMemberType.Name} is {expectedMemberType.MemberType}");
 
                     #region Class comparison

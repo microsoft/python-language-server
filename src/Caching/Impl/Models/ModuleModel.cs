@@ -163,8 +163,8 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                 if (_modelCache == null) {
                     _modelCache = new Dictionary<string, MemberModel>();
                     foreach (var m in GetMemberModels()) {
-                        Debug.Assert(!_modelCache.ContainsKey(m.QualifiedName));
-                        _modelCache[m.QualifiedName] = m;
+                        Debug.Assert(!_modelCache.ContainsKey(m.Name));
+                        _modelCache[m.Name] = m;
                     }
                 }
 

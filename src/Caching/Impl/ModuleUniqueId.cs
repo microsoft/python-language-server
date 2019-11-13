@@ -48,6 +48,10 @@ namespace Microsoft.Python.Analysis.Caching {
                 return null;
             }
 
+            if (moduleType == ModuleType.User) {
+                return moduleName; // For tests where user modules are cached.
+            }
+
             var key = new ModuleKey { ModuleName = moduleName, FilePath = filePath, ModuleType = moduleType };
             if (_nameCache.TryGetValue(key, out var id)) {
                 return id;
