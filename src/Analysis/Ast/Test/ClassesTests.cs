@@ -874,41 +874,5 @@ class test():
                 .Should().HaveSingleOverload().Which
                 .Should().HaveReturnType("Test2");
         }
-
-        [TestMethod, Priority(0)]
-        public async Task PrivateMembers() {
-            const string code = @"
-class Op:
-    __EQ = '0''
-    __NOT_EQ = '1''
-    __OP_LIST = [__EQ]
-
-    @classmethod
-    def print_EQ(cls):
-        print(cls.__EQ)
-
-    @classmethod
-    def print_NOT_EQ(cls):
-        print(cls.__NOT_EQ)
-
-    @classmethod
-    def print_is_numeric_operatior(cls, ope):
-        print(ope in cls.__OP_LIST)
-
-    @classmethod
-        def is_numeric_operator(cls, ope):
-    return ope in cls.__OP_LIST
-";
-            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
-            var test = analysis.Should().HaveClass("test").Which;
-
-            test.Should().HaveMember<IPythonInstance>("A").Which
-                .Should().HaveMethod("Z");
-
-            test.Should().HaveMethod("X").Which
-                .Should().HaveSingleOverload().Which
-                .Should().HaveReturnType("Test2");
-        }
-
     }
 }
