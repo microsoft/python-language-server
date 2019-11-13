@@ -40,7 +40,7 @@
 
   <ItemGroup Condition="$(SignPackage)">
     <SignFiles Include="$(OutputPath)\Python-Language-Server-*.nupkg" />
-    <SignFiles Include="$(OutputPath)\Microsoft-Python-Analysis-*.nupkg" />
+    <SignFiles Include="$(OutputPath)\Microsoft.Python.Analysis*.nupkg" />
   </ItemGroup>
 
   <Target Name="_CheckFiles" BeforeTargets="SignFiles">

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Microsoft-Python-Analysis</id>
+    <id>Microsoft.Python.Analysis</id>
     <version>$version$</version>
     <title>Microsoft Python Static Analysis</title>
     <authors>Microsoft</authors>
