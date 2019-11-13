@@ -182,7 +182,7 @@ namespace Microsoft.Python.Analysis.Specializations {
                 var iterator = (args[0] as IPythonIterable)?.GetIterator();
                 var itemType = (iterator?.Next ?? module.Interpreter.UnknownType).GetPythonType();
                 var intType = module.Interpreter.GetBuiltinType(BuiltinTypeId.Int);
-                var content = new[] {new PythonInstance(intType), itemType.CreateInstance(ArgumentSet.WithoutContext)};
+                var content = new[] { intType.CreateInstance(ArgumentSet.WithoutContext), itemType.CreateInstance(ArgumentSet.WithoutContext) };
                 return PythonCollectionType.CreateTuple(module, content);
             }
             return null;
