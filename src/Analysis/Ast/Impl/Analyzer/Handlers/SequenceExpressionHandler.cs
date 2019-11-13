@@ -13,7 +13,6 @@
 // See the Apache Version 2.0 License for specific language governing
 // permissions and limitations under the License.
 
-using System.Collections.Generic;
 using Microsoft.Python.Analysis.Analyzer.Evaluation;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Utilities;
@@ -24,9 +23,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
     internal sealed class SequenceExpressionHandler : StatementHandler {
         public SequenceExpressionHandler(AnalysisWalker walker) : base(walker) { }
 
-        public void HandleAssignment(SequenceExpression seq, IMember value) {
-            Assign(seq, value, Eval);
-        }
+        public void HandleAssignment(SequenceExpression seq, IMember value) => Assign(seq, value, Eval);
 
         internal static void Assign(SequenceExpression seq, IMember value, ExpressionEval eval) {
             var typeEnum = new ValueEnumerator(value, eval.UnknownType, eval.Module);
