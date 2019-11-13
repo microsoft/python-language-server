@@ -80,7 +80,7 @@ namespace Microsoft.Python.Analysis.Caching.Models {
 
                 switch (v.Value) {
                     case ITypingNamedTupleType nt:
-                        namedTuples[nt.Name] = new NamedTupleModel(nt, services);
+                        namedTuples[v.Name] = new NamedTupleModel(nt, services);
                         continue;
                     case IPythonFunctionType ft when ft.IsLambda():
                         // No need to persist lambdas.
@@ -107,12 +107,6 @@ namespace Microsoft.Python.Analysis.Caching.Models {
                             continue;
                         }
                         break;
-                    //case IPythonModule m:
-                    //    if (!subModules.ContainsKey(m.Name)) {
-                    //        subModules[m.Name] = new SubmoduleModel(m, services);
-                    //        continue;
-                    //    }
-                    //    break;
                 }
 
                 // Do not re-declare classes and functions as variables in the model.

@@ -15,6 +15,7 @@
 
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -29,7 +30,7 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             }
 
             // Filter out parenthesis expression in assignment because it makes no difference.
-            var lhs = node.Left.Select(s => s.RemoveParenthesis());
+            var lhs = node.Left.Select(s => s.RemoveParenthesis()).ToArray();
 
             // Note that this is handling assignments of the same value to multiple variables,
             // i.e. with "x = y = z = value", x/y/z are the items in lhs. If an expression looks
@@ -37,8 +38,16 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
             // will be handled by AssignToExpr.
             var value = ExtractRhs(node.Right, lhs.FirstOrDefault(), lookupOptions);
             if (value != null) {
-                foreach (var expr in lhs) {
-                    AssignToExpr(expr, value);
+                // Named tuple may get assigned to variables that have name different from the tuple itself.
+                // Then the name may conflict with other types in module or its persistent model. For example,
+                // 'tokenize' stub declares _TokenInfo = NamedTuple('TokenInfo', ...) but there is also
+                // 'class TokenInfo(_TokenInfo)'' so we have to use the variable name in order to avoid type conflicts.
+                if (value is ITypingNamedTupleType nt && lhs.Length == 1 && lhs[0] is NameExpression nex) {
+                    nt.SetName(nex.Name);
+                } else {
+                    foreach (var expr in lhs) {
+                        AssignToExpr(expr, value);
+                    }
                 }
             }
         }
