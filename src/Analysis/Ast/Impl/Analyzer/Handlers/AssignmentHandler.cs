@@ -15,7 +15,6 @@
 
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Python.Analysis.Specializations.Builtins;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Parsing.Ast;
@@ -100,10 +99,6 @@ namespace Microsoft.Python.Analysis.Analyzer.Handlers {
         private bool IsValidAssignment(string name, Location loc) => !Eval.GetInScope(name).IsDeclaredAfter(loc);
 
         private void HandleNameExpression(NameExpression ne, IMember value) {
-            if (value is IPythonEnumerator e) {
-                value = e.Next; // x = enumerate(y)
-            }
-
             IScope scope;
             if (Eval.CurrentScope.NonLocals[ne.Name] != null) {
                 Eval.LookupNameInScopes(ne.Name, out scope, LookupOptions.Nonlocal);

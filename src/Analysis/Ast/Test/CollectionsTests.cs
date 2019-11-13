@@ -14,6 +14,8 @@
 // permissions and limitations under the License.
 
 using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.Python.Analysis.Specializations.Builtins;
 using Microsoft.Python.Analysis.Tests.FluentAssertions;
 using Microsoft.Python.Analysis.Types;
 using Microsoft.Python.Analysis.Values;
@@ -588,8 +590,11 @@ a3 = enumerate(a)
 ";
             var analysis = await GetAnalysisAsync(code);
             analysis.Should().HaveVariable("a1").OfType(BuiltinTypeId.Int)
-                .And.HaveVariable("a2").OfType(BuiltinTypeId.Str)
-                .And.HaveVariable("a3").OfType(BuiltinTypeId.Str);
+                .And.HaveVariable("a2").OfType(BuiltinTypeId.Str);
+
+            var a3 = analysis.Should().HaveVariable("a3").Which.Value;
+            a3.Should().BeAssignableTo<IPythonEnumerator>();
+            a3.GetPythonType().Name.Should().Be("enumerate");
         }
     }
 }

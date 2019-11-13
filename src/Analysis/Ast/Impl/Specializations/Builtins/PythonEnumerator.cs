@@ -22,21 +22,24 @@ namespace Microsoft.Python.Analysis.Specializations.Builtins {
     /// Represents object returned from enumerate().
     /// </summary>
     internal sealed class PythonEnumerator : PythonIterator, IPythonEnumerator {
-        private readonly IPythonModule _declaringModule;
+        private readonly IPythonInterpreter _interpreter;
         private readonly IPythonIterator _iterator;
 
         public PythonEnumerator(IArgumentSet argSet, IPythonModule declaringModule)
             : base(declaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.TupleIterator)) {
-            _declaringModule = declaringModule;
+            _interpreter = declaringModule.Interpreter;
             var args = argSet.Values<IMember>();
             if (args.Count > 0) {
                 _iterator = (args[0] as IPythonIterable)?.GetIterator();
             }
         }
 
+        public override IPythonType Type
+            => _interpreter.ModuleResolution.BuiltinsModule.GetMember("enumerate")?.GetPythonType() ?? _interpreter.UnknownType;
+
         public IMember IndexValue
-            => _declaringModule.Interpreter.GetBuiltinType(BuiltinTypeId.Int).CreateInstance(ArgumentSet.WithoutContext);
+            => _interpreter.GetBuiltinType(BuiltinTypeId.Int).CreateInstance(ArgumentSet.WithoutContext);
         public override IMember Next
-            => _iterator?.Next ?? _declaringModule.Interpreter.UnknownType.CreateInstance(ArgumentSet.WithoutContext);
+            => _iterator?.Next ?? _interpreter.UnknownType.CreateInstance(ArgumentSet.WithoutContext);
     }
 }

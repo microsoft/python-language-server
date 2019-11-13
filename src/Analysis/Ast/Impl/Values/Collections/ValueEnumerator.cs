@@ -17,11 +17,10 @@ using System.Linq;
 using Microsoft.Python.Analysis.Specializations.Builtins;
 using Microsoft.Python.Analysis.Specializations.Typing;
 using Microsoft.Python.Analysis.Types;
-using Microsoft.Python.Analysis.Values;
 using Microsoft.Python.Core;
 using Microsoft.Python.Core.Collections;
 
-namespace Microsoft.Python.Analysis.Utilities {
+namespace Microsoft.Python.Analysis.Values.Collections {
     internal sealed class ValueEnumerator {
         private readonly IMember _value;
         private readonly IPythonType _unknown;
