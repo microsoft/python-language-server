@@ -12,7 +12,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Microsoft Python Parsing Library</description>
     <releaseNotes>Initial release.</releaseNotes>
-    <copyright>Copyright (c) 2018-2019</copyright>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>Python</tags>
     <dependencies>
       <dependency id="Microsoft.Extensions.FileSystemGlobbing" version="2.2" />
