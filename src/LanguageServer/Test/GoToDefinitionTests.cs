@@ -651,5 +651,42 @@ x = datetime.datetime.day
             reference.uri.AbsolutePath.Should().Contain("datetime.py");
             reference.uri.AbsolutePath.Should().NotContain("pyi");
         }
+
+        [TestMethod, Priority(0)]
+        public async Task GotoDefinitionFromMultiImport() {
+            var otherModPath = TestData.GetTestSpecificUri("other.py");
+            var testModPath = TestData.GetTestSpecificUri("test.py");
+            const string otherModCode = @"
+def a(): ...
+def b(): ...
+def c(): ...
+";
+            const string testModCode = @"
+from other import a, b, c
+";
+            await CreateServicesAsync(PythonVersions.LatestAvailable3X);
+            var rdt = Services.GetService<IRunningDocumentTable>();
+
+            rdt.OpenDocument(otherModPath, otherModCode);
+            var testMod = rdt.OpenDocument(testModPath, testModCode);
+            await Services.GetService<IPythonAnalyzer>().WaitForCompleteAnalysisAsync();
+            var analysis = await testMod.GetAnalysisAsync();
+            var ds = new DefinitionSource(Services);
+
+            var reference = ds.FindDefinition(analysis, new SourceLocation(2, 19), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(1, 4, 1, 5);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 22), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(2, 4, 2, 5);
+
+            reference = ds.FindDefinition(analysis, new SourceLocation(2, 25), out _);
+            reference.Should().NotBeNull();
+            reference.uri.AbsolutePath.Should().Contain("other.py");
+            reference.range.Should().Be(3, 4, 3, 5);
+        }
     }
 }
