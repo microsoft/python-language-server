@@ -220,7 +220,7 @@ y = package.x";
         }
 
         [TestMethod, Priority(0)]
-        public async Task NoRenameInLibrary() {
+        public async Task NoRenameInSystemLibrary() {
             const string code = @"from logging import BASIC_FORMAT";
             var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
             var rs = new RenameSource(Services);
@@ -229,6 +229,19 @@ y = package.x";
             wse.Should().BeNull();
 
             wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(1, 23), "z");
+            wse.Should().BeNull();
+        }
+
+        [TestMethod, Priority(0)]
+        public async Task NoRenameInUserLibrary() {
+            const string code = @"
+import Library1
+Library1.make_foo()
+";
+            var analysis = await GetAnalysisAsync(code, PythonVersions.LatestAvailable3X);
+            var rs = new RenameSource(Services);
+
+            var wse = await rs.RenameAsync(analysis.Document.Uri, new SourceLocation(3, 16), "z");
             wse.Should().BeNull();
         }
     }
