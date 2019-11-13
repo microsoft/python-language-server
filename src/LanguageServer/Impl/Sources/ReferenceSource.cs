@@ -44,30 +44,35 @@ namespace Microsoft.Python.LanguageServer.Sources {
         }
 
         public async Task<Reference[]> FindAllReferencesAsync(Uri uri, SourceLocation location, ReferenceSearchOptions options, CancellationToken cancellationToken = default) {
-            if (uri != null) {
-                var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
+            if (uri == null) {
+                return Array.Empty<Reference>();
+            }
+            var analysis = await Document.GetAnalysisAsync(uri, _services, FindReferencesAnalysisTimeout, cancellationToken);
 
-                var definitionSource = new DefinitionSource(_services);
-                var definition = definitionSource.FindDefinition(analysis, location, out var definingMember);
-                if (definition == null) {
-                    return Array.Empty<Reference>();
-                }
+            var definitionSource = new DefinitionSource(_services);
+            var definition = definitionSource.FindDefinition(analysis, location, out var definingMember);
+            if (definition == null) {
+                return Array.Empty<Reference>();
+            }
 
-                var rootDefinition = definingMember.GetRootDefinition();
-                if (rootDefinition != null) {
-                    var name = definingMember.GetName();
-                    var moduleUri = rootDefinition.Definition?.DocumentUri;
-                    if (moduleUri != null) {
-                        var rdt = _services.GetService<IRunningDocumentTable>();
-                        var declaringModule = rdt.GetDocument(moduleUri);
+            var rootDefinition = definingMember.GetRootDefinition();
+            if (rootDefinition == null) {
+                return Array.Empty<Reference>();
+            }
+            
+            var name = definingMember.GetName();
+            var moduleUri = rootDefinition.Definition?.DocumentUri;
+            if (moduleUri == null) {
+                return Array.Empty<Reference>();
+            }
+            
+            var rdt = _services.GetService<IRunningDocumentTable>();
+            var declaringModule = rdt.GetDocument(moduleUri);
 
-                        // If it is an implicitly declared variable, such as function or a class
-                        // then the location is invalid and the module is null. Use current module.
-                        if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
-                            return await FindAllReferencesAsync(name, declaringModule, rootDefinition, location, definitionSource, cancellationToken);
-                        }
-                    }
-                }
+            // If it is an implicitly declared variable, such as function or a class
+            // then the location is invalid and the module is null. Use current module.
+            if (!string.IsNullOrEmpty(name) && (declaringModule.ModuleType == ModuleType.User || options == ReferenceSearchOptions.All)) {
+                return await FindAllReferencesAsync(name, declaringModule, rootDefinition, location, definitionSource, cancellationToken);
             }
             return Array.Empty<Reference>();
         }
