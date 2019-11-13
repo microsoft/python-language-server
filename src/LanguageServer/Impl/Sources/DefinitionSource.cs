@@ -140,7 +140,7 @@ namespace Microsoft.Python.LanguageServer.Sources {
 
             // Are we in the member name part (ie. B in 'from A import B')?
             // Handle 'from A import B' similar to 'import A.B' 
-            var partReference = FindModulePartReference(statement.Names, expr, module, out definingMember);
+            var partReference = FindModulePartReference(statement.Names, statement.AsNames, expr, module, out definingMember);
             if (partReference != null) {
                 return partReference;
             }
@@ -163,9 +163,24 @@ namespace Microsoft.Python.LanguageServer.Sources {
             return null;
         }
 
-        private static Reference FindModulePartReference(ImmutableArray<NameExpression> names, Node expr, IPythonModule module, out ILocatedMember definingMember) {
+        private static Reference FindModulePartReference(ImmutableArray<NameExpression> names, ImmutableArray<NameExpression> asNames, Node expr, IPythonModule module, out ILocatedMember definingMember) {
             definingMember = null;
-            var part = names.FirstOrDefault(x => x.IndexSpan.Start <= expr.StartIndex && x.IndexSpan.Start <= expr.EndIndex);
+            NameExpression part = null;
+            for (var i = 0; i < names.Count; i++) {
+                var name = names[i];
+                var asName = i < asNames.Count ? asNames[i] : null;
+
+                if (expr.StartIndex <= name.IndexSpan.Start && expr.EndIndex >= name.IndexSpan.End) {
+                    part = name;
+                    break;
+                }
+
+                if (asName != null && expr.StartIndex <= asName.IndexSpan.Start && expr.EndIndex >= asName.IndexSpan.End) {
+                    part = name;
+                    break;
+                }
+            }
+
             if (part != null) {
                 var definition = module.Analysis.GlobalScope.Variables[part.Name]?.Definition;
                 if (definition != null) {
